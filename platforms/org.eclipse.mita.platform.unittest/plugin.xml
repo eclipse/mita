@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.mita.library.extension.type_library">
+      <Library
+            description="The implementation independent platform we use for unit testing"
+            id="platforms.unittest"
+            name="Unittest Platform Definition"
+            optional="true"
+            version="1.0.0"
+            module="org.eclipse.mita.platform.unittest.UnitTestPlatformGeneratorModule">
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.platform.unittest/platform/unittests.platform">
+         </ResourceURI>
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.platform.unittest/platform/Types.mita">
+         </ResourceURI>
+         <Dependency
+               id="org.eclipse.mita.library.stdlib">
+         </Dependency>
+      </Library>
+   </extension>
+
+</plugin>

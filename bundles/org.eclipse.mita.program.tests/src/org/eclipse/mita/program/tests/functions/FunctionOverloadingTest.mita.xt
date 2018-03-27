@@ -1,0 +1,106 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.functions.FunctionsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP
+ */
+
+package test;
+import platforms.unittest; 
+
+// Functions are polymorphic, meaning that there can be multiple functions with the same name who differ through their signature.
+fn overloadingTest(x : int8) : int16 {
+	return x as int16;
+}
+
+fn overloadingTest(x : uint8) : uint16 {
+	return x as uint16;
+}
+
+fn g(x : int8) : int8 {
+	return x as int8;
+}
+
+fn g(x : uint8) : uint8 {
+	return x as uint8;
+}
+
+// noCompileErrors doesn't work for polymorphic functions yet
+// IGNORE noCompileErrors
+fn main() {
+	// XPECT inferredType --> int16 
+	let x1 = overloadingTest(10 as int8);
+	
+	// XPECT inferredType --> uint16
+	let x2 = overloadingTest(10 as uint8);
+	
+	
+	// Polymorphism also works for extension methods
+	let i4 = 10 as int8;
+	// XPECT inferredType --> int16
+	let x4 = i4.overloadingTest();
+	
+	let i5 = 10 as uint8;
+	// XPECT inferredType --> uint16
+	let x5 = i5.overloadingTest();
+	
+	let x6 = overloadingTest(x = 10);
+	
+	
+	// XPECT inferredType --> uint16
+	let x7 = (10 as uint8).overloadingTest();
+	// XPECT inferredType --> int16 
+	let x8 = (10 as int8).overloadingTest(); 
+}
+
+fn main2() {
+	// XPECT inferredType --> int16 
+	let x1 = overloadingTest(g(10 as int8));
+	
+	// XPECT inferredType --> uint16
+	let x2 = overloadingTest(g(10 as uint8));
+	
+	
+	// Polymorphism also works for extension methods
+	let i4 = 10 as int8;
+	// XPECT inferredType --> int16
+	let x4 = g(i4).overloadingTest();
+	
+	let i5 = 10 as uint8;
+	// XPECT inferredType --> uint16
+	let x5 = g(i5).overloadingTest();
+	
+	
+	// XPECT inferredType --> int16
+	let x6 = i4.g().overloadingTest();
+	
+	// XPECT inferredType --> uint16
+	let x7 = i5.g().overloadingTest();
+	
+	let x8 = overloadingTest(x = g(10));
+	
+	
+	// XPECT inferredType --> uint16
+	let x9 = (10 as uint8).g().overloadingTest();
+	// XPECT inferredType --> int16 
+	let x10 = (10 as int8).g().overloadingTest(); 
+}
+
+
+fn overloadingTest2(x : int8) : int16 {
+    return x as int16;
+}
+
+fn overloadingTest2(x : int16) : int32 {
+    return x as int16;
+}
+ 
+fn test() { 
+    let i4 = 10 as int16;
+    // XPECT inferredType --> int32 
+    let x4 = overloadingTest2(i4); 
+
+}
+  
+

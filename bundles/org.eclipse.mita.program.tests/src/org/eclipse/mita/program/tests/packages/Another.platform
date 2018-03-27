@@ -1,0 +1,5 @@
+package platforms.another;
+
+platform AnotherPlatform {	
+	has system-event foo
+}

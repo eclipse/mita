@@ -1,0 +1,136 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.setup.SetupTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// Platforms define system resources (e.g. connectivity, sensors,GPIO, I2C, SPI).
+// System resources can be set up before use.
+// Sensors are the only system resources which do not require explicit setup.
+
+/* XPECT errors ---
+"Cannot assign a to this system resource." at "foo"
+--- */
+setup foo : my_sensor01 { }
+
+// Connectivity has to be named
+/* XPECT errors ---
+"Connectivity setup blocks have to be named, e.g. 'setup myConnectivity : MyConnectivity { }'" at "MyConnectivity"
+--- */
+setup MyConnectivity { 
+	
+}
+
+// Some system resources can be named
+// XPECT noCompileErrors
+setup devNetwork : MyConnectivity { 
+	cfg00 = "MyDevice";
+} 
+setup productionNetwork : MyConnectivity { } 
+// setup myGpioSetup : GPIO { } // compiler error: The GPIO resource can not be named . 
+
+// Some system resources can exist multiple times.
+// XPECT noCompileErrors
+setup networkA : MyConnectivity { } 
+setup networkB : MyConnectivity { } 
+// setup GPIO { } 
+// setup GPIO { } // compiler error: The GPIO resource can only be set up once . 
+
+// Some system resources (connectivity and sensors) have configuration items . 
+// Configuration items are set like named parameters with basic expressions . 
+// Configuration items are typed.
+setup my_sensor00 { 
+	// XPECT errors --> "The type 'bool' is not compatible with the configuration item's type 'int16'" at "true"
+ 	cfg01 = true; // compiler error: configuration item type int16 and bool are not compatible . 
+} 
+ 
+// Some system resources have variable configuration items (VCI),e . g . connectivity , GPIO , I2C , SPI . 
+// VCI are defined like variables using vci functions.
+// VCI can only be mutable using var. 
+// The system resource defines the VCI functions available.
+setup bluetoothA : MyConnectivity {
+ 	cfg00 = "MyDevice";
+ 	
+ 	// The fully qualified enumerator in the scope is not a problem. Users can't use it anyways and it will
+ 	// go away once we import the platforms and do away with the selectable libraries.
+ 	/* XPECT scope at CFG_VAL_1 ---
+ 	    CFG_VAL_1, CFG_VAL_2, CFG_VAL_3
+ 	--- */
+ 	cfg03 = CFG_VAL_1;
+ 	
+ 	// XPECT errors --> "Value has to be an instance of 'MySingletonConnectivity'" at "MySingletonConnectivity"
+ 	cfg04 = MySingletonConnectivity;
+ 	
+ 	// We only care for vci00, vci01 and vci02 but not for the other stuff in the scope. Syntax prevents invalid choices.
+ 	/* XPECT scope at vci00 ---
+ 	    vci00, vci01, vci02
+ 	--- */
+ 	var boolC : bool = vci00(p01=true, p02=CFG_VAL_1);
+ 	
+ 	// XPECT errors --> "Incompatible types string and uint32." at "vci01("wrong")"
+ 	var boolC2 = vci01("wrong"); // compile-error: The types int16 and string compatible
+ 	
+	/*  XPECT errors ---
+ 	    "Assignment operator '=' may only be applied on compatible types, not on string and uint16." at "var boolC3 : string = vci01(17);"
+ 	--- */
+ 	var boolC3 : string = vci01(17); // compile-error: The types string and uint16 are not compatible
+} 
+
+// XPECT errors --> "This system resource must only be setup once" at "MySingletonConnectivity"
+setup someSingletonName : MySingletonConnectivity {
+
+}
+// XPECT errors --> "This system resource must only be setup once" at "MySingletonConnectivity"
+setup withADifferentName : MySingletonConnectivity {
+
+} 
+
+// setup GPIO { 
+// 	var ledSwitch : bool = digitalOut ( ) 
+// 	let button : bool = digitalIn ( pullup = true ) 
+// 	let batteryVoltage : uint32 = analogIn ( ) 
+// 	let wrongVoltage : bool = analogIn ( ) // compiler error: return type uint32 and bool are not compatible . 
+// } 
+
+ // Connectivity resources have configuration items and slots
+ // XPECT noCompileErrors
+ setup devNetwork2 : MyConnectivity { 
+ 	cfg00 = "bar";
+ 	cfg01 = true;
+ 	cfg02 = 123 as uint32;
+ 	cfg03 = CFG_VAL_1;
+ }
+
+ // Configuration items can be mandatory
+// setup backend : LWM2M {  
+// 	transport = devNetwork2;
+// } // compile-error: Missing setup for configuration item 'serverName'
+
+ 
+// VCI can have optional parameters
+setup bluetoothB : MyConnectivity {
+	// We do not expect an error as p02 is optional 
+	// XPECT vciParameters --> p01=0 p02=42
+	var vciv0 = vci02(p01 = 0);
+	
+	// We can explicitly set p02
+	// XPECT vciParameters --> p01=0 p02=0
+	var vciv1 = vci02(p01 = 0, p02 = 0);
+	
+	// XPECT errors --> "Wrong number of arguments, expected [uint32, int32]." at "vci02(p02 = 0)"
+	var vciv2 = vci02(p02 = 0);
+	
+	// XPECT errors --> "Incompatible types bool and int32." at "vci02(p01 = 0, p02 = true)"
+	var vciv3 = vci02(p01 = 0, p02 = true);
+	
+	// XPECT vciParameters --> p01=1 p02=41
+	var vciv4 = vci02(1, 41);
+
+	// XPECT vciParameters --> p01=0 p02=42
+	var vciv5 = vci02(0);
+}
+ 

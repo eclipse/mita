@@ -1,0 +1,77 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.controlflow.ControlStructuresTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// Code can branch using if statements
+// XPECT noCompileErrors
+function testIfSuccess() : void {
+	var foo = 10;
+	
+	if(foo >= 15) {
+		print("That's high");
+	} else if(foo >= 10){
+		print("That's less high");
+	} else {
+		print("That's not high");
+	}
+} 
+
+function testIfFail(){
+	var foo = 10;
+	// If-conditions must be bool
+	// XPECT errors --> "Incompatible types int32 and bool." at "foo"
+	if(foo) { }
+}
+
+// XPECT noCompileErrors
+function testLoopsSuccess() : void {
+	// Traditional for loops are supported
+	for(var i = 0; i < 10; i=i+1) { 
+		var x = i;
+	}
+	
+	// Advanced for loops
+	var list = new array<int16>(10);
+	for (var element in list) { 
+		var x = element;
+	}
+	
+	//While loops are supported
+	while(true) { }
+	//and do while loops are supported
+	do { } while(true)
+	
+}
+
+function testLoopsFail() {
+	var x : int32 = 10;
+
+	// XPECT errors --> "Incompatible types int32 and bool." at "x"
+	while(x) { }
+	
+	// XPECT errors --> "Incompatible types int32 and bool." at "x"
+	do { } while(x)
+	
+}
+
+// XPECT noCompileErrors
+function testConditionalSuccess() {
+	var x  = true ? 5 : 1;
+	x = x > 10 ? 1 : 3;
+}
+
+function testConditionalFail() {
+	/* XPECT errors ---
+		"conditional expression must be of type boolean." at "5 ? 5 : 1"
+	--- */
+	var x  = 5 ? 5 : 1;
+}
+
+
+

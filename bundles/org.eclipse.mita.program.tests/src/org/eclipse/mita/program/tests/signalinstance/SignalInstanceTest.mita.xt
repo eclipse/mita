@@ -1,0 +1,51 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.exceptions.ExceptionsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest; 
+
+setup connectivity : MyConnectivity {
+	var signal_instance00 = vci00(p01=true, p02=CFG_VAL_1);
+	var signal_instance01 = vci01(20);
+}
+
+fn accessWithoutReadOrWrite() {
+	/* XPECT errors ---
+		"Cannot determine size of element: Object does not have a size" at "connectivity.signal_instance00"
+		"Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
+	--- */
+	var x1 = connectivity.signal_instance00;
+}
+
+// XPECT errors ---> "Signal instances and modalities cannot be passed as parameters" at "siginst<uint32>"
+fn functionWithSiginstParameter(p : siginst<uint32>) { 
+}
+
+// XPECT errors ---> "Could not infer the size of the function's return." at "functionReturningSiginst"
+fn functionReturningSiginst() : siginst<bool> {
+	// XPECT errors --> "Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
+	return connectivity.signal_instance00;
+}
+
+fn useSiginstCorrectly() {
+	// XPECT inferredType ---> bool
+	var x1 = connectivity.signal_instance00.read();
+	
+	// XPECT inferredType ---> uint16
+	var x2 = connectivity.signal_instance01.read();
+	
+	connectivity.signal_instance00.write(true);
+	connectivity.signal_instance01.write(20);
+}
+
+fn stuffSiginstShouldValidate() {
+	/* XPECT errors ---
+		"Could not infer common type for type parameter T from argument types [integer, bool]." at "connectivity.signal_instance00.write(20)"
+		"Incompatible types integer and bool." at "connectivity.signal_instance00.write(20)"
+	--- */
+	connectivity.signal_instance00.write(20);
+}

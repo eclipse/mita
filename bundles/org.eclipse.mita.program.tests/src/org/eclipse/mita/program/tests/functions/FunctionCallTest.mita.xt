@@ -1,0 +1,42 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.functions.FunctionsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP
+ */
+
+package test;
+import platforms.unittest;
+
+// XPECT noCompileErrors
+fn returnsTrue() {
+	return true;
+}
+
+// XPECT noCompileErrors
+fn voidFunction() : void { }
+
+// XPECT noCompileErrors
+fn voidFunctionCall() {
+	voidFunction();
+}
+
+fn f(x : int32) { return x; }
+fn g(x : int32) { return x; }
+fn h(x : int32) { return x; }
+
+// XPECT noCompileErrors
+fn callFGH() {
+	let x = f(g(h(42)));
+
+	// TODO: make this statement work with noCompileErrors
+	// let y = (42 as int32).f().g().h();
+}
+
+native unchecked fn abs(x : double) : double header "math.h";
+
+// XPEXCT noCompileErrors
+every 1 second {
+	let x = abs(20);
+}

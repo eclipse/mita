@@ -1,0 +1,563 @@
+package platforms.xdk110;
+
+
+enum BMA280_Range {
+	/**< sets range to +/- 2G mode */
+	Range_2G,
+	
+	/**< sets range to +/- 4G mode */
+	Range_4G,
+	
+	/**< sets range to +/- 8G mode */
+	Range_8G,
+	
+	/**< sets range to +/- 16G mode */
+	Range_16G
+}
+
+enum BMA280_Bandwidth {
+ 	/**< sets bandwidth to LowPass 7.81HZ  */
+	BW_7_81Hz,
+
+	/**< sets bandwidth to LowPass 15.63HZ  */
+	BW_15_63Hz,
+	
+	/**< sets bandwidth to LowPass 31.25HZ  */
+	BW_31_25Hz,
+	
+	 /**< sets bandwidth to LowPass 62.50HZ  */
+	BW_62_50Hz,
+	
+	/**< sets bandwidth to LowPass 125HZ  */
+	BW_125Hz,
+	
+	/**< sets bandwidth to LowPass 250HZ  */
+	BW_250Hz,
+	
+	/**< sets bandwidth to LowPass 500HZ  */
+	BW_500Hz,
+	
+	/**< sets bandwidth to LowPass 1000HZ  */
+	BW_1000Hz
+}
+
+/**
+ * The BMA280 is a tri axial, low-g acceleration sensor with digital output for consumer applications.
+ * It allows measurements of acceleration in three perpendicular axes.
+ */
+sensor BMA280 {
+	generator "org.eclipse.mita.platform.xdk110.sensors.Bma280Generator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.Bma280Validator"
+	
+	/**
+	 * The range of acceleration we want to measure.
+	 */
+	configuration-item range : BMA280_Range = BMA280_Range.Range_2G
+	
+	/**
+	 * The low-pass filter bandwidth used by the BMA.
+	 */
+	configuration-item bandwidth : BMA280_Bandwidth = BMA280_Bandwidth.BW_500Hz
+	
+	/**
+	 * The threshold of acceleration that has to be crossed before an any motion event is triggered.
+	 */
+	configuration-item any_motion_threshold : uint32 = 20
+	
+	/**
+	 * The threshold of acceleration that must not be exceeded for a no motion event to be triggered.
+	 */
+	configuration-item no_motion_threshold : uint32 = 20
+	
+	
+	/**
+	 * The X axis of the BMA280
+	 */
+	modality x_axis : int32
+	
+	/**
+	 * The Y axis of the BMA280
+	 */
+	modality y_axis : int32
+	
+	/**
+	 * The Z axis of the BMA280
+	 */ 
+	modality z_axis : int32
+	
+	/**
+	 * The L2 norm of the acceleration vector: sqrt(x^2 + y^2 + z^2)
+	 */
+	modality magnitude : uint32
+	
+	/**
+	 * The any motion event (also called activity) uses the change between two successive
+	 * acceleration measurements to detect changes in motion. An event is generated when this change
+	 * exceeds the any_motion_threshold.
+	 */
+	event any_motion
+	
+	/**
+	 * The no motion event (also called any inactivity) uses the change between two successive
+	 * acceleration measurements to detect changes in motion. An event is generated when this change
+	 * consecutively stays below the no_motion_threshold.
+	 */
+    event no_motion
+    
+    
+    event low_g
+    event high_g
+    event single_tap
+    event double_tap
+    event flat
+    event orientation
+    event fifo_full
+    event fifo_wml
+    
+    /**
+     * This event serves the asynchronous reading of data. It is generated after storing a new value
+     * of z-axis acceleration data in the data register.
+     */
+    event new_data
+}
+
+//sensor BMG160 {
+//	generator ""
+//}
+//
+//sensor BMM150 {
+//	generator ""
+//}
+
+enum BME280_PowerMode {
+	/**
+	 * Normal mode comprises an automated perpetual cycling between an (active) measurement period and an (inactive) standby period.
+	 */
+	Normal,
+	
+	/**
+	 * In forced mode, a single measurement is performed in accordance to the selected
+	 * measurement and filter options. When the measurement is finished, the sensor returns to sleep
+	 * mode and the measurement results can be obtained from the data registers.
+	 */
+	Forced
+}
+
+enum BME280_Oversampling {
+	OVERSAMPLE_1X,
+	OVERSAMPLE_2X,
+	OVERSAMPLE_4X,
+	OVERSAMPLE_8X,
+	OVERSAMPLE_16X
+}
+
+/**
+ * The BME280 is as combined digital humidity, pressure and temperature sensor based on proven sensing principles.
+ */
+sensor BME280 {
+	generator "org.eclipse.mita.platform.xdk110.sensors.Bme280Generator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.Bme280Validator"
+	
+	/**
+	 * The BME280 power mode
+	 */
+	configuration-item power_mode : BME280_PowerMode = BME280_PowerMode.Normal
+	
+	/**
+	 * The standby time used in normal mode in milliseconds.
+	 * Beware that the value supplied here will be clipped to the nearest valid value.
+	 */
+	configuration-item standby_time : uint32
+	
+	/**
+	 * Reduces noise in the temperature measurement by over sampling.
+	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
+	 */
+	configuration-item temperature_oversampling : BME280_Oversampling
+	
+	/**
+	 * Reduces noise in the pressure measurement by over sampling.
+	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
+	 */
+	configuration-item pressure_oversampling : BME280_Oversampling
+	
+	/**
+	 * Reduces noise in the humidity measurement by over sampling.
+	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
+	 */
+	configuration-item humidity_oversampling : BME280_Oversampling
+	
+	/**
+	 * The temperature in milli-celcius
+	 */
+	modality temperature : int32
+	
+	/**
+	 * The pressure in pascal
+	 */
+	modality pressure : uint32
+	
+	/**
+	 * The relative humidity as percentage
+	 */
+	modality humidity : float
+	
+	/**
+	 * The relative humidity as percentage in Q22.10 integer format.
+	 * Divide this value by 1024 to get the percentage.
+	 */
+	modality humidity_fixed_point : uint32
+	
+}
+
+enum MAX44009_IntegrationTime {
+	/**
+	 * Integration time of 800 milliseconds. This is a preferred mode for boosting low-light sensitivity.
+	 */
+	MS_800,
+	
+	/**
+	 * Integration time of 400 milliseconds. 
+	 */
+	MS_400,
+	
+	/**
+	 * Integration time of 200 milliseconds. 
+	 */
+	MS_200,
+	
+	/**
+	 * Integration time of 100 milliseconds. 
+	 */
+	MS_100,
+	
+	/**
+	 * Integration time of 50 milliseconds. 
+	 */
+	MS_50,
+	
+	/**
+	 * Integration time of 25 milliseconds. 
+	 */
+	MS_25,
+	
+	/**
+	 * Integration time of 12.5 milliseconds. 
+	 */
+	MS_12_5,
+	
+	/**
+	 * Integration time of 6.25 milliseconds. 
+	 */
+	MS_6_25
+}
+
+
+/**
+ * The XDK light sensor.
+ */
+sensor MAX44009 {
+	generator "org.eclipse.mita.platform.xdk110.sensors.Max44009Generator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.Max44009Validator"
+
+	/**
+	 * Enables the manual configuration of integration time and high brightness mode.
+	 * If set to false (default) the chip automatically selects those values.
+	 */
+	configuration-item manual_mode : bool = false
+
+	/**
+	 * The integration time is the time the sensor collects light for. In automatic mode
+	 * (manual mode set to false) the chip automatically selects the integration time.
+	 *
+	 * This configuration item is only used when manual_mode is set to true.
+	 */
+	configuration-item integration_time : MAX44009_IntegrationTime = MAX44009_IntegrationTime.MS_800
+	
+	/**
+	 * Set to true so that only 1/8 of the photo diode current goes to the ADC. This mode is used in
+	 * high-brightness situations to avoid saturation/clipping effects of the ADC.
+	 *
+	 * This configuration item is only used when manual_mode is set to true.
+	 */
+	configuration-item high_brightness : bool = false
+	
+	/**
+	 * In default mode (false) the IC measures lux intensity only once every 800ms regardless
+	 * of integration time. This mode allows the part to operate at its lowest possible supply current.
+	 *
+	 * In continuous mode (true) the IC continuously measures lux intensity. That is, as soon as one
+	 * reading is finished, a new one begins. If integration time is 6.25ms, readings are taken every 6.25ms.
+	 * If integration time is 800ms, readings are taken every 800ms. In this mode, the part consumes slightly
+	 * higher power than in the default mode.
+	 */
+	configuration-item continuous_mode : bool = false
+	
+	/**
+	 * The light intensity in millilux.
+	 */
+	modality intensity : uint32
+}
+
+//connectivity UART {
+//	generator ""	
+//}
+//
+
+/**
+ * BLE is Bluetooth Low Energy using GATT profiles. 
+ * At the moment we only support slave mode where the XDK becomes a device that can be connected to (as compared to connecting to some other device).
+ */
+connectivity named-singleton BLE {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.BleGenerator"
+	validator "org.eclipse.mita.platform.xdk110.connectivity.BleValidator"
+	
+	/**
+	 * The name of the device as advertised via GAP.
+	 */
+	configuration-item deviceName : string
+	
+	/**
+	 * The last four bytes of the UUID of the GATT service we'll create.
+	 */
+	configuration-item serviceUID : uint32
+	
+	/**
+	 * The advertising interval in milliseconds.
+	 */
+	configuration-item advertisingInterval : int16 = 1000
+	
+	
+	/**
+	 * Creates a boolean GATT characteristic.
+	 * 
+	 * @param UUID The last four bytes of the characteristic UUID. Defaults to the hash code of the VCI name.
+	 */
+	signal bool_characteristic(UUID : uint32) : bool
+	
+	/**
+	 * Creates an unsigned integer GATT characteristic.
+	 * 
+	 * @param UUID The last four bytes of the characteristic UUID. Defaults to the hash code of the VCI name.
+	 */
+	signal uint32_characteristic(UUID : uint32) : uint32
+	
+	/**
+	 * Creates a signed integer GATT characteristic.
+	 * 
+	 * @param UUID The last four bytes of the characteristic UUID. Defaults to the hash code of the VCI name.
+	 */
+	signal int32_characteristic(UUID : uint32) : int32
+
+}
+
+/**
+ * Senses actuation of a physical button.
+ */
+sensor Button {
+	generator "org.eclipse.mita.platform.xdk110.sensors.ButtonGenerator"
+	
+	/**
+	 * True if the button is pressed in this very right moment. False otherwise.
+	 */
+	modality is_pressed : bool
+	
+	/**
+	 * Fires after the button was pressed.
+	 */
+	event pressed
+	
+	/**
+	 * Fires after the button was released.
+	 */
+	event released
+}
+
+/**
+ * Specifies the connection to a wireless wide-area network, also refered to as WiFi. 
+ */
+connectivity named-singleton WLAN {
+    generator "org.eclipse.mita.platform.xdk110.connectivity.WlanGenerator"
+    validator "org.eclipse.mita.platform.xdk110.connectivity.WlanValidator"
+
+    /**
+     * The SSID of the WLAN network we want to connect to.
+     */
+    required configuration-item ssid : string
+
+    /**
+     * The pre-shared key of the WLAN we're connecting to. Note that this
+     * setting implies WPA2-PSK as authentication method. At this moment
+     * the WLAN connectivity does not support enterprise WLAN.
+     */
+    required configuration-item psk : string
+
+    /**
+     * If true we'll attempt to configure the wireless interface using DHCP and
+     * all static settings will be ignored. If false, the static settings have to
+     * be present.
+     */
+    configuration-item useDHCP : bool = true
+
+    /**
+     * The static IP address to use. This field has to be in the number-dot
+     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
+     * If useDHCP is true this field is ignored. If useDHCP is false, this field
+     * is mandatory.
+     */
+    configuration-item staticIP : string
+
+    /**
+     * The IP address of the default gateway. This field has to be in the number-dot
+     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
+     * If useDHCP is true this field is ignored. If useDHCP is false, this field
+     * is recommended.
+     */
+    configuration-item staticGW : string
+
+    /**
+     * The IP address of the default DNS server. This field has to be in the number-dot
+     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
+     * If useDHCP is true this field is ignored. If useDHCP is false, this field
+     * is recommended.
+     */
+    configuration-item staticDNS : string 
+    
+    /**
+     * The IP address of the default Subnet Mask. This field has to be in the number-dot
+     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
+     * If useDHCP is true this field is ignored. If useDHCP is false, this field
+     * is recommended.
+     */
+    configuration-item staticMask : string
+
+}
+
+exception MqttException;
+
+/**
+ * MQTT (Message Queuing Telemetry Transport) is an ISO standard (ISO/IEC PRF 20922) publish-subscribe-based messaging protocol.
+ * This MQTT connectivity requires WLAN to be setup as well. 
+ */
+connectivity many MQTT {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.MqttGenerator"
+    validator "org.eclipse.mita.platform.xdk110.connectivity.MqttValidator"
+	
+	/**
+	 * The underlying transport connectivity we use to send the data out. In the future we might also
+	 * support LoRa here.
+	 */
+	required configuration-item transport : WLAN
+	
+	/**
+	 * The URL pointing to the MQTT broker, for example: mqtt://does-not.exist:8000
+	 */
+	required configuration-item url : string
+	
+	/**
+	 * The client identifier (here: clientID) is a identifier of each MQTT client
+     * connecting to a MQTT broker. It needs to be unique for the broker to
+     * know the state of the client. 
+	 */
+	required configuration-item clientId : string
+	
+	/**
+	 * The clean session flag indicates to the broker whether the client wants
+     * to establish a clean session or a persistent session where all
+     * subscriptions and messages (QoS 1 & 2) are stored for the client.
+	 */
+	configuration-item cleanSession : bool = false
+	
+	/**
+	 * The keep alive interval (in seconds) is the time the client commits to for
+     * when sending regular pings to the broker. The broker responds to the
+     * pings enabling both sides to determine if the other one is still alive and
+     * reachable.
+     */
+	configuration-item keepAliveInterval : uint32 = 60
+	
+	/**
+	 * Publishes a message to a particular topic. 
+	 */
+	signal topic(name : string, qos : uint32 = 0) : string
+	
+}
+
+/**
+ * Exception thrown when we can't setup the WLAN network
+ */
+exception HttpRequestNotOkException;
+
+/**
+ * The HttpMethods supported by the XDK
+ */
+enum HttpMethod {
+	GET, POST, PUT, DELETE, UPDATE
+}
+
+/**
+ * Implements an HTTP REST Client over WIFI 
+ */
+connectivity many HttpRestClient {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.RestClientGenerator"
+	validator "org.eclipse.mita.platform.xdk110.connectivity.RestClientValidator"
+	
+	/**
+	 * The underlying transport connectivity we use to send the data out. In the future we might also
+	 * support LoRa here.
+	 */
+	required configuration-item transport : WLAN
+	
+	/**
+	 * The part of the endpoint URL common to all requests, e.g. http://foobar.com/api/v1
+	 */
+	required configuration-item endpointBase : string
+	
+	/**
+	 * A custom header which is added to each HTTP request. Example:
+	 *   X-Auth: MySecretToken\nX-Version: 1.0 
+	 */
+	configuration-item header : string
+		
+	signal resource(endpoint : string, contentType : string = "application/json", writeMethod : HttpMethod = HttpMethod.POST, readMethod : HttpMethod = HttpMethod.GET) : string
+	
+}
+
+
+enum LedColor {
+	Red,
+	Yellow,
+	Orange
+}
+
+/**
+ * Displays state using three differently colored LEDs on the device.
+ */
+connectivity named-singleton LED {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.LedGenerator"
+	validator "org.eclipse.mita.platform.xdk110.connectivity.LedValidator"
+	
+	signal light_up(color : LedColor) : bool
+}
+
+alias environment for BME280
+alias accelerometer for BMA280
+alias light for MAX44009
+alias button_one for Button
+alias button_two for Button
+
+platform XDK110 {
+	has environment
+	has accelerometer
+	has light
+	has button_one
+	has button_two
+	
+	has BLE
+	has LED
+	has WLAN
+	has MQTT
+	has HttpRestClient
+	
+	event startup
+}

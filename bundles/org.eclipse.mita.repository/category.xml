@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site>
+   <feature url="features/org.eclipse.mita.feature_0.1.0.qualifier.jar" id="org.eclipse.mita.feature" version="0.1.0.qualifier">
+      <category name="org.eclipse.mita.runtime.category"/>
+   </feature>
+   <bundle id="org.eclipse.mita.platform.unittest" version="0.1.0.qualifier">
+      <category name="org.eclipse.mita.platforms.category"/>
+   </bundle>
+   <bundle id="org.eclipse.mita.platform.xdk110" version="0.1.0.qualifier">
+      <category name="org.eclipse.mita.platforms.category"/>
+   </bundle>
+   <category-def name="org.eclipse.mita.runtime.category" label="Mita Runtime"/>
+   <category-def name="org.eclipse.mita.platforms.category" label="Platforms"/>
+</site>

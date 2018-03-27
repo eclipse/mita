@@ -1,0 +1,119 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+ 
+package test;
+import platforms.unittest;
+ 
+function variableInference() : void{ 
+	//XPECT inferredType --> uint8
+	var x = 10;
+	var z : uint8 = x; 
+} 
+
+function variableInferenceExpression() : void{
+	//XPECT inferredType --> uint8
+	var x = 10;
+	var z : uint8 = (x * 3) + 10;
+}
+
+function variableInferenceOperationCall() : void{
+	var array : array<int8> = new array<int8>(size = 10);
+	//XPECT inferredType --> uint8  
+	var x = 10;   
+	testIt(x, 10);         
+	//XPECT inferredType --> uint32
+	var y = 10;
+	testIt(param2 = y, param1 = 10);   
+} 
+ 
+function testIt(param1 : uint8, param2 : uint32) : bool {
+	return true;
+}
+
+function variableInferenceExtensionOperationCall() : void{
+	var opt : optional<int8> = 10;
+	//XPECT inferredType --> int8 
+	var x = opt.value();     
+}
+
+function variableInferenceRecursion(){
+	//XPECT inferredType --> int32
+	var x = 10;
+	//XPECT inferredType --> int32
+	var z = x;
+}
+
+function variableInferenceIf(){
+	//XPECT inferredType --> int32
+	var x = 10;
+	if(x > 10){
+		
+	}
+}
+
+function variableInferenceFloat(){
+	//XPECT inferredType --> float
+	var x  = 10;
+	var z : float = x;
+	//XPECT inferredType --> float
+	var y = 10.0f; 
+}
+ 
+function variableInferenceDouble(){
+	//XPECT inferredType --> double
+	var x  = 10;
+	var z : double = x;
+	// XPECT inferredType --> double
+	var y = 10.0d; 
+}
+
+function variableInferenceGenerated() {
+    //XPECT inferredType --> optional<int32>
+    var xo: int32? = 1;
+    //XPECT inferredType --> optional<int32>
+    var yo = xo;
+    
+    //XPECT inferredType --> int32
+    var xs = 42;
+    //XPECT inferredType --> string
+    var ys = `${xs}`;
+    
+    //XPECT inferredType --> array<int32>
+    var xa = [1,2,3,4];
+    //XPECT inferredType --> array<int32>
+    var ya = xa;
+}
+
+function variableInferenceBoolean(){
+	//XPECT inferredType --> bool
+	var x  = true;
+}
+
+function test(){
+	//XPECT inferredType --> uint8
+	var x = inferMe();  
+}
+
+function inferMe(){
+	var z : uint8  = 10;
+	return z;  
+}
+
+function inferByInitialization(){
+	var x : uint8 = 10;
+	var y : int8 = 10;
+	//XPECT inferredType --> int16
+	var z = x + y;
+}	
+
+function noCommonType(){
+	var x : int32 = 10;
+	var y : uint32 = 10;
+	//XPECT inferredType --> int32
+	var z = x + y;  
+}
+

@@ -1,0 +1,303 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.references.ReferencesTest
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest; 
+		
+/*
+- You can always read contents of references
+- You can never return anything with references
+- You can always pass references to another function
+- You can always reference value types
+- You can always modify values that are referenced (that is the base values that are referenced)
+- You can only set referenced references if the new reference belongs to the same person or it's ancestor as the original one (too hard --> forbidden)
+    - Therefore you can only modify your own referenced references
+    - This also means you can't reference function parameter references
+    - This also means you can't copy reference references from function parameters
+- You can do whatever you want to (contents of) values that you didn't get by reference
+*/
+
+struct Foo {
+	var foo0 : uint32;
+	var foo1 : &uint32;
+	var foo2 : &&uint32;
+	var foo3 : &&&uint32;
+}
+
+fn testError(x1: Foo, x2: &Foo, x3: &&Foo, y1: uint32, y2: &uint32, y3: &&uint32): void {
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t1_1 = x1;"
+	let t1_1 = x1;
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t25_1 = x1.foo1;"
+	let t25_1 = x1.foo1;
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t4_1 = *(x1.foo2);"
+	let t4_1 = *(x1.foo2);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t6_1 = *(x1.foo3);"
+	let t6_1 = *(x1.foo3);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t7_1 = **(x1.foo3);"
+	let t7_1 = **(x1.foo3);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t0_2 = x2;"
+	let t0_2 = x2;
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t1_2 = (*x2);"
+	let t1_2 = (*x2);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t25_2 = (*x2).foo1;"
+	let t25_2 = (*x2).foo1;
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t4_2 = *((*x2).foo2);"
+	let t4_2 = *((*x2).foo2);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t6_2 = *((*x2).foo3);"
+	let t6_2 = *((*x2).foo3);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t7_2 = **((*x2).foo3);"
+	let t7_2 = **((*x2).foo3);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t42_3 = x3;"
+	let t42_3 = x3;
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t0_3 = (*x3);"
+	let t0_3 = (*x3);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t1_3 = (**x3);"
+	let t1_3 = (**x3);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t25_3 = (**x3).foo1;"
+	let t25_3 = (**x3).foo1;
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t4_3 = *((**x3).foo2);"
+	let t4_3 = *((**x3).foo2);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t6_3 = *((**x3).foo3);"
+	let t6_3 = *((**x3).foo3);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t7_3 = **((**x3).foo3);"
+	let t7_3 = **((**x3).foo3);
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t2_4 = y2;"
+	let t2_4 = y2;
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t5_4 = y3;"
+	let t5_4 = y3;
+	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t6_4 = *y3;"
+	let t6_4 = *y3;
+	
+	// You can only set referenced references if the new reference belongs to the same person or it's ancestor as the original one (too hard --> forbidden)
+	// Therefore you can only modify your own referenced references
+	let badV: uint32 = 1;
+	// XPECT errors --> "Can not assign to references that were passed in." at "x1.foo1 = &badV"
+	x1.foo1 = &badV;
+	// XPECT errors --> "Can not assign to references that were passed in." at "*x1.foo2 = &badV"
+	*x1.foo2 = &badV;
+	// XPECT errors --> "Can not assign to references that were passed in." at "**x1.foo3 = &badV"
+	**x1.foo3 = &badV;
+	
+	// XPECT errors --> "Can not assign to references that were passed in." at "(*x2).foo1 = &badV"
+	(*x2).foo1 = &badV;
+	// XPECT errors --> "Can not assign to references that were passed in." at "*(*x2).foo2 = &badV"
+	*(*x2).foo2 = &badV;
+	// XPECT errors --> "Can not assign to references that were passed in." at "**(*x2).foo3 = &badV"
+	**(*x2).foo3 = &badV;
+	
+	// XPECT errors --> "Can not assign to references that were passed in." at "(**x3).foo1 = &badV"
+	(**x3).foo1 = &badV;
+	// XPECT errors --> "Can not assign to references that were passed in." at "*(**x3).foo2 = &badV"
+	*(**x3).foo2 = &badV;
+	// XPECT errors --> "Can not assign to references that were passed in." at "**(**x3).foo3 = &badV"
+	**(**x3).foo3 = &badV;
+	
+//     This also means you can't reference function parameter references
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad1 = &x1;"
+	let bad1 = &x1;
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad2 = &x2;"
+	let bad2 = &x2;
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad3 = &x3;"
+	let bad3 = &x3;
+	// this is allowed
+	let ok4 = &y1;
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad5 = &y2;"
+	let bad5 = &y2;
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad6 = &y3;"
+	let bad6 = &y3;
+//     This also means you can't copy reference references from function parameters
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad7 = &x1;"
+	let bad7 = &x1;
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad8 = &x2;"
+	let bad8 = &x2;
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad9 = &x3;"
+	let bad9 = &x3;
+	// this is allowed
+	let ok10 = &y1;
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad11 = &y2;"
+	let bad11 = &y2;
+	//XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let bad12 = &y3;"
+	let bad12 = &y3;
+}
+
+// The code formatter can't handle double dereference expressions (**) atm. NoCompileErrors doesn't work here because of that
+fn test(x1: Foo, x2: &Foo, x3: &&Foo, y1: uint32, y2: &uint32, y3: &&uint32): void {
+// You can always read contents of references, but you can only copy them if they are not from your function arguments
+	let z: Foo;
+	let w = &z;
+	
+	let t1_0 = z;
+	let t2_0 = z.foo0;
+	let t3_0 = *(z.foo1);
+	let t4_0 = *(z.foo2);
+	let t5_0 = **(z.foo2);
+	// XPECT inferredType --> reference<reference<uint32>>
+	let t6_0 = *(z.foo3);
+	// XPECT inferredType --> reference<uint32>
+	let t7_0 = **(z.foo3);
+	// XPECT inferredType --> uint32
+	let t8_0 = ***(z.foo3);
+	
+	let t1_42 = (*w);
+	let t2_42 = (*w).foo0;
+	let t3_42 = *((*w).foo1);
+	let t4_42 = *((*w).foo2);
+	let t5_42 = **((*w).foo2);
+	let t6_42 = *((*w).foo3);
+	let t7_42 = **((*w).foo3);
+	let t8_42 = ***((*w).foo3);  
+	
+	let t2_1 = x1.foo0;
+	let t3_1 = *(x1.foo1);
+	let t5_1 = **(x1.foo2);
+	let t8_1 = ***(x1.foo3);
+
+	let t2_2 = (*x2).foo0;
+	let t3_2 = *((*x2).foo1);
+	let t5_2 = **((*x2).foo2);
+	let t8_2 = ***((*x2).foo3);
+
+	let t2_3 = (**x3).foo0;
+	let t3_3 = *((**x3).foo1);
+	let t5_3 = **((**x3).foo2);
+	let t8_3 = ***((**x3).foo3);
+
+	let t1_4 = y1;
+	let t3_4 = *y2;
+
+	let t7_4 = **y3;
+// You can never return anything with references
+// see below
+
+// You can always pass references to another function
+// You can always reference value types
+	let val: uint32 = 1;
+	let val_ref = &val;
+	test2(&val_ref);
+
+// You can always modify values that are referenced (that is the base values that are referenced)
+	x1.foo0 = 1;
+	*x1.foo1 = 2;
+	**x1.foo2 = 3;
+	***x1.foo3 = 4;
+	
+	(*x2).foo0 = 1;
+	*(*x2).foo1 = 2;
+	**(*x2).foo2 = 3;
+	***(*x2).foo3 = 4;
+	
+	(**x3).foo0 = 1;
+	*(**x3).foo1 = 2;
+	**(**x3).foo2 = 3;
+	***(**x3).foo3 = 4;
+}
+
+fn test2(x: &&uint32) { }
+		
+fn foo(x: &&int32, y: &int32) {
+  // this is allowed, since references are always valid:
+  var a = **x;
+  // this is also allowed, since *x points to somewhere above, and **x to somewhere even further above.
+  **x = 0;
+  /* this can not be categorically allowed, since x might point to somewhere before y, 
+   * thus assigning x to somewhere above its execution context. If we can analyze or guarantee 
+   * (by allocating soon enough) that y is at least as long lived as x, this is OK though. 
+   */
+  /* XPECT errors ---
+      "Can not assign to references that were passed in." at "*x = y"
+      "Can not copy function parameters that are or contain references of references." at "*x = y"
+  --- */
+  *x = y;   
+  
+  /* XPECT errors ---
+  	"Cannot determine size of element: Cannot infer size of "VariableDeclarationImpl" of type "reference"." at "b"
+  	"Types with references must be initialized" at "var b: &uint32;"
+  --- */
+  var b: &uint32;
+}
+
+// you mustn't return references
+// right now, this includes all things other than ints.
+// XPECT errors --> "Functions may not return references" at "forbiddenReturn"
+// XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "forbiddenReturn"
+fn forbiddenReturn(): &int32 {
+	var a = 0;
+	// XPECT errors --> "Functions may not return references" at "return &a;"
+	return &a;
+}
+
+struct testRef {
+	var a: uint32;
+	var b: uint32;
+}
+
+fn add1(x: uint32): uint32 {
+	return x + 1;
+} 
+
+fn referencing(): void {
+  var a: uint32 = 10;
+  var r1 = &a;
+  var r2 = &r1;
+  var r3 = &r2;
+  
+  // XPECT inferredType --> uint32 
+  var a1 = *r1;
+  // XPECT inferredType --> uint32
+  var a2 = **r2;
+  // XPECT inferredType --> uint32
+  var a3 = ***r3;
+  // XPECT inferredType --> reference<uint32>
+  var r1_1 = *r2;
+  var r2_1 = *r3;
+  // XPECT inferredType --> uint32
+  var a4 = *r1_1;
+  // XPECT inferredType --> uint32
+  var a5 = **r2_1;
+  
+  // XPECT errors --> "Can not dereference non-reference types." at "**r1" 
+  var bad1 = **r1;
+  // XPECT errors --> "Can not dereference non-reference types." at "***r2"
+  var bad2 = ***r2;
+  // XPECT errors --> "Can not dereference non-reference types." at "****r3"
+  var bad3 = ****r3;
+  // you can't ref twice in a row, since we need to store the intermediate ref first
+    /* XPECT errors ---
+      "Logical operator '&&' may only be applied on boolean types, not on null and reference<uint32>." at "&&r1"
+      "no viable alternative at input '&&'" at "&&"
+  --- */
+  var r2_nope = &&r1;
+  
+  // you can ref struct members
+  var s = testRef(4, 2);
+  // XPECT inferredType --> reference<uint32>
+  var a6 = &s.a;
+  
+  // you can't ref function results
+  // XPECT errors --> "Can not reference function results." at "&add1(1)"
+  var bad4 = &add1(1);
+  // XPECT errors --> "Can not reference function results." at "&a.add1()"
+  var bad5 = &a.add1();
+  // XPECT errors --> "Can not reference function results." at "&s.a.add1()"
+  var bad6 = &s.a.add1();
+  
+}
+
+every 1 second {
+    let m : testRef;
+    let mRef = &m;
+    (&m).doSomething();
+    (&mRef).doSomethingElse();
+}
+
+fn doSomething(msg : &testRef) {
+}
+
+fn doSomethingElse(msg : &&testRef) {
+}
+
+

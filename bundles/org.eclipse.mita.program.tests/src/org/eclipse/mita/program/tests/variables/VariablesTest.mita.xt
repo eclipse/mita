@@ -1,0 +1,63 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.variables.VariablesTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest; 
+
+// Mutable variables are declared with the var keyword
+function variableMutabilityTest() : void {
+	var foo = 1;
+	foo = 2;
+	
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int32 and bool." at "foo = true"
+	foo = true;
+	
+	// Immutable variables are declared with the let keyword
+	let bar = 1;
+	// XPECT errors --> "Assignment to constant not allowed." at "bar"
+	bar = 2; 
+} 
+
+// XPECT noCompileErrors
+function variableInitializationTest() : void {
+	// All variables have an implicit initialization with the default value of a type.
+	// If a type does not have a default value, a compiler error is raised.
+	var foo : uint32;
+	printf(foo); // prints "0"
+	 
+	let bar : uint32;
+	printf(bar); // prints "0"
+}
+
+fn printf(i:uint32) : void {}
+
+exception FooException;
+
+function typesAvailableInVarDec() : void {
+	// XPECT errors --> "Couldn't resolve reference to Type 'FooException'." at "FooException"
+	var withException : FooException;
+	
+	// XPECT errors --> "Couldn't resolve reference to Type 'MySensor'." at "MySensor"
+	var withSensor : MySensor;
+	
+	// XPECT errors --> "Couldn't resolve reference to Type 'MyConnectivity'." at "MyConnectivity"
+	var withConnectivity : MyConnectivity;
+	
+	// XPECT errors --> "Couldn't resolve reference to Type 'array.T'." at "array.T"
+	var withTypeParameter : array.T;
+}
+
+function withParams(param : bool) {}
+
+function parameterScoping() {
+	// XPECT errors --> "Couldn't resolve reference to EObject 'param'." at "param"
+	var operationParamRef = param;
+	
+	// XPECT errors --> "Couldn't resolve reference to EObject 'p01'." at "p01"
+	var vciParamRef = p01;
+}
+

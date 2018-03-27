@@ -1,0 +1,122 @@
+@GenModel(operationReflection="false", modelDirectory="/org.eclipse.mita.platform/emf-gen")
+package org.eclipse.mita.platform
+
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+import org.eclipse.mita.types.GeneratedElement
+import org.eclipse.mita.types.PackageAssociation
+import org.yakindu.base.expressions.expressions.Expression
+import org.yakindu.base.types.Event
+import org.yakindu.base.types.Operation
+import org.yakindu.base.types.Parameter
+import org.yakindu.base.types.Property
+import org.yakindu.base.types.Type
+
+enum Instantiability {
+	/**
+	 * This resource can not be instantiated and thus not be named
+	 */
+	None,
+	
+	/**
+	 * This resource can be instantiated only once, thus naming is optional
+	 */
+	Singleton,
+	
+	/**
+	 * This resource can be instantiated only once, but must be named
+	 */
+	NamedSingleton,
+	
+	/**
+	 * This resource can be instantiated multiple times, thus naming is required
+	 */
+	Many
+}
+
+class SystemSpecification extends PackageAssociation {
+	contains AbstractSystemResource[] resources
+	contains Type[] types
+}
+
+// DO NOT SWAP the order of inheritance here as a bug in Xcore will cause the DSL generation to fail with an NPE
+abstract class AbstractSystemResource extends Type, GeneratedElement {
+	Instantiability instantiable
+	
+	contains resolving ConfigurationItem[] configurationItems
+	contains resolving Signal[] signals
+	contains resolving SystemResourceEvent[] events
+	contains resolving Modality[] modalities
+	
+	op String toString() {
+		return super.toString();
+	}
+}
+
+class ConfigurationItem extends Property {
+	Boolean required = "false"
+	contains Expression defaultValue
+}
+
+class Signal extends Operation {
+	contains resolving SignalEvent[] events opposite signal
+}
+class SignalParameter extends Parameter {
+	contains Expression defaultValue
+}
+
+class SystemResourceEvent extends Event {
+}
+class SignalEvent extends Event {
+	container Signal signal opposite events
+}
+
+class Modality extends Property {
+}
+
+class SystemResourceAlias extends AbstractSystemResource {
+	refers AbstractSystemResource delegate
+	
+	op String getGenerator() {
+		return delegate?.generator;
+	}
+	
+	op String getValidator() {
+		return delegate?.validator;
+	}
+	
+	op ConfigurationItem[] getConfigurationItems() {
+		return delegate?.configurationItems;
+	}
+	
+	op Signal[] getSignals() {
+		return delegate?.signals;
+	}
+	
+	op SystemResourceEvent[] getEvents() {
+		return delegate?.events;
+	}
+	
+	op Modality[] getModalities() {
+		return delegate?.modalities;
+	}
+}
+class Bus extends AbstractSystemResource { }
+class Connectivity extends AbstractSystemResource { }
+class InputOutput extends AbstractSystemResource { }
+class Sensor extends AbstractSystemResource { }
+
+class Platform extends AbstractSystemResource {
+	refers AbstractSystemResource[] resources
+}

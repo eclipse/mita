@@ -1,0 +1,35 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.events.EventHandlingTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// System resources and time define events. All events can be handled using the every keyword.
+// XPECT noCompileErrors
+every my_sensor00.event00 { }
+every my_sensor00.event01 { }
+every my_sensor00.event02 { }
+
+every my_sensor01.event00 { }
+every my_sensor01.event01 { }
+every my_sensor01.event02 { }
+
+every my_sensor02.event00 { }
+every my_sensor02.event01 { }
+every my_sensor02.event02 { }
+
+// XPECT noCompileErrors
+every UnitTestPlatform.foo { }
+
+// In the platform we have deliberately named a sensor instance vci01 to check for linker errors
+// XPECT noCompileErrors
+every vci01.event00 { }
+every vci01.event01 { }
+every vci01.event02 { }
+
+// This should be fine, we should generate two different handlers
+every my_sensor00.event00 { }

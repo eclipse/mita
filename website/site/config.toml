@@ -1,0 +1,64 @@
+baseURL = "/"
+languageCode = "en-us"
+title = "Mita"
+theme = "hugo-material-docs"
+metadataformat = "yaml"
+relativeURLs = true
+Paginate = 4
+PygmentsCodeFences = true
+PygmentsUseClasses = true
+PygmentsStyle = "monokai"
+uglyUrls = true
+
+[blackfriday]
+  smartypants = true
+  fractions = true
+  smartDashes = true
+  plainIDAnchors = true
+  extensions = [ "fencedCode", "backslashLineBreak" ]
+
+[params]
+	# General information
+	description = "The documentation of the Mita language."
+	copyright = "Bosch Connected Devices and Solutions GmbH"
+
+	logo = "images/logo.png"
+	favicon = ""
+
+	permalink = "#"
+
+	# Custom assets
+	custom_css = []
+	custom_js  = []
+
+	# Syntax highlighting theme
+	highlight_css  = ""
+
+	[params.palette]
+    	primary = "yellow"
+    	accent  = "teal"
+
+    [params.font]
+    	text = "Ubuntu"
+    	code = "Ubuntu Mono"
+
+[[menu.main]]
+    name = "Download"
+    weight = -300
+    url = "/download"
+[[menu.main]]
+    name = "Concepts"
+    weight = -200
+    url = "/concepts/"
+[[menu.main]]
+    name = "Language"
+    weight = -200
+    url = "/language"
+[[menu.main]]
+    name = "Platforms"
+    weight = -100
+    url = "/platforms/"
+#[[menu.main]]
+#    name = "FAQ"
+#    weight = -1
+#    url = "/faq/"

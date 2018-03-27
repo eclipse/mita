@@ -1,0 +1,71 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.strings.StringsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// Strings are one-byte ASCII strings (not UTF8, not ISO8859-1)
+// Strings are reference types
+// Strings have a maximum length fixed at compile time
+
+function someExternalFunction() : int32 {
+	return 5;
+}
+
+// XPECT noCompileErrors
+function stringTestSuccess() : void {
+	// XPECT inferredStringLength --> string::14
+	var bar = "this is a test";
+
+	// XPECT inferredStringLength --> string::24
+	var foo = "hello world";
+	foo = "this is my long sentence"; // This is ok. At compile time we can determine that foo is max 24 characters.
+	
+	// The length of a string can be set explicitly
+	// XPECT inferredStringLength --> string::300
+	var foo2 : string = new string(size=300);
+	foo2 = "bla";
+	
+	// Strings with explicit size can be used in loops
+	var explicitSize = new string(size=300);
+	for(var i = 0; i < 10; i+=1) {
+		explicitSize += "foo";
+	} 
+	
+	// Strings can be concatenated using +
+	// XPECT inferredStringLength --> string::18
+	var foo3 = "bla bla";
+	foo3 += "hello world";
+
+	// Strings can be interpolated
+	let bla = 42;
+	let greeting = "good sir";
+	// XPECT inferredStringLength --> string::37
+	let baz = `my variable: ${bla} and ${greeting}`;
+	
+	let x10 = `${bla}`;
+	let x11 = `xx ${bla}`;
+	let x12 = `${bla} xx`;
+	let x13 = ``;
+	let x14 = `foo`;
+	let x15 = `foo\n`;
+	let x16 = `${x14}${x15}`;
+	let x17 = `${x14} ${x15}`;
+	let x18 = `\n\t\r 0123456789{}()[],.;:`;
+	let x19 = `{ } , ; : . ( ) [ ] + - * / % \\ && || & | = ==`;
+	let x20 = `alias-of alt alternative catch checked constructor do else enum every exception export extends finally fn for function generated generator header hour hours if import is isother let millisecond milliseconds minute minutes native native-type package return second seconds setup size-inferrer static struct subtype-of throw try type unchecked validator var where while`;
+	let x21 = `this ${"is"} a test`;
+}
+
+function stringTestFail() : void {
+// XPECT inferredStringLength --> INVALID:Cannot infer string length in loops@string {}
+	var foo = "hello world";
+	for(var i = 0; i < someExternalFunction(); i=i+1) { //TODO: Increment Operator i++
+		// XPECT errors --> "Cannot determine size of element: Cannot infer string length in loops" at "+="
+		foo += "hello"; // compiler error: Cannot determine the length of foo. Please set the length explicitly.
+	}
+}

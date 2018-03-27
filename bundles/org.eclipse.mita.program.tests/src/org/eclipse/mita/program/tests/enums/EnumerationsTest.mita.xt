@@ -1,0 +1,69 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.enums.EnumerationsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// Enumerations are custom, user-defined types
+enum Foo {
+	Bar,
+	Baz,
+	Bla
+}
+
+setup my_sensor00 {
+    cfg00 = true;
+    cfg03 = CFG_VAL_1;
+}
+
+// XPECT noCompileErrors
+function enumOp(p1 : Foo) : Foo {
+	return p1;
+}
+
+// XPECT noCompileErrors
+function testEnumUsageSuccess() : void {
+	var f : Foo = Foo.Bla;
+	var f2 = Foo.Baz;
+}
+
+// XPECT noCompileErrors
+function testEnumOperationCallWithVar() : void {
+	var f : Foo = Foo.Bla;
+	var f2 = enumOp(f);
+}
+
+// XPECT noCompileErrors
+function testEnumOperationCallWithLiteral() : void {
+	var f = enumOp(Foo.Bar);
+}
+
+function testEnumUsageFail() : void {
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on Foo and integer." at "var f5 : Foo = 10;"
+	var f5 : Foo = 10;
+	
+	// XPECT errors --> "Couldn't resolve reference to EObject 'Bar'." at "Bar"
+	var f6 : Foo = Bar;
+	
+	// XPECT errors --> "Couldn't resolve reference to EObject 'Bar'." at "Bar"
+	var f7 = enumOp(Bar);
+	
+	/* XPECT errors ---
+		"Incompatible types integer and Foo." at "enumOp(10)"
+	--- */
+	var f8 = enumOp(10);
+}
+
+//function testEnumTypeHandling() : void {
+//// 	The first item in an enumeration is its default value
+//// TODO: implement "default()"
+//	Foo.Bar == default(Foo); // true
+//	
+//	//Unlike C, enumerations are not numbers
+//	// xpect errors --> "Cannot cast from Foo to uint8_t." at "Foo.Bar"
+//	Foo.Bar as uint8_t;
+//}

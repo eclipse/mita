@@ -1,0 +1,36 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.exceptions.ExceptionsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest; 
+
+fn accessWithoutRead() {
+	/* XPECT errors ---
+		"Cannot determine size of element: Object does not have a size" at "my_sensor00.modality00"
+		"Modalities must be used immediately. Add .read() after modality00" at "modality00"
+	--- */
+	var x1 = my_sensor00.modality00;
+}
+
+// XPECT errors ---> "Signal instances and modalities cannot be passed as parameters" at "modality<uint32>"
+fn functionWithModalityParameter(p : modality<uint32>) { 
+}
+
+// XPECT errors ---> "Could not infer the size of the function's return." at "functionReturningModality"
+fn functionReturningModality() : modality<int16> {
+	// XPECT errors ---> "Modalities must be used immediately. Add .read() after modality00" at "modality00"
+	return my_sensor00.modality00;
+}
+
+// XPECT noCompileErrors
+fn useModalitiesCorrectly() {
+	// XPECT inferredType ---> int16
+	var x1 = my_sensor00.modality00.read();
+	
+	// XPECT inferredType ---> uint32
+	var x2 = my_sensor00.modality01.read();
+}

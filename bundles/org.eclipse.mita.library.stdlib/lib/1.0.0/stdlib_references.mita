@@ -1,0 +1,31 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+package stdlib;
+
+/*
+ * # References
+ * 
+ * Similar to C pointers, but: 
+ * - You can always read contents of references
+ * - You can never return anything with references
+ * - You can always pass references to another function
+ * - You can always reference value types
+ * - You can always modify values that are referenced (that is the base values that are referenced)
+ * - You can only set referenced references if the new reference belongs to the same person or it's ancestor as the original one (too hard --> forbidden)
+ * - You can do whatever you want to (contents of) values that you didn't get by reference 
+ */
+export generated type reference<T>
+	generator "org.eclipse.mita.library.stdlib.ReferenceGenerator"
+	size-inferrer "org.eclipse.mita.library.stdlib.ReferenceSizeInferrer"
+	constructor con(T t);

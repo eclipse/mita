@@ -1,0 +1,349 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+grammar org.eclipse.mita.program.ProgramDsl with org.eclipse.mita.types.TypeDsl
+
+import "org.eclipse.mita.program" as program
+import "http://www.yakindu.org/base/types/2.0.0" as types
+import "org.eclipse.mita.types" as mitaTypes
+import "http://www.yakindu.org/base/expressions/Expressions" as expressions
+import "org.eclipse.mita.platform" as platform
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+
+
+Program returns program::Program:
+	{program::Program}
+
+	'package' name=QID ';'
+	(imports+=ImportStatement)*
+	
+	(setup += SystemResourceSetup
+	| globalVariables+= VariableDeclaration 
+	| functionDefinitions += (FunctionDefinition | GeneratedFunctionDefinition | NativeFunctionDefinition)
+	| eventHandlers+=EventHandlerDeclaration
+	| types+=TypeDeclaration
+	)*
+;
+
+ImportStatement returns mitaTypes::ImportStatement:
+	'import' importedNamespace=QID ';'
+;
+
+SystemResourceSetup returns program::SystemResourceSetup:
+	'setup' ((name=ID) ':')? type=[platform::AbstractSystemResource|QID] '{'
+		(configurationItemValues += ConfigurationItemValue)*
+		(signalInstances += SignalInstance)*
+	'}'
+;
+
+ConfigurationItemValue returns program::ConfigurationItemValue: 
+	item=[platform::ConfigurationItem] '=' value=Expression ';'
+;
+
+SignalInstance returns program::SignalInstance: 
+	(writeable ?= 'var') name=ID (':' typeSpecifier=TypeSpecifier)? '=' initialization=Expression ';'
+;
+
+GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
+	(exported?='export')?
+	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)
+	'generator' generator=STRING
+	('validator' validator=STRING)?
+	';'
+;
+
+NativeFunctionDefinition returns program::NativeFunctionDefinition:
+	(exported?='export')?
+	'native' (checked?='checked' | 'unchecked') ('fn' | 'function')  name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)?
+	'header' header=STRING ';'
+;
+
+FunctionDefinition returns program::FunctionDefinition:
+	(exported?='export')?
+	('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)?
+	(body = ProgramBlock)?
+;
+
+GenericFunctionTypeParameter returns types::TypeParameter: 
+	name=ID ('<:' bound=[types::Type])?
+;
+
+FunctionParameterDeclaration returns program::FunctionParameterDeclaration:
+	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' value=Expression)?
+;
+
+VariableDeclaration returns program::VariableDeclaration: 
+	(writeable ?= 'var' | 'let') name=ID (':' typeSpecifier=TypeSpecifier)? ('=' initialization=Expression)? ';'
+;
+
+EventHandlerDeclaration returns program::EventHandlerDeclaration: 
+	'every' event=(TimeIntervalEvent | SystemEventSource)
+	block=ProgramBlock
+;
+
+TimeIntervalEvent returns program::TimeIntervalEvent: 
+	interval=IntLiteral unit=TimeUnit
+;
+
+enum TimeUnit returns program::TimeUnit: 
+	Millisecond = 'millisecond' | Millisecond='milliseconds' |
+	Second = 'second' | Second = 'seconds' |
+	Minute = 'minute' | Minute = 'minutes' |
+	Hour = 'hour' | Hour = 'hours' 
+;
+
+SystemEventSource returns program::SystemEventSource: 
+	origin=[platform::AbstractSystemResource] '.' source=[types::Event]
+;
+
+ProgramBlock returns program::ProgramBlock:
+	{program::ProgramBlock}
+	'{' (content+=AbstractStatement)* '}'
+;
+
+AbstractStatement returns program::AbstractStatement:
+	(
+	  VariableDeclaration 
+	| ExpressionStatement
+	| DoWhileStatement
+	| AbstractLoopStatement
+	| IfStatement
+	| WhileStatement
+	| TryStatement
+	| ThrowExceptionStatement
+	| ReturnStatement
+	| WhereIsStatement
+	)
+;
+
+ExpressionStatement returns program::ExpressionStatement:
+	expression=Expression ';'
+;
+
+@Override
+Literal returns expressions::Literal:
+	ArrayLiteral | BoolLiteral | IntLiteral | HexLiteral | BinaryLiteral | DoubleLiteral | FloatLiteral | StringLiteral | NullLiteral;
+
+ArrayLiteral returns program::ArrayLiteral:
+	{program::ArrayLiteral}
+	'[' (values+=Literal (',' values += Literal)*)? ']'
+;
+
+@Override 
+PrimaryExpression returns expressions::Expression:
+	PrimitiveValueExpression
+	| FeatureCall
+	| NewInstanceExpression
+	| InterpolatedStringExpression
+	| DereferenceExpression
+	| ReferenceExpression
+;
+
+DereferenceExpression returns program::DereferenceExpression hidden():
+	'*' expression=PrimaryExpression
+;
+
+ReferenceExpression returns program::ReferenceExpression hidden(): 
+	'&' variable=FeatureCall
+;
+
+// no need to capture as its own expression
+@Override ParenthesizedExpression returns expressions::Expression:
+    '(' Expression ')'
+;
+
+@Override
+FeatureCall returns expressions::Expression:
+    (ElementReferenceExpression | ParenthesizedExpression) (
+    	({expressions::FeatureCall.owner=current} '.' feature=[ecore::EObject] (=> operationCall?='('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
+	  | ({program::ArrayAccessExpression.owner=current} '[' (arraySelector=arraySelector) ']')
+    )*
+;
+
+@Override
+ElementReferenceExpression returns expressions::Expression:
+	{expressions::ElementReferenceExpression} reference=[ecore::EObject|ID]
+	(=> operationCall?='('	(arguments+=Argument (',' arguments+=Argument)*)?	')' )?;
+
+arraySelector returns expressions::Expression:
+	  Expression ({program::ValueRange.lowerBound=current} ':' (upperBound=Expression)?)?
+	| ({program::ValueRange} ':' (upperBound=Expression)?)
+;
+
+NewInstanceExpression returns program::NewInstanceExpression:
+	'new' type=TypeSpecifier operationCall?='(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
+;
+
+InterpolatedStringExpression returns program::InterpolatedStringExpression hidden(): 
+	{program::InterpolatedStringExpression}
+	'`' ((=>'${' content+=Expression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
+;
+IntAsString returns ecore::EString: INT;
+
+DoWhileStatement returns program::DoWhileStatement: 
+	'do' body=ProgramBlock 'while' '(' condition=Expression ')'
+;
+
+AbstractLoopStatement returns program::AbstractLoopStatement:
+	'for' '('(
+		( {program::ForEachStatement} iterator=ForEachLoopIteratorVariableDeclaration =>'in' iterable=Expression )
+		| ({program::ForStatement} (loopVariables += ForLoopVariableDeclaration (',' loopVariables += ForLoopVariableDeclaration)*)? ';'
+			condition = Expression ';'
+			(postLoopStatements += (Expression) (',' postLoopStatements += (Expression))*)? )
+	)')' body=ProgramBlock
+;
+
+ForEachLoopIteratorVariableDeclaration returns program::ForEachLoopIteratorVariableDeclaration:
+	'var' name=ID
+;
+
+ForLoopVariableDeclaration returns program::VariableDeclaration:
+	writeable ?= 'var' name=ID (':' typeSpecifier=TypeSpecifier)? '=' initialization=Expression;
+
+IfStatement returns program::IfStatement:
+	'if' '(' condition=Expression ')' 	
+	then=ProgramBlock
+	elseIf+=ElseIfStatement*
+	('else' ^else=ProgramBlock)?
+;
+ElseIfStatement returns program::ConditionalStatement: 
+	'else' 'if' '(' condition=Expression ')' 	
+	then=ProgramBlock
+;
+
+WhileStatement returns program::WhileStatement: 
+	'while' '(' condition=Expression ')' body=ProgramBlock
+;
+
+ReturnStatement returns program::ReturnStatement:
+	{program::ReturnStatement} 
+	'return' (value=Expression)? ';'
+;
+
+WhereIsStatement returns program::WhereIsStatement:
+	'where' '(' matchElement=ElementReferenceExpression ')' '{'
+		(isCases += IsCase)*
+	'}'
+;
+
+IsCase returns program::IsCase:
+	IsTypeMatchCase | IsAssignmentCase | IsDeconstructionCase | IsOtherCase
+;
+
+IsTypeMatchCase returns program::IsTypeMatchCase:
+	'is' '(' productType=[mitaTypes::SumAlternative|QID] ')'
+	body=ProgramBlock
+;
+
+IsAssignmentCase returns program::IsAssignmentCase:
+	'is' '(' assignmentVariable=IsAssignmentVariable ')' 
+	body=ProgramBlock
+; 
+IsAssignmentVariable returns program::VariableDeclaration:
+	name=ID ':' typeSpecifier=TypeSpecifier
+;
+
+IsDeconstructionCase returns  program::IsDeconstructionCase:
+	'is' '(' productType=[mitaTypes::SumAlternative|QID] '->' deconstructors+=IsDeconstructor (',' deconstructors+=IsDeconstructor)*
+	')' 
+	body=ProgramBlock
+;
+IsDeconstructor returns program::IsDeconstructor:
+	name=ID ('=' productMember=[mitaTypes::ProductMember|QID])?
+;
+
+IsOtherCase returns program::IsOtherCase:
+	'isother' 
+	body=ProgramBlock
+;
+
+ThrowExceptionStatement returns program::ThrowExceptionStatement: 
+	'throw' exceptionType=[mitaTypes::ExceptionTypeDeclaration] ('(' message=STRING ')')? ';'
+;
+
+TryStatement returns program::TryStatement: 
+	'try' try=ProgramBlock
+	(catchStatements+=CatchStatement)+
+	('finally' ^finally=ProgramBlock)?
+;
+CatchStatement returns program::CatchStatement: 
+	'catch' '(' exceptionType=[mitaTypes::ExceptionTypeDeclaration] ')' body=ProgramBlock
+;
+
+ReservedKeywords:
+	'alias-of' |
+	'alt' |
+	'alternative' |
+	'catch' |
+	'checked' |
+	'constructor' |
+	'do' |
+	'else' |
+	'enum' |
+	'every' |
+	'exception' |
+	'export' |
+	'extends' |
+	'finally' |
+	'fn' |
+	'for' |
+	'function' |
+	'generated' |
+	'generator' |
+	'header' |
+	'hour' |
+	'hours' |
+	'if' |
+	'import' |
+	'is' |
+	'isother' |
+	'let' |
+	'millisecond' |
+	'milliseconds' |
+	'minute' |
+	'minutes' |
+	'native' |
+	'native-type' |
+	'package' |
+	'return' |
+	'second' |
+	'seconds' |
+	'setup' |
+	'size-inferrer' |
+	'static' |
+	'struct' |
+	'subtype-of' |
+	'throw' |
+	'try' |
+	'type' |
+	'unchecked' |
+	'validator' |
+	'var' |
+	'where' |
+	'while'
+;
+
+ReservedSymbols:
+	'{' | '}' |
+	',' | ';' |
+	':' | '.' |
+	'(' | ')' |
+	'[' | ']' |
+	'+' | '-' |
+	'*' | '/' |
+	'%' | '\\'| 
+	'&&' | '||' |
+	'&' | '|' |
+	'=' | '==' |
+	'!'
+;

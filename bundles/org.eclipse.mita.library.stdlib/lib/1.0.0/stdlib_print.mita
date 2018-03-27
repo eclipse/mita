@@ -1,0 +1,51 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+package stdlib;
+
+/**
+ * Prints a string via USB/serial.
+ */
+export generated fn print(msg : string) : void
+	generator "org.eclipse.mita.library.stdlib.functions.PrintGenerator";
+
+/**
+ * Prints a string via USB/serial appending a newline.
+ */
+export generated fn println(msg : string) : void
+	generator "org.eclipse.mita.library.stdlib.functions.PrintGenerator";
+
+/**
+ * Logs a debug message using the platform logging capabilities.
+ */
+export generated fn logDebug(msg : string) : void
+	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
+
+/**
+ * Logs an info message using the platform logging capabilities.
+ */
+export generated fn logInfo(msg : string) : void
+	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
+	
+/**
+ * Logs a warning message using the platform logging capabilities.
+ */
+export generated fn logWarning(msg : string) : void
+	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
+	
+/**
+ * Logs an error message using the platform logging capabilities.
+ */
+export generated fn logError(msg : string) : void
+	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
+	

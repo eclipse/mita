@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Bosch Cross Domain Development Kit (XDK110) Platform
+Bundle-SymbolicName: org.eclipse.mita.platform.xdk110;singleton:=true
+Bundle-Version: 0.1.0.qualifier
+Bundle-Vendor: Eclipse.org/Mita
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Require-Bundle: org.eclipse.mita.library.extension,
+ org.eclipse.xtend.lib;bundle-version="2.10.0",
+ org.eclipse.mita.program;bundle-version="0.1.0",
+ org.eclipse.mita.platform;bundle-version="0.1.0"

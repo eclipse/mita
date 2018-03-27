@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.mita.library.extension.type_library">
+      <Library
+            description="Mita Standard Library provides basic types for the Mita Language."
+            id="org.eclipse.mita.library.stdlib"
+            name="Mita Standard Library"
+            optional="false"
+            version="1.0.0">
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.library.stdlib/lib/1.0.0/stdlib_types.mita">
+         </ResourceURI>
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.library.stdlib/lib/1.0.0/stdlib_iterables.mita">
+         </ResourceURI>
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.library.stdlib/lib/1.0.0/stdlib_print.mita">
+         </ResourceURI>
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.library.stdlib/lib/1.0.0/stdlib_optionals.mita">
+         </ResourceURI>
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.library.stdlib/lib/1.0.0/stdlib_references.mita">
+         </ResourceURI>
+      </Library>
+   </extension>
+</plugin>

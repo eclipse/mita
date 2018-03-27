@@ -1,0 +1,43 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.exceptions.ExceptionsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest; 
+
+// Exceptions are special types defined using the exception keyword
+exception FooException;
+// Exceptions can be thrown which returns control flow to the caller.
+// If the exception is not caught in the caller it propagates further.
+// If the exception is never caught it causes a system reset.
+// XPECT noCompileErrors
+fn foo() : void {
+	throw FooException;
+	// Exceptions can be caught
+	try {
+		throw FooException;
+	} catch(FooException) {
+		print("Caught FooException");
+	} finally {
+		print("Finally entered");
+	}
+}
+// Exceptions are implicit, meaning that functions do not have to (and cannot) declare the exceptions they might throw.
+// XPECT noCompileErrors
+fn doSomething() {
+	throw FooException;
+}
+ 
+fn throwNonException() {
+	// XPECT errors --> "Couldn't resolve reference to ExceptionTypeDeclaration 'uint32_t'." at "uint32_t"
+	throw uint32_t;
+	
+	try {
+	// XPECT errors --> "Couldn't resolve reference to ExceptionTypeDeclaration 'uint32_t'." at "uint32_t"
+	} catch(uint32_t) {
+		
+	}
+}

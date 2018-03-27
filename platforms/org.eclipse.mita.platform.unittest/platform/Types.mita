@@ -1,0 +1,23 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+package platforms.unittest;
+
+/**
+ * Some Generic Type
+ */
+export generated type SomeGenType<T> subtype-of iterable
+	generator "org.eclipse.mita.platform.unittest.SomeTypeGenerator"
+	size-inferrer "org.eclipse.mita.platform.unittest.SomeTypeSizeInferrer"
+	
+	constructor con(size : static uint32, opt : int16=10);

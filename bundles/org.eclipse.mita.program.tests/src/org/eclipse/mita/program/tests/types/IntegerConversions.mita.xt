@@ -1,0 +1,163 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+var u8 : uint8 = 10;
+var u16 : uint16 = 11;
+var u32 : uint32 = 12;
+var s8 : int8 = 10;
+var s16 : int16 = 11;
+var s32 : int32 = 12;
+var f : float = 10.0f;
+var d : double = 10.0d;
+
+fn unsingedIntSuccess() {
+	u32 = u32;
+	u32 = u16;
+	u16 = u8;
+	u8 = u8;
+	
+	s16 = u8;
+	s32 = u8;
+	s32 = u16;
+
+}
+
+fn singedIntSuccess() {
+	s32 = s32;
+	s32 = s16;
+	s16 = s8;
+	s8 = s8;
+}
+
+fn takesUint8(x : uint8) {
+	return x;
+}
+
+fn intRangeChecks() {
+	// XPECT errors ---> "Value is out of range. Must be 0 <= x <= 255." at "takesUint8(-1)"
+	takesUint8(-1);
+	
+	// here we would like to see an error, but a bug in the type inferrer validation acceptance prevents that.
+	let x : uint8 = -1;
+}
+
+fn unsignedToUnsignedFail(){
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and uint32." at "u8 = u32"
+	u8 = u32;
+	//XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and uint16." at "u8 = u16"
+	u8 = u16;
+	//XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint16 and uint32." at "u16 = u32"
+	u16 = u32;
+}
+
+fn signedToSignedFail(){
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int8 and int32." at "s8 = s32"
+	s8 = s32;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int8 and int16." at "s8 = s16"
+	s8 = s16;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int16 and int32." at "s16 = s32"
+	s16 = s32;
+}
+
+fn signedToUnsignedFail(){
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int8 and uint8." at "s8 = u8"
+	s8 = u8;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int16 and uint16." at "s16 = u16"
+	s16 = u16;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int32 and uint32." at "s32 = u32"
+	s32 = u32;
+}
+
+fn UnsignedToSignedFail(){
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and int8." at "u8 = s8"
+	u8 = s8;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and int16." at "u8 = s16"
+	u8 = s16;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and int32." at "u8 = s32"
+	u8 = s32;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint16 and int8." at "u16 = s8"
+	u16 = s8;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint16 and int16." at "u16 = s16"
+	u16 = s16;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint16 and int32." at "u16 = s32"
+	u16 = s32;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint32 and int8." at "u32 = s8"
+	u32 = s8;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint32 and int16." at "u32 = s16" 
+	u32 = s16;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint32 and int32." at "u32 = s32" 
+	u32 = s32;
+}
+
+
+function testVariables() : void {
+	// Types are optional if they can be inferred from an initializing statement
+	var x1 = 1;
+	
+	// Types can be explicitly specified
+	var x2 : uint32;
+	
+	// Types can be generic
+	var x3 : SomeGenType<uint32>;
+	 
+	// Types can have parameters which require explicit initialization
+	var x4 = new SomeGenType<uint32>(size = 10, opt = 18); 
+	var x41 = new SomeGenType<uint32>(opt = 18, size = 10);
+	var x42 = new SomeGenType<uint32>(10); 
+	var x43 = new SomeGenType<uint32>(10, 10);
+	
+	// XPECT errors --> "Wrong number of arguments, expected [uint32, int16]." at "new SomeGenType<uint32>()"
+	var x51 = new SomeGenType<uint32>();
+
+	// XPECT errors --> "Wrong number of arguments, expected [uint32, int16]." at "new SomeGenType<uint32>(opt = 18)"
+	var x52 = new SomeGenType<uint32>(opt = 18);
+
+	// XPECT errors --> "Couldn't resolve reference to Type 'real'." at "real"
+	var x53 : real = 10;
+	
+	// XPECT errors --> "Couldn't resolve reference to Type 'boolean'." at "boolean"
+	var x54 : boolean = 10;
+	
+	// XPECT errors --> "Couldn't resolve reference to Type 'integer'." at "integer"
+	var x55 : integer = 10;
+	
+	/* xpect errors ---
+		"Incompatible types bool and uint32." at "new SomeGenType<uint32>(true)"
+		"Incompatible types bool and uint32." at "var x6 = new SomeGenType<uint32>(true);"
+	--- */
+//	var x6 = new SomeGenType<uint32>(true); // TODO: will be fixed in next SCT release
+		
+	// Types are types. The type of an expression can be had withtypeof. Explicit type references can be made with the type keyword
+//	var foo : Type = typeof(1 + 1); // TODO: wouldn't it be more readable to write "foo : typeof(1+1)"?
+//	var bar : Type = type(uint32); 
+//	// Types have well defined comparisons
+//	typeof(1) == typeof(2); // true
+//	typeof(subType) < typeof(superType); // true
+//	typeof(superType) > typeof(superType); // false
+//	typeof(superType) >= typeof(superType); // true
+	
+	// Types can have a default value. The default value of a type can be had with default.
+	// TODO: where are default values defined? Best in TypeDSL so we need to adjust it
+//	default(uint32) == 0 // true
+	
+	// xpect errors --> "RingBuffer<uint32> does not have a default value" at default
+	// TODO: does it mean, structure types have a default value if all fields have a default value; do we need to define default values for struct fields, or are default values for their types sufficient?
+//	default(ringbuffer<uint32>)
+}
+
+
+struct Name {
+	// XPECT errors --> "Cannot determine size of element: Type "Name" is recursive. Cannot infer size." at "x"
+    var x : Name;
+}
+
+function useRecursiveTypeDef() {
+    var myStruct : Name;
+}

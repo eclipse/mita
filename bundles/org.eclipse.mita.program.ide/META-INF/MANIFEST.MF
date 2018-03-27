@@ -1,0 +1,17 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Mita Program Language IDE
+Bundle-Vendor: Eclipse.org/Mita
+Bundle-Version: 0.1.0.qualifier
+Bundle-SymbolicName: org.eclipse.mita.program.ide; singleton:=true
+Bundle-ActivationPolicy: lazy
+Require-Bundle: org.eclipse.mita.program,
+ org.eclipse.xtext.ide,
+ org.eclipse.xtext.xbase.ide,
+ org.yakindu.base.expressions,
+ org.eclipse.mita.types,
+ org.antlr.runtime
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: org.eclipse.mita.program.ide.contentassist.antlr.internal,
+ org.eclipse.mita.program.ide.contentassist.antlr
+

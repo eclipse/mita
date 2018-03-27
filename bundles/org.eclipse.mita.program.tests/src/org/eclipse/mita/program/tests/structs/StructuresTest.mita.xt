@@ -1,0 +1,40 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.structs.StructuresTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// Structures are custom, user-defined reference types for organizing data
+struct Foo {
+	var bar : uint32;
+	var foo : bool;
+}
+
+
+function structTest() : void {
+	// Structures can be initialized
+	var inst : Foo = Foo(bar = 10, foo = true);
+	// Structures can be initialized with positional arguments
+	inst = Foo(10, true);
+	inst.bar == 10; // true
+	// struct members can be set
+	inst.bar = 12;
+	(inst).bar = 10;
+	
+	// Structures are initialized with 0
+	var inst2 : Foo;
+	inst2.bar == 0; // true
+	
+	// We error on wrong number of arguments
+	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(1)"
+	inst = Foo(1);
+	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(1, false, 3)"
+	inst = Foo(1, false, 3);
+	// We error on wrong type of arguments
+	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'" at "\"AHHHH!\""
+	inst = Foo(1, "AHHHH!");
+}

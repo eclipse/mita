@@ -1,0 +1,70 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.id.IDTest
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest; 
+
+var x : int32;
+/* XPECT errors ---
+"Duplicate element 'x'" at "var x : int32;"
+--- */
+var x : int32;
+  
+fn fnX(){}     
+// Function overloading is allowed, 
+fn fnX(xy : double){}   
+
+fn fnY(){} 
+
+/* XPECT errors ---
+"Duplicate function 'fnY'" at "fn fnY(){}"
+--- */
+fn fnY(){}
+
+var myVar : int32 = 5; 
+
+fn shadowingSuccess(){
+	var myVar : bool = true;
+	myVar = true;
+	//the global myVar is shadowed by the local bool myVar
+	if(myVar){
+		var x : int32;
+		x = x + 10;
+	}else{
+		var x : bool;
+		x = true; 
+	}
+}
+
+fn variableScopesFail(){
+	if(true){
+		var myVarIf : bool = true;
+	}
+	/* XPECT errors ---
+		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf"
+		"The left-hand side of an assignment must be a variable." at "myVarIf"
+	--- */
+	myVarIf = false;   
+}
+ 
+fn variableScopesShadowing(){
+	var myVar = true;
+	if(true){
+		var myVar = 0.0; 
+	}      
+}      
+        
+fn variableDeclarationAfterReference(){
+	/* XPECT errors ---
+		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2"
+		"The left-hand side of an assignment must be a variable." at "myVar2"
+	--- */
+	myVar2 = 10;          
+	var myVar2 = 5;    
+	myVar2 = 10;    
+} 
+

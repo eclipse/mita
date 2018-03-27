@@ -1,0 +1,61 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.functions.FunctionsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP
+ */
+
+package test;
+import platforms.unittest;
+
+/* TODO: not yet tested here:
+ * "extern" function f() {}
+ * <T> function f() : list<T> {}
+ * 
+ * semantic: T extends int16
+ * <T : int16> function f() : list<T> {}
+ * 
+ * function f(p : "static" int16)
+ * 
+ */ 
+
+// Functions are declared using the fn or function keywords.
+// Functions must have a body, meaning curly braces.
+// XPECT noCompileErrors
+fn foo() { }
+function foo2() { }
+
+// XPECT noCompileErrors
+fn foo4() : int32 {
+	return 1;
+}
+
+// XPECT noCompileErrors
+fn foo5() : void {
+	var x1 = foo4();
+	let x2 = foo4();
+}
+
+// XPECT noCompileErrors
+fn foo6() : int32 {
+	return foo4();
+}
+
+// extension on generic type with explicit primitive type argument
+fn genTypeExtension(p : SomeGenType<int16>) {}
+fn <T> genTypeExtension2(p : SomeGenType<T>) {}
+
+fn genTypeExtensionCall() {
+    var genVar = new SomeGenType<int16>(10);
+    genVar.genTypeExtension(); 
+    genVar.genTypeExtension2();
+}
+
+// XPECT noCompileErrors
+fn usesParameter(x : uint32) : uint32 {
+	return x + 10 as uint32;
+}
+
+// XPECT errors --> "Default values for function parameters are not allowed." at "10"
+fn optionalParameter(x : uint32 = 10) {}

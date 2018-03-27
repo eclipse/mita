@@ -1,0 +1,123 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.optionals.OptionalsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// XPECT noCompileErrors
+function testOptionalsSuccess() {
+	//XPECT inferredType --> int32
+	var notOptional : int32;
+ 
+	//Types can be marked as Optional with a '?'
+	//XPECT inferredType --> optional<int32>
+	var optional : int32?;
+//	//This is syntactic sugar for 
+	//XPECT inferredType --> optional<int32>
+	var optional2 : optional<int32>;
+	
+	
+	//Optional Types can be assigned at declaration
+	//XPECT inferredType --> optional<int16>
+	var optional3 : int16? = 10;
+	//XPECT inferredType --> optional<int32>
+	var optional4 : optional<int32> = 10; 
+	
+	 
+	//Optionals are type compatible to optionals and base type values
+	optional = notOptional;
+	optional = optional2; 
+	optional = 10;
+	
+	functionWithOptionals(optional, optional2);  
+	functionWithOptionals(optional2, optional2);
+	
+	if(optional.hasValue()) {  
+		var intValue = optional.value();
+		intValue += 1;
+	}   
+}
+
+function testOptionalOfOptionalError() {
+	/*XPECT errors ---
+		"Nested generated types are not supported yet" at "optional<int32?>"
+		"Nested generated types are not supported yet" at "var optionalOfOptional : optional<int32?> = 10;"
+	--- */
+	var optionalOfOptional : optional<int32?> = 10;
+	optionalOfOptional = 10;
+}
+
+function testOptionalReturn() : optional<bool> {
+	//XPECT errors --> "Implicit construction of optionals in returns is not yet supported. Please use 'optional.some' instead." at "return true;"
+	return true;
+}
+
+// XPECT noCompileErrors
+function testOptionalReturn2() : optional<bool> {
+	var x : bool? = false;
+	return x;
+} 
+
+function testOptionalsFail(){
+	var notOptional : uint32; 
+	var optional : uint32?; 
+	/*XPECT errors ---
+		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "10"
+		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "42"
+	--- */
+	functionWithOptionals(42, 10);
+	/*XPECT errors ---
+		"Nested generated types are not supported yet" at "optional<int32?>"
+		"Nested generated types are not supported yet" at "var optionalOfOptional : optional<int32?> = 10;"
+	--- */
+	var optionalOfOptional : optional<int32?> = 10;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint32 and optional<uint32>." at "notOptional = optional"
+	notOptional = optional;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional<uint32> and bool." at "optional = true"
+	optional = true;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional and bool." at "var optional3 : uint16? = true;"
+	var optional3 : uint16? = true;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional and bool." at "var optional4 : optional<uint32> = true;"
+	var optional4 : optional<uint32> = true;
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional<optional<int32>> and optional<uint32>." at "optionalOfOptional = optional"
+	optionalOfOptional = optional;
+	// XPECT errors --> "Incompatible types optional<uint32> and int32." at "functionWithNonOptionals(optional)"
+	functionWithNonOptionals(optional);
+	/*XPECT errors ---
+		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "10"
+		"Incompatible types bool and optional<int32>." at "functionWithOptionals(true, 10)"
+	--- */
+	functionWithOptionals(true, 10);
+	/*XPECT errors ---
+		"Incompatible types double and optional<int32>." at "functionWithOptionals(4.2, 10)"
+		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "10"
+		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "4.2"
+	--- */
+	functionWithOptionals(4.2, 10);
+}
+function testOptionalReturnFail() :bool {
+	var x : bool? = false;
+	//XPECT errors --> "The return type 'optional<bool>' is not compatible with the operation's type 'bool'" at "return x;"
+	return x;
+}
+
+function functionWithOptionals(param1 : int32?, param2 : optional<int32>){} 
+
+function functionWithNonOptionals(param1 : int32){}	
+
+struct testRef {
+	var a: uint32;
+	var b: uint32;
+}
+
+every 1 second {
+    let m : testRef?;
+    m.doSomething();
+}
+
+fn doSomething(msg : testRef?) {
+}

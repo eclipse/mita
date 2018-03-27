@@ -1,0 +1,302 @@
+@GenModel(operationReflection="false", modelDirectory="/org.eclipse.mita.program/emf-gen")
+package org.eclipse.mita.program
+
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.ConfigurationItem
+import org.eclipse.mita.platform.Modality
+import org.eclipse.mita.platform.Signal
+import org.eclipse.mita.types.ExceptionTypeDeclaration
+import org.eclipse.mita.types.Exportable
+import org.eclipse.mita.types.GeneratedElement
+import org.eclipse.mita.types.GeneratedType
+import org.eclipse.mita.types.PackageAssociation
+import org.eclipse.mita.types.SumAlternative
+import org.eclipse.mita.types.TypeSpecifier
+import org.eclipse.emf.ecore.EObject
+import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.yakindu.base.expressions.expressions.Expression
+import org.yakindu.base.expressions.expressions.IntLiteral
+import org.yakindu.base.expressions.expressions.Literal
+import org.yakindu.base.types.Event
+import org.yakindu.base.types.Operation
+import org.yakindu.base.types.Parameter
+import org.yakindu.base.types.Property
+import org.yakindu.base.types.Type
+import org.eclipse.mita.types.ImportStatement 
+
+class Program extends PackageAssociation {
+	contains ImportStatement[] imports
+	contains SystemResourceSetup[] setup
+	contains VariableDeclaration[] globalVariables
+	contains Operation[] functionDefinitions
+	contains EventHandlerDeclaration[] eventHandlers
+	contains Type[] types
+}
+
+class SystemResourceSetup {
+	id String name
+	refers AbstractSystemResource ^type
+	contains ConfigurationItemValue[] configurationItemValues
+	contains SignalInstance[] signalInstances
+	
+	op Expression getConfigurationItemValue(String name) {
+		configurationItemValues.filter[x | x.item?.name == name ].head?.value;
+	}
+}
+
+class ConfigurationItemValue {
+	refers ConfigurationItem item
+	contains Expression value
+}
+
+/*
+ * To get a parameter value, you need to use ModelUtils.getArgumentValue(vciv, 'paramName')
+ */
+class SignalInstance extends VariableDeclaration {
+	
+	op Signal getInstanceOf() {
+		return if(initialization instanceof ElementReferenceExpression) {
+			val ref = (initialization as ElementReferenceExpression).reference;
+			if(ref instanceof Signal) {
+				ref;
+			}
+		}
+	} 
+	
+}
+
+class EventHandlerDeclaration {
+	contains EventSource event
+	contains ProgramBlock block
+}
+
+abstract class EventSource { }
+class TimeIntervalEvent extends EventSource {
+	contains IntLiteral interval
+	TimeUnit unit
+}
+class SystemEventSource extends EventSource {
+	refers AbstractSystemResource origin
+	refers Event source
+}
+
+enum TimeUnit {
+	Millisecond
+	Second
+	Minute
+	Hour
+}
+
+abstract class ExportableOperation extends Operation, Exportable { }
+
+class FunctionDefinition extends ExportableOperation {
+	contains ProgramBlock body
+	
+	op String getId(){
+		return null;
+	}
+}
+
+class GeneratedFunctionDefinition extends ExportableOperation, GeneratedElement {
+	op String getId(){
+		return null;
+	}
+}
+
+class NativeFunctionDefinition extends ExportableOperation, GeneratedElement {
+	String header
+	boolean checked
+}
+
+class FunctionParameterDeclaration extends Parameter {
+	boolean ^static
+	contains Expression value
+}
+
+class ProgramBlock {
+	contains AbstractStatement[] content
+}
+
+
+abstract class AbstractStatement { }
+
+class VariableDeclaration extends Property, AbstractStatement {
+	boolean writeable
+	contains Expression initialization
+	op boolean isConst() {
+		return !writeable
+	}
+}
+
+class ArrayLiteral extends Literal {
+	contains Literal[] values
+}
+
+class ExpressionStatement extends AbstractStatement {
+	contains Expression expression
+}
+
+abstract class AbstractLoopStatement extends AbstractStatement {
+	contains ProgramBlock body	
+}
+class DoWhileStatement extends AbstractLoopStatement {
+	contains Expression condition
+}
+class ForStatement extends AbstractLoopStatement {
+	contains VariableDeclaration[] loopVariables
+	contains Expression condition
+	contains Expression[] postLoopStatements
+}
+class ForEachStatement extends AbstractLoopStatement {
+	contains VariableDeclaration iterator
+	contains Expression iterable
+}
+class ForEachLoopIteratorVariableDeclaration extends VariableDeclaration {
+	
+}
+class WhileStatement extends AbstractLoopStatement {
+	contains Expression condition
+}
+
+class ConditionalStatement extends AbstractStatement {
+	contains Expression condition
+	contains ProgramBlock then
+}
+class IfStatement extends ConditionalStatement {
+	contains ConditionalStatement[] elseIf
+	contains ProgramBlock ^else
+}
+
+class ReturnStatement extends AbstractStatement {
+	contains Expression value
+}
+
+class WhereIsStatement extends AbstractStatement {
+	contains Expression matchElement
+	contains IsCase[] isCases
+}
+
+abstract class IsCase extends AbstractStatement { 
+	contains ProgramBlock body
+}
+
+class IsTypeMatchCase extends IsCase {
+	refers SumAlternative productType
+}
+
+class IsAssignmentCase extends IsCase {
+	contains VariableDeclaration assignmentVariable
+}
+class IsDeconstructionCase extends IsCase {
+	refers SumAlternative productType
+	contains IsDeconstructor[] deconstructors
+	op Boolean isAnonymous() {
+		return deconstructors.map[it.productMember === null].contains(true);
+	}
+}
+
+class IsOtherCase extends IsCase { }
+class IsDeconstructor extends VariableDeclaration { 
+	refers Parameter productMember
+}
+
+class ThrowExceptionStatement extends AbstractStatement {
+	refers ExceptionTypeDeclaration exceptionType
+	String message
+}
+
+class TryStatement extends AbstractStatement {
+	contains ProgramBlock ^try
+	contains CatchStatement[] catchStatements
+	contains ProgramBlock ^finally
+}
+class CatchStatement extends AbstractStatement {
+	refers ExceptionTypeDeclaration exceptionType
+	contains ProgramBlock body
+}
+
+class NewInstanceExpression extends ElementReferenceExpression {
+	contains TypeSpecifier ^type
+	
+	op EObject getReference() {
+		val t = ^type.^type
+		if (t instanceof GeneratedType) {
+			t.constructor
+		} else {
+			super.reference
+		}
+	}
+}
+
+class InterpolatedStringExpression extends Expression {
+	String[] text
+	contains Expression[] content
+}
+
+class DereferenceExpression extends Expression {
+	contains Expression expression
+	op EObject getInnerReference() {
+		if(expression instanceof DereferenceExpression) {
+			return (expression as DereferenceExpression).getInnerReference();
+		}
+		return expression;
+	}
+}
+
+class ReferenceExpression extends Expression {
+	contains Expression variable
+} 
+
+class ArrayAccessExpression extends Expression {
+	contains Expression owner
+	contains Expression arraySelector
+}
+
+class ValueRange extends Expression {
+	contains Expression lowerBound
+	contains Expression upperBound
+}
+
+/**
+ * Post-transformation classes
+ */
+class ModalityAccessPreparation extends AbstractStatement {
+	refers AbstractSystemResource systemResource
+	refers Modality[] modalities
+}
+class ModalityAccess extends Expression {
+	refers ModalityAccessPreparation preparation
+	refers Modality modality
+}
+class SignalInstanceReadAccess extends VariableDeclaration {
+	refers SignalInstance vci
+}
+class SignalInstanceWriteAccess extends Expression {
+	refers SignalInstance vci
+	contains Expression value
+}
+class ExceptionBaseVariableDeclaration extends VariableDeclaration {
+	boolean needsReturnFromTryCatch
+}
+class SourceCodeComment extends AbstractStatement {
+	String content
+}
+class LoopBreakerStatement extends AbstractStatement {
+	contains Expression condition
+}
+class ArrayRuntimeCheckStatement extends AbstractStatement {
+	refers ArrayAccessExpression access
+}

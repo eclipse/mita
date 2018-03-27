@@ -1,0 +1,137 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+let e : MyEnum;
+var y : int16;
+var x : int8 = 3;
+
+setup accelerometer {
+	mode = BMA280_SleepMode.LowPowerModeOne;
+	range = "";
+	
+}
+
+setup asd : BLE {
+	
+	var a : int8 = bool_characteristic(deviceName);
+}
+ 
+setup DemoWifi : WLAN {
+	PSK = "foo";
+	SSID = "bla";
+}
+
+//setup  backend via LWM2M uses DemoWifi {
+//	topic shock : float maps-to "/1/1"
+//}
+
+setup myNewHw : I2C {
+	byRegister = true;
+	i2cBlock = true;
+} 
+
+every system.startup {
+}  
+
+every accelerometer.activity {
+	if (accelerometer.magnitude > 1000) {
+		while(true) {
+			throw MyException;
+		}
+	}
+//	accelerometerValues.add(accelerator.energy)
+}
+
+every 10 millisecond {
+	var s : int16 = 3;
+	s = 1 << 8;
+	myOperation(1);
+	
+//	1 += true;
+	x = 4;
+//	x = y;
+	y = x;
+}
+
+extern fn myOperation(param1 : static int16) : MyEnum {
+	var x:int16 = 10;
+	param1 = 1;
+	
+	var f: float = 1.4;
+	
+	do {
+		x -= 1;
+	} while(x > 0)
+	
+	if (x<100) {
+		var t: MyType;
+		t.member = true;
+		t.myOp2(true);
+		t.myOp;
+		 myOp(t);
+		 
+		t.myOp;
+		 
+		var gt: MyGenericType<bool>;
+		gt.member = true;
+		gt.m.member = false; 
+		
+		return MyEnum.A;
+	}
+	return MyEnum.B;
+}
+
+extern fn MyThrowingOp() : int16 {
+	try {
+		x = 1;
+	} catch (MyException(e)) {
+		e = "";
+	}
+	throw MyException("some exception message");
+}
+ 
+extern fn myOp(p : MyType) : int16 {
+	p.member = true; 
+}
+
+
+extern fn myOp2(p : MyType, p2: bool) : int16 {
+	p.member = true;
+}
+
+extern fn myOp3(p : MySubType) : bool{}
+
+every 100 milliseconds {
+	var foo = environment.temperature;
+	
+	
+}
+
+every GPIO.interrupt {
+	var t1 : MyType; 
+	var t2 : MySubType;
+	
+	t1.myOp;   
+	t1.myOp2(false);
+	
+	t2.myOp;   
+	t2.myOp2(true);
+	t2.myOp3;
+	
+	var t3 : list<int16>;
+	t3.add(6); 
+	
+	var l1 : list<int16>;
+	l1 = t3;
+}
+

@@ -1,0 +1,160 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.sumtypes.SumTypesTest
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+
+import platforms.unittest;
+		
+struct vec2d_t {
+    var x: int32;
+    var y: int32;
+}
+
+struct badVec2d {
+	var x: int16;
+	var y: bool;
+}
+
+alt anyVec { 
+	  vec0d /* singleton */ 
+	| vec1d: int32 
+	| vec2d: vec2d_t 
+	| vec3d: {x: int32, y: int32, z: int32} 
+	| vec4d: int32, int32, int32, int32
+}
+
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "incVecs"
+fn incVecs(a: anyVec) {
+	// 4*int32 + 1 = 4*4 + 1 = 17
+	// XPECT inferredSize --> 17
+    var b: anyVec;
+    where(a) {
+    	is(anyVec.vec0d) {
+    		b = anyVec.vec0d();
+    	} 
+        is(x: anyVec.vec1d) {
+        	b = anyVec.vec1d(x + 1);
+        } 
+        is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
+        	b = anyVec.vec2d(x = x + 1, y = y + 1);
+        }
+        is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
+        	b = anyVec.vec3d(x + 1, y + 1, z + 1);
+        }
+        is(anyVec.vec1d -> x) {
+        	b = anyVec.vec1d(x + 1);
+		}
+        is(anyVec.vec2d -> x, y) {
+        	b = anyVec.vec2d(x = x + 1, y = y + 1);
+        }
+        is(anyVec.vec3d -> x, y, z) {
+        	b = anyVec.vec3d(x + 1, y + 1, z + 1);
+        }
+        is(anyVec.vec4d -> x, y, z, w) {
+        	b = anyVec.vec4d(x + 1, y + 1, z + 1, w + 1);
+        }
+        is(anyVec.vec0d) {
+        	/*XPECT errors ---
+        	    "Assignment operator '=' may only be applied on compatible types, not on anyVec and any." at "b = vec0d()"
+        	    "Couldn't resolve reference to EObject 'vec0d'." at "vec0d"
+        	--- */
+    		b = vec0d();
+    	} 
+        is(x: anyVec.vec1d) {
+        	/*XPECT errors ---
+        	    "Assignment operator '=' may only be applied on compatible types, not on anyVec and any." at "b = vec1d(x + 1)"
+        	    "Couldn't resolve reference to EObject 'vec1d'." at "vec1d"
+        	--- */
+        	b = vec1d(x + 1);
+        } 
+        is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
+        	/*XPECT errors ---
+        	    "Assignment operator '=' may only be applied on compatible types, not on anyVec and any." at "b = vec2d(x = x + 1, y = y + 1)"
+        	    "Couldn't resolve reference to EObject 'vec2d'." at "vec2d"
+        	    "Couldn't resolve reference to Parameter 'x'." at "x"
+        	    "Couldn't resolve reference to Parameter 'y'." at "y"
+        	--- */
+        	b = vec2d(x = x + 1, y = y + 1);
+        }
+        is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
+        	/*XPECT errors ---
+        	    "Assignment operator '=' may only be applied on compatible types, not on anyVec and any." at "b = vec3d(x + 1, y + 1, z + 1)"
+        	    "Couldn't resolve reference to EObject 'vec3d'." at "vec3d"
+        	--- */
+        	b = vec3d(x + 1, y + 1, z + 1);
+        }
+        is(anyVec.vec0d) {
+        	// XPECT errors --> "Wrong number of arguments, expected [] ." at "anyVec.vec0d(1)"
+    		b = anyVec.vec0d(1);
+    	}
+        is(anyVec.vec1d -> x) {
+        	// XPECT errors --> "Wrong number of arguments, expected [int32] ." at "anyVec.vec1d(x + 1, x + 2)"
+        	b = anyVec.vec1d(x + 1, x + 2);
+		}
+        is(anyVec.vec2d -> x, y) {
+        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32] ." at "anyVec.vec2d(x + 1, y + 1, x + 2)"
+        	b = anyVec.vec2d(x + 1, y + 1, x + 2);
+        }
+        is(anyVec.vec3d -> x, y, z) {
+        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32] ." at "anyVec.vec3d(x + 1, y + 1, z + 1, x + 2)"
+        	b = anyVec.vec3d(x + 1, y + 1, z + 1, x + 2);
+        }
+        is(anyVec.vec4d -> x, y, z, w) {
+        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32, int32] ." at "anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2)"
+        	b = anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2);
+        }
+        // XPECT errors --> "Wrong number of deconstructors, expected 1." at "is(anyVec.vec1d -> x, y) {        }"
+        is(anyVec.vec1d -> x, y) {
+		}
+        // XPECT errors --> "Wrong number of deconstructors, expected 2." at "is(anyVec.vec2d -> x, y, z) {        }"
+        is(anyVec.vec2d -> x, y, z) {
+        }
+        // XPECT errors --> "Wrong number of deconstructors, expected 3." at "is(anyVec.vec3d -> x, y, z, w) {        }"
+        is(anyVec.vec3d -> x, y, z, w) {
+        }
+        // XPECT errors --> "Wrong number of deconstructors, expected 4." at "is(anyVec.vec4d -> x, y, z, w, v) {        }"
+        is(anyVec.vec4d -> x, y, z, w, v) {
+        }
+        // XPECT errors --> "Default case must be the last case" at "isother {      	}" 
+        isother {
+        }
+    	// XPECT errors --> "Can't assign singletons" at "x: anyVec.vec0d"
+    	is(x: anyVec.vec0d) {
+    	}
+    	/* XPECT errors ---
+    	    "Can't deconstruct singletons" at "is(anyVec.vec0d -> x) {      	}"
+    	    "Wrong number of deconstructors, expected 0." at "is(anyVec.vec0d -> x) {      	}"
+    	--- */
+    	is(anyVec.vec0d -> x) {
+    	}
+    	// XPECT errors --> "Deconstruction cases must not mix named and anonymous deconstructors" at "is(anyVec.vec3d -> x = vec3d.x, y, z) {      	}"
+    	is(anyVec.vec3d -> x = vec3d.x, y, z) {
+    	}
+    	// XPECT errors --> "Deconstruction cases must not mix named and anonymous deconstructors" at "is(anyVec.vec3d -> x, y = vec3d.y, z) {      	}"
+    	is(anyVec.vec3d -> x, y = vec3d.y, z) {
+    	}
+    	is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
+    		// types are checked
+    		// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on anyVec and badVec2d." at "b = badVec2d(1, true)"
+        	b = badVec2d(1, true);
+        	var bVec: badVec2d;
+        	/* XPECT errors ---
+        	    "Incompatible types: 'int32' can't be converted to 'bool'" at "y"
+        		"Incompatible types: 'int32' can't be converted to 'int16'" at "x"
+        	--- */
+        	bVec = badVec2d(x, y);
+        	/* XPECT errors ---
+        	    "Incompatible types: 'int32' can't be converted to 'bool'" at "y"
+        		"Incompatible types: 'int32' can't be converted to 'int16'" at "x"
+        	--- */
+        	bVec = badVec2d(x = x, y = y);
+        }
+        isother {
+        }
+    }
+	return b;
+}

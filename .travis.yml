@@ -1,0 +1,18 @@
+sudo: false 
+dist: trusty
+
+language: java
+
+jdk: oraclejdk8
+
+before_script:
+  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
+  - "curl -LOk https://github.com/gohugoio/hugo/releases/download/v0.31/hugo_0.31_Linux-32bit.tar.gz && tar xzfv hugo_0.31_Linux-32bit.tar.gz && export PATH=$PWD:$PATH"
+
+env:
+  global:
+    DISPLAY=:99.0
+
+script:
+  - pushd website && mvn clean verify -B; popd
+  - pushd bundles && mvn clean verify -B; popd

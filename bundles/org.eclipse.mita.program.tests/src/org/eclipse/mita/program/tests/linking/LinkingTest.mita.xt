@@ -1,0 +1,20 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.linking.LinkingTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+setup my_sensor00 {}
+ 
+every 10 milliseconds {
+	
+	if (my_sensor01.modality00.read() > 0) {}
+
+	// proper linking to sensor instance "my_sensor00" instead of to setup block "my_sensor00"
+	var a = my_sensor00.modality00.read();
+	if (my_sensor00.modality00.read() > 200) {}
+}

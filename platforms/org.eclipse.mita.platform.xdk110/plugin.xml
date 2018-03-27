@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.mita.library.extension.type_library">
+      <Library
+            description="XDK 110 Platform Definition "
+            id="platforms.xdk110"
+            name="XDK 110 Platform Definition"
+            optional="true"
+            version="1.0.0"
+            module="org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGeneratorModule">
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.platform.xdk110/1.0.0/xdk110.platform">
+         </ResourceURI>
+         <Dependency
+               id="org.eclipse.mita.library.stdlib">
+         </Dependency>
+      </Library>
+   </extension>
+
+</plugin>

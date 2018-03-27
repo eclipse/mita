@@ -1,0 +1,47 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.packages.PackagesTest 
+Workspace {
+	Project "unittestprj" {
+		File { from="NotImportedPackage.mita" }
+		File { from="OtherPackage.mita" }
+		File { from="SomethingElseInTest.mita" }
+		File { from="Another.platform" }
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+import other.pkg;
+
+/* XPECT errors ---
+"Re-importing the "other.pkg" package." at "other.pkg"
+--- */
+import other.pkg;
+
+// XPECT errors --> "Package 'does.not.exist' does not exist." at "does.not.exist"
+import does.not.exist;
+
+fn main() {
+	// We should be able to use things from the same package even though they're defined in a different file.
+	somethingElseInTest();
+
+	referenceToOtherPackage();
+	
+	// We can access the members of exported structs
+	var myVar : ExportedStruct = ExportedStruct(x = 10);
+	myVar.x = 20;
+	
+	/* XPECT errors ---
+		"Couldn't resolve reference to EObject 'NotExportedStruct'." at "NotExportedStruct"
+		"Couldn't resolve reference to Type 'NotExportedStruct'." at "NotExportedStruct"
+	--- */
+	var myOtherVar : NotExportedStruct = NotExportedStruct(x = 10);
+	
+	// XPECT errors --> "Couldn't resolve reference to EObject 'notExportedInOtherPackage'." at "notExportedInOtherPackage"
+	notExportedInOtherPackage();
+	
+	// XPECT errors --> "Couldn't resolve reference to EObject 'referenceToNotImportedPackage'." at "referenceToNotImportedPackage"
+	referenceToNotImportedPackage();
+	
+}

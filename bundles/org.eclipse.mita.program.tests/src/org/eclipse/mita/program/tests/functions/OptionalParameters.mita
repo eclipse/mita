@@ -1,0 +1,72 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+/* XPECT_SETUP org.eclipse.mita.program.tests.functions.FunctionsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP
+ */
+
+package test;
+import platforms.unittest; 
+
+// Functions have parameters which must be explicitly typed
+fn fnRequired(x : uint32, y : uint32) : void {} 
+
+// Functions can have optional parameters
+fn fnOptionals1(y : uint32 = 10) {}
+
+// Functions can have optional parameters
+fn fnOptionals2(x : uint32, y : uint32 = 10) {}
+
+// Functions can have optional parameters
+fn fnOptionals3(x : uint32, y : uint32 = 10, z : uint32 = 100) {}
+
+// XPECT errors --> "Required parameters must not be defined after optional parameters." at "x : uint32"
+fn fnOptionals4(y : uint32 = 10, x : uint32) {}
+
+fn functionCalls() : void{
+
+	// When invoking functions the parameters can be specified by position or name.
+	// 	The style of invocation must not be mixed.
+	fnRequired(1, 2);
+	fnRequired(x=1, y=2);
+	
+	/* XPECT errors ---
+	"Duplicate assignment to parameter 'x'." at "x=2"
+	"Wrong number of arguments, expected [uint32, uint32]." at "fnRequired(x=1, x=2)"
+	--- */
+	fnRequired(x=1, x=2);
+	  
+	// XPECT errors --> "Positional and named parameters must not be mixed." at "fnRequired(x=1, 2)"
+	fnRequired(x=1, 2);
+	 
+	// XPECT errors --> "Positional and named parameters must not be mixed." at "fnRequired(1, y=2)"
+	fnRequired(1, y=2);  
+	
+	// XPECT errors --> "Positional and named parameters must not be mixed." at "fnOptionals2(x=1, 2)"
+	fnOptionals2(x=1, 2);
+	// XPECT errors --> "Wrong number of arguments, expected [uint32, uint32]." at "fnOptionals2(y=2)"
+	fnOptionals2(y=2);
+	
+	// Extension methods: the first parameter of a function can be written before the function
+	let bar : uint32 = 1;
+	//FIXME: Linking of extension methods
+	bar.fnOptionals1();
+//	bar.foo5(y=2);
+
+	// XPECT errors --> "Functions can not be used as values. Please add parentheses." at "fnOptionals1"
+	bar.fnOptionals1;
+}

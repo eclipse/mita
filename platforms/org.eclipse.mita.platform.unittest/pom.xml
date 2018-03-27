@@ -1,0 +1,28 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<groupId>org.eclipse.mita</groupId>
+		<artifactId>org.eclipse.mita.releng</artifactId>
+		<version>0.1.0-SNAPSHOT</version>
+		<relativePath>../bundles</relativePath>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+	
+	<groupId>org.eclipse.mita</groupId>
+	<artifactId>org.eclipse.mita.platform.unittest</artifactId>
+	<version>0.1.0-SNAPSHOT</version>
+	<packaging>eclipse-plugin</packaging>
+
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.eclipse.xtend</groupId>
+				<artifactId>xtend-maven-plugin</artifactId>
+				<version>${xtextVersion}</version>
+			</plugin>
+		</plugins>
+	</build>
+	
+
+</project>
