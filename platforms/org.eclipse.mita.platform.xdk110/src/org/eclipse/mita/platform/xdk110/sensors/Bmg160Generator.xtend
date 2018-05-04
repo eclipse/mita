@@ -59,7 +59,7 @@ class Bmg160Generator extends AbstractSystemResourceGenerator {
         '''GYROSCOPE_BMG160_POWERMODE_«config.getEnumerator('powermode')?.name?.toUpperCase»'''
     }
     def String getBmgRangeEnumValue(IComponentConfiguration config) {
-    	//add prefix
+    	//add prefix, make last "S" lowercase
     	var enumVal = config.getEnumerator('range')?.name?.toUpperCase;
     	enumVal = enumVal?.substring(0, enumVal.length - 1) + 's';
         '''GYROSCOPE_BMG160_«enumVal»'''

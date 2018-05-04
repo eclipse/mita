@@ -150,7 +150,7 @@ enum BMI160_Powermode
 	Fast_startup
 }
 
-/**enum values to represent Range supported by the  Gyroscope */
+/**enum values to represent Range supported by the Gyroscope */
 enum BMI160_Range
 {   /** set to 0.0625 deg/s in 125 deg/s range */
     Range_125s, 
@@ -164,17 +164,26 @@ enum BMI160_Range
     Range_2000s 
 }
 
-sensor BMI160 {
+/**
+ * The BMI160 is a small, low power, low noise 16-bit inertial measurement unit 
+ * designed for use in mobile applications like augmented reality or indoor navigation 
+ * which require highly accurate, real-time sensor data.
+ */
+sensor Gyroscope_BMI160 {
 	generator "org.eclipse.mita.platform.xdk110.sensors.Bmi160Generator"
 	validator "org.eclipse.mita.platform.xdk110.sensors.Bmi160Validator"
 	
 	/**
-	 * The low-pass filter bandwidth used by the BMI.
+	 * The low-pass filter bandwidth used by the BMI160.
 	 */
 	configuration-item bandwidth : BMI160_Bandwidth = BMI160_Bandwidth.BW_523_9Hz
-	
+	/**
+	 * Configure power usage of the BMI160.
+	 */
 	configuration-item powermode : BMI160_Powermode = BMI160_Powermode.Normal
-	
+	/**
+	 * The range the BMI160 should measure in.
+	 */
 	configuration-item range : BMI160_Range = BMI160_Range.Range_2000S
 	
 	/**
@@ -241,17 +250,25 @@ enum BMG160_Powermode
     /** sets Powermode to advanced  powerup */
     Advance_Powerup
 
-sensor BMG160 {
+/**
+ * The BMG160 is an ultra-small, digital 3-axis angular rate sensor with a measurement range up to 2000°/s 
+ * and a digital resolution of 16 bit for consumer electronics applications.
+ */
+sensor Gyroscope_BMG160 {
 	generator "org.eclipse.mita.platform.xdk110.sensors.Bmg160Generator"
 	validator "org.eclipse.mita.platform.xdk110.sensors.Bmg160Validator"
 	
 	/**
-	 * The low-pass filter bandwidth used by the BMI.
+	 * The low-pass filter bandwidth used by the BMG160.
 	 */
 	configuration-item bandwidth : BMG160_Bandwidth = BMG160_Bandwidth.Bw_230Hz
-	
+	/**
+	 * Configure power usage of the BMG160.
+	 */
 	configuration-item powermode : BMG160_Powermode = BMG160_Powermode.Normal
-	
+	/**
+	 * The range the BMG160 should measure in.
+	 */
 	configuration-item range : BMG160_Range = BMG160_Range.Range_2000s
 	
 	/**
@@ -690,7 +707,7 @@ connectivity named-singleton LED {
 
 alias environment for BME280
 alias accelerometer for BMA280
-alias gyroscope for BMI160
+alias gyroscope for Gyroscope_BMI160
 alias light for MAX44009
 alias button_one for Button
 alias button_two for Button
@@ -703,8 +720,8 @@ platform XDK110 {
 	has button_one
 	has button_two
 	
-	has BMI160
-	has BMG160
+	has Gyroscope_BMI160
+	has Gyroscope_BMG160
 	
 	has BLE
 	has LED

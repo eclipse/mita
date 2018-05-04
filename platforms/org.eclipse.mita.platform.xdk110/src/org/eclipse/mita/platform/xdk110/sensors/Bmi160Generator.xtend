@@ -51,7 +51,7 @@ class Bmi160Generator extends AbstractSystemResourceGenerator {
     }
     
     def String getBmiBandwidthEnumValue(IComponentConfiguration config) {
-    	//remove BW_, add prefix
+    	//remove "BW_", add prefix
         '''GYROSCOPE_BMI160_BANDWIDTH_«config.getEnumerator('bandwidth')?.name?.toUpperCase.substring(3)»'''
     }
     def String getBmiPowermodeEnumValue(IComponentConfiguration config) {
