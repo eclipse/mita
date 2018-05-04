@@ -272,17 +272,17 @@ sensor Gyroscope_BMG160 {
 	configuration-item range : BMG160_Range = BMG160_Range.Range_2000s
 	
 	/**
-	 * The X axis of the BMI160
+	 * The X axis of the BMG160
 	 */
 	modality x_axis : int32
 	
 	/**
-	 * The Y axis of the BMI160
+	 * The Y axis of the BMG160
 	 */
 	modality y_axis : int32
 	
 	/**
-	 * The Z axis of the BMI160
+	 * The Z axis of the BMG160
 	 */ 
 	modality z_axis : int32
 	
