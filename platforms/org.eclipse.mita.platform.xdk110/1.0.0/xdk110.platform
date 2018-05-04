@@ -121,6 +121,43 @@ sensor BMA280 {
     event new_data
 }
 
+//enum CalibratedGyro_Accuracy
+//{               
+//	/** unreliable calibration status of calibrated gyroscope */
+//    Unreliable, 
+//    /** low calibration status of calibrated gyroscope */       
+//    Low,        
+//    /** medium calibration status of calibrated gyroscope */    
+//    Medium,     
+//    /** high calibration status of calibrated gyroscope */      
+//    High       
+//}
+
+sensor GyroscopeSensorFusion {
+	generator "org.eclipse.mita.platform.xdk110.sensors.GyroscopeSensorFusionGenerator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.GyroscopeSensorFusionValidator"
+	
+	/**
+	 * The X axis of the gyroscope
+	 */
+	modality x_axis : int32
+	
+	/**
+	 * The Y axis of the gyroscope
+	 */
+	modality y_axis : int32
+	
+	/**
+	 * The Z axis of the gyroscope
+	 */ 
+	modality z_axis : int32
+	/**
+	 * Accuracy of values read out of the gyroscope.
+	 * Range is 0 to 3, with 0 being maximum uncertainty.
+	 */
+	modality accuracy : uint8
+}
+
 enum BMI160_Bandwidth
 {              
 	/**< sets bandwidth to LowPass 10.7 HZ */
@@ -707,7 +744,7 @@ connectivity named-singleton LED {
 
 alias environment for BME280
 alias accelerometer for BMA280
-alias gyroscope for Gyroscope_BMI160
+alias gyroscope for GyroscopeSensorFusion
 alias light for MAX44009
 alias button_one for Button
 alias button_two for Button
