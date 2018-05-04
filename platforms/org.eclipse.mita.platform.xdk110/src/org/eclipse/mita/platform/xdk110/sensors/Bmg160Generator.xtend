@@ -73,7 +73,7 @@ class Bmg160Generator extends AbstractSystemResourceGenerator {
 	override generateAccessPreparationFor(ModalityAccessPreparation accessPreparation) {
 		return codeFragmentProvider.create('''
         Gyroscope_XyzData_T «accessPreparation.dataVariable»;
-        exception = Gyroscope_readXyzValue(xdkGyroscope_BMI160_Handle, &«accessPreparation.dataVariable»);
+        exception = Gyroscope_readXyzValue(xdkGyroscope_BMG160_Handle, &«accessPreparation.dataVariable»);
         «generateExceptionHandler(component, 'exception')»
         ''')
         .addHeader('BCDS_Gyroscope.h', true)
