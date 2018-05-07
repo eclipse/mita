@@ -45,8 +45,8 @@ public class OperationsLinker {
 	protected class PolymorphicComparator implements Comparator<IEObjectDescription> {
 
 		public int compare(IEObjectDescription operation1, IEObjectDescription operation2) {
-			List<Type> parameters1 = operationUserDataHelper.getArgumentTypes(operation1);
-			List<Type> parameters2 = operationUserDataHelper.getArgumentTypes(operation2);
+			List<Type> parameters1 = operationUserDataHelper.getParameterTypes(operation1);
+			List<Type> parameters2 = operationUserDataHelper.getParameterTypes(operation2);
 			
 			if (parameters1.size() > parameters2.size()) {
 				return -1;

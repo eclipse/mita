@@ -30,7 +30,7 @@ class OperationUserDataHelper {
 	@Inject
 	extension ITypeSystem typesystem;
 
-	def List<Type> getArgumentTypes(IEObjectDescription operation) {
+	def List<Type> getParameterTypes(IEObjectDescription operation) {
 		val rawTypesArray = operation.typesArray
 		
 		if(rawTypesArray !== null) {
@@ -55,27 +55,6 @@ class OperationUserDataHelper {
 		}
 		return #[];
 	}
-	
-	def isCallable(IEObjectDescription it, List<Type> arguments) {
-		val paramArray = getTypesArray
-		if (paramArray.length == 0) {
-			return false
-		}
-		
-		println("ParamArray " + paramArray)
-		println("arguments " + arguments)
-		
-		return true;
-	}
-
-	def isExtensionTo(IEObjectDescription it, Type contextType) {
-		val paramArray = getTypesArray
-		if (paramArray === null) {
-			return false
-		}
-		val paramTypeName = paramArray.get(0)
-		return contextType.isSubtypeOf(paramTypeName)
-	}
 
 	protected def getTypesArray(IEObjectDescription description) {
 		val params = description.getUserData(ProgramDslResourceDescriptionStrategy.OPERATION_PARAM_TYPES);
@@ -83,14 +62,6 @@ class OperationUserDataHelper {
 			return null
 		}
 		return params.toArray
-	}
-
-	protected def isSubtypeOf(Type subType, String superTypeName) {
-		if (subType.name == superTypeName) {
-			return true
-		}
-		val match = subType.superTypes.findFirst[name == superTypeName]
-		return match !== null
 	}
 
 	protected def toArray(String paramArrayAsString) {
