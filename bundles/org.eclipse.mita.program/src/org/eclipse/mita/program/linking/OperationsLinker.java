@@ -21,6 +21,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import org.eclipse.mita.program.scoping.ExtensionMethodHelper;
+import org.eclipse.mita.program.scoping.OperationUserDataHelper;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.yakindu.base.expressions.expressions.ArgumentExpression;
 import org.yakindu.base.expressions.expressions.Expression;
@@ -32,9 +34,10 @@ import org.yakindu.base.types.TypesPackage;
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer;
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
 import org.yakindu.base.types.typesystem.ITypeSystem;
+import org.yakindu.base.types.validation.IValidationIssueAcceptor;
+import org.yakindu.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity;
+import org.yakindu.base.types.validation.TypeValidator;
 
-import org.eclipse.mita.program.scoping.ExtensionMethodHelper;
-import org.eclipse.mita.program.scoping.OperationUserDataHelper;
 import com.google.inject.Inject;
 
 public class OperationsLinker {
@@ -72,6 +75,8 @@ public class OperationsLinker {
 	@Inject
 	protected ITypeSystemInferrer inferrer;
 	@Inject
+	protected TypeValidator validator;
+	@Inject
 	protected ITypeSystem typeSystem;
 	@Inject
 	protected ExtensionMethodHelper extensionMethodHelper;
@@ -93,7 +98,7 @@ public class OperationsLinker {
 		return Optional.empty();
 	}
 
-	protected List<Type> getArgumentTypes(Operation operation, ArgumentExpression expression) {
+	protected List<InferenceResult> getArgumentTypes(Operation operation, ArgumentExpression expression) {
 		List<Expression> orderedExpressions = ArgumentSorter.getOrderedExpressions(expression.getArguments(), operation);
 		if (expression instanceof FeatureCall) {
 			Expression owner = ((FeatureCall) expression).getOwner();
@@ -104,19 +109,26 @@ public class OperationsLinker {
 			}
 
 		}
-		return newArrayList(transform(orderedExpressions, (e) -> inferrer.infer(e).getType()));
+		return newArrayList(transform(orderedExpressions, (e) -> inferrer.infer(e)));
 	}
 
 	protected boolean isCallable(IEObjectDescription operation, ArgumentExpression expression) {
-		List<Type> argumentTypes = getArgumentTypes((Operation) operation.getEObjectOrProxy(), expression);
-		List<Type> parameterTypes = operationUserDataHelper.getArgumentTypes(operation);
+		Operation op = (Operation) operation.getEObjectOrProxy();
+		List<InferenceResult> argumentTypes = getArgumentTypes(op, expression);
+		List<InferenceResult> parameterTypes = operationUserDataHelper.getParameterInferenceResults(operation);
+		
 		if (argumentTypes.size() != parameterTypes.size())
 			return false;
+		
 		for (int i = 0; i < argumentTypes.size(); i++) {
-			Type type1 = argumentTypes.get(i);
-			Type type2 = parameterTypes.get(i);
-			if (!typeSystem.isSuperType(type2, type1))
+			InferenceResult argumentType = argumentTypes.get(i);
+			InferenceResult parameterType = parameterTypes.get(i);
+			IValidationIssueAcceptor.ListBasedValidationIssueAcceptor acceptor = new IValidationIssueAcceptor.ListBasedValidationIssueAcceptor();
+			validator.assertAssignable(parameterType, argumentType,
+					String.format("Types are incompatible", argumentType, parameterType), acceptor);
+			if (!acceptor.getTraces(Severity.ERROR).isEmpty()) {
 				return false;
+			}
 		}
 		return true;
 	}

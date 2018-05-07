@@ -18,9 +18,14 @@ import java.util.List
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.yakindu.base.types.Operation
 import org.yakindu.base.types.Type
+import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.yakindu.base.types.typesystem.ITypeSystem
 
 class OperationUserDataHelper {
+
+	@Inject
+	extension ITypeSystemInferrer inferrer;
 
 	@Inject
 	extension ITypeSystem typesystem;
@@ -39,6 +44,16 @@ class OperationUserDataHelper {
 			}
 			return #[];
 		}
+	}
+	
+	def List<InferenceResult> getParameterInferenceResults(IEObjectDescription operation) {
+		val objOrProxy = operation.EObjectOrProxy;
+		if (objOrProxy instanceof Operation) {
+			if (!objOrProxy.eIsProxy) {
+				return objOrProxy.parameters.map[it.infer]
+			}
+		}
+		return #[];
 	}
 	
 	def isCallable(IEObjectDescription it, List<Type> arguments) {
