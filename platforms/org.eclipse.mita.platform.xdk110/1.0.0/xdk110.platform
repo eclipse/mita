@@ -121,18 +121,6 @@ sensor BMA280 {
     event new_data
 }
 
-//enum CalibratedGyro_Accuracy
-//{               
-//	/** unreliable calibration status of calibrated gyroscope */
-//    Unreliable, 
-//    /** low calibration status of calibrated gyroscope */       
-//    Low,        
-//    /** medium calibration status of calibrated gyroscope */    
-//    Medium,     
-//    /** high calibration status of calibrated gyroscope */      
-//    High       
-//}
-
 sensor GyroscopeSensorFusion {
 	generator "org.eclipse.mita.platform.xdk110.sensors.GyroscopeSensorFusionGenerator"
 	validator "org.eclipse.mita.platform.xdk110.sensors.GyroscopeSensorFusionValidator"
@@ -151,11 +139,6 @@ sensor GyroscopeSensorFusion {
 	 * The Z axis of the gyroscope
 	 */ 
 	modality z_axis : int32
-	/**
-	 * Accuracy of values read out of the gyroscope.
-	 * Range is 0 to 3, with 0 being maximum uncertainty.
-	 */
-	modality accuracy : uint8
 }
 
 enum BMI160_Bandwidth
@@ -176,15 +159,6 @@ enum BMI160_Bandwidth
     BW_523_9Hz, 
     /**< sets bandwidth to LowPass 890 HZ */
     BW_890Hz 
-}
-
-enum BMI160_Powermode
-{	/** sets Powermode to suspend */
-    Suspend, 
-    /** sets Powermode to normal */
-    Normal, 
-    /** sets Powermode to fast startup */
-	Fast_startup
 }
 
 /**enum values to represent Range supported by the Gyroscope */
@@ -213,15 +187,12 @@ sensor Gyroscope_BMI160 {
 	/**
 	 * The low-pass filter bandwidth used by the BMI160.
 	 */
-	configuration-item bandwidth : BMI160_Bandwidth = BMI160_Bandwidth.BW_523_9Hz
-	/**
-	 * Configure power usage of the BMI160.
-	 */
-	configuration-item powermode : BMI160_Powermode = BMI160_Powermode.Normal
+	configuration-item bandwidth : BMI160_Bandwidth = BMI160_Bandwidth.BW_39_9Hz
+
 	/**
 	 * The range the BMI160 should measure in.
 	 */
-	configuration-item range : BMI160_Range = BMI160_Range.Range_2000S
+	configuration-item range : BMI160_Range = BMI160_Range.Range_2000s
 	
 	/**
 	 * The X axis of the BMI160
@@ -274,19 +245,6 @@ enum BMG160_Range
     Range_2000s
 }
 
-enum BMG160_Powermode
-{                    
-	/** sets Powermode to normal */
-    Normal,          
-    /** sets Powermode to deep suspend */
-    DeepSuspend,     
-    /** sets Powermode to suspend */
-    Suspend,         
-    /** sets Powermode to fast powerup */
-    Fast_Powerup,    
-    /** sets Powermode to advanced  powerup */
-    Advance_Powerup
-
 /**
  * The BMG160 is an ultra-small, digital 3-axis angular rate sensor with a measurement range up to 2000°/s 
  * and a digital resolution of 16 bit for consumer electronics applications.
@@ -298,11 +256,7 @@ sensor Gyroscope_BMG160 {
 	/**
 	 * The low-pass filter bandwidth used by the BMG160.
 	 */
-	configuration-item bandwidth : BMG160_Bandwidth = BMG160_Bandwidth.Bw_230Hz
-	/**
-	 * Configure power usage of the BMG160.
-	 */
-	configuration-item powermode : BMG160_Powermode = BMG160_Powermode.Normal
+	configuration-item bandwidth : BMG160_Bandwidth = BMG160_Bandwidth.Bw_523Hz
 	/**
 	 * The range the BMG160 should measure in.
 	 */

@@ -43,44 +43,27 @@ class GyroscopeSensorFusionGenerator extends AbstractSystemResourceGenerator {
     
 	override generateAccessPreparationFor(ModalityAccessPreparation accessPreparation) {
 		val xyzData = accessPreparation.dataVariable;
-		val accuracy = accessPreparation.accuracyVariable;
-		val readsXYZ = accessPreparation.modalities.findFirst[it.name.endsWith("_axis")] !== null;
-		val readsAcc = accessPreparation.modalities.findFirst[it.name == "accuracy"] !== null;
 		return codeFragmentProvider.create('''
-		«IF readsXYZ»
 		CalibratedGyro_XyzDpsData_T «xyzData»;
 		exception = CalibratedGyro_readXyzDpsValue(&«xyzData»);
 		«generateExceptionHandler(component, 'exception')»
-        «ENDIF»
-
-        ««« Until we can actually use platform defined enums in user code we use an uint8_t here
-        «IF readsAcc» 
-        uint8_t «accuracy»;
-        exception = CalibratedAccel_getStatus((uint8_t*) &«accuracy»);
-        «generateExceptionHandler(component, 'exception')»
-        «ENDIF»
         ''')
         .addHeader('BCDS_Gyroscope.h', true)
         .addHeader('XdkSensorHandle.h', true)
     }
 	
 	def String getDataVariable(ModalityAccessPreparation preparation) {
-		return preparation.uniqueIdentifier.toFirstLower + "_data";
+		return preparation.uniqueIdentifier.toFirstLower;
 	}
-    def String getAccuracyVariable(ModalityAccessPreparation preparation) {
-		return preparation.uniqueIdentifier.toFirstLower + "_accuracy";
-    }
     
 	override generateModalityAccessFor(ModalityAccess modalityAccess) {
 		val xyzData = modalityAccess.preparation.dataVariable;
-		val accuracy = modalityAccess.preparation.accuracyVariable;
 		val modalityName = modalityAccess.modality.name;
         
         return switch(modalityName) {
             case 'x_axis': codeFragmentProvider.create('''«xyzData».xAxisData''')
             case 'y_axis': codeFragmentProvider.create('''«xyzData».yAxisData''')
             case 'z_axis': codeFragmentProvider.create('''«xyzData».zAxisData''')
-            case 'accuracy': codeFragmentProvider.create('''«accuracy»''')
         }
     }
     

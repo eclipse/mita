@@ -36,7 +36,7 @@ class Bmi160Generator extends AbstractSystemResourceGenerator {
         «generateExceptionHandler(component, 'exception')»
         
         /* Set Powermode */
-        exception = Gyroscope_setMode(xdkGyroscope_BMI160_Handle, «configuration.getBmiPowermodeEnumValue»);
+        exception = Gyroscope_setMode(xdkGyroscope_BMI160_Handle, GYROSCOPE_BMI160_POWERMODE_NORMAL);
         «generateExceptionHandler(component, 'exception')»
         
 
@@ -53,10 +53,6 @@ class Bmi160Generator extends AbstractSystemResourceGenerator {
     def String getBmiBandwidthEnumValue(IComponentConfiguration config) {
     	//remove "BW_", add prefix
         '''GYROSCOPE_BMI160_BANDWIDTH_«config.getEnumerator('bandwidth')?.name?.toUpperCase.substring(3)»'''
-    }
-    def String getBmiPowermodeEnumValue(IComponentConfiguration config) {
-    	//add prefix
-        '''GYROSCOPE_BMI160_POWERMODE_«config.getEnumerator('powermode')?.name?.toUpperCase»'''
     }
     def String getBmiRangeEnumValue(IComponentConfiguration config) {
     	//add prefix and suffix, remove "Range_"
