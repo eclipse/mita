@@ -37,7 +37,7 @@ abstract class GeneratedElement {
 	/**
 	 * The optional fully-qualified name of the element size inferrer class.
 	 */
-	String inferrer
+	String sizeInferrer
 }
 
 
@@ -109,7 +109,6 @@ class StructureType extends org.yakindu.base.types.ComplexType, HasAccessors, Ex
 }
 
 class GeneratedType extends org.yakindu.base.types.ComplexType, GeneratedElement, Exportable {
-	String sizeInferrer
 	contains Operation constructor
 	
 	op String toString() {
