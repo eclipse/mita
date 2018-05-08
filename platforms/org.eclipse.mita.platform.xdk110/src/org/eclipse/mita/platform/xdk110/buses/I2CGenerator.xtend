@@ -35,7 +35,7 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		Retcode_T exception = RETCODE_OK;
 		
 		Board_EnablePowerSupply3V3(EXTENSION_BOARD);
-	    Board_WakeupPowerSupply2V5(EXTENSION_BOARD);
+		Board_WakeupPowerSupply2V5(EXTENSION_BOARD);
 		
 		BSP_Board_Delay(5);
 		
@@ -126,8 +126,8 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		«preamble»
 		return I2CTransceiver_Write(&tranceiverStruct, «busAddress.code.noTerminator», «registerAddress.code.noTerminator», «data», «dataLen»);
 		''')
-		.addHeader("XdkLiveExceptions.h", false)
-		.addHeader("XdkLiveGeneratedTypes.h", false)
+		.addHeader("MitaExceptions.h", false)
+		.addHeader("MitaGeneratedTypes.h", false)
 	}
 	
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
@@ -160,7 +160,7 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		«preamble»
 		return I2CTransceiver_Read(&tranceiverStruct, «busAddress.code.noTerminator», «registerAddress.code.noTerminator», «data», «dataLen»);
 		''')
-		.addHeader("XdkLiveExceptions.h", false)
-		.addHeader("XdkLiveGeneratedTypes.h", false)
+		.addHeader("MitaExceptions.h", false)
+		.addHeader("MitaGeneratedTypes.h", false)
 	}
 }
