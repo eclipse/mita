@@ -33,6 +33,11 @@ abstract class GeneratedElement {
 	 * The optional fully-qualified name of the validator class.
 	 */
 	String validator
+	
+	/**
+	 * The optional fully-qualified name of the element size inferrer class.
+	 */
+	String inferrer
 }
 
 
