@@ -13,10 +13,16 @@
 
 package org.eclipse.mita.program.inferrer
 
+import com.google.inject.Inject
+import java.util.LinkedList
+import java.util.List
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
@@ -27,19 +33,17 @@ import org.eclipse.mita.types.GeneratedType
 import org.eclipse.mita.types.NamedProductType
 import org.eclipse.mita.types.StructureType
 import org.eclipse.mita.types.SumType
-import com.google.inject.Inject
-import java.util.LinkedList
-import java.util.List
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
 import org.yakindu.base.expressions.expressions.AssignmentExpression
 import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.yakindu.base.expressions.expressions.FeatureCall
 import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
 import org.yakindu.base.types.ComplexType
 import org.yakindu.base.types.EnumerationType
 import org.yakindu.base.types.PrimitiveType
 import org.yakindu.base.types.Type
 import org.yakindu.base.types.TypeSpecifier
+import org.eclipse.mita.platform.AbstractSystemResource
 
 /**
  * Hierarchically infers the size of a data element.
@@ -55,6 +59,29 @@ class ElementSizeInferrer {
 
 	public def ElementSizeInferenceResult infer(EObject obj) {
 		return obj.doInfer;
+	}
+	
+	private static class Combination extends ElementSizeInferrer {
+		private final ElementSizeInferrer i1;
+		private final ElementSizeInferrer i2;
+		new(ElementSizeInferrer i1, ElementSizeInferrer i2) {
+			super();
+			this.i1 = i1;
+			this.i2 = i2;
+		}
+		
+		public override def infer(EObject obj) {
+			i1.infer(obj).orElse([| i2.infer(obj)]);
+		}
+	}
+	
+	public static def ElementSizeInferrer orElse(ElementSizeInferrer i1, ElementSizeInferrer i2) {
+		if(i1 !== null && i2 !== null) {
+			return new Combination(i1, i2);
+		}
+		else {
+			return i1?:i2;
+		}
 	}
 
 	protected def dispatch ElementSizeInferenceResult doInfer(FunctionDefinition obj) {
@@ -180,14 +207,39 @@ class ElementSizeInferrer {
 			return new ValidElementSizeInferenceResult(obj, typeSpec, 1);
 		} else if (type instanceof GeneratedType) {
 			// it's a generated type, so we must load the inferrer
-			val inferrer = loader.loadFromPlugin(type.eResource, type.sizeInferrer) as ElementSizeInferrer;
-			if (inferrer === null) {
+			var ElementSizeInferrer inferrer = null;
+			
+			if (obj instanceof FeatureCall) {
+				// if its a platform component, the component specifies its own inferrer
+				val instance = obj.owner;
+				if(instance instanceof FeatureCall) {
+					val resourceRef = instance.owner;
+					if(resourceRef instanceof ElementReferenceExpression) {
+						var resourceSetup = resourceRef.reference;
+						if(resourceSetup instanceof SystemResourceAlias) {
+							resourceSetup = resourceSetup.delegate;
+						}
+						if(resourceSetup instanceof SystemResourceSetup) {
+							val resource = resourceSetup.type;
+							inferrer = loader.loadFromPlugin(resource.eResource, resource.sizeInferrer) as ElementSizeInferrer;	
+						}
+						else if(resourceSetup instanceof AbstractSystemResource) {
+							inferrer = loader.loadFromPlugin(resourceSetup.eResource, resourceSetup.sizeInferrer) as ElementSizeInferrer;	
+						}
+					}
+				}
+			}
+			
+			inferrer = inferrer.orElse(loader.loadFromPlugin(type.eResource, type.sizeInferrer) as ElementSizeInferrer);	
+			
+			val finalInferrer = inferrer;
+			if (finalInferrer === null) {
 				return new InvalidElementSizeInferenceResult(obj, typeSpec, "Type has no size inferrer");
 			} else {
 				
 				return ModelUtils.preventRecursion(obj, 
 				[|
-					return inferrer.infer(obj);
+					return finalInferrer.infer(obj);
 				], [|
 					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type»".''')
 				])
@@ -298,6 +350,11 @@ abstract class ElementSizeInferenceResult {
 	private final TypeSpecifier typeOf;
 	private final List<ElementSizeInferenceResult> children;
 	
+	def ElementSizeInferenceResult orElse(ElementSizeInferenceResult esir){
+		return orElse([| esir]);
+	}
+	abstract def ElementSizeInferenceResult orElse(() => ElementSizeInferenceResult esirProvider);
+	
 	/**
 	 * Creates a new valid inference result for an element, its type and the
 	 * required element count.
@@ -385,7 +442,7 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 	}
 		
 	override toString() {
-		var result = typeOf?.type?.name;
+		var result = typeOf?.toString;
 		result += '::' + elementCount;
 		if(!children.empty) {
 			result += 'of{' + children.map[x | x.toString ].join(', ') + '}';			
@@ -458,6 +515,11 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 			.map[x | (x as ValidElementSizeInferenceResult).byteCount]
 			.fold(0, [x, y | x + y]);
 	}
+	
+	override orElse(() => ElementSizeInferenceResult esirProvider) {
+		return this;
+	}
+	
 }
 
 class InvalidElementSizeInferenceResult extends ElementSizeInferenceResult {
@@ -479,6 +541,17 @@ class InvalidElementSizeInferenceResult extends ElementSizeInferenceResult {
 	
 	override toString() {
 		return "INVALID:" + message + "@" + super.toString();
+	}
+	
+	override orElse(() => ElementSizeInferenceResult esirProvider) {
+		var esir = esirProvider?.apply();
+		if(esir === null) {
+			return this;
+		}
+		if(esir instanceof InvalidElementSizeInferenceResult) {
+			esir = new InvalidElementSizeInferenceResult(esir.root, esir.typeOf, message + "\n" + esir.message);
+		}
+		return esir;
 	}
 	
 }
