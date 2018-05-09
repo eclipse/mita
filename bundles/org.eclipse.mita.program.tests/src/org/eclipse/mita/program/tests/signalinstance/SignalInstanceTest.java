@@ -14,11 +14,25 @@
 package org.eclipse.mita.program.tests.signalinstance;
 
 import org.junit.runner.RunWith;
+import org.xpect.expectation.IStringExpectation;
+import org.xpect.expectation.StringExpectation;
+import org.xpect.runner.Xpect;
 import org.xpect.runner.XpectRunner;
+import org.xpect.xtext.lib.setup.ThisOffset;
 
+import com.google.inject.Inject;
+
+import org.eclipse.emf.ecore.EObject;
+import org.eclipse.mita.program.inferrer.ElementSizeInferrer;
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult;
 import org.eclipse.mita.program.tests.util.AbstractXpectTest;
 
 @RunWith(XpectRunner.class)
 public class SignalInstanceTest extends AbstractXpectTest {
-
+	@Inject
+	private ElementSizeInferrer elementSizeInferrer;
+	@Xpect
+	public void inferredSize(@StringExpectation IStringExpectation expectation, @ThisOffset EObject expr) {
+		expectation.assertEquals(((ValidElementSizeInferenceResult) elementSizeInferrer.infer(expr)).toString());
+	}
 }
