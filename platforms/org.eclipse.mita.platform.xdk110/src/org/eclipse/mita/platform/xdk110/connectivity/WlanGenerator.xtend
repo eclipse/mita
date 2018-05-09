@@ -67,17 +67,23 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 			return retcode;
 		}
 		«ENDIF»
-		
-		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
+	
+		«IF configuration.getBoolean("enterprise")»
+		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to enterprise network: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
+		check
+		«ELSE»
 		/* Passing NULL as onConnection callback (last parameter) makes this a blocking call, i.e. the
 		 * WlanConnect_WPA function will return only once a connection to the WLAN has been established,
 		 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
 		 * a callback instead of NULL. */
+		 «loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to personal network: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
 		retcode = WlanConnect_WPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_PassPhrase_T) NETWORK_PSK, NULL);
 		if(RETCODE_OK != retcode)
 		{
 			return retcode;
 		}
+		«ENDIF»
+
 		
 		NetworkConfig_IpSettings_T currentIpSettings;
 		retcode = NetworkConfig_GetIpSettings(&currentIpSettings);
@@ -106,6 +112,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		.setPreamble('''
 		#define NETWORK_SSID "«configuration.getString("ssid")»"
 		#define NETWORK_PSK  "«configuration.getString("psk")»"
+		#define NETWORK_USERNAME  "«configuration.getString("username")»"
 		''')
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
 		.addHeader('BCDS_WlanConnect.h', true, IncludePath.HIGH_PRIORITY)

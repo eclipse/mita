@@ -391,6 +391,8 @@ connectivity named-singleton WLAN {
      * the WLAN connectivity does not support enterprise WLAN.
      */
     required configuration-item psk : string
+    
+    required configuration-item enterprise : bool
 
     /**
      * If true we'll attempt to configure the wireless interface using DHCP and
