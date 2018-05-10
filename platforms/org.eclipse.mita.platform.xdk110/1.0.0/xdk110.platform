@@ -392,8 +392,9 @@ connectivity named-singleton WLAN {
      */
     required configuration-item psk : string
     
-    required configuration-item enterprise : bool
-
+    required configuration-item enterprise : bool //todo add doc
+    configuration-item IsHostPgmEnabled : bool //todo add doc
+    configuration-item  Username : string //todo add doc
     /**
      * If true we'll attempt to configure the wireless interface using DHCP and
      * all static settings will be ignored. If false, the static settings have to
@@ -432,7 +433,7 @@ connectivity named-singleton WLAN {
      * is recommended.
      */
     configuration-item staticMask : string
-
+    
 }
 
 exception MqttException;
