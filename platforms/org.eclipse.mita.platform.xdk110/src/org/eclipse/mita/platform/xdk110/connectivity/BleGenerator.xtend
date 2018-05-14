@@ -44,28 +44,77 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		
 		val deviceName = configuration.getString('deviceName') ?: baseName;
 		val serviceUid = configuration.getInteger('serviceUID') ?: baseName.hashCode;
+		val IsMacAddrConfigured = configuration.getBoolean('IsMacAddrConfigured');
+		val MacAddr = configuration.getInteger('MacAddr');
 		
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
-		
-		retcode = BlePeripheral_Initialize(«baseName»_OnEvent, «baseName»_ServiceRegistry);
-		if(retcode != RETCODE_OK)
-		{
-			return retcode;
-		}
-		
-		retcode = BlePeripheral_SetDeviceName((void *) _BLE_DEVICE_NAME);
-		if(retcode != RETCODE_OK)
-		{
-			return retcode;
-		}
+		    BleEventSignal = xSemaphoreCreateBinary();
+		        if (NULL == BleEventSignal)
+		        {
+		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+		        }
+		        if (RETCODE_OK == retcode)
+		        {
+		            BleSendCompleteSignal = xSemaphoreCreateBinary();
+		            if (NULL == BleSendCompleteSignal)
+		            {
+		                retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+		                vSemaphoreDelete(BleEventSignal);
+		            }
+		        }
+		        if (RETCODE_OK == retcode)
+		        {
+		            BleSendGuardMutex = xSemaphoreCreateMutex();
+		            if (NULL == BleSendGuardMutex)
+		            {
+		                retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+		                vSemaphoreDelete(BleEventSignal);
+		                vSemaphoreDelete(BleSendCompleteSignal);
+		            }
+		        }
+		        if (RETCODE_OK == retcode)
+		        {
+		            retcode =  BlePeripheral_Initialize(«baseName»_OnEvent, «baseName»_ServiceRegistry);
+		        }
+		        if (RETCODE_OK == retcode)
+		        {
+		            retcode = BlePeripheral_SetDeviceName((uint8_t*) _BLE_DEVICE_NAME);
+		        }
+		        if (RETCODE_OK == retcode)
+		        {
+		            if (IsMacAddrConfigured == true)
+		            {
+		                retcode = BlePeripheral_SetMacAddress(_BLE_MAC_ADDRESS);
+		            }
+		        }
+		    return retcode;
+
 		''')
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
+		.addHeader('BCDS_Retcode.h', true, IncludePath.VERY_HIGH_PRIORITY)
 		.addHeader("BCDS_BlePeripheral.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("BleTypes.h", true)
 		.addHeader("attserver.h", true)
+		.addHeader("FreeRTOS.h", true, IncludePath.HIGH_PRIORITY)
+		.addHeader("task.h", true)
+		.addHeader("semphr.h", true)
+		.addHeader("stdio.h", true)
+		.addHeader("XdkCommonInfo.h", true)
 		.setPreamble('''
 		#define _BLE_DEVICE_NAME "«deviceName»"
+		#define _BLE_MAC_ADDRESS"«MacAddr»"
+		#define BLE_EVENT_SYNC_TIMEOUT                  UINT32_C(1000)
+		static bool BleIsConnected = false;
+		/**< Handle for BLE peripheral event signal synchronization */
+		static SemaphoreHandle_t BleEventSignal = (SemaphoreHandle_t) NULL;
+		/**< Handle for BLE data send complete signal synchronization */
+		static SemaphoreHandle_t BleSendCompleteSignal = (SemaphoreHandle_t) NULL;
+		/**< Handle for BLE data send Mutex guard */
+		static SemaphoreHandle_t BleSendGuardMutex = (SemaphoreHandle_t) NULL;
+		/**< BLE peripheral event */
+		static BlePeripheral_Event_T BleEvent = BLE_PERIPHERAL_EVENT_MAX;
+		static bool IsMacAddrConfigured = «IsMacAddrConfigured»;
 		
 		/* «baseName» service */
 		static uint8_t «baseName»ServiceUid[ATTPDU_SIZEOF_128_BIT_UUID] = { 0x66, 0x9A, 0x0C, 0x20, 0x00, 0x08, 0xF8, 0x82, 0xE4, 0x11, 0x66, 0x71, «FOR i : ByteBuffer.allocate(4).putInt(serviceUid).array() SEPARATOR ', '»0x«Integer.toHexString(i.bitwiseAnd(0xFF)).toUpperCase»«ENDFOR» };
@@ -120,36 +169,48 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 		static void «baseName»_OnEvent(BlePeripheral_Event_T event, void* data)
 		{
-		    BCDS_UNUSED(data);
-		    Retcode_T retcode = RETCODE_OK;
-		
-			switch (event)
-		    {
-		    case BLE_PERIPHERAL_STARTED:
-		    	BlePeripheral_Wakeup();
-		        break;
-		
-		    case BLE_PERIPHERAL_CONNECTED:
-		        // TODO: add event callback
-		        break;
-		
-		    case BLE_PERIPHERAL_DISCONNECTED:
-		        // TODO: add event callback
-		        break;
-		    case BLE_PERIPHERAL_ERROR:
-		        // TODO: add proper error handling
-		        break;
-		
-		    default:
-		        /* assertion reason : invalid status of Bluetooth Device */
-		        break;
-		    }
+		        BCDS_UNUSED(data);
+		        BleEvent = event;
 		    
-		    if(retcode != RETCODE_OK)
-		    {
-		    	Retcode_raiseError(retcode);
-			}
-		}
+		        switch (event)
+		        {
+		        case BLE_PERIPHERAL_STARTED:
+		            printf("BleEventCallBack : BLE powered ON successfully \r\n");
+		            if (pdTRUE != xSemaphoreGive(BleEventSignal))
+		            {
+		                /* We would not expect this call to fail because we expect the application thread to wait for this semaphore */
+		                Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_WARNING, RETCODE_SEMAPHORE_ERROR));
+		            }
+		            break;
+		        case BLE_PERIPHERAL_SERVICES_REGISTERED:
+		            break;
+		        case BLE_PERIPHERAL_SLEEP_SUCCEEDED:
+		            printf("BleEventCallBack : BLE successfully entered into sleep mode \r\n");
+		            break;
+		        case BLE_PERIPHERAL_WAKEUP_SUCCEEDED:
+		            printf("BleEventCallBack : Device Wake up succeeded \r\n");
+		            if (pdTRUE != xSemaphoreGive(BleEventSignal))
+		            {
+		                /* We would not expect this call to fail because we expect the application thread to wait for this semaphore */
+		                Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_WARNING, RETCODE_SEMAPHORE_ERROR));
+		            }
+		            break;
+		        case BLE_PERIPHERAL_CONNECTED:
+		            printf("BleEventCallBack : Device connected \r\n");
+		            BleIsConnected = true;
+		            break;
+		        case BLE_PERIPHERAL_DISCONNECTED:
+		            printf("BleEventCallBack : Device Disconnected \r\n");
+		            BleIsConnected = false;
+		            break;
+		        case BLE_PERIPHERAL_ERROR:
+		            printf("BleEventCallBack : BLE Error Event \r\n");
+		            break;
+		        default:
+		            Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_INVALID_EVENT_RECEIVED));
+		            break;
+		        }
+		    }
 		
 		''')
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
@@ -220,11 +281,56 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateEnable() {
 		codeFragmentProvider.create('''
-		Retcode_T retcode = BlePeripheral_Start();
-		if(retcode != RETCODE_OK)
-		{
-			return retcode;
-		}
+		Retcode_T retcode = RETCODE_OK;
+		
+		    /* @todo - BLE in XDK is unstable for wakeup upon bootup.
+		     * Added this delay for the same.
+		     * This needs to be addressed in the HAL/BSP. */
+		    vTaskDelay(pdMS_TO_TICKS(1000));
+		
+		    /* This is a dummy take. In case of any callback received
+		     * after the previous timeout will be cleared here. */
+		    (void) xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(0));
+		    retcode = BlePeripheral_Start();
+		    if (RETCODE_OK == retcode)
+		    {
+		        if (pdTRUE != xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(BLE_EVENT_SYNC_TIMEOUT)))
+		        {
+		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
+		        }
+		        else if (BleEvent != BLE_PERIPHERAL_STARTED)
+		        {
+		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
+		        }
+		        else
+		        {
+		            /* Do not disturb retcode */;
+		        }
+		    }
+		
+		    /* This is a dummy take. In case of any callback received
+		     * after the previous timeout will be cleared here. */
+		    (void) xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(0));
+		    if (RETCODE_OK == retcode)
+		    {
+		        retcode = BlePeripheral_Wakeup();
+		    }
+		    if (RETCODE_OK == retcode)
+		    {
+		        if (pdTRUE != xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(BLE_EVENT_SYNC_TIMEOUT)))
+		        {
+		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_WAKEUP_FAILED);
+		        }
+		        else if (BleEvent != BLE_PERIPHERAL_WAKEUP_SUCCEEDED)
+		        {
+		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_WAKEUP_FAILED);
+		        }
+		        else
+		        {
+		            /* Do not disturb retcode */;
+		        }
+		    }
+		    return retcode;
 		''')
 	}
 	

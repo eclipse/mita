@@ -308,6 +308,12 @@ sensor MAX44009 {
  * BLE is Bluetooth Low Energy using GATT profiles. 
  * At the moment we only support slave mode where the XDK becomes a device that can be connected to (as compared to connecting to some other device).
  */
+enum BLE_Service {
+    BLE_BCDS_BIDIRECTIONAL_SERVICE,
+    BLE_XDK_SENSOR_SERVICES,
+    BLE_USER_CUSTOM_SERVICE
+}
+
 connectivity named-singleton BLE {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.BleGenerator"
 	validator "org.eclipse.mita.platform.xdk110.connectivity.BleValidator"
@@ -316,7 +322,18 @@ connectivity named-singleton BLE {
 	 * The name of the device as advertised via GAP.
 	 */
 	configuration-item deviceName : string
-	
+	/**
+	 * Boolean representing if the MAC address is to be configured
+	 */
+	configuration-item IsMacAddrConfigured : bool
+	/**
+	 * MAC Address to be configured. Unused if IsMacAddrConfigured is false
+	 */
+	configuration-item MacAddr : uint64
+	/**
+	 * BLE peripheral service type.
+	 */
+	configuration-item Service : BLE_Service
 	/**
 	 * The last four bytes of the UUID of the GATT service we'll create.
 	 */
