@@ -216,21 +216,34 @@ class ElementSizeInferrer {
 					val resourceRef = instance.owner;
 					if(resourceRef instanceof ElementReferenceExpression) {
 						var resourceSetup = resourceRef.reference;
+						var Object loadedInferrer = null;
 						if(resourceSetup instanceof SystemResourceAlias) {
 							resourceSetup = resourceSetup.delegate;
 						}
 						if(resourceSetup instanceof SystemResourceSetup) {
 							val resource = resourceSetup.type;
-							inferrer = loader.loadFromPlugin(resource.eResource, resource.sizeInferrer) as ElementSizeInferrer;	
+							loadedInferrer = loader.loadFromPlugin(resource.eResource, resource.sizeInferrer);	
 						}
 						else if(resourceSetup instanceof AbstractSystemResource) {
-							inferrer = loader.loadFromPlugin(resourceSetup.eResource, resourceSetup.sizeInferrer) as ElementSizeInferrer;	
+							loadedInferrer = loader.loadFromPlugin(resourceSetup.eResource, resourceSetup.sizeInferrer);	
+						}
+						// we're done loading, let's see if we actually loaded an ESI
+						if(loadedInferrer instanceof ElementSizeInferrer) {
+							inferrer = loadedInferrer;
+						}
+						// if we got something else we should warn about this. We could either throw an exception or try to recover by deferring to the default inferrer, but log a warning.
+						else if(loadedInferrer !== null) {
+							println('''[WARNING] Expected an instance of ElementSizeInferrer, got: «loadedInferrer.class.simpleName»''')
 						}
 					}
 				}
 			}
 			
-			inferrer = inferrer.orElse(loader.loadFromPlugin(type.eResource, type.sizeInferrer) as ElementSizeInferrer);	
+			val loadedTypeInferrer = loader.loadFromPlugin(type.eResource, type.sizeInferrer);
+			
+			if(loadedTypeInferrer instanceof ElementSizeInferrer) {			
+				inferrer = inferrer.orElse(loadedTypeInferrer);	
+			}
 			
 			val finalInferrer = inferrer;
 			if (finalInferrer === null) {

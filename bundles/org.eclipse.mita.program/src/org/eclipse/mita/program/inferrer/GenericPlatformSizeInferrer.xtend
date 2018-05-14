@@ -1,4 +1,4 @@
-package org.eclipse.mita.platform.unittest
+package org.eclipse.mita.program.inferrer
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.program.GeneratedFunctionDefinition
@@ -8,7 +8,7 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.yakindu.base.expressions.expressions.FeatureCall
 
-class UserStaticSizeInferrer extends ElementSizeInferrer {
+class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 	 
 	override infer(EObject obj) {
 		if (obj instanceof FeatureCall) {
