@@ -101,6 +101,7 @@ import org.yakindu.base.types.TypeSpecifier
 import org.yakindu.base.types.TypesFactory
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
+import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 
 class StatementGenerator {
 
@@ -473,63 +474,77 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode code(ExpressionStatement stmt) {
 		'''«stmt.expression.code.noTerminator»;'''
 	}
-
+	
+	
+	def IGeneratorNode generateFunCallStmt(String variableName, TypeSpecifier inferenceResult, ElementReferenceExpression initialization) {
+		val reference = initialization.reference;
+		if (reference instanceof FunctionDefinition) {
+			codeFragmentProvider.create('''
+				«generateFunctionCall(reference, codeFragmentProvider.create('''&«variableName»'''), initialization)»
+			''')
+		} else if (reference instanceof GeneratedFunctionDefinition) {
+			codeFragmentProvider.create('''
+				«registry.getGenerator(reference).generate(initialization, variableName).noTerminator»;
+			''')
+		} else if(reference instanceof NativeFunctionDefinition) {
+			if(reference.checked) {
+				codeFragmentProvider.create('''
+				«reference.generateNativeFunctionCallChecked(codeFragmentProvider.create('''&«variableName»'''), initialization)»
+				''')
+			}
+			else {
+				codeFragmentProvider.create('''
+				«variableName» = «reference.generateNativeFunctionCallUnchecked(initialization)»;''')
+			}
+		}	
+	}
+	
 	dispatch def IGeneratorNode code(VariableDeclaration stmt) {
 		// «platformGenerator.typeGenerator.code(stmt.typeSpecifier)»
 		val initialization = stmt.initialization;
 		val inferenceResult = stmt.inferType;
 		val type = inferenceResult?.type;
-
+	
+		
+	
 		// Generated types
-		var result =
-			if (type instanceof GeneratedType) {
-				val generator = registry.getGenerator(type);
-				val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));
-				val result = stmt.trace;
-				result.children += generator.generateVariableDeclaration(inferenceResult, stmt);
-				if (initialization instanceof NewInstanceExpression) {
-					result.children += generator.generateNewInstance(typeSpec, initialization);
-				} else if (initialization instanceof ArrayAccessExpression) {
-					val op = AssignmentOperator.ASSIGN;
-					result.children += generator.generateExpression(typeSpec, stmt, op, initialization);
-				}
-				result
-			// Exception base variable
-			} else if (stmt instanceof ExceptionBaseVariableDeclaration) {
-				codeFragmentProvider.create('''
-					«exceptionGenerator.exceptionType» «stmt.name» = NO_EXCEPTION;
-					«IF stmt.needsReturnFromTryCatch»
-						bool returnFromWithinTryCatch = false;
-					«ENDIF»
-					
-				''').addHeader('stdbool.h', true)
-
-			// Assignment from functions
+		var IGeneratorNode result = null;
+		if (type instanceof GeneratedType) {
+			val generator = registry.getGenerator(type);
+			val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));
+			var result2 = stmt.trace;
+			result2.children += generator.generateVariableDeclaration(inferenceResult, stmt);
+			if (initialization instanceof NewInstanceExpression) {
+				result2.children += generator.generateNewInstance(typeSpec, initialization);
+			} else if (initialization instanceof ArrayAccessExpression) {
+				val op = AssignmentOperator.ASSIGN;
+				result2.children += generator.generateExpression(typeSpec, stmt, op, initialization);
 			} else if (initialization instanceof ElementReferenceExpression) {
-				val reference = initialization.reference;
-				if (reference instanceof FunctionDefinition) {
-					codeFragmentProvider.create('''
-						«inferenceResult.ctype» «stmt.name»;
-						«generateFunctionCall(reference, codeFragmentProvider.create('''&«stmt.name»'''), initialization)»
-					''')
-				} else if (reference instanceof GeneratedFunctionDefinition) {
-					codeFragmentProvider.create('''
-						«inferenceResult.ctype» «stmt.name»;
-						«registry.getGenerator(reference).generate(initialization, stmt.name).noTerminator»;
-					''')
-				} else if(reference instanceof NativeFunctionDefinition) {
-					if(reference.checked) {
-						codeFragmentProvider.create('''
-						«inferenceResult.ctype» «stmt.name»;
-						«reference.generateNativeFunctionCallChecked(codeFragmentProvider.create('''&«stmt.name»'''), initialization)»
-						''')
-					}
-					else {
-						codeFragmentProvider.create('''
-						«inferenceResult.ctype» «stmt.name» = «reference.generateNativeFunctionCallUnchecked(initialization)»;''')
-					}
+				if(initialization.isOperationCall) {
+					result2.children += generateFunCallStmt(stmt.name, inferenceResult, initialization);
 				}
 			}
+			result = result2;
+		// Exception base variable
+		} else if (stmt instanceof ExceptionBaseVariableDeclaration) {
+			result = codeFragmentProvider.create('''
+				«exceptionGenerator.exceptionType» «stmt.name» = NO_EXCEPTION;
+				«IF stmt.needsReturnFromTryCatch»
+					bool returnFromWithinTryCatch = false;
+				«ENDIF»
+				
+			''').addHeader('stdbool.h', true)
+
+		// Assignment from functions
+		} else if (initialization instanceof ElementReferenceExpression) {
+			var result2 = stmt.trace;
+			result2.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
+			val funCall = generateFunCallStmt(stmt.name, inferenceResult, initialization);
+			result2.children += funCall;
+			if(funCall !== null) {
+				result = result2;	
+			}
+		}
 
 		// DEFAULT case
 		if (result === null) {

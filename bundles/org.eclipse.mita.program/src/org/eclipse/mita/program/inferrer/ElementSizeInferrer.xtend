@@ -209,9 +209,16 @@ class ElementSizeInferrer {
 			// it's a generated type, so we must load the inferrer
 			var ElementSizeInferrer inferrer = null;
 			
-			if (obj instanceof FeatureCall) {
-				// if its a platform component, the component specifies its own inferrer
-				val instance = obj.owner;
+			// if its a platform component, the component specifies its own inferrer
+			val instance = if(obj instanceof ElementReferenceExpression) {
+				if(obj.isOperationCall && obj.arguments.size > 0) {
+					obj.arguments.head.value; 
+				}
+			}
+			else if (obj instanceof FeatureCall) {
+				obj.owner;
+			}
+			if(instance !== null) {
 				if(instance instanceof FeatureCall) {
 					val resourceRef = instance.owner;
 					if(resourceRef instanceof ElementReferenceExpression) {
