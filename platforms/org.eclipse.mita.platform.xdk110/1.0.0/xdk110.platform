@@ -387,14 +387,24 @@ connectivity named-singleton WLAN {
 
     /**
      * The pre-shared key of the WLAN we're connecting to. Note that this
-     * setting implies WPA2-PSK as authentication method. At this moment
-     * the WLAN connectivity does not support enterprise WLAN.
+     * setting implies WPA2-PSK as authentication method.
      */
     required configuration-item psk : string
     
-    required configuration-item enterprise : bool //todo add doc
-    configuration-item IsHostPgmEnabled : bool //todo add doc
-    configuration-item  Username : string //todo add doc
+    /**
+     * If true we'll establish enterprise WLAN connectivity. If false, personal WLAN connectivity.
+     */    
+    required configuration-item enterprise : bool
+    
+    /**
+     * If true certificate will be uploaded for WiFi chip.
+     */
+    configuration-item IsHostPgmEnabled : bool
+    
+    /**
+     * The username of the WLAN network we want to connect to.
+     */    
+    configuration-item  Username : string
     /**
      * If true we'll attempt to configure the wireless interface using DHCP and
      * all static settings will be ignored. If false, the static settings have to
@@ -433,7 +443,6 @@ connectivity named-singleton WLAN {
      * is recommended.
      */
     configuration-item staticMask : string
-    
 }
 
 exception MqttException;
