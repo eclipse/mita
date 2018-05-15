@@ -31,6 +31,7 @@ class WlanValidator implements IResourceValidator {
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		if(context instanceof SystemResourceSetup) {
 			validateNetworkConfig(context, acceptor);
+			validateEnterprise(context, acceptor);
 		}
 	}
 	
@@ -69,4 +70,23 @@ class WlanValidator implements IResourceValidator {
 		
 	}
 	
+	protected def validateEnterprise(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
+		val enterpriseConfigItem = setup.configurationItemValues.findFirst[ it.item.name == "enterprise" ];
+		val useEnterprise = if(enterpriseConfigItem === null) {
+			true
+		} else {
+			StaticValueInferrer.infer(enterpriseConfigItem.value, []) as Boolean;
+		}
+		
+		if(useEnterprise) {
+			val enterpriseHost = setup.configurationItemValues.findFirst[ it.item.name == "IsHostPgmEnabled" ];
+			if(enterpriseHost === null) {
+				acceptor.acceptError("With enterprise set true, IsHostPgmEnabled must be configured", setup, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, "network_IsHostPgmEnabled_not_conf");
+			}
+			val userName = setup.configurationItemValues.findFirst[ it.item.name == "userName" ];
+			if(userName === null) {
+				acceptor.acceptError("With enterprise set true, userName must be configured", setup, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, "network_userName_not_conf");
+			}
+		}
+	}
 }

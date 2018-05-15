@@ -404,7 +404,7 @@ connectivity named-singleton WLAN {
     /**
      * The username of the WLAN network we want to connect to.
      */    
-    configuration-item  Username : string
+    configuration-item  userName : string
     /**
      * If true we'll attempt to configure the wireless interface using DHCP and
      * all static settings will be ignored. If false, the static settings have to
