@@ -69,16 +69,22 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	
 		«IF configuration.getBoolean("enterprise")»
 		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to enterprise network: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
-		«IF configuration.getBoolean("IsHostPgmEnabled")»
+		«IF configuration.getBoolean("isHostPgmEnabled")»
 		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to enterprise network with host programming")»
 		retcode = WLANHostPgm_Enable();
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
+
 		/* disable server authentication */
 		unsigned char pValues;
 		pValues = 0; //0 - Disable the server authentication | 1 - Enable (this is the default)
 		if (0U != sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID, 19, 1, &pValues))
 		{
-		    return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_WLAN_SL_SET_FAILED);
+			return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_WLAN_SL_SET_FAILED);
 		}
+
 		/* Passing NULL as onConnection callback (last parameter) makes this a blocking call, i.e. the
 		 * WlanConnect_EnterpriseWPA function will return only once a connection to the WLAN has been established,
 		 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass

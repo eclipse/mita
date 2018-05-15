@@ -77,11 +77,11 @@ class WlanValidator implements IResourceValidator {
 		} else {
 			StaticValueInferrer.infer(enterpriseConfigItem.value, []) as Boolean;
 		}
-		
+
 		if(useEnterprise) {
-			val enterpriseHost = setup.configurationItemValues.findFirst[ it.item.name == "IsHostPgmEnabled" ];
+			val enterpriseHost = setup.configurationItemValues.findFirst[ it.item.name == "isHostPgmEnabled" ];
 			if(enterpriseHost === null) {
-				acceptor.acceptError("With enterprise set true, IsHostPgmEnabled must be configured", setup, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, "network_IsHostPgmEnabled_not_conf");
+				acceptor.acceptError("With enterprise set true, isHostPgmEnabled must be configured", setup, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, "network_IsHostPgmEnabled_not_conf");
 			}
 			val userName = setup.configurationItemValues.findFirst[ it.item.name == "userName" ];
 			if(userName === null) {

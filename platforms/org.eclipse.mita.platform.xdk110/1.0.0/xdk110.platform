@@ -401,7 +401,7 @@ connectivity named-singleton WLAN {
      * Make sure to update service pack of the WiFi and then upload the certificate.
      * Certificate must placed under XDK110/common/certs/XDKDummy.
      */
-    configuration-item IsHostPgmEnabled : bool
+    configuration-item isHostPgmEnabled : bool
     
     /**
      * The username of the WLAN network we want to connect to.
