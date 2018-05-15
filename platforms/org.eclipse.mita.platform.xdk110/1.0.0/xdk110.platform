@@ -333,7 +333,7 @@ connectivity named-singleton BLE {
 	/**
 	 * BLE peripheral service type.
 	 */
-	configuration-item Service : BLE_Service
+	required configuration-item Service : BLE_Service
 	/**
 	 * The last four bytes of the UUID of the GATT service we'll create.
 	 */
