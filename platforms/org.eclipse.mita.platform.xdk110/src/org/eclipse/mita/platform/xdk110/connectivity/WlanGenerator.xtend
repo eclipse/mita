@@ -83,11 +83,14 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		 * WlanConnect_EnterpriseWPA function will return only once a connection to the WLAN has been established,
 		 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
 		 * a callback instead of NULL. */
-
 		retcode = WlanConnect_EnterpriseWPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_Username_T) NETWORK_USERNAME, (WlanConnect_PassPhrase_T) NETWORK_PSK, NULL);
 		if(RETCODE_OK != retcode)
 		{
 			return retcode;
+		}
+		else
+		{
+			vTaskDelay(pdMS_TO_TICKS(1000));
 		}
 		«ELSE»
 		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to enterprise network without host programming")»

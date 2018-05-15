@@ -44,21 +44,6 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 		#export BCDS_CFLAGS_COMMON = 
 		
 		
-		# This variable should fully specify the build configuration of the Serval 
-		# Stack library with regards the enabled and disabled features for the HTTPS Using TLS. 
-		export SERVAL_ENABLE_TLS_CLIENT=1
-		export SERVAL_ENABLE_TLS_ECC=1
-		export SERVAL_ENABLE_TLS_PSK=0
-		export SERVAL_ENABLE_DTLS_PSK=0
-		export SERVAL_ENABLE_DTLS_ECC=1
-		export SERVAL_MAX_NUM_MESSAGES=8
-		export SERVAL_MAX_SIZE_APP_PACKET=900
-		export SERVAL_ENABLE_TLS=1
-		export EscTls_CIPHER_SUITE=TLS_RSA_WITH_AES_128_CBC_SHA
-		
-		export BCDS_SERVALSTACK_MACROS = \
-			-D SERVAL_CYCURTLS_HANDSHAKE_BUFFER_SIZE=5500
-		
 		#List all the application header file under variable BCDS_XDK_INCLUDES 
 		export BCDS_XDK_INCLUDES = \
 			-I$(BCDS_BASE_DIR)/xdk110/Libraries/BSTLib/3rd-party/bstlib/BMA2x2_driver \

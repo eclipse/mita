@@ -397,7 +397,9 @@ connectivity named-singleton WLAN {
     required configuration-item enterprise : bool
     
     /**
-     * If true certificate will be uploaded for WiFi chip.
+     * If true server certificate will be uploaded to the WiFi chip CC3100. 
+     * Make sure to update service pack of the WiFi and then upload the certificate.
+     * Certificate must placed under XDK110/common/certs/XDKDummy.
      */
     configuration-item IsHostPgmEnabled : bool
     
