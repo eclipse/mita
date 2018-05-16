@@ -36,7 +36,6 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	override generateEnable() {
 		codeFragmentProvider.create('''
 		Retcode_T retcode;
-		retcode_t servalRetcode;
 		
 		retcode = WlanConnect_Init();
 		if(RETCODE_OK != retcode)
@@ -67,18 +66,55 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 			return retcode;
 		}
 		«ENDIF»
-		
-		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
+
+		«IF configuration.getEnumerator("connection").name == "Personal"»
 		/* Passing NULL as onConnection callback (last parameter) makes this a blocking call, i.e. the
 		 * WlanConnect_WPA function will return only once a connection to the WLAN has been established,
 		 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
 		 * a callback instead of NULL. */
+		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to personal network: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
 		retcode = WlanConnect_WPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_PassPhrase_T) NETWORK_PSK, NULL);
 		if(RETCODE_OK != retcode)
 		{
 			return retcode;
 		}
+		«ELSEIF configuration.getEnumerator("connection").name == "Enterprise"»
+		«IF configuration.getBoolean("isHostPgmEnabled")»
+		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to enterprise network with host programming: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
+		retcode = WLANHostPgm_Enable();
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
+		«ELSE»
+		«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to enterprise network without host programming: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
+		«ENDIF»
 		
+		/* disable server authentication */
+		unsigned char pValues;
+		pValues = 0; //0 - Disable the server authentication | 1 - Enable (this is the default)
+		if (0U != sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID, 19, 1, &pValues))
+		{
+			return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_WLAN_SL_SET_FAILED);
+		}
+
+		/* Passing NULL as onConnection callback (last parameter) makes this a blocking call, i.e. the
+		 * WlanConnect_EnterpriseWPA function will return only once a connection to the WLAN has been established,
+		 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
+		 * a callback instead of NULL. */
+		retcode = WlanConnect_EnterpriseWPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_Username_T) NETWORK_USERNAME, (WlanConnect_PassPhrase_T) NETWORK_PSK, NULL);
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
+		else
+		{
+			vTaskDelay(pdMS_TO_TICKS(1000));
+		}
+		«ELSE»
+		«loggingGenerator.generateLogStatement(LogLevel.Info, "Invalid connection type")»
+		«ENDIF»
+
 		NetworkConfig_IpSettings_T currentIpSettings;
 		retcode = NetworkConfig_GetIpSettings(&currentIpSettings);
 		if(RETCODE_OK != retcode)
@@ -104,14 +140,18 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		return RETCODE_OK;
 		''')
 		.setPreamble('''
-		#define NETWORK_SSID "«configuration.getString("ssid")»"
+		#define NETWORK_SSID  "«configuration.getString("ssid")»"
 		#define NETWORK_PSK  "«configuration.getString("psk")»"
+		#define NETWORK_USERNAME "«configuration.getString("username")»"
 		''')
+		.addHeader('XdkCommonInfo.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
 		.addHeader('BCDS_WlanConnect.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('BCDS_NetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
+		.addHeader('WLANHostPgm.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
+		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
 	}
 	
 }
