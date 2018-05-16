@@ -21,6 +21,10 @@ import org.eclipse.mita.program.validation.IResourceValidator
 import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
+import java.util.Enumeration
+import org.eclipse.xtext.xbase.scoping.featurecalls.StaticImplicitMethodsFeatureForTypeProvider.ExtensionClassNameProvider
+import org.eclipse.xtext.serializer.sequencer.ITransientValueService.ValueTransient
+import org.yakindu.base.types.Enumerator
 
 class WlanValidator implements IResourceValidator {
 	
@@ -31,6 +35,7 @@ class WlanValidator implements IResourceValidator {
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		if(context instanceof SystemResourceSetup) {
 			validateNetworkConfig(context, acceptor);
+			validateConnectivityType(context, acceptor);
 		}
 	}
 	
@@ -69,4 +74,24 @@ class WlanValidator implements IResourceValidator {
 		
 	}
 	
+	protected def validateConnectivityType(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
+		
+		val connectivityConfigItem = setup.configurationItemValues.findFirst[x | x.item.name == 'connection'];
+		val enterpriseOrPersonal = StaticValueInferrer.infer(connectivityConfigItem.value, []);
+		if(enterpriseOrPersonal instanceof Enumerator) {
+			if(enterpriseOrPersonal.name == "Enterprise") {
+				val enterpriseHost = setup.configurationItemValues.findFirst[ it.item.name == "isHostPgmEnabled" ];
+				if(enterpriseHost === null) {
+					acceptor.acceptError("With enterprise set true, isHostPgmEnabled must be configured", connectivityConfigItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "network_IsHostPgmEnabled_not_conf");
+				}
+				val userName = setup.configurationItemValues.findFirst[ it.item.name == "userName" ];
+				if(userName === null) {
+					acceptor.acceptError("With enterprise set true, userName must be configured", connectivityConfigItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "network_userName_not_conf");
+				}
+			}	
+		}
+		else {
+			acceptor.acceptError("We should never get here", setup, null, 0, null);
+		}
+	}
 }

@@ -13,9 +13,9 @@
 
 package org.eclipse.mita.program.inferrer
 
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.emf.ecore.EObject
 import org.yakindu.base.expressions.expressions.BoolLiteral
 import org.yakindu.base.expressions.expressions.DoubleLiteral
 import org.yakindu.base.expressions.expressions.ElementReferenceExpression
@@ -25,6 +25,7 @@ import org.yakindu.base.expressions.expressions.IntLiteral
 import org.yakindu.base.expressions.expressions.NumericalUnaryExpression
 import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
 import org.yakindu.base.expressions.expressions.StringLiteral
+import org.yakindu.base.types.Enumerator
 
 /**
  * Infers the value of an expression at compile time.
@@ -51,6 +52,10 @@ class StaticValueInferrer {
 		return expression.value;
 	}
 	
+	static dispatch def Object infer(Enumerator expression, (EObject) => void inferenceBlockerAcceptor) {
+		return expression;
+	}
+		
 	static dispatch def Object infer(NumericalUnaryExpression expression, (EObject) => void inferenceBlockerAcceptor) {
 		val inner = expression.operand.infer(inferenceBlockerAcceptor);
 		if(inner === null || !(inner instanceof Integer || inner instanceof Float)) {
@@ -85,7 +90,7 @@ class StaticValueInferrer {
 			return expression.initialization?.infer(inferenceBlockerAcceptor);
 		}
 	}
-	
+		
 	static dispatch def Object infer(ValueRange expression, (EObject) => void inferenceBlockerAcceptor) {
 		val lower = expression.lowerBound?.infer(inferenceBlockerAcceptor);
 		if(expression.lowerBound !== null && lower === null) return null;

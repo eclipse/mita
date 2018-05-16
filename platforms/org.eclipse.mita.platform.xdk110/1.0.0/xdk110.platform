@@ -529,6 +529,10 @@ sensor Button {
 	event released
 }
 
+enum ConnectivityType {
+	Personal,
+	Enterprise
+}
 /**
  * Specifies the connection to a wireless wide-area network, also refered to as WiFi. 
  */
@@ -537,17 +541,32 @@ connectivity named-singleton WLAN {
     validator "org.eclipse.mita.platform.xdk110.connectivity.WlanValidator"
 
     /**
+     * Choose personal WPA connection or Enterprise WPA connection
+     */    
+    required configuration-item connection : ConnectivityType
+
+    /**
      * The SSID of the WLAN network we want to connect to.
      */
     required configuration-item ssid : string
 
     /**
      * The pre-shared key of the WLAN we're connecting to. Note that this
-     * setting implies WPA2-PSK as authentication method. At this moment
-     * the WLAN connectivity does not support enterprise WLAN.
+     * setting implies WPA2-PSK as authentication method.
      */
     required configuration-item psk : string
-
+       
+    /**
+     * If true server certificate will be uploaded to the WiFi chip CC3100. 
+     * Make sure to update service pack of the WiFi and then upload the certificate.
+     * Certificate must placed under XDK110/common/certs/XDKDummy.
+     */
+    configuration-item isHostPgmEnabled : bool
+    
+    /**
+     * The username of the WLAN network we want to connect to.
+     */    
+    configuration-item  userName : string
     /**
      * If true we'll attempt to configure the wireless interface using DHCP and
      * all static settings will be ignored. If false, the static settings have to
@@ -586,7 +605,6 @@ connectivity named-singleton WLAN {
      * is recommended.
      */
     configuration-item staticMask : string
-
 }
 
 exception MqttException;
