@@ -476,6 +476,9 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 			if (ref instanceof StructureType) {
 				return InferenceResult.from(ref);
 			}
+			else if(ref instanceof SumAlternative) {
+				return InferenceResult.from(ref.eContainer as SumType);
+			}
 			return super.doInfer(e);
 		}
 		return super.doInfer(e)

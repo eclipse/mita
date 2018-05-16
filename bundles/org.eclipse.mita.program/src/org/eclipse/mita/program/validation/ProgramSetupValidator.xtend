@@ -26,6 +26,8 @@ import org.yakindu.base.base.BasePackage
 import org.yakindu.base.expressions.expressions.ElementReferenceExpression
 import org.yakindu.base.types.Type
 import org.yakindu.base.types.validation.TypeValidator
+import org.eclipse.mita.types.SumAlternative
+import org.eclipse.mita.types.StructureType
 
 class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	
@@ -60,7 +62,10 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 			]);
 			
 			if(itemValue instanceof ElementReferenceExpression) {
-				if(itemValue.reference instanceof Type) {
+				val ref = itemValue.reference;
+				if(ref instanceof SumAlternative || ref instanceof StructureType) {
+					/* do nothing, it's ok */
+				} else if(ref instanceof Type) {
 					error(String.format("Value has to be an instance of '%s'", configItemType), value,
 						ProgramPackage.eINSTANCE.configurationItemValue_Value, INCOMPATIBLE_VALUE_TYPE_CODE);
 				}

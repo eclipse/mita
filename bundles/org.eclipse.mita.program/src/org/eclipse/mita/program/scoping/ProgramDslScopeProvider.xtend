@@ -16,6 +16,11 @@
  */
 package org.eclipse.mita.program.scoping
 
+import com.google.common.base.Predicate
+import com.google.inject.Inject
+import java.util.Collections
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Sensor
@@ -34,13 +39,9 @@ import org.eclipse.mita.types.AnonymousProductType
 import org.eclipse.mita.types.NamedProductType
 import org.eclipse.mita.types.Singleton
 import org.eclipse.mita.types.StructureType
+import org.eclipse.mita.types.SumAlternative
 import org.eclipse.mita.types.SumType
 import org.eclipse.mita.types.scoping.TypesGlobalScopeProvider
-import com.google.common.base.Predicate
-import com.google.inject.Inject
-import java.util.Collections
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.EReference
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.IQualifiedNameConverter
 import org.eclipse.xtext.naming.IQualifiedNameProvider
@@ -52,6 +53,7 @@ import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
+import org.eclipse.xtext.util.OnChangeEvictingCache
 import org.yakindu.base.expressions.expressions.Argument
 import org.yakindu.base.expressions.expressions.ElementReferenceExpression
 import org.yakindu.base.expressions.expressions.Expression
@@ -63,7 +65,6 @@ import org.yakindu.base.types.Operation
 import org.yakindu.base.types.Type
 import org.yakindu.base.types.TypesPackage
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -164,47 +165,58 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	def protected IScope getCandidateParameterScope(EObject context, String crossRefString) {
+		return getCandidateParameterScope(context, crossRefString, delegate.getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE));
+	}
+	
+	def protected IScope getCandidateParameterScope(IScope globalScope, SumType superType, SumAlternative subType, String constructor) {
 		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
-		val globalScope = delegate.getScope(context, ref);
+		if (subType instanceof Singleton) {
+			return IScope.NULLSCOPE;
+		}
+		if (subType instanceof NamedProductType) {
+			if (!subType.eIsProxy) {
+				return Scopes.scopeFor(subType.parameters);
+			} else {
+				val name = superType.name + "." + constructor
+				val qName = fqnConverter.toQualifiedName(name)
+				return new ImportScope(#[new ImportNormalizer(qName, true, false)], globalScope, null,
+					ref.EReferenceType, false) as IScope;
+			}
+		} else if (subType instanceof AnonymousProductType) {
+			if (!subType.eIsProxy) {
+				if (subType.typeSpecifiers.length == 1) {
+					val maybeSType = subType.typeSpecifiers.head;
+					if (!maybeSType.eIsProxy && maybeSType.type instanceof StructureType) {
+						val sType = maybeSType.type as StructureType;
+						return Scopes.scopeFor(sType.parameters);
+					}
+				} else {
+					return IScope.NULLSCOPE;
+				}
+			} else {
+				val name = superType.name + "." + constructor
+				val qName = fqnConverter.toQualifiedName(name)
+				return new ImportScope(#[new ImportNormalizer(qName, true, false)], globalScope, null,
+					ref.EReferenceType, false) as IScope;
+
+			}
+		}
+	}
+	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, IScope globalScope) {
+		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
 		val qualifiedLinkName = fqnConverter.toQualifiedName(crossRefString)
+		
 
 		if (context instanceof FeatureCall) {
 			if (context.owner instanceof ElementReferenceExpression) {
 				val owner = context.owner as ElementReferenceExpression;
-				if (owner.reference instanceof SumType) {
+				val reference = owner.reference;
+				if (reference instanceof SumType) {
 					val feature = context.feature;
-
-					if (feature instanceof Singleton) {
-						return IScope.NULLSCOPE;
+					if(feature instanceof SumAlternative) {
+						return getCandidateParameterScope(globalScope, reference, feature, crossRefString);
 					}
-					if (feature instanceof NamedProductType) {
-						if (!feature.eIsProxy) {
-							return Scopes.scopeFor(feature.parameters);
-						} else {
-							val name = (owner.reference as SumType).name + "." + crossRefString
-							val qName = fqnConverter.toQualifiedName(name)
-							return new ImportScope(#[new ImportNormalizer(qName, true, false)], globalScope, null,
-								ref.EReferenceType, false) as IScope;
-						}
-					} else if (feature instanceof AnonymousProductType) {
-						if (!feature.eIsProxy) {
-							if (feature.typeSpecifiers.length == 1) {
-								val maybeSType = feature.typeSpecifiers.head;
-								if (!maybeSType.eIsProxy && maybeSType.type instanceof StructureType) {
-									val sType = maybeSType.type as StructureType;
-									return Scopes.scopeFor(sType.parameters);
-								}
-							} else {
-								return IScope.NULLSCOPE;
-							}
-						} else {
-							val name = (owner.reference as SumType).name + "." + crossRefString
-							val qName = fqnConverter.toQualifiedName(name)
-							return new ImportScope(#[new ImportNormalizer(qName, true, false)], globalScope, null,
-								ref.EReferenceType, false) as IScope;
-
-						}
-					}
+					
 				}
 			}
 		}
@@ -435,9 +447,27 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 		if (itemType instanceof EnumerationType) {
 			return filteredEnumeratorScope(originalScope, itemType);
+		} else if(itemType instanceof SumType) {
+			return filteredSumTypeScope(originalScope, itemType);
+		} else if(itemType instanceof SumAlternative) {
+			return originalScope
 		} else {
 			return originalScope;
 		}
+	}
+	
+	def filteredSumTypeScope(IScope originalScope, SumType itemType) {
+		val itemTypeName = qualifiedNameProvider.getFullyQualifiedName(itemType);
+		val normalizer = new ImportNormalizer(itemTypeName, true, false);
+		val delegate = new ImportScope(Collections.singletonList(normalizer), originalScope, null,
+			TypesPackage.Literals.COMPLEX_TYPE, false);
+		return new FilteringScope(delegate, [
+			(
+				   org.eclipse.mita.types.TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(it.EClass) 
+				|| org.eclipse.mita.types.TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(it.EClass) 
+				|| org.eclipse.mita.types.TypesPackage.Literals.SINGLETON.isSuperTypeOf(it.EClass) 
+			) && it.name.segmentCount == 1
+		])	
 	}
 
 	def filteredEnumeratorScope(IScope originalScope, EnumerationType itemType) {
@@ -468,8 +498,68 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				val result = Scopes.scopeFor(container.parameters, originalScope)
 				return result
 			}
+			else if(container instanceof NamedProductType) {
+				val result = Scopes.scopeFor(container.parameters, originalScope)
+				return result
+			}
+			else if(container instanceof AnonymousProductType) {
+				if(container.typeSpecifiers.length == 1) {
+					val mbStruct = container.typeSpecifiers.head?.type;
+					if(mbStruct instanceof StructureType) {
+						return Scopes.scopeFor(mbStruct.parameters);
+					}
+				}
+			}
 		}
 		return originalScope;
+	}
+
+	dispatch def IScope scopeInSetupBlock(ElementReferenceExpression context, EReference reference) {
+		
+		// Erefs should only be constructors.
+		val ref = context.eGet(ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE, false) as EObject;
+		if(ref.eIsProxy){
+			val container = context.eContainer;
+			if (container !== null && container != context) {
+				if(container instanceof ConfigurationItemValue) {
+					val confItem = container.item;
+					val typ = confItem.type;
+					if(typ instanceof SumType) {
+						return Scopes.scopeFor(typ.alternatives);
+					} else if(typ instanceof StructureType) {
+						return Scopes.scopeFor(#[typ]);
+					}
+				}
+				return scopeInSetupBlock(container, reference);
+			} else {
+				return IScope.NULLSCOPE;
+			}
+		}
+		else {
+			if(ref instanceof SumAlternative) {
+				if(reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
+					if(ref instanceof NamedProductType) {
+						return Scopes.scopeFor(ref.parameters);
+					}
+					if(ref instanceof AnonymousProductType) {
+						if(ref.typeSpecifiers.length == 1) {
+							val mbStruct = ref.typeSpecifiers.head.type;
+							if(mbStruct instanceof StructureType) {
+								return Scopes.scopeFor(mbStruct.parameters);
+							}
+						}
+					}
+					return IScope.NULLSCOPE;
+				}
+				return Scopes.scopeFor(#[ref]);
+			}
+			val container = context.eContainer;
+			if (container !== null && container != context) {
+				return scopeInSetupBlock(container, reference);
+			} else {
+				return IScope.NULLSCOPE;
+			}
+		}
 	}
 
 	dispatch def IScope scopeInSetupBlock(EObject context, EReference reference) {
@@ -539,7 +629,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				context instanceof SystemResourceSetup) {
 				scope_ConfigurationItemValue_item(context as SystemResourceSetup, reference);
 			} else {
-//			val methodName = "scope_" + reference.getEContainingClass().getName() + "_" + reference.getName();
+//				val methodName = "scope_" + reference.getEContainingClass().getName() + "_" + reference.getName();
 //			println(methodName);
 				super.getScope(context, reference);
 			}
