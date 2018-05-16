@@ -325,13 +325,20 @@ connectivity named-singleton BLE {
 	/**
 	 * Boolean representing if the MAC address is to be configured
 	 */
-	configuration-item IsMacAddrConfigured : bool
+	configuration-item isMACAddrConfigured : bool
 	/**
-	 * MAC Address to be configured. Unused if IsMacAddrConfigured is false
+	 * MAC Address to be configured. Unused if isMacAddrConfigured is false
 	 */
-	configuration-item MacAddr : uint64
+	configuration-item MACAddr : uint64
 	/**
 	 * BLE peripheral service type.
+	 * The following services are supported
+	 * - BLE_BCDS_BIDIRECTIONAL_SERVICE 
+	 *   The Bi-Directional Service is a set of custom services that provides a raw byte array payload communication.
+     * - BLE_XDK_SENSOR_SERVICES
+     *	 The Sensor Services is a set of custom services, that provides a raw byte array payload communication as well as several sensor data services
+     * - BLE_USER_CUSTOM_SERVICE
+     *   User can define their own services and communicate.
 	 */
 	required configuration-item Service : BLE_Service
 	/**

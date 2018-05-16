@@ -83,6 +83,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		        {
 		            retcode = BlePeripheral_SetDeviceName((uint8_t*) _BLE_DEVICE_NAME);
 		        }
+		        «IF configuration.getBoolean("IsMacAddrConfigured") == true»
 		        if (RETCODE_OK == retcode)
 		        {
 		            if (IsMacAddrConfigured == true)
@@ -90,6 +91,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		                retcode = BlePeripheral_SetMacAddress(_BLE_MAC_ADDRESS);
 		            }
 		        }
+		        «ENDIF»
 		    return retcode;
 
 		''')

@@ -50,14 +50,14 @@ class BleValidator implements IResourceValidator {
 
     protected def validateServiceType(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
 
-		val ServiceConfigItem = setup.configurationItemValues.findFirst[x|x.item.name == 'Service'];
-		val CustomService = StaticValueInferrer.infer(ServiceConfigItem.value, []);
-		if (CustomService instanceof Enumerator) {
-			if (CustomService.name == "BLE_USER_CUSTOM_SERVICE") {
+		val serviceConfigItem = setup.configurationItemValues.findFirst[x|x.item.name == 'Service'];
+		val customService = StaticValueInferrer.infer(serviceConfigItem.value, []);
+		if (customService instanceof Enumerator) {
+			if (customService.name == "BLE_USER_CUSTOM_SERVICE") {
 				val customcharacteristic = setup.configurationItemValues.findFirst[it.item.name == "serviceUID"];
 				if (customcharacteristic === null) {
 					acceptor.acceptError("With custom service, serviceUID needs to be enabled",
-						ServiceConfigItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0,
+						serviceConfigItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0,
 						"serviceUID_not_conf");
 				}
 			}
