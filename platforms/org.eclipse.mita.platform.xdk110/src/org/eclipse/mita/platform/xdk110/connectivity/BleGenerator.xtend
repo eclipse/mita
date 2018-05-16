@@ -45,7 +45,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		val deviceName = configuration.getString('deviceName') ?: baseName;
 		val serviceUid = configuration.getInteger('serviceUID') ?: baseName.hashCode;
 		val IsMacAddrConfigured = configuration.getBoolean('IsMacAddrConfigured');
-		val MacAddr = configuration.getInteger('MacAddr');
+		val MacAddr = configuration.getInteger('MacAddr') ?: 0 ;
 		val Service = configuration.getEnumerator("Service");
 		
 		
@@ -124,11 +124,11 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static uint8_t «baseName»ServiceUid[ATTPDU_SIZEOF_128_BIT_UUID] = { 0x66, 0x9A, 0x0C, 0x20, 0x00, 0x08, 0xF8, 0x82, 0xE4, 0x11, 0x66, 0x71, «FOR i : ByteBuffer.allocate(4).putInt(serviceUid).array() SEPARATOR ', '»0x«Integer.toHexString(i.bitwiseAnd(0xFF)).toUpperCase»«ENDFOR» };
 		static AttServiceAttribute «baseName»Service;
 		
-		typedef enum {
+		enum «baseName»_E{
 		«FOR signalInstance : setup?.signalInstances»
-			«signalInstance.name»_e,
+			«baseName»_«signalInstance.name»,
 		«ENDFOR»
-		} instances_enum;
+		} ;
 		
 		«FOR signalInstance : setup?.signalInstances»
 		/* «signalInstance.name» characteristic */
@@ -148,7 +148,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 			Retcode_T retcode = RETCODE_OK;
 			if (pdTRUE == xSemaphoreTake(BleSendGuardMutex, pdMS_TO_TICKS(BLE_EVENT_SYNC_TIMEOUT)))
 			{
-				if (BLE_IsConnected == true)
+				if (BleIsConnected == true)
 				{
 				 	BleSendStatus = RETCODE_OK;
 				    /* This is a dummy take. In case of any callback received
@@ -170,7 +170,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 					«ELSEIF configuration.getEnumerator("Service").name == "BLE_XDK_SENSOR_SERVICES"»
 						retcode = SensorServices_SendData(dataToSend, dataToSendLen, (Ble_SensorServicesInfo_T *) param);
 						if (RETCODE_OK == retcode)
-					 	{a
+					 	{
 							if (pdTRUE != xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(timeout)))
 								{
 									retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_SEND_FAILED);
@@ -182,15 +182,14 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 						}
 					«ELSE»
 				      // tell the world via BLE
-				      Retcode_T retcode = RETCODE_OK;
 				      «FOR signalInstance : setup?.signalInstances»
-				      if(param == «signalInstance.name»_e)
+				      if((enum «baseName»_E)param == «baseName»_«signalInstance.name»)
 				      {
 				      	ATT_SERVER_SecureDatabaseAccess();
 				      	AttStatus status = ATT_SERVER_WriteAttributeValue(
 				      	&«baseName»«signalInstance.name.toFirstUpper»Attribute,
-				      	(uint8_t*) &«baseName»«signalInstance.name.toFirstUpper»Value,
-				      	«signalInstance.contentLength»
+				      	dataToSend,
+				      	dataToSendLen
 				      	);
 				      	if (status == BLESTATUS_SUCCESS) /* send notification */
 				      	{
@@ -209,6 +208,10 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				      		}
 				      	}
 				      	ATT_SERVER_ReleaseDatabaseAccess();
+				      	if (pdTRUE != xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(timeout)))
+				      	{
+				      		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
+				      	}
 				      }
 				      «ENDFOR»		
 					«ENDIF»
@@ -230,7 +233,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				 retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 			}
 			return retcode;
-		
+		}
 		''')
 	}
 	
@@ -461,14 +464,15 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		val baseName = setup.baseName
 		
 		codeFragmentProvider.create('''
+		Retcode_T retcode = RETCODE_OK;
 		if(«resultName» == NULL)
 		{
-			return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
+			retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 		}
-		«component.baseName»_SendData(«baseName»«signalInstance.name.toFirstUpper»Value,«resultName»,sizeof(«resultName»),«signalInstance.name»_e,1000);
-		// set the new value
-		memcpy(&«baseName»«signalInstance.name.toFirstUpper»Value, «resultName», sizeof(«resultName»));
-		
+		else
+		{
+			retcode = «component.baseName»_SendData((uint8_t *)«resultName»,sizeof(«resultName»),(void*)«baseName»_«signalInstance.name»,1000);
+		}
 		return retcode;
 		''')
 	}
