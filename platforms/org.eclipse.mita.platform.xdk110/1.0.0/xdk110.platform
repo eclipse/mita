@@ -343,8 +343,6 @@ connectivity named-singleton BLE {
 	 * The advertising interval in milliseconds.
 	 */
 	configuration-item advertisingInterval : int16 = 1000
-	
-	
 	/**
 	 * Creates a boolean GATT characteristic.
 	 * 

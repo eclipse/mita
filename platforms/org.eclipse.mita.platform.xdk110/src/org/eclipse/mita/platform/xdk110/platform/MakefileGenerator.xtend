@@ -48,7 +48,8 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 			-I$(BCDS_BASE_DIR)/xdk110/Libraries/BSTLib/3rd-party/bstlib/BMA2x2_driver \
 			-I$(BCDS_APP_SOURCE_DIR) \
 			-I$(BCDS_APP_SOURCE_DIR)/.. \
-			-I$(BCDS_APP_SOURCE_DIR)/base
+			-I$(BCDS_APP_SOURCE_DIR)/base \
+			-I$(BCDS_BASE_DIR)/xdk110/Common/include
 			
 		#List all the application source file under variable BCDS_XDK_APP_SOURCE_FILES in a similar pattern as below
 		export BCDS_XDK_APP_SOURCE_FILES = \

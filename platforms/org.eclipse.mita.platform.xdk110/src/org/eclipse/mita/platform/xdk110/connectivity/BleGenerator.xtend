@@ -45,8 +45,9 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		val deviceName = configuration.getString('deviceName') ?: baseName;
 		val serviceUid = configuration.getInteger('serviceUID') ?: baseName.hashCode;
 		val IsMacAddrConfigured = configuration.getBoolean('IsMacAddrConfigured');
-		val MacAddr = configuration.getInteger('MacAddr') ?: 0;
+		val MacAddr = configuration.getInteger('MacAddr');
 		val Service = configuration.getEnumerator("Service");
+		
 		
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
@@ -63,7 +64,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		                retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 		                vSemaphoreDelete(BleEventSignal);
 		            }
-		        }
+		        }  
 		        if (RETCODE_OK == retcode)
 		        {
 		            BleSendGuardMutex = xSemaphoreCreateMutex();
@@ -123,6 +124,12 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static uint8_t «baseName»ServiceUid[ATTPDU_SIZEOF_128_BIT_UUID] = { 0x66, 0x9A, 0x0C, 0x20, 0x00, 0x08, 0xF8, 0x82, 0xE4, 0x11, 0x66, 0x71, «FOR i : ByteBuffer.allocate(4).putInt(serviceUid).array() SEPARATOR ', '»0x«Integer.toHexString(i.bitwiseAnd(0xFF)).toUpperCase»«ENDFOR» };
 		static AttServiceAttribute «baseName»Service;
 		
+		typedef enum {
+		«FOR signalInstance : setup?.signalInstances»
+			«signalInstance.name»_e,
+		«ENDFOR»
+		} instances_enum;
+		
 		«FOR signalInstance : setup?.signalInstances»
 		/* «signalInstance.name» characteristic */
 		static Att16BitCharacteristicAttribute «baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute;
@@ -177,9 +184,11 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				      // tell the world via BLE
 				      Retcode_T retcode = RETCODE_OK;
 				      «FOR signalInstance : setup?.signalInstances»
-				      ATT_SERVER_SecureDatabaseAccess();
-				      AttStatus status = ATT_SERVER_WriteAttributeValue(
-				      &«baseName»«signalInstance.name.toFirstUpper»Attribute,
+				      if(param == «signalInstance.name»_e)
+				      {
+				      	ATT_SERVER_SecureDatabaseAccess();
+				      	AttStatus status = ATT_SERVER_WriteAttributeValue(
+				      	&«baseName»«signalInstance.name.toFirstUpper»Attribute,
 				      	(uint8_t*) &«baseName»«signalInstance.name.toFirstUpper»Value,
 				      	«signalInstance.contentLength»
 				      	);
@@ -189,17 +198,18 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				      		/* BLESTATUS_SUCCESS and BLESTATUS_PENDING are fine */
 				      		if ((status == BLESTATUS_FAILED) || (status == BLESTATUS_INVALID_PARMS))
 				      		{
-				      		    retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_SEND_NOTIFICATION_FAILED);
+				      		 	retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_SEND_NOTIFICATION_FAILED);
 				      		}
 				      	}
 				      	else
 				      	{
 				      		if (BLESTATUS_SUCCESS != status)
-				      			{
-				      				retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_WRITE_ATT_VALUE_FAILED);
-				      			}
+				      		{
+				      			retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_WRITE_ATT_VALUE_FAILED);
+				      		}
 				      	}
 				      	ATT_SERVER_ReleaseDatabaseAccess();
+				      }
 				      «ENDFOR»		
 					«ENDIF»
 					
@@ -333,7 +343,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				            retcode = BleDeviceInformationService_Register();
 				        }
 
-				 «ELSEIF configuration.getEnumerator("Service").name == "BLE_USER_CUSTOM_SERVICE"»
+				«ELSEIF configuration.getEnumerator("Service").name == "BLE_USER_CUSTOM_SERVICE"»
 				    	// register service we'll connect our characteristics to
 				    	ATT_SERVER_SecureDatabaseAccess();
 				    	AttStatus registerStatus = ATT_SERVER_RegisterServiceAttribute(
@@ -372,11 +382,11 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				    		ATT_SERVER_ReleaseDatabaseAccess();
 				    					
 				    	«ENDFOR»
-				 «ELSE»
+				«ELSE»
 				        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_INVALID_SERVICE_IS_SETUP);
 
 				«ENDIF»
-				    return (retcode);
+			 return (retcode);
 			}
 
 		''')
@@ -455,7 +465,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		{
 			return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 		}
-		«component.baseName»_SendData(«baseName»«signalInstance.name.toFirstUpper»Value,«resultName»,sizeof(«resultName»))
+		«component.baseName»_SendData(«baseName»«signalInstance.name.toFirstUpper»Value,«resultName»,sizeof(«resultName»),«signalInstance.name»_e,1000);
 		// set the new value
 		memcpy(&«baseName»«signalInstance.name.toFirstUpper»Value, «resultName», sizeof(«resultName»));
 		
