@@ -37,6 +37,7 @@ import org.yakindu.base.expressions.expressions.ElementReferenceExpression
 import org.yakindu.base.expressions.expressions.FeatureCall
 import org.yakindu.base.types.validation.IValidationIssueAcceptor
 import org.yakindu.base.types.validation.TypeValidator
+import org.eclipse.mita.program.model.ModelUtils
 
 class SumTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {
 	
@@ -123,15 +124,16 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 			}
 			
 			if(ref instanceof NamedProductType) {
-				for(var i = 0; i < ref.parameters.length; i++) {
-					val sField = ref.parameters.get(i);
-					val sArg = arguments.get(i).value;
+				var argsSorted = ModelUtils.getSortedArguments(ref.parameters, arguments);
+
+				for(arg_type: ModelUtils.zip(argsSorted, realArgs)) {
+					val sArg = arg_type.key.value;
+					val sField = arg_type.value;
 					val t1 = inferrer.infer(sField, this);
 					val t2 = inferrer.infer(sArg, this);
 					validator.assertAssignable(t1, t2,
-					
-					// message says t2 can't be assigned to t1, --> invert in format
-					String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
+						// message says t2 can't be assigned to t1, --> invert in format
+						String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
 				}
 			}
 			else if(ref instanceof AnonymousProductType) {
@@ -144,15 +146,28 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 					error(String.format(PlatformDSLValidator.ERROR_WRONG_NUMBER_OF_ARGUMENTS_MSG, realTypeSpecifiers.map[it.type].toString), obj, null);
 					return;
 				}
-				for(var i = 0; i < realTypeSpecifiers.length; i++) {
-					val sField = realTypeSpecifiers.get(i);
-					val sArg = arguments.get(i).value;
-					val t1 = inferrer.infer(sField, this);
-					val t2 = inferrer.infer(sArg, this);
-					validator.assertAssignable(t1, t2,
-					
-					// message says t2 can't be assigned to t1, --> invert in format
-					String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
+				if(realType instanceof StructureType) {
+					var argsSorted = ModelUtils.getSortedArguments(realType.parameters, arguments);
+					for(arg_type: ModelUtils.zip(argsSorted, realArgs)) {
+						val sArg = arg_type.key.value;
+						val sField = arg_type.value;
+						val t1 = inferrer.infer(sField, this);
+						val t2 = inferrer.infer(sArg, this);
+						validator.assertAssignable(t1, t2,
+							// message says t2 can't be assigned to t1, --> invert in format
+							String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
+					}
+				}
+				else {
+					for(var i = 0; i < realTypeSpecifiers.length; i++) {
+						val sField = realTypeSpecifiers.get(i);
+						val sArg = arguments.get(i).value;
+						val t1 = inferrer.infer(sField, this);
+						val t2 = inferrer.infer(sArg, this);
+						validator.assertAssignable(t1, t2,
+							// message says t2 can't be assigned to t1, --> invert in format
+							String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
+					}
 				}
 			}
 		

@@ -6,6 +6,14 @@ enum MyConfigItemValues {
 	CFG_VAL_3
 }
 
+struct ConfigStruct {
+	var config : int32;
+}
+
+alt ConfigAlt {
+	Nothing | SomethingAnonymous : int32 | SomethingNamed : { x : int32, y : bool } | SomeStruct : ConfigStruct
+}
+
 sensor MySensor {
 	generator "org.eclipse.mita.platform.unittest.SensorGenerator"
 	//validator ""
@@ -54,6 +62,7 @@ connectivity many MyConnectivity {
 	configuration-item cfg02 : uint32
 	configuration-item cfg03 : MyConfigItemValues
 	configuration-item cfg04 : MySingletonConnectivity
+	configuration-item cfg05 : ConfigAlt
 	
 	event event00
 	event event01
