@@ -530,6 +530,11 @@ connectivity many HttpRestClient {
 	 * The part of the endpoint URL common to all requests, e.g. http://foobar.com/api/v1
 	 */
 	required configuration-item endpointBase : string
+
+	/**
+	 * isSecurityEnabled flag is set to use HTTP with security 
+	 */
+	required configuration-item isSecurityEnabled : bool
 	
 	/**
 	 * A custom header which is added to each HTTP request. Example:

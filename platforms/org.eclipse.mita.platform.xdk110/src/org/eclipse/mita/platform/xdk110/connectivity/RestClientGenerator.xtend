@@ -15,6 +15,7 @@ package org.eclipse.mita.platform.xdk110.connectivity
 
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
+import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
@@ -47,74 +48,12 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
-	
-	override generateAdditionalImplementation() {
-		// TODO: infer buffer size based on signal instance use - at the moment generators have no way of doing that
-		val httpBodyBufferSize = 512;
-		val baseUrl = new URL(configuration.getString('endpointBase'));
-		
-		codeFragmentProvider.create('''
-		/**
-		 * @brief API responsible to pass the payload to the requested URL
-		 *
-		 * @param[in] omsh_ptr This data structure is used hold the buffer and information needed by the serializer.
-		 *
-		 */
-		static retcode_t httpPayloadSerializer(OutMsgSerializationHandover_T* omsh_ptr)
-		{
-		    uint32_t offset = omsh_ptr->offset;
-		    uint32_t bytesLeft = strlen(httpBodyBuffer) - offset;
-		    uint32_t bytesToCopy = omsh_ptr->bufLen > bytesLeft ? bytesLeft : omsh_ptr->bufLen;
-		
-		    memcpy(omsh_ptr->buf_ptr, httpBodyBuffer + offset, bytesToCopy);
-		    omsh_ptr->len = bytesToCopy;
-		
-		    if(bytesToCopy < bytesLeft) {
-		    	return RC_MSG_FACTORY_INCOMPLETE;
-		    } else {
-		    	return RC_OK;
-		    }
-		}
-		
-		static retcode_t httpClientResponseCallback(HttpSession_T *httpSession, Msg_T *msg_ptr, retcode_t status) 
-		{
-			responseRetcode = status;
-			responseStatusCode = HttpMsg_getStatusCode(msg_ptr);
-			xSemaphoreGive(responseReceivedSemaphore);
-			return RC_OK;
-		}
-		
-		
-		static retcode_t httpClientOnSentCallback(Callable_T *callfunc, retcode_t status) {
-			«loggingGenerator.generateLogStatement(LogLevel.Debug, "Send HTTP request %s", codeFragmentProvider.create('''(status == RC_OK ? "OK" : "FAILED")'''))»
-			return status;
-		}
-		''')
-		.setPreamble('''
-		static char httpBodyBuffer[«httpBodyBufferSize»];
-		static SemaphoreHandle_t responseReceivedSemaphore;
-		static Http_StatusCode_T responseStatusCode;
-		static retcode_t responseRetcode;
-		
-		#define «setup.baseName.toUpperCase»_TIMEOUT (20000 / portTICK_PERIOD_MS)
-		#define «setup.baseName.toUpperCase»_HOST    "«baseUrl.host»"
-		
-		static retcode_t httpPayloadSerializer(OutMsgSerializationHandover_T* omsh_ptr);
-		static retcode_t httpClientResponseCallback(HttpSession_T *httpSession, Msg_T *msg_ptr, retcode_t status);
-		static retcode_t httpClientOnSentCallback(Callable_T *callfunc, retcode_t status);
-		''')
-		.addHeader('Serval_Http.h', true)
-		.addHeader('stdio.h', true)
-		.addHeader('FreeRTOS.h', true, IncludePath.HIGH_PRIORITY)
-		.addHeader('semphr.h', true)
-	}
-	
+
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
-		val baseUrl = new URL(configuration.getString('endpointBase'));
-		
+		val baseUrl = new URL(configuration.getString("endpointBase"));
+		val url = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "endpoint"), [ ]);
 		val httpMethod = ModelUtils.getArgumentValue(signalInstance, "writeMethod").httpMethod;
 		val contentType = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "contentType"), []);
-		val url = '''«baseUrl.path»«StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, 'endpoint'), [ ])»''';
 		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
 		
 		codeFragmentProvider.create('''
@@ -126,70 +65,32 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		
 		memcpy(httpBodyBuffer, *«variableName», strlen(*«variableName»));
 		
-		retcode_t rc;
-		Ip_Address_T destAddr;
-		rc = PAL_getIpaddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
-		if (rc != RC_OK)
+		/**< HTTP rest client configuration parameters */
+		static HTTPRestClient_Config_T HTTPRestClientConfigInfo =
 		{
-			return rc;
-		}
-		
-		Msg_T* msg_ptr;
-		rc = HttpClient_initRequest(&destAddr, Ip_convertIntToPort(«port»), &msg_ptr);
-		if (rc != RC_OK || msg_ptr == NULL)
+		       .IsSecure = configuration.getBoolean("isSecurityEnabled"),
+		       .DestinationServerUrl = url,
+		       .DestinationServerPort = port,
+		       .RequestMaxDownloadSize = REQUEST_MAX_DOWNLOAD_SIZE,
+		};
+
+		/**< HTTP rest client POST parameters */
+		static HTTPRestClient_Post_T HTTPRestClientPostInfo =
 		{
-		    return rc;
-		}
-		
-		HttpMsg_setReqMethod(msg_ptr, «httpMethod»);
-		
-		rc = HttpMsg_setHost(msg_ptr, «setup.baseName.toUpperCase»_HOST);
-		if (rc != RC_OK)
-		{
-		    return rc;
-		}
-		
-		const char* url_ptr = "«url»";
-		rc = HttpMsg_setReqUrl(msg_ptr, url_ptr);
-		if (rc != RC_OK)
-		{
-		    return rc;
-		}
-		
-		HttpMsg_setContentType(msg_ptr, "«contentType»");
-		rc = Msg_prependPartFactory(msg_ptr, &httpPayloadSerializer);
-		if (rc != RC_OK) {
-			return rc;
-		}
-		
-		Callable_T sentCallable;
-		(void) Callable_assign(&sentCallable, httpClientOnSentCallback);
-		rc = HttpClient_pushRequest(msg_ptr, &sentCallable, &httpClientResponseCallback);
-		if (rc != RC_OK)
-		{
-			return rc;
-		}
-		
-		if(xSemaphoreTake(responseReceivedSemaphore, «setup.baseName.toUpperCase»_TIMEOUT) == pdTRUE)
-		{
-			if(responseRetcode != RC_OK) {
-				return EXCEPTION_HTTPREQUESTNOTOKEXCEPTION;
-			}
-			else if(responseStatusCode == Http_StatusCode_OK)
-			{
-				return RC_OK;
-			}
-			else
-			{
-				«loggingGenerator.generateLogStatement(LogLevel.Warning, "HTTP response status code was %d", codeFragmentProvider.create('''responseStatusCode'''))»
-				return EXCEPTION_HTTPREQUESTNOTOKEXCEPTION;
-			}
-		} 
-		else
-		{
-			«loggingGenerator.generateLogStatement(LogLevel.Warning, "HTTP request timed out")»
-			return EXCEPTION_TIMEOUTEXCEPTION;
-		}
+		       .Payload = POST_REQUEST_BODY, //TODO: check whether we get the payload
+		       .PayloadLength = (sizeof(POST_REQUEST_BODY) - 1U),
+		       .Url = httpMethod,
+		       .RequestCustomHeader0 = POST_REQUEST_CUSTOM_HEADER_0,
+		       .RequestCustomHeader1 = POST_REQUEST_CUSTOM_HEADER_1,
+		};
+		retcode_t rc = HTTPRestClient_Post(&HTTPRestClientConfigInfo, &HTTPRestClientPostInfo, APP_RESPONSE_FROM_HTTP_SERVER_POST_TIMEOUT); 
+		//TODO: this is post; where to get. What is the application of restclient ? 
+		// 1. for the user to post and get
+		return retcode;
+		''')
+		.setPreamble('''
+		#define APP_RESPONSE_FROM_HTTP_SERVER_POST_TIMEOUT  UINT32_C(10000)"
+		#define REQUEST_MAX_DOWNLOAD_SIZE       UINT32_C(512)
 		''')
 	}
 	
@@ -220,31 +121,66 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSetup() {
 		codeFragmentProvider.create('''
-		responseReceivedSemaphore = xSemaphoreCreateBinary();
+		static CmdProcessor_T * AppCmdProcessor;
+
+		static SNTP_Setup_T SNTPSetupInfo =
+		{
+		    .ServerUrl = SNTP_SERVER_URL,
+		    .ServerIpAddr = SNTP_SERVER_IP_ADDR,
+		    .ServerPort = SNTP_SERVER_PORT,
+		    .UseServerUrl = SNTP_USE_SERVER_URL,
+		};
+		static HTTPRestClient_Setup_T HTTPRestClientSetupInfo =
+		{
+			.IsSecure = HTTP_SECURE_ENABLE,
+		};
+
+		Retcode_T retcode = ServalPAL_Setup(AppCmdProcessor);
+		«IF configuration.getBoolean("isSecurityEnabled")»
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = SNTP_Setup(&SNTPSetupInfo);
+		}
+		«ENDIF»
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = HTTPRestClient_Setup(&HTTPRestClientSetupInfo);
+		}
+		if (RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
 		''')
 	}
 	
 	override generateEnable() {
 		codeFragmentProvider.create('''
-	    Retcode_T retcode = PAL_initialize();
-	    if (retcode != RETCODE_OK)
-	    {
-	        return retcode;
-	    }
 
-	    PAL_socketMonitorInit();
+		Retcode_T retcode = ServalPAL_Enable();
+		if (retcode != RETCODE_OK)
+		{
+		    return retcode;
+		}
+		«IF configuration.getBoolean("isSecurityEnabled")»
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = SNTP_Enable();
+		}
+		«ENDIF»
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = HTTPRestClient_Enable();
+		}
 
-	    retcode = HttpClient_initialize();
-	    if(retcode != RETCODE_OK) 
-	    {
-	    	return retcode;
-	    }
+		if (RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
 		''')
 		.addHeader("BCDS_Basics.h", true, IncludePath.HIGH_PRIORITY)
-		.addHeader('Serval_HttpClient.h', true)
-		.addHeader('Serval_Network.h', true)
-		.addHeader('PAL_socketMonitor_ih.h', true)
-		.addHeader('PAL_initialize_ih.h', true)
+		.addHeader('XDK_ServalPAL.h', true)
+		.addHeader('XDK_SNTP.h', true)
+		.addHeader('XDK_HTTPRestClient.h', true)
 	}
 	
 }
