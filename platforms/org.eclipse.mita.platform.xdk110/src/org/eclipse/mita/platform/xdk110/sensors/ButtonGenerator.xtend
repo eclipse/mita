@@ -49,7 +49,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
             void «handler.internalHandlerName»(uint32_t data)
             {
             	if(data == BSP_XDK_BUTTON_PRESS) {
-            		Retcode_T retcode = CmdProcessor_EnqueueFromIsr(&Mita_EventQueue, «handler.handlerName», NULL, data);
+            		Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «handler.handlerName», NULL, data);
                     if(retcode != RETCODE_OK)
                     {
                         Retcode_RaiseErrorFromIsr(retcode);
