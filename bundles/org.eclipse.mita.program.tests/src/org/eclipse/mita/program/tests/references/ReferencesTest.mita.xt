@@ -291,13 +291,13 @@ every 1 second {
     let m : testRef;
     let mRef = &m;
     (&m).doSomething();
-    (&mRef).doSomethingElse();
+    (&mRef).doSomething();
 }
 
 fn doSomething(msg : &testRef) {
 }
 
-fn doSomethingElse(msg : &&testRef) {
+fn doSomething(msg : &&testRef) {
 }
 
 
