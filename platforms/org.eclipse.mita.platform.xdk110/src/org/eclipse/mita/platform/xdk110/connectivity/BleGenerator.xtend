@@ -45,7 +45,6 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		val deviceName = configuration.getString('deviceName') ?: baseName;
 		val serviceUid = configuration.getInteger('serviceUID') ?: baseName.hashCode;
 		val macAddress = configuration.getString('macAddress') ?: 0 ;
-//		val service = configuration.getEnumerator("service");
 		
 		
 		codeFragmentProvider.create('''
@@ -167,33 +166,6 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				    /* This is a dummy take. In case of any callback received
 				     * after the previous timeout will be cleared here. */
 				     (void) xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(0));
-				      «IF configuration.getEnumerator("service").name == "BIDIRECTIONAL_SERVICE"»
-				       retcode = BidirectionalService_SendData(dataToSend, dataToSendLen);
-				        if (RETCODE_OK == retcode)
-				         	{
-				         		if (pdTRUE != xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(timeout)))
-				         		{
-				         		 	retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_SEND_FAILED);
-				         		}
-				         		else
-				         		{
-				         		    retcode = BleSendStatus;
-				         		}
-				         	}		
-					«ELSEIF configuration.getEnumerator("service").name == "SENSOR_SERVICES"»
-						retcode = SensorServices_SendData(dataToSend, dataToSendLen, (Ble_SensorServicesInfo_T *) param);
-						if (RETCODE_OK == retcode)
-					 	{
-							if (pdTRUE != xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(timeout)))
-								{
-									retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_SEND_FAILED);
-								}
-						}
-						else
-						{
-							 retcode = BleSendStatus;
-						}
-					«ELSE»
 				      // tell the world via BLE
 				      «FOR signalInstance : setup?.signalInstances»
 				      if((enum «baseName»_E)param == «baseName»_«signalInstance.name»)
@@ -227,7 +199,6 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				      	}
 				      }
 				      «ENDFOR»		
-					«ENDIF»
 					
 				}     
 				else
@@ -338,28 +309,6 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static Retcode_T «baseName»_ServiceRegistry(void)
 		{
 				Retcode_T retcode = RETCODE_OK;
-				«IF configuration.getEnumerator("service").name == "BIDIRECTIONAL_SERVICE"»
-				        retcode = BidirectionalService_Init(BleBcdsBidirectionalServiceDataRxCB, «baseName»_OnEvent);
-				        if (RETCODE_OK == retcode)
-				        {
-				            retcode = BidirectionalService_Register();
-				        }
-				«ELSEIF configuration.getEnumerator("service").name == "SENSOR_SERVICES"»
-				        retcode = BleDeviceInformationService_Initialize(BLESetup.CharacteristicValue);
-				        if (RETCODE_OK == retcode)
-				        {
-				            retcode = SensorServices_Init(BleXdkSensorServicesServiceDataRxCB, «baseName»_OnEvent);
-				        }
-				        if (RETCODE_OK == retcode)
-				        {
-				            retcode = SensorServices_Register();
-				        }
-				        if (RETCODE_OK == retcode)
-				        {
-				            retcode = BleDeviceInformationService_Register();
-				        }
-
-				«ELSEIF configuration.getEnumerator("service").name == "CUSTOM_SERVICE"»
 				    	// register service we'll connect our characteristics to
 				    	ATT_SERVER_SecureDatabaseAccess();
 				    	AttStatus registerStatus = ATT_SERVER_RegisterServiceAttribute(
@@ -398,10 +347,6 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				    		ATT_SERVER_ReleaseDatabaseAccess();
 				    					
 				    	«ENDFOR»
-				«ELSE»
-				        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_INVALID_SERVICE_IS_SETUP);
-
-				«ENDIF»
 			 return (retcode);
 			}
 

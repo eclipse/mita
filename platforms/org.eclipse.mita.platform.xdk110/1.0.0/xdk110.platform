@@ -464,11 +464,6 @@ sensor MAX44009 {
  * BLE is Bluetooth Low Energy using GATT profiles. 
  * At the moment we only support slave mode where the XDK becomes a device that can be connected to (as compared to connecting to some other device).
  */
-enum BLE_Service {
-    BIDIRECTIONAL_SERVICE,
-    SENSOR_SERVICES,
-    CUSTOM_SERVICE
-}
 
 connectivity named-singleton BLE {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.BleGenerator"
@@ -478,21 +473,12 @@ connectivity named-singleton BLE {
 	 * The name of the device as advertised via GAP.
 	 */
 	configuration-item deviceName : string
+	
 	/**
 	 * MAC Address to be configured.
 	 */
 	configuration-item macAddress : string
-	/**
-	 * BLE peripheral service type.
-	 * The following services are supported
-	 * - BIDIRECTIONAL_SERVICE 
-	 *   The Bi-Directional Service is a set of custom services that provides a raw byte array payload communication.
-     * - SENSOR_SERVICES
-     *	 The Sensor Services is a set of custom services, that provides a raw byte array payload communication as well as several sensor data services
-     * - CUSTOM_SERVICE
-     *   User can define their own services and communicate.
-	 */
-	configuration-item service : BLE_Service = CUSTOM_SERVICE
+
 	/**
 	 * The last four bytes of the UUID of the GATT service we'll create.
 	 */
@@ -502,6 +488,7 @@ connectivity named-singleton BLE {
 	 * The advertising interval in milliseconds.
 	 */
 	configuration-item advertisingInterval : int16 = 1000
+	
 	/**
 	 * Creates a boolean GATT characteristic.
 	 * 
