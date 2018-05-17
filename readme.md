@@ -20,5 +20,16 @@ There are two ways you can extend Mita:
 1. _Provide or extend a Mita platform_: to run Mita on a particular device, we need a `platform` which describes this device. For details of how to build such a platform, check out _platform integrator guide_.
 2. _Extend the core language itself_: Mita is a programming langauge in its infancy. If you want to help build it, please find and file bug reports, or better yet provide a PR to fix it.
 
+## Installing Mita with Oomph
+1. Download the the <a href="https://wiki.eclipse.org/Eclipse_Oomph_Installer" target="_blank">Oomph Eclipse Installer</a>
+2. Execute the installer
+3. Expand the menu on the upper right corner and select *Advanced Mode*
+4. Select *Eclipse IDE for Eclipse Comitters* on the *Product* page and click on *Next*
+5. Add the Mita Repository via the green "+" sympol. As the catalog select *Github Projects* and as the *Resource URIs* paste the following link: https://raw.githubusercontent.com/eclipse/mita/master/mita.setup
+6. Select the new *Mita* project, which will appear in *Github Projects* -> *User* -> *Mita* and continue by clicking on *Next*
+7. Choose a *Installation folder name* like "mita-master", which should be set by default and click on *Next*
+8. The setup is done. Click on *Finish* and the installation will be executed
+9. After this a new Eclipse will be started. With the initial execution some *Setup Tasks* need to be executed. You can see the progress by clicking on the double arrow symbol on the bottom right. After finishing the *Setup Tasks* your enviroment is ready to use and should contain no errors
+
 ## Get in Touch
 Please check out the [Eclipse Mita project home page](https://www.eclipse.org/mita) for details regarding our mailing list.
