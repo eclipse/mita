@@ -71,6 +71,8 @@ setup bluetoothA : MyConnectivity {
  	--- */
  	var boolC : bool = vci00(p01=true, p02=CFG_VAL_1);
  	
+ 	var boolD : bool = vci00(true, CFG_VAL_1);
+ 	
  	// XPECT errors --> "Incompatible types string and uint32." at "vci01("wrong")"
  	var boolC2 = vci01("wrong"); // compile-error: The types int16 and string compatible
  	
