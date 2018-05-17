@@ -44,9 +44,8 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		
 		val deviceName = configuration.getString('deviceName') ?: baseName;
 		val serviceUid = configuration.getInteger('serviceUID') ?: baseName.hashCode;
-		val IsMacAddrConfigured = configuration.getBoolean('IsMacAddrConfigured');
-		val MacAddr = configuration.getInteger('MacAddr') ?: 0 ;
-		val Service = configuration.getEnumerator("Service");
+		val macAddress = configuration.getString('macAddress') ?: 0 ;
+//		val service = configuration.getEnumerator("service");
 		
 		
 		codeFragmentProvider.create('''
@@ -83,15 +82,26 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		        {
 		            retcode = BlePeripheral_SetDeviceName((uint8_t*) _BLE_DEVICE_NAME);
 		        }
-		        «IF configuration.getBoolean("IsMacAddrConfigured") == true»
 		        if (RETCODE_OK == retcode)
 		        {
 		            if (IsMacAddrConfigured == true)
 		            {
-		                retcode = BlePeripheral_SetMacAddress(_BLE_MAC_ADDRESS);
+		            	char macId[] = "«macAddress»"; 
+		            	char *macIdByte;
+		            	uint8_t index = 0;
+		            	uint64_t dataInInt[6];
+		            	
+		            	macIdByte = strtok(macId, ":");
+		            	dataInInt[index++] = strtol(macIdByte, NULL, 16);
+		            	while ((NULL != macIdByte) && (index < 6))
+		            	{
+		            	    macIdByte = strtok(NULL, ":");
+		            		dataInInt[index++] = strtol(macIdByte, NULL, 16);
+		            	}
+		            	uint64_t MacIdToBeSet = (dataInInt[5]) | (dataInInt[4] << 8) | (dataInInt[3] << 16) | (dataInInt[2] << 24) | (dataInInt[1] << 32) | (dataInInt[0] << 40);
+		            	retcode = BlePeripheral_SetMacAddress(MacIdToBeSet);
 		            }
 		        }
-		        «ENDIF»
 		    return retcode;
 
 		''')
@@ -105,9 +115,10 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("semphr.h", true)
 		.addHeader("stdio.h", true)
 		.addHeader("XdkCommonInfo.h", true)
+		.addHeader("string.h", true)
+		.addHeader("stdlib.h", true)
 		.setPreamble('''
 		#define _BLE_DEVICE_NAME "«deviceName»"
-		#define _BLE_MAC_ADDRESS  «MacAddr»
 		#define BLE_EVENT_SYNC_TIMEOUT                  UINT32_C(1000)
 		static bool BleIsConnected = false;
 		/**< Handle for BLE peripheral event signal synchronization */
@@ -118,7 +129,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static SemaphoreHandle_t BleSendGuardMutex = (SemaphoreHandle_t) NULL;
 		/**< BLE peripheral event */
 		static BlePeripheral_Event_T BleEvent = BLE_PERIPHERAL_EVENT_MAX;
-		static bool IsMacAddrConfigured = «IsMacAddrConfigured»;
+		static bool IsMacAddrConfigured = true;
 		/**< BLE send status */
 		static Retcode_T BleSendStatus;
 		
@@ -156,7 +167,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				    /* This is a dummy take. In case of any callback received
 				     * after the previous timeout will be cleared here. */
 				     (void) xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(0));
-				      «IF configuration.getEnumerator("Service").name == "BLE_BCDS_BIDIRECTIONAL_SERVICE"»
+				      «IF configuration.getEnumerator("service").name == "BIDIRECTIONAL_SERVICE"»
 				       retcode = BidirectionalService_SendData(dataToSend, dataToSendLen);
 				        if (RETCODE_OK == retcode)
 				         	{
@@ -169,7 +180,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				         		    retcode = BleSendStatus;
 				         		}
 				         	}		
-					«ELSEIF configuration.getEnumerator("Service").name == "BLE_XDK_SENSOR_SERVICES"»
+					«ELSEIF configuration.getEnumerator("service").name == "SENSOR_SERVICES"»
 						retcode = SensorServices_SendData(dataToSend, dataToSendLen, (Ble_SensorServicesInfo_T *) param);
 						if (RETCODE_OK == retcode)
 					 	{
@@ -327,13 +338,13 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static Retcode_T «baseName»_ServiceRegistry(void)
 		{
 				Retcode_T retcode = RETCODE_OK;
-				«IF configuration.getEnumerator("Service").name == "BLE_BCDS_BIDIRECTIONAL_SERVICE"»
+				«IF configuration.getEnumerator("service").name == "BIDIRECTIONAL_SERVICE"»
 				        retcode = BidirectionalService_Init(BleBcdsBidirectionalServiceDataRxCB, «baseName»_OnEvent);
 				        if (RETCODE_OK == retcode)
 				        {
 				            retcode = BidirectionalService_Register();
 				        }
-				«ELSEIF configuration.getEnumerator("Service").name == "BLE_XDK_SENSOR_SERVICES"»
+				«ELSEIF configuration.getEnumerator("service").name == "SENSOR_SERVICES"»
 				        retcode = BleDeviceInformationService_Initialize(BLESetup.CharacteristicValue);
 				        if (RETCODE_OK == retcode)
 				        {
@@ -348,7 +359,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				            retcode = BleDeviceInformationService_Register();
 				        }
 
-				«ELSEIF configuration.getEnumerator("Service").name == "BLE_USER_CUSTOM_SERVICE"»
+				«ELSEIF configuration.getEnumerator("service").name == "CUSTOM_SERVICE"»
 				    	// register service we'll connect our characteristics to
 				    	ATT_SERVER_SecureDatabaseAccess();
 				    	AttStatus registerStatus = ATT_SERVER_RegisterServiceAttribute(

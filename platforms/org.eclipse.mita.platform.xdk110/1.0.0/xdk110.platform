@@ -465,9 +465,9 @@ sensor MAX44009 {
  * At the moment we only support slave mode where the XDK becomes a device that can be connected to (as compared to connecting to some other device).
  */
 enum BLE_Service {
-    BLE_BCDS_BIDIRECTIONAL_SERVICE,
-    BLE_XDK_SENSOR_SERVICES,
-    BLE_USER_CUSTOM_SERVICE
+    BIDIRECTIONAL_SERVICE,
+    SENSOR_SERVICES,
+    CUSTOM_SERVICE
 }
 
 connectivity named-singleton BLE {
@@ -479,24 +479,20 @@ connectivity named-singleton BLE {
 	 */
 	configuration-item deviceName : string
 	/**
-	 * Boolean representing if the MAC address is to be configured
+	 * MAC Address to be configured.
 	 */
-	configuration-item isMACAddrConfigured : bool
-	/**
-	 * MAC Address to be configured. Unused if isMacAddrConfigured is false
-	 */
-	configuration-item MACAddr : uint64
+	configuration-item macAddress : string
 	/**
 	 * BLE peripheral service type.
 	 * The following services are supported
-	 * - BLE_BCDS_BIDIRECTIONAL_SERVICE 
+	 * - BIDIRECTIONAL_SERVICE 
 	 *   The Bi-Directional Service is a set of custom services that provides a raw byte array payload communication.
-     * - BLE_XDK_SENSOR_SERVICES
+     * - SENSOR_SERVICES
      *	 The Sensor Services is a set of custom services, that provides a raw byte array payload communication as well as several sensor data services
-     * - BLE_USER_CUSTOM_SERVICE
+     * - CUSTOM_SERVICE
      *   User can define their own services and communicate.
 	 */
-	required configuration-item Service : BLE_Service
+	configuration-item service : BLE_Service = CUSTOM_SERVICE
 	/**
 	 * The last four bytes of the UUID of the GATT service we'll create.
 	 */
