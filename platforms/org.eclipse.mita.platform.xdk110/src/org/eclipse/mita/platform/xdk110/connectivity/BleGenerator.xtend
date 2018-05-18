@@ -308,10 +308,10 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 			// register service we'll connect our characteristics to
 			ATT_SERVER_SecureDatabaseAccess();
 			AttStatus registerStatus = ATT_SERVER_RegisterServiceAttribute(
-			ATTPDU_SIZEOF_128_BIT_UUID,
-			«baseName»ServiceUid,
-			«baseName»_ServiceCallback,
-			&«baseName»Service
+				ATTPDU_SIZEOF_128_BIT_UUID,
+				«baseName»ServiceUid,
+				«baseName»_ServiceCallback,
+				&«baseName»Service
 			);
 			ATT_SERVER_ReleaseDatabaseAccess();
 			if(registerStatus != BLESTATUS_SUCCESS)
