@@ -88,16 +88,20 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		            	char macId[] = "«macAddress»"; 
 		            	char *macIdByte;
 		            	uint8_t index = 0;
+		            	char delimiter[] = ":";
 		            	uint64_t dataInInt[6];
-		            	
-		            	macIdByte = strtok(macId, ":");
+		            	if (NULL != strchr(macId, '-'))
+		            	{
+		            	 	delimiter[0] = '-';
+		            	}
+		            	macIdByte = strtok(macId, delimiter);
 		            	dataInInt[index++] = strtol(macIdByte, NULL, 16);
 		            	while ((NULL != macIdByte) && (index < 6))
 		            	{
-		            	    macIdByte = strtok(NULL, ":");
-		            		dataInInt[index++] = strtol(macIdByte, NULL, 16);
+		            		macIdByte = strtok(NULL, delimiter);
+		            	    dataInInt[index++] = strtol(macIdByte, NULL, 16);
 		            	}
-		            	uint64_t MacIdToBeSet = (dataInInt[5]) | (dataInInt[4] << 8) | (dataInInt[3] << 16) | (dataInInt[2] << 24) | (dataInInt[1] << 32) | (dataInInt[0] << 40);
+        				uint64_t MacIdToBeSet = (dataInInt[5]) | (dataInInt[4] << 8) | (dataInInt[3] << 16) | (dataInInt[2] << 24) | (dataInInt[1] << 32) | (dataInInt[0] << 40);
 		            	retcode = BlePeripheral_SetMacAddress(MacIdToBeSet);
 		            }
 		        }

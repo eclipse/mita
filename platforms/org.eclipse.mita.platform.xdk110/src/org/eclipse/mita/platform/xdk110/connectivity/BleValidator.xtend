@@ -24,12 +24,19 @@ import org.yakindu.base.expressions.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.model.ModelUtils
 import org.yakindu.base.types.Operation
 import org.yakindu.base.types.Enumerator
+import java.util.regex.Pattern
+import org.eclipse.mita.platform.PlatformPackage
 
 class BleValidator implements IResourceValidator {
 	
+	val Pattern MAC_ADDRESS_PATTERN = Pattern.compile(
+        "^(FC:D6:BD:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})|(FC-D6-BD-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2})$");
+
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		if(context instanceof SystemResourceSetup) {
 			validateUniqueUUIDs(program, context, acceptor);
+			validateMacAddress(program, context, acceptor);
+			
 		}
 	}
 	
@@ -47,4 +54,19 @@ class BleValidator implements IResourceValidator {
 		}
 	}
 
+	protected def validateMacAddress(Program program,SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
+		val itemValue = setup.configurationItemValues.findFirst[ it.item.name == 'macAddress' ];
+		if(itemValue === null) {
+			//don't do anything
+		} else {
+			val value = StaticValueInferrer.infer(itemValue.value, []);
+			if(value instanceof String) {
+				val valid = MAC_ADDRESS_PATTERN.matcher(value).matches
+				if(!valid){
+					acceptor.acceptError("Your MAC address is not in the correct format" + value, itemValue, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "_not_conf");								
+				}					
+			}
+		}
+		
+	}
 }

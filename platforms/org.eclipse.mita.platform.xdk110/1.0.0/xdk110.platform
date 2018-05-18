@@ -475,7 +475,7 @@ connectivity named-singleton BLE {
 	configuration-item deviceName : string
 	
 	/**
-	 * MAC Address to be configured. It should be in the format "FC:D6:BD:xx:xx:xx" if it is not in this format then it will take random MAC address.
+	 * MAC Address to be configured. It should be in the format "FC:D6:BD:xx:xx:xx" or "FC-D6-BD-xx-xx-xx" if it is not in this format then it will take random MAC address.
 	 */
 	configuration-item macAddress : string
 
