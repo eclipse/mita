@@ -58,6 +58,7 @@ class UserCodeFileGenerator {
 			«FOR function : program.functionDefinitions.filter(FunctionDefinition)»
 			«statementGenerator.header(function)»
 			«ENDFOR»
+			«exceptionGenerator.exceptionType» initGlobalVariables();
 		''')
 		.addHeader(program.getResourceTypesName + '.h', false)
 		.toHeader(context, program.resourceBaseName.toUpperCase + '_H');
@@ -125,6 +126,17 @@ class UserCodeFileGenerator {
 		«FOR variable : program.globalVariables»
 		«statementGenerator.code(variable)»
 		«ENDFOR»
+		
+		«exceptionGenerator.exceptionType» initGlobalVariables() {
+			«exceptionGenerator.exceptionType» exception = «exceptionGenerator.noExceptionStatement»;
+			
+			«FOR variable : program.globalVariables»
+			«statementGenerator.initialization(variable)»
+			«generateExceptionHandler(null, "exception")»
+			
+			«ENDFOR»
+			return exception;
+		}
 		''')
 	}
 	

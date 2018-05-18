@@ -102,6 +102,7 @@ import org.yakindu.base.types.TypesFactory
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.program.Program
 
 class StatementGenerator {
 
@@ -479,24 +480,48 @@ class StatementGenerator {
 	def IGeneratorNode generateFunCallStmt(String variableName, TypeSpecifier inferenceResult, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
 		if (reference instanceof FunctionDefinition) {
-			codeFragmentProvider.create('''
+			return codeFragmentProvider.create('''
 				«generateFunctionCall(reference, codeFragmentProvider.create('''&«variableName»'''), initialization)»
 			''')
 		} else if (reference instanceof GeneratedFunctionDefinition) {
-			codeFragmentProvider.create('''
+			return codeFragmentProvider.create('''
 				«registry.getGenerator(reference).generate(initialization, variableName).noTerminator»;
 			''')
 		} else if(reference instanceof NativeFunctionDefinition) {
 			if(reference.checked) {
-				codeFragmentProvider.create('''
+				return codeFragmentProvider.create('''
 				«reference.generateNativeFunctionCallChecked(codeFragmentProvider.create('''&«variableName»'''), initialization)»
 				''')
 			}
 			else {
-				codeFragmentProvider.create('''
+				return codeFragmentProvider.create('''
 				«variableName» = «reference.generateNativeFunctionCallUnchecked(initialization)»;''')
 			}
 		}	
+	}
+	
+	def IGeneratorNode initialization(VariableDeclaration stmt) {
+		val initialization = stmt.initialization;
+		val inferenceResult = stmt.inferType;
+		val type = inferenceResult?.type;
+		val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));	
+		
+		if (type instanceof GeneratedType) {
+			val generator = registry.getGenerator(type);
+			if (initialization instanceof NewInstanceExpression) {
+				return generator.generateNewInstance(typeSpec, initialization);
+			} else if (initialization instanceof ArrayAccessExpression) {
+				val op = AssignmentOperator.ASSIGN;
+				return generator.generateExpression(typeSpec, stmt, op, initialization);
+			} else if (initialization instanceof ElementReferenceExpression) {
+				if(initialization.isOperationCall) {
+					return generateFunCallStmt(stmt.name, inferenceResult, initialization);
+				}
+			}
+		} else if (initialization instanceof ElementReferenceExpression) {
+			return generateFunCallStmt(stmt.name, inferenceResult, initialization);
+		}
+		return CodeFragment.EMPTY;
 	}
 	
 	dispatch def IGeneratorNode code(VariableDeclaration stmt) {
@@ -504,30 +529,19 @@ class StatementGenerator {
 		val initialization = stmt.initialization;
 		val inferenceResult = stmt.inferType;
 		val type = inferenceResult?.type;
+		val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));
 	
+		var result = stmt.trace;
+		// generate declaration
 		
-	
-		// Generated types
-		var IGeneratorNode result = null;
+		// generated types
 		if (type instanceof GeneratedType) {
 			val generator = registry.getGenerator(type);
-			val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));
-			var result2 = stmt.trace;
-			result2.children += generator.generateVariableDeclaration(inferenceResult, stmt);
-			if (initialization instanceof NewInstanceExpression) {
-				result2.children += generator.generateNewInstance(typeSpec, initialization);
-			} else if (initialization instanceof ArrayAccessExpression) {
-				val op = AssignmentOperator.ASSIGN;
-				result2.children += generator.generateExpression(typeSpec, stmt, op, initialization);
-			} else if (initialization instanceof ElementReferenceExpression) {
-				if(initialization.isOperationCall) {
-					result2.children += generateFunCallStmt(stmt.name, inferenceResult, initialization);
-				}
-			}
-			result = result2;
+			result.children += generator.generateVariableDeclaration(inferenceResult, stmt);
+			
 		// Exception base variable
 		} else if (stmt instanceof ExceptionBaseVariableDeclaration) {
-			result = codeFragmentProvider.create('''
+			result.children += codeFragmentProvider.create('''
 				«exceptionGenerator.exceptionType» «stmt.name» = NO_EXCEPTION;
 				«IF stmt.needsReturnFromTryCatch»
 					bool returnFromWithinTryCatch = false;
@@ -537,34 +551,26 @@ class StatementGenerator {
 
 		// Assignment from functions
 		} else if (initialization instanceof ElementReferenceExpression) {
-			var result2 = stmt.trace;
-			result2.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
-			val funCall = generateFunCallStmt(stmt.name, inferenceResult, initialization);
-			result2.children += funCall;
-			if(funCall !== null) {
-				result = result2;	
-			}
-		}
-
-		// DEFAULT case
-		if (result === null) {
-			// if we're in here none of the special cases above matched here. Let's use the default case.
+			result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
+		} else {
 			if (stmt.initialization !== null) {
-				result = codeFragmentProvider.
-					create('''«inferenceResult.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
+				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
 			} else if (type instanceof StructureType) {
-				result = codeFragmentProvider.create(
-				'''
-					«inferenceResult.ctype» «stmt.name»;
-					memset((void *) &«stmt.name», 0, sizeof(«inferenceResult.ctype»));
-				''');
+				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = {0};''');
 			} else if (type instanceof PrimitiveType) {
-				result = codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = 0;''');
+				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = 0;''');
 			} else {
-				result = codeFragmentProvider.
-					create('''«inferenceResult.ctype» «stmt.name»; // WARNING: unsupported initialization''');
+				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = WARNING unsupported initialization;''');
 			}
 		}
+		// We can only generate declarative statements
+		if(stmt.eContainer instanceof Program) {
+			return result;
+		}
+		
+		// generate initialization
+		result.children += codeFragmentProvider.create('''«stmt.initialization»''');
+
 		return result;
 	}
 
