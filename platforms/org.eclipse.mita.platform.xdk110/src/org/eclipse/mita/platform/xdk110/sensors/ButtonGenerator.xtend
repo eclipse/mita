@@ -52,7 +52,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
             		Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «handler.handlerName», NULL, data);
                     if(retcode != RETCODE_OK)
                     {
-                        Retcode_RaiseErrorFromIsr(retcode);
+                        Retcode_raiseErrorFromIsr(retcode);
                     }
             	}
             }

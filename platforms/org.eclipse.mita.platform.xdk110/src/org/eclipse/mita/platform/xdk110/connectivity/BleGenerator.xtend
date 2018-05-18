@@ -13,6 +13,10 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
+import com.google.inject.Inject
+import java.nio.ByteBuffer
+import java.util.List
+import java.util.regex.Pattern
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
@@ -23,9 +27,6 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import java.nio.ByteBuffer
-import java.util.List
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 
 class BleGenerator extends AbstractSystemResourceGenerator {
@@ -39,73 +40,65 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	@Inject
 	protected TypeGenerator typeGenerator
 	
+	public static val MAC_ADDRESS_REGEX = "^([Ff][Cc]:[Dd]6:[Bb][Dd]:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})|([Ff][Cc]-[Dd]6-[Bb][Dd]-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2})$";
+	public static val MAC_ADDRESS_PATTERN = Pattern.compile(MAC_ADDRESS_REGEX);
+	
 	override generateSetup() {
 		val baseName = (setup ?: component).baseName;
 		
 		val deviceName = configuration.getString('deviceName') ?: baseName;
 		val serviceUid = configuration.getInteger('serviceUID') ?: baseName.hashCode;
-		val macAddress = configuration.getString('macAddress') ?: 0 ;
+		val macAddressStr = configuration.getString('macAddress');
+		val macAddressMatcher = MAC_ADDRESS_PATTERN.matcher(macAddressStr);
+		val macAdressConfigured = macAddressStr !== null && macAddressMatcher.matches;
+		val macAddress = if(macAdressConfigured) {
+			macAddressStr.replaceAll('[:-]', '').toUpperCase;
+		}
 		
 		
 		codeFragmentProvider.create('''
-		Retcode_T retcode = RETCODE_OK;
-		    BleEventSignal = xSemaphoreCreateBinary();
-		        if (NULL == BleEventSignal)
-		        {
-		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-		        }
-		        if (RETCODE_OK == retcode)
-		        {
-		            BleSendCompleteSignal = xSemaphoreCreateBinary();
-		            if (NULL == BleSendCompleteSignal)
-		            {
-		                retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-		                vSemaphoreDelete(BleEventSignal);
-		            }
-		        }  
-		        if (RETCODE_OK == retcode)
-		        {
-		            BleSendGuardMutex = xSemaphoreCreateMutex();
-		            if (NULL == BleSendGuardMutex)
-		            {
-		                retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-		                vSemaphoreDelete(BleEventSignal);
-		                vSemaphoreDelete(BleSendCompleteSignal);
-		            }
-		        }
-		        if (RETCODE_OK == retcode)
-		        {
-		            retcode =  BlePeripheral_Initialize(«baseName»_OnEvent, «baseName»_ServiceRegistry);
-		        }
-		        if (RETCODE_OK == retcode)
-		        {
-		            retcode = BlePeripheral_SetDeviceName((uint8_t*) _BLE_DEVICE_NAME);
-		        }
-		        if (RETCODE_OK == retcode)
-		        {
-		            if (IsMacAddrConfigured == true)
-		            {
-		            	char macId[] = "«macAddress»"; 
-		            	char *macIdByte;
-		            	uint8_t index = 0;
-		            	char delimiter[] = ":";
-		            	uint64_t dataInInt[6];
-		            	if (NULL != strchr(macId, '-'))
-		            	{
-		            	 	delimiter[0] = '-';
-		            	}
-		            	macIdByte = strtok(macId, delimiter);
-		            	dataInInt[index++] = strtol(macIdByte, NULL, 16);
-		            	while ((NULL != macIdByte) && (index < 6))
-		            	{
-		            		macIdByte = strtok(NULL, delimiter);
-		            	    dataInInt[index++] = strtol(macIdByte, NULL, 16);
-		            	}
-        				uint64_t MacIdToBeSet = (dataInInt[5]) | (dataInInt[4] << 8) | (dataInInt[3] << 16) | (dataInInt[2] << 24) | (dataInInt[1] << 32) | (dataInInt[0] << 40);
-		            	retcode = BlePeripheral_SetMacAddress(MacIdToBeSet);
-		            }
-		        }
-		    return retcode;
+			Retcode_T retcode = RETCODE_OK;
+			BleEventSignal = xSemaphoreCreateBinary();
+			if (NULL == BleEventSignal)
+			{
+				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+			}
+			if (RETCODE_OK == retcode)
+			{
+			    BleSendCompleteSignal = xSemaphoreCreateBinary();
+			    if (NULL == BleSendCompleteSignal)
+			    {
+			        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+			        vSemaphoreDelete(BleEventSignal);
+			    }
+			}  
+			if (RETCODE_OK == retcode)
+			{
+			    BleSendGuardMutex = xSemaphoreCreateMutex();
+			    if (NULL == BleSendGuardMutex)
+			    {
+			        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+			        vSemaphoreDelete(BleEventSignal);
+			        vSemaphoreDelete(BleSendCompleteSignal);
+			    }
+			}
+			if (RETCODE_OK == retcode)
+			{
+			    retcode =  BlePeripheral_Initialize(«baseName»_OnEvent, «baseName»_ServiceRegistry);
+			}
+			if (RETCODE_OK == retcode)
+			{
+			    retcode = BlePeripheral_SetDeviceName((uint8_t*) _BLE_DEVICE_NAME);
+			}
+			if (RETCODE_OK == retcode)
+			{
+				«IF macAdressConfigured»
+				// macAddress = «macAddressStr»
+				uint64_t macAddress = 0x«macAddress»ll;
+				retcode = BlePeripheral_SetMacAddress(macAddress);
+				«ENDIF»
+			}
+			return retcode;
 
 		''')
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
@@ -132,7 +125,6 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static SemaphoreHandle_t BleSendGuardMutex = (SemaphoreHandle_t) NULL;
 		/**< BLE peripheral event */
 		static BlePeripheral_Event_T BleEvent = BLE_PERIPHERAL_EVENT_MAX;
-		static bool IsMacAddrConfigured = true;
 		/**< BLE send status */
 		static Retcode_T BleSendStatus;
 		
@@ -166,45 +158,45 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 			{
 				if (BleIsConnected == true)
 				{
-				 	BleSendStatus = RETCODE_OK;
-				    /* This is a dummy take. In case of any callback received
-				     * after the previous timeout will be cleared here. */
-				     (void) xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(0));
-				      // tell the world via BLE
-				      «FOR signalInstance : setup?.signalInstances»
-				      if((enum «baseName»_E)param == «baseName»_«signalInstance.name»)
-				      {
-				      	ATT_SERVER_SecureDatabaseAccess();
-				      	AttStatus status = ATT_SERVER_WriteAttributeValue(
-				      	&«baseName»«signalInstance.name.toFirstUpper»Attribute,
-				      	dataToSend,
-				      	dataToSendLen
-				      	);
-				      	if (status == BLESTATUS_SUCCESS) /* send notification */
-				      	{
-				      		status = ATT_SERVER_SendNotification(&«baseName»«signalInstance.name.toFirstUpper»Attribute, 1);
-				      		/* BLESTATUS_SUCCESS and BLESTATUS_PENDING are fine */
-				      		if ((status == BLESTATUS_FAILED) || (status == BLESTATUS_INVALID_PARMS))
-				      		{
-				      		 	retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_SEND_NOTIFICATION_FAILED);
-				      		}
-				      	}
-				      	else
-				      	{
-				      		if (BLESTATUS_SUCCESS != status)
-				      		{
-				      			retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_WRITE_ATT_VALUE_FAILED);
-				      		}
-				      	}
-				      	ATT_SERVER_ReleaseDatabaseAccess();
-				      	if (pdTRUE != xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(timeout)))
-				      	{
-				      		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
-				      	}
-				      }
-				      «ENDFOR»		
+					BleSendStatus = RETCODE_OK;
+					/* This is a dummy take. In case of any callback received
+					 * after the previous timeout will be cleared here. */
+					(void) xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(0));
+					// tell the world via BLE
+					«FOR signalInstance : setup?.signalInstances»
+					if((enum «baseName»_E)param == «baseName»_«signalInstance.name»)
+					{
+						ATT_SERVER_SecureDatabaseAccess();
+						AttStatus status = ATT_SERVER_WriteAttributeValue(
+						    &«baseName»«signalInstance.name.toFirstUpper»Attribute,
+						    dataToSend,
+						    dataToSendLen
+						);
+						if (status == BLESTATUS_SUCCESS) /* send notification */
+					 	{
+					 		status = ATT_SERVER_SendNotification(&«baseName»«signalInstance.name.toFirstUpper»Attribute, 1);
+					 		/* BLESTATUS_SUCCESS and BLESTATUS_PENDING are fine */
+					 		if ((status == BLESTATUS_FAILED) || (status == BLESTATUS_INVALID_PARMS))
+					 		{
+					 		 	retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_SEND_NOTIFICATION_FAILED);
+					 		}
+					 	}
+					 	else
+					 	{
+					 		if (BLESTATUS_SUCCESS != status)
+					 		{
+					 			retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_WRITE_ATT_VALUE_FAILED);
+					 		}
+					 	}
+					 	ATT_SERVER_ReleaseDatabaseAccess();
+					 	if (pdTRUE != xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(timeout)))
+					 	{
+					 		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
+					 	}
+					}
 					
-				}     
+				    «ENDFOR»							
+				}
 				else
 				{
 				 	retcode = RETCODE(RETCODE_SEVERITY_WARNING, RETCODE_BLE_NOT_CONNECTED);
@@ -259,48 +251,48 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 		static void «baseName»_OnEvent(BlePeripheral_Event_T event, void* data)
 		{
-		        BCDS_UNUSED(data);
-		        BleEvent = event;
-		    
-		        switch (event)
+		    BCDS_UNUSED(data);
+		    BleEvent = event;
+		
+		    switch (event)
+		    {
+		    case BLE_PERIPHERAL_STARTED:
+		        printf("BleEventCallBack : BLE powered ON successfully \r\n");
+		        if (pdTRUE != xSemaphoreGive(BleEventSignal))
 		        {
-		        case BLE_PERIPHERAL_STARTED:
-		            printf("BleEventCallBack : BLE powered ON successfully \r\n");
-		            if (pdTRUE != xSemaphoreGive(BleEventSignal))
-		            {
-		                /* We would not expect this call to fail because we expect the application thread to wait for this semaphore */
-		                Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_WARNING, RETCODE_SEMAPHORE_ERROR));
-		            }
-		            break;
-		        case BLE_PERIPHERAL_SERVICES_REGISTERED:
-		            break;
-		        case BLE_PERIPHERAL_SLEEP_SUCCEEDED:
-		            printf("BleEventCallBack : BLE successfully entered into sleep mode \r\n");
-		            break;
-		        case BLE_PERIPHERAL_WAKEUP_SUCCEEDED:
-		            printf("BleEventCallBack : Device Wake up succeeded \r\n");
-		            if (pdTRUE != xSemaphoreGive(BleEventSignal))
-		            {
-		                /* We would not expect this call to fail because we expect the application thread to wait for this semaphore */
-		                Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_WARNING, RETCODE_SEMAPHORE_ERROR));
-		            }
-		            break;
-		        case BLE_PERIPHERAL_CONNECTED:
-		            printf("BleEventCallBack : Device connected \r\n");
-		            BleIsConnected = true;
-		            break;
-		        case BLE_PERIPHERAL_DISCONNECTED:
-		            printf("BleEventCallBack : Device Disconnected \r\n");
-		            BleIsConnected = false;
-		            break;
-		        case BLE_PERIPHERAL_ERROR:
-		            printf("BleEventCallBack : BLE Error Event \r\n");
-		            break;
-		        default:
-		            Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_INVALID_EVENT_RECEIVED));
-		            break;
+		            /* We would not expect this call to fail because we expect the application thread to wait for this semaphore */
+		            Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_WARNING, RETCODE_SEMAPHORE_ERROR));
 		        }
+		        break;
+		    case BLE_PERIPHERAL_SERVICES_REGISTERED:
+		        break;
+		    case BLE_PERIPHERAL_SLEEP_SUCCEEDED:
+		        printf("BleEventCallBack : BLE successfully entered into sleep mode \r\n");
+		        break;
+		    case BLE_PERIPHERAL_WAKEUP_SUCCEEDED:
+		        printf("BleEventCallBack : Device Wake up succeeded \r\n");
+		        if (pdTRUE != xSemaphoreGive(BleEventSignal))
+		        {
+		            /* We would not expect this call to fail because we expect the application thread to wait for this semaphore */
+		            Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_WARNING, RETCODE_SEMAPHORE_ERROR));
+		        }
+		        break;
+		    case BLE_PERIPHERAL_CONNECTED:
+		        printf("BleEventCallBack : Device connected \r\n");
+		        BleIsConnected = true;
+		        break;
+		    case BLE_PERIPHERAL_DISCONNECTED:
+		        printf("BleEventCallBack : Device Disconnected \r\n");
+		        BleIsConnected = false;
+		        break;
+		    case BLE_PERIPHERAL_ERROR:
+		        printf("BleEventCallBack : BLE Error Event \r\n");
+		        break;
+		    default:
+		        Retcode_RaiseError(RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_INVALID_EVENT_RECEIVED));
+		        break;
 		    }
+		}
 		
 		''')
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
@@ -312,47 +304,47 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 		static Retcode_T «baseName»_ServiceRegistry(void)
 		{
-				Retcode_T retcode = RETCODE_OK;
-				    	// register service we'll connect our characteristics to
-				    	ATT_SERVER_SecureDatabaseAccess();
-				    	AttStatus registerStatus = ATT_SERVER_RegisterServiceAttribute(
-				    	ATTPDU_SIZEOF_128_BIT_UUID,
-				    	«baseName»ServiceUid,
-				    	«baseName»_ServiceCallback,
-				    	&«baseName»Service
-				    	);
-				    	ATT_SERVER_ReleaseDatabaseAccess();
-				    	if(registerStatus != BLESTATUS_SUCCESS)
-				    	{
-				    		return registerStatus;
-				    	}
-				    				
-				    	«FOR signalInstance : setup.signalInstances»
-				    		// setup «signalInstance.name» characteristics
-				    		«baseName»«signalInstance.name.toFirstUpper»Uuid.size = ATT_UUID_SIZE_128;
-				    		«baseName»«signalInstance.name.toFirstUpper»Uuid.value.uuid128 = «baseName»«signalInstance.name.toFirstUpper»UuidValue;
-				    		ATT_SERVER_SecureDatabaseAccess();
-				    		registerStatus = ATT_SERVER_AddCharacteristic(
-				    		ATTPROPERTY_READ | ATTPROPERTY_NOTIFY,
-				    		&«baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute,
-				    		&«baseName»«signalInstance.name.toFirstUpper»Uuid,
-				    		ATT_PERMISSIONS_ALLACCESS, 
-				    		«signalInstance.contentLength»,
-				    		(uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value, 
-				    		FALSE,
-				    		«signalInstance.contentLength»,
-				    		&«baseName»Service,
-				    		&«baseName»«signalInstance.name.toFirstUpper»Attribute
-				    		);
-				    		if(registerStatus != BLESTATUS_SUCCESS)
-				    		{
-				    			return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
-				    		}
-				    		ATT_SERVER_ReleaseDatabaseAccess();
-				    					
-				    	«ENDFOR»
-			 return (retcode);
+			Retcode_T retcode = RETCODE_OK;
+			// register service we'll connect our characteristics to
+			ATT_SERVER_SecureDatabaseAccess();
+			AttStatus registerStatus = ATT_SERVER_RegisterServiceAttribute(
+			ATTPDU_SIZEOF_128_BIT_UUID,
+			«baseName»ServiceUid,
+			«baseName»_ServiceCallback,
+			&«baseName»Service
+			);
+			ATT_SERVER_ReleaseDatabaseAccess();
+			if(registerStatus != BLESTATUS_SUCCESS)
+			{
+				return registerStatus;
 			}
+			
+			«FOR signalInstance : setup.signalInstances»
+			// setup «signalInstance.name» characteristics
+			«baseName»«signalInstance.name.toFirstUpper»Uuid.size = ATT_UUID_SIZE_128;
+			«baseName»«signalInstance.name.toFirstUpper»Uuid.value.uuid128 = «baseName»«signalInstance.name.toFirstUpper»UuidValue;
+			ATT_SERVER_SecureDatabaseAccess();
+			registerStatus = ATT_SERVER_AddCharacteristic(
+				ATTPROPERTY_READ | ATTPROPERTY_NOTIFY,
+				&«baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute,
+				&«baseName»«signalInstance.name.toFirstUpper»Uuid,
+				ATT_PERMISSIONS_ALLACCESS, 
+				«signalInstance.contentLength»,
+				(uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value,
+				FALSE,
+				«signalInstance.contentLength»,
+				&«baseName»Service,
+				&«baseName»«signalInstance.name.toFirstUpper»Attribute
+			);
+			if(registerStatus != BLESTATUS_SUCCESS)
+			{
+				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+			}
+			ATT_SERVER_ReleaseDatabaseAccess();
+			
+			«ENDFOR»
+			return (retcode);
+		}
 
 		''')
 	}
@@ -371,54 +363,54 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
 		
-		    /* @todo - BLE in XDK is unstable for wakeup upon bootup.
-		     * Added this delay for the same.
-		     * This needs to be addressed in the HAL/BSP. */
-		    vTaskDelay(pdMS_TO_TICKS(1000));
+		/* @todo - BLE in XDK is unstable for wakeup upon bootup.
+		 * Added this delay for the same.
+		 * This needs to be addressed in the HAL/BSP. */
+		vTaskDelay(pdMS_TO_TICKS(1000));
 		
-		    /* This is a dummy take. In case of any callback received
-		     * after the previous timeout will be cleared here. */
-		    (void) xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(0));
-		    retcode = BlePeripheral_Start();
-		    if (RETCODE_OK == retcode)
+		/* This is a dummy take. In case of any callback received
+		 * after the previous timeout will be cleared here. */
+		(void) xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(0));
+		retcode = BlePeripheral_Start();
+		if (RETCODE_OK == retcode)
+		{
+		    if (pdTRUE != xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(BLE_EVENT_SYNC_TIMEOUT)))
 		    {
-		        if (pdTRUE != xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(BLE_EVENT_SYNC_TIMEOUT)))
-		        {
-		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
-		        }
-		        else if (BleEvent != BLE_PERIPHERAL_STARTED)
-		        {
-		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
-		        }
-		        else
-		        {
-		            /* Do not disturb retcode */;
-		        }
+		        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
 		    }
+		    else if (BleEvent != BLE_PERIPHERAL_STARTED)
+		    {
+		        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
+		    }
+		    else
+		    {
+		        /* Do not disturb retcode */;
+		    }
+		}
 		
-		    /* This is a dummy take. In case of any callback received
-		     * after the previous timeout will be cleared here. */
-		    (void) xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(0));
-		    if (RETCODE_OK == retcode)
+		/* This is a dummy take. In case of any callback received
+		 * after the previous timeout will be cleared here. */
+		(void) xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(0));
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = BlePeripheral_Wakeup();
+		}
+		if (RETCODE_OK == retcode)
+		{
+		    if (pdTRUE != xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(BLE_EVENT_SYNC_TIMEOUT)))
 		    {
-		        retcode = BlePeripheral_Wakeup();
+		        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_WAKEUP_FAILED);
 		    }
-		    if (RETCODE_OK == retcode)
+		    else if (BleEvent != BLE_PERIPHERAL_WAKEUP_SUCCEEDED)
 		    {
-		        if (pdTRUE != xSemaphoreTake(BleEventSignal, pdMS_TO_TICKS(BLE_EVENT_SYNC_TIMEOUT)))
-		        {
-		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_WAKEUP_FAILED);
-		        }
-		        else if (BleEvent != BLE_PERIPHERAL_WAKEUP_SUCCEEDED)
-		        {
-		            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_WAKEUP_FAILED);
-		        }
-		        else
-		        {
-		            /* Do not disturb retcode */;
-		        }
+		        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_WAKEUP_FAILED);
 		    }
-		    return retcode;
+		    else
+		    {
+		        /* Do not disturb retcode */;
+		    }
+		}
+		return retcode;
 		''')
 	}
 	
