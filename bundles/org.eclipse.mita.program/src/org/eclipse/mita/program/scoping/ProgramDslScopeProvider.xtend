@@ -37,7 +37,6 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.impl.VariableDeclarationImpl
 import org.eclipse.mita.types.AnonymousProductType
 import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.Singleton
 import org.eclipse.mita.types.StructureType
 import org.eclipse.mita.types.SumAlternative
 import org.eclipse.mita.types.SumType
@@ -169,44 +168,44 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 	
 	def protected IScope getCandidateParameterScope(IScope globalScope, SumType superType, SumAlternative subType, String constructor) {
-		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
-		if (subType instanceof Singleton) {
-			return IScope.NULLSCOPE;
-		}
-		if (subType instanceof NamedProductType) {
-			if (!subType.eIsProxy) {
-				return Scopes.scopeFor(subType.parameters);
-			} else {
-				val name = superType.name + "." + constructor
-				val qName = fqnConverter.toQualifiedName(name)
-				return new ImportScope(#[new ImportNormalizer(qName, true, false)], globalScope, null,
-					ref.EReferenceType, false) as IScope;
-			}
-		} else if (subType instanceof AnonymousProductType) {
-			if (!subType.eIsProxy) {
-				if (subType.typeSpecifiers.length == 1) {
-					val maybeSType = subType.typeSpecifiers.head;
-					if (!maybeSType.eIsProxy && maybeSType.type instanceof StructureType) {
-						val sType = maybeSType.type as StructureType;
-						return Scopes.scopeFor(sType.parameters);
-					}
-				} else {
-					return IScope.NULLSCOPE;
-				}
-			} else {
-				val name = superType.name + "." + constructor
-				val qName = fqnConverter.toQualifiedName(name)
-				return new ImportScope(#[new ImportNormalizer(qName, true, false)], globalScope, null,
-					ref.EReferenceType, false) as IScope;
-
-			}
+		return doGetCandidateParameterScope(subType, createConstructorScope(globalScope, superType, constructor));
+	}
+	
+	def protected dispatch doGetCandidateParameterScope(SumAlternative type, IScope constructorScope) {
+		// fall-back
+		return IScope.NULLSCOPE;
+	}
+	
+	def protected dispatch doGetCandidateParameterScope(NamedProductType subType, IScope constructorScope) {
+		if (!subType.eIsProxy) {
+			return Scopes.scopeFor(subType.parameters);
+		} else {
+			return constructorScope;
 		}
 	}
+	
+	def protected dispatch doGetCandidateParameterScope(AnonymousProductType subType, IScope constructorScope) {
+		if (!subType.eIsProxy) {
+			if (subType.typeSpecifiers.length == 1) {
+				val maybeSType = subType.typeSpecifiers.head;
+				if (!maybeSType.eIsProxy && maybeSType.type instanceof StructureType) {
+					val sType = maybeSType.type as StructureType;
+					return Scopes.scopeFor(sType.parameters);
+				}
+			}
+		} else {
+			return constructorScope;
+		}
+	}
+	
+	def protected createConstructorScope(IScope globalScope, Type type, String constructor) {
+		val name = type.name + "." + constructor
+		val qName = fqnConverter.toQualifiedName(name)
+		return new ImportScope(#[new ImportNormalizer(qName, true, false)], globalScope, null,
+			ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE.EReferenceType, false) as IScope;
+	}
+	
 	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, IScope globalScope) {
-		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
-		val qualifiedLinkName = fqnConverter.toQualifiedName(crossRefString)
-		
-
 		if (context instanceof FeatureCall) {
 			if (context.owner instanceof ElementReferenceExpression) {
 				val owner = context.owner as ElementReferenceExpression;
@@ -221,6 +220,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			}
 		}
 		// import by name, for named parameters of structs and functions
+		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
+		val qualifiedLinkName = fqnConverter.toQualifiedName(crossRefString)
 		val scopeDequalified = new ImportScope(
 			#[new ImportNormalizer(qualifiedLinkName, true, false)],
 			new FilteringScope(globalScope, [it.name.startsWith(qualifiedLinkName)]),
@@ -228,9 +229,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			ref.EReferenceType,
 			false
 		);
-
 		return scopeDequalified
-
 	}
 
 	def IScope scope_VariableDeclarationImpl_feature(VariableDeclarationImpl context, EReference reference) {
@@ -538,18 +537,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		else {
 			if(ref instanceof SumAlternative) {
 				if(reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
-					if(ref instanceof NamedProductType) {
-						return Scopes.scopeFor(ref.parameters);
-					}
-					if(ref instanceof AnonymousProductType) {
-						if(ref.typeSpecifiers.length == 1) {
-							val mbStruct = ref.typeSpecifiers.head.type;
-							if(mbStruct instanceof StructureType) {
-								return Scopes.scopeFor(mbStruct.parameters);
-							}
-						}
-					}
-					return IScope.NULLSCOPE;
+					return doGetCandidateParameterScope(ref, IScope.NULLSCOPE);
 				}
 				return Scopes.scopeFor(#[ref]);
 			}
