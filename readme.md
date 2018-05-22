@@ -1,4 +1,5 @@
 ![Mita logo](website/site/content/logo.png)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Feclipse%2Fmita.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Feclipse%2Fmita?ref=badge_shield)
 
 Eclipse Mita is a new programming language for the embedded IoT.
 It targets developers who are new to embedded software development, specifically those who come from a cloud background.
@@ -53,3 +54,7 @@ In order to create a pull request you need a GitHug account as well as an Eclips
 
 ## Get in Touch
 Please check out the [Eclipse Mita project home page](https://www.eclipse.org/mita) for details regarding our mailing list.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Feclipse%2Fmita.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Feclipse%2Fmita?ref=badge_large)
