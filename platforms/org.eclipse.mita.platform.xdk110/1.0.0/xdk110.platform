@@ -18,7 +18,6 @@ enum BMA280_Range {
 enum BMA280_Bandwidth {
  	/**< sets bandwidth to LowPass 7.81HZ  */
 	BW_7_81Hz,
-
 	/**< sets bandwidth to LowPass 15.63HZ  */
 	BW_15_63Hz,
 	
@@ -532,18 +531,18 @@ connectivity many HttpRestClient {
 	required configuration-item endpointBase : string
 
 	/**
-	 * isSecurityEnabled flag is set to use HTTP with security 
+	 * isSecurityEnabled flag is set to use HTTP with security
 	 */
 	required configuration-item isSecurityEnabled : bool
 	
 	/**
 	 * A custom header which is added to each HTTP request. Example:
-	 *   X-Auth: MySecretToken\nX-Version: 1.0 
+	 *   X-Auth: MySecretToken\nX-Version: 1.0
 	 */
-	configuration-item header : string
-		
+	configuration-item customHeader : array<string>
+
 	signal resource(endpoint : string, contentType : string = "application/json", writeMethod : HttpMethod = HttpMethod.POST, readMethod : HttpMethod = HttpMethod.GET) : string
-	
+
 }
 
 

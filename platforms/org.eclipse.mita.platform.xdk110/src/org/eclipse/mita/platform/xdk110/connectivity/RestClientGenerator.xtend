@@ -15,12 +15,10 @@ package org.eclipse.mita.platform.xdk110.connectivity
 
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
-import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
-import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
@@ -49,13 +47,84 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
 
+	override generateSetup() {
+		codeFragmentProvider.create('''
+		static CmdProcessor_T * AppCmdProcessor;
+
+		Retcode_T retcode = ServalPAL_Setup(AppCmdProcessor);
+		printf("ServalPAL_Setup1");
+		if (RETCODE_OK != retcode)
+		{		
+			printf("ServalPAL_Setup fail");
+		}
+		else
+		{
+			printf("ServalPAL_Setup1 success");
+		}
+		#if HTTP_SECURE_ENABLE
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = SNTP_Setup(&SNTPSetupInfo);
+		}
+		#endif /* HTTP_SECURE_ENABLE */
+
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = HTTPRestClient_Setup(&HTTPRestClientSetupInfo);
+		}
+		return retcode;
+		''')
+		.addHeader("BCDS_Basics.h", true, IncludePath.HIGH_PRIORITY)
+		.addHeader("BCDS_Retcode.h", true, IncludePath.HIGH_PRIORITY)
+		.addHeader('XDK_ServalPAL.h', true)
+		.addHeader('XDK_SNTP.h', true)
+		.addHeader('XDK_HTTPRestClient.h', true)
+		.addHeader('task.h', true)
+		.addHeader('BCDS_BSP.h', true)
+		.addHeader('task.h', true)
+		.addHeader('FreeRTOS.h', true)
+	}
+
+	override generateEnable() {
+		codeFragmentProvider.create('''
+
+		Retcode_T retcode = ServalPAL_Enable();
+		if (RETCODE_OK != retcode)
+		{		
+			printf("ServalPAL_Enable");
+		}
+		#if HTTP_SECURE_ENABLE
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = SNTP_Enable();
+			if (RETCODE_OK != retcode)
+			{		
+				printf("SNTP_Enable");
+			}
+		}
+		#endif /*HTTP_SECURE_ENABLE*/
+
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = HTTPRestClient_Enable();
+			if (RETCODE_OK != retcode)
+			{		
+				printf("HTTPRestClient_Enable");
+			}		    
+		}
+		return retcode;
+		''')
+	}
+
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
-		val baseUrl = new URL(configuration.getString("endpointBase")); // why validator requires the protocol and the implementation does not
-		val url = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "endpoint"), [ ]);
+		val baseUrl = new URL(configuration.getString("endpointBase"));
+		val base2 =configuration.getString("endpointBase");
+		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
+		val customHeader = configuration.getString("customHeader"); // @todo: check how to extract the array values
+		val endpoint = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "endpoint"), [ ]);
 		val httpWriteMethod = ModelUtils.getArgumentValue(signalInstance, "writeMethod").httpMethod;
 		val httpReadMethod = ModelUtils.getArgumentValue(signalInstance, "readMethod").httpMethod;
-//		val contentType = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "contentType"), []); // @todo : check what content type
-		val port = 80; // 443-secure port. How to pass the port from mita application @todo check //if(baseUrl.port < 0) 80 else baseUrl.port;
+		val contentType = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "contentType"), []); // @todo: where is it used?
 		
 		codeFragmentProvider.create('''
 		Retcode_T rc = RETCODE_FAILURE;
@@ -64,7 +133,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		static HTTPRestClient_Config_T HTTPRestClientConfigInfo =
 		{
 		       .IsSecure = HTTP_SECURE_ENABLE,
-		       .DestinationServerUrl = "postman-echo.com", // @todo: replace with user parameter url or baseUrl
+		       .DestinationServerUrl = "«baseUrl.host»", // @todo: replace with user parameter url or baseUrl
 		       .DestinationServerPort = «port»,
 		       .RequestMaxDownloadSize = REQUEST_MAX_DOWNLOAD_SIZE,
 		};
@@ -72,9 +141,9 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		/**< HTTP rest client POST parameters */
 		static HTTPRestClient_Post_T HTTPRestClientPostInfo =
 		{
-		        .Payload = "{ \"device\": \"XDK110\", \"ping\": \"pong\" }", // @todo: replace with user input «variableName»
-		        .PayloadLength = (sizeof("{ \"device\": \"XDK110\", \"ping\": \"pong\" }") - 1U),
-		        .Url = "/post",//«httpWriteMethod»,
+		        .Payload = "{ \"«endpoint»\": \"«variableName»\"}",
+		        .PayloadLength = (sizeof("{ \"«endpoint»\": \"«variableName»\"}") - 1U),
+		        .Url = "/post",//getHttpMethod("«httpWriteMethod»"),
 		        .RequestCustomHeader0 = POST_REQUEST_CUSTOM_HEADER_0,
 		        .RequestCustomHeader1 = POST_REQUEST_CUSTOM_HEADER_1,
 		};
@@ -82,7 +151,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		/**< HTTP rest client GET parameters */
 		static HTTPRestClient_Get_T HTTPRestClientGetInfo =
 		{
-		        .Url = "/get",//«httpReadMethod»,
+		        .Url = "/get",//getHttpMethod("«httpReadMethod»"),
 		        .GetCB = NULL,
 		};
 
@@ -156,7 +225,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		{
 		    .ServerUrl = SNTP_SERVER_URL,
 		    .ServerIpAddr = SNTP_SERVER_IP_ADDR,
-		    .ServerPort = SNTP_SERVER_PORT,
+		    .ServerPort = «port»,
 		    .UseServerUrl = SNTP_USE_SERVER_URL,
 		};
 		/**
@@ -168,11 +237,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		 * SNTP_SERVER_IP_ADDR is the SNTP server IP address. Is unused if SNTP_USE_SERVER_URL is true.
 		 */
 		#define SNTP_SERVER_IP_ADDR             BCDS_IPV4_VAL(0, 0, 0, 0)
-		
-		/**
-		 * SNTP_SERVER_PORT is the SNTP server port number
-		 */
-		#define SNTP_SERVER_PORT                UINT16_C(123)
 		
 		/**
 		 * SNTP_USE_SERVER_URL is a boolean.
@@ -209,54 +273,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 		return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
 		''').addHeader('BCDS_Basics.h', true);
-	}
-	
-	override generateSetup() {
-		codeFragmentProvider.create('''
-		static CmdProcessor_T * AppCmdProcessor;
-
-		Retcode_T retcode = ServalPAL_Setup(AppCmdProcessor);
-
-		#if HTTP_SECURE_ENABLE
-		if (RETCODE_OK == retcode)
-		{
-		    retcode = SNTP_Setup(&SNTPSetupInfo);
-		}
-		#endif /* HTTP_SECURE_ENABLE */
-
-		if (RETCODE_OK == retcode)
-		{
-		    retcode = HTTPRestClient_Setup(&HTTPRestClientSetupInfo);
-		}
-		return retcode;
-		''')
-	}
-	
-	override generateEnable() {
-		codeFragmentProvider.create('''
-
-		Retcode_T retcode = ServalPAL_Enable();
-
-		#if HTTP_SECURE_ENABLE
-		if (RETCODE_OK == retcode)
-		{
-		    retcode = SNTP_Enable();
-		}
-		#endif /*HTTP_SECURE_ENABLE*/
-
-		if (RETCODE_OK == retcode)
-		{
-		    retcode = HTTPRestClient_Enable();
-		}
-		return retcode;
-		''')
-		.addHeader("BCDS_Basics.h", true, IncludePath.HIGH_PRIORITY)
-		.addHeader("BCDS_Retcode.h", true, IncludePath.HIGH_PRIORITY)
-		.addHeader('XDK_ServalPAL.h', true)
-		.addHeader('XDK_SNTP.h', true)
-		.addHeader('XDK_HTTPRestClient.h', true)
-		.addHeader('task.h', true)
-		.addHeader('FreeRTOS.h', true)
 	}
 	
 }
