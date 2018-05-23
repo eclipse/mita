@@ -67,7 +67,7 @@ setup bluetoothA : MyConnectivity {
  	
  	// We only care for vci00, vci01 and vci02 but not for the other stuff in the scope. Syntax prevents invalid choices.
  	/* XPECT scope at vci00 ---
- 	    vci00, vci01, vci02
+ 	    vci00, vci01, vci02, vci03, vci04
  	--- */
  	var boolC : bool = vci00(p01=true, p02=CFG_VAL_1);
  	

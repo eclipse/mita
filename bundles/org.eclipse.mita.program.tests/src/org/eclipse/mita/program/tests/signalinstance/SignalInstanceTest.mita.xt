@@ -1,4 +1,4 @@
-/* XPECT_SETUP org.eclipse.mita.program.tests.exceptions.ExceptionsTest 
+/* XPECT_SETUP org.eclipse.mita.program.tests.signalinstance.SignalInstanceTest 
 Workspace {
 	Project "testproject" {
 	}  
@@ -11,6 +11,8 @@ import platforms.unittest;
 setup connectivity : MyConnectivity {
 	var signal_instance00 = vci00(p01=true, p02=CFG_VAL_1);
 	var signal_instance01 = vci01(20);
+	var signal_instance03 = vci03(5);
+	var signal_instance04 = vci04(6);
 }
 
 fn accessWithoutReadOrWrite() {
@@ -38,8 +40,20 @@ fn useSiginstCorrectly() {
 	// XPECT inferredType ---> uint16
 	var x2 = connectivity.signal_instance01.read();
 	
+	// XPECT inferredType ---> string
+	// XPECT inferredSize ---> string::5
+	var x3 = connectivity.signal_instance03.read();
+	
+	// XPECT inferredType ---> array<int32>
+	// XPECT inferredSize ---> array<int32>::6
+	let x4 = connectivity.signal_instance04.read();
+	
 	connectivity.signal_instance00.write(true);
 	connectivity.signal_instance01.write(20);
+	
+	connectivity.signal_instance03.write("asdf");
+	let data = [1,2,3,4];
+	connectivity.signal_instance04.write(data);
 }
 
 fn stuffSiginstShouldValidate() {

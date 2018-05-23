@@ -103,12 +103,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		val operationCallInit = (!topLevel) && stmt.initialization !== null 
 			&& stmt.initialization.isOperationCall;
-		val operationCall = if(stmt.initialization instanceof ElementReferenceExpression) {
-			stmt.initialization as ElementReferenceExpression;	
-		}
-		val operation = if(operationCall?.reference instanceof Operation) {
-			operationCall?.reference as Operation;
-		}
 		
 		val otherInit = stmt.initialization !== null 
 			&& !initWithValueLiteral
@@ -126,10 +120,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			.data = data_«stmt.name»_«occurrence»,
 			.length = «size»
 		}«ENDIF»;
-		«IF operationCallInit»
-		// «stmt.name» = «operation.name»(«FOR arg: operationCall.arguments SEPARATOR(", ")»«IF arg.parameter !== null»«arg.parameter.name» = «ENDIF»«arg.value.code»«ENDFOR»)
-		«statementGenerator.generateFunctionCall(operation, codeFragmentProvider.create('''&«stmt.name»'''), operationCall)»
-		«ENDIF»
 		«IF !topLevel && otherInit»
 		«generateExpression(type, stmt, AssignmentOperator.ASSIGN, stmt.initialization)»
 		«ENDIF»
@@ -279,6 +269,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		}
 		
 		codeFragmentProvider.create('''
+		«returnStatementLengthCheck»
 		«IF modifyLength»
 		// Need to modify length: «modifyLengthReason»
 		«lengthModifyStmt»;
@@ -290,7 +281,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		«dataLeft» = «reallocBufferName»;
 		«ENDIF»
 		«ENDIF»
-		«returnStatementLengthCheck»
 		«IF !rightExprIsValueLit»
 		// «varNameLeft» = «codeRightExpr»
 		memcpy(«dataLeft», «dataRight», «newLengthExpr»);

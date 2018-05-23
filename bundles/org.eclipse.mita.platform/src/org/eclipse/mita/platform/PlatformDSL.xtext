@@ -61,6 +61,7 @@ AbstractSystemResource returns platform::AbstractSystemResource:
 	name=ID  '{'
 		'generator' generator=STRING
 		('validator' validator=STRING)?
+		('sizeInferrer' sizeInferrer=STRING)?
 		
 		( configurationItems += ConfigurationItem
 		| signals += Signal
