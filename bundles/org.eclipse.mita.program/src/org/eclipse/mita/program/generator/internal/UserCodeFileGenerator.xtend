@@ -131,7 +131,7 @@ class UserCodeFileGenerator {
 			«exceptionGenerator.exceptionType» exception = «exceptionGenerator.noExceptionStatement»;
 			
 			«FOR variable : program.globalVariables»
-			«statementGenerator.initialization(variable)»
+			«statementGenerator.initializationCode(variable)»
 			«generateExceptionHandler(null, "exception")»
 			
 			«ENDFOR»

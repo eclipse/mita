@@ -70,7 +70,7 @@ class SumTypesTest extends AbstractGeneratorTest {
 			}
 			
 			fn incVecs(a: anyVec) {
-			    var b: anyVec;
+			    var b = anyVec.vec0d();
 			    where(a) {
 			    	is(anyVec.vec0d) {
 			    	} 
@@ -120,7 +120,7 @@ class SumTypesTest extends AbstractGeneratorTest {
 				exception UnknownTypeException;
 				
 				fn incVecs(a: anyVec) {
-				    var b: anyVec;
+					var b = anyVec.vec0d();
 				    where(a) {
 				    	is(anyVec.vec0d) {
 				    		b = anyVec.vec0d(); 
