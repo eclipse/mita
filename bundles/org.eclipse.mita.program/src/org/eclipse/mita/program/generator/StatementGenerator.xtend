@@ -788,27 +788,10 @@ class StatementGenerator {
 			if(preferred !== null) {
 				'''«prefix»«preferred.name»«suffix»'''	
 			}
-			else if(productType instanceof AnonymousProductType) {
-				if(productType.typeSpecifiers.length > 1) {
-					'''«prefix»_«idx»«suffix»''';	
-				}
-				// if we have only one type, we are an alias for another type
-				else {
-					// check if that is a struct
-					val realType = productType.typeSpecifiers.head.type;
-					if(realType instanceof StructureType) {
-						'''«prefix»«realType.parameters.get(idx).baseName»«suffix»''';	
-					}
-					else {
-						'''''';
-					}
-				}
-			}
-			else if(productType instanceof NamedProductType) {
-				'''«prefix»«productType.parameters.get(idx).baseName»«suffix»''';
-			}
 			else {
-				'''ERROR: NEITHER ANONYMOUS NOR NAMED, YOU MUST NEVER GET HERE''';
+				ModelUtils.getAccessorParameters(productType)
+					.transform[parameters | '''«prefix»«parameters.get(idx).baseName»«suffix»''']
+					.or('''«prefix»_«idx»«suffix»''')
 			} ]
 	}
 	

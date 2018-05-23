@@ -35,6 +35,7 @@ import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.impl.VariableDeclarationImpl
+import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.types.AnonymousProductType
 import org.eclipse.mita.types.NamedProductType
 import org.eclipse.mita.types.StructureType
@@ -75,6 +76,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	@Inject
 	IQualifiedNameProvider qualifiedNameProvider
+	
 
 	override scope_Argument_parameter(Argument argument, EReference ref) {
 		if (EcoreUtil2.getContainerOfType(argument, SystemResourceSetup) !== null) {
@@ -191,9 +193,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					return Scopes.scopeFor(sType.parameters);
 				}
 			}
-		} else {
-			return constructorScope;
-		}
+		} 
+		return constructorScope;
+		
 	}
 	
 	def protected createConstructorScope(IScope globalScope, Type type, String constructor) {
@@ -505,24 +507,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 			// unqualified resolving of parameter names
 			val container = (context.eContainer as ElementReferenceExpression).reference;
-			if (container instanceof Operation) {
-				val result = Scopes.scopeFor(container.parameters, originalScope)
-				return result
-			}
-			else if(container instanceof NamedProductType) {
-				val result = Scopes.scopeFor(container.parameters, originalScope)
-				return result
-			}
-			else if(container instanceof AnonymousProductType) {
-				if(container.typeSpecifiers.length == 1) {
-					val mbStruct = container.typeSpecifiers.head?.type;
-					if(mbStruct instanceof StructureType) {
-						return Scopes.scopeFor(mbStruct.parameters);
-					}
-				}
-			}
+			
+			ModelUtils.getAccessorParameters(container)
+				.transform[parameters | Scopes.scopeFor(parameters)]
+				.or(originalScope)		
 		}
-		return originalScope;
 	}
 
 	dispatch def IScope scopeInSetupBlock(ElementReferenceExpression context, EReference reference) {
@@ -600,20 +589,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		val deconstructorCase = context.eContainer as IsDeconstructionCase;
 		val productType = deconstructorCase.productType;
 		// structs can be here, they are anonymous (vec2d: v2d), and singular
-		if (productType instanceof AnonymousProductType) {
-			if (productType.typeSpecifiers.length == 1) {
-				val realType = productType.typeSpecifiers.get(0).type;
-				if (realType instanceof StructureType) {
-					return Scopes.scopeFor(realType.parameters, [x|QualifiedName.create(productType.name, x.name)],
-						originalScope);
-				}
-			}
-		} // otherwise, pull named references into scope
-		else if (productType instanceof NamedProductType) {
-			return Scopes.scopeFor(productType.parameters, [x|QualifiedName.create(productType.name, x.name)],
-				originalScope);
-		}
-		return originalScope;
+		return ModelUtils.getAccessorParameters(productType)
+			.transform[parameters | Scopes.scopeFor(parameters, [x|QualifiedName.create(productType.name, x.name)], originalScope)]
+			.or(originalScope)
 	}
 
 	override IScope getScope(EObject context, EReference reference) {
