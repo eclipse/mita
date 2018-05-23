@@ -18,14 +18,19 @@ import java.util.List
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.yakindu.base.types.Operation
 import org.yakindu.base.types.Type
+import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.yakindu.base.types.typesystem.ITypeSystem
 
 class OperationUserDataHelper {
 
 	@Inject
+	extension ITypeSystemInferrer inferrer;
+
+	@Inject
 	extension ITypeSystem typesystem;
 
-	def List<Type> getArgumentTypes(IEObjectDescription operation) {
+	def List<Type> getParameterTypes(IEObjectDescription operation) {
 		val rawTypesArray = operation.typesArray
 		
 		if(rawTypesArray !== null) {
@@ -41,25 +46,14 @@ class OperationUserDataHelper {
 		}
 	}
 	
-	def isCallable(IEObjectDescription it, List<Type> arguments) {
-		val paramArray = getTypesArray
-		if (paramArray.length == 0) {
-			return false
+	def List<InferenceResult> getParameterInferenceResults(IEObjectDescription operation) {
+		val objOrProxy = operation.EObjectOrProxy;
+		if (objOrProxy instanceof Operation) {
+			if (!objOrProxy.eIsProxy) {
+				return objOrProxy.parameters.map[it.infer]
+			}
 		}
-		
-		println("ParamArray " + paramArray)
-		println("arguments " + arguments)
-		
-		return true;
-	}
-
-	def isExtensionTo(IEObjectDescription it, Type contextType) {
-		val paramArray = getTypesArray
-		if (paramArray === null) {
-			return false
-		}
-		val paramTypeName = paramArray.get(0)
-		return contextType.isSubtypeOf(paramTypeName)
+		return #[];
 	}
 
 	protected def getTypesArray(IEObjectDescription description) {
@@ -68,14 +62,6 @@ class OperationUserDataHelper {
 			return null
 		}
 		return params.toArray
-	}
-
-	protected def isSubtypeOf(Type subType, String superTypeName) {
-		if (subType.name == superTypeName) {
-			return true
-		}
-		val match = subType.superTypes.findFirst[name == superTypeName]
-		return match !== null
 	}
 
 	protected def toArray(String paramArrayAsString) {

@@ -43,12 +43,17 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 		#and if any addition flags required then add that flags only in the below macro 
 		#export BCDS_CFLAGS_COMMON = 
 		
+		
 		#List all the application header file under variable BCDS_XDK_INCLUDES 
 		export BCDS_XDK_INCLUDES = \
 			-I$(BCDS_BASE_DIR)/xdk110/Libraries/BSTLib/3rd-party/bstlib/BMA2x2_driver \
+			-I$(BCDS_BASE_DIR)/xdk110/Platform/BSP/source \
 			-I$(BCDS_APP_SOURCE_DIR) \
 			-I$(BCDS_APP_SOURCE_DIR)/.. \
-			-I$(BCDS_APP_SOURCE_DIR)/base
+			-I$(BCDS_APP_SOURCE_DIR)/base \
+			-I$(BCDS_BASE_DIR)/xdk110/Common/include \
+			-I$(BCDS_BASE_DIR)/xdk110/Common/certs/XDKDummy \
+			-I$(BCDS_BASE_DIR)/xdk110/Common/source
 			
 		#List all the application source file under variable BCDS_XDK_APP_SOURCE_FILES in a similar pattern as below
 		export BCDS_XDK_APP_SOURCE_FILES = \

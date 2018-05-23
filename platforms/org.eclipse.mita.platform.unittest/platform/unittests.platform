@@ -56,6 +56,7 @@ connectivity named-singleton MySingletonConnectivity {
 connectivity many MyConnectivity {
 	generator ""
 	//validator ""
+	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
 	
 	configuration-item cfg00 : string = "foo"
 	configuration-item cfg01 : bool
@@ -71,6 +72,8 @@ connectivity many MyConnectivity {
 	signal vci00(p01 : bool, p02 : MyConfigItemValues) : bool
 	signal vci01(p01 : uint32) : uint16
 	signal vci02(p01 : uint32, p02 : int32 = 42) : uint16
+	signal vci03(length: uint32) : string
+	signal vci04(length: uint32) : array<int32>
 }
 
 alias my_sensor00 for MySensor

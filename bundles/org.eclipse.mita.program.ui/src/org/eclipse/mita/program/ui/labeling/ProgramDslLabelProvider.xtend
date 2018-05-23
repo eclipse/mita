@@ -66,11 +66,11 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def dispatch Object image(SystemResourceAlias ele) {
-		return ele.delegate.image;
+		return ele.delegate?.image;
 	}
 
 	def dispatch Object image(SystemResourceSetup ele) {
-		return ele.type.image;
+		return ele.type?.image;
 	}
 	
 	def dispatch image(VariableDeclaration ele) {
