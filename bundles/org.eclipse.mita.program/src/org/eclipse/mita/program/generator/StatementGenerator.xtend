@@ -500,7 +500,7 @@ class StatementGenerator {
 		}	
 	}
 	
-	def IGeneratorNode initialization(VariableDeclaration stmt) {
+	def IGeneratorNode initializationCode(VariableDeclaration stmt) {
 		val initialization = stmt.initialization;
 		val inferenceResult = stmt.inferType;
 		val type = inferenceResult?.type;
@@ -532,8 +532,10 @@ class StatementGenerator {
 		val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));
 	
 		var result = stmt.trace;
-		// generate declaration
 		
+		var initializationDone = false;
+		
+		// generate declaration
 		// generated types
 		if (type instanceof GeneratedType) {
 			val generator = registry.getGenerator(type);
@@ -548,10 +550,19 @@ class StatementGenerator {
 				«ENDIF»
 				
 			''').addHeader('stdbool.h', true)
-
-		// Assignment from functions
+			initializationDone = true;
 		} else if (initialization instanceof ElementReferenceExpression) {
-			result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
+			// Assignment from functions is done by declaring, then passing in a reference
+			if(initialization.operationCall) {
+				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
+			}
+			// copy assigmnent
+			// since type != generatedType we can copy with assignment
+			else {
+				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
+				initializationDone = true;
+			}
+		// constant assignments and similar get here
 		} else {
 			if (stmt.initialization !== null) {
 				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
@@ -562,14 +573,17 @@ class StatementGenerator {
 			} else {
 				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = WARNING unsupported initialization;''');
 			}
+			// all of the above did initialization
+			initializationDone = true;
 		}
 		// We can only generate declarative statements
-		if(stmt.eContainer instanceof Program) {
+		if(stmt.eContainer instanceof Program || initializationDone) {
 			return result;
 		}
 		
 		// generate initialization
-		result.children += codeFragmentProvider.create('''«stmt.initialization»''');
+		result.children += codeFragmentProvider.create('''«"\n"»''');
+		result.children += stmt.initializationCode;
 
 		return result;
 	}

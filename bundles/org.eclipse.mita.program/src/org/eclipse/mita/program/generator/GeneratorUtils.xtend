@@ -359,6 +359,8 @@ class GeneratorUtils {
 				var isNewLineNode = node instanceof NewLineNode;
 				var isEmptyTextNode = if(node instanceof TextNode) {
 					node.text.length == 0
+				} else if(node instanceof CodeFragment) {
+					node == CodeFragment.EMPTY
 				} else {
 					false
 				}
