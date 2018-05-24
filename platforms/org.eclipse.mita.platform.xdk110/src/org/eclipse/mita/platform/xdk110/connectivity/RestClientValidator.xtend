@@ -28,7 +28,6 @@ class RestClientValidator implements IResourceValidator  {
 	
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		if(context instanceof SystemResourceSetup) {
-			acceptor.acceptWarning("The HttpRestClient connectivity is experimental. Things might not work as expected.", context, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, 'restclient_is_experimental');
 			
 			val rawEndpointBaseItem = context.configurationItemValues.findFirst[ it.item.name == 'endpointBase' ]
 			val rawEndpointBase = rawEndpointBaseItem?.value;

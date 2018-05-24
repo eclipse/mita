@@ -16,9 +16,7 @@ package org.eclipse.mita.platform.xdk110.connectivity
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
-import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
@@ -40,12 +38,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject
 	protected TypeGenerator typeGenerator
-	
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
-	
-	@Inject(optional=true)
-	protected IPlatformLoggingGenerator loggingGenerator
 
 	override generateSetup() {
 		codeFragmentProvider.create('''
@@ -87,12 +79,33 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 
 	override generateEnable() {
 		codeFragmentProvider.create('''
+		static CmdProcessor_T CommandProcessorHandle;
 
-		Retcode_T retcode = ServalPAL_Enable();
-		if (RETCODE_OK != retcode)
-		{		
-			printf("ServalPAL_Enable");
+		Retcode_T retcode = CmdProcessor_Initialize(&CommandProcessorHandle, "Serval PAL", TASK_PRIORITY_SERVALPAL_CMD_PROC, TASK_STACK_SIZE_SERVALPAL_CMD_PROC, TASK_QUEUE_LEN_SERVALPAL_CMD_PROC);
+		if (RETCODE_OK == retcode)
+		{
+			retcode = ServalPAL_Setup(&CommandProcessorHandle);
 		}
+		#if HTTP_SECURE_ENABLE
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = SNTP_Setup(&SNTPSetupInfo);
+		}
+		#endif /* HTTP_SECURE_ENABLE */
+
+		if (RETCODE_OK == retcode)
+		{
+		    retcode = HTTPRestClient_Setup(&HTTPRestClientSetupInfo);
+		}
+		// @todo: remove block later
+		if (RETCODE_OK == retcode)
+		{
+			printf("Setup block successfull\n");
+		}
+		// @todo: remove later
+
+		retcode = ServalPAL_Enable();
+
 		#if HTTP_SECURE_ENABLE
 		if (RETCODE_OK == retcode)
 		{
@@ -107,18 +120,28 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		if (RETCODE_OK == retcode)
 		{
 		    retcode = HTTPRestClient_Enable();
-			if (RETCODE_OK != retcode)
-			{		
-				printf("HTTPRestClient_Enable");
-			}		    
 		}
+		
+		// @todo: remove block later
+		if (RETCODE_OK == retcode)
+		{
+			printf("Enable block successfull\n");
+		}
+		// @todo: remove later
 		return retcode;
+		''')
+		.setPreamble('''
+		/**< Main command processor task priority */
+		#define TASK_PRIORITY_SERVALPAL_CMD_PROC                (UINT32_C(3))
+		/**< Main command processor task stack size */
+		#define TASK_STACK_SIZE_SERVALPAL_CMD_PROC          (UINT32_C(700))
+		/**< Main command processor task queue length */
+		#define TASK_QUEUE_LEN_SERVALPAL_CMD_PROC               (UINT32_C(10))		
 		''')
 	}
 
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
 		val baseUrl = new URL(configuration.getString("endpointBase"));
-		val base2 =configuration.getString("endpointBase");
 		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
 		val customHeader = configuration.getString("customHeader"); // @todo: check how to extract the array values
 		val endpoint = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "endpoint"), [ ]);
@@ -141,8 +164,8 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		/**< HTTP rest client POST parameters */
 		static HTTPRestClient_Post_T HTTPRestClientPostInfo =
 		{
-		        .Payload = "{ \"«endpoint»\": \"«variableName»\"}",
-		        .PayloadLength = (sizeof("{ \"«endpoint»\": \"«variableName»\"}") - 1U),
+				.Payload = POST_REQUEST_BODY,
+				.PayloadLength = (sizeof(POST_REQUEST_BODY) - 1U),
 		        .Url = "/post",//getHttpMethod("«httpWriteMethod»"),
 		        .RequestCustomHeader0 = POST_REQUEST_CUSTOM_HEADER_0,
 		        .RequestCustomHeader1 = POST_REQUEST_CUSTOM_HEADER_1,
@@ -208,6 +231,8 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		 * POST request. It's meant to demonstrate how to use custom header.
 		 */
 		#define POST_REQUEST_CUSTOM_HEADER_1    "X-Foobar: AnotherCustomHeader\r\n"
+		
+		#define POST_REQUEST_BODY               "{ \"device\": \"XDK110\", \"ping\": \"pong\" }"
 		
 		/**
 		 * The time we wait (in milliseconds) between sending HTTP requests.
