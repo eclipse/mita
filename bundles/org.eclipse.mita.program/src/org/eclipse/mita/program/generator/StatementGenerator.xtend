@@ -103,6 +103,7 @@ import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.program.Program
+import org.eclipse.xtext.EcoreUtil2
 
 class StatementGenerator {
 
@@ -292,8 +293,10 @@ class StatementGenerator {
 				else {
 					feature.structType
 				}
+				// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
+				val needCast = EcoreUtil2.getContainerOfType(stmt, ProgramBlock) !== null
 				'''
-				(«sumType.structName») {
+				«IF needCast»(«sumType.structName») «ENDIF»{
 					.tag = «feature.enumName»«IF !(feature instanceof Singleton)», ««« there is no other field for singletons
 
 					««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
@@ -303,6 +306,8 @@ class StatementGenerator {
 						«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«i_arg.value.value.code.noTerminator»
 						«ENDFOR»	
 					}
+					«ELSE»
+					
 					«ENDIF»
 				}
 				'''
