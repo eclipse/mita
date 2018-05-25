@@ -29,6 +29,7 @@ class RestClientValidator implements IResourceValidator  {
 	
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		if(context instanceof SystemResourceSetup) {
+			acceptor.acceptWarning("The HttpRestClient connectivity with security is experimental. Things might not work as expected.", context, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, 'restclient_is_experimental');
 			validateEndPointBase(context, acceptor);
 			validateCustomHeader(context, acceptor);
 		}
@@ -64,7 +65,10 @@ class RestClientValidator implements IResourceValidator  {
 		if(customHeaderValues !== null) {
 			val customHeader = StaticValueInferrer.infer(customHeaderValues, []);
 			if(customHeader instanceof List) {
-				customHeader as List<String>;
+				val headers = customHeader as List<String>;
+				if(headers.size() > 2){
+					acceptor.acceptError("Currently, maximum support for custom header size is only 2. ", customHeaderItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "malformed_custom_header");								
+				}				
 			}
 			else
 			{

@@ -75,41 +75,13 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 
 	override generateEnable() {
 		codeFragmentProvider.create('''
-		static CmdProcessor_T CommandProcessorHandle;
 
-		Retcode_T retcode = CmdProcessor_Initialize(&CommandProcessorHandle, "Serval PAL", TASK_PRIORITY_SERVALPAL_CMD_PROC, TASK_STACK_SIZE_SERVALPAL_CMD_PROC, TASK_QUEUE_LEN_SERVALPAL_CMD_PROC);
-		if (RETCODE_OK == retcode)
-		{
-			retcode = ServalPAL_Setup(&CommandProcessorHandle);
-		}
-		#if HTTP_SECURE_ENABLE
-		if (RETCODE_OK == retcode)
-		{
-		    retcode = SNTP_Setup(&SNTPSetupInfo);
-		}
-		#endif /* HTTP_SECURE_ENABLE */
-
-		if (RETCODE_OK == retcode)
-		{
-		    retcode = HTTPRestClient_Setup(&HTTPRestClientSetupInfo);
-		}
-		// @todo: remove block later
-		if (RETCODE_OK == retcode)
-		{
-			printf("Setup block successfull\n");
-		}
-		// @todo: remove later
-
-		retcode = ServalPAL_Enable();
+		Retcode_T retcode = ServalPAL_Enable();
 
 		#if HTTP_SECURE_ENABLE
 		if (RETCODE_OK == retcode)
 		{
 		    retcode = SNTP_Enable();
-			if (RETCODE_OK != retcode)
-			{		
-				printf("SNTP_Enable");
-			}
 		}
 		#endif /*HTTP_SECURE_ENABLE*/
 
@@ -118,12 +90,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		    retcode = HTTPRestClient_Enable();
 		}
 		
-		// @todo: remove block later
-		if (RETCODE_OK == retcode)
-		{
-			printf("Enable block successfull\n");
-		}
-		// @todo: remove later
 		return retcode;
 		''')
 		.setPreamble('''
@@ -146,35 +112,31 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		val endpoint = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "endpoint"), [ ]);
 		val httpWriteMethod = ModelUtils.getArgumentValue(signalInstance, "writeMethod").httpMethod;
 		val httpReadMethod = ModelUtils.getArgumentValue(signalInstance, "readMethod").httpMethod;
-		val contentType = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "contentType"), []); // @todo: where is it used?
+		val contentType = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "contentType"), []);
 		
+		if(variableName instanceof String) {
+			val heee = 0;
+		}
 		codeFragmentProvider.create('''
 		Retcode_T rc = RETCODE_FAILURE;
 		
 		/**< HTTP rest client configuration parameters */
-		static HTTPRestClient_Config_T HTTPRestClientConfigInfo =
+		HTTPRestClient_Config_T HTTPRestClientConfigInfo =
 		{
 		       .IsSecure = HTTP_SECURE_ENABLE,
-		       .DestinationServerUrl = "«baseUrl.host»", // @todo: replace with user parameter url or baseUrl
+		       .DestinationServerUrl = "«baseUrl.host»",
 		       .DestinationServerPort = «port»,
 		       .RequestMaxDownloadSize = REQUEST_MAX_DOWNLOAD_SIZE,
 		};
 		
 		/**< HTTP rest client POST parameters */
-		static HTTPRestClient_Post_T HTTPRestClientPostInfo =
+		HTTPRestClient_Post_T HTTPRestClientPostInfo =
 		{
-				.Payload = «variableName»,
-				.PayloadLength = (sizeof(«variableName») - 1U),
+				.Payload = "{ \"«endpoint»\": \"«variableName»\"}", 
+				.PayloadLength = (sizeof("{ \"«endpoint»\": \"«variableName»\"}") - 1U),
 		        .Url = "/post",//getHttpMethod("«httpWriteMethod»"),
-		        .RequestCustomHeader0 = «headers.get(0)»,
-		        .RequestCustomHeader1 = «headers.get(1)»,
-		};
-		
-		/**< HTTP rest client GET parameters */
-		static HTTPRestClient_Get_T HTTPRestClientGetInfo =
-		{
-		        .Url = "/get",//getHttpMethod("«httpReadMethod»"),
-		        .GetCB = NULL,
+		        .RequestCustomHeader0 = "«headers.get(0)»",
+		        .RequestCustomHeader1 = "«headers.get(1)»",
 		};
 
 		#if HTTP_SECURE_ENABLE
@@ -195,18 +157,8 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		#endif /* HTTP_SECURE_ENABLE */
 
 		rc = HTTPRestClient_Post(&HTTPRestClientConfigInfo, &HTTPRestClientPostInfo, APP_RESPONSE_FROM_HTTP_SERVER_POST_TIMEOUT);
-		if (RETCODE_OK == rc)
-		{
-		    /* Wait for INTER_REQUEST_INTERVAL */
-		    vTaskDelay(pdMS_TO_TICKS(INTER_REQUEST_INTERVAL));
-		    /* Do a HTTP rest client GET */
-		    rc = HTTPRestClient_Get(&HTTPRestClientConfigInfo, &HTTPRestClientGetInfo, APP_RESPONSE_FROM_HTTP_SERVER_GET_TIMEOUT);
-		}
 
-		if (RETCODE_OK != rc)
-		{
-			return rc;
-		}
+		return rc;
 		''')
 		.setPreamble('''
 		#define HTTP_SECURE_ENABLE «configuration.getBoolean("isSecurityEnabled")»
@@ -230,8 +182,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		 * POST request. It's meant to demonstrate how to use custom header.
 		 */
 		#define POST_REQUEST_CUSTOM_HEADER_1    "X-Foobar: AnotherCustomHeader\r\n"
-		
-		#define POST_REQUEST_BODY               "{ \"device\": \"XDK110\", \"ping\": \"pong\" }"
 		
 		/**
 		 * The time we wait (in milliseconds) between sending HTTP requests.
