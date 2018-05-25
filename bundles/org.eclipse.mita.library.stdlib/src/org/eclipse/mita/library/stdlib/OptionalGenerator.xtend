@@ -62,7 +62,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)» «generateExpression(type, stmt, AssignmentOperator.ASSIGN, stmt.initialization)»''')
+		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»;''')
 	}
 	
 	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
