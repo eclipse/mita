@@ -43,29 +43,74 @@
 	</properties>
 
 	<modules>
-		<module>org.eclipse.mita.target</module> 
-
-		<module>org.eclipse.mita.platform</module>
-		<module>org.eclipse.mita.platform.ide</module>
-		<module>org.eclipse.mita.platform.ui</module>
-
-		<module>org.eclipse.mita.types</module>
-		<module>org.eclipse.mita.types.ide</module>
-		<module>org.eclipse.mita.types.ui</module>
-
-		<module>org.eclipse.mita.program</module>
-		<module>org.eclipse.mita.program.ide</module>
-		<module>org.eclipse.mita.program.ui</module>
-		<module>org.eclipse.mita.program.tests</module>
-		<module>org.eclipse.mita.library.extension</module>
-		<module>org.eclipse.mita.library.stdlib</module>
-
-		<module>../platforms/org.eclipse.mita.platform.xdk110</module>
-		<module>../platforms/org.eclipse.mita.platform.unittest</module>
-
-		<module>org.eclipse.mita.feature</module>
-		<module>org.eclipse.mita.repository</module>		 
+		<module>org.eclipse.mita.target</module>
 	</modules>
+
+    <profiles>
+        <profile>
+            <id>plugins</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>org.eclipse.mita.platform</module>
+                <module>org.eclipse.mita.platform.ide</module>
+                <module>org.eclipse.mita.platform.ui</module>
+
+                <module>org.eclipse.mita.types</module>
+                <module>org.eclipse.mita.types.ide</module>
+                <module>org.eclipse.mita.types.ui</module>
+
+                <module>org.eclipse.mita.program</module>
+                <module>org.eclipse.mita.program.ide</module>
+                <module>org.eclipse.mita.program.ui</module>
+                
+                <module>org.eclipse.mita.library.extension</module>
+                <module>org.eclipse.mita.library.stdlib</module>
+            </modules>
+        </profile>
+        
+        <profile>
+            <id>platforms</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>../platforms/org.eclipse.mita.platform.xdk110</module>
+                <module>../platforms/org.eclipse.mita.platform.unittest</module>
+            </modules>
+        </profile>
+        
+        <profile>
+            <id>tests</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>org.eclipse.mita.program.tests</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>deployment</id>
+            <modules>
+                <module>org.eclipse.mita.feature</module>
+                <module>org.eclipse.mita.repository</module>
+            </modules>
+        </profile>
+
+
+		<profile>
+			<id>macosx-jvm-flags</id>
+			<activation>
+				<os><family>mac</family></os>
+			</activation>
+			<properties>
+				<test.vmargs>-Xmx512m -XstartOnFirstThread</test.vmargs>
+			</properties>
+		</profile>
+
+    </profiles>
 
 	<build>
 		<plugins>
@@ -329,31 +374,6 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
-	<profiles>
-		<profile>
-			<id>skip-ui-tests</id>
-			<activation>
-				<property>
-					<name>skip-ui-tests</name>
-				</property>
-			</activation>
-			<properties>
-				<tycho.surefire.skipUiTest>true</tycho.surefire.skipUiTest>
-			</properties>
-		</profile>
-		<profile>
-			<id>macosx</id>
-			<activation>
-				<os>
-					<family>mac</family>
-				</os>
-			</activation>
-			<properties>
-				<test.vmargs>-Xmx512m -XstartOnFirstThread</test.vmargs>
-			</properties>
-		</profile>
-	</profiles>
 
 	<dependencyManagement>
 		<dependencies>
