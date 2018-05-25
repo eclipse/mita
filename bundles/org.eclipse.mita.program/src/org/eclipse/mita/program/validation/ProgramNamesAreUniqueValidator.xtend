@@ -19,7 +19,7 @@ import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.yakindu.base.types.Operation
+import org.eclipse.mita.base.types.Operation
 
 class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 

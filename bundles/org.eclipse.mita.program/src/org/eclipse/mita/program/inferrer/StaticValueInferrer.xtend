@@ -16,16 +16,16 @@ package org.eclipse.mita.program.inferrer
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
-import org.yakindu.base.expressions.expressions.BoolLiteral
-import org.yakindu.base.expressions.expressions.DoubleLiteral
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.FloatLiteral
-import org.yakindu.base.expressions.expressions.IntLiteral
-import org.yakindu.base.expressions.expressions.NumericalUnaryExpression
-import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
-import org.yakindu.base.expressions.expressions.StringLiteral
-import org.yakindu.base.types.Enumerator
+import org.eclipse.mita.base.expressions.BoolLiteral
+import org.eclipse.mita.base.expressions.DoubleLiteral
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FloatLiteral
+import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.NumericalUnaryExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.types.Enumerator
 
 /**
  * Infers the value of an expression at compile time.

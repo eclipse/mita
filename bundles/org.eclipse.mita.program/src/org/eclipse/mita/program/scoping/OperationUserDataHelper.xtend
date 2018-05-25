@@ -16,11 +16,11 @@ package org.eclipse.mita.program.scoping
 import com.google.inject.Inject
 import java.util.List
 import org.eclipse.xtext.resource.IEObjectDescription
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Type
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.yakindu.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 class OperationUserDataHelper {
 

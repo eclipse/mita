@@ -16,28 +16,28 @@ package org.eclipse.mita.program.validation
 import com.google.inject.Inject
 import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.HasAccessors
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
+import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.platform.validation.PlatformDSLValidator
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsOtherCase
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.HasAccessors
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.Singleton
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumAlternative
+import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.yakindu.base.expressions.expressions.Argument
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.validation.IValidationIssueAcceptor
-import org.yakindu.base.types.validation.TypeValidator
-import org.eclipse.mita.program.model.ModelUtils
 
 class SumTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {
 	

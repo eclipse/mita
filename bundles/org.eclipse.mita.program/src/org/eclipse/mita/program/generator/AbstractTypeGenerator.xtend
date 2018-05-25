@@ -17,9 +17,9 @@ import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.expressions.expressions.AssignmentOperator
-import org.yakindu.base.types.TypeSpecifier
-import org.yakindu.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 /**
  * Interface for type generators.

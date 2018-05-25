@@ -13,17 +13,17 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
+import java.net.MalformedURLException
+import java.net.URI
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.validation.IResourceValidator
-import java.net.MalformedURLException
-import java.net.URI
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.ExpressionsPackage
 
 class MqttValidator implements IResourceValidator {
 	

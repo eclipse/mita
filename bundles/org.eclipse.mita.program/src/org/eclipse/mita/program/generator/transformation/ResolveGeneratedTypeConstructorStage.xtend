@@ -13,8 +13,8 @@
 
 package org.eclipse.mita.program.generator.transformation
 
+import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.types.GeneratedType
 
 class ResolveGeneratedTypeConstructorStage extends AbstractTransformationStage {
 	

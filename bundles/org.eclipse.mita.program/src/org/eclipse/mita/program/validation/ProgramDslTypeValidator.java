@@ -13,11 +13,11 @@
 
 package org.eclipse.mita.program.validation;
 
-import org.yakindu.base.expressions.inferrer.ExpressionsTypeInferrer;
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
-import org.yakindu.base.types.typesystem.ITypeSystem;
-import org.yakindu.base.types.validation.IValidationIssueAcceptor;
-import org.yakindu.base.types.validation.TypeValidator;
+import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer;
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
+import org.eclipse.mita.base.types.typesystem.ITypeSystem;
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor;
+import org.eclipse.mita.base.types.validation.TypeValidator;
 
 import org.eclipse.mita.program.inferrer.OptionalTypeExtensions;
 import com.google.inject.Inject;

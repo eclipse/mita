@@ -23,7 +23,7 @@ import org.xpect.runner.XpectRunner;
 import org.xpect.xtext.lib.setup.ThisOffset;
 import org.xpect.xtext.lib.setup.XtextStandaloneSetup;
 import org.xpect.xtext.lib.setup.XtextWorkspaceSetup;
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer;
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer;
 
 import com.google.inject.Inject;
 

@@ -18,7 +18,7 @@ import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import java.util.ArrayList
 import org.eclipse.xtext.scoping.impl.AbstractScope
-import org.yakindu.base.types.GenericElement
+import org.eclipse.mita.base.types.GenericElement
 
 import static extension org.eclipse.xtext.EcoreUtil2.*
 

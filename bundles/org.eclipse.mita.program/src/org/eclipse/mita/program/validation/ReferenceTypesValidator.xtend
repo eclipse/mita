@@ -13,6 +13,21 @@
 
 package org.eclipse.mita.program.validation
 
+import com.google.common.base.Optional
+import com.google.inject.Inject
+import java.util.List
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.FunctionDefinition
@@ -22,28 +37,13 @@ import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.StructureType
-import com.google.common.base.Optional
-import com.google.inject.Inject
-import java.util.List
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.util.Triple
 import org.eclipse.xtext.util.Tuples
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.yakindu.base.base.BasePackage
-import org.yakindu.base.expressions.expressions.AssignmentExpression
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.TypeSpecifier
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.yakindu.base.types.typesystem.ITypeSystem
-import org.yakindu.base.types.validation.IValidationIssueAcceptor
+import org.eclipse.mita.base.types.TypesPackage
 
 class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {
 	
@@ -132,7 +132,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	def forbiddenReferenceReturn(FunctionDefinition funDecl) {
 		val funDeclTypeIR = inferrer.infer(funDecl);
 		if(hasReferenceInType(funDeclTypeIR)) {
-			error(FORBIDDEN_RETURN, funDecl, BasePackage.Literals.NAMED_ELEMENT__NAME);
+			error(FORBIDDEN_RETURN, funDecl, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 		}
 	}
 	

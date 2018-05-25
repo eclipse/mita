@@ -18,17 +18,17 @@ import java.util.Map;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.mita.base.scoping.TypeDSLResourceDescriptionStrategy;
+import org.eclipse.mita.base.types.StructureType;
+import org.eclipse.mita.base.types.SumAlternative;
+import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.platform.AbstractSystemResource;
 import org.eclipse.mita.platform.Platform;
 import org.eclipse.mita.platform.PlatformPackage;
 import org.eclipse.mita.platform.SystemResourceAlias;
-import org.eclipse.mita.types.StructureType;
-import org.eclipse.mita.types.SumAlternative;
-import org.eclipse.mita.types.scoping.TypeDSLResourceDescriptionStrategy;
 import org.eclipse.xtext.resource.EObjectDescription;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.util.IAcceptor;
-import org.yakindu.base.types.TypeSpecifier;
 
 import com.google.common.collect.ImmutableList;
 

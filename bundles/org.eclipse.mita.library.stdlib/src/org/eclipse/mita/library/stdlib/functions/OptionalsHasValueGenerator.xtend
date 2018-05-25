@@ -17,7 +17,7 @@ import org.eclipse.mita.library.stdlib.OptionalGenerator.enumOptional
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
 import com.google.inject.Inject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class OptionalsHasValueGenerator extends AbstractFunctionGenerator {
 	

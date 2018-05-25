@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension point="org.eclipse.emf.ecore.generated_package">
+      <!-- @generated types -->
+      <package
+            uri="org.eclipse.mita.base.types"
+            class="org.eclipse.mita.base.types.TypesPackage"
+            genModel="model/types.xcore"/>
+   </extension>
+
+   <extension point="org.eclipse.emf.ecore.generated_package">
+      <!-- @generated expressions -->
+      <package
+            uri="org.eclipse.mita.base.expressions"
+            class="org.eclipse.mita.base.expressions.ExpressionsPackage"
+            genModel="model/expressions.xcore"/>
+   </extension>
+
+</plugin>

@@ -21,6 +21,23 @@ import com.google.inject.Inject
 import java.util.Collections
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Sensor
@@ -36,12 +53,6 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.impl.VariableDeclarationImpl
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumAlternative
-import org.eclipse.mita.types.SumType
-import org.eclipse.mita.types.scoping.TypesGlobalScopeProvider
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.IQualifiedNameConverter
 import org.eclipse.xtext.naming.IQualifiedNameProvider
@@ -54,17 +65,6 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
-import org.yakindu.base.expressions.expressions.Argument
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.ExpressionsPackage
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.ComplexType
-import org.yakindu.base.types.EnumerationType
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Type
-import org.yakindu.base.types.TypesPackage
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -389,15 +389,15 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
-			(org.eclipse.mita.types.TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
-			(org.eclipse.mita.types.TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass));
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass));
 
 		val exclusion = (PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
 			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
 			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) ||
-			(org.eclipse.mita.types.TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
-			(org.eclipse.mita.types.TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
-			(org.eclipse.mita.types.TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass))
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass))
 
 		inclusion && !exclusion;
 	]
@@ -407,7 +407,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 		val exclusion = PlatformPackage.Literals.SENSOR.isSuperTypeOf(x.EClass) ||
 			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x.EClass) ||
-			org.eclipse.mita.types.TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x.EClass) ||
+			TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x.EClass) ||
 			TypesPackage.Literals.TYPE_PARAMETER.isSuperTypeOf(x.EClass); // exclude gloabal type parameters, local ones are added in TypeReferenceScope
 		inclusion && !exclusion;
 	]
@@ -467,9 +467,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			TypesPackage.Literals.COMPLEX_TYPE, false);
 		return new FilteringScope(delegate, [
 			(
-				   org.eclipse.mita.types.TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(it.EClass) 
-				|| org.eclipse.mita.types.TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(it.EClass) 
-				|| org.eclipse.mita.types.TypesPackage.Literals.SINGLETON.isSuperTypeOf(it.EClass) 
+				   TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(it.EClass) 
+				|| TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(it.EClass) 
+				|| TypesPackage.Literals.SINGLETON.isSuperTypeOf(it.EClass) 
 			) && it.name.segmentCount == 1
 		])	
 	}
@@ -608,7 +608,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				scope_ConfigurationItemValue_item(context as SystemResourceSetup, reference);
 			} else {
 //				val methodName = "scope_" + reference.getEContainingClass().getName() + "_" + reference.getName();
-//			println(methodName);
+//				println(methodName + ' -> ' + context.eClass.name);
 				super.getScope(context, reference);
 			}
 

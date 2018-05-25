@@ -8,8 +8,7 @@ Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.mita.platform,
  org.eclipse.xtext.ide,
  org.eclipse.xtext.xbase.ide,
- org.eclipse.mita.types,
- org.yakindu.base.expressions,
+ org.eclipse.mita.base,
  org.antlr.runtime
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: org.eclipse.mita.platform.ide.contentassist.antlr,

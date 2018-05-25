@@ -14,7 +14,7 @@
 package org.eclipse.mita.program.generator.transformation
 
 import org.eclipse.mita.program.generator.transformation.AbstractTransformationStage
-import org.yakindu.base.expressions.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.StringLiteral
 
 class EscapeWhitespaceInStringStage extends AbstractTransformationStage {
 	

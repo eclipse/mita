@@ -13,11 +13,11 @@
 
 package org.eclipse.mita.program.scoping
 
-import org.eclipse.mita.types.ImportStatement
-import org.eclipse.mita.types.PackageAssociation
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
