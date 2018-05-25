@@ -23,32 +23,52 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import java.net.URL
 import java.net.MalformedURLException
 import com.google.common.base.Strings
+import java.util.List
 
 class RestClientValidator implements IResourceValidator  {
 	
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		if(context instanceof SystemResourceSetup) {
-			
-			val rawEndpointBaseItem = context.configurationItemValues.findFirst[ it.item.name == 'endpointBase' ]
-			val rawEndpointBase = rawEndpointBaseItem?.value;
-			if(rawEndpointBase !== null) {
-				val endpointValue = StaticValueInferrer.infer(rawEndpointBase, []);
-				if(endpointValue instanceof String) {
-					try {
-						val endpointUrl = new URL(endpointValue);
-						if(Strings.isNullOrEmpty(endpointUrl.protocol)) {
-							acceptor.acceptError("Please include the protocol. Start with http://", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "no_protocol_in_url");
-						} else if(endpointUrl.protocol != 'http') {
-							acceptor.acceptError("Only http is supported as protocol", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "only_http_supported");
-						} else if(Strings.isNullOrEmpty(endpointUrl.host)) {
-							acceptor.acceptError("Host part of the URL is required", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "host_required");
-						} else if(endpointValue.endsWith("/")) {
-							acceptor.acceptWarning("Endpoint base should not end with a trailing slash. Remove the last /", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "no_trailing_slash");
-						}
-					} catch(MalformedURLException e) {
-						acceptor.acceptError("URL is malformed. " + e.message?.toFirstUpper, rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "malformed_endpoint_base");
+			validateEndPointBase(context, acceptor);
+			validateCustomHeader(context, acceptor);
+		}
+	}	
+	
+	protected def validateEndPointBase(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
+		val rawEndpointBaseItem = setup.configurationItemValues.findFirst[ it.item.name == 'endpointBase' ]
+		val rawEndpointBase = rawEndpointBaseItem?.value;
+		if(rawEndpointBase !== null) {
+			val endpointValue = StaticValueInferrer.infer(rawEndpointBase, []);
+			if(endpointValue instanceof String) {
+				try {
+					val endpointUrl = new URL(endpointValue);
+					if(Strings.isNullOrEmpty(endpointUrl.protocol)) {
+						acceptor.acceptError("Please include the protocol. Start with http://", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "no_protocol_in_url");
+					} else if(endpointUrl.protocol != 'http') {
+						acceptor.acceptError("Only http is supported as protocol", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "only_http_supported");
+					} else if(Strings.isNullOrEmpty(endpointUrl.host)) {
+						acceptor.acceptError("Host part of the URL is required", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "host_required");
+					} else if(endpointValue.endsWith("/")) {
+						acceptor.acceptWarning("Endpoint base should not end with a trailing slash. Remove the last /", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "no_trailing_slash");
 					}
+				} catch(MalformedURLException e) {
+					acceptor.acceptError("URL is malformed. " + e.message?.toFirstUpper, rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "malformed_endpoint_base");
 				}
+			}
+		}		
+	}
+	
+	protected def validateCustomHeader(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
+		val customHeaderItem = setup.configurationItemValues.findFirst[ it.item.name == 'customHeader' ]
+		val customHeaderValues = customHeaderItem?.value;
+		if(customHeaderValues !== null) {
+			val customHeader = StaticValueInferrer.infer(customHeaderValues, []);
+			if(customHeader instanceof List) {
+				customHeader as List<String>;
+			}
+			else
+			{
+				acceptor.acceptError("customHeader is not of type list. ", customHeaderItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "malformed_custom_header");
 			}
 		}
 	}

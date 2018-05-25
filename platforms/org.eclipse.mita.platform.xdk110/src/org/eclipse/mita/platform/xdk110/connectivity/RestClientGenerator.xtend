@@ -13,6 +13,9 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
+import com.google.inject.Inject
+import java.net.URL
+import java.util.List
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
@@ -20,8 +23,6 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import java.net.URL
 import org.yakindu.base.expressions.expressions.ElementReferenceExpression
 import org.yakindu.base.expressions.expressions.Expression
 import org.yakindu.base.expressions.expressions.FeatureCall
@@ -41,17 +42,12 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 
 	override generateSetup() {
 		codeFragmentProvider.create('''
-		static CmdProcessor_T * AppCmdProcessor;
+		static CmdProcessor_T CommandProcessorHandle;
 
-		Retcode_T retcode = ServalPAL_Setup(AppCmdProcessor);
-		printf("ServalPAL_Setup1");
-		if (RETCODE_OK != retcode)
-		{		
-			printf("ServalPAL_Setup fail");
-		}
-		else
+		Retcode_T retcode = CmdProcessor_Initialize(&CommandProcessorHandle, "Serval PAL", TASK_PRIORITY_SERVALPAL_CMD_PROC, TASK_STACK_SIZE_SERVALPAL_CMD_PROC, TASK_QUEUE_LEN_SERVALPAL_CMD_PROC);
+		if (RETCODE_OK == retcode)
 		{
-			printf("ServalPAL_Setup1 success");
+			retcode = ServalPAL_Setup(&CommandProcessorHandle);
 		}
 		#if HTTP_SECURE_ENABLE
 		if (RETCODE_OK == retcode)
@@ -143,7 +139,10 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
 		val baseUrl = new URL(configuration.getString("endpointBase"));
 		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
-		val customHeader = configuration.getString("customHeader"); // @todo: check how to extract the array values
+		val customHeader = StaticValueInferrer.infer(configuration.getExpression("customHeader"), []); 
+		
+		val headers = customHeader as List<String>;
+		
 		val endpoint = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "endpoint"), [ ]);
 		val httpWriteMethod = ModelUtils.getArgumentValue(signalInstance, "writeMethod").httpMethod;
 		val httpReadMethod = ModelUtils.getArgumentValue(signalInstance, "readMethod").httpMethod;
@@ -164,11 +163,11 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		/**< HTTP rest client POST parameters */
 		static HTTPRestClient_Post_T HTTPRestClientPostInfo =
 		{
-				.Payload = POST_REQUEST_BODY,
-				.PayloadLength = (sizeof(POST_REQUEST_BODY) - 1U),
+				.Payload = «variableName»,
+				.PayloadLength = (sizeof(«variableName») - 1U),
 		        .Url = "/post",//getHttpMethod("«httpWriteMethod»"),
-		        .RequestCustomHeader0 = POST_REQUEST_CUSTOM_HEADER_0,
-		        .RequestCustomHeader1 = POST_REQUEST_CUSTOM_HEADER_1,
+		        .RequestCustomHeader0 = «headers.get(0)»,
+		        .RequestCustomHeader1 = «headers.get(1)»,
 		};
 		
 		/**< HTTP rest client GET parameters */
