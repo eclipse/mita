@@ -50,14 +50,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			retcode = ServalPAL_Setup(&CommandProcessorHandle);
 		}
 		#if HTTP_SECURE_ENABLE
-		/**< SNTP setup parameters */
-		SNTP_Setup_T SNTPSetupInfo =
-		{
-		    .ServerUrl = SNTP_SERVER_URL,
-		    .ServerIpAddr = SNTP_SERVER_IP_ADDR,
-		    .ServerPort = «port»,
-		    .UseServerUrl = SNTP_USE_SERVER_URL,
-		};
 		if (RETCODE_OK == retcode)
 		{
 		    retcode = SNTP_Setup(&SNTPSetupInfo);
@@ -135,8 +127,8 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		HTTPRestClient_Post_T HTTPRestClientPostInfo =
 		{
 				.Payload = «variableName», 
-				.PayloadLength = (strlen(«variableName») - 1U),
-		        .Url = "/«endpoint»",
+				.PayloadLength = (sizeof(«variableName») - 1U),
+		        .Url = "/post",
 		        .RequestCustomHeader0 = "«headers.get(0)»",
 		        .RequestCustomHeader1 = "«headers.get(1)»",
 		};
@@ -207,12 +199,22 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		
 		/**< Timeout for SNTP server time sync */
 		#define APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT           UINT32_C(10000)
+
+		/**< SNTP setup parameters */
+		SNTP_Setup_T SNTPSetupInfo =
+		{
+		    .ServerUrl = SNTP_SERVER_URL,
+		    .ServerIpAddr = SNTP_SERVER_IP_ADDR,
+		    .ServerPort = «port»,
+		    .UseServerUrl = SNTP_USE_SERVER_URL,
+		};
 		#endif /* HTTP_SECURE_ENABLE */
 		
 		HTTPRestClient_Setup_T HTTPRestClientSetupInfo =
 		{
 			.IsSecure = HTTP_SECURE_ENABLE,
 		};
+
 		
 		''')
 	}
