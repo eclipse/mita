@@ -50,6 +50,14 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			retcode = ServalPAL_Setup(&CommandProcessorHandle);
 		}
 		#if HTTP_SECURE_ENABLE
+		/**< SNTP setup parameters */
+		SNTP_Setup_T SNTPSetupInfo =
+		{
+		    .ServerUrl = SNTP_SERVER_URL,
+		    .ServerIpAddr = SNTP_SERVER_IP_ADDR,
+		    .ServerPort = «port»,
+		    .UseServerUrl = SNTP_USE_SERVER_URL,
+		};
 		if (RETCODE_OK == retcode)
 		{
 		    retcode = SNTP_Setup(&SNTPSetupInfo);
@@ -104,19 +112,13 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
 		val baseUrl = new URL(configuration.getString("endpointBase"));
+		val securityFlag = if(baseUrl.protocol == "https") 1 else 0;
 		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
 		val customHeader = StaticValueInferrer.infer(configuration.getExpression("customHeader"), []); 
-		
 		val headers = customHeader as List<String>;
-		
 		val endpoint = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "endpoint"), [ ]);
-		val httpWriteMethod = ModelUtils.getArgumentValue(signalInstance, "writeMethod").httpMethod;
-		val httpReadMethod = ModelUtils.getArgumentValue(signalInstance, "readMethod").httpMethod;
 		val contentType = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "contentType"), []);
-		
-		if(variableName instanceof String) {
-			val heee = 0;
-		}
+
 		codeFragmentProvider.create('''
 		Retcode_T rc = RETCODE_FAILURE;
 		
@@ -132,9 +134,9 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		/**< HTTP rest client POST parameters */
 		HTTPRestClient_Post_T HTTPRestClientPostInfo =
 		{
-				.Payload = "{ \"«endpoint»\": \"«variableName»\"}", 
-				.PayloadLength = (sizeof("{ \"«endpoint»\": \"«variableName»\"}") - 1U),
-		        .Url = "/post",//getHttpMethod("«httpWriteMethod»"),
+				.Payload = «variableName», 
+				.PayloadLength = (strlen(«variableName») - 1U),
+		        .Url = "/«endpoint»",
 		        .RequestCustomHeader0 = "«headers.get(0)»",
 		        .RequestCustomHeader1 = "«headers.get(1)»",
 		};
@@ -161,7 +163,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		return rc;
 		''')
 		.setPreamble('''
-		#define HTTP_SECURE_ENABLE «configuration.getBoolean("isSecurityEnabled")»
+		#define HTTP_SECURE_ENABLE «securityFlag»
 		#define APP_RESPONSE_FROM_HTTP_SERVER_POST_TIMEOUT  UINT32_C(10000)
 		/**< Timeout for completion of HTTP rest client GET */
 		#define APP_RESPONSE_FROM_HTTP_SERVER_GET_TIMEOUT       UINT32_C(10000)
@@ -171,42 +173,25 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		 * XDK. The maximum value that will work here is 512 bytes.
 		 */
 		#define REQUEST_MAX_DOWNLOAD_SIZE       UINT32_C(512)
-		/**
-		 * POST_REQUEST_CUSTOM_HEADER_0 is a custom header which is sent along with the
-		 * POST request. It's meant to demonstrate how to use custom header.
-		 */
-		#define POST_REQUEST_CUSTOM_HEADER_0    "X-AuthToken: InsertCrypticAuthenticationToken\r\n"
-		
-		/**
-		 * POST_REQUEST_CUSTOM_HEADER_1 is a custom header which is sent along with the
-		 * POST request. It's meant to demonstrate how to use custom header.
-		 */
-		#define POST_REQUEST_CUSTOM_HEADER_1    "X-Foobar: AnotherCustomHeader\r\n"
 		
 		/**
 		 * The time we wait (in milliseconds) between sending HTTP requests.
 		 */
 		#define INTER_REQUEST_INTERVAL          UINT32_C(10000)
-		
-		static HTTPRestClient_Setup_T HTTPRestClientSetupInfo =
-		{
-			.IsSecure = HTTP_SECURE_ENABLE,
-		};
-		
+
 		#if HTTP_SECURE_ENABLE
-		/**< SNTP setup parameters */
-		static SNTP_Setup_T SNTPSetupInfo =
-		{
-		    .ServerUrl = SNTP_SERVER_URL,
-		    .ServerIpAddr = SNTP_SERVER_IP_ADDR,
-		    .ServerPort = «port»,
-		    .UseServerUrl = SNTP_USE_SERVER_URL,
-		};
 		/**
 		 * SNTP_SERVER_URL is the SNTP server URL. Is unused if SNTP_USE_SERVER_URL is false.
 		 */
 		#define SNTP_SERVER_URL                 "YourSNTPServerURL"
-		
+
+		/* Helper Macro to convert readable representation of IPv4 in terms of uint32_t variable */
+		#define BCDS_IPV4_VAL(add_3,add_2,add_1,add_0)     \
+		    ((((uint32_t)add_0 << 24) & 0xFF000000) | \
+		        (((uint32_t)add_1 << 16) & 0xFF0000) | \
+		        (((uint32_t)add_2 << 8) & 0xFF00) | \
+		        ((uint32_t)add_3 & 0xFF) )
+		 
 		/**
 		 * SNTP_SERVER_IP_ADDR is the SNTP server IP address. Is unused if SNTP_USE_SERVER_URL is true.
 		 */
@@ -218,8 +203,16 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		 * If false, then SNTP_SERVER_IP_ADDR is used directly and SNTP_SERVER_URL macro is unused.
 		 *
 		 */
-		#define SNTP_USE_SERVER_URL             false		
+		#define SNTP_USE_SERVER_URL             false
+		
+		/**< Timeout for SNTP server time sync */
+		#define APP_RESPONSE_FROM_SNTP_SERVER_TIMEOUT           UINT32_C(10000)
 		#endif /* HTTP_SECURE_ENABLE */
+		
+		HTTPRestClient_Setup_T HTTPRestClientSetupInfo =
+		{
+			.IsSecure = HTTP_SECURE_ENABLE,
+		};
 		
 		''')
 	}

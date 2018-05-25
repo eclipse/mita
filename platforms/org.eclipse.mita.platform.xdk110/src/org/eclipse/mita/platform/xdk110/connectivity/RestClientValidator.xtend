@@ -29,7 +29,8 @@ class RestClientValidator implements IResourceValidator  {
 	
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		if(context instanceof SystemResourceSetup) {
-			acceptor.acceptWarning("The HttpRestClient connectivity with security is experimental. Things might not work as expected.", context, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, 'restclient_is_experimental');
+			acceptor.acceptWarning("The HttpRestClient connectivity with security is experimental. Things might not work as expected.", context, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, 'https_is_experimental');
+			acceptor.acceptWarning("The Http post works stably, http get will be implemented soon", context, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, 0, 'http_get_tobe_implemented');
 			validateEndPointBase(context, acceptor);
 			validateCustomHeader(context, acceptor);
 		}
@@ -45,8 +46,6 @@ class RestClientValidator implements IResourceValidator  {
 					val endpointUrl = new URL(endpointValue);
 					if(Strings.isNullOrEmpty(endpointUrl.protocol)) {
 						acceptor.acceptError("Please include the protocol. Start with http://", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "no_protocol_in_url");
-					} else if(endpointUrl.protocol != 'http') {
-						acceptor.acceptError("Only http is supported as protocol", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "only_http_supported");
 					} else if(Strings.isNullOrEmpty(endpointUrl.host)) {
 						acceptor.acceptError("Host part of the URL is required", rawEndpointBaseItem, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, "host_required");
 					} else if(endpointValue.endsWith("/")) {
