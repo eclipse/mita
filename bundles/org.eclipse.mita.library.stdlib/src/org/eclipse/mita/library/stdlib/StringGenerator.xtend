@@ -39,6 +39,7 @@ import org.yakindu.base.types.Operation
 import org.yakindu.base.types.TypeSpecifier
 import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.GeneratedFunctionDefinition
 
 class StringGenerator extends AbstractTypeGenerator {
 	
@@ -157,7 +158,6 @@ class StringGenerator extends AbstractTypeGenerator {
 			codeFragmentProvider.create(
 			'''
 				char «name»[«size + 1»];
-				«generateFunctionCall(elementReference.reference as Operation, codeFragmentProvider.create('''&«name»'''), elementReference)»
 			''')
 			.addHeader('string.h', true)
 			.addHeader('inttypes.h', true)

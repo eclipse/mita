@@ -120,9 +120,165 @@ sensor BMA280 {
     event new_data
 }
 
-//sensor BMG160 {
-//	generator ""
-//}
+sensor GyroscopeSensorFusion {
+	generator "org.eclipse.mita.platform.xdk110.sensors.GyroscopeSensorFusionGenerator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.GyroscopeSensorFusionValidator"
+	
+	/**
+	 * The X axis of the gyroscope
+	 */
+	modality x_axis : int32
+	
+	/**
+	 * The Y axis of the gyroscope
+	 */
+	modality y_axis : int32
+	
+	/**
+	 * The Z axis of the gyroscope
+	 */ 
+	modality z_axis : int32
+}
+
+enum BMI160_Bandwidth
+{              
+	/**< sets bandwidth to LowPass 10.7 HZ */
+    BW_10_7Hz, 
+    /**< sets bandwidth to LowPass 20.8 HZ */
+    BW_20_8Hz, 
+    /**< sets bandwidth to LowPass 39.9 HZ */
+    BW_39_9Hz, 
+    /**< sets bandwidth to LowPass 74.6 HZ */
+    BW_74_6Hz,  
+    /**< sets bandwidth to LowPass 136.6 HZ */
+    BW_136_6Hz, 
+    /**< sets bandwidth to LowPass 254.6 HZ */
+    BW_254_6Hz, 
+    /**< sets bandwidth to LowPass 523.9 HZ */
+    BW_523_9Hz, 
+    /**< sets bandwidth to LowPass 890 HZ */
+    BW_890Hz 
+}
+
+/**enum values to represent Range supported by the Gyroscope */
+enum BMI160_Range
+{   /** set to 0.0625 deg/s in 125 deg/s range */
+    Range_125s, 
+    /** set to 0.125 deg/s in 250 deg/s range */
+    Range_250s,  
+    /** set to 0.25 deg/s in 500 deg/s range */
+    Range_500s,  
+    /** set to 0.5 deg/s in 1000 deg/s range */
+    Range_1000s, 
+    /** set to 1 deg/s in 2000 deg/s range */
+    Range_2000s 
+}
+
+/**
+ * The BMI160 is a small, low power, low noise 16-bit inertial measurement unit 
+ * designed for use in mobile applications like augmented reality or indoor navigation 
+ * which require highly accurate, real-time sensor data.
+ */
+sensor Gyroscope_BMI160 {
+	generator "org.eclipse.mita.platform.xdk110.sensors.Bmi160Generator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.Bmi160Validator"
+	
+	/**
+	 * The low-pass filter bandwidth used by the BMI160.
+	 */
+	configuration-item bandwidth : BMI160_Bandwidth = BMI160_Bandwidth.BW_39_9Hz
+
+	/**
+	 * The range the BMI160 should measure in.
+	 */
+	configuration-item range : BMI160_Range = BMI160_Range.Range_2000s
+	
+	/**
+	 * The X axis of the BMI160
+	 */
+	modality x_axis : int32
+	
+	/**
+	 * The Y axis of the BMI160
+	 */
+	modality y_axis : int32
+	
+	/**
+	 * The Z axis of the BMI160
+	 */ 
+	modality z_axis : int32
+	
+}
+
+enum BMG160_Bandwidth
+{                                    
+	/** sets bandwidth to LowPass 12 HZ */
+    Bw_12Hz, 
+    /** sets bandwidth to LowPass 23 HZ */
+    Bw_23Hz, 
+    /** sets bandwidth to LowPass 32 HZ */
+    Bw_32Hz, 
+    /** sets bandwidth to LowPass 47 HZ */
+    Bw_47Hz, 
+    /** sets bandwidth to LowPass 64 HZ */
+    Bw_64Hz, 
+    /** sets bandwidth to LowPass 116 HZ */
+    Bw_116Hz,
+    /** sets bandwidth to LowPass 230 HZ */
+    Bw_230Hz,
+    /** sets bandwidth to LowPass 523 HZ */
+    Bw_523Hz 
+}
+
+enum BMG160_Range
+{                
+	/** set to 0.0625 deg/s in 125 deg/s range */
+    Range_125s,  
+    /** set to 0.125 deg/s in 250 deg/s range */
+    Range_250s,  
+    /** set to 0.25 deg/s in 500 deg/s range */
+    Range_500s,  
+    /** set to 0.5 deg/s in 1000 deg/s range */
+    Range_1000s, 
+    /** set to 1 deg/s in 2000 deg/s range */
+    Range_2000s
+}
+
+/**
+ * The BMG160 is an ultra-small, digital 3-axis angular rate sensor with a measurement range up to 2000°/s 
+ * and a digital resolution of 16 bit for consumer electronics applications.
+ */
+sensor Gyroscope_BMG160 {
+	generator "org.eclipse.mita.platform.xdk110.sensors.Bmg160Generator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.Bmg160Validator"
+	
+	/**
+	 * The low-pass filter bandwidth used by the BMG160.
+	 */
+	configuration-item bandwidth : BMG160_Bandwidth = BMG160_Bandwidth.Bw_523Hz
+	/**
+	 * The range the BMG160 should measure in.
+	 */
+	configuration-item range : BMG160_Range = BMG160_Range.Range_2000s
+	
+	/**
+	 * The X axis of the BMG160
+	 */
+	modality x_axis : int32
+	
+	/**
+	 * The Y axis of the BMG160
+	 */
+	modality y_axis : int32
+	
+	/**
+	 * The Z axis of the BMG160
+	 */ 
+	modality z_axis : int32
+	
+}
+
+
 //
 //sensor BMM150 {
 //	generator ""
@@ -307,6 +463,7 @@ sensor MAX44009 {
  * BLE is Bluetooth Low Energy using GATT profiles. 
  * At the moment we only support slave mode where the XDK becomes a device that can be connected to (as compared to connecting to some other device).
  */
+
 connectivity named-singleton BLE {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.BleGenerator"
 	validator "org.eclipse.mita.platform.xdk110.connectivity.BleValidator"
@@ -317,6 +474,11 @@ connectivity named-singleton BLE {
 	configuration-item deviceName : string
 	
 	/**
+	 * MAC Address to be configured. Format: "FC:D6:BD:xx:xx:xx" or "FC-D6-BD-xx-xx-xx".
+	 */
+	configuration-item macAddress : string
+
+	/**
 	 * The last four bytes of the UUID of the GATT service we'll create.
 	 */
 	configuration-item serviceUID : uint32
@@ -325,7 +487,6 @@ connectivity named-singleton BLE {
 	 * The advertising interval in milliseconds.
 	 */
 	configuration-item advertisingInterval : int16 = 1000
-	
 	
 	/**
 	 * Creates a boolean GATT characteristic.
@@ -562,8 +723,25 @@ connectivity named-singleton LED {
 	signal light_up(color : LedColor) : bool
 }
 
+bus many I2C {
+	generator "org.eclipse.mita.platform.xdk110.buses.I2CGenerator"
+	validator "org.eclipse.mita.platform.xdk110.buses.I2CValidator"
+	
+	required configuration-item deviceAddress: uint8
+	
+	signal register(address: uint8, width: uint8): array<uint8>
+	signal register_uint8(address: uint8): uint8
+	signal register_int8(address: uint8): int8
+	signal register_uint16(address: uint8): uint16
+	signal register_int16(address: uint8): int16
+	signal register_uint32(address: uint8): uint32
+	signal register_int32(address: uint8): int32
+}
+
+
 alias environment for BME280
 alias accelerometer for BMA280
+alias gyroscope for GyroscopeSensorFusion
 alias light for MAX44009
 alias button_one for Button
 alias button_two for Button
@@ -571,10 +749,15 @@ alias button_two for Button
 platform XDK110 {
 	has environment
 	has accelerometer
+	has gyroscope
 	has light
 	has button_one
 	has button_two
 	
+	has Gyroscope_BMI160
+	has Gyroscope_BMG160
+	
+	has I2C
 	has BLE
 	has LED
 	has WLAN

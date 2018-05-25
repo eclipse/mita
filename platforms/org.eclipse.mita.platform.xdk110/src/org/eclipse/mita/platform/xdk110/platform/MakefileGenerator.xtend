@@ -47,6 +47,7 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 		#List all the application header file under variable BCDS_XDK_INCLUDES 
 		export BCDS_XDK_INCLUDES = \
 			-I$(BCDS_BASE_DIR)/xdk110/Libraries/BSTLib/3rd-party/bstlib/BMA2x2_driver \
+			-I$(BCDS_BASE_DIR)/xdk110/Platform/BSP/source \
 			-I$(BCDS_APP_SOURCE_DIR) \
 			-I$(BCDS_APP_SOURCE_DIR)/.. \
 			-I$(BCDS_APP_SOURCE_DIR)/base \
