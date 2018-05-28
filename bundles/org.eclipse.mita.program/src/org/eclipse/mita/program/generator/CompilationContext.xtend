@@ -51,6 +51,9 @@ class CompilationContext {
 	@Inject
 	protected Provider<ResourceGraphBuilder> resourceGraphBuilderProvider;
 	
+	@Inject
+	protected ModelUtils modelUtils;
+	
 	private var Boolean isInited = false;
 
 	public def init(Iterable<Program> compilationUnits, Iterable<Program> stdLib) {
@@ -67,7 +70,7 @@ class CompilationContext {
 		systemResourceSetups = compilationUnits.map[it.setup].flatten.toSet();
 		
 		eventHandler = compilationUnits.map[x|x.eventHandlers].flatten.toList();
-		platform = ModelUtils.getPlatform(compilationUnits.head);
+		platform = modelUtils.getPlatform(compilationUnits.head);
 	}
 	
 	private def assertInited() {

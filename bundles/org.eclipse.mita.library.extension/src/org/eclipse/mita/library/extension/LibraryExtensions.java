@@ -24,6 +24,7 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.common.util.URI;
+import org.osgi.framework.FrameworkUtil;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -141,15 +142,6 @@ public class LibraryExtensions {
 		Version version = Version.fromString(element.getAttribute(ATTRIBUTE_VERSION));
 		boolean optional = Boolean.valueOf(element.getAttribute(ATTRIBUTE_OPTIONAL));
 		
-		Module module = null;
-		try {
-			if (element.getAttribute(ATTRIBUTE_MODULE) != null) {
-				module = (Module) element.createExecutableExtension(ATTRIBUTE_MODULE);
-			}
-		} catch (CoreException e) {
-			e.printStackTrace();
-		}
-		
 		IConfigurationElement[] children = element.getChildren(ELEMENT_RESOURCE_URI);
 		List<URI> resourceURIs = Lists.newArrayList();
 		for (IConfigurationElement resourceURI : children) {
@@ -160,7 +152,7 @@ public class LibraryExtensions {
 		for (IConfigurationElement currentDependency : dependencyElements) {
 			dependencies.add(currentDependency.getAttribute(ATTRIBUTE_ID));
 		}
-		return new LibraryDescriptor(id, name, description, version, resourceURIs, dependencies, optional, module);
+		return new LibraryDescriptor(id, name, description, version, resourceURIs, optional);
 	}
 
 	public static LibraryDescriptor getContainingLibrary(URI uri) {
@@ -184,16 +176,13 @@ public class LibraryExtensions {
 		private List<String> dependencies;
 		private Module module;
 
-		public LibraryDescriptor(String id, String name, String description, Version version, List<URI> resourceUris,
-				List<String> dependencies, boolean optional, Module module) {
+		public LibraryDescriptor(String id, String name, String description, Version version, List<URI> resourceUris, boolean optional) {
 			this.id = id;
 			this.name = name;
 			this.description = description;
 			this.version = version;
 			this.resourceUris = resourceUris;
-			this.dependencies = dependencies;
 			this.optional = optional;
-			this.module = module;
 		}
 
 		public String getId() {

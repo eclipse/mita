@@ -1,3 +1,4 @@
+
 package platforms.xdk110;
 
 
@@ -764,7 +765,9 @@ alias button_one for Button
 alias button_two for Button
 
 platform XDK110 {
+	module "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGeneratorModule"
 	validator "org.eclipse.mita.platform.xdk110.platform.Validation"
+
 	has environment
 	has accelerometer
 	has gyroscope

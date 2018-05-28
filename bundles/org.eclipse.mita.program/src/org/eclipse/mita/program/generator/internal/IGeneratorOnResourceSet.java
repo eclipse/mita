@@ -13,9 +13,11 @@
 
 package org.eclipse.mita.program.generator.internal;
 
+import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.generator.IFileSystemAccess2;
 import org.eclipse.xtext.generator.IGenerator2;
+import org.eclipse.xtext.xbase.lib.Functions.Function1;
 
 /**
  * Generates text from all resources in a resource set.
@@ -27,5 +29,12 @@ public interface IGeneratorOnResourceSet extends IGenerator2 {
      * @param fsa - file system access to be used to generate files
      */
     public void doGenerate(ResourceSet input, IFileSystemAccess2 fsa);
+    
+    /**
+     * @param input - the input for which to generate resources
+     * @param fsa - file system access to be used to generate files
+     * @param includeInBuildPredicate - predicate to exclude resources in the resource set from being built
+     */
+    public void doGenerate(ResourceSet input, IFileSystemAccess2 fsa, Function1<Resource, Boolean> includeInBuildPredicate);
 	
 }
