@@ -6,19 +6,19 @@
  * http://www.eclipse.org/legal/epl-2.0.
  *
  * Contributors:
- *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *    Bosch Connected Devices and Solutions GmbH - Initial design and API
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 package org.eclipse.mita.compiler
 
 import com.google.inject.Inject
+import com.google.inject.Provider
 import java.io.File
 import org.eclipse.core.resources.IFile
 import org.eclipse.core.resources.IProject
 import org.eclipse.core.resources.IProjectDescription
 import org.eclipse.core.resources.IWorkspaceRoot
-import org.eclipse.core.resources.IncrementalProjectBuilder
 import org.eclipse.core.resources.ResourcesPlugin
 import org.eclipse.core.runtime.NullProgressMonitor
 import org.eclipse.core.runtime.Path
@@ -26,31 +26,38 @@ import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.equinox.app.IApplication
 import org.eclipse.equinox.app.IApplicationContext
-import org.eclipse.mita.platform.PlatformDSLStandaloneSetup
-import org.eclipse.mita.program.ProgramDslStandaloneSetup
-import org.eclipse.mita.program.generator.ProgramDslGenerator
 import org.eclipse.ui.dialogs.IOverwriteQuery
 import org.eclipse.ui.wizards.datatransfer.FileSystemStructureProvider
 import org.eclipse.ui.wizards.datatransfer.ImportOperation
 import org.eclipse.xtext.generator.GeneratorContext
+import org.eclipse.xtext.generator.GeneratorDelegate
 import org.eclipse.xtext.generator.JavaIoFileSystemAccess
 import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.validation.CheckMode
 import org.eclipse.xtext.validation.IResourceValidator
-import org.eclipse.xtext.generator.GeneratorDelegate
+import org.eclipse.mita.program.ui.internal.ProgramActivator
+import org.eclipse.core.runtime.Platform
 
 class Main implements IApplication {
+
+	@Inject Provider<ResourceSet> resourceSetProvider
 	
-	@Inject ProgramDslGenerator programDslGenerator
+	@Inject Provider<JavaIoFileSystemAccess> fileSystemAccessProvider
+	
+	@Inject IResourceValidator resourceValidator
+	
+	@Inject GeneratorDelegate generator
 	
 	
 	override start(IApplicationContext context) throws Exception {
-		val args = context.arguments.get("application.args") as String[];
+		val args = Platform.applicationArgs;
 		if(args.length < 1) {
 			println("Need at least one arg: project path");
 			return null;
 		}
 		val projectPath = args.get(0);
+		
+		ProgramActivator.instance.getInjector(ProgramActivator.ORG_ECLIPSE_MITA_PROGRAM_PROGRAMDSL).injectMembers(this);
 		
 		val workspace = ResourcesPlugin.getWorkspace();
 		val IWorkspaceRoot root = workspace.getRoot();
@@ -68,15 +75,14 @@ class Main implements IApplication {
 		importOperation.run(new NullProgressMonitor());
 		
 		
-		// start plugins --> program and platform parsers need to register themselves		
-		val pdsli = new ProgramDslStandaloneSetup().createInjectorAndDoEMFRegistration()
-		val set = pdsli.getInstance(ResourceSet);
+		// start plugins --> program and platform parsers need to register themselves
+//		val pdsli = new ProgramDslStandaloneSetup().createInjectorAndDoEMFRegistration()
+		val set = resourceSetProvider.get();
 		
-		val plati = new PlatformDSLStandaloneSetup().createInjectorAndDoEMFRegistration()
 		
 		// output to original project folder subdir
-		val fileAccess = pdsli.getInstance(JavaIoFileSystemAccess)
-		fileAccess.outputPath = projectPath + '/src-gen/'
+		val fileAccess = fileSystemAccessProvider.get();
+		fileAccess.outputPath = projectPath + '/src-gen/';
 		
 		// generate code for all .mita files
 		project.members.filter(IFile).filter[it.name.endsWith(".mita")].forEach[ mitaFile |
@@ -86,8 +92,7 @@ class Main implements IApplication {
 			// load and parse
 			val res = set.getResource(uri, true);
 			// check for issues
-			val validator = pdsli.getInstance(IResourceValidator);
-			val issues = validator.validate(res, CheckMode.ALL, CancelIndicator.NullImpl)
+			val issues = resourceValidator.validate(res, CheckMode.ALL, CancelIndicator.NullImpl)
 			if (!issues.empty) {
 				issues.forEach[System.err.println(it)]
 				return
@@ -96,9 +101,7 @@ class Main implements IApplication {
 			val generatorContext = new GeneratorContext => [
 				cancelIndicator = CancelIndicator.NullImpl
 			]
-			// get generator from programDsl
-			val generator = pdsli.getInstance(GeneratorDelegate)
-			// generate
+			
 			generator.generate(res, fileAccess, generatorContext)
 		]
 		
