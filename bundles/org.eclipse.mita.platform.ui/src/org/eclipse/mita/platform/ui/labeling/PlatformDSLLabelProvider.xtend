@@ -52,15 +52,15 @@ class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
 	}
 	
 	def text(ConfigurationItem ele) {
-		'''«IF ele.required»required«ENDIF» configuration <b>«ele.name» : «ele.type»</b>'''
+		'''Â«IF ele.requiredÂ»requiredÂ«ENDIFÂ» configuration <b>Â«ele.nameÂ» : Â«ele.typeÂ»</b>'''
 	}
 	
 	def text(Sensor ele) {
-		'''sensor <b>«ele.name»</b>'''
+		'''sensor <b>Â«ele.nameÂ»</b>'''
 	}
 	
 	def text(SystemResourceAlias ele) {
-		'''«ele.label» <b>«ele.name» : «ele.delegate?.name»</b>'''
+		'''Â«ele.labelÂ» <b>Â«ele.nameÂ» : Â«ele.delegate?.nameÂ»</b>'''
 	}
 	
 	protected dispatch def String getLabel(SystemResourceAlias alias) {
@@ -72,16 +72,16 @@ class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
 	}
 	
 	def text(SystemResourceEvent ele) {
-		'''resource event <b>«ele.name»</b>'''
+		'''resource event <b>Â«ele.nameÂ»</b>'''
 	}
 	
 	def text(SignalEvent ele) {
-		'''signal event <b>«ele.name»</b>'''
+		'''signal event <b>Â«ele.nameÂ»</b>'''
 	}
 	
 	def text(Modality ele) {
 		val type = typeInferrer.infer(ele)?.type
-		'''«ele.eContainer.label.toLowerCase» modality <b>«ele.name» : «type»</b>'''
+		'''Â«ele.eContainer.label.toLowerCaseÂ» modality <b>Â«ele.nameÂ» : Â«typeÂ»</b>'''
 	}
 
 	override protected convertToString(Object text) {
