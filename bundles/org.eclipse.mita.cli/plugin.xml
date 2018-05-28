@@ -9,7 +9,7 @@
             thread="main"
             visible="true">
          <run
-               class="org.eclipse.mita.compiler.Main">
+               class="org.eclipse.mita.cli.Main">
          </run>
       </application>
    </extension>

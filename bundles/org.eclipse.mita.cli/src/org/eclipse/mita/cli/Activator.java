@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.mita.compiler;
+package org.eclipse.mita.cli;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;

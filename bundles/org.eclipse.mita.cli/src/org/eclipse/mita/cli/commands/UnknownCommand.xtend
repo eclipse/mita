@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
  
-package org.eclipse.mita.compiler.commands
+package org.eclipse.mita.cli.commands
 
 import org.apache.commons.cli.CommandLine
 

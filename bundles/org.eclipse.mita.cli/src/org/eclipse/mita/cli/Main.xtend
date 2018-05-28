@@ -10,14 +10,14 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-package org.eclipse.mita.compiler
+package org.eclipse.mita.cli
 
 import org.apache.commons.cli.GnuParser
 import org.eclipse.core.runtime.Platform
 import org.eclipse.equinox.app.IApplication
 import org.eclipse.equinox.app.IApplicationContext
-import org.eclipse.mita.compiler.commands.CompilerCommand
-import org.eclipse.mita.compiler.commands.UnknownCommand
+import org.eclipse.mita.cli.commands.CompilerCommand
+import org.eclipse.mita.cli.commands.UnknownCommand
 import org.eclipse.mita.program.ui.internal.ProgramActivator
 
 class Main implements IApplication {
