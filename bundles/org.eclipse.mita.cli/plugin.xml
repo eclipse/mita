@@ -13,5 +13,21 @@
          </run>
       </application>
    </extension>
+   <extension
+         id="product"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="org.eclipse.mita.cli.Compiler"
+            name="Eclipse Mita CLI">
+         <property
+               name="aboutText"
+               value="%aboutText">
+         </property>
+         <property
+               name="appName"
+               value="Eclipse Mita CLI">
+         </property>
+      </product>
+   </extension>
 
 </plugin>

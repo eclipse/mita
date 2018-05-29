@@ -1,0 +1,4 @@
+/target/
+/workspace/
+*.escaped
+*.folded
