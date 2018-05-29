@@ -13,6 +13,13 @@
 
 package org.eclipse.mita.program.model
 
+import com.google.common.base.Optional
+import java.util.Iterator
+import java.util.NoSuchElementException
+import java.util.function.Predicate
+import org.eclipse.emf.common.notify.impl.AdapterImpl
+import org.eclipse.emf.common.util.EList
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
@@ -31,12 +38,6 @@ import org.eclipse.mita.types.NamedProductType
 import org.eclipse.mita.types.StructureType
 import org.eclipse.mita.types.TypesFactory
 import org.eclipse.mita.types.scoping.TypesLibraryProvider
-import com.google.common.base.Optional
-import java.util.Iterator
-import java.util.NoSuchElementException
-import java.util.function.Predicate
-import org.eclipse.emf.common.notify.impl.AdapterImpl
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.yakindu.base.expressions.expressions.Argument
@@ -75,6 +76,31 @@ class ModelUtils {
 	}
 	static dispatch def VariableDeclaration getUnderlyingVariableDeclaration(Void acc) {
 		null;
+	}
+	
+	
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(Operation op) {
+		return Optional.of(op.parameters);
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(StructureType st) {
+		return Optional.of(st.parameters);	
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(AnonymousProductType apt) {
+		val tss = apt.typeSpecifiers;
+		if(tss.length == 1) {
+			val t0 = tss.head.type;
+			return t0.getAccessorParameters;
+		}
+		return Optional.absent;
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(NamedProductType npt) {
+		return Optional.of(npt.parameters);
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(EObject obj) {
+		Optional.absent;
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(Void obj) {
+		Optional.absent;
 	}
 	
 	static def <T> Optional<T> preventRecursion(EObject obj, () => T action) {

@@ -13,16 +13,23 @@
 
 package org.eclipse.mita.platform.scoping;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.xtext.resource.IEObjectDescription;
-import org.eclipse.xtext.util.IAcceptor;
-
 import org.eclipse.mita.platform.AbstractSystemResource;
 import org.eclipse.mita.platform.Platform;
 import org.eclipse.mita.platform.PlatformPackage;
 import org.eclipse.mita.platform.SystemResourceAlias;
+import org.eclipse.mita.types.StructureType;
+import org.eclipse.mita.types.SumAlternative;
 import org.eclipse.mita.types.scoping.TypeDSLResourceDescriptionStrategy;
+import org.eclipse.xtext.resource.EObjectDescription;
+import org.eclipse.xtext.resource.IEObjectDescription;
+import org.eclipse.xtext.util.IAcceptor;
+import org.yakindu.base.types.TypeSpecifier;
+
 import com.google.common.collect.ImmutableList;
 
 public class PlatformDslResourceDescriptionStrategy extends TypeDSLResourceDescriptionStrategy {
@@ -35,7 +42,13 @@ public class PlatformDslResourceDescriptionStrategy extends TypeDSLResourceDescr
 			PlatformPackage.Literals.SENSOR, // we expose resources bound to the platform
 			PlatformPackage.Literals.SYSTEM_RESOURCE_ALIAS // we expose resources bound to the platform
 			);
-
+	
+	void export(EObject obj, IAcceptor<IEObjectDescription> acceptor) {
+		Map<String, String> map = new HashMap<>();
+		map.put(EXPORTED, String.valueOf(true));
+		acceptor.accept(EObjectDescription.create(getQualifiedNameProvider().getFullyQualifiedName(obj), obj, map));
+	}
+	
 	@Override
 	public boolean createEObjectDescriptions(EObject eObject, IAcceptor<IEObjectDescription> acceptor) {
 		if (getQualifiedNameProvider() == null) {
@@ -47,6 +60,11 @@ public class PlatformDslResourceDescriptionStrategy extends TypeDSLResourceDescr
 			return false;
 		} else if(eObject instanceof Platform) {
 			return createPlatformDescription((Platform) eObject, acceptor);
+		} else if( (eObject instanceof StructureType) 
+				|| (eObject instanceof SumAlternative) 
+				|| (eObject.eContainer() instanceof SumAlternative && !(eObject instanceof TypeSpecifier))) {
+			export(eObject, acceptor);
+			return true;
 		} else {
 			return super.createEObjectDescriptions(eObject, acceptor);			
 		}

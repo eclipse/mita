@@ -13,6 +13,9 @@
 
 package org.eclipse.mita.program.validation
 
+import com.google.inject.Inject
+import org.eclipse.emf.common.util.EList
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.platform.validation.PlatformDSLValidator
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
@@ -25,14 +28,16 @@ import org.eclipse.mita.types.NamedProductType
 import org.eclipse.mita.types.Singleton
 import org.eclipse.mita.types.StructureType
 import org.eclipse.mita.types.SumAlternative
-import com.google.inject.Inject
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
+import org.yakindu.base.expressions.expressions.Argument
+import org.yakindu.base.expressions.expressions.ElementReferenceExpression
 import org.yakindu.base.expressions.expressions.FeatureCall
 import org.yakindu.base.types.validation.IValidationIssueAcceptor
 import org.yakindu.base.types.validation.TypeValidator
+import org.eclipse.mita.program.model.ModelUtils
 
 class SumTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {
 	
@@ -88,9 +93,23 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 	}
 	
 	@Check
-	def checkSumAlternativeConstructorsHaveCorrectArguments(FeatureCall fc) {
+	def checkSumAlternativeConstructorsHaveCorrectArgumentsForFeatureCall(FeatureCall fc) {
 		val ref = fc.feature;
 		if(ref instanceof SumAlternative) {
+			checkSumAlternativeConstructorsHaveCorrectArguments(fc, fc.arguments, ref);
+		}
+	}
+	
+	@Check
+	def checkSumAlternativeConstructorsHaveCorrectArgumentsForERef(ElementReferenceExpression eref) {
+		val ref = eref.reference;
+		if(ref instanceof SumAlternative) {
+			checkSumAlternativeConstructorsHaveCorrectArguments(eref, eref.arguments, ref);
+		}
+	}
+	
+	def checkSumAlternativeConstructorsHaveCorrectArguments(EObject obj, EList<Argument> arguments, SumAlternative ref) {
+
 			val realType = ref.realType;
 			val realArgs = if(realType instanceof HasAccessors) {
 				realType.accessorsTypes;
@@ -99,21 +118,22 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 				#[realType];
 			}
 			
-			if(realArgs.length != fc.arguments.length) {
-				error(String.format(PlatformDSLValidator.ERROR_WRONG_NUMBER_OF_ARGUMENTS_MSG, realArgs.toString), fc, null);
+			if(realArgs.length != arguments.length) {
+				error(String.format(PlatformDSLValidator.ERROR_WRONG_NUMBER_OF_ARGUMENTS_MSG, realArgs.toString), obj, null);
 				return;
 			}
 			
 			if(ref instanceof NamedProductType) {
-				for(var i = 0; i < ref.parameters.length; i++) {
-					val sField = ref.parameters.get(i);
-					val sArg = fc.arguments.get(i).value;
+				var argsSorted = ModelUtils.getSortedArguments(ref.parameters, arguments);
+
+				for(arg_type: ModelUtils.zip(argsSorted, realArgs)) {
+					val sArg = arg_type.key.value;
+					val sField = arg_type.value;
 					val t1 = inferrer.infer(sField, this);
 					val t2 = inferrer.infer(sArg, this);
 					validator.assertAssignable(t1, t2,
-					
-					// message says t2 can't be assigned to t1, --> invert in format
-					String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
+						// message says t2 can't be assigned to t1, --> invert in format
+						String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
 				}
 			}
 			else if(ref instanceof AnonymousProductType) {
@@ -122,22 +142,35 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 				} else {
 					ref.typeSpecifiers;
 				}
-				if(realTypeSpecifiers.length != fc.arguments.length) {
-					error(String.format(PlatformDSLValidator.ERROR_WRONG_NUMBER_OF_ARGUMENTS_MSG, realTypeSpecifiers.map[it.type].toString), fc, null);
+				if(realTypeSpecifiers.length != arguments.length) {
+					error(String.format(PlatformDSLValidator.ERROR_WRONG_NUMBER_OF_ARGUMENTS_MSG, realTypeSpecifiers.map[it.type].toString), obj, null);
 					return;
 				}
-				for(var i = 0; i < realTypeSpecifiers.length; i++) {
-					val sField = realTypeSpecifiers.get(i);
-					val sArg = fc.arguments.get(i).value;
-					val t1 = inferrer.infer(sField, this);
-					val t2 = inferrer.infer(sArg, this);
-					validator.assertAssignable(t1, t2,
-					
-					// message says t2 can't be assigned to t1, --> invert in format
-					String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
+				if(realType instanceof StructureType) {
+					var argsSorted = ModelUtils.getSortedArguments(realType.parameters, arguments);
+					for(arg_type: ModelUtils.zip(argsSorted, realArgs)) {
+						val sArg = arg_type.key.value;
+						val sField = arg_type.value;
+						val t1 = inferrer.infer(sField, this);
+						val t2 = inferrer.infer(sArg, this);
+						validator.assertAssignable(t1, t2,
+							// message says t2 can't be assigned to t1, --> invert in format
+							String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
+					}
+				}
+				else {
+					for(var i = 0; i < realTypeSpecifiers.length; i++) {
+						val sField = realTypeSpecifiers.get(i);
+						val sArg = arguments.get(i).value;
+						val t1 = inferrer.infer(sField, this);
+						val t2 = inferrer.infer(sArg, this);
+						validator.assertAssignable(t1, t2,
+							// message says t2 can't be assigned to t1, --> invert in format
+							String.format(ProgramDslValidator.INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
+					}
 				}
 			}
-		}
+		
 	}
 	
 	
