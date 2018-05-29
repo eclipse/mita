@@ -29,8 +29,8 @@ import java.util.Set
 import java.util.TreeMap
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.naming.IQualifiedNameProvider
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 
 class ResourceGraphBuilder {
 	

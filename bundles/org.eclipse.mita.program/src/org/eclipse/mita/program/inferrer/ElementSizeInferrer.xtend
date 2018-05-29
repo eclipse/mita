@@ -17,6 +17,22 @@ import com.google.inject.Inject
 import java.util.LinkedList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.PrimitiveType
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.FunctionDefinition
@@ -27,23 +43,7 @@ import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.ExceptionTypeDeclaration
-import org.eclipse.mita.types.GeneratedType
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumType
 import org.eclipse.xtext.EcoreUtil2
-import org.yakindu.base.expressions.expressions.AssignmentExpression
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
-import org.yakindu.base.types.ComplexType
-import org.yakindu.base.types.EnumerationType
-import org.yakindu.base.types.PrimitiveType
-import org.yakindu.base.types.Type
-import org.yakindu.base.types.TypeSpecifier
-import org.eclipse.mita.platform.AbstractSystemResource
 
 /**
  * Hierarchically infers the size of a data element.

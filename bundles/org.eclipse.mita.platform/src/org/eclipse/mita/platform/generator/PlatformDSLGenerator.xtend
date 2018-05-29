@@ -29,7 +29,7 @@ import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.Signal
-import org.yakindu.base.types.Parameter
+import org.eclipse.mita.base.types.Parameter
 
 /**
  * Generates code from your model files on save.

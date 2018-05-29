@@ -11,10 +11,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-grammar org.eclipse.mita.platform.PlatformDSL with org.eclipse.mita.types.TypeDsl
+grammar org.eclipse.mita.platform.PlatformDSL with org.eclipse.mita.base.TypeDsl
 
-import "http://www.yakindu.org/base/types/2.0.0"
-import "org.eclipse.mita.types" as types
+import "org.eclipse.mita.base.types"
 import "org.eclipse.mita.platform" as platform
 
 SystemSpecification returns platform::SystemSpecification:

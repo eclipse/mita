@@ -16,8 +16,17 @@
  */
 package org.eclipse.mita.program
 
+import com.google.inject.Binder
+import com.google.inject.name.Names
+import org.eclipse.mita.base.expressions.inferrer.TypeParameterInferrer
+import org.eclipse.mita.base.scoping.MitaTypeSystem
+import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.program.formatting.ProgramDslFormatter
 import org.eclipse.mita.program.generator.ProgramDslGenerator
+import org.eclipse.mita.program.generator.ProgramDslGeneratorNodeProcessor
 import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.inferrer.ProgramDslTypeParameterInferrer
@@ -25,25 +34,16 @@ import org.eclipse.mita.program.linking.ProgramLinkingService
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.mita.program.validation.ProgramDslTypeValidator
-import org.eclipse.mita.types.scoping.TypesGlobalScopeProvider
-
-import com.google.inject.Binder
-import com.google.inject.name.Names
-import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.formatting.IFormatter
+import org.eclipse.xtext.generator.trace.node.GeneratorNodeProcessor
 import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
-import org.yakindu.base.expressions.inferrer.TypeParameterInferrer
-import org.yakindu.base.expressions.terminals.ExpressionsValueConverterService
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.yakindu.base.types.typesystem.ITypeSystem
-import org.yakindu.base.types.validation.TypeValidator
-import org.eclipse.xtext.generator.trace.node.GeneratorNodeProcessor
-import org.eclipse.mita.program.generator.ProgramDslGeneratorNodeProcessorimport org.eclipse.mita.types.scoping.MitaTypeSystem
+import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
+import org.eclipse.xtext.conversion.IValueConverterService
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -68,10 +68,6 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		return TypesGlobalScopeProvider;
 	}
 
-	override Class<? extends IValueConverterService> bindIValueConverterService() {
-		return ExpressionsValueConverterService
-	}
-
 	override bindILinkingService() {
 		return ProgramLinkingService
 	}
@@ -82,6 +78,10 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
 	public def Class<? extends IGeneratorOnResourceSet> bindIGeneratorOnResourceSet() {
 		return ProgramDslGenerator;
+	}
+	
+	override Class<? extends IValueConverterService> bindIValueConverterService() {
+		return ExpressionsValueConverterService
 	}
 
 }

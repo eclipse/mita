@@ -18,10 +18,10 @@ import java.util.Map;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
-import org.yakindu.base.types.Operation;
+import org.eclipse.mita.base.types.Operation;
 
 import org.eclipse.mita.program.ProgramPackage;
-import org.eclipse.mita.types.scoping.TypeDSLResourceDescriptionStrategy;
+import org.eclipse.mita.base.scoping.TypeDSLResourceDescriptionStrategy;
 import com.google.common.collect.ImmutableList;
 
 public class ProgramDslResourceDescriptionStrategy extends TypeDSLResourceDescriptionStrategy {

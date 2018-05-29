@@ -17,8 +17,8 @@ import org.eclipse.mita.library.stdlib.StringGenerator
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import com.google.inject.Inject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.base.NamedElement
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.NamedElement
 
 class PrintGenerator extends AbstractFunctionGenerator {
 	

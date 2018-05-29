@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import java.nio.ByteBuffer
 import java.util.List
 import java.util.regex.Pattern
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
@@ -27,7 +28,6 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 
 class BleGenerator extends AbstractSystemResourceGenerator {
 	

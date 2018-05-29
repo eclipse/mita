@@ -16,7 +16,7 @@
  */
 package org.eclipse.mita.platform.ui.quickfix
 
-import org.eclipse.mita.types.ui.quickfix.TypeDslQuickfixProvider
+import org.eclipse.mita.base.ui.quickfix.TypeDslQuickfixProvider
 
 /**
  * Custom quickfixes.

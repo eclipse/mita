@@ -20,8 +20,8 @@ import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.WhileStatement
 import org.eclipse.emf.ecore.EReference
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.ExpressionsFactory
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ExpressionsFactory
 
 class PrepareLoopForFunctionUnvravelingStage extends AbstractTransformationStage {
 	

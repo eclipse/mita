@@ -13,6 +13,14 @@
 
 package org.eclipse.mita.program.generator.internal
 
+import com.google.common.base.Optional
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.CacheLoader
+import com.google.common.cache.LoadingCache
+import com.google.inject.Inject
+import com.google.inject.Singleton
+import org.eclipse.mita.base.types.GeneratedElement
+import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
@@ -20,14 +28,6 @@ import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.IGenerator
 import org.eclipse.mita.program.resource.PluginResourceLoader
-import org.eclipse.mita.types.GeneratedElement
-import org.eclipse.mita.types.GeneratedType
-import com.google.common.base.Optional
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.CacheLoader
-import com.google.common.cache.LoadingCache
-import com.google.inject.Inject
-import com.google.inject.Singleton
 
 /**
  * Creates and maintains the component generators associated with a platform.

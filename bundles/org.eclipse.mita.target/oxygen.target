@@ -13,10 +13,6 @@
 <repository location="http://download.eclipse.org/eclipse/updates/4.7"/>
 </location>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="org.yakindu.base.feature.group" version="3.2.0.201801051226"/>
-<repository location="http://updates.yakindu.com/statecharts/integration"/>
-</location>
-<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.xtext.sdk.feature.group" version="2.13.0.v20171020-0920"/>
 <repository location="http://download.eclipse.org/modeling/tmf/xtext/updates/releases/2.13.0"/>
 </location>

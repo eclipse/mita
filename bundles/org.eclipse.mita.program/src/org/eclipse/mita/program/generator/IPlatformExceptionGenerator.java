@@ -13,7 +13,7 @@
 
 package org.eclipse.mita.program.generator;
 
-import org.yakindu.base.types.Type;
+import org.eclipse.mita.base.types.Type;
 
 public interface IPlatformExceptionGenerator {
 

@@ -18,7 +18,7 @@ import com.google.inject.Inject
 import org.eclipse.xtext.formatting.impl.AbstractDeclarativeFormatter
 import org.eclipse.xtext.formatting.impl.FormattingConfig
 import org.eclipse.xtext.service.AbstractElementFinder.AbstractParserRuleElementFinder
-import org.eclipse.mita.types.services.TypeDslGrammarAccess
+import org.eclipse.mita.base.services.TypeDslGrammarAccess
 
 class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 
