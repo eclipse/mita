@@ -24,6 +24,7 @@ public interface ExpressionsTypeInferrerMessages {
 	public static final String ASSIGNMENT_OPERATOR = "Assignment operator '%s' may only be applied on compatible types, not on %s and %s.";
 	public static final String ARITHMETIC_OPERATOR = "Arithmetic operator '%s' may only be applied on numeric types, not on %s.";
 	public static final String ARITHMETIC_OPERATORS = "Arithmetic operator '%s' may only be applied on numeric types, not on %s and %s.";
+	public static final String POSTFIX_OPERATOR = "Postfix operator '%s' may only be applied on numeric types, not on %s.";
 	public static final String COMMON_TYPE = "Could not determine a common type for %s and %s.";
 	public static final String CONDITIONAL_BOOLEAN = "conditional expression must be of type boolean.";
 	public static final String CAST_OPERATORS = "Cannot cast from %s to %s.";
