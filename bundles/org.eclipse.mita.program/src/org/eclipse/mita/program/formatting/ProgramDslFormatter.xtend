@@ -40,6 +40,7 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 		c.formatForLoop
 		c.formatCatchFinally
 		c.formatAllTypeSpecifiers
+		c.formatPostFixExpression
 	}
 	
 	def formatCurlyBrackets(FormattingConfig config) {
@@ -148,6 +149,10 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 
 	def formatFeatureCalls(FormattingConfig config) {
 		grammar.findKeywords(".").forEach[config.setNoSpace.around(it)]
+	}
+	
+	def formatPostFixExpression(FormattingConfig config) {
+		config.setNoSpace.before(grammar.postFixUnaryExpressionAccess.operatorPostFixOperatorEnumRuleCall_1_1_0)
 	}
 
 }
