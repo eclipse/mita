@@ -52,4 +52,5 @@ In order to create a pull request you need a GitHug account as well as an Eclips
 5. Create a pull request here on GitHub by selecting your branch
 
 ## Get in Touch
-Please check out the [Eclipse Mita project home page](https://www.eclipse.org/mita) for details regarding our mailing list.
+Come and find us in our [Mattermost channel at eclipse.org](https://mattermost.eclipse.org/eclipse/channels/mita) or
+check out the [Eclipse Mita project home page](https://www.eclipse.org/mita) for details regarding our mailing list.
