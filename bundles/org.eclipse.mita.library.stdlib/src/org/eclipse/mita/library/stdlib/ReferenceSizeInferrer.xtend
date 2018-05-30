@@ -17,8 +17,8 @@ import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.yakindu.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.program.model.ModelUtils
 
 class ReferenceSizeInferrer extends ElementSizeInferrer {

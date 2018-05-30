@@ -1,4 +1,4 @@
-![Mita logo](website/site/content/logo.png)
+![Mita logo](logo/symbolAndText.png)
 
 Eclipse Mita is a new programming language for the embedded IoT.
 It targets developers who are new to embedded software development, specifically those who come from a cloud background.

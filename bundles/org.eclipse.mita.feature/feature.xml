@@ -34,9 +34,6 @@
       <import plugin="com.google.guava"/>
       <import plugin="com.google.inject"/>
       <import plugin="org.eclipse.xtend.lib"/>
-      <import plugin="org.yakindu.base.expressions"/>
-      <import plugin="org.yakindu.base.expressions.ui"/>
-      <import plugin="org.yakindu.base.types"/>
    </requires>
 
    <plugin
@@ -61,19 +58,19 @@
          unpack="false"/>
 
    <plugin
-         id="org.eclipse.mita.types"
+         id="org.eclipse.mita.base"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
 
    <plugin
-         id="org.eclipse.mita.types.ide"
+         id="org.eclipse.mita.base.ide"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
 
    <plugin
-         id="org.eclipse.mita.types.ui"
+         id="org.eclipse.mita.base.ui"
          download-size="0"
          install-size="0"
          version="0.0.0"/>

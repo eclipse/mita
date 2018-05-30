@@ -25,7 +25,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.ConfigurationItem
 
 /**

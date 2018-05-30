@@ -6,8 +6,8 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 	 

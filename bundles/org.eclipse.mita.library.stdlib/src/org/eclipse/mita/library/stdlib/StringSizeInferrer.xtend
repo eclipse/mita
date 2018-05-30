@@ -27,13 +27,13 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.xtext.EcoreUtil2
-import org.yakindu.base.expressions.expressions.AssignmentExpression
-import org.yakindu.base.expressions.expressions.AssignmentOperator
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
-import org.yakindu.base.expressions.expressions.StringLiteral
-import org.yakindu.base.types.Operation
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class StringSizeInferrer extends ElementSizeInferrer {
 	

@@ -21,8 +21,8 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal
 import org.eclipse.xtext.ui.editor.contentassist.ConfigurableCompletionProposal
 import org.eclipse.xtext.ui.editor.contentassist.ContentProposalPriorities
 import org.eclipse.xtext.ui.editor.hover.html.XtextBrowserInformationControlInput
-import org.yakindu.base.types.Event
-import org.yakindu.base.types.TypesPackage
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.TypesPackage
 
 class ProposalPriorityHelper extends ContentProposalPriorities {
 	

@@ -16,20 +16,20 @@
  */
 package org.eclipse.mita.program.ui.quickfix
 
+import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.validation.ProgramImportValidator
 import org.eclipse.mita.program.validation.ProgramSetupValidator
-import org.eclipse.mita.types.TypesFactory
 import org.eclipse.xtext.ui.editor.quickfix.Fix
 import org.eclipse.xtext.ui.editor.quickfix.IssueResolutionAcceptor
 import org.eclipse.xtext.validation.Issue
-import org.yakindu.base.expressions.expressions.ExpressionsFactory
-import org.yakindu.base.expressions.ui.quickfix.ExpressionsQuickfixProvider
+import org.eclipse.mita.base.ui.quickfix.TypeDslQuickfixProvider
 
-class ProgramDslQuickfixProvider extends ExpressionsQuickfixProvider {
+class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 
 	@Fix(ProgramImportValidator.MISSING_TARGET_PLATFORM_CODE)
 	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {

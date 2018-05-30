@@ -13,21 +13,21 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.NativeType
+import org.eclipse.mita.base.types.PrimitiveType
+import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.ExceptionTypeDeclaration
-import org.eclipse.mita.types.GeneratedType
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.NativeType
-import org.eclipse.mita.types.Singleton
-import com.google.inject.Inject
-import org.yakindu.base.types.ComplexType
-import org.yakindu.base.types.EnumerationType
-import org.yakindu.base.types.PrimitiveType
-import org.yakindu.base.types.Type
-import org.yakindu.base.types.typesystem.ITypeSystem
-import org.yakindu.base.types.TypeSpecifier
 
 /**
  * Facade for generating types.

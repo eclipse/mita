@@ -20,10 +20,10 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import java.util.HashMap
 import java.util.Map
 import java.util.NoSuchElementException
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.Enumerator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.Enumerator
 
 class MapBasedComponentConfiguration implements IComponentConfiguration {
 	

@@ -15,8 +15,8 @@ package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 
 /**
  * Generates code implementing a function call. 

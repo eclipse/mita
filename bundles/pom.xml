@@ -57,9 +57,9 @@
                 <module>org.eclipse.mita.platform.ide</module>
                 <module>org.eclipse.mita.platform.ui</module>
 
-                <module>org.eclipse.mita.types</module>
-                <module>org.eclipse.mita.types.ide</module>
-                <module>org.eclipse.mita.types.ui</module>
+                <module>org.eclipse.mita.base</module>
+                <module>org.eclipse.mita.base.ide</module>
+                <module>org.eclipse.mita.base.ui</module>
 
                 <module>org.eclipse.mita.program</module>
                 <module>org.eclipse.mita.program.ide</module>

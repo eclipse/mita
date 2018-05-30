@@ -14,6 +14,8 @@
 package org.eclipse.mita.platform.xdk110.connectivity
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
@@ -21,8 +23,6 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.Operation
 
 class BleValidator implements IResourceValidator {
 	

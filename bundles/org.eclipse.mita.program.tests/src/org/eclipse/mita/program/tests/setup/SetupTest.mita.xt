@@ -30,6 +30,105 @@ setup MyConnectivity {
 setup devNetwork : MyConnectivity { 
 	cfg00 = "MyDevice";
 } 
+
+// Sum types can be used
+setup alt0 : MyConnectivity {
+	cfg05 = Nothing();
+}
+setup alt1 : MyConnectivity { 
+	cfg05 = SomethingAnonymous(10);
+} 
+setup alt2 : MyConnectivity { 
+	cfg05 = SomethingNamed(10, false);
+}
+setup alt3 : MyConnectivity { 
+	cfg05 = SomethingNamed(x = 10, y = true);
+}
+setup alt4 : MyConnectivity { 
+	cfg05 = SomethingNamed(y = false, x = 10);
+}
+setup alt5 : MyConnectivity { 
+	cfg05 = SomeStruct(10);
+}
+setup alt6 : MyConnectivity { 
+	cfg05 = SomeStruct(config = 10);
+}
+
+// Sum type constructors are validated
+setup alt0_bad : MyConnectivity {
+	//XPECT errors --> "Wrong number of arguments, expected [] ." at "Nothing(10)"
+	cfg05 = Nothing(10);
+}
+setup alt1_bad : MyConnectivity { 
+	//XPECT errors --> "Wrong number of arguments, expected [int32] ." at "SomethingAnonymous(10, 20)"
+	cfg05 = SomethingAnonymous(10, 20);
+}
+setup alt2_bad : MyConnectivity { 
+	//XPECT errors --> "Wrong number of arguments, expected [int32] ." at "SomethingAnonymous()"
+	cfg05 = SomethingAnonymous();
+} 
+setup alt3_bad : MyConnectivity { 
+	//XPECT errors --> "Incompatible types: 'integer' can't be converted to 'bool'" at "20"
+	cfg05 = SomethingNamed(10, 20);
+} 
+setup alt4_bad : MyConnectivity { 
+	//XPECT errors --> "Wrong number of arguments, expected [int32, bool] ." at "SomethingNamed(20)"
+	cfg05 = SomethingNamed(20);
+}
+setup alt5_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Couldn't resolve reference to Parameter 'z'." at "z"
+		"Wrong number of arguments, expected [int32, bool] ." at "SomethingNamed(x = 20, y = true, z = 10)"
+	--- */
+	cfg05 = SomethingNamed(x = 20, y = true, z = 10);
+}
+setup alt6_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Incompatible types: 'bool' can't be converted to 'int32'" at "true"
+		"Incompatible types: 'integer' can't be converted to 'bool'" at "20"
+	--- */
+	cfg05 = SomethingNamed(x = true, y = 20);
+} 
+setup alt7_bad : MyConnectivity { 
+	//XPECT errors --> "Wrong number of arguments, expected [int32, bool] ." at "SomethingNamed(x = 20)"
+	cfg05 = SomethingNamed(x = 20);
+} 
+setup alt8_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Duplicate assignment to parameter 'x'." at "x = 10"
+		"Wrong number of arguments, expected [int32, bool] ." at "SomethingNamed(x = 20, y = true, x = 10)"
+	--- */
+	cfg05 = SomethingNamed(x = 20, y = true, x = 10);
+}
+setup alt9_bad : MyConnectivity { 
+	//XPECT errors --> "Wrong number of arguments, expected [int32] ." at "SomeStruct()"
+	cfg05 = SomeStruct();
+}
+setup alt10_bad : MyConnectivity { 
+	//XPECT errors --> "Wrong number of arguments, expected [int32] ." at "SomeStruct(10, 20)"
+	cfg05 = SomeStruct(10, 20);
+}
+setup alt11_bad : MyConnectivity { 
+	//XPECT errors --> "Incompatible types: 'string' can't be converted to 'int32'" at ""asdf""
+	cfg05 = SomeStruct("asdf");
+}
+setup alt12_bad : MyConnectivity { 
+	//XPECT errors --> "Incompatible types: 'bool' can't be converted to 'int32'" at "true"
+	cfg05 = SomeStruct(config = true);
+}
+setup alt13_bad : MyConnectivity { 
+	//XPECT errors --> "Couldn't resolve reference to Parameter 'x'." at "x"
+	cfg05 = SomeStruct(x = 10);
+}
+setup alt14_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Duplicate assignment to parameter 'config'." at "config = 20"
+		"Wrong number of arguments, expected [int32] ." at "SomeStruct(config = 10, config = 20)"
+	--- */
+	cfg05 = SomeStruct(config = 10, config = 20);
+}
+
+
 setup productionNetwork : MyConnectivity { } 
 // setup myGpioSetup : GPIO { } // compiler error: The GPIO resource can not be named . 
 

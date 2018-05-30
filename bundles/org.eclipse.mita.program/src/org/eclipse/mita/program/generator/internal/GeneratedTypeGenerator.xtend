@@ -13,14 +13,14 @@
 
 package org.eclipse.mita.program.generator.internal
 
+import com.google.inject.Inject
+import java.util.List
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.types.GeneratedType
-import com.google.inject.Inject
-import java.util.List
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 
 class GeneratedTypeGenerator {
 	

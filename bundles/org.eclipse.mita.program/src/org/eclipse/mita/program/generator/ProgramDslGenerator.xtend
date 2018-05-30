@@ -33,6 +33,7 @@ import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
+import org.eclipse.mita.base.scoping.TypesLibraryProvider
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SystemResourceSetup
@@ -45,7 +46,6 @@ import org.eclipse.mita.program.generator.internal.SystemResourceHandlingGenerat
 import org.eclipse.mita.program.generator.internal.TimeEventGenerator
 import org.eclipse.mita.program.generator.internal.UserCodeFileGenerator
 import org.eclipse.mita.program.generator.transformation.ProgramGenerationTransformationPipeline
-import org.eclipse.mita.types.scoping.TypesLibraryProvider
 import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext

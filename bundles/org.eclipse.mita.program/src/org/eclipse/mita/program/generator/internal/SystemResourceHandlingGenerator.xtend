@@ -28,7 +28,7 @@ import org.eclipse.mita.program.model.ModelUtils
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 
 class SystemResourceHandlingGenerator {
 

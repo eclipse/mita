@@ -13,19 +13,17 @@
 
 package org.eclipse.mita.program.generator.transformation
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.types.GeneratedType
-import org.eclipse.mita.types.SumType
-import com.google.inject.Inject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.ExpressionsFactory
-import org.yakindu.base.types.ComplexType
-import org.yakindu.base.types.Operation
-import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.program.ProgramBlock
-import org.eclipse.mita.program.ExpressionStatement
 
 class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	

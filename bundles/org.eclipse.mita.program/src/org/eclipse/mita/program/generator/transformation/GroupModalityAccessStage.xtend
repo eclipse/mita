@@ -21,8 +21,8 @@ import java.util.HashSet
 import java.util.List
 import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.program.ModalityAccess
 
 class GroupModalityAccessStage extends AbstractTransformationStage {
