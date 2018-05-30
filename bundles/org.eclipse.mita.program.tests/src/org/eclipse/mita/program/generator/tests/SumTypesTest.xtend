@@ -15,15 +15,15 @@ package org.eclipse.mita.program.generator.tests
 
 import java.util.Map
 import org.eclipse.cdt.core.dom.ast.IASTDeclarator
-import org.eclipse.cdt.internal.core.dom.parser.c.CASTDesignatedInitializer
-import org.eclipse.cdt.internal.core.dom.parser.c.CASTEqualsInitializer
-import org.eclipse.cdt.internal.core.dom.parser.c.CASTFieldDesignator
-import org.eclipse.cdt.internal.core.dom.parser.c.CASTInitializerList
-import org.eclipse.cdt.internal.core.dom.parser.c.CASTLiteralExpression
-import org.eclipse.cdt.internal.core.dom.parser.c.CASTSimpleDeclaration
-import org.eclipse.cdt.internal.core.dom.parser.c.CASTTypeIdInitializerExpression
-import org.junit.Test
+import org.eclipse.cdt.core.dom.ast.IASTEqualsInitializer
+import org.eclipse.cdt.core.dom.ast.IASTInitializerList
+import org.eclipse.cdt.core.dom.ast.IASTLiteralExpression
+import org.eclipse.cdt.core.dom.ast.IASTSimpleDeclaration
+import org.eclipse.cdt.core.dom.ast.c.ICASTFieldDesignator
+import org.eclipse.cdt.core.dom.ast.c.ICASTTypeIdInitializerExpression
 import org.junit.Assert
+import org.junit.Test
+import org.eclipse.cdt.core.dom.ast.c.ICASTDesignatedInitializer
 
 class SumTypesTest extends AbstractGeneratorTest {
 	/* Template
@@ -112,7 +112,7 @@ class SumTypesTest extends AbstractGeneratorTest {
 		ast.assertNoCompileErrors();
 		val ast2 = ast.value;
 		val decls = ast2.declarations
-		val varDecls = decls.filter(CASTSimpleDeclaration).map[it.declarators.head].toList
+		val varDecls = decls.filter(IASTSimpleDeclaration).map[it.declarators.head].toList
 		val c1 = varDecls.findFirst[it.name.toString == "c1"]
 		val c2 = varDecls.findFirst[it.name.toString == "c2"]
 		
@@ -121,21 +121,21 @@ class SumTypesTest extends AbstractGeneratorTest {
 	}
 	
 	def void verifyInit(IASTDeclarator varDecl, Map<String, String> inits) {
-		val init1 = varDecl.initializer as CASTEqualsInitializer
-		val init2 = init1.initializerClause as CASTInitializerList
-		val init3 = init2.clauses.filter(CASTDesignatedInitializer).findFirst[member | 
+		val init1 = varDecl.initializer as IASTEqualsInitializer
+		val init2 = init1.initializerClause as IASTInitializerList
+		val init3 = init2.clauses.filter(ICASTDesignatedInitializer).findFirst[member | 
 			member.designators.findFirst[
-				val accessor = it as CASTFieldDesignator;
+				val accessor = it as ICASTFieldDesignator;
 				accessor.name.toString == "data"
 			] !== null
 		]
-		val init4 = init3.operand as CASTTypeIdInitializerExpression;
-		val init5 = init4.initializer as CASTInitializerList;
-		val init6 = init5.clauses.filter(CASTDesignatedInitializer)
+		val init4 = init3.operand as ICASTTypeIdInitializerExpression;
+		val init5 = init4.initializer as IASTInitializerList;
+		val init6 = init5.clauses.filter(ICASTDesignatedInitializer)
 		init6.forEach[init|  
-			val nameDesign = init.designators.head as CASTFieldDesignator
+			val nameDesign = init.designators.head as ICASTFieldDesignator
 			val name = nameDesign.name.toString
-			val valueExpr = init.operand as CASTLiteralExpression
+			val valueExpr = init.operand as IASTLiteralExpression
 			val value = String.copyValueOf(valueExpr.value)
 			val ok = inits.get(name) == value
 			if(!ok) {

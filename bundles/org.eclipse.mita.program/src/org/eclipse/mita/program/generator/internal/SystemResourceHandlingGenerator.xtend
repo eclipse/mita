@@ -60,7 +60,7 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		
 		val exceptionType = exceptionGenerator.exceptionType;
@@ -106,7 +106,7 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		
 		val exceptionType = exceptionGenerator.exceptionType;
@@ -160,8 +160,8 @@ class SystemResourceHandlingGenerator {
 		.toImplementation(context)
 	}
 	
-	protected def IComponentConfiguration getConfiguration(CompilationContext context, AbstractSystemResource component) {
-		return new MapBasedComponentConfiguration(component, context);
+	protected def IComponentConfiguration getConfiguration(CompilationContext context, AbstractSystemResource component, SystemResourceSetup setup) {
+		return new MapBasedComponentConfiguration(component, context, setup);
 	}
 
 	protected def getRelevantEventHandler(CompilationContext context, AbstractSystemResource component) {
