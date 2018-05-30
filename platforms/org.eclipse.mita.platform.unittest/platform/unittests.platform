@@ -54,7 +54,7 @@ connectivity named-singleton MySingletonConnectivity {
 }
 
 connectivity many MyConnectivity {
-	generator ""
+	generator "org.eclipse.mita.platform.unittest.ConnectivityGenerator"
 	//validator ""
 	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
 	
