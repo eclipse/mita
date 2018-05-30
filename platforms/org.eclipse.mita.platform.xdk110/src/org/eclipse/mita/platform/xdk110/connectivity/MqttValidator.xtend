@@ -24,6 +24,8 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
+import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.base.types.Operation
 
 class MqttValidator implements IResourceValidator {
 	
@@ -65,12 +67,12 @@ class MqttValidator implements IResourceValidator {
 	def validateTopicQualityOfService(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
 		for(siginst : setup.signalInstances) {
 			if(siginst.instanceOf.name == 'topic') {
-				val qos = (siginst.initialization as ElementReferenceExpression).arguments.findFirst[ it.parameter.name == 'qos' ];
+				val qos = ModelUtils.getArgumentValue(siginst, "qos")
 				if(qos !== null) {
-					val qosValue = StaticValueInferrer.infer(qos.value, []);
+					val qosValue = StaticValueInferrer.infer(qos, []);
 					if(qosValue instanceof Integer) {
 						if(qosValue < 0 || qosValue > 2) {
-							acceptor.acceptError('''QOS level must be between 0 and 2''', qos, ExpressionsPackage.Literals.ARGUMENT__VALUE, 0, "qos_level_oob");
+							acceptor.acceptError('''QOS level must be between 0 and 2''', qos.eContainer, ExpressionsPackage.Literals.ARGUMENT__VALUE, 0, "qos_level_oob");
 						}
 					}
 				}
