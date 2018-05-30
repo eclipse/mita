@@ -14,12 +14,12 @@
 package org.eclipse.mita.program.inferrer
 
 import com.google.inject.Inject
-import org.yakindu.base.expressions.inferrer.TypeParameterInferrer
-import org.yakindu.base.types.TypeSpecifier
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.yakindu.base.types.validation.IValidationIssueAcceptor
 import java.util.Map
-import org.yakindu.base.types.TypeParameter
+import org.eclipse.mita.base.expressions.inferrer.TypeParameterInferrer
+import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 
 class ProgramDslTypeParameterInferrer extends TypeParameterInferrer {
 	

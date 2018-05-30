@@ -23,9 +23,9 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import com.google.inject.Inject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 class ArraySizeInferrer extends ElementSizeInferrer {
 	

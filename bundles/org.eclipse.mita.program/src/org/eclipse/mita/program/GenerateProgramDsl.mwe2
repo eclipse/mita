@@ -11,10 +11,8 @@ var rootPath = ".."
 Workflow {
 	bean = StandaloneSetup {
 		scanClassPath = true
-		registerGenModelFile = "platform:/resource/org.yakindu.base.types/model/types.genmodel"
-		registerGenModelFile = "platform:/resource/org.yakindu.base.expressions/model/Expressions.genmodel"
-		registerGeneratedEPackage = "org.yakindu.base.types.TypesPackage"
-		registerGeneratedEPackage = "org.yakindu.base.expressions.expressions.ExpressionsPackage"
+		registerGeneratedEPackage = "org.eclipse.mita.base.types.TypesPackage"
+		registerGeneratedEPackage = "org.eclipse.mita.base.expressions.ExpressionsPackage"
 	}
 	component = XtextGenerator {
 		configuration = {
@@ -37,11 +35,10 @@ Workflow {
 		language = StandardLanguage {
 			name = "org.eclipse.mita.program.ProgramDsl"
 			fileExtensions = "mita"
-			referencedResource = "platform:/resource/org.yakindu.base.types/model/types.genmodel"
-			referencedResource = "platform:/resource/org.yakindu.base.expressions/model/Expressions.genmodel"
 			referencedResource = "platform:/resource/org.eclipse.mita.platform/model/platforms.xcore"
 			referencedResource = "platform:/resource/org.eclipse.mita.program/model/program.xcore"
-			referencedResource = "platform:/resource/org.eclipse.mita.types/model/types.xcore"
+			referencedResource = "platform:/resource/org.eclipse.mita.base/model/types.xcore"
+			referencedResource = "platform:/resource/org.eclipse.mita.base/model/expressions.xcore"
 			
 			serializer = {
 				generateStub = false

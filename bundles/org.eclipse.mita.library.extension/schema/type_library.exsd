@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!-- Schema file written by PDE -->
-<schema targetNamespace="org.eclipse.mita.types" xmlns="http://www.w3.org/2001/XMLSchema">
+<schema targetNamespace="org.eclipse.mita.base" xmlns="http://www.w3.org/2001/XMLSchema">
 <annotation>
       <appInfo>
-         <meta.schema plugin="org.eclipse.mita.types" id="type_library" name="Mita library extensions"/>
+         <meta.schema plugin="org.eclipse.mita.base" id="type_library" name="Mita library extensions"/>
       </appInfo>
       <documentation>
          [Enter description of this extension point.]

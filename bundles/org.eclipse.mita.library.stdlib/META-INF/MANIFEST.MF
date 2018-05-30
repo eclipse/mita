@@ -5,11 +5,12 @@ Bundle-SymbolicName: org.eclipse.mita.library.stdlib;singleton:=true
 Bundle-Version: 0.1.0.qualifier
 Bundle-Vendor: Eclipse.org/Mita
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Require-Bundle: org.eclipse.mita.types,
+Require-Bundle: org.eclipse.mita.base,
  org.eclipse.mita.library.extension,
  com.google.guava,
  org.eclipse.xtext.xbase.lib,
  org.eclipse.xtend.lib,
  org.eclipse.xtend.lib.macro,
- org.eclipse.mita.program;bundle-version="0.1.0"
+ org.eclipse.mita.program;bundle-version="0.1.0",
+ com.google.inject
 

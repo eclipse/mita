@@ -13,12 +13,6 @@
 
 package org.eclipse.mita.program.ui.contentassist
 
-import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.program.ProgramPackage
-import org.eclipse.mita.program.model.ImportHelper
-import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
-import org.eclipse.mita.types.ImportStatement
-import org.eclipse.mita.types.PackageAssociation
 import com.google.common.base.Function
 import com.google.inject.Inject
 import java.util.Arrays
@@ -26,6 +20,18 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.jface.text.contentassist.ICompletionProposal
 import org.eclipse.jface.viewers.ILabelProvider
 import org.eclipse.jface.viewers.StyledString
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.scoping.MitaTypeSystem
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.program.ProgramPackage
+import org.eclipse.mita.program.model.ImportHelper
+import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.RuleCall
 import org.eclipse.xtext.resource.IEObjectDescription
@@ -35,12 +41,6 @@ import org.eclipse.xtext.ui.editor.contentassist.ConfigurableCompletionProposal
 import org.eclipse.xtext.ui.editor.contentassist.ContentAssistContext
 import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor
 import org.eclipse.xtext.ui.editor.hover.IEObjectHover
-import org.yakindu.base.expressions.expressions.ExpressionsPackage
-import org.yakindu.base.types.Event
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.TypesPackage
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.types.scoping.MitaTypeSystem
 
 class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 

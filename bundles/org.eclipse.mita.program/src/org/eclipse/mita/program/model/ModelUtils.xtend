@@ -13,6 +13,30 @@
 
 package org.eclipse.mita.program.model
 
+import com.google.common.base.Optional
+import java.util.Iterator
+import java.util.NoSuchElementException
+import java.util.function.Predicate
+import org.eclipse.emf.common.notify.impl.AdapterImpl
+import org.eclipse.emf.common.util.EList
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.scoping.TypesLibraryProvider
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.PrimitiveType
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypesFactory
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
@@ -25,31 +49,8 @@ import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.ProgramCopier
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.GeneratedType
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.TypesFactory
-import org.eclipse.mita.types.scoping.TypesLibraryProvider
-import com.google.common.base.Optional
-import java.util.Iterator
-import java.util.NoSuchElementException
-import java.util.function.Predicate
-import org.eclipse.emf.common.notify.impl.AdapterImpl
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.yakindu.base.expressions.expressions.Argument
-import org.yakindu.base.expressions.expressions.ArgumentExpression
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Parameter
-import org.yakindu.base.types.PrimitiveType
-import org.yakindu.base.types.Type
-import org.yakindu.base.types.TypeSpecifier
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 
 class ModelUtils {
 
@@ -75,6 +76,31 @@ class ModelUtils {
 	}
 	static dispatch def VariableDeclaration getUnderlyingVariableDeclaration(Void acc) {
 		null;
+	}
+	
+	
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(Operation op) {
+		return Optional.of(op.parameters);
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(StructureType st) {
+		return Optional.of(st.parameters);	
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(AnonymousProductType apt) {
+		val tss = apt.typeSpecifiers;
+		if(tss.length == 1) {
+			val t0 = tss.head.type;
+			return t0.getAccessorParameters;
+		}
+		return Optional.absent;
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(NamedProductType npt) {
+		return Optional.of(npt.parameters);
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(EObject obj) {
+		Optional.absent;
+	}
+	static dispatch def Optional<EList<Parameter>> getAccessorParameters(Void obj) {
+		Optional.absent;
 	}
 	
 	static def <T> Optional<T> preventRecursion(EObject obj, () => T action) {

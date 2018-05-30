@@ -13,6 +13,51 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.inject.Inject
+import java.util.LinkedList
+import java.util.List
+import java.util.function.Function
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.IStatus
+import org.eclipse.core.runtime.Status
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.BinaryExpression
+import org.eclipse.mita.base.expressions.BoolLiteral
+import org.eclipse.mita.base.expressions.ConditionalExpression
+import org.eclipse.mita.base.expressions.DoubleLiteral
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FloatLiteral
+import org.eclipse.mita.base.expressions.HexLiteral
+import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.Literal
+import org.eclipse.mita.base.expressions.NullLiteral
+import org.eclipse.mita.base.expressions.ParenthesizedExpression
+import org.eclipse.mita.base.expressions.PostFixUnaryExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.TypeCastExpression
+import org.eclipse.mita.base.expressions.UnaryExpression
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.PrimitiveType
+import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypesFactory
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.ArrayAccessExpression
@@ -38,6 +83,7 @@ import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ReferenceExpression
 import org.eclipse.mita.program.ReturnStatement
@@ -52,57 +98,10 @@ import org.eclipse.mita.program.WhileStatement
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.GeneratedType
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.Singleton
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumAlternative
-import org.eclipse.mita.types.SumType
-import com.google.inject.Inject
-import java.util.LinkedList
-import java.util.List
-import java.util.function.Function
-import org.eclipse.core.runtime.CoreException
-import org.eclipse.core.runtime.IStatus
-import org.eclipse.core.runtime.Status
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.xtend2.lib.StringConcatenationClient
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
-import org.yakindu.base.expressions.expressions.Argument
-import org.yakindu.base.expressions.expressions.ArgumentExpression
-import org.yakindu.base.expressions.expressions.AssignmentExpression
-import org.yakindu.base.expressions.expressions.AssignmentOperator
-import org.yakindu.base.expressions.expressions.BinaryExpression
-import org.yakindu.base.expressions.expressions.BoolLiteral
-import org.yakindu.base.expressions.expressions.ConditionalExpression
-import org.yakindu.base.expressions.expressions.DoubleLiteral
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.expressions.expressions.FloatLiteral
-import org.yakindu.base.expressions.expressions.HexLiteral
-import org.yakindu.base.expressions.expressions.IntLiteral
-import org.yakindu.base.expressions.expressions.Literal
-import org.yakindu.base.expressions.expressions.NullLiteral
-import org.yakindu.base.expressions.expressions.ParenthesizedExpression
-import org.yakindu.base.expressions.expressions.PostFixUnaryExpression
-import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
-import org.yakindu.base.expressions.expressions.StringLiteral
-import org.yakindu.base.expressions.expressions.TypeCastExpression
-import org.yakindu.base.expressions.expressions.UnaryExpression
-import org.yakindu.base.types.EnumerationType
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Parameter
-import org.yakindu.base.types.PrimitiveType
-import org.yakindu.base.types.Property
-import org.yakindu.base.types.TypeSpecifier
-import org.yakindu.base.types.TypesFactory
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.eclipse.mita.program.Program
 
 class StatementGenerator {
 
@@ -292,8 +291,10 @@ class StatementGenerator {
 				else {
 					feature.structType
 				}
+				// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
+				val needCast = EcoreUtil2.getContainerOfType(stmt, ProgramBlock) !== null
 				'''
-				(«sumType.structName») {
+				«IF needCast»(«sumType.structName») «ENDIF»{
 					.tag = «feature.enumName»«IF !(feature instanceof Singleton)», ««« there is no other field for singletons
 
 					««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
@@ -303,6 +304,8 @@ class StatementGenerator {
 						«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«i_arg.value.value.code.noTerminator»
 						«ENDFOR»	
 					}
+					«ELSE»
+					
 					«ENDIF»
 				}
 				'''
@@ -788,27 +791,10 @@ class StatementGenerator {
 			if(preferred !== null) {
 				'''«prefix»«preferred.name»«suffix»'''	
 			}
-			else if(productType instanceof AnonymousProductType) {
-				if(productType.typeSpecifiers.length > 1) {
-					'''«prefix»_«idx»«suffix»''';	
-				}
-				// if we have only one type, we are an alias for another type
-				else {
-					// check if that is a struct
-					val realType = productType.typeSpecifiers.head.type;
-					if(realType instanceof StructureType) {
-						'''«prefix»«realType.parameters.get(idx).baseName»«suffix»''';	
-					}
-					else {
-						'''''';
-					}
-				}
-			}
-			else if(productType instanceof NamedProductType) {
-				'''«prefix»«productType.parameters.get(idx).baseName»«suffix»''';
-			}
 			else {
-				'''ERROR: NEITHER ANONYMOUS NOR NAMED, YOU MUST NEVER GET HERE''';
+				ModelUtils.getAccessorParameters(productType)
+					.transform[parameters | '''«prefix»«parameters.get(idx).baseName»«suffix»''']
+					.or('''«prefix»_«idx»«suffix»''')
 			} ]
 	}
 	

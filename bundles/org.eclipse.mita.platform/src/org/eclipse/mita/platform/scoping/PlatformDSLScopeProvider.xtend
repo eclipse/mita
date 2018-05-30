@@ -21,12 +21,12 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.ComplexType
-import org.yakindu.base.types.EnumerationType
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.yakindu.base.expressions.expressions.Expression
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.expressions.Expression
 
 /**
  * This class contains custom scoping description.

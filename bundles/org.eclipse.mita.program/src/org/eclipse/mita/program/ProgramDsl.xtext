@@ -11,12 +11,11 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-grammar org.eclipse.mita.program.ProgramDsl with org.eclipse.mita.types.TypeDsl
+grammar org.eclipse.mita.program.ProgramDsl with org.eclipse.mita.base.TypeDsl
 
 import "org.eclipse.mita.program" as program
-import "http://www.yakindu.org/base/types/2.0.0" as types
-import "org.eclipse.mita.types" as mitaTypes
-import "http://www.yakindu.org/base/expressions/Expressions" as expressions
+import "org.eclipse.mita.base.types" as types
+import "org.eclipse.mita.base.expressions" as expressions
 import "org.eclipse.mita.platform" as platform
 import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 
@@ -35,7 +34,7 @@ Program returns program::Program:
 	)*
 ;
 
-ImportStatement returns mitaTypes::ImportStatement:
+ImportStatement returns types::ImportStatement:
 	'import' importedNamespace=QID ';'
 ;
 
@@ -132,7 +131,7 @@ ExpressionStatement returns program::ExpressionStatement:
 
 @Override
 Literal returns expressions::Literal:
-	ArrayLiteral | BoolLiteral | IntLiteral | HexLiteral | BinaryLiteral | DoubleLiteral | FloatLiteral | StringLiteral | NullLiteral;
+	ArrayLiteral | BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;
 
 ArrayLiteral returns program::ArrayLiteral:
 	{program::ArrayLiteral}
@@ -241,7 +240,7 @@ IsCase returns program::IsCase:
 ;
 
 IsTypeMatchCase returns program::IsTypeMatchCase:
-	'is' '(' productType=[mitaTypes::SumAlternative|QID] ')'
+	'is' '(' productType=[types::SumAlternative|QID] ')'
 	body=ProgramBlock
 ;
 
@@ -254,12 +253,12 @@ IsAssignmentVariable returns program::VariableDeclaration:
 ;
 
 IsDeconstructionCase returns  program::IsDeconstructionCase:
-	'is' '(' productType=[mitaTypes::SumAlternative|QID] '->' deconstructors+=IsDeconstructor (',' deconstructors+=IsDeconstructor)*
+	'is' '(' productType=[types::SumAlternative|QID] '->' deconstructors+=IsDeconstructor (',' deconstructors+=IsDeconstructor)*
 	')' 
 	body=ProgramBlock
 ;
 IsDeconstructor returns program::IsDeconstructor:
-	name=ID ('=' productMember=[mitaTypes::ProductMember|QID])?
+	name=ID ('=' productMember=[types::ProductMember|QID])?
 ;
 
 IsOtherCase returns program::IsOtherCase:
@@ -268,7 +267,7 @@ IsOtherCase returns program::IsOtherCase:
 ;
 
 ThrowExceptionStatement returns program::ThrowExceptionStatement: 
-	'throw' exceptionType=[mitaTypes::ExceptionTypeDeclaration] ('(' message=STRING ')')? ';'
+	'throw' exceptionType=[types::ExceptionTypeDeclaration] ('(' message=STRING ')')? ';'
 ;
 
 TryStatement returns program::TryStatement: 
@@ -277,7 +276,7 @@ TryStatement returns program::TryStatement:
 	('finally' ^finally=ProgramBlock)?
 ;
 CatchStatement returns program::CatchStatement: 
-	'catch' '(' exceptionType=[mitaTypes::ExceptionTypeDeclaration] ')' body=ProgramBlock
+	'catch' '(' exceptionType=[types::ExceptionTypeDeclaration] ')' body=ProgramBlock
 ;
 
 ReservedKeywords:

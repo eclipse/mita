@@ -16,10 +16,10 @@ package org.eclipse.mita.program.generator.transformation
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.ArgumentExpression
-import org.yakindu.base.expressions.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.ModalityAccessPreparation

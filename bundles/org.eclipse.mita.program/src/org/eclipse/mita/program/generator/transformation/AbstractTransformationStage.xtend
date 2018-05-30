@@ -23,8 +23,8 @@ import java.util.LinkedList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.yakindu.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 abstract class AbstractTransformationStage {
 	

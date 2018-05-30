@@ -25,7 +25,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.ConfigurationItem
 
 /**
@@ -52,15 +52,15 @@ class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
 	}
 	
 	def text(ConfigurationItem ele) {
-		'''«IF ele.required»required«ENDIF» configuration <b>«ele.name» : «ele.type»</b>'''
+		'''ï¿½IF ele.requiredï¿½requiredï¿½ENDIFï¿½ configuration <b>ï¿½ele.nameï¿½ : ï¿½ele.typeï¿½</b>'''
 	}
 	
 	def text(Sensor ele) {
-		'''sensor <b>«ele.name»</b>'''
+		'''sensor <b>ï¿½ele.nameï¿½</b>'''
 	}
 	
 	def text(SystemResourceAlias ele) {
-		'''«ele.label» <b>«ele.name» : «ele.delegate?.name»</b>'''
+		'''ï¿½ele.labelï¿½ <b>ï¿½ele.nameï¿½ : ï¿½ele.delegate?.nameï¿½</b>'''
 	}
 	
 	protected dispatch def String getLabel(SystemResourceAlias alias) {
@@ -72,16 +72,16 @@ class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
 	}
 	
 	def text(SystemResourceEvent ele) {
-		'''resource event <b>«ele.name»</b>'''
+		'''resource event <b>ï¿½ele.nameï¿½</b>'''
 	}
 	
 	def text(SignalEvent ele) {
-		'''signal event <b>«ele.name»</b>'''
+		'''signal event <b>ï¿½ele.nameï¿½</b>'''
 	}
 	
 	def text(Modality ele) {
 		val type = typeInferrer.infer(ele)?.type
-		'''«ele.eContainer.label.toLowerCase» modality <b>«ele.name» : «type»</b>'''
+		'''ï¿½ele.eContainer.label.toLowerCaseï¿½ modality <b>ï¿½ele.nameï¿½ : ï¿½typeï¿½</b>'''
 	}
 
 	override protected convertToString(Object text) {

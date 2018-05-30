@@ -14,10 +14,10 @@
 package org.eclipse.mita.program.generator.transformation
 
 import org.eclipse.mita.program.generator.transformation.AbstractUnravelingStage
-import org.yakindu.base.expressions.expressions.Expression
+import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.xtext.EcoreUtil2
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 
 class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {

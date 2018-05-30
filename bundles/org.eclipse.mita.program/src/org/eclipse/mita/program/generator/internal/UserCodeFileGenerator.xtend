@@ -13,7 +13,13 @@
 
 package org.eclipse.mita.program.generator.internal
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
@@ -22,13 +28,7 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumType
-import com.google.inject.Inject
 import org.eclipse.xtext.EcoreUtil2
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.EnumerationType
-import org.eclipse.mita.program.NativeFunctionDefinition
 
 class UserCodeFileGenerator { 
 	

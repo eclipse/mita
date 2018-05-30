@@ -33,15 +33,15 @@ import org.eclipse.mita.program.model.ModelUtils
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
-import org.yakindu.base.expressions.expressions.AssignmentOperator
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.TypeSpecifier
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.program.ReturnStatement
-import org.yakindu.base.expressions.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.program.FunctionParameterDeclaration
-import org.yakindu.base.base.NamedElement
+import org.eclipse.mita.base.types.NamedElement
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	

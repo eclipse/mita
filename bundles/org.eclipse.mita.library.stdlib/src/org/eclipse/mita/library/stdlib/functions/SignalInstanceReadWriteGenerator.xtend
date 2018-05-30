@@ -19,9 +19,9 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.model.ModelUtils
 import com.google.inject.Inject
-import org.yakindu.base.base.NamedElement
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.FeatureCall
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	

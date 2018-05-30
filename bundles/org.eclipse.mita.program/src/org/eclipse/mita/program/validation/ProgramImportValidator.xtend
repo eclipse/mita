@@ -13,20 +13,20 @@
 
 package org.eclipse.mita.program.validation
 
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.model.ImportHelper
-import org.eclipse.mita.types.PackageAssociation
-import org.eclipse.mita.types.TypesPackage
 import com.google.inject.Inject
 import java.util.Collections
 import java.util.HashSet
 import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.library.^extension.LibraryExtensions
+import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.model.ImportHelper
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.eclipse.mita.library.^extension.LibraryExtensions
 
 class ProgramImportValidator extends AbstractDeclarativeValidator {
 

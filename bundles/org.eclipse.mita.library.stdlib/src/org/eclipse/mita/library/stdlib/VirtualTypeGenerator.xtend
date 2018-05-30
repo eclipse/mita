@@ -14,10 +14,10 @@
 package org.eclipse.mita.library.stdlib
 
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
-import org.yakindu.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.expressions.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.AssignmentOperator
 
 class VirtualTypeGenerator extends AbstractTypeGenerator {
 	
