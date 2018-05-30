@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         id="Compiler"
+         point="org.eclipse.core.runtime.applications">
+      <application
+            cardinality="singleton-global"
+            thread="main"
+            visible="true">
+         <run
+               class="org.eclipse.mita.cli.Main">
+         </run>
+      </application>
+   </extension>
+   <extension
+         id="product"
+         point="org.eclipse.core.runtime.products">
+      <product
+            application="org.eclipse.mita.cli.Compiler"
+            name="Eclipse Mita CLI">
+         <property
+               name="aboutText"
+               value="%aboutText">
+         </property>
+         <property
+               name="appName"
+               value="Eclipse Mita CLI">
+         </property>
+      </product>
+   </extension>
+
+</plugin>

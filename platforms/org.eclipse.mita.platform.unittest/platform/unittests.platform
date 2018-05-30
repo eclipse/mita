@@ -51,6 +51,7 @@ sensor MyOtherSensor {
 }
 
 connectivity named-singleton MySingletonConnectivity {
+	generator ""
 }
 
 connectivity many MyConnectivity {

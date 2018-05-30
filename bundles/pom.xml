@@ -67,6 +67,9 @@
                 
                 <module>org.eclipse.mita.library.extension</module>
                 <module>org.eclipse.mita.library.stdlib</module>
+
+				<module>org.eclipse.mita.cli</module>
+				<module>org.eclipse.mita.cli.product</module>
             </modules>
         </profile>
         
