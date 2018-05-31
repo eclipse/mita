@@ -13,12 +13,11 @@
 
 package org.eclipse.mita.program.formatting
 
-import org.eclipse.mita.program.services.ProgramDslGrammarAccess
 import com.google.inject.Inject
+import org.eclipse.mita.program.services.ProgramDslGrammarAccess
 import org.eclipse.xtext.formatting.impl.AbstractDeclarativeFormatter
 import org.eclipse.xtext.formatting.impl.FormattingConfig
 import org.eclipse.xtext.service.AbstractElementFinder.AbstractParserRuleElementFinder
-import org.eclipse.mita.base.services.TypeDslGrammarAccess
 
 class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 
@@ -41,17 +40,16 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 		c.formatForLoop
 		c.formatCatchFinally
 		c.formatAllTypeSpecifiers
+		c.formatPostFixExpression
 	}
 	
 	def formatCurlyBrackets(FormattingConfig config) {
-		grammar.findKeywords("{").forEach [
-			config.setLinewrap(1, 1, 2).after(it);
-			config.setIndentationIncrement().after(it);
-		]
-		grammar.findKeywords("}").forEach [
-			config.setLinewrap(1, 1, 2).before(it);
-			config.setIndentationDecrement().before(it);
-			config.setLinewrap(1, 1, 2).after(it)
+		grammar.findKeywordPairs("{", "}").forEach [
+			config.setLinewrap(1, 1, 2).after(it.first);
+			config.setIndentationIncrement().after(it.first);
+			config.setLinewrap(1, 1, 2).before(it.second);
+			config.setIndentationDecrement().before(it.second);
+			config.setLinewrap(1, 1, 2).after(it.second)
 		]
 	}
 
@@ -151,6 +149,10 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 
 	def formatFeatureCalls(FormattingConfig config) {
 		grammar.findKeywords(".").forEach[config.setNoSpace.around(it)]
+	}
+	
+	def formatPostFixExpression(FormattingConfig config) {
+		config.setNoSpace.before(grammar.postFixUnaryExpressionAccess.operatorPostFixOperatorEnumRuleCall_1_1_0)
 	}
 
 }
