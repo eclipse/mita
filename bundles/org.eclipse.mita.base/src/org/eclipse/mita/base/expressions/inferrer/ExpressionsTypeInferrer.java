@@ -184,9 +184,9 @@ public class ExpressionsTypeInferrer extends AbstractTypeSystemInferrer implemen
 		return result1;
 	}
 
-	public InferenceResult doInfer(PostFixUnaryExpression expression) {
-		InferenceResult result = inferTypeDispatch(expression.getOperand());
-		assertIsSubType(result, getResultFor(REAL), null);
+	public InferenceResult doInfer(PostFixUnaryExpression e) {
+		InferenceResult result = inferTypeDispatch(e.getOperand());
+		assertIsSubType(result, getResultFor(REAL), String.format(POSTFIX_OPERATOR, e.getOperator(), result));
 		return result;
 	}
 
