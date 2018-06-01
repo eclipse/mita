@@ -77,7 +77,7 @@ connectivity many MyConnectivity {
 	signal vci04(length: uint32) : array<int32>
 }
 
-connectivity many MyConnectivityWithRequireds {
+connectivity many MyConnectivityWithRequires {
 	generator "org.eclipse.mita.platform.unittest.ConnectivityGenerator"
 	//validator ""
 	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
@@ -106,6 +106,6 @@ platform UnitTestPlatform {
 	
 	has MyConnectivity
 	has MySingletonConnectivity
-	has MyConnectivityWithRequireds
+	has MyConnectivityWithRequires
 }
 
