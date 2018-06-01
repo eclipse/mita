@@ -158,3 +158,10 @@ fn incVecs(a: anyVec) {
     }
 	return b;
 }
+
+fn testAssignments() {
+    var v3 : anyVec.vec3d = anyVec.vec3d(10, 10, 10);
+    var av : anyVec = anyVec.vec3d(10, 10, 10);
+    // XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on vec3d and vec1d." at "v3 = anyVec.vec1d(10)"
+    v3 = anyVec.vec1d(10);
+}
