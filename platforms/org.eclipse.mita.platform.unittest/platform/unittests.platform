@@ -51,6 +51,7 @@ sensor MyOtherSensor {
 }
 
 connectivity named-singleton MySingletonConnectivity {
+	generator "org.eclipse.mita.platform.unittest.ConnectivityGenerator"
 }
 
 connectivity many MyConnectivity {
@@ -76,6 +77,19 @@ connectivity many MyConnectivity {
 	signal vci04(length: uint32) : array<int32>
 }
 
+connectivity many MyConnectivityWithRequireds {
+	generator "org.eclipse.mita.platform.unittest.ConnectivityGenerator"
+	//validator ""
+	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
+	
+	required configuration-item rcfg00 : string = "foo"
+	required configuration-item rcfg01 : bool
+	required configuration-item rcfg02 : uint32
+	required configuration-item rcfg03 : MyConfigItemValues
+	required configuration-item rcfg04 : MySingletonConnectivity
+	required configuration-item rcfg05 : ConfigAlt
+}
+
 alias my_sensor00 for MySensor
 alias my_sensor01 for MySensor
 alias my_sensor02 for MyOtherSensor
@@ -92,5 +106,6 @@ platform UnitTestPlatform {
 	
 	has MyConnectivity
 	has MySingletonConnectivity
+	has MyConnectivityWithRequireds
 }
 
