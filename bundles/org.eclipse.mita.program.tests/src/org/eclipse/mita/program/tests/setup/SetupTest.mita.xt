@@ -234,4 +234,9 @@ setup bluetoothB : MyConnectivity {
 	// XPECT vciParameters --> p01=0 p02=42
 	var vciv5 = vci02(0);
 }
+
+// XPECT errors --> "Missing configuration items: rcfg00, rcfg01, rcfg02, rcfg03, rcfg04, rcfg05" at "setup missingReq : MyConnectivityWithRequires {}"
+setup missingReq : MyConnectivityWithRequires {
+
+}
  
