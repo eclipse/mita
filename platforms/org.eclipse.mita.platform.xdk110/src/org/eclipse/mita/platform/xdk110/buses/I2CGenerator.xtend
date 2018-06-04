@@ -87,7 +87,13 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	private def getWidth(String register_width) {
-		switch(register_width.substring("register_".length)) {
+		val regName = if(register_width.startsWith("array_")) {
+			register_width.substring("array_register_".length);
+		}
+		else {
+			register_width.substring("register_".length);
+		}
+		switch(regName) {
 			case "int8": 1
 			case "uint8": 1
 			case "int16": 2
@@ -97,27 +103,30 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		}
 	}
 	
-	override generateSignalInstanceSetter(SignalInstance signalInstance, String valueVariableName) {
+	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
 		val busAddress = this.setup.getConfigurationItemValue("deviceAddress");
 		val registerAddress = ModelUtils.getArgumentValue(signalInstance, 'address');
 		
 		val signalName = signalInstance.instanceOf.name;
-		val preamble = if(signalName == "register") {
+		
+		val isArray = signalName.startsWith("array_register")
+		
+		val preamble = if(isArray) {
 			codeFragmentProvider.create('''
-			if(«valueVariableName»->length != «ModelUtils.getArgumentValue(signalInstance, 'width').code.noTerminator») {
+			if(«resultName»->length != «ModelUtils.getArgumentValue(signalInstance, 'length').code.noTerminator») {
 				return EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION;
 			}
 			''')
 		} else {
 			CodeFragment.EMPTY;
-		}	
-		val data = if(signalName == "register") {
-			codeFragmentProvider.create('''«valueVariableName»->data''');
-		} else {
-			codeFragmentProvider.create('''«valueVariableName»''');
 		}
-		val dataLen = if(signalName == "register") {
-			codeFragmentProvider.create('''«valueVariableName»->length''')
+		val data = if(isArray) {
+			codeFragmentProvider.create('''(uint8_t*) «resultName»->data''');
+		} else {
+			codeFragmentProvider.create('''«resultName»''');
+		}
+		val dataLen = if(isArray) {
+			codeFragmentProvider.create('''«resultName»->length / «signalName.getWidth»''')
 		} else {
 			codeFragmentProvider.create('''«signalName.getWidth»''');			
 		}
@@ -136,22 +145,24 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		
 		val signalName = signalInstance.instanceOf.name;
 		
-		val preamble = if(signalName == "register") {
+		val isArray = signalName.startsWith("array_register")
+		
+		val preamble = if(isArray) {
 			codeFragmentProvider.create('''
-			if(«resultName»->length != «ModelUtils.getArgumentValue(signalInstance, 'width').code.noTerminator») {
+			if(«resultName»->length != «ModelUtils.getArgumentValue(signalInstance, 'length').code.noTerminator») {
 				return EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION;
 			}
 			''')
 		} else {
 			CodeFragment.EMPTY;
 		}
-		val data = if(signalName == "register") {
-			codeFragmentProvider.create('''«resultName»->data''');
+		val data = if(isArray) {
+			codeFragmentProvider.create('''(uint8_t*) «resultName»->data''');
 		} else {
 			codeFragmentProvider.create('''«resultName»''');
 		}
-		val dataLen = if(signalName == "register") {
-			codeFragmentProvider.create('''«resultName»->length''')
+		val dataLen = if(isArray) {
+			codeFragmentProvider.create('''«resultName»->length / «signalName.getWidth»''')
 		} else {
 			codeFragmentProvider.create('''«signalName.getWidth»''');			
 		}
