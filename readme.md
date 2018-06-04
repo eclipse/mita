@@ -23,7 +23,7 @@ In case you find a bug or have a feature request, please feel free to file an is
 There are two ways you can extend Mita:
 
 1. _Provide or extend a Mita platform_: to run Mita on a particular device, we need a `platform` which describes this device. For details of how to build such a platform, check out _platform integrator guide_ (TBD).
-2. _Extend the core language itself_: Mita is a programming langauge in its infancy. If you want to help build it, please find and file bug reports, or better yet provide a PR to fix it.
+2. _Extend the core language itself_: Mita is a programming language in its infancy. If you want to help build it, please find and file bug reports, or better yet provide a PR to fix it.
 
 ### Setting up developer workspace
 1. Download the the <a href="https://wiki.eclipse.org/Eclipse_Oomph_Installer" target="_blank">Oomph Eclipse Installer</a>
