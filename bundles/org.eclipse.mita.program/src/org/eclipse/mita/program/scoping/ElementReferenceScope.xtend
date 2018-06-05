@@ -92,16 +92,23 @@ class ElementReferenceScope extends AbstractScope {
 		}
 	}
 
-	def addForLoopIterator(List<EObject> result, EObject object) {
+	def void addForLoopIterator(List<EObject> result, EObject object) {
 		var container = object.getContainerOfType(ForStatement)
-		if (container !== null)
+		if (container !== null) {
 			result += container.loopVariables
+			if(container.eContainer !== null) {
+				result.addForLoopIterator(container.eContainer)
+			}
+		}
 	}
 	
-	def addForEachLoopIterator(List<EObject> result, EObject object) {
+	def void addForEachLoopIterator(List<EObject> result, EObject object) {
 		var container = object.getContainerOfType(ForEachStatement)
 		if (container !== null) {
 			result += container.iterator
+			if(container.eContainer !== null) {
+				result.addForEachLoopIterator(container.eContainer)
+			}
 		}
 	}
 
