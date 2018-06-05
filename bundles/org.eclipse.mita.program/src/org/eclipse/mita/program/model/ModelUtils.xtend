@@ -339,7 +339,17 @@ class ModelUtils {
 
 		// we did not find a named arg. Let's look it up based on the index
 		val sortedArgs = getSortedArguments(op.parameters, expr.arguments);
-		val argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
+		
+		var argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
+		// for extension methods the first arg is on the left side
+		if(expr instanceof FeatureCall) {
+			if(expr.operationCall) {
+				if(argIndex == 0) {
+					return expr.owner;
+				}
+				argIndex--;	
+			}
+		}
 		if(argIndex === null || argIndex >= sortedArgs.length) return null;
 
 		return sortedArgs.get(argIndex)?.value;
@@ -378,6 +388,5 @@ class ModelUtils {
 		} else {
 			false
 		}
-	}
-
+	}	
 }

@@ -20,6 +20,10 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.platform.xdk110.platform.ExceptionGenerator
 
 class I2CGenerator extends AbstractSystemResourceGenerator {
 	
@@ -28,6 +32,9 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject 
 	extension GeneratorUtils generatorUtils
+
+	@Inject 
+	ExceptionGenerator exceptionGenerator
 
 	override generateSetup() {
 		
@@ -79,6 +86,18 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		static void i2cCallback(I2C_T i2c, struct MCU_I2C_Event_S event) {
 			I2CTransceiver_LoopCallback(&tranceiverStruct, event);
 		}
+		
+		static void swapByteOrder(uint8_t* buffer, size_t objectSize, size_t objectCount) {
+			for(uint32_t i = 0; i < objectCount; i++) {
+				for(uint32_t off = 0; off < (objectSize >> 1); off++) {
+					uint8_t left  = buffer[objectSize*i + off];
+					uint8_t right = buffer[objectSize*(i+1) - off - 1];
+
+					buffer[objectSize*i + off] = right;
+					buffer[objectSize*(i+1) - off - 1] = left;
+				}
+			}
+		}
 		''')
 	}
 		
@@ -103,9 +122,66 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		}
 	}
 	
+	private def Boolean shouldSwapByteOrder(SignalInstance sigInst) {
+		val setup = sigInst.eContainer as SystemResourceSetup;
+		val byteOrder = setup.configurationItemValues.findFirst[it.item.name == "byteOrder"]?.value;
+		val enumVal = StaticValueInferrer.infer(byteOrder, []);
+		if(enumVal instanceof Enumerator) {
+			// invert Big Endian, since XDK uses Little Endian
+			return enumVal.name == "BigEndian";
+		}
+		return false;
+	}
+	
+	private static class ByteOrderInfo {
+		public final CodeFragment bufferName;
+		public final CodeFragment bufferDeclaration;
+		public final CodeFragment byteOrderSwap;
+		
+		new(CodeFragment bn, CodeFragment bd, CodeFragment bos) {
+			bufferName = bn;
+			bufferDeclaration = bd;
+			byteOrderSwap = bos;
+		}
+		new(CodeFragment bn) {
+			bufferName = bn;
+			bufferDeclaration = CodeFragment.EMPTY;
+			byteOrderSwap = CodeFragment.EMPTY;
+		}
+		
+	}
+	
+	private def ByteOrderInfo swapByteOrder(SignalInstance sigInst, CodeFragment elementSize, CodeFragment elementCount, CodeFragment dataHandle, Boolean copy) {
+		if(!sigInst.shouldSwapByteOrder) {
+			return new ByteOrderInfo(dataHandle);
+		}
+		val dh = codeFragmentProvider.create('''data_asBytes''')
+		val dd = codeFragmentProvider.create('''
+		«IF copy»
+		uint8_t «dh»[«elementCount» * «elementSize»];
+		memcpy(«dh», «dataHandle», «elementCount» * «elementSize»);
+		«ELSE»
+		uint8_t* «dh» = «dataHandle»;
+		«ENDIF»
+		''')
+		val bos = codeFragmentProvider.create('''
+		swapByteOrder(«dh», «elementSize», «elementCount»);
+		''')
+		return new ByteOrderInfo(dh, dd, bos);
+	}
+	
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
 		val busAddress = this.setup.getConfigurationItemValue("deviceAddress");
 		val registerAddress = ModelUtils.getArgumentValue(signalInstance, 'address');
+		val mode = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "mode"), []);
+		if(mode instanceof Enumerator) {
+			if(!mode.name.contains("Write")) {
+				
+			}
+		}
+		else {
+			
+		}
 		
 		val signalName = signalInstance.instanceOf.name;
 		
@@ -125,15 +201,25 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		} else {
 			codeFragmentProvider.create('''«resultName»''');
 		}
-		val dataLen = if(isArray) {
-			codeFragmentProvider.create('''«resultName»->length / «signalName.getWidth»''')
+		val dataCount = if(isArray) {
+			codeFragmentProvider.create('''«resultName»->length''')
+		} else {
+			codeFragmentProvider.create('''1''');
+		}
+		val byteCount = if(isArray) {
+			codeFragmentProvider.create('''«resultName»->length * «signalName.getWidth»''')
 		} else {
 			codeFragmentProvider.create('''«signalName.getWidth»''');			
 		}
 		
+		// we don't want to modify passed in data so we need to copy it (last arg: true)
+		val boi = swapByteOrder(signalInstance, codeFragmentProvider.create('''«signalName.getWidth»'''), dataCount, data, true)
+		
 		codeFragmentProvider.create('''
 		«preamble»
-		return I2CTransceiver_Write(&tranceiverStruct, «busAddress.code.noTerminator», «registerAddress.code.noTerminator», «data», «dataLen»);
+		«boi.bufferDeclaration»
+		«boi.byteOrderSwap»
+		return I2CTransceiver_Write(&tranceiverStruct, «busAddress.code.noTerminator», «registerAddress.code.noTerminator», «boi.bufferName», «byteCount»);
 		''')
 		.addHeader("MitaExceptions.h", false)
 		.addHeader("MitaGeneratedTypes.h", false)
@@ -142,6 +228,15 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
 		val busAddress = this.setup.getConfigurationItemValue("deviceAddress");
 		val registerAddress = ModelUtils.getArgumentValue(signalInstance, 'address');
+		val mode = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "mode"), []);
+		if(mode instanceof Enumerator) {
+			if(!mode.name.contains("Read")) {
+				
+			}
+		}
+		else {
+			
+		}
 		
 		val signalName = signalInstance.instanceOf.name;
 		
@@ -159,17 +254,29 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		val data = if(isArray) {
 			codeFragmentProvider.create('''(uint8_t*) «resultName»->data''');
 		} else {
-			codeFragmentProvider.create('''«resultName»''');
+			codeFragmentProvider.create('''(uint8_t*) «resultName»''');
 		}
-		val dataLen = if(isArray) {
-			codeFragmentProvider.create('''«resultName»->length / «signalName.getWidth»''')
+		val dataCount = if(isArray) {
+			codeFragmentProvider.create('''«resultName»->length''')
+		} else {
+			codeFragmentProvider.create('''1''');
+		}
+		val byteCount = if(isArray) {
+			codeFragmentProvider.create('''«resultName»->length * «signalName.getWidth»''')
 		} else {
 			codeFragmentProvider.create('''«signalName.getWidth»''');			
 		}
 		
+		val boi = swapByteOrder(signalInstance, codeFragmentProvider.create('''«signalName.getWidth»'''), dataCount, data, false)
+		
+		
 		codeFragmentProvider.create('''
+		«exceptionGenerator.exceptionType» exception = «exceptionGenerator.noExceptionStatement.noTerminator»;
 		«preamble»
-		return I2CTransceiver_Read(&tranceiverStruct, «busAddress.code.noTerminator», «registerAddress.code.noTerminator», «data», «dataLen»);
+		«boi.bufferDeclaration»
+		exception = I2CTransceiver_Read(&tranceiverStruct, «busAddress.code.noTerminator», «registerAddress.code.noTerminator», «boi.bufferName», «byteCount»);
+		«boi.byteOrderSwap»
+		return exception;
 		''')
 		.addHeader("MitaExceptions.h", false)
 		.addHeader("MitaGeneratedTypes.h", false)
