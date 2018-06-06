@@ -755,6 +755,69 @@ bus many I2C {
 	signal register_int32(address: uint8, mode: I2CMode = ReadWrite): int32
 }
 
+enum GPIOPin
+{   /** Alternate function shall be Timer0 channel 0 compare operations */
+    PA0,  
+    /** General purpose I/O  */
+    PA1,  
+    /** General purpose I/O  */
+    PB2,  
+    /** General purpose I/O, SPI MOSI operations  */
+    PB3,  
+    /** General purpose I/O, SPI MISO operations  */
+    PB4,  
+    /** General purpose I/O, SPI clock operations */
+    PB5,  
+    /** General purpose I/O, UART1_TX operations */
+    PB9,  
+    /** General purpose I/O, UART1_RX operations */
+    PB10, 
+    /** General purpose I/O, Timer0 channel 1 compare operations  */
+    PC0,  
+    /** General purpose I/O, Timer0 channel 2 compare operations  */
+    PC1,  
+    /** General purpose I/O, Timer0 Channel 0 Complementary Dead-Time Insertion operations  */
+    PC2,  
+    /** General purpose I/O, Timer0 Channel 1 Complementary Dead-Time Insertion operations   */
+    PC3,  
+    /** General purpose I/O, Timer0 Channel 2 Complementary Dead-Time Insertion operations  */
+    PC4,  
+    /** General purpose I/O, Timer2 channel 0 capture operations   */
+    PC8,  
+    /** General purpose I/O, Timer2 channel 1 capture operations   */
+    PC9,  
+    /** General purpose I/O, Timer2 channel 2 capture operations   */
+    PC10, 
+    /** General purpose I/O, ADC0 operations */
+    PD5,  
+    /** General purpose I/O, ADC0 operations */
+    PD6,  
+    /** General purpose I/O */
+    PD8,  
+    /** General purpose I/O */
+    PE2,  
+    /** General purpose I/O */
+    PF6
+}
+
+enum GPIOMode {                    
+	/** Input enabled */
+	NoPull,               
+	/** Input enabled with internal pull-up */
+    PullUp,               
+    /** Input enabled with internal pull-down */
+    PullDown,             
+    /** Input enabled with internal pull-up and glitch filter enabled  */
+    PullUpFilter
+}
+
+bus named-singleton GPIO {
+	generator "org.eclipse.mita.platform.xdk110.buses.GPIOGenerator"
+	
+	signal digitalIn(pin : GPIOPin, mode : GPIOMode) : bool
+	signal digitalOut(pin : GPIOPin, default : bool = false) : bool
+}
+
 
 alias environment for BME280
 alias accelerometer for BMA280
@@ -776,6 +839,7 @@ platform XDK110 {
 	has Gyroscope_BMG160
 	
 	has I2C
+	has GPIO
 	has BLE
 	has LED
 	has WLAN
