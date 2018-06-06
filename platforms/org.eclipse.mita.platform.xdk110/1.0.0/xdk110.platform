@@ -719,19 +719,40 @@ connectivity named-singleton LED {
 	signal light_up(color : LedColor) : bool
 }
 
+enum ByteOrder {
+	LittleEndian,
+	BigEndian
+}
+
+enum I2CMode {
+	None, 
+	Read, 
+	Write,
+	ReadWrite
+}
+
 bus many I2C {
 	generator "org.eclipse.mita.platform.xdk110.buses.I2CGenerator"
 	validator "org.eclipse.mita.platform.xdk110.buses.I2CValidator"
+	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
 	
 	required configuration-item deviceAddress: uint8
 	
-	signal register(address: uint8, width: uint8): array<uint8>
-	signal register_uint8(address: uint8): uint8
-	signal register_int8(address: uint8): int8
-	signal register_uint16(address: uint8): uint16
-	signal register_int16(address: uint8): int16
-	signal register_uint32(address: uint8): uint32
-	signal register_int32(address: uint8): int32
+	configuration-item byteOrder : ByteOrder = LittleEndian
+	
+	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint8>
+	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int8>
+	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint16>
+	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int16>
+	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint32>
+	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int32>
+	
+	signal register_uint8(address: uint8, mode: I2CMode = ReadWrite): uint8
+	signal register_int8(address: uint8, mode: I2CMode = ReadWrite): int8
+	signal register_uint16(address: uint8, mode: I2CMode = ReadWrite): uint16
+	signal register_int16(address: uint8, mode: I2CMode = ReadWrite): int16
+	signal register_uint32(address: uint8, mode: I2CMode = ReadWrite): uint32
+	signal register_int32(address: uint8, mode: I2CMode = ReadWrite): int32
 }
 
 
@@ -743,6 +764,7 @@ alias button_one for Button
 alias button_two for Button
 
 platform XDK110 {
+	validator "org.eclipse.mita.platform.xdk110.platform.Validation"
 	has environment
 	has accelerometer
 	has gyroscope
