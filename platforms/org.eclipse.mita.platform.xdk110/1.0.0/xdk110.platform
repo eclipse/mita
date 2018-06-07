@@ -534,10 +534,26 @@ sensor Button {
 	event released
 }
 
-enum ConnectivityType {
-	Personal,
-	Enterprise
+alt Authentification {
+	None | Personal : {
+		psk : string
+	} | Enterprise : {
+		username : string,
+		password : string
+	}
 }
+
+alt IpConfiguration {
+	Dhcp | DhcpCustom : {
+		dns : string
+	} | Static : {
+		ip : string,
+		subnetMask : string,
+		gateway : string,
+		dns : string
+	}
+}
+
 /**
  * Specifies the connection to a wireless wide-area network, also refered to as WiFi. 
  */
@@ -548,7 +564,7 @@ connectivity named-singleton WLAN {
     /**
      * Choose personal WPA connection or Enterprise WPA connection
      */    
-    required configuration-item connection : ConnectivityType
+    required configuration-item authentification : Authentification
 
     /**
      * The SSID of the WLAN network we want to connect to.
@@ -559,25 +575,23 @@ connectivity named-singleton WLAN {
      * The pre-shared key of the WLAN we're connecting to. Note that this
      * setting implies WPA2-PSK as authentication method.
      */
-    required configuration-item psk : string
        
     /**
      * If true server certificate will be uploaded to the WiFi chip CC3100. 
      * Make sure to update service pack of the WiFi and then upload the certificate.
      * Certificate must placed under XDK110/common/certs/XDKDummy.
      */
-    configuration-item isHostPgmEnabled : bool
+    configuration-item isHostPgmEnabled : bool = false
     
     /**
      * The username of the WLAN network we want to connect to.
-     */    
-    configuration-item  userName : string
+     */
     /**
      * If true we'll attempt to configure the wireless interface using DHCP and
      * all static settings will be ignored. If false, the static settings have to
      * be present.
      */
-    configuration-item useDHCP : bool = true
+    configuration-item ipConfiguration : IpConfiguration = Dhcp()
 
     /**
      * The static IP address to use. This field has to be in the number-dot
@@ -585,7 +599,6 @@ connectivity named-singleton WLAN {
      * If useDHCP is true this field is ignored. If useDHCP is false, this field
      * is mandatory.
      */
-    configuration-item staticIP : string
 
     /**
      * The IP address of the default gateway. This field has to be in the number-dot
@@ -593,7 +606,6 @@ connectivity named-singleton WLAN {
      * If useDHCP is true this field is ignored. If useDHCP is false, this field
      * is recommended.
      */
-    configuration-item staticGW : string
 
     /**
      * The IP address of the default DNS server. This field has to be in the number-dot
@@ -601,7 +613,6 @@ connectivity named-singleton WLAN {
      * If useDHCP is true this field is ignored. If useDHCP is false, this field
      * is recommended.
      */
-    configuration-item staticDNS : string 
     
     /**
      * The IP address of the default Subnet Mask. This field has to be in the number-dot
@@ -609,7 +620,6 @@ connectivity named-singleton WLAN {
      * If useDHCP is true this field is ignored. If useDHCP is false, this field
      * is recommended.
      */
-    configuration-item staticMask : string
 }
 
 exception MqttException;
