@@ -535,21 +535,43 @@ sensor Button {
 }
 
 alt Authentification {
-	None | Personal : {
+	None 
+	/**
+     * WPA(2) with PSK (pre-shared key) 
+     */
+	| Personal : {
 		psk : string
-	} | Enterprise : {
+	}  
+	/**
+	 * WPA(2) Enterprise with username/password
+	 */
+	| Enterprise : {
 		username : string,
 		password : string
 	}
 }
 
 alt IpConfiguration {
-	Dhcp | DhcpCustom : {
-		dns : string
-	} | Static : {
-		ip : string,
+	Dhcp | Static : {
+		/**
+	     * The static IP address to use. This field has to be in the number-dot
+	     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
+	     */
+		ip : string,   
+	    /**
+	     * The IP address of the default Subnet Mask. This field has to be in the number-dot
+	     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
+	     */
 		subnetMask : string,
+		/**
+	     * The IP address of the default gateway. This field has to be in the number-dot
+	     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
+		 */
 		gateway : string,
+		/**
+	     * The IP address of the default DNS server. This field has to be in the number-dot
+	     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
+	     */
 		dns : string
 	}
 }
@@ -567,14 +589,9 @@ connectivity named-singleton WLAN {
     required configuration-item authentification : Authentification
 
     /**
-     * The SSID of the WLAN network we want to connect to.
+     * The SSID of the WLAN network we want to connect to
      */
     required configuration-item ssid : string
-
-    /**
-     * The pre-shared key of the WLAN we're connecting to. Note that this
-     * setting implies WPA2-PSK as authentication method.
-     */
        
     /**
      * If true server certificate will be uploaded to the WiFi chip CC3100. 
@@ -584,42 +601,9 @@ connectivity named-singleton WLAN {
     configuration-item isHostPgmEnabled : bool = false
     
     /**
-     * The username of the WLAN network we want to connect to.
-     */
-    /**
-     * If true we'll attempt to configure the wireless interface using DHCP and
-     * all static settings will be ignored. If false, the static settings have to
-     * be present.
+     * Configure IP address and network via DHCP or static 
      */
     configuration-item ipConfiguration : IpConfiguration = Dhcp()
-
-    /**
-     * The static IP address to use. This field has to be in the number-dot
-     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
-     * If useDHCP is true this field is ignored. If useDHCP is false, this field
-     * is mandatory.
-     */
-
-    /**
-     * The IP address of the default gateway. This field has to be in the number-dot
-     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
-     * If useDHCP is true this field is ignored. If useDHCP is false, this field
-     * is recommended.
-     */
-
-    /**
-     * The IP address of the default DNS server. This field has to be in the number-dot
-     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
-     * If useDHCP is true this field is ignored. If useDHCP is false, this field
-     * is recommended.
-     */
-    
-    /**
-     * The IP address of the default Subnet Mask. This field has to be in the number-dot
-     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
-     * If useDHCP is true this field is ignored. If useDHCP is false, this field
-     * is recommended.
-     */
 }
 
 exception MqttException;

@@ -56,6 +56,9 @@ class SystemResourceSetup {
 	op Expression getConfigurationItemValue(String name) {
 		configurationItemValues.filter[x | x.item?.name == name ].head?.value;
 	}
+	op Expression getConfigurationItemValueOrDefault(String name) {
+		getConfigurationItemValue(name)?:(^type?.configurationItems?.findFirst[it.name == name]?.defaultValue)
+	}
 }
 
 class ConfigurationItemValue {

@@ -55,7 +55,7 @@ class PlatformDSLScopeProvider extends AbstractPlatformDSLScopeProvider {
 		val typ = configItem?.type;
 		val superScope = delegate.getScope(context, ref);
 		if(typ instanceof SumType) {
-			return Scopes.scopeFor(typ.alternatives)
+			return Scopes.scopeFor(typ.alternatives);
 		}
 		return superScope;
 	}
