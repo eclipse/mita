@@ -27,12 +27,12 @@ public interface IPlatformMakefileGenerator {
 	 *            the source files we need to compile
 	 * @return the makefile content
 	 */
-	public CodeFragment generateMakefile(Program program, List<String> sourceFiles);
+	public CodeFragment generateMakefile(Iterable<Program> compilationUnits, List<String> sourceFiles);
 
 	public class NullImpl implements IPlatformMakefileGenerator {
 
 		@Override
-		public CodeFragment generateMakefile(Program program, List<String> sourceFiles) {
+		public CodeFragment generateMakefile(Iterable<Program> compilationUnits, List<String> sourceFiles) {
 			return CodeFragment.EMPTY;
 		}
 

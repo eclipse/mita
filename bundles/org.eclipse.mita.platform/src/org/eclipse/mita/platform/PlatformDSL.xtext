@@ -34,6 +34,7 @@ PlatformSpecification returns platform::Platform:
 	(
 		('has' resources+=[platform::AbstractSystemResource])
 		| (events += SystemResourceEvent)
+		| (configurationItems += ConfigurationItem)
 	)* '}'
 ;
 

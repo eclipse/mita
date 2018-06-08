@@ -782,5 +782,7 @@ platform XDK110 {
 	has MQTT
 	has HttpRestClient
 	
+	configuration-item applicationName : string = "EclipseMitaApplication"
+	
 	event startup
 }
