@@ -1,0 +1,33 @@
+package platforms.arduinouno;
+
+sensor Button {
+	generator "org.eclipse.mita.platform.arduinouno.sensors.ButtonGenerator"
+	modality is_pressed : bool
+	event pressed
+	event released
+}
+
+enum LedColor {
+	Red,
+	Yellow,
+	Orange
+}
+
+connectivity named-singleton LED {
+	generator "org.eclipse.mita.platform.arduinouno.connectivity.LedGenerator"
+	
+	signal light_up(color : LedColor) : bool
+}
+
+alias button_one for Button
+alias button_two for Button
+
+// PINOUT TBD
+// Define pins here: e.g. D6 -> red led
+
+platform ArduinoUno {
+	has button_one
+	has button_two
+	has LED
+	event startup
+}
