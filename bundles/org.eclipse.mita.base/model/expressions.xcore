@@ -136,16 +136,34 @@ class ConditionalExpression extends Expression {
 	contains Expression falseCase
 }
 class LogicalOrExpression extends BinaryExpression {
+	op EEnumerator getOperator() {
+		return LogicalOperator.OR
+	}
 }
 class LogicalAndExpression extends BinaryExpression { 
+	op EEnumerator getOperator() {
+		return LogicalOperator.AND
+	}
 }
-class LogicalNotExpression extends UnaryExpression { 
+class LogicalNotExpression extends UnaryExpression {
+	op EEnumerator getOperator() {
+		return LogicalOperator.NOT
+	} 
 }
-class BitwiseXorExpression extends BinaryExpression { 
+class BitwiseXorExpression extends BinaryExpression {
+	op EEnumerator getOperator() {
+		return BitwiseOperator.XOR
+	}  
 }
-class BitwiseOrExpression extends BinaryExpression { 
+class BitwiseOrExpression extends BinaryExpression {
+	op EEnumerator getOperator() {
+		return BitwiseOperator.OR
+	} 
 }
-class BitwiseAndExpression extends BinaryExpression { 
+class BitwiseAndExpression extends BinaryExpression {
+	op EEnumerator getOperator() {
+		return BitwiseOperator.AND
+	} 
 }
 class LogicalRelationExpression extends BinaryExpression {
 	RelationalOperator operator 
