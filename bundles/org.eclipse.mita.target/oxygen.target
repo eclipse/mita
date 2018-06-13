@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?pde version="3.8"?><target name="oxygen" sequenceNumber="3">
+<?pde version="3.8"?><target name="oxygen" sequenceNumber="4">
 <locations>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.eclipse.equinox.sdk.feature.group" version="0.0.0"/>
@@ -43,6 +43,10 @@
 <unit id="org.eclipse.emf.sdk.feature.group" version="2.13.0.v20170609-0928"/>
 <unit id="org.eclipse.launchbar.feature.group" version="2.2.0.201711162100"/>
 <repository location="http://download.eclipse.org/releases/oxygen"/>
+</location>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="de.innot.avreclipse.feature.group" version="2.4.1"/>
+<repository location="http://avr-eclipse.sourceforge.net/updatesite/"/>
 </location>
 </locations>
 </target>
