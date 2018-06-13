@@ -1,0 +1,66 @@
+package platforms.arduino.uno;
+
+
+/**
+ * Sensor for buttons
+ */
+sensor Button {
+	generator "org.eclipse.mita.platform.arduino.uno.sensors.ButtonGenerator"
+	
+	/**
+	 * Result is true, if the button is pressed. Gives the current state of the button.
+	 */
+	modality is_pressed : bool
+	
+	/**
+	 * Fires after the button was pressed.
+	 */	
+	event pressed
+	
+	/**
+	 * Fires after the button was released.
+	 */
+	event released
+}
+
+enum LedColor {
+	Red,
+	Yellow,
+	Orange
+}
+
+/** 
+ * Used to control three LEDs
+ */
+connectivity named-singleton LED {
+	generator "org.eclipse.mita.platform.arduino.uno.connectivity.LedGenerator"
+	
+	/**
+	 * Controls a single LED
+	 */
+	signal light_up(color : LedColor) : bool
+}
+
+alias button_one for Button
+alias button_two for Button
+
+
+/** 
+ * The current pinout - this is how the Arduino Uno needs to be connected, if the button or LEDs are used.
+ * Arduino Pin |  Function
+ * -------------------------
+ *      2      | button_one
+ *      3      | button_two
+ *      4      | yellow LED
+ *      5      | orange LED
+ *      6      |  red LED
+ *
+ * The buttons are if not pressed logical high (5V).
+ */
+platform ArduinoUno {
+	module "org.eclipse.mita.platform.arduino.uno.platform.ArduinoUnoPlatformGeneratorModule"
+	has button_one
+	has button_two
+	has LED
+	event startup
+}

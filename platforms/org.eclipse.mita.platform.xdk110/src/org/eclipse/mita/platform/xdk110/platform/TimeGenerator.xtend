@@ -87,11 +87,6 @@ class TimeGenerator implements IPlatformTimeGenerator {
 			.addHeader('timers.h', true);
 	}
 	
-	
-	protected def allTimeEvents(CompilationContext context) {
-		return context.allEventHandlers.filter[x | x.event instanceof TimeIntervalEvent ]
-	}
-	
 	protected def getTimerName(EObject event) {
 		return '''timer«event.handlerName»'''
 	}
