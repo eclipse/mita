@@ -19,16 +19,25 @@ import java.util.Date
 import java.util.function.Function
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.typesystem.GenericTypeSystem
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.Connectivity
@@ -44,6 +53,7 @@ import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
+import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemEventSource
@@ -57,6 +67,10 @@ import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
+import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.scoping.impl.FilteringScope
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.StructureType
 
 /**
  * Utility functions for the generating code. Eventually this will be moved into the model.
@@ -65,6 +79,119 @@ class GeneratorUtils {
 
 	@Inject
 	protected extension ProgramCopier
+	
+	@Inject 
+	ITypeSystem typeSystem
+	
+	@Inject
+	protected IScopeProvider scopeProvider;
+
+	def dispatch dummyExpression(Type itemType, EObject context) {
+		// fall-back, just print a default text
+		createDummyString
+	}
+	
+	def dispatch dummyExpression(PrimitiveType itemType, EObject context) {
+		if (typeSystem.isSuperType(itemType, typeSystem.getType(GenericTypeSystem.INTEGER))) {
+			createDummyInteger
+		} else if (typeSystem.isSuperType(itemType, typeSystem.getType(GenericTypeSystem.STRING))) {
+			createDummyString
+		} else if (typeSystem.isSuperType(itemType, typeSystem.getType(GenericTypeSystem.BOOLEAN))) {
+			createDummyBool
+		} else {
+			createDummyString
+		}
+	}
+	
+	def PrimitiveValueExpression createDummyString() {
+		return ExpressionsFactory.eINSTANCE.createPrimitiveValueExpression => [
+			value = ExpressionsFactory.eINSTANCE.createStringLiteral => [
+				value = 'replace_me'
+			]
+		]
+	}
+	
+	def PrimitiveValueExpression createDummyInteger() {
+		return ExpressionsFactory.eINSTANCE.createPrimitiveValueExpression => [
+			value = ExpressionsFactory.eINSTANCE.createIntLiteral => [
+				value = 0
+			]
+		]
+	}
+	
+	def PrimitiveValueExpression createDummyBool() {
+		return ExpressionsFactory.eINSTANCE.createPrimitiveValueExpression => [
+			value = ExpressionsFactory.eINSTANCE.createBoolLiteral => [
+				value = true
+			]
+		]
+	}
+
+	def dispatch Expression dummyExpression(EnumerationType itemType, EObject context) {
+		if (!itemType.enumerator.isEmpty) {
+			return ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
+				reference = itemType.enumerator.head
+			]
+		}
+		return createDummyString
+	}
+	def dispatch Expression dummyExpression(StructureType itemType, EObject context) {
+		val args = itemType.parameters.map[p | ExpressionsFactory.eINSTANCE.createArgument => [
+			 value = p.type.dummyExpression(context)
+		]];
+		
+		return ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
+			reference = itemType;
+			operationCall = true;
+			arguments += args;
+		]
+			
+	}
+	def dispatch Expression dummyExpression(SumType itemType, EObject context) {
+		if (!itemType.alternatives.isEmpty) {
+			val alt = itemType.alternatives.head;
+			val args = alt.accessorsTypes.map[tp | ExpressionsFactory.eINSTANCE.createArgument => [
+				 value = tp.dummyExpression(context)
+			]];
+			if(EcoreUtil2.getContainerOfType(context, SystemResourceSetup) === null) {
+				return ExpressionsFactory.eINSTANCE.createFeatureCall => [
+					feature = alt;
+					operationCall = true;
+					owner = ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
+						reference = itemType;
+					]
+					arguments += args;
+				]
+			}
+			return ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
+				reference = itemType.alternatives.head;
+				operationCall = true;
+				arguments += args;
+			]
+			
+		}
+		return createDummyString
+	}
+
+	def dispatch dummyExpression(AbstractSystemResource itemType, EObject context) {
+		val scope = getSetupScope(itemType, context);
+		if (!scope.allElements.empty) {
+			return ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
+				reference = scope.allElements.head.EObjectOrProxy
+			]
+		}
+		return createDummyString
+	}
+	protected def FilteringScope getSetupScope(AbstractSystemResource itemType, EObject context) {
+		new FilteringScope(
+			scopeProvider.getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE),
+			[
+				ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(it.EClass) &&
+					(it.EObjectOrProxy as SystemResourceSetup).type == itemType
+			]
+		)
+	}
+	
 
 	def getOccurrence(EObject obj) {
 		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
