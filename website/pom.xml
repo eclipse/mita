@@ -25,10 +25,7 @@
 									failonerror="false">
 									<arg line="clone https://github.com/digitalcraftsman/hugo-material-docs.git hugo-material-docs" />
 								</exec>
-								<exec executable="hugo" dir="${project.basedir}/site"
-									failonerror="true">
-									<arg line="--uglyURLs" />
-								</exec>
+								<exec executable="hugo" dir="${project.basedir}/site" failonerror="true" />
 							</target>
 						</configuration>
 						<goals>
