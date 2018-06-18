@@ -102,7 +102,7 @@ class GPIOGenerator extends AbstractSystemResourceGenerator {
 	def CodeFragment getPinValue(SignalInstance sigInst) {
 		val isOutput = sigInst.instanceOf.name.contains("Out");
 		if(isOutput) {
-			val defaultVal = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "default"), []);
+			val defaultVal = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "initialValue"), []);
 			if(defaultVal instanceof Boolean) {
 				return codeFragmentProvider.create('''BSP_EXTENSIONPORT_GPIO_PIN_«if(defaultVal) "HIGH" else "LOW"»''');
 			}

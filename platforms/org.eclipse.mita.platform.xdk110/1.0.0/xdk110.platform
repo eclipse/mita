@@ -815,7 +815,7 @@ bus named-singleton GPIO {
 	generator "org.eclipse.mita.platform.xdk110.buses.GPIOGenerator"
 	
 	signal digitalIn(pin : GPIOPin, mode : GPIOMode) : bool
-	signal digitalOut(pin : GPIOPin, default : bool = false) : bool
+	signal digitalOut(pin : GPIOPin, initialValue : bool = false) : bool
 }
 
 

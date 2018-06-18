@@ -24,7 +24,7 @@ package main;
 import platforms.xdk110;
 
 setup test : GPIO {
-	var out = digitalOut(pin = PA1, default = false);
+	var out = digitalOut(pin = PA1, initialValue = false);
 	var inp = digitalIn(pin = PB2, mode = PullDown);
 }
 
