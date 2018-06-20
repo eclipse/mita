@@ -696,8 +696,8 @@ connectivity many HttpRestClient {
 	 * A custom header which is added to each HTTP request. Example:
 	 *   X-Auth: MySecretToken\nX-Version: 1.0 
 	 */
-	configuration-item header : string
-		
+	configuration-item headerContent : string
+
 	signal resource(endpoint : string, contentType : string = "application/json", writeMethod : HttpMethod = HttpMethod.POST, readMethod : HttpMethod = HttpMethod.GET) : string
 	
 }
@@ -738,21 +738,21 @@ bus many I2C {
 	
 	required configuration-item deviceAddress: uint8
 	
-	configuration-item byteOrder : ByteOrder = LittleEndian
+	configuration-item byteOrder : ByteOrder = ByteOrder.LittleEndian
 	
-	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint8>
-	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int8>
-	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint16>
-	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int16>
-	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint32>
-	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int32>
+	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint8>
+	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int8>
+	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint16>
+	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int16>
+	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint32>
+	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int32>
 	
-	signal register_uint8(address: uint8, mode: I2CMode = ReadWrite): uint8
-	signal register_int8(address: uint8, mode: I2CMode = ReadWrite): int8
-	signal register_uint16(address: uint8, mode: I2CMode = ReadWrite): uint16
-	signal register_int16(address: uint8, mode: I2CMode = ReadWrite): int16
-	signal register_uint32(address: uint8, mode: I2CMode = ReadWrite): uint32
-	signal register_int32(address: uint8, mode: I2CMode = ReadWrite): int32
+	signal register_uint8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint8
+	signal register_int8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int8
+	signal register_uint16(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint16
+	signal register_int16(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int16
+	signal register_uint32(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint32
+	signal register_int32(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int32
 }
 
 
