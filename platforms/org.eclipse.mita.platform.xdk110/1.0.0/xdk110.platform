@@ -18,7 +18,6 @@ enum BMA280_Range {
 enum BMA280_Bandwidth {
  	/**< sets bandwidth to LowPass 7.81HZ  */
 	BW_7_81Hz,
-
 	/**< sets bandwidth to LowPass 15.63HZ  */
 	BW_15_63Hz,
 	
@@ -681,6 +680,7 @@ connectivity many HttpRestClient {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.RestClientGenerator"
 	validator "org.eclipse.mita.platform.xdk110.connectivity.RestClientValidator"
 	
+	
 	/**
 	 * The underlying transport connectivity we use to send the data out. In the future we might also
 	 * support LoRa here.
@@ -694,12 +694,12 @@ connectivity many HttpRestClient {
 	
 	/**
 	 * A custom header which is added to each HTTP request. Example:
-	 *   X-Auth: MySecretToken\nX-Version: 1.0 
+	 *   X-Auth: MySecretToken\nX-Version: 1.0
 	 */
-	configuration-item header : string
-		
+	configuration-item customHeader : array<string>
+
 	signal resource(endpoint : string, contentType : string = "application/json", writeMethod : HttpMethod = HttpMethod.POST, readMethod : HttpMethod = HttpMethod.GET) : string
-	
+
 }
 
 

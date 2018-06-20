@@ -14,6 +14,7 @@
 package org.eclipse.mita.program.inferrer
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.base.expressions.BoolLiteral
@@ -54,6 +55,10 @@ class StaticValueInferrer {
 	
 	static dispatch def Object infer(Enumerator expression, (EObject) => void inferenceBlockerAcceptor) {
 		return expression;
+	}
+	
+	static dispatch def Object infer(ArrayLiteral expression, (EObject) => void inferenceBlockerAcceptor) {
+		return expression.values.map[it.infer(inferenceBlockerAcceptor)];
 	}
 		
 	static dispatch def Object infer(NumericalUnaryExpression expression, (EObject) => void inferenceBlockerAcceptor) {
