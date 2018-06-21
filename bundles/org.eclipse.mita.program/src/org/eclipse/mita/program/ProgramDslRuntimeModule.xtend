@@ -19,6 +19,9 @@ package org.eclipse.mita.program
 import com.google.inject.Binder
 import com.google.inject.name.Names
 import org.eclipse.mita.base.expressions.inferrer.TypeParameterInferrer
+import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
+import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
@@ -34,6 +37,7 @@ import org.eclipse.mita.program.linking.ProgramLinkingService
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.mita.program.validation.ProgramDslTypeValidator
+import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.formatting.IFormatter
 import org.eclipse.xtext.generator.trace.node.GeneratorNodeProcessor
 import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
@@ -42,8 +46,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
-import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
-import org.eclipse.xtext.conversion.IValueConverterService
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -57,6 +59,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(boolean).annotatedWith(Names.named(CompositeEValidator.USE_EOBJECT_VALIDATOR)).toInstance(false)
 		binder.bind(DefaultRuntimeModule).annotatedWith(Names.named("injectingModule")).toInstance(this)
 		binder.bind(GeneratorNodeProcessor).to(ProgramDslGeneratorNodeProcessor);
+		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
 	}
 
 	override configureIScopeProviderDelegate(Binder binder) {

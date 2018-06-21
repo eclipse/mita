@@ -62,7 +62,8 @@ class ProgramImportValidator extends AbstractDeclarativeValidator {
 	def checkPlatformImportIsPresent(Program program) {
 		val availablePackages = LibraryExtensions.availablePlatforms.map[id].toSet
 		val importedPlatforms = program.imports.filter[availablePackages.contains(importedNamespace)]
-		if (importedPlatforms.nullOrEmpty) {
+		val needsPlatformImport = !program.name.startsWith("stdlib");
+		if (needsPlatformImport && importedPlatforms.nullOrEmpty) {
 			error(MISSING_TARGET_PLATFORM_MSG, program, TypesPackage.Literals.PACKAGE_ASSOCIATION__NAME, MISSING_TARGET_PLATFORM_CODE)
 		} else if (importedPlatforms.size > 1) {
 			error('''Only one target platform must be imported.''', program,

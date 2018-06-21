@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.base.scoping;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.URI;
@@ -26,11 +27,18 @@ import com.google.inject.Singleton;
 public class LibraryScopeProvider extends AbstractLibraryGlobalScopeProvider {
 
 	@Inject
-	protected TypesLibraryProvider libraryProvider;
+	protected ILibraryProvider libraryProvider;
 	
 	@Override
 	protected Set<URI> getLibraries(Resource context) {
-		return libraryProvider.getLibraries(context);
+		Set<URI> result = new HashSet<>();
+		for(URI uri : libraryProvider.getDefaultLibraries()) {
+			result.add(uri);
+		}
+		for(URI uri : libraryProvider.getImportedLibraries(context)) {
+			result.add(uri);
+		}
+		return result;
 	}
 
 }

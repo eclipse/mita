@@ -46,7 +46,7 @@ pipeline {
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'bundles/org.eclipse.mita.repository/target/*', fingerprint: true
+                    archiveArtifacts artifacts: 'bundles/org.eclipse.mita.repository/target/*,bundles/org.eclipse.mita.cli/target/*-cli.jar', fingerprint: true
                 }
             }
         }

@@ -154,6 +154,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject TypeValidator validator
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
+	@Inject ModelUtils modelUtils
 		
 	@Check(CheckType.NORMAL)
 	def checkElementSizeInference(VariableDeclaration variable) {
@@ -216,7 +217,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Check(CheckType.NORMAL)
 	def checkProgram_platformValidator(Program program) {
-		val platform = ModelUtils.getPlatform(program);
+		val platform = modelUtils.getPlatform(program);
 		if (platform === null) {
 			//TODO: 
 //			error(String.format(NO_PLATFORM_SELECTED_MSG, LibraryExtensions.descriptors.filter[optional].map[id].join(", ")), program, ProgramPackage.eINSTANCE.program_EventHandlers,
