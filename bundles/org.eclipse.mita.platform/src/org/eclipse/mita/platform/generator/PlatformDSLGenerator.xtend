@@ -29,7 +29,7 @@ import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.Signal
-import org.yakindu.base.types.Parameter
+import org.eclipse.mita.base.types.Parameter
 
 /**
  * Generates code from your model files on save.
@@ -45,7 +45,7 @@ class PlatformDSLGenerator extends AbstractGenerator {
 		val platform = resource.contents.filter(SystemSpecification).flatMap[x | x.resources ].filter(Platform).head;
 		
 		fsa.generateFile('reference.md', '''
-		�platform.generateSystemResourecDocumentation�
+		«platform.generateSystemResourecDocumentation»
 		''')
 	}
 	
@@ -53,7 +53,7 @@ class PlatformDSLGenerator extends AbstractGenerator {
 		val doc = item.documentation
 		if(doc === null) return null;
 		
-		val paramStart = '''@param �parameter.name�''';
+		val paramStart = '''@param «parameter.name»''';
 		var start = doc.indexOf(paramStart);
 		if(start < 0) return null;
 		start += paramStart.length;
@@ -76,11 +76,11 @@ class PlatformDSLGenerator extends AbstractGenerator {
 	}
 	
 	def generateSystemResourecDocumentation(Platform platform) '''
-		�FOR resource : platform.resources�
-		## �resource.typeName�: �resource.name��IF resource instanceof SystemResourceAlias� (�resource.delegate.name�)�ENDIF�
-		�resource.documentation�
+		«FOR resource : platform.resources»
+		## «resource.typeName»: «resource.name»«IF resource instanceof SystemResourceAlias» («resource.delegate.name»)«ENDIF»
+		«resource.documentation»
 		
-		�IF !resource.configurationItems.empty�
+		«IF !resource.configurationItems.empty»
 		### Configuration Items
 		<table>
 		    <thead>
@@ -90,17 +90,17 @@ class PlatformDSLGenerator extends AbstractGenerator {
 		        </tr>
 		    </thead>
 		    <tbody>
-				�FOR ci : resource.configurationItems�
+				«FOR ci : resource.configurationItems»
 				<tr>
-					<td><div class="highlight"><pre>�IF !ci.required�<small>optional</small> �ENDIF�<b>�ci.name�</b> : <span class="kt">�ci.type�</span></pre></div></td>
-					<td>�IF ci.defaultValue !== null�Defaults to <i>�ci.defaultValue.originalSpec�</i>. �ENDIF��ci.documentation�</td>
+					<td><div class="highlight"><pre>«IF !ci.required»<small>optional</small> «ENDIF»<b>«ci.name»</b> : <span class="kt">«ci.type»</span></pre></div></td>
+					<td>«IF ci.defaultValue !== null»Defaults to <i>«ci.defaultValue.originalSpec»</i>. «ENDIF»«ci.documentation»</td>
 				</tr>
-		    	�ENDFOR�
+		    	«ENDFOR»
 		    </tbody>
 		</table>
-		�ENDIF�
+		«ENDIF»
 		
-		�IF !resource.modalities.empty�
+		«IF !resource.modalities.empty»
 		#### Modalities
 		<table>
 		    <thead>
@@ -110,17 +110,17 @@ class PlatformDSLGenerator extends AbstractGenerator {
 		        </tr>
 		    </thead>
 		    <tbody>
-				�FOR mod : resource.modalities�
+				«FOR mod : resource.modalities»
 				<tr>
-					<td><div class="highlight"><pre><b>�mod.name�</b> : <span class="kt">�mod.type�</span></pre></div></td>
-					<td>�mod.documentation�</td>
+					<td><div class="highlight"><pre><b>«mod.name»</b> : <span class="kt">«mod.type»</span></pre></div></td>
+					<td>«mod.documentation»</td>
 				</tr>
-		    	�ENDFOR�
+		    	«ENDFOR»
 		    </tbody>
 		</table>
-		�ENDIF�
+		«ENDIF»
 		
-		�IF !resource.signals.empty�
+		«IF !resource.signals.empty»
 		### Variable Configuration Items
 		<table>
 		    <thead>
@@ -131,27 +131,27 @@ class PlatformDSLGenerator extends AbstractGenerator {
 		        </tr>
 		    </thead>
 		    <tbody>
-				�FOR mod : resource.signals�
+				«FOR mod : resource.signals»
 				<tr>
-					<td><div class="highlight"><pre><b>�mod.name�</b> : <span class="kt">�mod.type�</span></pre></div></td>
-					<td>�mod.documentation.withoutParameterDocumentation�</td>
+					<td><div class="highlight"><pre><b>«mod.name»</b> : <span class="kt">«mod.type»</span></pre></div></td>
+					<td>«mod.documentation.withoutParameterDocumentation»</td>
 					<td>
 						<ul>
-						�FOR param : mod.parameters�
+						«FOR param : mod.parameters»
 							<li>
-								<div class="highlight"><pre>�IF param.optional�<small>optional</small> �ENDIF� <b>�param.name�</b> : <span class="kt">�param.typeSpecifier.originalSpec�</span></pre></div>
-								�mod.getParameterDocumentation(param)�
+								<div class="highlight"><pre>«IF param.optional»<small>optional</small> «ENDIF» <b>«param.name»</b> : <span class="kt">«param.typeSpecifier.originalSpec»</span></pre></div>
+								«mod.getParameterDocumentation(param)»
 							</li>
-						�ENDFOR�
+						«ENDFOR»
 						</ul>
 					</td>
 				</tr>
-		    	�ENDFOR�
+		    	«ENDFOR»
 		    </tbody>
 		</table>
-		�ENDIF�
+		«ENDIF»
 		
-		�IF !resource.events.empty�
+		«IF !resource.events.empty»
 		#### Events
 		<table>
 		    <thead>
@@ -161,17 +161,17 @@ class PlatformDSLGenerator extends AbstractGenerator {
 		        </tr>
 		    </thead>
 		    <tbody>
-				�FOR mod : resource.events�
+				«FOR mod : resource.events»
 				<tr>
-					<td><div class="highlight"><pre><b>�mod.name�</b></pre></div></td>
-					<td>�mod.documentation�</td>
+					<td><div class="highlight"><pre><b>«mod.name»</b></pre></div></td>
+					<td>«mod.documentation»</td>
 				</tr>
-		    	�ENDFOR�
+		    	«ENDFOR»
 		    </tbody>
 		</table>
-		�ENDIF�
+		«ENDIF»
 
-		�ENDFOR�
+		«ENDFOR»
 		'''
 	
 	def String getTypeName(AbstractSystemResource resource) {

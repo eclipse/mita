@@ -13,9 +13,9 @@
 
 package org.eclipse.mita.program.generator.transformation
 
-import org.yakindu.base.expressions.expressions.ExpressionsFactory
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.Enumerator
+import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.Enumerator
 
 /**
  * Converts FeatureCalls to operation call ElementReferenceExpressions.

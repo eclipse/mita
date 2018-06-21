@@ -1,4 +1,4 @@
-![Mita logo](website/site/content/logo.png)
+![Mita logo](logo/symbolAndText.png)
 
 Eclipse Mita is a new programming language for the embedded IoT.
 It targets developers who are new to embedded software development, specifically those who come from a cloud background.
@@ -23,7 +23,7 @@ In case you find a bug or have a feature request, please feel free to file an is
 There are two ways you can extend Mita:
 
 1. _Provide or extend a Mita platform_: to run Mita on a particular device, we need a `platform` which describes this device. For details of how to build such a platform, check out _platform integrator guide_ (TBD).
-2. _Extend the core language itself_: Mita is a programming langauge in its infancy. If you want to help build it, please find and file bug reports, or better yet provide a PR to fix it.
+2. _Extend the core language itself_: Mita is a programming language in its infancy. If you want to help build it, please find and file bug reports, or better yet provide a PR to fix it.
 
 ### Setting up developer workspace
 1. Download the the <a href="https://wiki.eclipse.org/Eclipse_Oomph_Installer" target="_blank">Oomph Eclipse Installer</a>
@@ -52,4 +52,5 @@ In order to create a pull request you need a GitHug account as well as an Eclips
 5. Create a pull request here on GitHub by selecting your branch
 
 ## Get in Touch
-Please check out the [Eclipse Mita project home page](https://www.eclipse.org/mita) for details regarding our mailing list.
+Come and find us in our [Mattermost channel at eclipse.org](https://mattermost.eclipse.org/eclipse/channels/mita) or
+check out the [Eclipse Mita project home page](https://www.eclipse.org/mita) for details regarding our mailing list.

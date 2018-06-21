@@ -13,6 +13,33 @@
 
 package org.eclipse.mita.program.validation
 
+import com.google.inject.Inject
+import java.util.List
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrerMessages
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.ArrayAccessExpression
@@ -42,40 +69,12 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.mita.program.scoping.ExtensionMethodHelper
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.GeneratedType
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumType
-import com.google.inject.Inject
-import java.util.List
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
-import org.yakindu.base.base.BasePackage
-import org.yakindu.base.base.NamedElement
-import org.yakindu.base.expressions.expressions.ArgumentExpression
-import org.yakindu.base.expressions.expressions.AssignmentExpression
-import org.yakindu.base.expressions.expressions.AssignmentOperator
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.ExpressionsPackage
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.expressions.inferrer.ExpressionsTypeInferrerMessages
-import org.yakindu.base.types.ComplexType
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Parameter
-import org.yakindu.base.types.Property
-import org.yakindu.base.types.TypeSpecifier
-import org.yakindu.base.types.TypesPackage
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.yakindu.base.types.typesystem.ITypeSystem
-import org.yakindu.base.types.validation.TypeValidator
 
-import static org.yakindu.base.types.typesystem.ITypeSystem.VOID
+import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -155,6 +154,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject TypeValidator validator
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
+	@Inject ModelUtils modelUtils
 		
 	@Check(CheckType.NORMAL)
 	def checkElementSizeInference(VariableDeclaration variable) {
@@ -217,7 +217,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Check(CheckType.NORMAL)
 	def checkProgram_platformValidator(Program program) {
-		val platform = ModelUtils.getPlatform(program);
+		val platform = modelUtils.getPlatform(program);
 		if (platform === null) {
 			//TODO: 
 //			error(String.format(NO_PLATFORM_SELECTED_MSG, LibraryExtensions.descriptors.filter[optional].map[id].join(", ")), program, ProgramPackage.eINSTANCE.program_EventHandlers,
@@ -252,7 +252,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val conflictingVariable = variablesInBlock.findFirst[x|x != variable && x.name == variable.name];
 		if (conflictingVariable !== null) {
 			error(String.format(VARIABLE_NOT_UNIQUE_MSG, variable.name), variable,
-				BasePackage.Literals.NAMED_ELEMENT__NAME, VARIABLE_NOT_UNIQUE_CODE);
+				TypesPackage.Literals.NAMED_ELEMENT__NAME, VARIABLE_NOT_UNIQUE_CODE);
 		}
 	}
 
@@ -340,7 +340,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			return;
 		}
 		if (op.body.content.isEmpty()) {
-			error(String.format(MISSING_RETURN_VALUE_MSG, operationType), op, BasePackage.Literals.NAMED_ELEMENT__NAME);
+			error(String.format(MISSING_RETURN_VALUE_MSG, operationType), op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 			return;
 		}
 
@@ -369,10 +369,10 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		//       in #120.
 		val opSize = elementSizeInferrer.infer(op);
 		if(!(opSize instanceof ValidElementSizeInferenceResult)) {
-			error(SIZE_INFERENCE_FAILED_FOR_RETURN, op, BasePackage.Literals.NAMED_ELEMENT__NAME);
+			error(SIZE_INFERENCE_FAILED_FOR_RETURN, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 			return;
 		}
-		warning(FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG, op, BasePackage.Literals.NAMED_ELEMENT__NAME);
+		warning(FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 	}
 
 	@Check(CheckType.NORMAL)

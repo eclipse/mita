@@ -13,18 +13,15 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
+import java.util.regex.Pattern
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.validation.IResourceValidator
-import java.util.regex.Pattern
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
-import java.util.Enumeration
-import org.eclipse.xtext.xbase.scoping.featurecalls.StaticImplicitMethodsFeatureForTypeProvider.ExtensionClassNameProvider
-import org.eclipse.xtext.serializer.sequencer.ITransientValueService.ValueTransient
-import org.yakindu.base.types.Enumerator
 
 class WlanValidator implements IResourceValidator {
 	

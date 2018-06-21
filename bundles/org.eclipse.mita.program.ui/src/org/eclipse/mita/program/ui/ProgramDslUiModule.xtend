@@ -16,7 +16,7 @@ package org.eclipse.mita.program.ui
 import org.eclipse.mita.program.ui.highlighting.ProgramDslHighlightingConfiguration
 import org.eclipse.mita.program.ui.highlighting.ProgramDslSemanticHighlightingCalculator
 import org.eclipse.mita.program.ui.labeling.ProgramDslEObjectHoverProvider
-import org.eclipse.mita.types.ui.opener.LibraryURIEditorOpener
+import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
 import com.google.inject.Binder
 import org.eclipse.ui.PlatformUI
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor

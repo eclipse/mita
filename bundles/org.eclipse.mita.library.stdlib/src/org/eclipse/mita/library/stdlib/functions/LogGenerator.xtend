@@ -19,8 +19,8 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import com.google.inject.Inject
-import org.yakindu.base.base.NamedElement
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 
 class LogGenerator extends AbstractFunctionGenerator {

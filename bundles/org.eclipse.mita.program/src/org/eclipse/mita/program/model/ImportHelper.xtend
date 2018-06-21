@@ -13,10 +13,10 @@
 
 package org.eclipse.mita.program.model
 
-import org.eclipse.mita.library.^extension.LibraryExtensions
-import org.eclipse.mita.types.TypesPackage
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.resource.IResourceDescriptionsProvider
 

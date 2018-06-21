@@ -13,6 +13,11 @@
 
 package org.eclipse.mita.program.scoping
 
+import java.util.ArrayList
+import java.util.List
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
@@ -22,11 +27,6 @@ import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumType
-import java.util.ArrayList
-import java.util.List
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.AbstractScope
@@ -92,16 +92,23 @@ class ElementReferenceScope extends AbstractScope {
 		}
 	}
 
-	def addForLoopIterator(List<EObject> result, EObject object) {
+	def void addForLoopIterator(List<EObject> result, EObject object) {
 		var container = object.getContainerOfType(ForStatement)
-		if (container !== null)
+		if (container !== null) {
 			result += container.loopVariables
+			if(container.eContainer !== null) {
+				result.addForLoopIterator(container.eContainer)
+			}
+		}
 	}
 	
-	def addForEachLoopIterator(List<EObject> result, EObject object) {
+	def void addForEachLoopIterator(List<EObject> result, EObject object) {
 		var container = object.getContainerOfType(ForEachStatement)
 		if (container !== null) {
 			result += container.iterator
+			if(container.eContainer !== null) {
+				result.addForEachLoopIterator(container.eContainer)
+			}
 		}
 	}
 

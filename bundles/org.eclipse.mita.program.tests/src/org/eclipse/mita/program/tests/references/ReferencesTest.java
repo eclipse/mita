@@ -20,7 +20,7 @@ import org.xpect.expectation.StringExpectation;
 import org.xpect.runner.Xpect;
 import org.xpect.runner.XpectRunner;
 import org.xpect.xtext.lib.setup.ThisOffset;
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer;
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer;
 
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer;
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult;

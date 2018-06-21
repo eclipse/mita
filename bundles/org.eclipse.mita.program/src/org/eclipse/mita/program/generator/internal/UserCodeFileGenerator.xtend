@@ -13,7 +13,13 @@
 
 package org.eclipse.mita.program.generator.internal
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
@@ -22,13 +28,7 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumType
-import com.google.inject.Inject
 import org.eclipse.xtext.EcoreUtil2
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.EnumerationType
-import org.eclipse.mita.program.NativeFunctionDefinition
 
 class UserCodeFileGenerator { 
 	
@@ -58,6 +58,7 @@ class UserCodeFileGenerator {
 			«FOR function : program.functionDefinitions.filter(FunctionDefinition)»
 			«statementGenerator.header(function)»
 			«ENDFOR»
+			«exceptionGenerator.exceptionType» initGlobalVariables();
 		''')
 		.addHeader(program.getResourceTypesName + '.h', false)
 		.toHeader(context, program.resourceBaseName.toUpperCase + '_H');
@@ -125,6 +126,17 @@ class UserCodeFileGenerator {
 		«FOR variable : program.globalVariables»
 		«statementGenerator.code(variable)»
 		«ENDFOR»
+		
+		«exceptionGenerator.exceptionType» initGlobalVariables() {
+			«exceptionGenerator.exceptionType» exception = «exceptionGenerator.noExceptionStatement»;
+			
+			«FOR variable : program.globalVariables»
+			«statementGenerator.initializationCode(variable)»
+			«generateExceptionHandler(null, "exception")»
+			
+			«ENDFOR»
+			return exception;
+		}
 		''')
 	}
 	

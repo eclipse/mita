@@ -31,11 +31,11 @@ import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
 import org.eclipse.jface.resource.ImageDescriptor
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
-import org.yakindu.base.types.Enumerator
-import org.yakindu.base.types.Event
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.emf.ecore.EObject
 
 /**

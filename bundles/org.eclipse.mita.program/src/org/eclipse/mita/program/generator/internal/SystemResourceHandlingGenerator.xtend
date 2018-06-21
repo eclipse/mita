@@ -28,7 +28,7 @@ import org.eclipse.mita.program.model.ModelUtils
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 
 class SystemResourceHandlingGenerator {
 
@@ -60,43 +60,46 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		
 		val exceptionType = exceptionGenerator.exceptionType;
 		val name = EcoreUtil.getID(component);
 		
-		return codeFragmentProvider.create('''
-			/**
-			 * Sets up the «name».
-			 */
-			«exceptionType» «(setup ?: component).setupName»(void);
-			
-			/**
-			 * Enables the «name» sensor.
-			 */
-			«exceptionType» «(setup ?: component).enableName»(void);
-
-			«IF setup !== null»
-			«FOR signalInstance : setup?.signalInstances»
-			«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
-			/**
-			 * Provides read access to «signalInstance.name».
-			 */
-			«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result);
-
-			«IF signalInstance.writeable»
-			/**
-			 * Provides write access to «signalInstance.name».
-			 */
-			«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(signalType)»* result);
-			«ENDIF»
-			«ENDFOR»
-			«ENDIF»
-			
-			«internalGenerator?.generateAdditionalHeaderContent()»
-		''')
-		.toHeader(context, '''«component.baseName.toUpperCase»_«name.toUpperCase»_H''')
+		val cgn = obj.trace
+		cgn.children.add(
+			codeFragmentProvider.create('''
+				/**
+				 * Sets up the «name».
+				 */
+				«exceptionType» «(setup ?: component).setupName»(void);
+				
+				/**
+				 * Enables the «name» sensor.
+				 */
+				«exceptionType» «(setup ?: component).enableName»(void);
+	
+				«IF setup !== null»
+				«FOR signalInstance : setup?.signalInstances»
+				«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
+				/**
+				 * Provides read access to «signalInstance.name».
+				 */
+				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result);
+	
+				«IF signalInstance.writeable»
+				/**
+				 * Provides write access to «signalInstance.name».
+				 */
+				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(signalType)»* result);
+				«ENDIF»
+				«ENDFOR»
+				«ENDIF»
+				
+				«internalGenerator?.generateAdditionalHeaderContent()»
+			''')
+			.toHeader(context, '''«component.baseName.toUpperCase»_«name.toUpperCase»_H'''))
+		return cgn;
 	}
 	
 	def generateImplementation(CompilationContext context, EObject obj) {
@@ -106,62 +109,65 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		
 		val exceptionType = exceptionGenerator.exceptionType;
 		
-		codeFragmentProvider.create('''
-			«exceptionType» «(setup ?: component).setupName»(void)
-			{
-				«internalGenerator?.generateSetup()»
+		val cgn = obj.trace
+		cgn.children.add(
+			codeFragmentProvider.create('''
+				«exceptionType» «(setup ?: component).setupName»(void)
+				{
+					«internalGenerator?.generateSetup()»
+					
+					return NO_EXCEPTION;
+				}
 				
-				return NO_EXCEPTION;
-			}
-			
-			«exceptionType» «(setup ?: component).enableName»(void)
-			{
-				«internalGenerator?.generateEnable()»
+				«exceptionType» «(setup ?: component).enableName»(void)
+				{
+					«internalGenerator?.generateEnable()»
+					
+					return NO_EXCEPTION;
+				}
 				
-				return NO_EXCEPTION;
-			}
-			
-			«IF setup !== null»
-			«FOR signalInstance : setup?.signalInstances»
-			«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
-			/**
-			 * Provides read access to the «signalInstance.name» signal.
-			 */
-			«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result)
-			{
-				«internalGenerator?.generateSignalInstanceGetter(signalInstance, 'result')»
+				«IF setup !== null»
+				«FOR signalInstance : setup?.signalInstances»
+				«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
+				/**
+				 * Provides read access to the «signalInstance.name» signal.
+				 */
+				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result)
+				{
+					«internalGenerator?.generateSignalInstanceGetter(signalInstance, 'result')»
+					
+					return NO_EXCEPTION;
+				}
 				
-				return NO_EXCEPTION;
-			}
-			
-			«IF signalInstance.writeable»
-			/**
-			 * Provides write access to the «signalInstance.name» signal.
-			 */
-			«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(signalType)»* value)
-			{
-				«internalGenerator?.generateSignalInstanceSetter(signalInstance, 'value')»
+				«IF signalInstance.writeable»
+				/**
+				 * Provides write access to the «signalInstance.name» signal.
+				 */
+				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(signalType)»* value)
+				{
+					«internalGenerator?.generateSignalInstanceSetter(signalInstance, 'value')»
+					
+					return NO_EXCEPTION;
+				}
 				
-				return NO_EXCEPTION;
-			}
-			
-			«ENDIF»
-
-			«ENDFOR»
-			«ENDIF»
-			«internalGenerator?.generateAdditionalImplementation()»
-		''')
-		.addHeader('MitaExceptions.h', false)
-		.toImplementation(context)
+				«ENDIF»
+	
+				«ENDFOR»
+				«ENDIF»
+				«internalGenerator?.generateAdditionalImplementation()»
+			''')
+			.addHeader('MitaExceptions.h', false)
+			.toImplementation(context))
+		return cgn;
 	}
 	
-	protected def IComponentConfiguration getConfiguration(CompilationContext context, AbstractSystemResource component) {
-		return new MapBasedComponentConfiguration(component, context);
+	protected def IComponentConfiguration getConfiguration(CompilationContext context, AbstractSystemResource component, SystemResourceSetup setup) {
+		return new MapBasedComponentConfiguration(component, context, setup);
 	}
 
 	protected def getRelevantEventHandler(CompilationContext context, AbstractSystemResource component) {

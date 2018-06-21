@@ -22,7 +22,6 @@ import com.google.inject.Injector
 import com.google.inject.Module
 import com.google.inject.Provider
 import com.google.inject.name.Named
-import com.google.inject.util.Modules
 import java.util.LinkedList
 import org.eclipse.core.resources.IFile
 import org.eclipse.core.resources.IProject
@@ -33,6 +32,7 @@ import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
+import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SystemResourceSetup
@@ -45,12 +45,14 @@ import org.eclipse.mita.program.generator.internal.SystemResourceHandlingGenerat
 import org.eclipse.mita.program.generator.internal.TimeEventGenerator
 import org.eclipse.mita.program.generator.internal.UserCodeFileGenerator
 import org.eclipse.mita.program.generator.transformation.ProgramGenerationTransformationPipeline
-import org.eclipse.mita.types.scoping.TypesLibraryProvider
+import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.service.DefaultRuntimeModule
+import org.eclipse.xtext.xbase.lib.Functions.Function1
 
 /**
  * Generates code from your model files on save.
@@ -96,26 +98,23 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	protected Injector injector
 	
 	@Inject 
-	protected TypesLibraryProvider libraryProvider
+	protected ILibraryProvider libraryProvider
 	
 	@Inject @Named("injectingModule")
 	protected DefaultRuntimeModule injectingModule
 	
 	@Inject
 	protected CompilationContextProvider compilationContextProvider;
+	
+	@Inject
+	protected ModelUtils modelUtils
+	
+	@Inject
+	protected PluginResourceLoader resourceLoader
+	
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		resource.resourceSet.doGenerate(fsa);
-	}
-	
-	protected def getLibraryModule(Resource resource) {
-		val libraryModule = libraryProvider.getImportedLibraries(resource).
-			map[module].
-			filterNull.
-			reduce[module1, module2 | Modules.override(module1).with(module2)]
-			if(libraryModule === null)
-				return new EmptyPlatformGeneratorModule();
-			libraryModule
 	}
 	
 	protected def isMainApplicationFile(Resource resource) {
@@ -134,18 +133,24 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	}
 	
 	override doGenerate(ResourceSet input, IFileSystemAccess2 fsa) {
+		doGenerate(input, fsa, [ it.URI?.segment(0) == 'resource' ]);
+	}
+	
+	override doGenerate(ResourceSet input, IFileSystemAccess2 fsa, Function1<Resource, Boolean> includeInBuildPredicate) {
 		val resourcesToCompile = input
 			.resources
-			.filter[x | x.URI?.segment(0) == 'resource' ]
+			.filter(includeInBuildPredicate)
 			.toList();
 		
+		if(resourcesToCompile.empty) {
+			return;
+		}
+		
 		// Include libraries such as the stdlib in the compilation context
-		val libs = libraryProvider.getLibraries(resourcesToCompile.head);
+		val libs = libraryProvider.defaultLibraries;
 		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
 		val stdlib = stdlibUri.map[input.getResource(it, true).contents.filter(Program).head]
-
-		injectPlatformDependencies(resourcesToCompile.get(0).libraryModule);
-		
+	
 		/*
 		 * Steps:
 		 *  1. Copy all programs
@@ -161,6 +166,9 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			.toList();
 		
 		val someProgram = compilationUnits.head;
+		val platform = modelUtils.getPlatform(someProgram);
+		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);		
+		
 		val context = compilationContextProvider.get(compilationUnits, stdlib);
 		
 		val files = new LinkedList<String>();
@@ -200,7 +208,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		
 		files += getUserFiles(input);
 		
-		val codefragment = makefileGenerator?.generateMakefile(null, files)
+		val codefragment = makefileGenerator?.generateMakefile(compilationUnits, files)
 		if(codefragment !== null && codefragment != CodeFragment.EMPTY)
 			fsa.produceFile('Makefile', someProgram, codefragment);
 	}

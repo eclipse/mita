@@ -13,29 +13,30 @@ package org.eclipse.mita.program
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
-
+ 
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.Literal
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.ConfigurationItem
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Signal
-import org.eclipse.mita.types.ExceptionTypeDeclaration
-import org.eclipse.mita.types.Exportable
-import org.eclipse.mita.types.GeneratedElement
-import org.eclipse.mita.types.GeneratedType
-import org.eclipse.mita.types.PackageAssociation
-import org.eclipse.mita.types.SumAlternative
-import org.eclipse.mita.types.TypeSpecifier
-import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.IntLiteral
-import org.yakindu.base.expressions.expressions.Literal
-import org.yakindu.base.types.Event
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Parameter
-import org.yakindu.base.types.Property
-import org.yakindu.base.types.Type
-import org.eclipse.mita.types.ImportStatement 
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.Exportable
+import org.eclipse.mita.base.types.GeneratedElement
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.SumAlternative 
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -300,3 +301,6 @@ class LoopBreakerStatement extends AbstractStatement {
 class ArrayRuntimeCheckStatement extends AbstractStatement {
 	refers ArrayAccessExpression access
 }
+
+
+

@@ -15,8 +15,8 @@ package org.eclipse.mita.program.generator;
 
 import java.util.NoSuchElementException;
 
-import org.yakindu.base.expressions.expressions.Expression;
-import org.yakindu.base.types.Enumerator;
+import org.eclipse.mita.base.expressions.Expression;
+import org.eclipse.mita.base.types.Enumerator;
 
 /**
  * Component configurations describe the setup of a component based on user specification

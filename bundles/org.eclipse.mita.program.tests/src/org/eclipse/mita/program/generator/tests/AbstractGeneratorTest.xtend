@@ -113,8 +113,12 @@ public class AbstractGeneratorTest {
 	 * @return the generated parsed C code
 	 */
 	protected def generateAndParseApplication(CharSequence application) throws Exception {
+		return generateAndParseApplication(application, "application.c")
+	}
+	
+	protected def generateAndParseApplication(CharSequence application, String fileName) throws Exception {
 		val fsa = generateFrom(application);
-		return parseCFile(fsa, "application.c");
+		return parseCFile(fsa, fileName);
 	}
 
 	protected def findFunction(IASTTranslationUnit unit, String name) {

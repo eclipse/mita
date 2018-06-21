@@ -1,0 +1,322 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+grammar org.eclipse.mita.base.TypeDsl with org.eclipse.xtext.common.Terminals
+
+import "http://www.eclipse.org/emf/2002/Ecore" as ecore
+import "org.eclipse.mita.base.types"
+import "org.eclipse.mita.base.expressions"
+
+TypeRoot returns Package:
+	{Package}
+	(member+=TypeDeclaration)* 
+;
+
+TypeDeclaration returns Type:
+	(NativeTypeDeclaration | StructureTypeDeclaration | ExceptionTypeDeclaration | EnumerationDeclaration | GeneratedType | SumType) 
+;
+
+NativeTypeDeclaration returns NativeType:
+	(exported?='export')? 
+	'native-type' name=ID
+	('alias-of' aliasOf=ID)?
+	('subtype-of' superTypes+=[PrimitiveType] (',' superTypes+=[PrimitiveType])* )?
+	('header' header=STRING)?
+;
+
+EnumerationDeclaration returns EnumerationType:
+	(exported?='export')?
+	'enum' name=ID '{' enumerator+=Enumerator (','enumerator+=Enumerator)*
+	'}';
+
+Enumerator returns Enumerator:
+	name=ID;
+
+StructureTypeDeclaration returns ComplexType: 
+	{StructureType}
+	(exported?='export')?
+	'struct' name=ID '{' (parameters+=StructureField)+ '}'
+;
+
+StructureField returns Parameter: 
+	'var' name=ID ':' typeSpecifier=TypeSpecifier ';'
+;
+
+ExceptionTypeDeclaration: 
+	(exported?='export')?
+	'exception' name=ID ';'
+;
+
+GeneratedType returns ComplexType:
+	{GeneratedType} 
+	(exported?='export')?
+	'generated' 'type' name=ID ('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')? ('subtype-of' superTypes+=[ComplexType|QID])?
+		'generator' generator=STRING
+		'size-inferrer' sizeInferrer=STRING
+		('validator' validator=STRING)?
+		constructor = GeneratedTypeConstructor
+	';'
+;
+
+GeneratedTypeConstructor returns Operation:
+	{Operation}
+	'constructor' name=ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
+;
+
+GeneratedTypeParameter returns Parameter:
+	{GeneratedTypeParameter}
+	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' value=Expression)?
+;
+
+TypeParameter returns TypeParameter:
+	name=ID ('extends' bound=[Type])?;
+
+
+SumType returns SumType:
+	{SumType}
+	(exported?='export')?
+	('alt' | 'alternative') name = ID '{' alternatives += SumAlternative ('|' alternatives += SumAlternative)* '}'
+;	
+
+SumAlternative returns SumAlternative:
+	( AnonymousProductType
+	| NamedProductType 
+	| Singleton
+	)
+;
+
+Singleton returns Singleton:
+	name=ID
+;
+
+AnonymousProductType returns AnonymousProductType: 
+	{AnonymousProductType}
+	name=ID ':' typeSpecifiers+=TypeSpecifier (',' typeSpecifiers+=TypeSpecifier)*
+;
+NamedProductType returns NamedProductType:
+	{NamedProductType}
+	name=ID ':' '{' parameters+=ProductMember (',' parameters+=ProductMember)* '}'
+;
+
+ProductMember returns ProductMember: 
+	name=ID ':' typeSpecifier=TypeSpecifier
+;
+
+
+/**
+ * BELOW THIS LINE
+ * 
+ * Copyright (c) 2010 - 2015 committers of YAKINDU and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ * Contributors:
+ * 	committers of YAKINDU - initial API and implementation
+ * 
+ */
+Expression:
+	AssignmentExpression;
+
+AssignmentExpression returns Expression:
+	ConditionalExpression ({AssignmentExpression.varRef=current} operator=AssignmentOperator
+	expression=ConditionalExpression)*;
+
+ConditionalExpression returns Expression:
+	LogicalOrExpression ({ConditionalExpression.condition=current} '?' trueCase=LogicalOrExpression ':'
+	falseCase=LogicalOrExpression)?;
+
+LogicalOrExpression returns Expression:
+	LogicalAndExpression ({LogicalOrExpression.leftOperand=current} LogicalOrOperator
+	rightOperand=LogicalAndExpression)*;
+
+LogicalAndExpression returns Expression:
+	LogicalNotExpression ({LogicalAndExpression.leftOperand=current}
+	LogicalAndOperator rightOperand=LogicalNotExpression)*;
+
+LogicalNotExpression returns Expression:
+	BitwiseXorExpression | {LogicalNotExpression} LogicalNotOperator
+	operand=BitwiseXorExpression;
+
+BitwiseXorExpression returns Expression:
+	BitwiseOrExpression ({BitwiseXorExpression.leftOperand=current} BitwiseXOrOperator
+	rightOperand=BitwiseOrExpression)*;
+
+BitwiseOrExpression returns Expression:
+	BitwiseAndExpression ({BitwiseOrExpression.leftOperand=current} BitwiseOrOperator
+	rightOperand=BitwiseAndExpression)*;
+
+BitwiseAndExpression returns Expression:
+	LogicalRelationExpression ({BitwiseAndExpression.leftOperand=current} BitwiseAndOperator
+	rightOperand=LogicalRelationExpression)*;
+
+LogicalRelationExpression returns Expression:
+	ShiftExpression
+	({LogicalRelationExpression.leftOperand=current} operator=RelationalOperator
+	rightOperand=ShiftExpression)*;
+
+ShiftExpression returns Expression:
+	NumericalAddSubtractExpression ({ShiftExpression.leftOperand=current} operator=ShiftOperator
+	rightOperand=NumericalAddSubtractExpression)*;
+
+NumericalAddSubtractExpression returns Expression:
+	NumericalMultiplyDivideExpression
+	=>({NumericalAddSubtractExpression.leftOperand=current}
+	operator=AdditiveOperator
+	rightOperand=NumericalMultiplyDivideExpression)*;
+
+NumericalMultiplyDivideExpression returns Expression:
+	NumericalUnaryExpression
+	=>({NumericalMultiplyDivideExpression.leftOperand=current}
+	operator=MultiplicativeOperator
+	rightOperand=NumericalUnaryExpression)*;
+
+NumericalUnaryExpression returns Expression:
+	PostFixUnaryExpression | {NumericalUnaryExpression} operator=UnaryOperator operand=PostFixUnaryExpression;
+
+PostFixUnaryExpression returns Expression:
+	TypeCastExpression ({PostFixUnaryExpression.operand=current} operator=PostFixOperator)*;
+
+TypeCastExpression returns Expression:
+	PrimaryExpression (({TypeCastExpression.operand=current} 'as') type=[Type|QID])*;
+
+PrimaryExpression returns Expression:
+	PrimitiveValueExpression
+	| FeatureCall
+	| ParenthesizedExpression;
+
+PrimitiveValueExpression returns Expression:
+	{PrimitiveValueExpression} value=Literal;
+
+
+
+FeatureCall returns Expression:
+	ElementReferenceExpression ({FeatureCall.owner=current} '.' feature=[ecore::EObject]
+	(=> operationCall?= '('(arguments+=Argument (',' arguments+=Argument)*)?')'
+		|
+	=> (arrayAccess ?= '[' arraySelector+=Expression ']') => ('[' arraySelector+=Expression ']')* 
+	)?)*;
+
+ElementReferenceExpression returns Expression:
+	{ElementReferenceExpression} reference=[ecore::EObject|ID]
+	(=> operationCall?='('	(arguments+=Argument (',' arguments+=Argument)*)?	')' 
+		|
+	=> (arrayAccess ?= '[' arraySelector+=Expression ']') => ('[' arraySelector+=Expression ']')*
+	)?;
+
+Argument:
+	(parameter=[Parameter] '=')?  value=ConditionalExpression
+;
+
+ParenthesizedExpression returns Expression:
+	{ParenthesizedExpression} '(' expression=Expression ')';
+
+TypeSpecifier returns TypeSpecifier:
+	{TypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
+
+Literal:
+	BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;
+
+BoolLiteral:
+	{BoolLiteral} value=BOOL;
+
+IntLiteral:
+	{IntLiteral} value=INT;
+
+DoubleLiteral:
+	{DoubleLiteral} value=DOUBLE;
+
+FloatLiteral:
+	{FloatLiteral} value=FLOAT;
+
+HexLiteral:
+	{HexLiteral} value=HEX;
+
+BinaryLiteral:
+	{BinaryLiteral} value=BINARY;
+
+StringLiteral:
+	{StringLiteral} value=STRING;
+
+NullLiteral:
+	{NullLiteral} 'null';
+
+LogicalAndOperator:
+	'&&';
+
+LogicalOrOperator:
+	'||';
+
+LogicalNotOperator:
+	'!';
+
+BitwiseXOrOperator:
+	'^';
+
+BitwiseOrOperator:
+	'|';
+
+BitwiseAndOperator:
+	'&';
+
+enum PostFixOperator:
+	increment="++" | decrement="--";
+
+enum AssignmentOperator:
+	assign='='
+	| multAssign='*='
+	| divAssign='/='
+	| modAssign='%='
+	| addAssign='+='
+	| subAssign='-='
+	| leftShiftAssign='<<='
+	| rightShiftAssign='>>='
+	| andAssign='&='
+	| xorAssign='^='
+	| orAssign='|=';
+
+enum ShiftOperator:
+	left='<<'
+	| right='>>';
+
+enum AdditiveOperator:
+	plus='+' | minus='-';
+
+enum MultiplicativeOperator:
+	mul='*' | div='/' | mod='%';
+
+enum UnaryOperator:
+	positive='+' | negative='-' | complement='~';
+
+enum RelationalOperator:
+	smaller='<' | smallerEqual='<=' | greater='>' | greaterEqual='>=' |
+	equals='==' | notEquals='!=';
+
+terminal BOOL returns ecore::EBoolean:
+	'true' | 'false' | 'yes' | 'no';
+
+terminal HEX returns ecore::EInt:
+	('0') ('x' | 'X') ('0'..'9' | 'a'..'f' | 'A'..'F')+;
+
+terminal BINARY returns ecore::EInt: 
+	('0')('b' | 'B') ('0'|'1')+
+;
+terminal DOUBLE returns ecore::EDouble:
+	(INT '.' INT) ('e' ('-' | '+') INT)? ('d' | 'D')?;
+
+terminal FLOAT returns ecore::EFloat:
+	(INT '.' INT) ('e' ('-' | '+') INT)? ('f' | 'F')?;
+
+QID:
+	ID ('.' ID)*;
+

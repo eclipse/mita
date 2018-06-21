@@ -13,6 +13,15 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.inject.Inject
+import com.google.inject.Provider
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.program.EventHandlerDeclaration
@@ -22,18 +31,9 @@ import org.eclipse.mita.program.ThrowExceptionStatement
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.generator.internal.IResourceGraph
 import org.eclipse.mita.program.generator.internal.ResourceGraphBuilder
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.types.ExceptionTypeDeclaration
-import org.eclipse.mita.types.GeneratedType
-import com.google.inject.Inject
-import com.google.inject.Provider
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.yakindu.base.types.TypeParameter
-import org.yakindu.base.types.TypeSpecifier
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.program.generator.internal.IResourceGraph
-import org.eclipse.emf.ecore.EObject
 
 class CompilationContext {
 	protected Iterable<Program> units;
@@ -51,6 +51,9 @@ class CompilationContext {
 	@Inject
 	protected Provider<ResourceGraphBuilder> resourceGraphBuilderProvider;
 	
+	@Inject
+	protected ModelUtils modelUtils;
+	
 	private var Boolean isInited = false;
 
 	public def init(Iterable<Program> compilationUnits, Iterable<Program> stdLib) {
@@ -67,7 +70,7 @@ class CompilationContext {
 		systemResourceSetups = compilationUnits.map[it.setup].flatten.toSet();
 		
 		eventHandler = compilationUnits.map[x|x.eventHandlers].flatten.toList();
-		platform = ModelUtils.getPlatform(compilationUnits.head);
+		platform = modelUtils.getPlatform(compilationUnits.head);
 	}
 	
 	private def assertInited() {

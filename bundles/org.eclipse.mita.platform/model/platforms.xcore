@@ -14,14 +14,14 @@ package org.eclipse.mita.platform
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import org.eclipse.mita.types.GeneratedElement
-import org.eclipse.mita.types.PackageAssociation
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.types.Event
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Parameter
-import org.yakindu.base.types.Property
-import org.yakindu.base.types.Type
+import org.eclipse.mita.base.types.GeneratedElement
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.Type
 
 enum Instantiability {
 	/**
@@ -118,5 +118,6 @@ class InputOutput extends AbstractSystemResource { }
 class Sensor extends AbstractSystemResource { }
 
 class Platform extends AbstractSystemResource {
+	String module
 	refers AbstractSystemResource[] resources
 }

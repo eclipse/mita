@@ -17,6 +17,10 @@
 						<phase>generate-sources</phase>
 						<configuration>
 							<target>
+								<exec executable="cp" dir="${project.basedir}"
+									failonerror="false">
+									<arg line="../logo/symbolAndText.png site/content/logo.png" />
+								</exec>
 								<exec executable="git" dir="${project.basedir}/site/themes"
 									failonerror="false">
 									<arg line="clone https://github.com/digitalcraftsman/hugo-material-docs.git hugo-material-docs" />
