@@ -68,6 +68,7 @@
                 <module>org.eclipse.mita.library.extension</module>
                 <module>org.eclipse.mita.library.stdlib</module>
 
+<<<<<<< HEAD
 				<module>org.eclipse.mita.cli</module>
             </modules>
         </profile>
@@ -92,6 +93,11 @@
                 <module>org.eclipse.mita.program.tests</module>
             </modules>
         </profile>
+=======
+		<module>../platforms/org.eclipse.mita.platform.xdk110</module>
+		<module>../platforms/org.eclipse.mita.platform.arduinouno</module>
+		<module>../platforms/org.eclipse.mita.platform.unittest</module>
+>>>>>>> initial contribution for arduino sdk, edited pom.xml for arduino build
 
         <profile>
             <id>deployment</id>
