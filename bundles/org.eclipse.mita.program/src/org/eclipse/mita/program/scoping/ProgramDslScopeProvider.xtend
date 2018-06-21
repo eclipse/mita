@@ -65,6 +65,7 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -76,6 +77,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	@Inject
 	IQualifiedNameProvider qualifiedNameProvider
+	
+	@Inject
+	ITypeSystem typeSystem
 	
 
 	override scope_Argument_parameter(Argument argument, EReference ref) {
@@ -312,8 +316,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		if (subType.name == superTypeName) {
 			return true
 		}
-		val match = subType.superTypes.findFirst[name == superTypeName]
-		return match !== null
+		return typeSystem.getSuperTypes(subType).exists[name == superTypeName]
 	}
 
 	protected def toArray(String paramArrayAsString) {
