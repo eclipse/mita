@@ -61,6 +61,7 @@
 		<module>org.eclipse.mita.library.stdlib</module>
 
 		<module>../platforms/org.eclipse.mita.platform.xdk110</module>
+		<module>../platforms/org.eclipse.mita.platform.arduinouno</module>
 		<module>../platforms/org.eclipse.mita.platform.unittest</module>
 
 		<module>org.eclipse.mita.feature</module>

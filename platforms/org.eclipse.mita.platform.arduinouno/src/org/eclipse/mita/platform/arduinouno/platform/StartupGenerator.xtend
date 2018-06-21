@@ -14,7 +14,6 @@ class StartupGenerator implements IPlatformStartupGenerator {
 	@Inject 
 	protected extension GeneratorUtils
 	
-	//TBD: Using event queue or interrupt flags?
 	override generateMain(CompilationContext context) {
 		codeFragmentProvider.create('''
 		Mita_initialize();
