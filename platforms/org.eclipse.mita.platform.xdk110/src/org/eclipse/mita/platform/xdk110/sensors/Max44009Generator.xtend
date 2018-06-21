@@ -34,9 +34,6 @@ class Max44009Generator extends AbstractSystemResourceGenerator {
     @Inject
     protected extension GeneratorUtils
     
-    @Inject
-	protected CodeFragmentProvider codeFragmentProvider
-    
     override generateSetup() {
         val manualMode = configuration.getBoolean(CONFIG_ITEM_MANUAL_MODE) ?: false;
         val integrationTime = switch(configuration.getEnumerator(CONFIG_ITEM_INTEGRATION_TIME)?.name) {

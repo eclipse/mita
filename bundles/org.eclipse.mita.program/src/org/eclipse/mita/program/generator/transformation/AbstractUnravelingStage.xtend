@@ -131,7 +131,7 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 			}
 		} else {
 			variableDeclarationContainer.name;
-		})?.toLowerCase?.split(".")?.last
+		})?.toLowerCase?.split("\\.")?.last
 		val resultSuffix = if(resultName === null) 'result' else 'Result';
 		val result = '''«resultName»«resultSuffix»«uid»''';
 		return result;

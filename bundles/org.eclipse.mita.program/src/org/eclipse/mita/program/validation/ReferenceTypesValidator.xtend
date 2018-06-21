@@ -275,6 +275,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 				}
 			}
 		}
+		return Optional.absent;
 	}
 	
 	@Inject

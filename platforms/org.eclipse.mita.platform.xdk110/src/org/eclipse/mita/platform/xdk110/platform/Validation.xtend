@@ -73,7 +73,7 @@ class Validation implements IResourceValidator {
 				val owner = it.owner;
 				if(owner instanceof FeatureCall) {
 					val sigInst = owner.feature;
-					if(source === null || method === null || sigInst === null) {
+					if(method === null || sigInst === null) {
 						return null;
 					}
 					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE)
@@ -84,7 +84,7 @@ class Validation implements IResourceValidator {
 				val method = it.reference;
 				if(method instanceof Operation) {
 					val sigInst = ModelUtils.getArgumentValue(method, it, "self");
-					if(source === null || method === null || sigInst === null) {
+					if(method === null || sigInst === null) {
 						return null;
 					}
 					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)

@@ -42,19 +42,13 @@ import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 
 class StringGenerator extends AbstractTypeGenerator {
-	
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
-	
+		
 	@Inject
 	protected ElementSizeInferrer sizeInferrer
 
 	@Inject
 	protected extension ProgramDslTraceExtensions
-	
-	@Inject
-	protected TypeGenerator typeGenerator
-	
+		
 	@Inject
 	protected ITypeSystemInferrer typeInferrer
 	
@@ -133,8 +127,8 @@ class StringGenerator extends AbstractTypeGenerator {
 		 * container is of any other type, we infer the size of the initialization. In the latter case we might make
 		 * a mistake and allocate too little space.
 		 */
-		val sizeInferenceResult = if(initialization.eContainer instanceof VariableDeclaration) {
-			sizeInferrer.infer(initialization.eContainer);
+		val sizeInferenceResult = if(initialization?.eContainer instanceof VariableDeclaration) {
+			sizeInferrer.infer(initialization?.eContainer);
 		} else {
 			sizeInferrer.infer(initialization);
 		}
@@ -262,10 +256,7 @@ class StringGenerator extends AbstractTypeGenerator {
 	}
 	
 	static class LengthGenerator extends AbstractFunctionGenerator {
-		
-		@Inject
-		protected CodeFragmentProvider codeFragmentProvider
-		
+				
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	

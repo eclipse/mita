@@ -31,9 +31,6 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 
 	@Inject
 	protected extension GeneratorUtils
-
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
 	
     override generateSetup() {
         codeFragmentProvider.create('''

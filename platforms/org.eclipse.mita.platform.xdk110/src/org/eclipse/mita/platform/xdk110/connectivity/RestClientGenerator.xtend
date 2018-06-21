@@ -41,10 +41,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject
 	protected TypeGenerator typeGenerator
-	
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
-	
+		
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
 	

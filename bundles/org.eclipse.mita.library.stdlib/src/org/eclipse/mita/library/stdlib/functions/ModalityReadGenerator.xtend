@@ -20,10 +20,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.generator.CodeFragment
 
 class ModalityReadGenerator extends AbstractFunctionGenerator {
-	
-	@Inject
-	protected StatementGenerator statementGenerator
-	
+		
 	override callShouldBeUnraveled(ElementReferenceExpression expression) {
 		return false;
 	}

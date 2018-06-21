@@ -125,7 +125,7 @@ public class OperationsLinker {
 			InferenceResult parameterType = parameterTypes.get(i);
 			IValidationIssueAcceptor.ListBasedValidationIssueAcceptor acceptor = new IValidationIssueAcceptor.ListBasedValidationIssueAcceptor();
 			validator.assertAssignable(parameterType, argumentType,
-					String.format("Types are incompatible", argumentType, parameterType), acceptor);
+					String.format("Types are incompatible: %s and %s", argumentType, parameterType), acceptor);
 			if (!acceptor.getTraces(Severity.ERROR).isEmpty()) {
 				return false;
 			}

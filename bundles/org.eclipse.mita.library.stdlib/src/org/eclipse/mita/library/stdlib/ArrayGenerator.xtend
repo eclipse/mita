@@ -44,10 +44,7 @@ import org.eclipse.mita.program.FunctionParameterDeclaration
 import org.eclipse.mita.base.types.NamedElement
 
 class ArrayGenerator extends AbstractTypeGenerator {
-	
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
-	
+		
 	@Inject
 	protected extension GeneratorUtils generatorUtils
 	
@@ -291,10 +288,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	
 	static class LengthGenerator extends AbstractFunctionGenerator {
-		
-		@Inject
-		protected CodeFragmentProvider codeFragmentProvider
-		
+				
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	

@@ -36,9 +36,6 @@ class Bma280Generator extends AbstractSystemResourceGenerator {
 	@Inject
 	protected EventLoopGenerator eventLoopGenerator
 	
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
-
     override generateSetup() {
         codeFragmentProvider.create('''
         Retcode_T retcode = RETCODE_OK;

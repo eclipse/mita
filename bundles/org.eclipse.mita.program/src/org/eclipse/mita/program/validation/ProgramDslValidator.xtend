@@ -209,9 +209,11 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.NORMAL)
 	def checkSetup_platformValidator(SystemResourceSetup setup) {
 		val systemResource = if (setup.type instanceof AbstractSystemResource) {
-				setup.type as AbstractSystemResource;
-			}
-
+			setup.type as AbstractSystemResource;
+		}
+		if(systemResource === null) {
+			return;
+		}
 		runLibraryValidator(setup.eContainer as Program, setup, systemResource.eResource, systemResource.validator);
 	}
 
@@ -626,8 +628,10 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		range.upperBound?.assertIsInteger(ARRAY_RANGE_INVALID)
 
 		val lengthOfArrayIR = elementSizeInferrer.infer(expr);
-		val lengthOfArray = if(lengthOfArrayIR instanceof ValidElementSizeInferenceResult) {
+		val Integer lengthOfArray = if(lengthOfArrayIR instanceof ValidElementSizeInferenceResult) {
 			lengthOfArrayIR.elementCount;
+		} else {
+			null;
 		}
 		val lowerBound = StaticValueInferrer.infer(range.lowerBound, [x|])?:0
 		val upperBound = StaticValueInferrer.infer(range.upperBound, [x|])?:lengthOfArray
@@ -646,8 +650,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					errorFun2.apply("Upper bound must be strictly positive");
 				}
 			}
-		}
-		if(lowerBound !== null && upperBound !== null) {
+		
 			if(lowerBound as Integer >= upperBound as Integer) {
 				errorFun2.apply("Lower bound must be smaller than upper bound");
 			}

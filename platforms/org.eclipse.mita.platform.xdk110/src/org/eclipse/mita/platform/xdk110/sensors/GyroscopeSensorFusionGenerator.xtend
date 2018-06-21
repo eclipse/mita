@@ -21,9 +21,6 @@ class GyroscopeSensorFusionGenerator extends AbstractSystemResourceGenerator {
     @Inject
     protected extension GeneratorUtils
     
-    @Inject
-	protected CodeFragmentProvider codeFragmentProvider
-    
     override generateSetup() {
         codeFragmentProvider.create('''
         Retcode_T exception = RETCODE_OK;

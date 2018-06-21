@@ -38,7 +38,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 		} else if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {
 			(firstArg as ElementReferenceExpression).reference as SignalInstance;
 		} else {
-			firstArg.eAllContents.findFirst[ it instanceof SignalInstance ] as SignalInstance;
+			firstArg?.eAllContents?.findFirst[ it instanceof SignalInstance ] as SignalInstance;
 		}
 		
 		val functionName = (functionCall.reference as NamedElement).name;

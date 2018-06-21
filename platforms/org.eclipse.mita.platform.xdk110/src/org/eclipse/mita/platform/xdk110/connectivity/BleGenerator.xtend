@@ -44,6 +44,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	public static val MAC_ADDRESS_PATTERN = Pattern.compile(MAC_ADDRESS_REGEX);
 	
 	override generateSetup() {
+		val setupIsNull = setup === null;
 		val baseName = (setup ?: component).baseName;
 		
 		val deviceName = configuration.getString('deviceName') ?: baseName;
@@ -133,19 +134,23 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static AttServiceAttribute «baseName»Service;
 		
 		enum «baseName»_E{
-		«FOR signalInstance : setup?.signalInstances»
-			«baseName»_«signalInstance.name»,
-		«ENDFOR»
+		«IF !setupIsNull»
+			«FOR signalInstance : setup.signalInstances»
+				«baseName»_«signalInstance.name»,
+			«ENDFOR»
+		«ENDIF»
 		} ;
 		
-		«FOR signalInstance : setup?.signalInstances»
-		/* «signalInstance.name» characteristic */
-		static Att16BitCharacteristicAttribute «baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute;
-		static uint8_t «baseName»«signalInstance.name.toFirstUpper»UuidValue[ATTPDU_SIZEOF_128_BIT_UUID] = { «signalInstance.characteristicUuid» };
-		static AttUuid «baseName»«signalInstance.name.toFirstUpper»Uuid;
-		static «typeGenerator.code(ModelUtils.toSpecifier(typeInferrer.infer(signalInstance)?.bindings?.head))» «baseName»«signalInstance.name.toFirstUpper»Value;
-		static AttAttribute «baseName»«signalInstance.name.toFirstUpper»Attribute;
-		«ENDFOR»
+		«IF !setupIsNull»
+			«FOR signalInstance : setup.signalInstances»
+				/* «signalInstance.name» characteristic */
+				static Att16BitCharacteristicAttribute «baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute;
+				static uint8_t «baseName»«signalInstance.name.toFirstUpper»UuidValue[ATTPDU_SIZEOF_128_BIT_UUID] = { «signalInstance.characteristicUuid» };
+				static AttUuid «baseName»«signalInstance.name.toFirstUpper»Uuid;
+				static «typeGenerator.code(ModelUtils.toSpecifier(typeInferrer.infer(signalInstance)?.bindings?.head))» «baseName»«signalInstance.name.toFirstUpper»Value;
+				static AttAttribute «baseName»«signalInstance.name.toFirstUpper»Attribute;
+			«ENDFOR»
+		«ENDIF»
 
 		«setup.buildServiceCallback(eventHandler)»
 		«setup.buildSetupCharacteristic»
@@ -163,39 +168,41 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 					 * after the previous timeout will be cleared here. */
 					(void) xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(0));
 					// tell the world via BLE
-					«FOR signalInstance : setup?.signalInstances»
-					if((enum «baseName»_E)param == «baseName»_«signalInstance.name»)
-					{
-						ATT_SERVER_SecureDatabaseAccess();
-						AttStatus status = ATT_SERVER_WriteAttributeValue(
-						    &«baseName»«signalInstance.name.toFirstUpper»Attribute,
-						    dataToSend,
-						    dataToSendLen
-						);
-						if (status == BLESTATUS_SUCCESS) /* send notification */
-					 	{
-					 		status = ATT_SERVER_SendNotification(&«baseName»«signalInstance.name.toFirstUpper»Attribute, 1);
-					 		/* BLESTATUS_SUCCESS and BLESTATUS_PENDING are fine */
-					 		if ((status == BLESTATUS_FAILED) || (status == BLESTATUS_INVALID_PARMS))
-					 		{
-					 		 	retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_SEND_NOTIFICATION_FAILED);
-					 		}
-					 	}
-					 	else
-					 	{
-					 		if (BLESTATUS_SUCCESS != status)
-					 		{
-					 			retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_WRITE_ATT_VALUE_FAILED);
-					 		}
-					 	}
-					 	ATT_SERVER_ReleaseDatabaseAccess();
-					 	if (pdTRUE != xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(timeout)))
-					 	{
-					 		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
-					 	}
-					}
-					
-				    «ENDFOR»							
+					«IF !setupIsNull»
+						«FOR signalInstance : setup.signalInstances»
+							if((enum «baseName»_E)param == «baseName»_«signalInstance.name»)
+							{
+								ATT_SERVER_SecureDatabaseAccess();
+								AttStatus status = ATT_SERVER_WriteAttributeValue(
+								    &«baseName»«signalInstance.name.toFirstUpper»Attribute,
+								    dataToSend,
+								    dataToSendLen
+								);
+								if (status == BLESTATUS_SUCCESS) /* send notification */
+							 	{
+							 		status = ATT_SERVER_SendNotification(&«baseName»«signalInstance.name.toFirstUpper»Attribute, 1);
+							 		/* BLESTATUS_SUCCESS and BLESTATUS_PENDING are fine */
+							 		if ((status == BLESTATUS_FAILED) || (status == BLESTATUS_INVALID_PARMS))
+							 		{
+							 		 	retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_SEND_NOTIFICATION_FAILED);
+							 		}
+							 	}
+							 	else
+							 	{
+							 		if (BLESTATUS_SUCCESS != status)
+							 		{
+							 			retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_WRITE_ATT_VALUE_FAILED);
+							 		}
+							 	}
+							 	ATT_SERVER_ReleaseDatabaseAccess();
+							 	if (pdTRUE != xSemaphoreTake(BleSendCompleteSignal, pdMS_TO_TICKS(timeout)))
+							 	{
+							 		retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_BLE_START_FAILED);
+							 	}
+							}
+							
+					    «ENDFOR»
+					«ENDIF»
 				}
 				else
 				{

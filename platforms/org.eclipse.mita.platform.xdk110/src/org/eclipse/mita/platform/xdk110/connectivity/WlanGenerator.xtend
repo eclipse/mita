@@ -22,10 +22,7 @@ import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 
 class WlanGenerator extends AbstractSystemResourceGenerator {
-	
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
-	
+		
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
 	

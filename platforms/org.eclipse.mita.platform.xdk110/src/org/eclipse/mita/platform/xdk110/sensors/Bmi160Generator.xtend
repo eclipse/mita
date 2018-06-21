@@ -21,9 +21,6 @@ class Bmi160Generator extends AbstractSystemResourceGenerator {
     @Inject
     protected extension GeneratorUtils
     
-    @Inject
-	protected CodeFragmentProvider codeFragmentProvider
-    
     override generateSetup() {
         codeFragmentProvider.create('''
         Retcode_T exception = RETCODE_OK;
@@ -52,11 +49,11 @@ class Bmi160Generator extends AbstractSystemResourceGenerator {
     
     def String getBmiBandwidthEnumValue(IComponentConfiguration config) {
     	//remove "BW_", add prefix
-        '''GYROSCOPE_BMI160_BANDWIDTH_«config.getEnumerator('bandwidth')?.name?.toUpperCase.substring(3)»'''
+        '''GYROSCOPE_BMI160_BANDWIDTH_«config.getEnumerator('bandwidth')?.name?.toUpperCase?.substring(3)»'''
     }
     def String getBmiRangeEnumValue(IComponentConfiguration config) {
     	//add prefix and suffix, remove "Range_"
-        '''GYROSCOPE_BMI160_«config.getEnumerator('range')?.name?.toUpperCase.substring(6)»_RANGE'''
+        '''GYROSCOPE_BMI160_«config.getEnumerator('range')?.name?.toUpperCase?.substring(6)»_RANGE'''
     }
     
         

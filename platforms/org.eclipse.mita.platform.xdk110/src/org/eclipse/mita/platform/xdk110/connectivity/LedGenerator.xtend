@@ -27,9 +27,6 @@ import org.eclipse.mita.program.generator.CodeFragmentProvider
 
 class LedGenerator extends AbstractSystemResourceGenerator {
 
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
-
 	public static def Map<SignalInstance, String> getSignalToColorAssignment(SystemResourceSetup context) {
 		val result = new HashMap<SignalInstance, String>();
 		

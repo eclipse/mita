@@ -33,10 +33,7 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
     
     @Inject
     protected extension GeneratorUtils
-    
-    @Inject
-	protected CodeFragmentProvider codeFragmentProvider
-    
+        
     override generateSetup() {
         val powerMode = if(configuration.getEnumerator(CONFIG_ITEM_POWER_MODE)?.name == 'Forced') 'ENVIRONMENTAL_BME280_POWERMODE_FORCED' else 'ENVIRONMENTAL_BME280_POWERMODE_NORMAL';
         val standbyTimeRaw = configuration.getInteger(CONFIG_ITEM_STANDBY_TIME);

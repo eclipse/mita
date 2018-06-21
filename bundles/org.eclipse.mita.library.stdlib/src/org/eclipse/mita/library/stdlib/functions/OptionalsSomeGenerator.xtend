@@ -29,10 +29,7 @@ import org.eclipse.mita.program.model.ModelUtils
 class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	
 	@Inject 
-	protected extension StatementGenerator statementGenerator
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
+	protected extension StatementGenerator
 	
 	@Inject
 	protected GeneratorRegistry registry

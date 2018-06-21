@@ -23,7 +23,7 @@ import org.eclipse.mita.program.model.ModelUtils
 class OptionalsValueGenerator extends AbstractFunctionGenerator {
 	
 	@Inject 
-	protected extension StatementGenerator statementGenerator
+	protected extension StatementGenerator
 	
 	override generate(ElementReferenceExpression functionCall, String resultVariableName) {
 		val args = functionCall.arguments;
