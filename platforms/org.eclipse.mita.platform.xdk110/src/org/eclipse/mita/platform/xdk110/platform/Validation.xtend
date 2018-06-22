@@ -12,15 +12,17 @@ package org.eclipse.mita.platform.xdk110.platform
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
- 
+
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.platform.Bus
+import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
@@ -31,8 +33,12 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
-import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.emf.ecore.EStructuralFeature
+import java.util.Set
+import org.eclipse.mita.platform.xdk110.platform.Validation.MethodCall
+import java.util.HashSet
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.xtext.naming.IQualifiedNameProvider
 
 class Validation implements IResourceValidator {
 
@@ -55,7 +61,23 @@ class Validation implements IResourceValidator {
 		}
 		static dispatch def cons(Object _1, Object _2, Object _3, Object _4) {
 			null;
-		}		
+		}	
+		
+		override toString() {
+			val setup = EcoreUtil2.getContainerOfType(sigInst, SystemResourceSetup)
+			return '''«setup?.name».«sigInst.name».«method.name»(«FOR arg : source.arguments SEPARATOR(", ")»«StaticValueInferrer.infer(arg.value, [])?.toString?:"null"»«ENDFOR»)'''
+		}
+		
+		override hashCode() {
+			toString.hashCode()
+		}
+		
+		override equals(Object arg0) {
+			if(arg0 instanceof MethodCall) {
+				return toString == arg0.toString;
+			}
+			return super.equals(arg0)
+		}
 	}
 	
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
@@ -65,8 +87,7 @@ class Validation implements IResourceValidator {
 		// the following is extension method hell
 		// EObject source = it, SignalInstance sigInst, int structFeature
 		// ArgumentExpression source = it, Operation writeMethod, SignalInstance sigInst
-		
-		val i2cs = (
+		val sigInstAccesses = (
 			functionCalls1.map[
 				val ArgumentExpression source = it;
 				val method = it.feature;
@@ -90,42 +111,73 @@ class Validation implements IResourceValidator {
 					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
 				}
 				return null;
-			]).filterNull.filter[
+			]).filterNull
+		
+		val filterSigInstName = [String name | 
+			return sigInstAccesses.filter[
 				val init = it.sigInst.initialization;
 				if(init instanceof ElementReferenceExpression) {
 					val ref = init.reference;
 					if(ref instanceof Signal) {
-						val i2c = ref.eContainer;
-						if(i2c instanceof Bus) {
-							return i2c.name == "I2C"
+						val res = ref.eContainer;
+						if(res instanceof AbstractSystemResource) {
+							return res.name == name
 						}
 					}	
 				}
 				return false;
-			].toList
+			]
+		]
 		
-				
-		val reads = i2cs.filter[
+		val i2cs = filterSigInstName.apply("I2C").toSet
+		val gpios = filterSigInstName.apply("GPIO").toSet
+		
+		
+		
+		val reads = sigInstAccesses.filter[
 			if(it.method instanceof GeneratedFunctionDefinition) {
 				it.method.name == "read"
 			} else {
 				false
 			}
-		]
-		val writes = i2cs.filter[
+		].toSet
+		val writes = sigInstAccesses.filter[
 			if(it.method instanceof GeneratedFunctionDefinition) {
 				it.method.name == "write"
 			} else {
 				false
 			}
-		]
+		].toSet
 		
-		reads.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Read", "read from", acceptor)]
-		writes.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Write", "write to", acceptor)]
+		val i2cReads   = new HashSet(i2cs ) => [retainAll(reads)]
+		val i2cWrites  = new HashSet(i2cs ) => [retainAll(writes)]
+		val gpioReads  = new HashSet(gpios) => [retainAll(reads)]
+		val gpioWrites = new HashSet(gpios) => [retainAll(writes)]
 		
-		writes.forEach[validateI2cWriteLength(it.source, it.method, it.sigInst, acceptor)]
+		i2cReads.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Read", "read from", acceptor)]
+		i2cWrites.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Write", "write to", acceptor)]
 		
+		i2cWrites.forEach[validateI2cWriteLength(it.source, it.method, it.sigInst, acceptor)]
+		
+		gpioReads.forEach[validateGpioRead(it, acceptor)]
+		gpioWrites.forEach[validateGpioWrite(it, acceptor)]
 	}
+	
+	def validateGpioRead(MethodCall call, ValidationMessageAcceptor acceptor) {
+		val init = call.sigInst.initialization as ElementReferenceExpression;
+		val signal = init.reference as Signal;
+		if(signal.name.contains("Out")) {
+			acceptor.acceptError("Can not read from " + signal.name, call.source, call.structFeature, 0, "CANT_READ_FROM_" + signal.name.toUpperCase)
+		}
+	}
+	def validateGpioWrite(MethodCall call, ValidationMessageAcceptor acceptor) {
+		val init = call.sigInst.initialization as ElementReferenceExpression;
+		val signal = init.reference as Signal;
+		if(signal.name.contains("In")) {
+			acceptor.acceptError("Can not write to " + signal.name, call.source, call.structFeature, 0, "CANT_WRITE_TO_" + signal.name.toUpperCase)
+		}
+	}
+	
 	//ExpressionsPackage.FEATURE_CALL__FEATURE
 	
 	// precondition: none of these casts will fail --> caller needs to filter those that will fail
