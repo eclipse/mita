@@ -75,6 +75,7 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
+import org.eclipse.mita.base.expressions.Argument
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -184,25 +185,28 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val isSiginst = featureCall.feature instanceof SignalInstance;
 		val isModality = featureCall.feature instanceof Modality;
 		if(!(isSiginst || isModality)) return;
-		
+
 		val container = featureCall.eContainer;
-		val isUsedDirectly = if(container instanceof FeatureCall) {
-			if(container.feature instanceof GeneratedFunctionDefinition) {
-				true
-			} else {
-				false
+		if (container instanceof FeatureCall) {
+			if (container.feature instanceof GeneratedFunctionDefinition) {
+				return
 			}
-		} else {
-			false
+		} else if (container instanceof Argument) {
+			val operation = container.eContainer;
+			if (operation instanceof ElementReferenceExpression) {
+				if (operation.reference instanceof GeneratedFunctionDefinition) {
+					return
+				}
+			}
 		}
-		if(isUsedDirectly) return;
-		
+
 		val featureName = (featureCall.feature as NamedElement).name;
-		val msg = if(isModality) {
-			String.format(MUST_BE_USED_IMMEDIATELY_MSG, "Modalities", '''Add .read() after «featureName»''')
-		} else {
-			String.format(MUST_BE_USED_IMMEDIATELY_MSG, "Signal instances", '''Add .read() or .write() after «featureName»''')
-		}
+		val msg = if (isModality) {
+				String.format(MUST_BE_USED_IMMEDIATELY_MSG, "Modalities", '''Add .read() after «featureName»''')
+			} else {
+				String.format(MUST_BE_USED_IMMEDIATELY_MSG,
+					"Signal instances", '''Add .read() or .write() after «featureName»''')
+			}
 		error(msg, featureCall, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE, MUST_BE_USED_IMMEDIATELY_CODE);
 	}
 

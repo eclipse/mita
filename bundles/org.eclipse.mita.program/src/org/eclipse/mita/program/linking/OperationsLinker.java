@@ -16,6 +16,7 @@ package org.eclipse.mita.program.linking;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.transform;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import org.eclipse.mita.program.scoping.ExtensionMethodHelper;
 import org.eclipse.mita.program.scoping.OperationUserDataHelper;
 import org.eclipse.xtext.resource.IEObjectDescription;
+import org.eclipse.xtext.xbase.lib.IteratorExtensions;
 import org.eclipse.mita.base.expressions.ArgumentExpression;
 import org.eclipse.mita.base.expressions.Expression;
 import org.eclipse.mita.base.expressions.FeatureCall;
@@ -47,14 +49,14 @@ public class OperationsLinker {
 		public int compare(IEObjectDescription operation1, IEObjectDescription operation2) {
 			List<Type> parameters1 = operationUserDataHelper.getParameterTypes(operation1);
 			List<Type> parameters2 = operationUserDataHelper.getParameterTypes(operation2);
-			
+
 			if (parameters1.size() > parameters2.size()) {
 				return -1;
 			}
 			if (parameters1.size() < parameters2.size()) {
 				return 1;
 			}
-			
+
 			for (int i = 0; i < parameters1.size(); i++) {
 				final Type type1 = parameters1.get(i);
 				final Type type2 = parameters2.get(i);
@@ -84,10 +86,10 @@ public class OperationsLinker {
 	protected OperationUserDataHelper operationUserDataHelper;
 
 	public Optional<Operation> linkOperation(List<IEObjectDescription> candidates, ArgumentExpression call) {
-		if(candidates.size() == 1 && candidates.get(0).getEClass().isSuperTypeOf(TypesPackage.Literals.OPERATION)) {
+		if (candidates.size() == 1 && candidates.get(0).getEClass().isSuperTypeOf(TypesPackage.Literals.OPERATION)) {
 			return Optional.of((Operation) candidates.get(0).getEObjectOrProxy());
 		}
-		
+
 		Collections.sort(candidates, new PolymorphicComparator());
 		for (IEObjectDescription operation : candidates) {
 			if (isCallable(operation, call)) {
@@ -99,7 +101,8 @@ public class OperationsLinker {
 	}
 
 	protected List<InferenceResult> getArgumentTypes(Operation operation, ArgumentExpression expression) {
-		List<Expression> orderedExpressions = ArgumentSorter.getOrderedExpressions(expression.getArguments(), operation);
+		List<Expression> orderedExpressions = ArgumentSorter.getOrderedExpressions(expression.getArguments(),
+				operation);
 		if (expression instanceof FeatureCall) {
 			Expression owner = ((FeatureCall) expression).getOwner();
 			InferenceResult ownerType = inferrer.infer(owner);
@@ -114,12 +117,44 @@ public class OperationsLinker {
 
 	protected boolean isCallable(IEObjectDescription operation, ArgumentExpression expression) {
 		Operation op = (Operation) operation.getEObjectOrProxy();
-		List<InferenceResult> argumentTypes = getArgumentTypes(op, expression);
-		List<InferenceResult> parameterTypes = operationUserDataHelper.getParameterInferenceResults(operation);
-		
+
+		if (!op.eIsProxy()) {
+			return isCallableByType(operation, getArgumentTypes(op, expression));
+		} else {
+			return isCallableByName(operation, getArgumentTypes(op, expression));
+		}
+
+	}
+
+	protected boolean isCallableByName(IEObjectDescription operation, List<InferenceResult> argumentTypes) {
+		List<String> parameterTypes = Arrays.asList(operationUserDataHelper.getParameterTypeNames(operation));
+
 		if (argumentTypes.size() != parameterTypes.size())
 			return false;
-		
+
+		for (int i = 0; i < argumentTypes.size(); i++) {
+			String parameterTypeName = parameterTypes.get(i);
+			if (!isSubtype(argumentTypes.get(i).getType(), parameterTypeName)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	protected boolean isSubtype(Type subType, String superTypeName) {
+		if (subType.getName().equals(superTypeName)) {
+			return true;
+		}
+		return IteratorExtensions.exists(typeSystem.getSuperTypes(subType).iterator(),
+				(t) -> t.getName().equals(superTypeName));
+	}
+
+	protected boolean isCallableByType(IEObjectDescription operation, List<InferenceResult> argumentTypes) {
+		List<InferenceResult> parameterTypes = operationUserDataHelper.getParameterInferenceResults(operation);
+
+		if (argumentTypes.size() != parameterTypes.size())
+			return false;
+
 		for (int i = 0; i < argumentTypes.size(); i++) {
 			InferenceResult argumentType = argumentTypes.get(i);
 			InferenceResult parameterType = parameterTypes.get(i);

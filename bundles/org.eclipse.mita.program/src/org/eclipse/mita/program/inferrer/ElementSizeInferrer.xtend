@@ -137,12 +137,9 @@ class ElementSizeInferrer {
 	}
 	
 	protected def dispatch ElementSizeInferenceResult doInfer(ElementReferenceExpression obj) {
-		val objType = typeInferrer.infer(obj);
-		if(objType?.type instanceof GeneratedType) {
-			val inferredSize = obj.inferFromType;
-			if(inferredSize instanceof ValidElementSizeInferenceResult) {
-				return inferredSize;
-			}
+		val inferredSize = obj.inferFromType;
+		if (inferredSize instanceof ValidElementSizeInferenceResult) {
+			return inferredSize;
 		}
 		return obj.reference.infer;
 	}

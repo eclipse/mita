@@ -15,12 +15,12 @@ package org.eclipse.mita.program.scoping
 
 import com.google.inject.Inject
 import java.util.List
-import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.xtext.resource.IEObjectDescription
 
 class OperationUserDataHelper {
 
@@ -31,7 +31,7 @@ class OperationUserDataHelper {
 	extension ITypeSystem typesystem;
 
 	def List<Type> getParameterTypes(IEObjectDescription operation) {
-		val rawTypesArray = operation.typesArray
+		val rawTypesArray = operation.parameterTypeNames
 		
 		if(rawTypesArray !== null) {
 			return rawTypesArray.map[ typesystem.getType(it) ]
@@ -56,7 +56,7 @@ class OperationUserDataHelper {
 		return #[];
 	}
 
-	protected def getTypesArray(IEObjectDescription description) {
+	def getParameterTypeNames(IEObjectDescription description) {
 		val params = description.getUserData(ProgramDslResourceDescriptionStrategy.OPERATION_PARAM_TYPES);
 		if (params === null) {
 			return null
