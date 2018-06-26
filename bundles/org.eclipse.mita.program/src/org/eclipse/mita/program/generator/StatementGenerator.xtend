@@ -882,7 +882,7 @@ class StatementGenerator {
 		
 		typedef struct {
 			«definition.enumName» tag;
-			union Data {
+			union {
 				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«(alternative as AnonymousProductType).typeSpecifiers.head.ctype»«ELSE»«alternative.structType»«ENDIF» «alternative.structName»;
 			«ENDFOR»
 			} data;
