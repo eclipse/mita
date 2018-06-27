@@ -3,13 +3,13 @@ package org.eclipse.mita.platform.arduinouno.connectivity
 import com.google.inject.Inject
 import java.util.HashMap
 import java.util.Map
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.Enumerator
 
 class LedGenerator extends AbstractSystemResourceGenerator {
 	

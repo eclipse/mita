@@ -5,7 +5,7 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
-import org.yakindu.base.types.Type
+import org.eclipse.mita.base.types.Type
 
 class ExceptionGenerator implements IPlatformExceptionGenerator {
 
@@ -27,5 +27,5 @@ class ExceptionGenerator implements IPlatformExceptionGenerator {
 	override getNoExceptionStatement() {
 		return codeFragmentProvider.create('''RETCODE_OK''').addHeader("ARD_Retcode.h", false);
 	}
-
+	
 }
