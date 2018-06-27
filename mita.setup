@@ -107,6 +107,8 @@
       name="${target_definition}"/>
   <setupTask
       xsi:type="projects:ProjectsBuildTask"
+      id="firstBuild"
+      onlyNewProjects="true"
       refresh="true"/>
   <setupTask
       xsi:type="setup:CompoundTask"
@@ -142,7 +144,12 @@
   <setupTask
       xsi:type="launching:LaunchTask"
       id="GenerateTypeDsl"
-      launcher="/org.eclipse.mita.types/GenerateTypeDsl.launch"/>
+      launcher="/org.eclipse.mita.base/GenerateTypeDsl.launch"/>
+  <setupTask
+      xsi:type="projects:ProjectsBuildTask"
+      id="secondBuild"
+      onlyNewProjects="true"
+      refresh="true"/>
   <setupTask
       xsi:type="launching:LaunchTask"
       id="GenerateProgramDsl"
@@ -153,6 +160,8 @@
       launcher="/org.eclipse.mita.platform/GeneratePlatformDSL.launch"/>
   <setupTask
       xsi:type="projects:ProjectsBuildTask"
+      id="finalClean"
+      onlyNewProjects="true"
       clean="true"
       build="false"/>
   <stream name="master"/>
