@@ -1,11 +1,11 @@
 /*
- * ARD_Button.c
+ * Button.c
  *
  *  Created on: 24.05.2018
  *      Author: rherrmann
  */
 
-#include "ARD_Button.h"
+#include "Button.h"
 
 static void (*ButtonOnePressed)(void);
 static void (*ButtonOneReleased)(void);
@@ -13,7 +13,7 @@ static void (*ButtonTwoPressed)(void);
 static void (*ButtonTwoReleased)(void);
 
 
-Retcode_T ARD_Button_Connect(void) {
+Retcode_T Button_Connect(void) {
 	DDRD &=~ _BV(DDD2); 	// PD2 pin to 0
 	PORTD |= _BV(PORTD2); 	// raise internal pullup
 //
@@ -23,9 +23,9 @@ Retcode_T ARD_Button_Connect(void) {
 	return RETCODE_OK;
 }
 
-Retcode_T ARD_Button_Enable(uint32_t button, void* function, bool pressed) {
+Retcode_T Button_Enable(uint32_t button, void* function, bool pressed) {
 	switch (button) {
-	case ARD_BUTTON_1: {
+	case BUTTON_1: {
 		if (pressed == true){
 			ButtonOnePressed = function;
 		} else {
@@ -37,7 +37,7 @@ Retcode_T ARD_Button_Enable(uint32_t button, void* function, bool pressed) {
 		sei();
 		return RETCODE_OK;
 	}
-	case ARD_BUTTON_2: {
+	case BUTTON_2: {
 		if (pressed == true){
 			ButtonTwoPressed = function;
 		} else {
@@ -55,14 +55,14 @@ Retcode_T ARD_Button_Enable(uint32_t button, void* function, bool pressed) {
 	return RETCODE_OK;
 }
 
-uint8_t ARD_Button_GetState(uint32_t button){
+uint8_t Button_GetState(uint32_t button){
 	uint8_t state = UNDEFINED_STATE;
 	switch (button) {
-		case ARD_BUTTON_1: {
+		case BUTTON_1: {
 			state = (PIND & _BV(PIND3)) > 0 ? HIGH : LOW;
 			return state;
 		}
-		case ARD_BUTTON_2: {
+		case BUTTON_2: {
 			state = (PIND & _BV(PIND3)) > 0 ? HIGH : LOW;
 			return state;
 		}
