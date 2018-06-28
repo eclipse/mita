@@ -1,4 +1,4 @@
-package org.eclipse.mita.platform.arduinouno.platform
+package org.eclipse.mita.platform.arduino.uno.platform
 
 import com.google.inject.Inject
 import org.eclipse.mita.program.EventHandlerDeclaration
@@ -18,7 +18,7 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	
 	public def generateEventloopInject(String functionName, String userParam1, String userParam2) {
 		return codeFragmentProvider.create('''
-		«functionName»();
+			«functionName»();
 		''')
 	}
 	
@@ -36,11 +36,11 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	
 	override generateEventHeaderPreamble(CompilationContext context) {
 		return codeFragmentProvider.create('''
-		«FOR handler : context.allEventHandlers»
-		bool «handler.handlerName»_flag;
-		bool get«handler.handlerName»_flag();
-		void set«handler.handlerName»(bool val);
-		«ENDFOR»
+			«FOR handler : context.allEventHandlers»
+				bool «handler.handlerName»_flag;
+				bool get«handler.handlerName»_flag();
+				void set«handler.handlerName»(bool val);
+			«ENDFOR»
 		''');
 	}
 	

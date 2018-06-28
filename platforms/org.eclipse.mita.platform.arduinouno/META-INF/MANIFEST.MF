@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Arduino Uno Platform
-Bundle-SymbolicName: org.eclipse.mita.platform.arduinouno;singleton:=true
+Bundle-SymbolicName: org.eclipse.mita.platform.arduino.uno;singleton:=true
 Bundle-Version: 1.0.0.qualifier
 Automatic-Module-Name: org.eclipse.mita.platform.arduinouno
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

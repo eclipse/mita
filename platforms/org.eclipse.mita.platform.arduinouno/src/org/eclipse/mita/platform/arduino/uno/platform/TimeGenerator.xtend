@@ -1,4 +1,4 @@
-package org.eclipse.mita.platform.arduinouno.platform
+package org.eclipse.mita.platform.arduino.uno.platform
 
 import org.eclipse.mita.program.generator.IPlatformTimeGenerator
 import org.eclipse.mita.program.generator.CompilationContext
@@ -55,7 +55,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 					«handler.handlerName»_flag = val;
 				}
 			«ENDFOR»
-
+			
 			
 			Retcode_T Tick_Timer(void)
 			{

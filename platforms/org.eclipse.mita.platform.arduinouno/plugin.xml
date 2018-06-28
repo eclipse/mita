@@ -5,13 +5,13 @@
          point="org.eclipse.mita.library.extension.type_library">
       <Library
             description="Arduino Uno Platform Definition"
-            id="platforms.arduinouno"
+            id="platforms.arduino.uno"
             module="org.eclipse.mita.platform.arduinouno.platform.ArduinoPlatformGeneratorModule"
             name="Arduino Uno Platform Definition"
             optional="true"
             version="1.0.0">
          <ResourceURI
-               uri="platform:/plugin/org.eclipse.mita.platform.arduinouno/1.0.0/arduinouno.platform">
+               uri="platform:/plugin/org.eclipse.mita.platform.arduino.uno/1.0.0/arduino.uno.platform">
          </ResourceURI>
          <Dependency
                id="org.eclipse.mita.library.stdlib"></Dependency>

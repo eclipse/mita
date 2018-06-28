@@ -1,4 +1,4 @@
-package org.eclipse.mita.platform.arduinouno.platform
+package org.eclipse.mita.platform.arduino.uno.platform
 
 import com.google.inject.Inject
 import org.eclipse.mita.program.generator.CodeFragment
