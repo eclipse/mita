@@ -423,5 +423,10 @@ class GeneratorUtils {
 		trim(stmt, false, [x|trimBraces(x)]);
 		trim(stmt, true, [x|trimBraces(x)]);
 	}
+	
+		
+	public def getAllTimeEvents(CompilationContext context) {
+		return context.allEventHandlers.filter[x|x.event instanceof TimeIntervalEvent]
+	}
 
 }
