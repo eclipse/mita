@@ -10,7 +10,6 @@
 
 #include "Retcode.h"
 #include "MitaTime.h"
-#include "avr/interrupt.h"
 
 Retcode_T Timer_Connect(void);
 Retcode_T Timer_Enable(void);
