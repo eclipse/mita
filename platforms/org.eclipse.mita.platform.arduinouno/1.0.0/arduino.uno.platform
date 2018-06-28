@@ -1,7 +1,7 @@
-package platforms.arduinouno;
+package platforms.arduino.uno;
 
 sensor Button {
-	generator "org.eclipse.mita.platform.arduinouno.sensors.ButtonGenerator"
+	generator "org.eclipse.mita.platform.arduino.uno.sensors.ButtonGenerator"
 	modality is_pressed : bool
 	event pressed
 	event released
@@ -14,7 +14,7 @@ enum LedColor {
 }
 
 connectivity named-singleton LED {
-	generator "org.eclipse.mita.platform.arduinouno.connectivity.LedGenerator"
+	generator "org.eclipse.mita.platform.arduino.uno.connectivity.LedGenerator"
 	
 	signal light_up(color : LedColor) : bool
 }
@@ -26,7 +26,7 @@ alias button_two for Button
 // Define pins here: e.g. D6 -> red led
 
 platform ArduinoUno {
-	module "org.eclipse.mita.platform.arduinouno.platform.ArduinoPlatformGeneratorModule"
+	module "org.eclipse.mita.platform.arduino.uno.platform.ArduinoUnoPlatformGeneratorModule"
 	has button_one
 	has button_two
 	has LED

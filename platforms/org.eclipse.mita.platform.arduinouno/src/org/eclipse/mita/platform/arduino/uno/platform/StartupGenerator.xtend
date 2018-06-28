@@ -1,4 +1,4 @@
-package org.eclipse.mita.platform.arduinouno.platform
+package org.eclipse.mita.platform.arduino.uno.platform
 
 import org.eclipse.mita.program.generator.IPlatformStartupGenerator
 import org.eclipse.mita.program.generator.CompilationContext
@@ -16,17 +16,17 @@ class StartupGenerator implements IPlatformStartupGenerator {
 	
 	override generateMain(CompilationContext context) {
 		codeFragmentProvider.create('''
-		Mita_initialize();
-		Mita_goLive();
-		while(1) {
-			«FOR handler : context.allEventHandlers»
-				if (get«handler.handlerName»_flag() == true){
-					set«handler.handlerName»_flag(false);
-					«handler.handlerName»();
-				}
-			«ENDFOR»
-		}
-		return 0;
+			Mita_initialize();
+			Mita_goLive();
+			while(1) {
+				«FOR handler : context.allEventHandlers»
+					if (get«handler.handlerName»_flag() == true){
+						set«handler.handlerName»_flag(false);
+						«handler.handlerName»();
+					}
+				«ENDFOR»
+			}
+			return 0;
 		''')
 	}
 

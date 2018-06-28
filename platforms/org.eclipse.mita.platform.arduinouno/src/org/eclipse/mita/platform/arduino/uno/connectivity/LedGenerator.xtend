@@ -1,4 +1,4 @@
-package org.eclipse.mita.platform.arduinouno.connectivity
+package org.eclipse.mita.platform.arduino.uno.connectivity
 
 import com.google.inject.Inject
 import java.util.HashMap

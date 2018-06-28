@@ -1,8 +1,8 @@
-package org.eclipse.mita.platform.arduinouno.platform
+package org.eclipse.mita.platform.arduino.uno.platform
 
 import org.eclipse.mita.program.generator.EmptyPlatformGeneratorModule
 
-class ArduinoPlatformGeneratorModule extends EmptyPlatformGeneratorModule {
+class ArduinoUnoPlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 
 	override bindIPlatformEventLoopGenerator() {
 		EventLoopGenerator

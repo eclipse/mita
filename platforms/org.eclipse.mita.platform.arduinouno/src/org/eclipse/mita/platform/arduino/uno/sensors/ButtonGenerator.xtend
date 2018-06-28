@@ -1,4 +1,4 @@
-package org.eclipse.mita.platform.arduinouno.sensors
+package org.eclipse.mita.platform.arduino.uno.sensors
 
 import com.google.inject.Inject
 import org.eclipse.mita.platform.AbstractSystemResource
