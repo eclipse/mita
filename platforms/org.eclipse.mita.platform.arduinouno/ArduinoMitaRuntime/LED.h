@@ -12,9 +12,9 @@
 
 Retcode_T LED_Connect(void);
 
-Retcode_T LED_Enable(uint8_t color);
+Retcode_T LED_Enable(Color_T color);
 
-Retcode_T LED_Switch(uint8_t color, uint8_t on);
+Retcode_T LED_Switch(Color_T color, Command_T on);
 
 enum {
 	LED_Y, LED_O, LED_R

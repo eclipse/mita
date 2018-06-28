@@ -9,7 +9,9 @@
 #define SRC_GEN_BASE_TIMER_H_
 
 #include "Retcode.h"
+#ifdef TIMED_APPLICATION
 #include "MitaTime.h"
+#endif
 
 Retcode_T Timer_Connect(void);
 Retcode_T Timer_Enable(void);

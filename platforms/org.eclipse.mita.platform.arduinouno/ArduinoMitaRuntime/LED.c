@@ -13,7 +13,7 @@ Retcode_T LED_Connect(void) {
 	return retcode;
 }
 
-Retcode_T LED_Enable(uint8_t color){
+Retcode_T LED_Enable(Color_T color){
 	switch (color){
 	case LED_Y:{
 		DDRD |= _BV(DDD4); // Pin 4
@@ -33,7 +33,7 @@ Retcode_T LED_Enable(uint8_t color){
 	return RETCODE_OK;
 }
 
-Retcode_T LED_Switch(uint8_t color, uint8_t on){
+Retcode_T LED_Switch(Color_T color, Command_T on){
 	switch(color){
 	case LED_Y:{
 		if (on == LED_COMMAND_ON){
