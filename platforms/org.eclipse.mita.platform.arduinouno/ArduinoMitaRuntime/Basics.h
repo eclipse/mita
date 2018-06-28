@@ -18,4 +18,7 @@
 #define FALSE (uint8_t)0
 #define TRUE (uint8_t)1
 
+typedef uint8_t Color_T;
+typedef uint8_t Command_T;
+
 #endif /* BASICS_H_ */
