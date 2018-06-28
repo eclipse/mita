@@ -11,11 +11,6 @@
 #include "Retcode.h"
 #include "MitaEvents.h"
 
-#include "avr/io.h"
-#include <util/delay.h>
-#include <avr/interrupt.h>
-#include <avr/sleep.h>
-
 typedef void (*Callback)(uint32_t);
 
 Retcode_T Button_Connect(void);

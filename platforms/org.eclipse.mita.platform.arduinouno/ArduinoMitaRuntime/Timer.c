@@ -1,5 +1,6 @@
 #include "Timer.h"
 
+#include "avr/interrupt.h"
 
 Retcode_T Timer_Connect(void) {
 	cli();

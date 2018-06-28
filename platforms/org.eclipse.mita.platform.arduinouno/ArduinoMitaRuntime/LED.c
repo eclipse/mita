@@ -6,6 +6,7 @@
  */
 
 #include "LED.h"
+#include <avr/io.h>
 
 Retcode_T LED_Connect(void) {
 	Retcode_T retcode = RETCODE_OK;

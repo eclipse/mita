@@ -9,7 +9,6 @@
 #define SRC_GEN_BASE_LED_H_
 
 #include "Retcode.h"
-#include <avr/io.h>
 
 Retcode_T LED_Connect(void);
 
