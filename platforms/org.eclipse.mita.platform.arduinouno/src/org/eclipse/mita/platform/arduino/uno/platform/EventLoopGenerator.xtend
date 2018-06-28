@@ -49,11 +49,10 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	}
 	
 	override generateEventLoopHandlerSignature(CompilationContext context) {
-		return codeFragmentProvider.create('''''');
+		return CodeFragment.EMPTY;
 	}
 	
 	override generateEventLoopHandlerPreamble(CompilationContext context, EventHandlerDeclaration handler) {
-		return codeFragmentProvider.create('''
-		''')
+		return CodeFragment.EMPTY
 	}
 }
