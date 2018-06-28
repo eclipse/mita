@@ -26,6 +26,7 @@ alias button_two for Button
 // Define pins here: e.g. D6 -> red led
 
 platform ArduinoUno {
+	module "org.eclipse.mita.platform.arduinouno.platform.ArduinoPlatformGeneratorModule"
 	has button_one
 	has button_two
 	has LED
