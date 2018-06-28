@@ -23,5 +23,7 @@ Retcode_T Timer_Enable(void) {
 
 
 ISR(TIMER1_COMPA_vect) {
+	#ifdef TIMED_APPLICATION
 	Tick_Timer();
+	#endif
 }
