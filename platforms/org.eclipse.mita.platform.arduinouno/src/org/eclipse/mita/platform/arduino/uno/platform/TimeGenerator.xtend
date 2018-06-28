@@ -21,7 +21,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 
 	@Inject
 	protected extension GeneratorUtils
-
+	
 	override generateTimeEnable(CompilationContext context, EventHandlerDeclaration handler) {
 		return codeFragmentProvider.create('''Timer_Enable();''')
 	}
@@ -75,9 +75,9 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		.addHeader('MitaExceptions.h', false)
 		.addHeader('MitaEvents.h', false)
 		.addHeader('MitaTime.h', false)
-		.addHeader('ARD_Timer.h', false)
+		.addHeader('Timer.h', false)
 	}
-
+	
 	protected def allTimeEvents(CompilationContext context) {
 		return context.allEventHandlers.filter[x|x.event instanceof TimeIntervalEvent]
 	}

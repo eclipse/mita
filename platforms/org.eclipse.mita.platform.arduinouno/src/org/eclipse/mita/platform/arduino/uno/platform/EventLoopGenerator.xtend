@@ -7,6 +7,7 @@ import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
+import org.eclipse.mita.program.TimeIntervalEvent
 
 class EventLoopGenerator implements IPlatformEventLoopGenerator {
 
@@ -36,10 +37,14 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	
 	override generateEventHeaderPreamble(CompilationContext context) {
 		return codeFragmentProvider.create('''
+			«IF context.allTimeEvents.length !== 0» 
+			#define TIMED_APPLICATION
+			«ENDIF»
 			«FOR handler : context.allEventHandlers»
-				bool «handler.handlerName»_flag;
-				bool get«handler.handlerName»_flag();
-				void set«handler.handlerName»(bool val);
+			
+			bool «handler.handlerName»_flag;
+			bool get«handler.handlerName»_flag();
+			void set«handler.handlerName»(bool val);
 			«ENDFOR»
 		''');
 	}
@@ -51,5 +56,9 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	override generateEventLoopHandlerPreamble(CompilationContext context, EventHandlerDeclaration handler) {
 		return codeFragmentProvider.create('''
 		''')
+	}
+	
+	protected def allTimeEvents(CompilationContext context) {
+		return context.allEventHandlers.filter[x|x.event instanceof TimeIntervalEvent]
 	}
 }

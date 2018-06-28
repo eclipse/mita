@@ -21,11 +21,11 @@ class ExceptionGenerator implements IPlatformExceptionGenerator {
 	}
 
 	override getExceptionType() {
-		return codeFragmentProvider.create('''Retcode_T''').addHeader("ARD_Retcode.h", false);
+		return codeFragmentProvider.create('''Retcode_T''').addHeader("Retcode.h", false);
 	}
 
 	override getNoExceptionStatement() {
-		return codeFragmentProvider.create('''RETCODE_OK''').addHeader("ARD_Retcode.h", false);
+		return codeFragmentProvider.create('''RETCODE_OK''').addHeader("Retcode.h", false);
 	}
 	
 }

@@ -21,14 +21,14 @@ class LedGenerator extends AbstractSystemResourceGenerator {
 		
 		codeFragmentProvider.create('''
 			Retcode_T ledSetupStatus = RETCODE_OK;
-			ledSetupStatus = ARD_LED_Connect();
+			ledSetupStatus = LED_Connect();
 			if(ledSetupStatus != RETCODE_OK)
 			{
 				return ledSetupStatus;
 			}
 			«FOR color : colors»
 				
-				ledSetupStatus = ARD_LED_Enable((uint8_t) «color.handle»);
+				ledSetupStatus = LED_Enable((uint8_t) «color.handle»);
 				if(ledSetupStatus != RETCODE_OK)
 				{
 					return ledSetupStatus;
@@ -40,7 +40,7 @@ class LedGenerator extends AbstractSystemResourceGenerator {
 				static bool «color.statusVariable» = false;
 			«ENDFOR»
 		''')
-		.addHeader('ARD_LED.h', false);
+		.addHeader('LED.h', false);
 	}	
 	override generateEnable() {
 		CodeFragment.EMPTY;
@@ -67,9 +67,9 @@ class LedGenerator extends AbstractSystemResourceGenerator {
 	
 	private static def getHandle(String color) {
 		switch(color) {
-			case 'Orange': 'ARD_LED_O'
-			case 'Yellow': 'ARD_LED_Y'
-			case 'Red': 'ARD_LED_R'
+			case 'Orange': 'LED_O'
+			case 'Yellow': 'LED_Y'
+			case 'Red': 'LED_R'
 		}
 	}
 	
@@ -82,9 +82,9 @@ class LedGenerator extends AbstractSystemResourceGenerator {
 		
 		codeFragmentProvider.create('''
 			if(*«valueVariableName» == TRUE) {
-				ARD_LED_Switch((uint8_t) «color.handle», (uint8_t) LED_COMMAND_ON);
+				LED_Switch((uint8_t) «color.handle», (uint8_t) LED_COMMAND_ON);
 			} else {
-				ARD_LED_Switch((uint8_t) «color.handle», (uint8_t) LED_COMMAND_OFF);
+				LED_Switch((uint8_t) «color.handle», (uint8_t) LED_COMMAND_OFF);
 			}
 			«color.statusVariable» = *«valueVariableName»;
 		''')

@@ -5,13 +5,13 @@
  *      Author: rherrmannr
  */
 
-#ifndef ARD_RETCODE_H_
-#define ARD_RETCODE_H_
+#ifndef RETCODE_H_
+#define RETCODE_H_
 
-#include "ARD_Basics.h"
+#include "Basics.h"
 
 typedef uint32_t Retcode_T;
 
 #define RETCODE_OK (Retcode_T)0
 
-#endif /* ARD_RETCODE_H_ */
+#endif /* RETCODE_H_ */

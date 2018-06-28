@@ -18,7 +18,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 
 	override generateSetup() {
 		codeFragmentProvider.create('''
-			return ARD_Button_Connect();
+			return Button_Connect();
 		''').setPreamble('''
 			«FOR handler : eventHandler»
 				bool get«handler.handlerName»_flag(){
@@ -33,7 +33,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 					«handler.handlerName»_flag = true;
 				}
 			«ENDFOR»
-		''').addHeader("ARD_Button.h", false)
+		''').addHeader("Button.h", false)
 	}
 
 	override generateEnable() {
@@ -41,7 +41,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 			Retcode_T retcode = NO_EXCEPTION;
 			
 			«FOR handler : eventHandler»
-				retcode = ARD_Button_Enable((uint32_t) ARD_BUTTON_«handler.sensorInstance.buttonNumber», «handler.internalHandlerName», «IF handler.baseName.contains("Pressed")»true«ELSE»false«ENDIF»);
+				retcode = Button_Enable((uint32_t) BUTTON_«handler.sensorInstance.buttonNumber», «handler.internalHandlerName», «IF handler.baseName.contains("Pressed")»true«ELSE»false«ENDIF»);
 				if(retcode != NO_EXCEPTION) return retcode;
 				
 			«ENDFOR»
