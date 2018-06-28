@@ -31,8 +31,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 	}
 
 	override generateTimeSetup(CompilationContext context) {
-		val allTimeEvents = context.allTimeEvents
-
+		
 		val body = codeFragmentProvider.create('''
 			Retcode_T result = NO_EXCEPTION;
 			
@@ -44,7 +43,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		''')
 
 		return codeFragmentProvider.create(body).setPreamble('''
-			«FOR handler : allTimeEvents»
+			«FOR handler : context.allTimeEvents»
 				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
 				static uint32_t count_«period» = 0;
 				bool get«handler.handlerName»_flag(){
@@ -59,7 +58,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 			
 			Retcode_T Tick_Timer(void)
 			{
-			«FOR handler : allTimeEvents»
+			«FOR handler : context.allTimeEvents»
 				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
 					count_«period»++;
 					if(count_«period» % «period» == 0)
@@ -78,8 +77,4 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		.addHeader('Timer.h', false)
 	}
 	
-	protected def allTimeEvents(CompilationContext context) {
-		return context.allEventHandlers.filter[x|x.event instanceof TimeIntervalEvent]
-	}
-
 }
