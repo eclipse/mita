@@ -36,11 +36,11 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 
 	override generateEnable() {
 		codeFragmentProvider.create('''
-			Retcode_T retcode = NO_EXCEPTION;
+			Exception_T exception = STATUS_OK;
 			
 			«FOR handler : eventHandler»
-				retcode = Button_Enable((uint32_t) BUTTON_«handler.sensorInstance.buttonNumber», set«handler.handlerName»_flag, «IF handler.baseName.contains("Pressed")»true«ELSE»false«ENDIF»);
-				if(retcode != NO_EXCEPTION) return retcode;
+				exception = Button_Enable((uint32_t) BUTTON_«handler.sensorInstance.buttonNumber», set«handler.handlerName»_flag, «IF handler.baseName.contains("Pressed")»true«ELSE»false«ENDIF»);
+				if(exception != STATUS_OK) return exception;
 				
 			«ENDFOR»
 		''')

@@ -20,16 +20,16 @@ class LedGenerator extends AbstractSystemResourceGenerator {
 		val colors = setup.signalToColorAssignment.values.toSet
 		
 		codeFragmentProvider.create('''
-			Retcode_T ledSetupStatus = RETCODE_OK;
+			Exception_T ledSetupStatus = STATUS_OK;
 			ledSetupStatus = LED_Connect();
-			if(ledSetupStatus != RETCODE_OK)
+			if(ledSetupStatus != STATUS_OK)
 			{
 				return ledSetupStatus;
 			}
 			«FOR color : colors»
 				
 				ledSetupStatus = LED_Enable((uint8_t) «color.handle»);
-				if(ledSetupStatus != RETCODE_OK)
+				if(ledSetupStatus != STATUS_OK)
 				{
 					return ledSetupStatus;
 				} 		

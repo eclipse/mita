@@ -13,9 +13,9 @@
 #include "MitaTime.h"
 #endif
 
-Retcode_T Timer_Connect(void);
-Retcode_T Timer_Enable(void);
-Retcode_T Tick_Timer(void);
+Exception_T Timer_Connect(void);
+Exception_T Timer_Enable(void);
+Exception_T Tick_Timer(void);
 
 
 #endif /* SRC_GEN_BASE_TIMER_H_ */

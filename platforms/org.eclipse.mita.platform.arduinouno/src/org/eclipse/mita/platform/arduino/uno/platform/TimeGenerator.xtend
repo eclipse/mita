@@ -33,10 +33,10 @@ class TimeGenerator implements IPlatformTimeGenerator {
 	override generateTimeSetup(CompilationContext context) {
 		
 		val body = codeFragmentProvider.create('''
-			Retcode_T result = NO_EXCEPTION;
+			Exception_T result = STATUS_OK;
 			
 			result = Timer_Connect();
-			if(result != NO_EXCEPTION)
+			if(result != STATUS_OK)
 			{
 				return result;
 			}
@@ -56,7 +56,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 			«ENDFOR»
 			
 			
-			Retcode_T Tick_Timer(void)
+			Exception_T Tick_Timer(void)
 			{
 			«FOR handler : context.allTimeEvents»
 				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
@@ -68,7 +68,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 					}
 				
 			«ENDFOR»			
-				return NO_EXCEPTION;
+				return STATUS_OK;
 			}
 		''')
 		.addHeader('MitaExceptions.h', false)
