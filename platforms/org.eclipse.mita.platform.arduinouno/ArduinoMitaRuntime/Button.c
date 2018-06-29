@@ -14,10 +14,10 @@
 #include <avr/sleep.h>
 
 
-static void (*ButtonOnePressed)(void);
-static void (*ButtonOneReleased)(void);
-static void (*ButtonTwoPressed)(void);
-static void (*ButtonTwoReleased)(void);
+static void (*ButtonOnePressed)(bool val);
+static void (*ButtonOneReleased)(bool val);
+static void (*ButtonTwoPressed)(bool val);
+static void (*ButtonTwoReleased)(bool val);
 
 
 Retcode_T Button_Connect(void) {
@@ -88,9 +88,9 @@ ISR(INT0_vect){
 //	cli();
 	currentState = (PIND & _BV(PIND2)) > 0 ? HIGH : LOW;
 	if (LOW == oldState && LOW == currentState) {
-		ButtonOnePressed();
+		ButtonOnePressed(true);
 	} else if (HIGH == oldState && HIGH == currentState){
-		ButtonOneReleased();
+		ButtonOneReleased(true);
 	}
 }
 
@@ -103,8 +103,8 @@ ISR(INT1_vect){
 //	cli();
 	currentState = (PIND & _BV(PIND3)) > 0 ? HIGH : LOW;
 	if (LOW == oldState && LOW == currentState) {
-		ButtonTwoPressed();
+		ButtonTwoPressed(true);
 	} else if (HIGH == oldState && HIGH == currentState){
-		ButtonTwoReleased();
+		ButtonTwoReleased(true);
 	}
 }

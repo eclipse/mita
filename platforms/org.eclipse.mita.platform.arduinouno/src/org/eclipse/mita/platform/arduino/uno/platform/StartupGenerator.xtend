@@ -27,7 +27,13 @@ class StartupGenerator implements IPlatformStartupGenerator {
 				«ENDFOR»
 			}
 			return 0;
-		''')
+		''').setPreamble(
+			'''
+			«FOR handler : context.allEventHandlers»
+			extern void set«handler.handlerName»_flag();
+			«ENDFOR»
+			'''
+		)
 	}
 
 }
