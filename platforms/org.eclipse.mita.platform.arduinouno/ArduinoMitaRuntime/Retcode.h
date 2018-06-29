@@ -10,8 +10,8 @@
 
 #include "Basics.h"
 
-typedef uint32_t Retcode_T;
+typedef uint32_t Exception_T;
 
-#define RETCODE_OK (Retcode_T)0
+#define STATUS_OK (Exception_T)0
 
 #endif /* RETCODE_H_ */

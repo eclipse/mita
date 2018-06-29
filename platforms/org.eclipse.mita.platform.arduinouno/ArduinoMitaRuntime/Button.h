@@ -13,9 +13,11 @@
 
 typedef void (*Callback)(uint32_t);
 
-Retcode_T Button_Connect(void);
+Exception_T Button_Connect(void);
 
-Retcode_T Button_Enable(uint32_t button, void* function, bool pressed);
+Exception_T Button_Enable(uint32_t button, void* function, bool pressed);
+
+extern void setHandleEveryButton_onePressed1_flag(bool val);
 
 enum {
 	BUTTON_1, BUTTON_2

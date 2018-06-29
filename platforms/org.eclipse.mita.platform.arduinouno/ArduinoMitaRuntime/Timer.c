@@ -2,7 +2,7 @@
 
 #include "avr/interrupt.h"
 
-Retcode_T Timer_Connect(void) {
+Exception_T Timer_Connect(void) {
 	cli();
 
 	OCR1A = 1999;
@@ -10,15 +10,15 @@ Retcode_T Timer_Connect(void) {
 	TCCR1B |= _BV(CS11);
 	sei();
 
-	return RETCODE_OK;
+	return STATUS_OK;
 }
 
 
-Retcode_T Timer_Enable(void) {
+Exception_T Timer_Enable(void) {
 	cli();
 	TIMSK1 |= _BV(OCIE1A);
 	sei();
-	return RETCODE_OK;
+	return STATUS_OK;
 }
 
 

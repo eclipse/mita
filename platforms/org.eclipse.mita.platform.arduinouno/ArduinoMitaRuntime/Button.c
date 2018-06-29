@@ -20,17 +20,17 @@ static void (*ButtonTwoPressed)(bool val);
 static void (*ButtonTwoReleased)(bool val);
 
 
-Retcode_T Button_Connect(void) {
+Exception_T Button_Connect(void) {
 	DDRD &=~ _BV(DDD2); 	// PD2 pin to 0
 	PORTD |= _BV(PORTD2); 	// raise internal pullup
 //
 	DDRD &=~ _BV(DDD3); 	// PD2 pin to 0
 	PORTD |= _BV(PORTD3); 	// raise internal pullup
 
-	return RETCODE_OK;
+	return STATUS_OK;
 }
 
-Retcode_T Button_Enable(uint32_t button, void* function, bool pressed) {
+Exception_T Button_Enable(uint32_t button, void* function, bool pressed) {
 	switch (button) {
 	case BUTTON_1: {
 		if (pressed == true){
@@ -42,7 +42,7 @@ Retcode_T Button_Enable(uint32_t button, void* function, bool pressed) {
 		EICRA |= _BV(ISC00);	// Change edge of INT0 generates Interrupt
 		EIMSK |= _BV(INTF0);	// mask INT0 interrupt
 		sei();
-		return RETCODE_OK;
+		return STATUS_OK;
 	}
 	case BUTTON_2: {
 		if (pressed == true){
@@ -54,12 +54,12 @@ Retcode_T Button_Enable(uint32_t button, void* function, bool pressed) {
 		EICRA |= _BV(ISC10); 	// Change edge of INT0 generates Interrupt
 		EIMSK |= _BV(INTF1);	// mask INT0 interrupt
 		sei();
-		return RETCODE_OK;
+		return STATUS_OK;
 	}
 	default:
 		break;
 	}
-	return RETCODE_OK;
+	return STATUS_OK;
 }
 
 uint8_t Button_GetState(uint32_t button){
