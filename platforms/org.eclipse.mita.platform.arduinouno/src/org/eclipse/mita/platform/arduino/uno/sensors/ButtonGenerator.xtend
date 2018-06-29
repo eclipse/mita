@@ -28,12 +28,10 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 				void set«handler.handlerName»_flag(bool val){
 					«handler.handlerName»_flag = val;
 				}
-				
-				void «handler.internalHandlerName»() {
-					«handler.handlerName»_flag = true;
-				}
 			«ENDFOR»
-		''').addHeader("Button.h", false)
+		''')
+		.addHeader("Button.h", false)
+		.addHeader("MitaEvents.h", false)
 	}
 
 	override generateEnable() {
@@ -41,15 +39,11 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 			Retcode_T retcode = NO_EXCEPTION;
 			
 			«FOR handler : eventHandler»
-				retcode = Button_Enable((uint32_t) BUTTON_«handler.sensorInstance.buttonNumber», «handler.internalHandlerName», «IF handler.baseName.contains("Pressed")»true«ELSE»false«ENDIF»);
+				retcode = Button_Enable((uint32_t) BUTTON_«handler.sensorInstance.buttonNumber», set«handler.handlerName»_flag, «IF handler.baseName.contains("Pressed")»true«ELSE»false«ENDIF»);
 				if(retcode != NO_EXCEPTION) return retcode;
 				
 			«ENDFOR»
 		''')
-	}
-
-	private def getInternalHandlerName(EventHandlerDeclaration handler) {
-		'''«handler.sensorInstance.buttonName.toFirstUpper»«handler.event.baseName»'''
 	}
 
 	private def getSensorInstance(EventHandlerDeclaration declaration) {
