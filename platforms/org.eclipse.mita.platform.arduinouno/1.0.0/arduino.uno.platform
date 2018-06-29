@@ -19,6 +19,7 @@ connectivity named-singleton LED {
 	signal light_up(color : LedColor) : bool
 }
 
+<<<<<<< HEAD
 enum ArduinoUnoPins {
 	p0,
 	p1,
@@ -54,6 +55,8 @@ bus named-singleton GPIO {
 	signal digitalRead(pin : ArduinoUnoPins) : value
 }
 
+=======
+>>>>>>> 4c373e012d5a8f15cba998547e7174bf48077488
 alias button_one for Button
 alias button_two for Button
 
@@ -62,7 +65,10 @@ alias button_two for Button
 
 platform ArduinoUno {
 	module "org.eclipse.mita.platform.arduino.uno.platform.ArduinoUnoPlatformGeneratorModule"
+<<<<<<< HEAD
 	has GPIO
+=======
+>>>>>>> 4c373e012d5a8f15cba998547e7174bf48077488
 	has button_one
 	has button_two
 	has LED

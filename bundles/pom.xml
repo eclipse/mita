@@ -80,6 +80,7 @@
             </activation>
             <modules>
                 <module>../platforms/org.eclipse.mita.platform.xdk110</module>
+                <module>../platforms/org.eclipse.mita.platform.arduinouno</module>
                 <module>../platforms/org.eclipse.mita.platform.unittest</module>
             </modules>
         </profile>
