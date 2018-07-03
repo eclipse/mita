@@ -555,8 +555,12 @@ class StatementGenerator {
 			''').addHeader('stdbool.h', true)
 			initializationDone = true;
 		} else if (initialization instanceof ElementReferenceExpression) {
+			val ref = initialization.reference;
 			// Assignment from functions is done by declaring, then passing in a reference
-			if(initialization.operationCall) {
+			if(initialization.operationCall && 
+				// constructors of structural types are done directly
+				!(ref instanceof SumAlternative || ref instanceof StructureType)
+			) {
 				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
 			}
 			// copy assigmnent
