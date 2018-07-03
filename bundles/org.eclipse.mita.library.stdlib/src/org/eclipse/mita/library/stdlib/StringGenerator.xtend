@@ -43,6 +43,8 @@ import org.eclipse.mita.program.GeneratedFunctionDefinition
 
 class StringGenerator extends AbstractTypeGenerator {
 	
+	static public val DOUBLE_PRECISION = 6;
+	
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 	
@@ -144,7 +146,13 @@ class StringGenerator extends AbstractTypeGenerator {
 			// TOOD: Find a better way to report issues/errors during code generation
 			-1;
 		}
-
+		
+		val byteCount = if(size >= 0) {
+			size + 1;
+		} else {
+			size;
+		}
+		
 		if(initialization instanceof InterpolatedStringExpression) {
 			codeFragmentProvider.create(
 			'''
@@ -157,14 +165,14 @@ class StringGenerator extends AbstractTypeGenerator {
 			val elementReference = initialization as ElementReferenceExpression;
 			codeFragmentProvider.create(
 			'''
-				char «name»[«size + 1»];
+				char «name»[«byteCount»] = {0};
 			''')
 			.addHeader('string.h', true)
 			.addHeader('inttypes.h', true)
 		} else if(initialization !== null && !(initialization instanceof NewInstanceExpression)) {
 			codeFragmentProvider.create(
 			'''
-				char «name»[«size + 1»];
+				char «name»[«byteCount»];
 				const char* _«name»Init = «initialization.code.noTerminator»;
 				strcpy(«name», _«name»Init);
 			''')
@@ -173,7 +181,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		} else {
 			codeFragmentProvider.create(
 			'''
-				char «name»[«size + 1»];
+				char «name»[«byteCount»] = {0};
 			''')
 			.addHeader('string.h', true)
 		}
@@ -206,12 +214,13 @@ class StringGenerator extends AbstractTypeGenerator {
 					var typePattern = switch(type?.name) {
 						case 'uint32': '%" PRIu32 "'
 						case 'uint16': '%" PRIu16 "'
-						case 'uint8': '%" PRIu8 "'
-						case 'int32': '%" PRId32 "'
-						case 'int16': '%" PRId16 "'
-						case 'int8': '%" PRId8 "'
-						case 'float': '%f'
-						case 'bool': '%d'
+						case 'uint8':  '%" PRIu8 "'
+						case 'int32':  '%" PRId32 "'
+						case 'int16':  '%" PRId16 "'
+						case 'int8':   '%" PRId8 "'
+						case 'float':  '%.' + DOUBLE_PRECISION + 'g'
+						case 'double': '%.' + DOUBLE_PRECISION + 'g'
+						case 'bool':   '%d'
 						case 'string': '%s'
 						default: 'UNKNOWN'
 					}
