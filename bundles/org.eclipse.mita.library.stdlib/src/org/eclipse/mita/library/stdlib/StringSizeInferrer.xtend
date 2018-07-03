@@ -174,6 +174,9 @@ class StringSizeInferrer extends ElementSizeInferrer {
 				case 'int16':   6
 				case 'int8':    4
 				case 'bool':    1
+				// https://stackoverflow.com/a/1934253
+				case 'double': StringGenerator.DOUBLE_PRECISION + 1 + 1 + 5 + 1
+				case 'float':  StringGenerator.DOUBLE_PRECISION + 1 + 1 + 5 + 1
 				case 'string':    {
 					val stringSize = super.infer(subexpr);
 					if(stringSize instanceof ValidElementSizeInferenceResult) {
