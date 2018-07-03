@@ -54,6 +54,13 @@ fn useSiginstCorrectly() {
 	connectivity.signal_instance03.write("asdf");
 	let data = [1,2,3,4];
 	connectivity.signal_instance04.write(data);
+	
+	// use as non-extension method call
+	
+	// XPECT inferredType ---> bool
+	var x5 = read(connectivity.signal_instance00);
+	
+	write(connectivity.signal_instance00, true);
 }
 
 fn stuffSiginstShouldValidate() {

@@ -1,3 +1,4 @@
+
 package platforms.xdk110;
 
 
@@ -690,8 +691,8 @@ connectivity many HttpRestClient {
 	 * A custom header which is added to each HTTP request. Example:
 	 *   X-Auth: MySecretToken\nX-Version: 1.0 
 	 */
-	configuration-item header : string
-		
+	configuration-item headerContent : string
+
 	signal resource(endpoint : string, contentType : string = "application/json", writeMethod : HttpMethod = HttpMethod.POST, readMethod : HttpMethod = HttpMethod.GET) : string
 	
 }
@@ -732,21 +733,84 @@ bus many I2C {
 	
 	required configuration-item deviceAddress: uint8
 	
-	configuration-item byteOrder : ByteOrder = LittleEndian
+	configuration-item byteOrder : ByteOrder = ByteOrder.LittleEndian
 	
-	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint8>
-	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int8>
-	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint16>
-	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int16>
-	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<uint32>
-	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = ReadWrite): array<int32>
+	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint8>
+	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int8>
+	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint16>
+	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int16>
+	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint32>
+	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int32>
 	
-	signal register_uint8(address: uint8, mode: I2CMode = ReadWrite): uint8
-	signal register_int8(address: uint8, mode: I2CMode = ReadWrite): int8
-	signal register_uint16(address: uint8, mode: I2CMode = ReadWrite): uint16
-	signal register_int16(address: uint8, mode: I2CMode = ReadWrite): int16
-	signal register_uint32(address: uint8, mode: I2CMode = ReadWrite): uint32
-	signal register_int32(address: uint8, mode: I2CMode = ReadWrite): int32
+	signal register_uint8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint8
+	signal register_int8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int8
+	signal register_uint16(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint16
+	signal register_int16(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int16
+	signal register_uint32(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint32
+	signal register_int32(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int32
+}
+
+enum GPIOPin
+{   /** Alternate function shall be Timer0 channel 0 compare operations */
+    PA0,  
+    /** General purpose I/O  */
+    PA1,  
+    /** General purpose I/O  */
+    PB2,  
+    /** General purpose I/O, SPI MOSI operations  */
+    PB3,  
+    /** General purpose I/O, SPI MISO operations  */
+    PB4,  
+    /** General purpose I/O, SPI clock operations */
+    PB5,  
+    /** General purpose I/O, UART1_TX operations */
+    PB9,  
+    /** General purpose I/O, UART1_RX operations */
+    PB10, 
+    /** General purpose I/O, Timer0 channel 1 compare operations  */
+    PC0,  
+    /** General purpose I/O, Timer0 channel 2 compare operations  */
+    PC1,  
+    /** General purpose I/O, Timer0 Channel 0 Complementary Dead-Time Insertion operations  */
+    PC2,  
+    /** General purpose I/O, Timer0 Channel 1 Complementary Dead-Time Insertion operations   */
+    PC3,  
+    /** General purpose I/O, Timer0 Channel 2 Complementary Dead-Time Insertion operations  */
+    PC4,  
+    /** General purpose I/O, Timer2 channel 0 capture operations   */
+    PC8,  
+    /** General purpose I/O, Timer2 channel 1 capture operations   */
+    PC9,  
+    /** General purpose I/O, Timer2 channel 2 capture operations   */
+    PC10, 
+    /** General purpose I/O, ADC0 operations */
+    PD5,  
+    /** General purpose I/O, ADC0 operations */
+    PD6,  
+    /** General purpose I/O */
+    PD8,  
+    /** General purpose I/O */
+    PE2,  
+    /** General purpose I/O */
+    PF6
+}
+
+enum GPIOMode {                    
+	/** Input enabled */
+	NoPull,               
+	/** Input enabled with internal pull-up */
+    PullUp,               
+    /** Input enabled with internal pull-down */
+    PullDown,             
+    /** Input enabled with internal pull-up and glitch filter enabled  */
+    PullUpFilter
+}
+
+bus named-singleton GPIO {
+	generator "org.eclipse.mita.platform.xdk110.buses.GPIOGenerator"
+	
+	signal digitalIn(pin : GPIOPin, mode : GPIOMode) : bool
+	signal digitalOut(pin : GPIOPin, initialValue : bool = false) : bool
 }
 
 
@@ -758,7 +822,9 @@ alias button_one for Button
 alias button_two for Button
 
 platform XDK110 {
+	module "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGeneratorModule"
 	validator "org.eclipse.mita.platform.xdk110.platform.Validation"
+
 	has environment
 	has accelerometer
 	has gyroscope
@@ -770,11 +836,14 @@ platform XDK110 {
 	has Gyroscope_BMG160
 	
 	has I2C
+	has GPIO
 	has BLE
 	has LED
 	has WLAN
 	has MQTT
 	has HttpRestClient
+	
+	configuration-item applicationName : string = "EclipseMitaApplication"
 	
 	event startup
 }

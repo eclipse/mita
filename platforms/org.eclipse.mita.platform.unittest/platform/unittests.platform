@@ -96,6 +96,7 @@ alias my_sensor02 for MyOtherSensor
 alias vci01 for MyOtherSensor
 
 platform UnitTestPlatform {
+	module "org.eclipse.mita.platform.unittest.UnitTestPlatformGeneratorModule"
 	
 	event foo
 	

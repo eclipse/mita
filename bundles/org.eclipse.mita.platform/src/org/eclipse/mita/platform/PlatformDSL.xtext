@@ -30,10 +30,12 @@ SystemSpecification returns platform::SystemSpecification:
 
 PlatformSpecification returns platform::Platform: 
 	'platform' name=ID '{' 
-	('validator' validator=STRING)?
+		'module' module=STRING
+		('validator' validator=STRING)?
 	(
 		('has' resources+=[platform::AbstractSystemResource])
 		| (events += SystemResourceEvent)
+		| (configurationItems += ConfigurationItem)
 	)* '}'
 ;
 

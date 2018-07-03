@@ -67,6 +67,7 @@ import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.mita.base.types.GeneratedType
@@ -426,7 +427,11 @@ class GeneratorUtils {
 		return '''«sumType.name»_enum''';
 	}
 	dispatch def String getEnumName(SumAlternative singleton) {
-		return '''«singleton.name»_e''';
+		val parent = EcoreUtil2.getContainerOfType(singleton, SumType)
+		if(parent === null) {
+			return "ERROR: Model broken"
+		}
+		return '''«parent.name»_«singleton.name»_e''';
 	}
 	
 	dispatch def String getStructName(SumType sumType) {

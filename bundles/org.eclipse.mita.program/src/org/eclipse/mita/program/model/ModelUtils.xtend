@@ -14,6 +14,7 @@
 package org.eclipse.mita.program.model
 
 import com.google.common.base.Optional
+import com.google.inject.Inject
 import java.util.Iterator
 import java.util.NoSuchElementException
 import java.util.function.Predicate
@@ -25,7 +26,6 @@ import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.scoping.TypesLibraryProvider
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
@@ -49,6 +49,7 @@ import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.ProgramCopier
+import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.base.types.SumAlternative
@@ -56,6 +57,8 @@ import java.util.TreeMap
 import java.util.HashMap
 
 class ModelUtils {
+
+	@Inject protected ILibraryProvider typesLibraryProvider;
 
 	/**
 	 * Retrieves the variable declaration this nested expression is referencing.
@@ -146,16 +149,16 @@ class ModelUtils {
 	 * Retrieves the platform a program was written against.
 	 * 
 	 */
-	static def getPlatform(Program program) {
+	def getPlatform(Program program) {
 		val programResource = program.eResource;
 		val resourceSet = programResource.resourceSet;
-		//TODO: This class should be used via guice
-		val libraries = new TypesLibraryProvider().getImportedLibraries(programResource)
-		val libraryResources = libraries.map[l|l.resourceUris].flatten
-		val platformResourceUris = libraryResources.filter[r|r.fileExtension == 'platform']
+		
+		val libraries = typesLibraryProvider.getImportedLibraries(programResource);
+		val platformResourceUris = libraries.filter[r|r.fileExtension == 'platform'];
 
-		val platforms = platformResourceUris.map[uri|resourceSet.getResource(uri, true).allContents.toIterable].flatten.
-			filter(Platform)
+		val platforms = platformResourceUris
+			.flatMap[uri| resourceSet.getResource(uri, true).allContents.toIterable ]
+			.filter(Platform)
 		if (platforms.length > 1) {
 			// TODO: handle this error properly
 		}

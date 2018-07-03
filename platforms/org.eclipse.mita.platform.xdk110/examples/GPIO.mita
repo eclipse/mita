@@ -1,0 +1,45 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+/*
+ * This example sets up two GPIO pins on the XDK gateway: 
+ * - On pin PA1, every 5s we toggle the output
+ * - On pin PB2 via polling we detect an incoming signal
+ * 
+ * At the same time two LEDs (red and yellow) are showing the output of pin PA1 and the input of pin PB2. 
+ * Connecting pins PA1 and PB2 should therefore sync both LEDs.
+ */
+
+package main;
+import platforms.xdk110;
+
+setup test : GPIO {
+	var out = digitalOut(pin = PA1, initialValue = false);
+	var inp = digitalIn(pin = PB2, mode = PullDown);
+}
+
+setup hmi : LED {
+	var out = light_up(color=Yellow);
+	var inp = light_up(color=Red);
+} 
+var state = true;
+
+every 5 seconds {
+	test.out.write(state);
+	hmi.out.write(state);
+	state = state == false;
+}
+every 100 milliseconds { 
+	let s = test.inp.read(); 
+	hmi.inp.write(s);
+} 

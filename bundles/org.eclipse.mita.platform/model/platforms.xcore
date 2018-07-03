@@ -118,5 +118,6 @@ class InputOutput extends AbstractSystemResource { }
 class Sensor extends AbstractSystemResource { }
 
 class Platform extends AbstractSystemResource {
+	String module
 	refers AbstractSystemResource[] resources
 }
