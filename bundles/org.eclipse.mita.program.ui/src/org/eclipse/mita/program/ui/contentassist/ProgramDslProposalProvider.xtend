@@ -37,6 +37,7 @@ import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.model.ImportHelper
@@ -51,6 +52,7 @@ import org.eclipse.xtext.ui.editor.contentassist.ConfigurableCompletionProposal
 import org.eclipse.xtext.ui.editor.contentassist.ContentAssistContext
 import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor
 import org.eclipse.xtext.ui.editor.hover.IEObjectHover
+import org.eclipse.mita.base.types.StructureType
 
 class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 
@@ -147,30 +149,35 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 		val scope = scopeProvider.getScope(model, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		for (element : scope.allElements) {
 			val obj = element.EObjectOrProxy;
-			if(obj instanceof SumAlternative) {
-				val prefix = if(scoped) {
-					(obj.eContainer as SumType).name + ".";
-				}
-				else {
-					"";
-				}
-				val s = completeTypeConstructor(prefix, obj);
-				if(s !== null) {
-					val proposal = createCompletionProposal(
-						s,
-						new StyledString(s),
-						labelProvider.getImage(obj),
-						context
-					);
-					
-					if (proposal instanceof ConfigurableCompletionProposal) {
-						proposal.additionalProposalInfo = obj;
-						proposal.hover = hover;
-						getPriorityHelper.adjustCrossReferencePriority(proposal, prefix + obj.name);
+			val fromPlatform = EcoreUtil2.getContainerOfType(obj, Program) === null;
+			val inSetupBlock = EcoreUtil2.getContainerOfType(model, SystemResourceSetup) !== null;
+			// in setup blocks we use platform defined types and vice versa
+			if(fromPlatform === inSetupBlock) {
+				if(obj instanceof SumAlternative || obj instanceof StructureType) {
+					val prefix = if(scoped && obj instanceof SumAlternative) {
+						(obj.eContainer as SumType).name + ".";
 					}
-					
-					acceptor.accept(proposal);	
-				}
+					else {
+						"";
+					}
+					val s = completeTypeConstructor(prefix, obj as ComplexType);
+					if(s !== null) {
+						val proposal = createCompletionProposal(
+							s,
+							new StyledString(s),
+							labelProvider.getImage(obj),
+							context
+						);
+						
+						if (proposal instanceof ConfigurableCompletionProposal) {
+							proposal.additionalProposalInfo = obj;
+							proposal.hover = hover;
+							getPriorityHelper.adjustCrossReferencePriority(proposal, prefix + (obj as ComplexType).name);
+						}
+						
+						acceptor.accept(proposal);	
+					}
+				}	
 			}
 		}
 	}
