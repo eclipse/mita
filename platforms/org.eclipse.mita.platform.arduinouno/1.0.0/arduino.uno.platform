@@ -1,0 +1,76 @@
+package platforms.arduino.uno;
+
+sensor Button {
+	generator "org.eclipse.mita.platform.arduino.uno.sensors.ButtonGenerator"
+	modality is_pressed : bool
+	event pressed
+	event released
+}
+
+enum LedColor {
+	Red,
+	Yellow,
+	Orange
+}
+
+connectivity named-singleton LED {
+	generator "org.eclipse.mita.platform.arduino.uno.connectivity.LedGenerator"
+	
+	signal light_up(color : LedColor) : bool
+}
+
+<<<<<<< HEAD
+enum ArduinoUnoPins {
+	p0,
+	p1,
+	p2,
+	p3,
+	p4,
+	p5,
+	p6,
+	p7,
+	p8,
+	p9,
+	p10,
+	p11,
+	p12,
+	p13
+}
+
+enum Values {
+	LOW,
+	HIGH
+}
+
+enum Modes {
+	INPUT,
+	OUTPUT
+}
+
+bus named-singleton GPIO {
+	generator "org.eclipse.mita.platform.arduino.uno.buses.GPIOGenerator"
+	
+	signal pinMode(pin : ArduinoUnoPins, mode : Modes) : void
+	signal digitalWrite(pin : ArduinoUnoPins, value: Values) : void
+	signal digitalRead(pin : ArduinoUnoPins) : value
+}
+
+=======
+>>>>>>> 4c373e012d5a8f15cba998547e7174bf48077488
+alias button_one for Button
+alias button_two for Button
+
+// PINOUT TBD
+// Define pins here: e.g. D6 -> red led
+
+platform ArduinoUno {
+	module "org.eclipse.mita.platform.arduino.uno.platform.ArduinoUnoPlatformGeneratorModule"
+<<<<<<< HEAD
+	has GPIO
+=======
+>>>>>>> 4c373e012d5a8f15cba998547e7174bf48077488
+	has button_one
+	has button_two
+	has LED
+	event startup
+}
