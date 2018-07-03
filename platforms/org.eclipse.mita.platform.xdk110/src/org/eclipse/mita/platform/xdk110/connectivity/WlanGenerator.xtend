@@ -42,7 +42,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	override generateEnable() {
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentification"), []);
-		codeFragmentProvider.create('''
+		val result = codeFragmentProvider.create('''
 		Retcode_T retcode;
 		
 		/* The order of calls is important here. WlanConnect_init initializes the CC3100 and prepares
@@ -181,10 +181,15 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
 		.addHeader('BCDS_WlanConnect.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('BCDS_NetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
-		.addHeader('WLANHostPgm.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
+		if(auth instanceof SumTypeRepr) {
+			if(auth.name == "Enterprise") {
+				result.addHeader('WLANHostPgm.h', true, IncludePath.HIGH_PRIORITY)		
+			}
+		}
+		return result
 	}
 	
 }
