@@ -116,6 +116,11 @@ class CompilationContext {
 		return units.exists[unit | unit.eventHandlers.exists[e| e.event instanceof TimeIntervalEvent ] ]
 	}
 	
+	def hasGlobalVariables() {
+		assertInited();
+		return units.exists[!globalVariables.empty]
+	}
+	
 	def getAllExceptionsUsed() {
 		assertInited();
 		val unitAndStdlibExceptions = (units + stdlib).flatMap[program | 

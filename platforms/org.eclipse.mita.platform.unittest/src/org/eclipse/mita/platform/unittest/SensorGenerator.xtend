@@ -13,11 +13,11 @@
 
 package org.eclipse.mita.platform.unittest
 
+import com.google.inject.Inject
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragmentProvider
-import com.google.inject.Inject
 
 class SensorGenerator extends AbstractSystemResourceGenerator {
 	
@@ -33,21 +33,26 @@ class SensorGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	override generateSetup() {
-		code.create('''setupMock();''')
+		code.create('''// nothing to do''')
 	}
 	
 	override generateEnable() {
-		code.create('''enableMock();''')
+		code.create('''// nothing to do''')
 	}
 	
 	override generateAdditionalHeaderContent() {
 		code.create('''
 			void accessPreparationMock();
 			int16_t modalityAccessMock();
-			void setupMock();
-			void enableMock();	
 		''')
 		.addHeader('stdint.h', true);
 	}
+	
+	override generateAdditionalImplementation() {
+        codeFragmentProvider.create('''
+        void accessPreparationMock() {}
+        int16_t modalityAccessMock() { return 42;}
+        ''')
+    }
 	
 }
