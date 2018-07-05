@@ -24,7 +24,7 @@ import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.generator.DefaultValueProvider
 import org.eclipse.mita.program.validation.ProgramImportValidator
 import org.eclipse.mita.program.validation.ProgramSetupValidator
 import org.eclipse.xtext.scoping.IScopeProvider
@@ -39,9 +39,9 @@ class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 	
 	@Inject
 	protected ITypeSystem typeSystem;
-	
+		
 	@Inject
-	protected extension GeneratorUtils generatorUtils;
+	DefaultValueProvider defaultValueProvider
 
 	@Fix(ProgramImportValidator.MISSING_TARGET_PLATFORM_CODE)
 	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {
@@ -67,7 +67,7 @@ class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 				val newConfigItemValue = ProgramFactory.eINSTANCE.createConfigurationItemValue
 				setup.configurationItemValues.add(newConfigItemValue)
 				newConfigItemValue.item = missingItem
-				newConfigItemValue.value = missingItem.type.dummyExpression(newConfigItemValue)
+				newConfigItemValue.value = defaultValueProvider.dummyExpression(missingItem.type, newConfigItemValue)
 			]
 		])
 	}

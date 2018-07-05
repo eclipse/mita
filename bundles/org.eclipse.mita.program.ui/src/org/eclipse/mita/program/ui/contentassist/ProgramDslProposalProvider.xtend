@@ -22,26 +22,22 @@ import org.eclipse.jface.viewers.ILabelProvider
 import org.eclipse.jface.viewers.StyledString
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.scoping.MitaTypeSystem
-import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.Event
-import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
-import org.eclipse.mita.base.types.PrimitiveType
-import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.generator.DefaultValueProvider
 import org.eclipse.mita.program.model.ImportHelper
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.RuleCall
@@ -52,7 +48,6 @@ import org.eclipse.xtext.ui.editor.contentassist.ConfigurableCompletionProposal
 import org.eclipse.xtext.ui.editor.contentassist.ContentAssistContext
 import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor
 import org.eclipse.xtext.ui.editor.hover.IEObjectHover
-import org.eclipse.mita.base.types.StructureType
 
 class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 
@@ -68,6 +63,8 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 	protected ITypeSystemInferrer typeInferrer;
 	@Inject 
 	protected extension ImportHelper
+	@Inject 
+	DefaultValueProvider defaultValueProvider
 
 	override Function<IEObjectDescription, ICompletionProposal> getProposalFactory(String ruleName,
 		ContentAssistContext contentAssistContext) {
@@ -160,7 +157,7 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 					else {
 						"";
 					}
-					val s = completeTypeConstructor(prefix, obj as ComplexType);
+					val s = defaultValueProvider.getDummyConstructor(prefix, obj as ComplexType);
 					if(s !== null) {
 						val proposal = createCompletionProposal(
 							s,
@@ -182,60 +179,8 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 		}
 	}
 	
-	def String completeTypeConstructor(String base, ComplexType typ) {
-		val namedParamsOpt = ModelUtils.getAccessorParameters(typ);
-		if(namedParamsOpt.present) {
-			val namedParams = namedParamsOpt.get
-			val proposalString = '''«base»«typ.name»(«FOR param : namedParams SEPARATOR(", ")»«param.name» = «getDummyString(param.type)»«ENDFOR»)'''
-			return proposalString;
-		}
-		if(typ instanceof AnonymousProductType) {
-			val proposalString = '''«base»«typ.name»(«FOR conType : typ.accessorsTypes SEPARATOR(", ")»«getDummyString(conType)»«ENDFOR»)'''
-			return proposalString;
-		}
-		if(typ instanceof Singleton) {
-			return '''«base»«typ.name»()'''
-		}
-		return null;
-	}
 	
 	
-	private def getDummyString(Type obj) {
-		if(obj instanceof ComplexType) {
-			if(obj instanceof SumType) {
-				if(obj.alternatives.empty) {
-					return "";
-				}
-				return completeTypeConstructor(obj.name + ".", obj.alternatives.head);
-			}
-			return completeTypeConstructor("", obj);
-		}
-		if(obj instanceof GeneratedType) {
-			if(obj.name == "string") {
-				return '""';
-			}
-			else if(obj.name == "optional") {
-				return 'none()';
-			}
-			else if(obj.name == "array") {
-				return '[]';
-			}
-			return '';
-		}
-		if(obj instanceof PrimitiveType) {
-			if(obj.name == "bool") {
-				return "false";
-			}
-			if(obj.name === null) {
-				return ""
-			}
-			if(obj.name.contains("int")) {
-				return "0";
-			}
-		}
-		return "";
-	}
-
 	override complete_ElementReferenceExpression(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
 		if(EcoreUtil2.getContainerOfType(model, SystemResourceSetup) === null) {
 			return;

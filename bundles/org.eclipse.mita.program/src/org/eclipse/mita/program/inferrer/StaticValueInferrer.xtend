@@ -13,8 +13,6 @@
 
 package org.eclipse.mita.program.inferrer
 
-import com.google.inject.Inject
-import com.google.inject.Provider
 import java.util.HashMap
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
@@ -35,7 +33,6 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.model.ModelUtils
 
 /**
@@ -142,7 +139,8 @@ class StaticValueInferrer {
 		if(ref !== null) {
 			return infer(ref, expression, inferenceBlockerAcceptor);
 		}
-		return expression.reference?.infer(inferenceBlockerAcceptor);
+		inferenceBlockerAcceptor.apply(expression);
+		return null;
 	}
 	
 	static dispatch def Object infer(VariableDeclaration expression, (EObject) => void inferenceBlockerAcceptor) {

@@ -27,6 +27,8 @@ import org.eclipse.mita.base.types.Type;
 public interface ITypeSystem {
 
 	public static final String STRING = "string";
+	public static final String ARRAY = "array";
+	public static final String OPTIONAL = "optional";
 	public static final String REAL = "real";
 	public static final String INTEGER = "integer";
 	public static final String BOOLEAN = "boolean";
