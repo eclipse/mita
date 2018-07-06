@@ -13,26 +13,24 @@
 
 package org.eclipse.mita.program.ui.contentassist
 
-import org.eclipse.mita.platform.PlatformPackage
-import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.core.runtime.NullProgressMonitor
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.jface.text.contentassist.ICompletionProposal
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.platform.PlatformPackage
+import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.xtext.ui.editor.contentassist.ConfigurableCompletionProposal
 import org.eclipse.xtext.ui.editor.contentassist.ContentProposalPriorities
 import org.eclipse.xtext.ui.editor.hover.html.XtextBrowserInformationControlInput
 import org.eclipse.mita.base.types.Event
-import org.eclipse.mita.base.types.TypesPackage
 
 class ProposalPriorityHelper extends ContentProposalPriorities {
 	
-	public static final String ADDITIONAL_DATA__CANDIDATE = 'candidate';
-	
+	protected static final int PRIORITY_PARAMETER = 670;
 	protected static final int PRIORITY_LOCAL_VARIABLE = 650;
 	protected static final int PRIORITY_EVENT = 610;
 	protected static final int PRIORITY_SENSOR = 600;
 	protected static final int PRIORITY_CONNECTIVITY = 550;
-	protected static final int PRIORITY_PARAMETER = 670;
 	
 	override adjustCrossReferencePriority(ICompletionProposal proposal, String prefix) {
 		if(proposal instanceof ConfigurableCompletionProposal) {
