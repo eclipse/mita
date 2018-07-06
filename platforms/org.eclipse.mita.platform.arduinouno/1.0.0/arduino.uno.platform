@@ -23,22 +23,40 @@ sensor Button {
 	event released
 }
 
-enum LedColor {
-	Red,
-	Yellow,
-	Orange
+enum ArduinoUnoPins {
+	p0,
+	p1,
+	p2,
+	p3,
+	p4,
+	p5,
+	p6,
+	p7,
+	p8,
+	p9,
+	p10,
+	p11,
+	p12,
+	p13
 }
 
-/** 
- * Used to control three LEDs
+enum Values {
+	LOW,
+	HIGH
+}
+
+enum Modes {
+	INPUT,
+	OUTPUT
+}
+
+/*
+ * General Purpose Input Output support for Arduino Uno
  */
-connectivity named-singleton LED {
-	generator "org.eclipse.mita.platform.arduino.uno.connectivity.LedGenerator"
+bus named-singleton GPIO {
+	generator "org.eclipse.mita.platform.arduino.uno.buses.GPIOGenerator"
 	
-	/**
-	 * Controls a single LED
-	 */
-	signal light_up(color : LedColor) : bool
+	signal pinMode(pin : ArduinoUnoPins, mode : Modes) : bool
 }
 
 alias button_one for Button
@@ -46,21 +64,19 @@ alias button_two for Button
 
 
 /** 
- * The current pinout - this is how the Arduino Uno needs to be connected, if the button or LEDs are used.
+ * The current pinout - this is how the Arduino Uno needs to be connected, if the button is used.
  * Arduino Pin |  Function
  * -------------------------
  *      2      | button_one
  *      3      | button_two
- *      4      | yellow LED
- *      5      | orange LED
- *      6      |  red LED
  *
  * The buttons are if not pressed logical high (5V).
+ * Additionally, every port can be accessed by using the GPIO 
  */
 platform ArduinoUno {
 	module "org.eclipse.mita.platform.arduino.uno.platform.ArduinoUnoPlatformGeneratorModule"
 	has button_one
 	has button_two
-	has LED
+	has GPIO
 	event startup
 }
