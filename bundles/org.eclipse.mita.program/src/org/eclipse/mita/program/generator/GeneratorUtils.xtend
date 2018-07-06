@@ -57,10 +57,9 @@ import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
-import org.eclipse.emf.ecore.util.EcoreUtil
 
 /**
- * Utility functions for the generating code. Eventually this will be moved into the model.
+ * Utility functions for generating code. Eventually this will be moved into the model.
  */
 class GeneratorUtils {
 
@@ -427,6 +426,10 @@ class GeneratorUtils {
 	def IGeneratorNode noBraces(IGeneratorNode stmt) {
 		trim(stmt, false, [x|trimBraces(x)]);
 		trim(stmt, true, [x|trimBraces(x)]);
+	}
+	
+	def boolean containsCodeRelevantContent(Program it) {
+		!eventHandlers.empty || !functionDefinitions.empty || !types.empty || !globalVariables.empty
 	}
 
 }
