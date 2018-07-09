@@ -430,7 +430,8 @@ class GeneratorUtils {
 	
 	def getAllTimeEvents(CompilationContext context) {
 		return context.allEventHandlers.filter[x|x.event instanceof TimeIntervalEvent]
-
+	}
+	
 	def boolean containsCodeRelevantContent(Program it) {
 		!eventHandlers.empty || !functionDefinitions.empty || !types.empty || !globalVariables.empty
 	}
