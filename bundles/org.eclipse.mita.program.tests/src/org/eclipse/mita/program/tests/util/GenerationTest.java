@@ -15,6 +15,7 @@ package org.eclipse.mita.program.tests.util;
 
 import static org.eclipse.emf.ecore.util.EcoreUtil.getRootContainer;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Retention;
@@ -49,6 +50,7 @@ import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.program.Program;
 import org.eclipse.mita.program.ProgramFactory;
 import org.eclipse.mita.program.ThrowExceptionStatement;
+import org.eclipse.mita.program.generator.GeneratorUtils;
 import org.eclipse.mita.program.tests.util.GenerationTest.ContextObject.ContextObjectProvider;
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
@@ -81,74 +83,86 @@ public class GenerationTest {
 
 	@Inject
 	private Provider<XtextResourceSet> resourceSetProvider;
+
 	@Inject
-	CProjectHelper helper;
+	TestProjectHelper helper;
+
+	@Inject
+	ExternalCommandExecutor exec;
+	
+	@Inject
+	GeneratorUtils genUtils;
 
 	@Xpect(liveExecution = LiveExecutionType.FAST)
 	public void noCompileErrors(@ContextObject EObject contextObject) {
-		if("true".equals(System.getenv("DISABLE_NO_COMPILE_ERRORS"))) {
+		if ("true".equals(System.getenv("DISABLE_NO_COMPILE_ERRORS"))) {
 			return;
 		}
 		try {
-			IProject project = helper.createEmptyGenerationProject();
+			IProject project = helper.createEmptyTestProject();
 			Resource resource = createProgram(contextObject);
 			project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 
 			resource.save(Collections.emptyMap());
-			
+
 			project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
-			
-			final Program program = (Program) resource.getContents().get(0);
-			final boolean applicationCFileShouldExist = !program.getEventHandlers().isEmpty() 
-					|| !program.getFunctionDefinitions().isEmpty() 
-					|| !program.getTypes().isEmpty();
-			if(applicationCFileShouldExist) {
-				assertFileExists(project, "src-gen/application.c");				
-			}
-			
-			ErrorMarkerCollector collector = new ErrorMarkerCollector();
-			project.accept(collector);
-			if (collector.getErrors().size() > 0) {
-				String code = getGeneratedSource(project);
-				Assert.fail("Generated C code has compilation errors: \n" + String.join("\n", collector.getErrors())
-						+ "\n\n Generated Code:\n" + code);
-			}
+
+			assertGeneratedCodeExists(project, resource);
+
+			compile(project);
 		} catch (CoreException | IOException e) {
 			e.printStackTrace();
 			Assert.fail("Error in test setup: " + e.getMessage());
 		}
 	}
-	
+
+	private void assertGeneratedCodeExists(IProject project, Resource resource) {
+		final Program program = (Program) resource.getContents().get(0);
+		if (genUtils.containsCodeRelevantContent(program)) {
+			assertFileExists(project, "src-gen/application.c");
+		}
+	}
+
+	private void compile(IProject project) throws CoreException {
+		try {
+			exec.execute(Collections.singletonList("make"),
+					new File(project.getFolder("src-gen").getLocationURI()));
+		} catch (Exception e) {
+			String code = getGeneratedSource(project);
+			Assert.fail(e.getMessage() + "\n\n Generated Code:\n" + code);
+		}
+	}
+
 	private void assertFileExists(IProject project, String filePath) {
 		IFile file = project.getFile(filePath);
-		Assert.assertTrue("File does not exists: "+filePath, file.exists());
+		Assert.assertTrue("File does not exists: " + filePath, file.exists());
 	}
 
 	private String getGeneratedSource(IProject project) throws CoreException {
 		IFile applicationCFile = project.getFile("src-gen/application.c");
-		if(applicationCFile.exists()) {
+		if (applicationCFile.exists()) {
 			InputStream stream = applicationCFile.getContents();
 			try (Scanner scanner = new Scanner(stream, "UTF-8")) {
 				return scanner.useDelimiter("\\A").next();
-			}			
+			}
 		} else {
 			return "Application.c file does not exist";
 		}
 	}
-	
+
 	private Resource createProgram(EObject contextObject) {
 		Copier c = new Copier();
-		Program originalProgram =(Program) getRootContainer(contextObject);
+		Program originalProgram = (Program) getRootContainer(contextObject);
 		c.copy(originalProgram);
 		c.copyReferences();
-		
+
 		Program program = ProgramFactory.eINSTANCE.createProgram();
 		program.setName("unittest");
-		
+
 		for (ImportStatement i : originalProgram.getImports()) {
 			addToContainingFeature(program, i, c.get(i));
 		}
-		
+
 		// Add all references from the snippet under test
 		TreeIterator<EObject> eAllContents = contextObject.eAllContents();
 		while (eAllContents.hasNext()) {
@@ -156,7 +170,8 @@ public class GenerationTest {
 			if (next instanceof ElementReferenceExpression) {
 				ElementReferenceExpression ref = (ElementReferenceExpression) next;
 				EObject referencedObject = ref.getReference();
-				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(referencedObject)) && !EcoreUtil.isAncestor(contextObject, referencedObject)) {
+				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(referencedObject))
+						&& !EcoreUtil.isAncestor(contextObject, referencedObject)) {
 					addToContainingFeature(program, referencedObject, c.get(referencedObject));
 				}
 			}
@@ -164,7 +179,8 @@ public class GenerationTest {
 				FeatureCall feature = (FeatureCall) next;
 				if (feature.isOperationCall()) {
 					EObject featureObject = feature.getFeature();
-					if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(featureObject)) && !EcoreUtil.isAncestor(contextObject, featureObject)) {
+					if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(featureObject))
+							&& !EcoreUtil.isAncestor(contextObject, featureObject)) {
 						addToContainingFeature(program, featureObject, c.get(featureObject));
 					}
 				}
@@ -172,14 +188,14 @@ public class GenerationTest {
 			if (next instanceof TypeSpecifier) {
 				Type type = ((TypeSpecifier) next).getType();
 				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(type))) {
-					program.getTypes().add((Type)c.get(type));
+					program.getTypes().add((Type) c.get(type));
 				}
 			}
-			
+
 			if (next instanceof ThrowExceptionStatement) {
 				Type type = ((ThrowExceptionStatement) next).getExceptionType();
 				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(type))) {
-					program.getTypes().add((Type)c.get(type));
+					program.getTypes().add((Type) c.get(type));
 				}
 			}
 		}
@@ -189,8 +205,8 @@ public class GenerationTest {
 		ResourceSet set = resourceSetProvider.get();
 		Resource resource = set.createResource(URI.createPlatformResourceURI("unittestprj/application.mita", true));
 		resource.getContents().add(program);
-		((LazyLinkingResource)resource).resolveLazyCrossReferences(CancelIndicator.NullImpl);
-		
+		((LazyLinkingResource) resource).resolveLazyCrossReferences(CancelIndicator.NullImpl);
+
 		return resource;
 	}
 
