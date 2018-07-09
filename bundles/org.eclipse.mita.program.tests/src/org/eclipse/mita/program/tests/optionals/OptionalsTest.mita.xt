@@ -44,8 +44,8 @@ function testOptionalsSuccess() {
 
 function testOptionalOfOptionalError() {
 	/*XPECT errors ---
-		"Nested generated types are not supported yet" at "optional<int32?>"
-		"Nested generated types are not supported yet" at "var optionalOfOptional : optional<int32?> = 10;"
+		"Nested generated types are not supported yet." at "optional<int32?>"
+		"Nested generated types are not supported yet." at "var optionalOfOptional : optional<int32?> = 10;"
 	--- */
 	var optionalOfOptional : optional<int32?> = 10;
 	optionalOfOptional = 10;
@@ -71,8 +71,8 @@ function testOptionalsFail(){
 	--- */
 	functionWithOptionals(42, 10);
 	/*XPECT errors ---
-		"Nested generated types are not supported yet" at "optional<int32?>"
-		"Nested generated types are not supported yet" at "var optionalOfOptional : optional<int32?> = 10;"
+		"Nested generated types are not supported yet." at "optional<int32?>"
+		"Nested generated types are not supported yet." at "var optionalOfOptional : optional<int32?> = 10;"
 	--- */
 	var optionalOfOptional : optional<int32?> = 10;
 	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint32 and optional<uint32>." at "notOptional = optional"
@@ -101,7 +101,7 @@ function testOptionalsFail(){
 }
 function testOptionalReturnFail() :bool {
 	var x : bool? = false;
-	//XPECT errors --> "The return type 'optional<bool>' is not compatible with the operation's type 'bool'" at "return x;"
+	//XPECT errors --> "The return type 'optional<bool>' is not compatible with the operation's type 'bool'." at "return x;"
 	return x;
 }
 

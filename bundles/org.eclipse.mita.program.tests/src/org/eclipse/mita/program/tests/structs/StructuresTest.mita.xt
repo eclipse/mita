@@ -35,6 +35,6 @@ function structTest() : void {
 	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(1, false, 3)"
 	inst = Foo(1, false, 3);
 	// We error on wrong type of arguments
-	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'" at "\"AHHHH!\""
+	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'." at "\"AHHHH!\""
 	inst = Foo(1, "AHHHH!");
 }
