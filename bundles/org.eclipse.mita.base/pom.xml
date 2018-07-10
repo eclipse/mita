@@ -120,24 +120,28 @@
 							<includes>
 								<include>**/*</include>
 							</includes>
+							<excludes>.gitignore</excludes>
 						</fileset>
 						<fileset>
 							<directory>${basedir}/../org.eclipse.mita.base/emf-gen/</directory>
 							<includes>
 								<include>**/*</include>
 							</includes>
+							<excludes>.gitignore</excludes>
 						</fileset>
 						<fileset>
 							<directory>${basedir}/../org.eclipse.mita.base.ide/src-gen/</directory>
 							<includes>
 								<include>**/*</include>
 							</includes>
+							<excludes>.gitignore</excludes>
 						</fileset>
 						<fileset>
 							<directory>${basedir}/../org.eclipse.mita.base.ui/src-gen/</directory>
 							<includes>
 								<include>**/*</include>
 							</includes>
+							<excludes>.gitignore</excludes>
 						</fileset>
 					</filesets>
 				</configuration>
