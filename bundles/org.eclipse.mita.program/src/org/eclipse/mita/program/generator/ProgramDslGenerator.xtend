@@ -193,9 +193,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			}
 		}
 	
-		for (program : compilationUnits.filter[x | 
-			!x.eventHandlers.empty || !x.functionDefinitions.empty || !x.types.empty
-		]) {
+		for (program : compilationUnits.filter[containsCodeRelevantContent]) {
 			// generate the actual content for this resource
 			files += fsa.produceFile(userCodeGenerator.getResourceBaseName(program) + '.c', program, stdlib.head.trace.append(userCodeGenerator.generateImplementation(context, program)));
 			files += fsa.produceFile(userCodeGenerator.getResourceBaseName(program) + '.h', program, stdlib.head.trace.append(userCodeGenerator.generateHeader(context, program)));

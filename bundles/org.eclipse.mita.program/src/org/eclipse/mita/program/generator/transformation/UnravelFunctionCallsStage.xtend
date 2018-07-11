@@ -20,6 +20,7 @@ import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.GeneratedFunctionDefinition
@@ -57,7 +58,7 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 				return true;
 			}
 			
-			return (ref instanceof ComplexType && !(ref instanceof SumType)) 
+			return (ref instanceof ComplexType && !(ref instanceof SumType || ref instanceof StructureType)) 
 				|| ref instanceof GeneratedType
 		}
 		

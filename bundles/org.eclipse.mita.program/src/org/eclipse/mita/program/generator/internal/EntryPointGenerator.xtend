@@ -78,7 +78,7 @@ class EntryPointGenerator {
 		for(systemResource : allResourcesUsed) {
 			baseIncludes.add(new IncludePath(systemResource.fileBasename + '.h', false));
 		}
-		for(program : context.allUnits) {
+		for(program : context.allUnits.filter[containsCodeRelevantContent]) {
 			baseIncludes.add(new IncludePath(userCodeGenerator.getResourceBaseName(program) + '.h', false))
 		}
 		
@@ -108,9 +108,10 @@ class EntryPointGenerator {
 				
 				«ENDFOR»
 				«ENDIF»
+				«IF context.hasGlobalVariables»
 				exception = initGlobalVariables();
 				«"InitGlobalVars".generateLoggingExceptionHandler("setup")»
-				
+				«ENDIF»
 				return exception;
 			}
 			

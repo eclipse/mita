@@ -13,38 +13,32 @@
 
 package org.eclipse.mita.program.tests.util
 
-import java.io.IOException
-import java.io.InputStream
 import java.lang.reflect.InvocationTargetException
-import org.eclipse.cdt.core.CCProjectNature
-import org.eclipse.cdt.core.CCorePlugin
-import org.eclipse.core.resources.IFile
+import org.eclipse.cdt.core.CProjectNature
 import org.eclipse.core.resources.IProject
 import org.eclipse.core.resources.IWorkspace
 import org.eclipse.core.resources.IWorkspaceRunnable
 import org.eclipse.core.resources.ResourcesPlugin
 import org.eclipse.core.runtime.CoreException
-import org.eclipse.core.runtime.FileLocator
-import org.eclipse.core.runtime.IPath
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.core.runtime.NullProgressMonitor
-import org.eclipse.core.runtime.Path
-import org.eclipse.core.runtime.SubMonitor
 import org.eclipse.ui.PlatformUI
 import org.eclipse.ui.actions.WorkspaceModifyOperation
 import org.eclipse.xtext.ui.XtextProjectHelper
-import org.osgi.framework.Bundle
 
-class CProjectHelper {
+/**
+ * Creates and holds an empty project with Xtext nature setup for testing purposes
+ */
+class TestProjectHelper {
 	
 	public val String testProjectName = "unittestprj"
 	
-	public def getGenerationProject() {
+	public def getTestProject() {
 		return ResourcesPlugin.workspace.root.getProject(testProjectName);
 	}
 	
-	public def createEmptyGenerationProject() {
-		val project = generationProject;
+	public def createEmptyTestProject() {
+		val project = testProject;
 		val op = new WorkspaceModifyOperation() {
 			override protected execute(IProgressMonitor monitor) throws CoreException, InvocationTargetException, InterruptedException {
 				if (project.exists) {
@@ -52,7 +46,6 @@ class CProjectHelper {
 				}
 				createProject(testProjectName);
 			}
-			
 		}
 		try {
 			PlatformUI.getWorkbench().getProgressService().run(false, true, op);
@@ -61,38 +54,7 @@ class CProjectHelper {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-
 		return project;
-	}
-	
-	def protected copyFileFromBundleToFolder(Bundle bundle, String sourcePath, String targetPath) {
-		copyFileFromBundleToFolder(bundle, new Path(sourcePath), new Path(targetPath));
-	}
-	
-	def protected copyFileFromBundleToFolder(Bundle bundle, IPath sourcePath, IPath targetPath) {
-		try {
-			val is = FileLocator.openStream(bundle, sourcePath, false);
-			createFile(targetPath, is);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-	}
-	
-	def protected createFile(IPath path, InputStream source) {
-		val file = ResourcesPlugin.getWorkspace().getRoot().getFile(path);
-		createFile(file, source);
-	}
-
-	def protected createFile(IFile file, InputStream source) {
-		try {
-			if (file.exists()) {
-				file.setContents(source, true, false, new NullProgressMonitor());
-			} else {
-				file.create(source, true, new NullProgressMonitor());
-			}
-		} catch (CoreException e) {
-			throw new RuntimeException(e);
-		}
 	}
 	
 	protected def IProject createProject(String name) throws CoreException {
@@ -102,15 +64,16 @@ class CProjectHelper {
 		workspace.run(new IWorkspaceRunnable() {
 			
 			override run(IProgressMonitor monitor) throws CoreException {
-				val subMonitor = SubMonitor.convert(monitor);
 				val root = workspace.getRoot();
-				val newProject = root.getProject(name);
-				if (!newProject.exists()) {
-					val description = workspace.newProjectDescription(newProject.getName());
-					val project = CCorePlugin.getDefault().createCProject(description, newProject, subMonitor.newChild(1), name);
-					
-					
-					CCProjectNature.addNature(project, XtextProjectHelper.NATURE_ID, subMonitor.newChild(1));
+				val project = root.getProject(name);
+				if (!project.exists()) {
+					project.create(monitor);
+					project.open(monitor);
+					CProjectNature.addNature(project, XtextProjectHelper.NATURE_ID, monitor);
+				} else {
+					if (!project.isOpen) {
+						project.open(monitor);
+					}
 				}
 			}
 

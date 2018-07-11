@@ -14,35 +14,6 @@
 	
 	<build>
 		<plugins>
-		
-			<!-- compile custom TypesDslWorkflowLanguage before running MWE workflow -->
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-compiler-plugin</artifactId>
-				<version>${tycho-version}</version>
-				<executions>
-					<execution>
-						<id>pre-compilation</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>compile</goal>
-						</goals>
-						<configuration>
-							<includes>
-								<include>**/TypesDslWorkflowLanguage*</include>
-							</includes>
-						</configuration>
-					</execution>
-				</executions>
-				<dependencies>
-					<dependency>
-						<groupId>org.eclipse.xtext</groupId>
-						<artifactId>org.eclipse.xtext.xtext.generator</artifactId>
-						<version>${xtextVersion}</version>
-					</dependency>
-				</dependencies>
-			</plugin>
-		
 			<plugin>
 				<groupId>org.eclipse.xtext</groupId>
 				<artifactId>xtext-maven-plugin</artifactId>

@@ -2,7 +2,7 @@
 /target/
 /xtend-gen/
 /src-gen/
-/model/generated/
+/emf-gen/
 /.antlr-generator-3.2.0-patch.jar
 /plugin.properties
 plugin.xml_gen
