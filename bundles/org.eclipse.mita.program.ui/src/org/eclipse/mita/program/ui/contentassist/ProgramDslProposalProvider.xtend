@@ -169,8 +169,6 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 		}
 	}
 	
-	
-	
 	override complete_ElementReferenceExpression(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
 		if(EcoreUtil2.getContainerOfType(model, SystemResourceSetup) === null) {
 			return;
