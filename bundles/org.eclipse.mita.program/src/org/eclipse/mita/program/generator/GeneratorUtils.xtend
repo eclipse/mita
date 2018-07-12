@@ -57,6 +57,7 @@ import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
+import org.eclipse.xtext.scoping.IScopeProvider
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -65,7 +66,11 @@ class GeneratorUtils {
 
 	@Inject
 	protected extension ProgramCopier
+	
+	@Inject
+	protected IScopeProvider scopeProvider;
 
+	
 	def getOccurrence(EObject obj) {
 		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
 			?:EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration) as EObject

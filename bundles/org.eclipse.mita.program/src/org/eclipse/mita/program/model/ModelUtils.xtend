@@ -52,6 +52,9 @@ import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.types.SumAlternative
+import java.util.TreeMap
+import java.util.HashMap
 
 class ModelUtils {
 
@@ -241,7 +244,14 @@ class ModelUtils {
 		// TODO: This only finds setup blocks in the same compilation unit! This is very likely to cause bugs!
 		return program.setup.findFirst[it.type?.name == name]
 	}
-		
+	
+	def static getSortedArgumentsAsMap(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
+		val args = getSortedArguments(parameters, arguments);
+		val map = new TreeMap<Parameter, Argument>([p1, p2 | p1.name.compareTo(p2.name)]);
+		parameters.zip(args).forEach[map.put(it.key, it.value)];
+		return map;
+	}
+	
 	def static getSortedArguments(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
 		if(arguments.empty || arguments.head.parameter === null) {
 			arguments;
@@ -336,6 +346,29 @@ class ModelUtils {
 	 * Finds the value of an argument based on the name of its parameter.
 	 */
 	def static Expression getArgumentValue(Operation op, ArgumentExpression expr, String name) {
+		// first check if we find a named argument
+		val namedArg = expr.arguments.findFirst[x|x.parameter?.name == name];
+		if(namedArg !== null) return namedArg.value;
+
+		// we did not find a named arg. Let's look it up based on the index
+		val sortedArgs = getSortedArguments(op.parameters, expr.arguments);
+		
+		var argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
+		// for extension methods the first arg is on the left side
+		if(expr instanceof FeatureCall) {
+			if(expr.operationCall) {
+				if(argIndex == 0) {
+					return expr.owner;
+				}
+				argIndex--;	
+			}
+		}
+		if(argIndex === null || argIndex >= sortedArgs.length) return null;
+
+		return sortedArgs.get(argIndex)?.value;
+	}
+	
+	def static Expression getArgumentValue(NamedProductType op, ArgumentExpression expr, String name) {
 		// first check if we find a named argument
 		val namedArg = expr.arguments.findFirst[x|x.parameter?.name == name];
 		if(namedArg !== null) return namedArg.value;

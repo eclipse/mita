@@ -393,14 +393,14 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass));
 
 		val exclusion = (PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
 			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass))
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass))
 
 		inclusion && !exclusion;
 	]
@@ -490,7 +490,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	dispatch def IScope scopeInSetupBlock(Argument context, EReference reference) {
-		val originalScope = getDelegate().getScope(context, reference);
+			val originalScope = getDelegate().getScope(context, reference);
 
 		if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 			if (context.parameter !== null) {
@@ -511,7 +511,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			// unqualified resolving of parameter names
 			val container = (context.eContainer as ElementReferenceExpression).reference;
 			
-			ModelUtils.getAccessorParameters(container)
+			return ModelUtils.getAccessorParameters(container)
 				.transform[parameters | Scopes.scopeFor(parameters)]
 				.or(originalScope)		
 		}
@@ -519,7 +519,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	dispatch def IScope scopeInSetupBlock(ElementReferenceExpression context, EReference reference) {
 		
-		// Erefs should only be constructors.
+		// Erefs should only be constructors or refs in arguments.
 		val ref = context.eGet(ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE, false) as EObject;
 		if(ref.eIsProxy){
 			val container = context.eContainer;
@@ -531,6 +531,16 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 						return Scopes.scopeFor(typ.alternatives);
 					} else if(typ instanceof StructureType) {
 						return Scopes.scopeFor(#[typ]);
+					}
+				}
+				else if(container instanceof Argument) {
+					// context is a named parameter
+					val constr = EcoreUtil2.getContainerOfType(container, ElementReferenceExpression);
+					val typ = constr.reference;
+					val parms = ModelUtils.getAccessorParameters(typ);
+					if(parms.present) {
+						// you can reference both argument parameters and things you can otherwise reference here
+						return new CombiningScope(Scopes.scopeFor(parms.get), scopeInSetupBlock(container, reference));
 					}
 				}
 				return scopeInSetupBlock(container, reference);

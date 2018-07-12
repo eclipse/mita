@@ -255,9 +255,7 @@ class AnonymousProductType extends SumAlternative {
 				return realType.accessorsTypes;
 			}
 		}
-		else {
-			return typeSpecifiers.map[it.^type];
-		}
+		return typeSpecifiers.map[it.^type];
 	}
 }
 class NamedProductType extends SumAlternative, HasAccessors {
