@@ -631,22 +631,28 @@ class StatementGenerator {
 		'''
 			// TRY
 			returnFromWithinTryCatch = false;
-			for(«bool» «runOnce» = true; «runOnce»; «runOnce» = false)
+			«runOnce» = false;
+			do
 			«stmt.^try.code»
+			while(«runOnce»);
 			«FOR idx_catchStmt : stmt.catchStatements.indexed»
 				// CATCH «idx_catchStmt.value.exceptionType.name»
 				«IF idx_catchStmt.key > 0»else «ENDIF»if(exception «IF idx_catchStmt.value.exceptionType.name == 'Exception'»!= NO_EXCEPTION«ELSE»== «idx_catchStmt.value.exceptionType.baseName»«ENDIF»)
 				{
 					exception = NO_EXCEPTION;
 «««If we are in try OR in catch we need to only exit the try/catch block, since we also need to execute finally. Therefore we generate a for loop as well
-					for(bool «runOnce» = true; «runOnce»; «runOnce» = false)
+					«runOnce» = false;
+					do
 					«idx_catchStmt.value.body.code»
+					while(«runOnce»);
 				}
 			«ENDFOR»
 			«IF stmt.^finally !== null»
 				// FINALLY
-				for(bool «runOnce» = true; «runOnce»; «runOnce» = false)
+				«runOnce» = false;
+				do
 				«stmt.^finally.code»
+				while(«runOnce»);
 			«ENDIF»
 ««« If we returned in a try-, catch- or finally-block, we only exited that block. Furthermore, if we didn't catch an exception, we need to fall through.
 			if(returnFromWithinTryCatch || exception != NO_EXCEPTION) {
