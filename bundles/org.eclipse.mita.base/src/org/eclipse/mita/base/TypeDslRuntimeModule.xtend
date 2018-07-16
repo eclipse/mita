@@ -20,19 +20,22 @@ import com.google.inject.Binder
 import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
 import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
 import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
-import org.eclipse.mita.base.scoping.LibraryProviderImpl
 
 class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 
 	override configure(Binder binder) {
-		super.configure(binder)
-		binder.bind(ITypeSystem).toInstance(MitaTypeSystem.getInstance())
+		super.configure(binder);
+		binder.bind(ITypeSystem).toInstance(MitaTypeSystem.getInstance());
+		binder.bind(org.eclipse.mita.base.typesystem.ILibraryProvider).to(StandardLibraryProvider);
 	}
 	
 	def Class<? extends ILibraryProvider> bindILibraryProvider() {
@@ -49,6 +52,10 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 	
 	override Class<? extends IValueConverterService> bindIValueConverterService() {
 		return ExpressionsValueConverterService
+	}
+	
+	override bindXtextResource() {
+		return MitaBaseResource
 	}
 	
 }
