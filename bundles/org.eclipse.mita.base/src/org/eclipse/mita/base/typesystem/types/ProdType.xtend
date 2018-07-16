@@ -14,4 +14,8 @@ class ProdType extends AbstractType {
 		this.alternatives = alternatives;
 	}
 	
+	override toString() {
+		"(" + alternatives.join(", ") + ")"
+	}
+	
 }

@@ -23,6 +23,11 @@ class BoundTypeVariable extends AbstractTypeVariable {
 	def getSymbol() {
 		return symbol;
 	}
+	
+	override toString() {
+		symbol.lastSegment
+	}
+	
 }
 
 @EqualsHashCode
@@ -31,6 +36,10 @@ class FreeTypeVariable extends AbstractTypeVariable {
 	
 	new() {
 		super('''vf_«instanceCount++»''')
+	}
+	
+	override toString() {
+		name.replaceFirst("vf_", "t")
 	}
 	
 }

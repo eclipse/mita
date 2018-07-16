@@ -15,4 +15,8 @@ class TypeFuncType extends AbstractType {
 		this.to = to;
 	}
 	
+	override toString() {
+		from + "(" + to + ")"
+	}
+	
 }

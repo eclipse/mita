@@ -9,4 +9,9 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 class Equality extends AbstractTypeConstraint {
 	protected final AbstractType left;
 	protected final AbstractType right;
+
+	override toString() {
+		left + " ≡ " + right
+	}
+	
 }

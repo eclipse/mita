@@ -33,4 +33,25 @@ class ConstraintSystem {
 		return typeTable;
 	}
 	
+	override toString() {
+		val res = new StringBuilder()
+		
+		res.append("Symbols:\n")
+		res.append(symbolTable)
+		res.append("\n\n")
+		
+		res.append("TypeTable:\n")
+		res.append(typeTable)
+		res.append("\n\n")
+		
+		res.append("Constraints:\n")
+		constraints.forEach[
+			res.append("\t")
+			res.append(it)
+			res.append("\n")
+		]
+		
+		return res.toString
+	}
+	
 }
