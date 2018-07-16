@@ -10,14 +10,8 @@ class ConstraintSystem {
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected final SymbolTable symbolTable;
 	protected final TypeTable typeTable;
-	
-	@Inject
-	protected Provider<SymbolTable> symbolTableProvider;
 
-	@Inject
-	protected Provider<TypeTable> typeTableProvider;
-	
-	new() {
+	@Inject new(Provider<SymbolTable> symbolTableProvider, Provider<TypeTable> typeTableProvider) {
 		this.symbolTable = symbolTableProvider.get();
 		this.typeTable = typeTableProvider.get();
 	}
