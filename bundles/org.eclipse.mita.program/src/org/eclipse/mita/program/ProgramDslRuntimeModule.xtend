@@ -37,10 +37,10 @@ import org.eclipse.mita.program.generator.ProgramDslGeneratorNodeProcessor
 import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.inferrer.ProgramDslTypeParameterInferrer
-import org.eclipse.mita.program.linking.ProgramConstraintFactory
 import org.eclipse.mita.program.linking.ProgramLinkingService
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
+import org.eclipse.mita.program.typesystem.ProgramConstraintFactory
 import org.eclipse.mita.program.validation.NullProgramDslValidator
 import org.eclipse.mita.program.validation.ProgramDslTypeValidator
 import org.eclipse.mita.program.validation.ProgramDslValidator

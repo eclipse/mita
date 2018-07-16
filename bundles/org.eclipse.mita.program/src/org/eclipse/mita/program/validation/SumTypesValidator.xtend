@@ -112,7 +112,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 
 			val realType = ref.realType;
 			val realArgs = if(realType instanceof HasAccessors) {
-				realType.accessorsTypes;
+				realType.accessorsTypes.map[it.type];
 			}
 			else {
 				#[realType];

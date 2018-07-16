@@ -7,15 +7,15 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 class ProdType extends AbstractType {
 	private static Integer instanceCount = 0;
 	
-	protected final List<AbstractType> alternatives;
+	protected final List<AbstractType> types;
 	
-	new(List<AbstractType> alternatives) {
+	new(List<AbstractType> types) {
 		super('''prod_«instanceCount++»''');
-		this.alternatives = alternatives;
+		this.types = types;
 	}
 	
 	override toString() {
-		"(" + alternatives.join(", ") + ")"
+		"(" + types.join(", ") + ")"
 	}
 	
 }
