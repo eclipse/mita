@@ -14,4 +14,8 @@ class SumType extends AbstractType {
 		this.alternatives = alternatives;
 	}
 	
+	override toString() {
+		"(" + alternatives.join(" | ") + ")"
+	}
+	
 }

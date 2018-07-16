@@ -11,4 +11,9 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 class Subtype extends AbstractTypeConstraint {
 	protected final AbstractType subType;
 	protected final AbstractType superType;
+	
+	override toString() {
+		subType + " ⩽ " + superType
+	}
+	
 }

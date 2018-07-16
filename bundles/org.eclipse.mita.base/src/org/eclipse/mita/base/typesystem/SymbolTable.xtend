@@ -27,4 +27,18 @@ class SymbolTable {
 		return content.get(nameProvider.getFullyQualifiedName(obj));
 	}
 	
+	override toString() {
+		val res = new StringBuilder()
+		
+		content.forEach[p1, p2|
+			res.append("\t")
+			res.append(p1)
+			res.append(": ")
+			res.append(p2)
+			res.append("\n")
+		]
+		
+		return res.toString
+	}
+
 }
