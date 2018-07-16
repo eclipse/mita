@@ -53,13 +53,11 @@ class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
 		super(delegate);
 	}
 
+	// TODO define images for vci, modiality, bus, exception, signal
 	def dispatch Object image(EObject ele) {
 		return super.image(ele);
 	}
 
-	// TODO define images for vci, modiality, bus, exception, signal
-//	
-	// TODO define image for bus
 	def dispatch image(Enumerator element) {
 		loadImage('enumerator.png')
 	}
