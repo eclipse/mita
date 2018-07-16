@@ -27,7 +27,9 @@ import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.TypeValidator
+import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
 import org.eclipse.mita.program.formatting.ProgramDslFormatter
 import org.eclipse.mita.program.generator.ProgramDslGenerator
@@ -35,7 +37,7 @@ import org.eclipse.mita.program.generator.ProgramDslGeneratorNodeProcessor
 import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.inferrer.ProgramDslTypeParameterInferrer
-import org.eclipse.mita.program.linking.MitaLinker
+import org.eclipse.mita.program.linking.ProgramConstraintFactory
 import org.eclipse.mita.program.linking.ProgramLinkingService
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
@@ -65,7 +67,9 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(DefaultRuntimeModule).annotatedWith(Names.named("injectingModule")).toInstance(this)
 		binder.bind(GeneratorNodeProcessor).to(ProgramDslGeneratorNodeProcessor);
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
+		
 		binder.bind(org.eclipse.mita.base.typesystem.ILibraryProvider).to(StandardLibraryProvider);
+		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
 	}
 
 	override configureIScopeProviderDelegate(Binder binder) {

@@ -23,5 +23,9 @@ class TypeTable {
 	public def getContent() {
 		return Collections.unmodifiableMap(this.content);
 	}
+	
+	public def get(EObject obj) {
+		return content.get(nameProvider.getFullyQualifiedName(obj));
+	}
 		
 }

@@ -25,6 +25,8 @@ import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
 import org.eclipse.xtext.conversion.IValueConverterService
@@ -36,6 +38,7 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 		super.configure(binder);
 		binder.bind(ITypeSystem).toInstance(MitaTypeSystem.getInstance());
 		binder.bind(org.eclipse.mita.base.typesystem.ILibraryProvider).to(StandardLibraryProvider);
+		binder.bind(IConstraintFactory).to(BaseConstraintFactory);
 	}
 	
 	def Class<? extends ILibraryProvider> bindILibraryProvider() {

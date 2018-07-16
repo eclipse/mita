@@ -13,6 +13,7 @@ class ConstraintSystem {
 	
 	@Inject
 	protected Provider<SymbolTable> symbolTableProvider;
+
 	@Inject
 	protected Provider<TypeTable> typeTableProvider;
 	
