@@ -45,9 +45,9 @@ public class ProgramDslResourceDescriptionStrategy extends TypeDSLResourceDescri
 	}
 
 	static public String[] getOperationParameterTypes(Operation operation) {
-		String[] paramTypes = new String[operation.getParameters().size()];
-		for (int i = 0; i < operation.getParameters().size(); i++) {
-			paramTypes[i] = getTypeSpecifierType(operation.getParameters().get(i).getTypeSpecifier());
+		String[] paramTypes = new String[operation.getParameters().getParameters().size()];
+		for (int i = 0; i < operation.getParameters().getParameters().size(); i++) {
+			paramTypes[i] = getTypeSpecifierType(operation.getParameters().getParameters().get(i).getTypeSpecifier());
 		}
 		return paramTypes;
 	}

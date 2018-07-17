@@ -115,11 +115,17 @@ abstract class TypedElement {
 		return null;
 	}
 }
+
+class ParameterList {
+	container Operation owningOperation opposite parameters
+	contains Parameter[] parameters opposite parameterList
+}
+
 class Operation extends Declaration, GenericElement {
-	contains Parameter[] parameters opposite owningOperation
+	contains ParameterList parameters opposite owningOperation
 }
 class Parameter extends TypedElement, NamedElement {
-	container Operation owningOperation opposite parameters
+	container ParameterList parameterList opposite parameters
 	boolean optional
 }
 class Enumerator extends Declaration {

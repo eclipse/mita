@@ -241,7 +241,7 @@ class GeneratorUtils {
 	}
 	
 	def dispatch String getBaseName(Operation element) {
-		return '''«element.name»«FOR p : element.parameters BEFORE '_' SEPARATOR '_'»«p.type.name»«ENDFOR»'''
+		return '''«element.name»«FOR p : element.parameters.parameters BEFORE '_' SEPARATOR '_'»«p.type.name»«ENDFOR»'''
 	}
 	
 	def dispatch String getBaseName(AbstractSystemResource resource) {

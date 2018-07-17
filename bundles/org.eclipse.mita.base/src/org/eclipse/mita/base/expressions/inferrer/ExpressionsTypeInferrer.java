@@ -255,7 +255,7 @@ public class ExpressionsTypeInferrer extends AbstractTypeSystemInferrer implemen
 			Map<TypeParameter, InferenceResult> typeParameterMapping) {
 		// resolve type parameter from operation call
 		List<InferenceResult> argumentTypes = getArgumentTypes(getOperationArguments(e));
-		List<Parameter> parameters = op.getParameters();
+		List<Parameter> parameters = op.getParameters().getParameters();
 
 		List<InferenceResult> argumentsToInfer = new ArrayList<>();
 		List<Parameter> parametersToInfer = new ArrayList<>();
@@ -317,7 +317,7 @@ public class ExpressionsTypeInferrer extends AbstractTypeSystemInferrer implemen
 	public Map<TypeParameter, InferenceResult> validateParameters(
 			Map<TypeParameter, InferenceResult> typeParameterMapping, Operation operation, List<Expression> args,
 			IValidationIssueAcceptor acceptor) {
-		List<Parameter> parameters = operation.getParameters();
+		List<Parameter> parameters = operation.getParameters().getParameters();
 		for (int i = 0; i < parameters.size(); i++) {
 			if (args.size() > i) {
 				Parameter parameter = parameters.get(i);
