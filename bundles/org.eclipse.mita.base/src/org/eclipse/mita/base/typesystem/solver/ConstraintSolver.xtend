@@ -24,7 +24,8 @@ class ConstraintSolver {
 	}
 	
 	protected dispatch def Substitution solve(Subtype constraint, ConstraintSystem constraints) {
-		
+		val instance = constraint.superType.instantiate();
+		return constraints.plus(new Equality(constraint.subType, instance)).solve();
 	}
 	
 }

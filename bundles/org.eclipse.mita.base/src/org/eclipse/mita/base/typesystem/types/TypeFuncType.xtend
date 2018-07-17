@@ -25,7 +25,12 @@ class TypeFuncType extends AbstractType {
 	}
 	
 		override getFreeVars() {
-		return #[from, to].filter(TypeVariable);
+		return #[to].filter(TypeVariable);
+	}
+	
+	override instantiate() {
+		val nto = if(to instanceof TypeVariable) new TypeVariable(to.origin) else to;
+		return new FunctionType(origin, from, nto);
 	}
 	
 }

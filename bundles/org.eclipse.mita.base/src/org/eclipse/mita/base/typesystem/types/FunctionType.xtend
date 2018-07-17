@@ -28,4 +28,10 @@ class FunctionType extends AbstractType {
 		return #[from, to].filter(TypeVariable);
 	}
 	
+	override instantiate() {
+		val nfrom = if(from instanceof TypeVariable) new TypeVariable(from.origin) else from;
+		val nto = if(to instanceof TypeVariable) new TypeVariable(to.origin) else to;
+		return new FunctionType(origin, nfrom, nto);
+	}
+	
 }

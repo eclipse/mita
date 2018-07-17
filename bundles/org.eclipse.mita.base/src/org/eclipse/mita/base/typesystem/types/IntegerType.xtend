@@ -20,4 +20,8 @@ class IntegerType extends AbstractType {
 		return #[];
 	}
 	
+	override instantiate() {
+		return this;
+	}
+	
 }

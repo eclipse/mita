@@ -12,6 +12,8 @@ abstract class AbstractType {
 	
 	abstract def AbstractType replace(AbstractType from, AbstractType with);
 	
+	abstract def AbstractType instantiate();
+	
 	abstract def Iterable<TypeVariable> getFreeVars();
 	
 }

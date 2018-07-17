@@ -52,4 +52,11 @@ class ConstraintSystem {
 		return constraints.get(0) -> result;
 	}
 	
+	def plus(AbstractTypeConstraint constraint) {
+		val result = new ConstraintSystem(symbolTable);
+		result.constraints.add(constraint);
+		result.constraints.addAll(this.constraints);
+		return result;
+	}
+	
 }

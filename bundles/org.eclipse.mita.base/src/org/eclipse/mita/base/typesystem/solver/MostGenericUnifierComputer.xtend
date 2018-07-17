@@ -21,11 +21,13 @@ class MostGenericUnifierComputer {
 			result.add(t1 as TypeVariable, t2);
 		} else if(t2IsFree) {
 			result.add(t2 as TypeVariable, t1);
-		} else if(t1.class == t2.class) {
-			
+		} else {
+			println('''Unable to unify «t1» and «t2»''');
 		}
 			// none is free - ask the defined types
 		return result;
 	}
+	
+	
 
 }

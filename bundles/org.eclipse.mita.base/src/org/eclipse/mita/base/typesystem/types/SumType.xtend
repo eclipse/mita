@@ -1,5 +1,6 @@
 package org.eclipse.mita.base.typesystem.types
 
+import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
@@ -25,6 +26,21 @@ class SumType extends AbstractType {
 	
 	override getFreeVars() {
 		return types.filter(TypeVariable);
+	}
+	
+	override instantiate() {
+		val ntypes = new ArrayList<AbstractType>();
+		for(t : types) {
+			ntypes.add(
+				if(t instanceof TypeVariable) {
+					new TypeVariable(t.origin);
+				} else {
+					t
+				}
+			);
+		}
+		
+		return new SumType(origin, ntypes);
 	}
 	
 }

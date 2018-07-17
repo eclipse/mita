@@ -1,8 +1,9 @@
 package org.eclipse.mita.base.typesystem.types
 
+import java.util.ArrayList
 import java.util.List
-import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 @EqualsHashCode
 class ProdType extends AbstractType {
@@ -25,6 +26,21 @@ class ProdType extends AbstractType {
 	
 	override getFreeVars() {
 		return types.filter(TypeVariable);
+	}
+	
+	override instantiate() {
+		val ntypes = new ArrayList<AbstractType>();
+		for(t : types) {
+			ntypes.add(
+				if(t instanceof TypeVariable) {
+					new TypeVariable(t.origin);
+				} else {
+					t
+				}
+			);
+		}
+		
+		return new ProdType(origin, ntypes);
 	}
 	
 }

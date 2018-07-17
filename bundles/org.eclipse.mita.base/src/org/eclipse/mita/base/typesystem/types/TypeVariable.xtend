@@ -25,4 +25,8 @@ class TypeVariable extends AbstractType {
 		return if(from == this) with else this;
 	}
 	
+	override instantiate() {
+		return new TypeVariable(origin);
+	}
+	
 }

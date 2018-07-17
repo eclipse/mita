@@ -9,7 +9,9 @@ class StandardLibraryProvider implements org.eclipse.mita.base.typesystem.ILibra
 	override ensureLibrariesLoaded(ResourceSet resourceSet) {
 		for(LibraryDescriptor desc : LibraryExtensions.getDefaultLibraries()) {
 			for(uri: desc.resourceUris) {
-				resourceSet.getResource(uri, true);
+				if(resourceSet.resources.findFirst[it.URI == uri] === null) {
+					resourceSet.getResource(uri, true);
+				}
 			}
 		}
 	}

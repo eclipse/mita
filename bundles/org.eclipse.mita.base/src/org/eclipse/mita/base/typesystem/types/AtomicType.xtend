@@ -22,4 +22,8 @@ class AtomicType extends AbstractType {
 		return #[];
 	}
 	
+	override instantiate() {
+		return this;
+	}
+	
 }

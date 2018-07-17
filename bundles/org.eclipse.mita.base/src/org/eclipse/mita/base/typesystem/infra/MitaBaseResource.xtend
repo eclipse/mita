@@ -1,19 +1,28 @@
 package org.eclipse.mita.base.typesystem.infra
 
-import com.google.inject.Inject
-import java.io.IOException
-import java.util.Map
-import org.eclipse.mita.base.typesystem.ILibraryProvider
+import org.eclipse.xtext.parser.IParseResult
 import org.eclipse.xtext.resource.XtextResource
 
 class MitaBaseResource extends XtextResource {
 	
-	@Inject
-	protected ILibraryProvider libraryProvider;
+	override updateInternalState(IParseResult newParseResult) {
+		this.parseResult = newParseResult;
+		val newRootASTElement = parseResult.getRootASTElement();
+		val containsRootElement = getContents().contains(newRootASTElement);
+		if (newRootASTElement !== null && !containsRootElement) {
+			getContents().add(0, newRootASTElement);			
+		}
+		reattachModificationTracker(newRootASTElement);
+		
+		clearErrorsAndWarnings();
+		addSyntaxErrors();
+		
+		// We trigger linking in the resource set once all required resources are loaded
+		// doLinking();
+	}
 	
-	override load(Map<?, ?> options) throws IOException {		
-		super.load(options)
-		libraryProvider.ensureLibrariesLoaded(this.resourceSet);
+	override public doLinking() {
+		super.doLinking()
 	}
 	
 }
