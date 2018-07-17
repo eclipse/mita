@@ -26,11 +26,11 @@ import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
-import org.eclipse.mita.base.typesystem.ConstraintSystem
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
 
