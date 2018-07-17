@@ -13,5 +13,4 @@ Require-Bundle: org.eclipse.mita.base,
  org.eclipse.xtend.lib.macro,
  org.eclipse.mita.program;bundle-version="0.1.0",
  com.google.inject
-Export-Package: org.eclipse.mita.library.stdlib.typesystem
 

@@ -44,7 +44,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PrimitiveType type) {
-<<<<<<< HEAD
 		if(type.name.startsWith("int") || type.name.startsWith("uint")) {
 			// take type apart
 		} else {
