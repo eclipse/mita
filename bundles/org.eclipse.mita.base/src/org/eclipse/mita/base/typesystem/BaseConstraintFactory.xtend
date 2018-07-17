@@ -1,18 +1,24 @@
 package org.eclipse.mita.base.typesystem
 
 import com.google.inject.Inject
-import com.google.inject.Provider
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.constraints.Equality
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.SymbolTable
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.scoping.IScopeProvider
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -20,10 +26,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected IQualifiedNameProvider nameProvider;
 	
 	@Inject
-	protected Provider<ConstraintSystem> constraintSystemProvider;
+	protected ConstraintSystemProvider constraintSystemProvider;
 	
-	public override ConstraintSystem create(EObject context) {
-		val result = constraintSystemProvider.get();
+	@Inject
+	protected IScopeProvider scopeProvider;
+	
+	public override ConstraintSystem create(SymbolTable symbols, EObject context) {
+		val result = constraintSystemProvider.get(symbols);
 		result.computeConstraints(context);
 		return result;
 	}
@@ -35,44 +44,45 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PrimitiveType type) {
-		return system.typeTable.introduce(type) => [ typeVar |
-			system.addConstraint(new Equality(typeVar, new BoundTypeVariable(nameProvider.getFullyQualifiedName(type))));
+		new TypeVariable(type) => [ typeVar |
+			system.addConstraint(new Equality(typeVar, new AtomicType(type)));
 		]
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructureType structType) {
-		return system.typeTable.introduce(structType) => [ typeVar |
+		new TypeVariable(structType) => [ typeVar |
 			val types = structType.accessorsTypes.map[ 
-				system.computeConstraints(it);
-				system.typeTable.get(it);
+				system.computeConstraints(it) as AbstractType;
 			];
-			system.addConstraint(new Equality(typeVar, new ProdType(types)));
+			system.addConstraint(new Equality(typeVar, new ProdType(structType, types)));
 		]
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
-		return system.typeTable.introduce(sumType) => [typeVar |
+		new TypeVariable(sumType) => [typeVar |
 			val types = sumType.alternatives.map[ 
-				system.computeConstraints(it);
-				system.typeTable.get(it);
+				system.computeConstraints(it) as AbstractType;
 			];
-			system.addConstraint(new Equality(typeVar, new SumType(types)));
+			system.addConstraint(new Equality(typeVar, new SumType(sumType, types)));
 		]
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumAlternative sumAlt) {
-		return system.typeTable.introduce(sumAlt) => [typeVar |
+		new TypeVariable(sumAlt) => [typeVar |
 			val types = sumAlt.accessorsTypes.map[ 
-				system.computeConstraints(it);
-				system.typeTable.get(it);
+				system.computeConstraints(it) as AbstractType;
 			];
-			system.addConstraint(new Equality(typeVar, new ProdType(types)));
+			system.addConstraint(new Equality(typeVar, new ProdType(sumAlt, types)));
 		]
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
-		return system.typeTable.introduce(typeSpecifier) => [ typeVar |
-			
+		new TypeVariable(typeSpecifier) => [ typeVar |
+			val scope = scopeProvider.getScope(typeSpecifier, TypesPackage.eINSTANCE.typeSpecifier_Type);
+			val typeText = NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.typeSpecifier_Type).head.text;
+			val typeQN = scope.getSingleElement(QualifiedName.create(typeText.split('.'))).qualifiedName;
+			//val referencedTypeVar = system.typeTable.getContent.get(typeQN);
+			//system.addConstraint(new Equality(typeVar, referencedTypeVar));
 		]
 	}
 	
