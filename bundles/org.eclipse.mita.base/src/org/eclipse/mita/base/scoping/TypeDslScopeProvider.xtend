@@ -16,15 +16,17 @@
  */
 package org.eclipse.mita.base.scoping
 
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 
 /**
  * This class contains custom scoping description.
@@ -32,10 +34,11 @@ import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#scoping
  * on how and when to use it.
  */
-class TypeDslScopeProvider extends AbstractDeclarativeScopeProvider {
+class TypeDslScopeProvider extends SymbolBasedScopeProvider {
 	
 	
 	def scope_Argument_parameter(Argument object, EReference ref) {
+		
 		var parameters = object?.eContainer?.operation?.parameters
 		return if(parameters !== null) Scopes.scopeFor(parameters.parameters) else IScope.NULLSCOPE;
 	}
@@ -51,6 +54,9 @@ class TypeDslScopeProvider extends AbstractDeclarativeScopeProvider {
 	}
 
 	def dispatch getOperation(ElementReferenceExpression it) {
+		val symbols = getSymbols(it);
+		val candidate = symbols.get(QualifiedName.create(NodeModelUtils.findNodesForFeature(it, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head.text))
+		
 		return if (reference instanceof Operation)
 			reference as Operation
 		else

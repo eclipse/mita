@@ -8,7 +8,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 
-class SymbolTable { 
+class SymbolTable implements ISymbolTable {
 	
 	protected final Map<QualifiedName, EObject> content = new HashMap;
 	
@@ -27,8 +27,12 @@ class SymbolTable {
 		return Collections.unmodifiableMap(this.content);
 	}
 
-	public def get(EObject obj) {
-		return content.get(nameProvider.getFullyQualifiedName(obj));
+	public override get(QualifiedName qn) {
+		return content.get(qn);
+	}
+	
+	public def addAll(SymbolTable from) {
+		this.content.putAll(from.getContent);
 	}
 	
 	override toString() {
@@ -44,5 +48,4 @@ class SymbolTable {
 		
 		return res.toString
 	}
-
 }
