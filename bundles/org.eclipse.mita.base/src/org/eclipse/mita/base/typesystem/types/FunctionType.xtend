@@ -19,4 +19,12 @@ class FunctionType extends AbstractType {
 		from + " → " + to
 	}
 	
+	override replace(AbstractType from, AbstractType with) {
+		new FunctionType(this.from.replace(from, with), this.to.replace(from, with));
+	}
+	
+	override getFreeVars() {
+		return #[from, to].filter(FreeTypeVariable);
+	}
+	
 }

@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AbstractTypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
@@ -14,6 +15,14 @@ class Subtype extends AbstractTypeConstraint {
 	
 	override toString() {
 		subType + " ⩽ " + superType
+	}
+	
+	override replace(AbstractTypeVariable from, AbstractType with) {
+		return new Subtype(subType.replace(from, with), superType.replace(from, with));
+	}
+	
+	override getActiveVars() {
+		return subType.freeVars + superType.freeVars;
 	}
 	
 }

@@ -1,8 +1,9 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.types.AbstractTypeVariable
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 @FinalFieldsConstructor 
 @EqualsHashCode
@@ -14,4 +15,12 @@ class Equality extends AbstractTypeConstraint {
 		left + " ≡ " + right
 	}
 	
+	override replace(AbstractTypeVariable from, AbstractType with) {
+		return new Equality(left.replace(from, with), right.replace(from, with));
+	}
+	
+	override getActiveVars() {
+		return left.freeVars + right.freeVars;
+	}
+
 }

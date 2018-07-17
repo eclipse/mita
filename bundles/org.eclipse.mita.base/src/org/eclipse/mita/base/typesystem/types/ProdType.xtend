@@ -18,4 +18,12 @@ class ProdType extends AbstractType {
 		"(" + alternatives.join(", ") + ")"
 	}
 	
+	override replace(AbstractType from, AbstractType with) {
+		new ProdType(alternatives.map[ it.replace(from, with) ]);
+	}
+	
+	override getFreeVars() {
+		return alternatives.filter(FreeTypeVariable);
+	}
+	
 }

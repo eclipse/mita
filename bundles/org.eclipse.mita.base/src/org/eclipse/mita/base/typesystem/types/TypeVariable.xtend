@@ -7,6 +7,11 @@ import org.eclipse.xtext.naming.QualifiedName
 @FinalFieldsConstructor
 @EqualsHashCode
 abstract class AbstractTypeVariable extends AbstractType {
+	
+	override AbstractType replace(AbstractType from, AbstractType with) {
+		return if(from == this) with else this;
+	}
+	
 }
 
 @EqualsHashCode
@@ -28,6 +33,10 @@ class BoundTypeVariable extends AbstractTypeVariable {
 		symbol.lastSegment
 	}
 	
+	override getFreeVars() {
+		return #[];
+	}
+	
 }
 
 @EqualsHashCode
@@ -40,6 +49,10 @@ class FreeTypeVariable extends AbstractTypeVariable {
 	
 	override toString() {
 		name.replaceFirst("vf_", "t")
+	}
+	
+	override getFreeVars() {
+		return #[this];
 	}
 	
 }

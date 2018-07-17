@@ -6,6 +6,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.typesystem.constraints.Equality
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.BoundTypeVariable
 import org.eclipse.mita.base.typesystem.types.FreeTypeVariable
 import org.eclipse.mita.base.typesystem.types.ProdType

@@ -1,10 +1,11 @@
-package org.eclipse.mita.base.typesystem
+package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import java.util.Collections
 
 class ConstraintSystem {
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
@@ -14,6 +15,11 @@ class ConstraintSystem {
 	@Inject new(Provider<SymbolTable> symbolTableProvider, Provider<TypeTable> typeTableProvider) {
 		this.symbolTable = symbolTableProvider.get();
 		this.typeTable = typeTableProvider.get();
+	}
+	
+	protected new(SymbolTable symbolTable, TypeTable typeTable) {
+		this.symbolTable = symbolTable;
+		this.typeTable = typeTable;
 	}
 	
 	def addConstraint(AbstractTypeConstraint constraint) {
@@ -26,6 +32,10 @@ class ConstraintSystem {
 	
 	def getTypeTable() {
 		return typeTable;
+	}
+	
+	def getConstraints() {
+		return Collections.unmodifiableList(constraints);
 	}
 	
 	override toString() {
@@ -47,6 +57,16 @@ class ConstraintSystem {
 		]
 		
 		return res.toString
+	}
+	
+	def takeOne() {
+		val result = new ConstraintSystem(symbolTable, typeTable);
+		if(constraints.empty) {
+			return (null -> result);
+		}
+		
+		result.constraints = constraints.subList(1, constraints.length);
+		return constraints.get(0) -> result;
 	}
 	
 }

@@ -18,4 +18,12 @@ class SumType extends AbstractType {
 		"(" + alternatives.join(" | ") + ")"
 	}
 	
+	override replace(AbstractType from, AbstractType with) {
+		return new SumType(this.alternatives.map[ it.replace(from, with) ]);
+	}
+	
+	override getFreeVars() {
+		return alternatives.filter(FreeTypeVariable);
+	}
+	
 }

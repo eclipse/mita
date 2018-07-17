@@ -7,4 +7,9 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 @EqualsHashCode
 abstract class AbstractType {
 	protected final String name;
+	
+	abstract def AbstractType replace(AbstractType from, AbstractType with);
+	
+	abstract def Iterable<FreeTypeVariable> getFreeVars();
+	
 }
