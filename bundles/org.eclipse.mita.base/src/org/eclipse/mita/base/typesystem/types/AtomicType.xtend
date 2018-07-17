@@ -10,6 +10,10 @@ class AtomicType extends AbstractType {
 		super(origin, '''atom_«instanceCount++»''');
 	}
 	
+	new(EObject origin, String name) {
+		super(origin, name);
+	}
+	
 	override replace(AbstractType from, AbstractType with) {
 		return this;
 	}
