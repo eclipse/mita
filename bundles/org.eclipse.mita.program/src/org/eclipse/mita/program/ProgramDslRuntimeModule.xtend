@@ -20,6 +20,7 @@ import com.google.inject.Binder
 import com.google.inject.name.Names
 import org.eclipse.mita.base.expressions.inferrer.TypeParameterInferrer
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
+import org.eclipse.mita.base.generator.BaseQualifiedNameProvider
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaTypeSystem
@@ -33,6 +34,7 @@ import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.MitaLinker
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.program.formatting.ProgramDslFormatter
@@ -57,7 +59,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -77,7 +78,6 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
 		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
-	
 	}
 
 	override configureIScopeProviderDelegate(Binder binder) {
@@ -121,4 +121,8 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		return MitaResourceSet
 	}
 
+	override bindIQualifiedNameProvider() {
+		return BaseQualifiedNameProvider
+	}
+	
 }
