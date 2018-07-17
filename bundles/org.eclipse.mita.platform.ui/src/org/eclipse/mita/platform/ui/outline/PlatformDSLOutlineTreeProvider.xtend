@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
- *
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
- *
+ * 
  * Contributors:
  *    Bosch Connected Devices and Solutions GmbH - initial contribution
- *
+ * 
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
@@ -16,13 +16,32 @@
  */
 package org.eclipse.mita.platform.ui.outline
 
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.platform.ConfigurationItem
+import org.eclipse.mita.platform.Modality
+import org.eclipse.mita.platform.Signal
 import org.eclipse.xtext.ui.editor.outline.impl.DefaultOutlineTreeProvider
 
 /**
  * Customization of the default outline structure.
- *
+ * 
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#outline
  */
 class PlatformDSLOutlineTreeProvider extends DefaultOutlineTreeProvider {
 
+	def dispatch boolean isLeaf(ConfigurationItem modelElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(Signal modelElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(Event modelElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(Modality modelElement) {
+		true
+	}
 }
