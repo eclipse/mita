@@ -42,38 +42,37 @@ class BaseConstraintFactory implements IConstraintFactory {
 		context.eContents.forEach[ system.computeConstraints(it) ]
 		return null;
 	}
-	
+
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PrimitiveType type) {
-		new TypeVariable(type) => [ typeVar |
-			system.addConstraint(new Equality(typeVar, new AtomicType(type)));
-		]
+<<<<<<< HEAD
+		if(type.name.startsWith("int") || type.name.startsWith("uint")) {
+			// take type apart
+		} else {
+			val typeVar = new TypeVariable(type);
+			system.addConstraint(new Equality(typeVar, new AtomicType(type, type.name)));
+			return typeVar;
+		}
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructureType structType) {
-		new TypeVariable(structType) => [ typeVar |
-			val types = structType.accessorsTypes.map[ 
-				system.computeConstraints(it) as AbstractType;
-			];
-			system.addConstraint(new Equality(typeVar, new ProdType(structType, types)));
-		]
+		val typeVar = new TypeVariable(structType);
+		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ];
+		system.addConstraint(new Equality(typeVar, new ProdType(structType, types)));
+		return typeVar;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
-		new TypeVariable(sumType) => [typeVar |
-			val types = sumType.alternatives.map[ 
-				system.computeConstraints(it) as AbstractType;
-			];
-			system.addConstraint(new Equality(typeVar, new SumType(sumType, types)));
-		]
+		val typeVar = new TypeVariable(sumType);
+		val types = sumType.alternatives.map[ system.computeConstraints(it) as AbstractType ];
+		system.addConstraint(new Equality(typeVar, new SumType(sumType, types)));
+		return typeVar;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumAlternative sumAlt) {
-		new TypeVariable(sumAlt) => [typeVar |
-			val types = sumAlt.accessorsTypes.map[ 
-				system.computeConstraints(it) as AbstractType;
-			];
-			system.addConstraint(new Equality(typeVar, new ProdType(sumAlt, types)));
-		]
+		val typeVar = new TypeVariable(sumAlt);
+		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ];
+		system.addConstraint(new Equality(typeVar, new ProdType(sumAlt, types)));
+		return typeVar;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
@@ -86,6 +85,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		]
 	}
 	
+//	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
+//		
+//	}
+//	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Void context) {
 		println('computeConstraints called on null');
 		return null;
