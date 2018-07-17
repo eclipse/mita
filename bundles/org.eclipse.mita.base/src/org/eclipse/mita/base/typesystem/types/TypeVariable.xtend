@@ -1,50 +1,16 @@
 package org.eclipse.mita.base.typesystem.types
 
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.xtext.naming.QualifiedName
 
 @FinalFieldsConstructor
 @EqualsHashCode
-abstract class AbstractTypeVariable extends AbstractType {
-	
-	override AbstractType replace(AbstractType from, AbstractType with) {
-		return if(from == this) with else this;
-	}
-	
-}
-
-@EqualsHashCode
-class BoundTypeVariable extends AbstractTypeVariable {
+class TypeVariable extends AbstractType {
 	static Integer instanceCount = 0;
 	
-	protected final QualifiedName symbol;
-	
-	new(QualifiedName symbol) {
-		super('''vb_«instanceCount++»''')
-		this.symbol = symbol;
-	}
-	
-	def getSymbol() {
-		return symbol;
-	}
-	
-	override toString() {
-		symbol.lastSegment
-	}
-	
-	override getFreeVars() {
-		return #[];
-	}
-	
-}
-
-@EqualsHashCode
-class FreeTypeVariable extends AbstractTypeVariable {
-	static Integer instanceCount = 0;
-	
-	new() {
-		super('''vf_«instanceCount++»''')
+	new(EObject origin) {
+		super(origin, '''f_«instanceCount++»''')
 	}
 	
 	override toString() {
@@ -53,6 +19,10 @@ class FreeTypeVariable extends AbstractTypeVariable {
 	
 	override getFreeVars() {
 		return #[this];
+	}
+	
+	override AbstractType replace(AbstractType from, AbstractType with) {
+		return if(from == this) with else this;
 	}
 	
 }

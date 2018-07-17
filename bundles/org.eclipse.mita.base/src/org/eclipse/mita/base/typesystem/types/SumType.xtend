@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.types
 
 import java.util.List
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 @EqualsHashCode
@@ -9,8 +10,8 @@ class SumType extends AbstractType {
 	
 	protected final List<AbstractType> types;
 	
-	new(List<AbstractType> types) {
-		super('''sum_«instanceCount++»''');
+	new(EObject origin, List<AbstractType> types) {
+		super(origin, '''sum_«instanceCount++»''');
 		this.types = types;
 	}
 	
@@ -19,11 +20,11 @@ class SumType extends AbstractType {
 	}
 	
 	override replace(AbstractType from, AbstractType with) {
-		return new SumType(this.types.map[ it.replace(from, with) ]);
+		return new SumType(origin, this.types.map[ it.replace(from, with) ]);
 	}
 	
 	override getFreeVars() {
-		return types.filter(FreeTypeVariable);
+		return types.filter(TypeVariable);
 	}
 	
 }

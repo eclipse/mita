@@ -4,21 +4,14 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.HashMap
 import java.util.Map
-import org.eclipse.mita.base.typesystem.types.BoundTypeVariable
-import org.eclipse.mita.base.typesystem.types.FreeTypeVariable
-import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.mita.base.typesystem.types.AbstractTypeVariable
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
-	protected Map<AbstractTypeVariable, AbstractType> content = new HashMap();
+	protected Map<TypeVariable, AbstractType> content = new HashMap();
 	
-	public def void add(FreeTypeVariable variable, QualifiedName with) {
-		this.content.put(variable, new BoundTypeVariable(with));
-	}
-	
-	public def void add(AbstractTypeVariable variable, AbstractType type) {
+	public def void add(TypeVariable variable, AbstractType type) {
 		this.content.put(variable, type);
 	}
 	
@@ -32,9 +25,6 @@ class Substitution {
 	
 	public def apply(ConstraintSystem system) {
 		val result = constraintSystemProvider.get();
-		system.typeTable.content.forEach[k, v| 
-			this.content.forEach[from, with| result.typeTable.content.put(k, v.replace(from, with)) ]
-		];
 		result.constraints.addAll(system.constraints.map[c | 
 			var nc = c;
 			for(kv : this.content.entrySet) {
@@ -51,7 +41,7 @@ class Substitution {
 			return system;
 		}
 		
-		override add(FreeTypeVariable variable, QualifiedName with) {
+		override add(TypeVariable variable, AbstractType with) {
 			throw new UnsupportedOperationException("Cannot add to empty substitution");
 		}
 		

@@ -1,5 +1,6 @@
 package org.eclipse.mita.base.typesystem.types
 
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 @EqualsHashCode
@@ -9,8 +10,8 @@ class FunctionType extends AbstractType {
 	protected final AbstractType from;
 	protected final AbstractType to;
 	
-	new(AbstractType from, AbstractType to) {
-		super('''fun_«instanceCount++»''');
+	new(EObject origin, AbstractType from, AbstractType to) {
+		super(origin, '''fun_«instanceCount++»''');
 		this.from = from;
 		this.to = to;
 	}
@@ -20,11 +21,11 @@ class FunctionType extends AbstractType {
 	}
 	
 	override replace(AbstractType from, AbstractType with) {
-		new FunctionType(this.from.replace(from, with), this.to.replace(from, with));
+		new FunctionType(origin, this.from.replace(from, with), this.to.replace(from, with));
 	}
 	
 	override getFreeVars() {
-		return #[from, to].filter(FreeTypeVariable);
+		return #[from, to].filter(TypeVariable);
 	}
 	
 }

@@ -9,10 +9,9 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.typesystem.constraints.Equality
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.types.AbstractTypeVariable
-import org.eclipse.mita.base.typesystem.types.BoundTypeVariable
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 
 class BaseConstraintFactory implements IConstraintFactory {
@@ -29,19 +28,19 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return result;
 	}
 	
-	protected dispatch def AbstractTypeVariable computeConstraints(ConstraintSystem system, EObject context) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
 		println('''computeConstraints is not implemented for «context.eClass.name»''');
 		context.eContents.forEach[ system.computeConstraints(it) ]
 		return null;
 	}
 	
-	protected dispatch def AbstractTypeVariable computeConstraints(ConstraintSystem system, PrimitiveType type) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PrimitiveType type) {
 		return system.typeTable.introduce(type) => [ typeVar |
 			system.addConstraint(new Equality(typeVar, new BoundTypeVariable(nameProvider.getFullyQualifiedName(type))));
 		]
 	}
 	
-	protected dispatch def AbstractTypeVariable computeConstraints(ConstraintSystem system, StructureType structType) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructureType structType) {
 		return system.typeTable.introduce(structType) => [ typeVar |
 			val types = structType.accessorsTypes.map[ 
 				system.computeConstraints(it);
@@ -51,7 +50,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		]
 	}
 	
-	protected dispatch def AbstractTypeVariable computeConstraints(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
 		return system.typeTable.introduce(sumType) => [typeVar |
 			val types = sumType.alternatives.map[ 
 				system.computeConstraints(it);
@@ -61,7 +60,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		]
 	}
 	
-	protected dispatch def AbstractTypeVariable computeConstraints(ConstraintSystem system, SumAlternative sumAlt) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumAlternative sumAlt) {
 		return system.typeTable.introduce(sumAlt) => [typeVar |
 			val types = sumAlt.accessorsTypes.map[ 
 				system.computeConstraints(it);
@@ -71,13 +70,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 		]
 	}
 	
-	protected dispatch def AbstractTypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
 		return system.typeTable.introduce(typeSpecifier) => [ typeVar |
 			
 		]
 	}
 	
-	protected dispatch def AbstractTypeVariable computeConstraints(ConstraintSystem system, Void context) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Void context) {
 		println('computeConstraints called on null');
 		return null;
 	}

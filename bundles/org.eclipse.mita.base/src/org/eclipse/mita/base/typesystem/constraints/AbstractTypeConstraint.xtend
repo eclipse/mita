@@ -1,13 +1,12 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.AbstractTypeVariable
-import org.eclipse.mita.base.typesystem.types.FreeTypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 abstract class AbstractTypeConstraint {
 	
-	abstract def AbstractTypeConstraint replace(AbstractTypeVariable from, AbstractType with);
+	abstract def AbstractTypeConstraint replace(TypeVariable from, AbstractType with);
 	
-	abstract def Iterable<FreeTypeVariable> getActiveVars();
+	abstract def Iterable<TypeVariable> getActiveVars();
 	
 }
