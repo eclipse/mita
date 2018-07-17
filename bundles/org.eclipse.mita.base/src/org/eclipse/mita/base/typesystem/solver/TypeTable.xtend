@@ -6,6 +6,7 @@ import java.util.HashMap
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FreeTypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 
@@ -18,6 +19,20 @@ class TypeTable {
 	
 	def put(EObject obj, AbstractType type) {
 		content.put(nameProvider.getFullyQualifiedName(obj), type);
+	}
+	
+	def put(QualifiedName name, AbstractType type) {
+		content.put(name, type);
+	}
+	
+	def introduce(EObject obj) {
+		return introduce(nameProvider.getFullyQualifiedName(obj));
+	}
+	
+	def introduce(QualifiedName name) {
+		return new FreeTypeVariable() => [
+			put(name, it)
+		]
 	}
 	
 	public def getContent() {

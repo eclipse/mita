@@ -7,23 +7,23 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 class SumType extends AbstractType {
 	private static Integer instanceCount = 0;
 	
-	protected final List<AbstractType> alternatives;
+	protected final List<AbstractType> types;
 	
-	new(List<AbstractType> alternatives) {
+	new(List<AbstractType> types) {
 		super('''sum_«instanceCount++»''');
-		this.alternatives = alternatives;
+		this.types = types;
 	}
 	
 	override toString() {
-		"(" + alternatives.join(" | ") + ")"
+		"(" + types.join(" | ") + ")"
 	}
 	
 	override replace(AbstractType from, AbstractType with) {
-		return new SumType(this.alternatives.map[ it.replace(from, with) ]);
+		return new SumType(this.types.map[ it.replace(from, with) ]);
 	}
 	
 	override getFreeVars() {
-		return alternatives.filter(FreeTypeVariable);
+		return types.filter(FreeTypeVariable);
 	}
 	
 }
