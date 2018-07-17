@@ -437,9 +437,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			return result;
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 			val globalScope = getDelegate().getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE);
-			val enumTypes = context.instanceOf.parameters.map[typeInferrer.infer(it.type)?.type].filter(EnumerationType)
+			val enumTypes = context.instanceOf.parameters.parameters.map[typeInferrer.infer(it.type)?.type].filter(EnumerationType)
 			val enumeratorScope = filteredEnumeratorScope(globalScope, enumTypes)
-			val paramScope = Scopes.scopeFor(context.instanceOf.parameters)
+			val paramScope = Scopes.scopeFor(context.instanceOf.parameters.parameters)
 			val scope = new CombiningScope(paramScope, enumeratorScope)
 			return scope
 		} else {
@@ -503,7 +503,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				val signal = (context.eContainer() as ElementReferenceExpression).reference
 				if (signal instanceof Operation) {
 					// unqualified resolving of enumeration values
-					val enumTypes = signal.parameters.map[typeInferrer.infer(it.type)?.type].filter(EnumerationType)
+					val enumTypes = signal.parameters.parameters.map[typeInferrer.infer(it.type)?.type].filter(EnumerationType)
 					return filteredEnumeratorScope(originalScope, enumTypes)
 				}
 			}

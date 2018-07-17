@@ -39,7 +39,7 @@ class OperationUserDataHelper {
 			val objOrProxy = operation.EObjectOrProxy;
 			if(objOrProxy instanceof Operation) {
 				if(!objOrProxy.eIsProxy) {
-					return objOrProxy.parameters.map[ it.type ]
+					return objOrProxy.parameters.parameters.map[ it.type ]
 				}
 			}
 			return #[];
@@ -50,7 +50,7 @@ class OperationUserDataHelper {
 		val objOrProxy = operation.EObjectOrProxy;
 		if (objOrProxy instanceof Operation) {
 			if (!objOrProxy.eIsProxy) {
-				return objOrProxy.parameters.map[it.infer]
+				return objOrProxy.parameters.parameters.map[it.infer]
 			}
 		}
 		return #[];

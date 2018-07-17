@@ -137,7 +137,7 @@ class PlatformDSLGenerator extends AbstractGenerator {
 					<td>«mod.documentation.withoutParameterDocumentation»</td>
 					<td>
 						<ul>
-						«FOR param : mod.parameters»
+						«FOR param : mod.parameters.parameters»
 							<li>
 								<div class="highlight"><pre>«IF param.optional»<small>optional</small> «ENDIF» <b>«param.name»</b> : <span class="kt">«param.typeSpecifier.originalSpec»</span></pre></div>
 								«mod.getParameterDocumentation(param)»
