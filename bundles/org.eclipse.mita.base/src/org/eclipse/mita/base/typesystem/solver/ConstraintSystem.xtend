@@ -1,7 +1,5 @@
 package org.eclipse.mita.base.typesystem.solver
 
-import com.google.inject.Inject
-import com.google.inject.Provider
 import java.util.ArrayList
 import java.util.Collections
 import java.util.List
@@ -11,11 +9,7 @@ class ConstraintSystem {
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected final SymbolTable symbolTable;
 
-	@Inject new(Provider<SymbolTable> symbolTableProvider) {
-		this.symbolTable = symbolTableProvider.get();
-	}
-	
-	protected new(SymbolTable symbolTable) {
+	new(SymbolTable symbolTable) {
 		this.symbolTable = symbolTable;
 	}
 	
