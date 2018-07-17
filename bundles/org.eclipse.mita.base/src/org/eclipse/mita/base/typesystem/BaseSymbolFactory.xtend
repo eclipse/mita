@@ -12,6 +12,7 @@ class BaseSymbolFactory implements ISymbolFactory {
 	
 	override create(EObject obj) {
 		val st = symbolTableProvider.get();
+		st.addSymbols(obj);
 		return st;
 	}
 	

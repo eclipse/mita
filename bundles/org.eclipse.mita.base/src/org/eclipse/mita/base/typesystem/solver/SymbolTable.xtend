@@ -16,7 +16,11 @@ class SymbolTable {
 	protected IQualifiedNameProvider nameProvider;
 	
 	public def put(EObject obj) {
-		this.content.put(nameProvider.getFullyQualifiedName(obj), obj);
+		val fqn = nameProvider.getFullyQualifiedName(obj);
+		if(content.containsKey(fqn)) {
+			throw new IllegalArgumentException('''fqn already known: «fqn»''');
+		}
+		this.content.put(fqn, obj);
 	}
 	
 	public def getContent() {

@@ -20,6 +20,7 @@ import com.google.inject.Binder
 import com.google.inject.name.Names
 import org.eclipse.mita.base.expressions.inferrer.TypeParameterInferrer
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
+import org.eclipse.mita.base.generator.BaseQualifiedNameProvider
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaTypeSystem
@@ -51,6 +52,7 @@ import org.eclipse.mita.program.validation.ProgramDslValidator
 import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.formatting.IFormatter
 import org.eclipse.xtext.generator.trace.node.GeneratorNodeProcessor
+import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
 import org.eclipse.xtext.scoping.IScopeProvider
@@ -76,7 +78,6 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
 		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
-	
 	}
 
 	override configureIScopeProviderDelegate(Binder binder) {
@@ -115,5 +116,9 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 	override bindXtextResource() {
 		return MitaBaseResource
 	}
-
+	
+	override bindIQualifiedNameProvider() {
+		return BaseQualifiedNameProvider
+	}
+	
 }

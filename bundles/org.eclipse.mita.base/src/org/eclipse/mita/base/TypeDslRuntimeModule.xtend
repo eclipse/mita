@@ -35,6 +35,8 @@ import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
+import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.mita.base.generator.BaseQualifiedNameProvider
 
 class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 
@@ -66,5 +68,7 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 	override bindXtextResource() {
 		return MitaBaseResource
 	}
-	
+	override bindIQualifiedNameProvider() {
+		return BaseQualifiedNameProvider
+	}
 }
