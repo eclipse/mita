@@ -32,6 +32,8 @@ import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
+import org.eclipse.mita.base.typesystem.infra.DefaultPackageResourceMapper
+import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
@@ -78,6 +80,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
 		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
+		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
 	}
 
 	override configureIScopeProviderDelegate(Binder binder) {

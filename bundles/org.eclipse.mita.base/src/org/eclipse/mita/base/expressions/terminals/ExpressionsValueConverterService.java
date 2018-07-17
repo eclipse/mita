@@ -65,6 +65,7 @@ public class ExpressionsValueConverterService extends DefaultTerminalConverters 
 	
 	@ValueConverter(rule = QID)
 	public IValueConverter<String> QID() {
+		// TODO: QIDConverter can't handle empty strings which can come up during editing
 		return qidConverter;
 	}
 	

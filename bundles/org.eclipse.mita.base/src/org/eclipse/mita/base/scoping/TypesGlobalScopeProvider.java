@@ -42,8 +42,8 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 
 	public IScope getScope(Resource context, EReference reference, Predicate<IEObjectDescription> filter) {
 		IScope superScope = super.getScope(context, reference, filter);
-		superScope = addLibraryScope(context, reference, superScope);
-		superScope = addTypeSystemScope(context, reference, superScope);
+//		superScope = addLibraryScope(context, reference, superScope);
+//		superScope = addTypeSystemScope(context, reference, superScope);
 		superScope = filterExportable(context, reference, superScope);
 		return superScope;
 	}
