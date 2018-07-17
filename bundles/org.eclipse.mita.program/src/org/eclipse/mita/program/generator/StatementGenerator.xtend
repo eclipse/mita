@@ -830,7 +830,7 @@ class StatementGenerator {
 
 	@Traced dispatch def header(FunctionDefinition definition) {
 		val resultType = definition.inferType;
-		'''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.ctype»* _result«IF !definition.parameters.empty», «ENDIF»«FOR x : definition.parameters SEPARATOR ', '»«x.inferType.ctype» «x.name»«ENDFOR»);'''
+		'''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.ctype»* _result«IF !definition.parameters.parameters.empty», «ENDIF»«FOR x : definition.parameters.parameters SEPARATOR ', '»«x.inferType.ctype» «x.name»«ENDFOR»);'''
 	}
 	
 	dispatch def IGeneratorNode header(StructureType definition) {
@@ -911,14 +911,14 @@ class StatementGenerator {
 	
 	@Traced def generateNativeFunctionCallUnchecked(NativeFunctionDefinition op, ArgumentExpression args) {
 		val call = codeFragmentProvider
-			.create('''«op.name»(«FOR arg : ModelUtils.getSortedArguments(op.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»)''')
+			.create('''«op.name»(«FOR arg : ModelUtils.getSortedArguments(op.parameters.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»)''')
 			.addHeader(op.header, true);
 		return '''«call»'''
 	}
 	
 	@Traced def generateFunctionCall(Operation op, IGeneratorNode firstArg, ArgumentExpression args) {
 		'''
-		exception = «op.baseName»(«IF firstArg !== null»«firstArg.noTerminator»«IF !args.arguments.empty», «ENDIF»«ENDIF»«FOR arg : ModelUtils.getSortedArguments(op.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»);
+		exception = «op.baseName»(«IF firstArg !== null»«firstArg.noTerminator»«IF !args.arguments.empty», «ENDIF»«ENDIF»«FOR arg : ModelUtils.getSortedArguments(op.parameters.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»);
 		«generateExceptionHandler(args, 'exception')»'''
 	}
 

@@ -70,7 +70,11 @@ GeneratedType returns ComplexType:
 
 GeneratedTypeConstructor returns Operation:
 	{Operation}
-	'constructor' name=ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
+	'constructor' name=ID parameters=GeneratedTypeParameterList
+;
+
+GeneratedTypeParameterList returns ParameterList:
+	'(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
 ;
 
 GeneratedTypeParameter returns Parameter:

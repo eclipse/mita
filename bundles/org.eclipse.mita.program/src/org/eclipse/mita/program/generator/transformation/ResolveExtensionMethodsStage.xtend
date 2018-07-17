@@ -39,7 +39,7 @@ class ResolveExtensionMethodsStage extends AbstractTransformationStage {
 			featureCall.arguments.forEach[x | x.value?.doTransform ]
 			
 			val firstArg = ExpressionsFactory.eINSTANCE.createArgument;
-			firstArg.parameter = function.parameters.head;
+			firstArg.parameter = function.parameters.parameters.head;
 			firstArg.value = featureCall.owner;
 			
 			val elementRefExpr = ExpressionsFactory.eINSTANCE.createElementReferenceExpression;

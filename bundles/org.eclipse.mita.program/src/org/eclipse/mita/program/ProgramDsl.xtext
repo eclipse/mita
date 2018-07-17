@@ -55,7 +55,7 @@ SignalInstance returns program::SignalInstance:
 
 GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
 	(exported?='export')?
-	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)
+	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID parameters=FunctionParameters (':' typeSpecifier=TypeSpecifier)
 	'generator' generator=STRING
 	('validator' validator=STRING)?
 	';'
@@ -63,14 +63,18 @@ GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition:
 
 NativeFunctionDefinition returns program::NativeFunctionDefinition:
 	(exported?='export')?
-	'native' (checked?='checked' | 'unchecked') ('fn' | 'function')  name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)?
+	'native' (checked?='checked' | 'unchecked') ('fn' | 'function')  name=ID parameters=FunctionParameters (':' typeSpecifier=TypeSpecifier)?
 	'header' header=STRING ';'
 ;
 
 FunctionDefinition returns program::FunctionDefinition:
 	(exported?='export')?
-	('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)?
+	('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID parameters=FunctionParameters (':' typeSpecifier=TypeSpecifier)?
 	(body = ProgramBlock)?
+;
+
+FunctionParameters returns types::ParameterList:
+	{types::ParameterList} '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')'
 ;
 
 GenericFunctionTypeParameter returns types::TypeParameter: 

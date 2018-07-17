@@ -34,7 +34,7 @@ class SetupTest extends AbstractXpectTest {
 		var String result;
 		
 		if (contextObject instanceof SignalInstance) {
-			val parameters = contextObject.instanceOf.parameters.map[ it.name ];
+			val parameters = contextObject.instanceOf.parameters.parameters.map[ it.name ];
 			result = parameters.sort.map[ '''«it»=«StaticValueInferrer.infer(ModelUtils.getArgumentValue(contextObject, it), [])»''' ].join(' ');
 		} else {
 			result = "vciParameters check can only be used on VCI values"
