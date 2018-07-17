@@ -76,9 +76,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
 		new TypeVariable(typeSpecifier) => [ typeVar |
-			val scope = scopeProvider.getScope(typeSpecifier, TypesPackage.eINSTANCE.typeSpecifier_Type);
+			//val scope = scopeProvider.getScope(typeSpecifier, TypesPackage.eINSTANCE.typeSpecifier_Type);
 			val typeText = NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.typeSpecifier_Type).head.text;
-			val typeQN = scope.getSingleElement(QualifiedName.create(typeText.split('.'))).qualifiedName;
+			//val typeQN = scope.getSingleElement(QualifiedName.create(typeText.split('.'))).qualifiedName;
 			//val referencedTypeVar = system.typeTable.getContent.get(typeQN);
 			//system.addConstraint(new Equality(typeVar, referencedTypeVar));
 		]

@@ -27,8 +27,10 @@ import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.TypeValidator
+import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.IConstraintFactory
+import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
@@ -73,6 +75,8 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(org.eclipse.mita.base.typesystem.ILibraryProvider).to(StandardLibraryProvider);
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
 		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
+		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
+	
 	}
 
 	override configureIScopeProviderDelegate(Binder binder) {

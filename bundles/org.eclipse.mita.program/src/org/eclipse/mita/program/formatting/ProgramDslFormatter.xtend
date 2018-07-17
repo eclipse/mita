@@ -141,10 +141,10 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 	}
 
 	def formatGeneratedFunctionDefinition(FormattingConfig config) {
-		config.setIndentationIncrement.before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_9)
-		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_9)
-		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.validatorKeyword_11_0)
-		config.setIndentationDecrement.after(grammar.generatedFunctionDefinitionAccess.semicolonKeyword_12);
+		config.setIndentationIncrement.before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_7)
+		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_7)
+		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.validatorKeyword_9_0)
+		config.setIndentationDecrement.after(grammar.generatedFunctionDefinitionAccess.semicolonKeyword_10);
 	}
 
 	def formatFeatureCalls(FormattingConfig config) {

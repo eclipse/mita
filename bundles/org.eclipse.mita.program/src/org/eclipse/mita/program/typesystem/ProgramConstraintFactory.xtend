@@ -50,7 +50,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	
 	def computeParameterConstraints(ConstraintSystem system, FunctionDefinition function, ParameterList parms) {
 		return new TypeVariable(parms) => [typeVar |
-			val parmTypes = parms.parameters.map[system.computeConstraints(it) as AbstractType]
+			val parmTypes = parms.parameters.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].toList
 			system.addConstraint(new Equality(typeVar, new ProdType(parms, parmTypes)))
 		]
 	}

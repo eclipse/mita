@@ -26,8 +26,10 @@ import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.IConstraintFactory
+import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
@@ -42,6 +44,7 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 		binder.bind(org.eclipse.mita.base.typesystem.ILibraryProvider).to(StandardLibraryProvider);
 		binder.bind(IConstraintFactory).to(BaseConstraintFactory);
 		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
+		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 	}
 	
 	def Class<? extends ILibraryProvider> bindILibraryProvider() {
