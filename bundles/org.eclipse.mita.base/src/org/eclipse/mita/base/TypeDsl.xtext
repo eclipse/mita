@@ -74,6 +74,7 @@ GeneratedTypeConstructor returns Operation:
 ;
 
 GeneratedTypeParameterList returns ParameterList:
+	{ParameterList}
 	'(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
 ;
 
