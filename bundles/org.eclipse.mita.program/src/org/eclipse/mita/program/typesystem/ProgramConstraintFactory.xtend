@@ -31,7 +31,6 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
 		return new TypeVariable(eventHandler) => [typeVar |
 			//system.addConstraint(new Equality(typeVar, new FunctionType(eventHandler, StdlibTypeRegistry.voidType, StdlibTypeRegistry.voidType)));
-		
 			system.computeConstraints(eventHandler.block);
 		]
 	}
