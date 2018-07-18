@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem
 import com.google.inject.Inject
 import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
@@ -18,11 +19,9 @@ import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.mita.base.types.Enumerator
-import org.eclipse.mita.base.types.NativeType
-import org.eclipse.xtext.naming.QualifiedName
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -53,25 +52,25 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val signed = intPatternMatcher.group(1) == 'int';
 			val size = Integer.parseInt(intPatternMatcher.group(2)) / 8;
 			
-			return system.associate(type, new IntegerType(type, size, signed));
+			return system.associate(new IntegerType(type, size, signed));
 		} else {
-			return system.associate(type, new AtomicType(type, type.name));
+			return system.associate(new AtomicType(type, type.name));
 		}
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ];
-		return system.associate(structType, new ProdType(structType, types));
+		return system.associate(new ProdType(structType, types));
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
 		val types = sumType.alternatives.map[ system.computeConstraints(it) as AbstractType ];
-		return system.associate(sumType, new SumType(sumType, types));
+		return system.associate(new SumType(sumType, types));
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumAlternative sumAlt) {
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ];
-		return system.associate(sumAlt, new ProdType(sumAlt, types));
+		return system.associate(new ProdType(sumAlt, types));
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
@@ -85,7 +84,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NativeType enumerator) {
-		return system.associate(enumerator, new AtomicType(enumerator, enumerator.name));
+		return system.associate(new AtomicType(enumerator, enumerator.name));
 	}
 	
 //	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
@@ -97,8 +96,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return null;
 	}
 	
-	protected def associate(ConstraintSystem system, EObject origin, AbstractType t) {
-		val typeVar = new TypeVariable(origin);
+	protected def associate(ConstraintSystem system, AbstractType t) {
+		return associate(system, t, t.origin);
+	}
+	
+	protected def associate(ConstraintSystem system, AbstractType t, EObject typeVarOrigin) {
+		val typeVar = new TypeVariable(typeVarOrigin);
 		system.addConstraint(new Equality(typeVar, t));
 		return typeVar;
 	}
