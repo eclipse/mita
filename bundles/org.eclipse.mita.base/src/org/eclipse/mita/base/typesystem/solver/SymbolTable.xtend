@@ -18,7 +18,7 @@ class SymbolTable {
 	public def put(EObject obj) {
 		val fqn = nameProvider.getFullyQualifiedName(obj);
 		if(content.containsKey(fqn)) {
-			throw new IllegalArgumentException('''fqn already known: «fqn»''');
+//			throw new IllegalArgumentException('''fqn already known: «fqn»''');
 		}
 		this.content.put(fqn, obj);
 	}

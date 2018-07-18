@@ -2,12 +2,13 @@ package org.eclipse.mita.base.typesystem.infra
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.xtext.diagnostics.IDiagnosticConsumer
-import org.eclipse.xtext.linking.lazy.LazyLinker
+import org.eclipse.xtext.linking.impl.Linker
 
-class MitaLinker extends LazyLinker {
+class MitaLinker extends Linker {
 
 	@Inject
 	protected IConstraintFactory constraintFactory;
@@ -21,6 +22,10 @@ class MitaLinker extends LazyLinker {
 		val symbols = symbolFactory.create(model);
 		val constraints = constraintFactory.create(symbols, model);
 		println(constraints);
+	}
+	
+	override protected isClearAllReferencesRequired(Resource resource) {
+		false
 	}
 	
 }

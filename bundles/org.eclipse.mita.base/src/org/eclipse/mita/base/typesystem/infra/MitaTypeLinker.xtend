@@ -13,10 +13,10 @@ import org.eclipse.mita.base.types.TypesPackage
 class MitaTypeLinker extends Linker {
 	
 	override ensureIsLinked(EObject obj, INode node, CrossReference ref, Set<EReference> handledReferences, IDiagnosticProducer producer) {
-		println(ref.type);
 		val classifier = ref.type?.classifier;
 		if(classifier instanceof EClass) {
 			if(TypesPackage.eINSTANCE.type.isSuperTypeOf(classifier)) {
+				println('''Linking types: «obj.eResource»:«obj» from «node»''');
 				super.ensureIsLinked(obj, node, ref, handledReferences, producer);
 			}
 		}
