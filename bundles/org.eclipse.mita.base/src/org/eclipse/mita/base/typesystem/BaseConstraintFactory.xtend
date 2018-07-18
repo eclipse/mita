@@ -5,6 +5,7 @@ import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
+import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
@@ -21,6 +22,8 @@ import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
 class BaseConstraintFactory implements IConstraintFactory {
@@ -47,7 +50,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Type type) {
-		system.associate(type, system.translateTypeDeclaration(type));
+		system.associate(system.translateTypeDeclaration(type), type);
 	}
 
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, PrimitiveType type) {
@@ -110,7 +113,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NativeType enumerator) {
-		return system.associate(enumerator, new AtomicType(enumerator, enumerator.name));
+		return system.associate(new AtomicType(enumerator, enumerator.name));
 	}
 	
 //	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
@@ -122,8 +125,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return null;
 	}
 	
-	protected def associate(ConstraintSystem system, EObject origin, AbstractType t) {
-		val typeVar = new TypeVariable(origin);
+	protected def associate(ConstraintSystem system, AbstractType t) {
+		return associate(system, t, t.origin);
+	}
+	
+	protected def associate(ConstraintSystem system, AbstractType t, EObject typeVarOrigin) {
+		val typeVar = new TypeVariable(typeVarOrigin);
 		system.addConstraint(new Equality(typeVar, t));
 		return typeVar;
 	}

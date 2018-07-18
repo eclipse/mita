@@ -5,11 +5,17 @@ import org.eclipse.xtext.resource.XtextResource
 import com.google.inject.Inject
 import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
 import org.eclipse.xtext.diagnostics.Severity
+import java.util.Map
+import java.io.IOException
 
 class MitaBaseResource extends XtextResource {
 	
 	@Inject
 	protected MitaTypeLinker typeLinker;
+	
+	override load(Map<?, ?> options) throws IOException {
+		super.load(options)
+	}
 	
 	override updateInternalState(IParseResult newParseResult) {
 		this.parseResult = newParseResult;

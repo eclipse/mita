@@ -19,6 +19,7 @@ package org.eclipse.mita.base
 import com.google.inject.Binder
 import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
+import org.eclipse.mita.base.generator.BaseQualifiedNameProvider
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaTypeSystem
@@ -31,12 +32,11 @@ import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.typesystem.infra.StandardLibraryProvider
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
-import org.eclipse.xtext.naming.IQualifiedNameProvider
-import org.eclipse.mita.base.generator.BaseQualifiedNameProvider
 
 class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 
@@ -68,6 +68,9 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 	override bindXtextResource() {
 		return MitaBaseResource
 	}
+//	override bindXtextResourceSet() {
+//		return MitaResourceSet
+//	}
 	override bindIQualifiedNameProvider() {
 		return BaseQualifiedNameProvider
 	}
