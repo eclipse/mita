@@ -1,15 +1,13 @@
 ---
 title: "Introduction"
 description: "The definite reference of the Mita language; all its keywords, constructs and tricks."
-weight: -10
+weight: 1
 draft: false
-toc: false
-type: index
 menu:
   main:
     parent: Language
     identifier: introduction
-    weight: -10
+    weight: 01
 ---
 
 Mita is a programming language that is focused on making Internet-Of-Things things easier to program, especially for developers without embedded development background.

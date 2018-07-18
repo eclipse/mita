@@ -1,0 +1,13 @@
+.project .logo img {
+    background-color: transparent;
+    border-radius: 0px;
+}
+
+.header, .footer {
+    /* background: linear-gradient(30deg, #324D5C, #FFE33C) !important; */
+    background: linear-gradient(-30deg, #FFC848, #1EC4B4) !important;
+}
+
+.article code {
+    background-color: transparent;
+}
