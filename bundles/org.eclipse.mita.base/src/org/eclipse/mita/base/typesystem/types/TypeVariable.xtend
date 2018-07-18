@@ -21,12 +21,12 @@ class TypeVariable extends AbstractType {
 		return #[this];
 	}
 	
-	override AbstractType replace(AbstractType from, AbstractType with) {
-		return if(from == this) with else this;
+	override AbstractType replace(TypeVariable from, AbstractType with) {
+		return if(from == this) {
+			with;
+		} 
+		else {
+			this;	
+		}
 	}
-	
-	override instantiate() {
-		return new TypeVariable(origin);
-	}
-	
 }

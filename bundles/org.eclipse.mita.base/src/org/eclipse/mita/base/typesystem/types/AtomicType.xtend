@@ -1,6 +1,5 @@
 package org.eclipse.mita.base.typesystem.types
 
-import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.emf.ecore.EObject
 
 class AtomicType extends AbstractType {
@@ -14,16 +13,12 @@ class AtomicType extends AbstractType {
 		super(origin, name);
 	}
 	
-	override replace(AbstractType from, AbstractType with) {
+	override replace(TypeVariable from, AbstractType with) {
 		return this;
 	}
 	
 	override getFreeVars() {
 		return #[];
 	}
-	
-	override instantiate() {
-		return this;
-	}
-	
+		
 }

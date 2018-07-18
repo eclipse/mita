@@ -12,16 +12,11 @@ class IntegerType extends AbstractType {
 		this.signed = signed;
 	}
 	
-	override replace(AbstractType from, AbstractType with) {
+	override replace(TypeVariable from, AbstractType with) {
 		return this;
 	}
 	
 	override getFreeVars() {
 		return #[];
-	}
-	
-	override instantiate() {
-		return this;
-	}
-	
+	}	
 }

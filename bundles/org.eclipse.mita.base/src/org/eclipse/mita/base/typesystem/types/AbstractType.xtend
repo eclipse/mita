@@ -10,9 +10,11 @@ abstract class AbstractType {
 	protected final EObject origin;
 	protected final String name;
 	
-	abstract def AbstractType replace(AbstractType from, AbstractType with);
+	abstract def AbstractType replace(TypeVariable from, AbstractType with);
 	
-	abstract def AbstractType instantiate();
+	def Pair<Iterable<TypeVariable>, AbstractType> instantiate() {
+		return #[] -> this;
+	}
 	
 	abstract def Iterable<TypeVariable> getFreeVars();
 	

@@ -20,18 +20,11 @@ class FunctionType extends AbstractType {
 		from + " → " + to
 	}
 	
-	override replace(AbstractType from, AbstractType with) {
+	override replace(TypeVariable from, AbstractType with) {
 		new FunctionType(origin, this.from.replace(from, with), this.to.replace(from, with));
 	}
 	
 	override getFreeVars() {
 		return #[from, to].filter(TypeVariable);
-	}
-	
-	override instantiate() {
-		val nfrom = if(from instanceof TypeVariable) new TypeVariable(from.origin) else from;
-		val nto = if(to instanceof TypeVariable) new TypeVariable(to.origin) else to;
-		return new FunctionType(origin, nfrom, nto);
-	}
-	
+	}	
 }
