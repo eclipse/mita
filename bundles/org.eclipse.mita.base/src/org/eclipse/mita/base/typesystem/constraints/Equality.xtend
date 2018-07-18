@@ -4,8 +4,10 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtend.lib.annotations.Accessors
 
 @FinalFieldsConstructor 
+@Accessors
 @EqualsHashCode
 class Equality extends AbstractTypeConstraint {
 	protected final AbstractType left;

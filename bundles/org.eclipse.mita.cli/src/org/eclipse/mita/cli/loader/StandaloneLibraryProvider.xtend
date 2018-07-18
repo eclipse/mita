@@ -13,10 +13,9 @@
 
 package org.eclipse.mita.cli.loader
 
-import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
-import org.eclipse.mita.cli.commands.CompileToCAdapter
 import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.cli.commands.CompileToCAdapter
 
 /*
  * In a standalone context we cannot register libraries like we do in an Eclipse setting.
@@ -38,11 +37,7 @@ class StandaloneLibraryProvider implements ILibraryProvider {
 		this.resourceSet = resourceSet;
 	}
 
-	override getImportedLibraries(Resource context) {
-		defaultLibraries;
-	}
-	
-	override getDefaultLibraries() {
+	override getLibraries() {
 		if(resourceSet === null) {
 			return #[]
 		} else {

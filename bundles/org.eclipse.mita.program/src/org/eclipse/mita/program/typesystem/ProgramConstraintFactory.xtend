@@ -15,44 +15,33 @@ import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.Program
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program prog) {
-		prog.functionDefinitions.forEach[
-			system.computeConstraints(it);
-		]
-		prog.types.forEach[
-			system.computeConstraints(it);
-		]
-		prog.eventHandlers.forEach[
-			system.computeConstraints(it);
-		]
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
+		println('''Prog: «program.eResource»''');
+		system.computeConstraintsForChildren(program);
 		return null;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
-		return new TypeVariable(eventHandler) => [typeVar |
-			val voidType = system.symbolTable.content.get(StdlibTypeRegistry.voidTypeQID);
-			val voidTypeAt = new AtomicType(voidType, "void");
-			system.addConstraint(new Equality(typeVar, new FunctionType(eventHandler, voidTypeAt, voidTypeAt)));
-			system.computeConstraints(eventHandler.block);
-		]
+		system.computeConstraints(eventHandler.block);
+		
+		val voidType = system.symbolTable.content.get(StdlibTypeRegistry.voidTypeQID);
+		val voidTypeAt = new AtomicType(voidType, "void");
+		return system.associate(new FunctionType(eventHandler, voidTypeAt, voidTypeAt));
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {
-		return new TypeVariable(function) => [typeVar |
-			val fromType = system.computeParameterConstraints(function, function.parameters);
-			val toType = system.computeConstraints(function.typeSpecifier);
+		system.computeConstraints(function.body);
 			
-			system.addConstraint(new Equality(typeVar, new FunctionType(function, fromType, toType)));
-			
-			system.computeConstraints(function.body);	
-		]
+		val fromType = system.computeParameterConstraints(function, function.parameters);
+		val toType = system.computeConstraints(function.typeSpecifier);
+		val result = system.associate(new FunctionType(function, fromType, toType));
+		return result;
 	}
 	
-	def computeParameterConstraints(ConstraintSystem system, FunctionDefinition function, ParameterList parms) {
-		return new TypeVariable(parms) => [typeVar |
-			val parmTypes = parms.parameters.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].toList
-			system.addConstraint(new Equality(typeVar, new ProdType(parms, parmTypes)))
-		]
+	protected def computeParameterConstraints(ConstraintSystem system, FunctionDefinition function, ParameterList parms) {
+		val parmTypes = parms.parameters.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
+		system.associate(new ProdType(parms, parmTypes));
 	}
 	
 }

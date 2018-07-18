@@ -38,6 +38,7 @@ import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Sensor
@@ -65,7 +66,6 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 

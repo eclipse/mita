@@ -61,31 +61,31 @@ class MitaTypeSystem extends GenericTypeSystem {
 		getType(ITypeSystem.STRING).abstract = true
 	}
 
-	override getType(String type) {
-		val result = super.getType(type)
-		if (result === null) {
-			lazyLoadNativeTypes()
-			return super.getType(type)
-		}
-		result
-	}
-
-	override getTypes() {
-		lazyLoadNativeTypes()
-		super.getTypes()
-	}
-
-	protected def lazyLoadNativeTypes() {
-		if (!nativeTypesLoaded) {
-			// Load native types from stdlibs
-			libraryProvider.defaultLibraries.toSet.forEach [
-				exportedTypes.forEach [ type |
-					declareType(type.EObjectOrProxy as Type, (type.EObjectOrProxy as Type).name)
-				]
-			]
-			nativeTypesLoaded = true
-		}
-	}
+//	override getType(String type) {
+//		val result = super.getType(type)
+//		if (result === null) {
+//			lazyLoadNativeTypes()
+//			return super.getType(type)
+//		}
+//		result
+//	}
+//
+//	override getTypes() {
+//		lazyLoadNativeTypes()
+//		super.getTypes()
+//	}
+//
+//	protected def lazyLoadNativeTypes() {
+//		if (!nativeTypesLoaded) {
+//			// Load native types from stdlibs
+//			libraryProvider.defaultLibraries.toSet.forEach [
+//				exportedTypes.forEach [ type |
+//					declareType(type.EObjectOrProxy as Type, (type.EObjectOrProxy as Type).name)
+//				]
+//			]
+//			nativeTypesLoaded = true
+//		}
+//	}
 
 	def Iterable<IEObjectDescription> getExportedTypes(URI libraryUri) {
 		val set = new XtextResourceSet();

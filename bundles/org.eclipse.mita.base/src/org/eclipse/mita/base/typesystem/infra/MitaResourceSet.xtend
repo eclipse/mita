@@ -4,8 +4,8 @@ import com.google.inject.Inject
 import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.common.util.URI
+import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.types.ImportStatement
-import org.eclipse.mita.base.typesystem.ILibraryProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.XtextResourceSet
 
@@ -21,7 +21,7 @@ class MitaResourceSet extends XtextResourceSet {
 		val result = super.getResource(uri, loadOnDemand);
 		if(result instanceof MitaBaseResource) {
 			if(loadOnDemand) {
-				libraryProvider.ensureLibrariesLoaded(this);
+				ensureLibrariesAreLoaded();
 				loadRequiredResources(result, new HashSet());
 				
 				linkTypes();
@@ -31,9 +31,18 @@ class MitaResourceSet extends XtextResourceSet {
 		return result;
 	}
 	
+	protected def void ensureLibrariesAreLoaded() {
+		for(uri : libraryProvider.libraries.filter[ it.lastSegment.startsWith("stdlib_") ]) {
+			if(this.resources.findFirst[ it.URI == uri ] === null) {
+				getResource(uri, true);				
+			}
+		}
+	}
+	
 	protected def void loadRequiredResources(MitaBaseResource resource, Set<URI> loadedDependencies) {
+		// TODO: not sure we need this here ... we're loading all libraries into the resource set anyways, what do a few more files in the project matter?
 		val root = resource.contents.flatMap[ it.eAllContents.toIterable().filter(ImportStatement) ].toList();
-		val requiredResources = root.flatMap[ packageResourceMapper.getResources(this, QualifiedName.create(it.importedNamespace?.split("\\."))) ];
+		val requiredResources = root.flatMap[ packageResourceMapper.getResourceURIs(this, QualifiedName.create(it.importedNamespace?.split("\\."))) ];
 		
 		for(dep : requiredResources) {
 			if(!loadedDependencies.contains(dep)) {
