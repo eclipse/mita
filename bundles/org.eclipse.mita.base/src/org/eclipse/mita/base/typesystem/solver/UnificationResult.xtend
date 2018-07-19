@@ -29,8 +29,8 @@ class UnificationResult {
 		return new UnificationResult(null, issue);
 	}
 	
-	static def UnificationResult failure(String issue) {
-		return new UnificationResult(null, new UnificationIssue(issue));
+	static def UnificationResult failure(Object origin, String issue) {
+		return new UnificationResult(null, new UnificationIssue(origin, issue));
 	}
 	
 }

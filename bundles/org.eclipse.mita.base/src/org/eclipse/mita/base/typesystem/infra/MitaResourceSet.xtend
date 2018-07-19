@@ -8,6 +8,7 @@ import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
+import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolver
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.xtext.naming.QualifiedName
@@ -33,6 +34,8 @@ class MitaResourceSet extends XtextResourceSet {
 	
 	@Inject
 	protected ISymbolFactory symbolFactory;
+	
+	protected ConstraintSolution latestSolution;
 	
 	override getResource(URI uri, boolean loadOnDemand) {
 		val result = super.getResource(uri, loadOnDemand);
@@ -61,17 +64,7 @@ class MitaResourceSet extends XtextResourceSet {
 		];
 		
 		val allConstraints = ConstraintSystem.combine(constraints);
-		println('''
-		«allConstraints»
-		''')
-		
-		val solution = constraintSolver.solve(allConstraints);
-		println('''
-		Issues:
-			«FOR issue : constraintSolver.issues SEPARATOR "\n"»«issue»«ENDFOR»
-		Solution:
-			«solution»
-		''')
+		latestSolution = constraintSolver.solve(allConstraints);
 	}
 	
 	protected def void ensureLibrariesAreLoaded() {
@@ -100,6 +93,10 @@ class MitaResourceSet extends XtextResourceSet {
 	
 	protected def linkTypes() {
 		resources.filter(MitaBaseResource).forEach[ it.doLinkTypes ];
+	}
+	
+	public def getLatestSolution() {
+		return latestSolution;
 	}
 	
 }

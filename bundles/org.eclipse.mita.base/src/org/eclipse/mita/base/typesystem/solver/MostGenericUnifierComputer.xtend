@@ -29,7 +29,7 @@ class MostGenericUnifierComputer {
 				return UnificationResult.failure(error);
 			}
 		} else {
-			return UnificationResult.failure('''Cannot unify «t1» and «t2»''');
+			return UnificationResult.failure(#[t1, t2], '''Cannot unify «t1» and «t2»''');
 		}
 		
 		// none is free - ask the defined types
@@ -38,7 +38,7 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue validateSubstitution(AtomicType t1, AtomicType t2) {
 		if(t1.name != t2.name) {
-			return new UnificationIssue('''Cannot unify «t1» and «t2»''');
+			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
 		}
 		
 		// not an issue
@@ -46,7 +46,7 @@ class MostGenericUnifierComputer {
 	}
 	
 	protected dispatch def UnificationIssue validateSubstitution(AbstractType t1, AbstractType t2) {
-		return new UnificationIssue('''Cannot unify «t1» and «t2»''');
+		return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
 	}
 
 }

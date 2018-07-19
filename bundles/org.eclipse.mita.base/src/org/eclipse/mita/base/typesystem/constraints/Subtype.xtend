@@ -25,4 +25,8 @@ class Subtype extends AbstractTypeConstraint {
 		return subType.freeVars + superType.freeVars;
 	}
 	
+	override getOrigins() {
+		return #[subType, superType].map[ it.origin ];
+	}
+	
 }

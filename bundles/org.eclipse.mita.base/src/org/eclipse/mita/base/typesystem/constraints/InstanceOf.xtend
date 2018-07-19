@@ -19,4 +19,8 @@ class InstanceOf extends AbstractTypeConstraint {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
+	override getOrigins() {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
 }
