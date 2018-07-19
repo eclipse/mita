@@ -13,6 +13,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.Program
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -32,10 +33,19 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {
 		system.computeConstraints(function.body);
+		
+		val typeArgs = function.typeParameters.map[system.computeConstraints(it)].force()
 			
 		val fromType = system.computeParameterConstraints(function, function.parameters);
 		val toType = system.computeConstraints(function.typeSpecifier);
-		val result = system.associate(new FunctionType(function, fromType, toType));
+		val funType = new FunctionType(function, fromType, toType);
+		var result = system.associate(	
+			if(typeArgs.empty) {
+				funType
+			} else {
+				new TypeScheme(function, typeArgs, funType);	
+			}
+		)
 		return result;
 	}
 	

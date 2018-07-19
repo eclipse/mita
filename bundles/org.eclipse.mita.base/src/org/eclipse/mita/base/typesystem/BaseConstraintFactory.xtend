@@ -91,12 +91,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
-		val atomicType = new AtomicType(genType, genType.name);
+		val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
+		val atomicType = new AtomicType(genType, genType.name, typeArgs.map[it as AbstractType].force());
 		if(typeParameters.empty) {
 			return atomicType;
 		}
 		else {
-			val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
 			return new TypeScheme(genType, typeArgs, atomicType);
 		}
 	}

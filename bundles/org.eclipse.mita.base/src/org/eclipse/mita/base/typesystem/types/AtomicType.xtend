@@ -9,7 +9,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 @EqualsHashCode
 class AtomicType extends AbstractType {
 	protected static Integer instanceCount = 0;
-	protected final List<AbstractType> freeVars;
+	protected final List<AbstractType> typeArguments;
 	
 	
 	new(EObject origin) {
@@ -21,12 +21,16 @@ class AtomicType extends AbstractType {
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		val newVars = freeVars.map[it.replace(from, with)]
+		val newVars = typeArguments.map[it.replace(from, with)]
 		return new AtomicType(origin, name, newVars);
 	}
 	
 	override getFreeVars() {
-		return freeVars.flatMap[it.freeVars];
+		return typeArguments.flatMap[it.freeVars];
+	}
+	
+	override toString() {
+		return '''«super.toString»«IF !typeArguments.empty»<«typeArguments.join(",")»>«ENDIF»'''
 	}
 		
 }
