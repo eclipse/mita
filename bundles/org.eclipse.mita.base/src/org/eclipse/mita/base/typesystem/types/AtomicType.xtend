@@ -1,24 +1,32 @@
 package org.eclipse.mita.base.typesystem.types
 
+import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
+@FinalFieldsConstructor
+@EqualsHashCode
 class AtomicType extends AbstractType {
 	protected static Integer instanceCount = 0;
+	protected final List<AbstractType> freeVars;
+	
 	
 	new(EObject origin) {
-		super(origin, '''atom_«instanceCount++»''');
+		this(origin,  '''atom_«instanceCount++»''');
 	}
 	
 	new(EObject origin, String name) {
-		super(origin, name);
+		this(origin, name, #[]);
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		return this;
+		val newVars = freeVars.map[it.replace(from, with)]
+		return new AtomicType(origin, name, newVars);
 	}
 	
 	override getFreeVars() {
-		return #[];
+		return freeVars.flatMap[it.freeVars];
 	}
 		
 }
