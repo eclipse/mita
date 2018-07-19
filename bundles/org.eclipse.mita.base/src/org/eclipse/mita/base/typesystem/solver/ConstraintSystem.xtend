@@ -1,11 +1,14 @@
 package org.eclipse.mita.base.typesystem.solver
 
+import com.google.inject.Inject
 import java.util.ArrayList
 import java.util.Collections
 import java.util.List
+import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 
 class ConstraintSystem {
+	@Inject protected ConstraintSystemProvider constraintSystemProvider; 
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected final SymbolTable symbolTable;
 
@@ -62,6 +65,19 @@ class ConstraintSystem {
 		result.constraints.add(constraint);
 		result.constraints.addAll(this.constraints);
 		return result;
+	}
+	
+	def static combine(Iterable<ConstraintSystem> systems) {
+		if(systems.empty) {
+			return null;
+		}
+		
+		val csp = systems.head.constraintSystemProvider;
+		return systems.fold(csp.get(), [r, t|
+			r.constraints.addAll(t.constraints);
+			r.symbolTable.content.putAll(t.symbolTable.content);
+			return r;
+		]);
 	}
 	
 }

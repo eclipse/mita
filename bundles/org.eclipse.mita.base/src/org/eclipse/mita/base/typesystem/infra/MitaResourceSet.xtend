@@ -6,8 +6,13 @@ import java.util.Set
 import org.eclipse.emf.common.util.URI
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.typesystem.IConstraintFactory
+import org.eclipse.mita.base.typesystem.ISymbolFactory
+import org.eclipse.mita.base.typesystem.solver.ConstraintSolver
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.XtextResourceSet
+import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class MitaResourceSet extends XtextResourceSet {
 	
@@ -16,6 +21,18 @@ class MitaResourceSet extends XtextResourceSet {
 	
 	@Inject
 	protected IPackageResourceMapper packageResourceMapper;
+	
+	@Inject
+	protected OnChangeEvictingCache cache;
+	
+	@Inject
+	protected IConstraintFactory constraintFactory;
+	
+	@Inject
+	protected ConstraintSolver constraintSolver;
+	
+	@Inject
+	protected ISymbolFactory symbolFactory;
 	
 	override getResource(URI uri, boolean loadOnDemand) {
 		val result = super.getResource(uri, loadOnDemand);
@@ -26,9 +43,27 @@ class MitaResourceSet extends XtextResourceSet {
 				
 				linkTypes();
 				result.doLinking();
+				
+				computeTypes();
 			}
 		}
 		return result;
+	}
+	
+	protected def computeTypes() {
+		val constraints = resources.map[ 
+			val model = it.contents.head;
+			cache.get(ConstraintSystem, it, [
+				val symbols = symbolFactory.create(model);
+				val result = constraintFactory.create(symbols, model);
+				println(result);
+				return result;		
+			]);
+		];
+		
+		val allConstraints = ConstraintSystem.combine(constraints);
+		val solution = constraintSolver.solve(allConstraints);
+		println(solution);
 	}
 	
 	protected def void ensureLibrariesAreLoaded() {
