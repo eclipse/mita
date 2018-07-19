@@ -11,7 +11,7 @@ class MostGenericUnifierComputer {
 	@Inject
 	protected Provider<Substitution> substitutionProvider;
 	
-	def Substitution compute(AbstractType t1, AbstractType t2) {
+	def UnificationResult compute(AbstractType t1, AbstractType t2) {
 		val t1IsFree = t1 instanceof TypeVariable;
 		val t2IsFree = t2 instanceof TypeVariable;
 		
@@ -26,27 +26,27 @@ class MostGenericUnifierComputer {
 			val error = validateSubstitution(t1, t2);
 			if(error !== null) {
 				// mark substition as errornous
-				println(error)
+				return UnificationResult.failure(error);
 			}
 		} else {
-			println('''Cannot unify «t1» and «t2»''');
+			return UnificationResult.failure('''Cannot unify «t1» and «t2»''');
 		}
 		
 		// none is free - ask the defined types
-		return result;
+		return UnificationResult.success(result);
 	}
 	
-	protected dispatch def String validateSubstitution(AtomicType t1, AtomicType t2) {
+	protected dispatch def UnificationIssue validateSubstitution(AtomicType t1, AtomicType t2) {
 		if(t1.name != t2.name) {
-			return '''Cannot unify «t1» and «t2»''';
+			return new UnificationIssue('''Cannot unify «t1» and «t2»''');
 		}
 		
 		// not an issue
 		return null;
 	}
 	
-	protected dispatch def String validateSubstitution(AbstractType t1, AbstractType t2) {
-		return '''Cannot unify «t1» and «t2»''';
+	protected dispatch def UnificationIssue validateSubstitution(AbstractType t1, AbstractType t2) {
+		return new UnificationIssue('''Cannot unify «t1» and «t2»''');
 	}
 
 }

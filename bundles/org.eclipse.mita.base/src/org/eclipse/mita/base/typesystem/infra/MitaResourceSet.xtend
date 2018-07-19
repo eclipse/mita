@@ -56,14 +56,19 @@ class MitaResourceSet extends XtextResourceSet {
 			cache.get(ConstraintSystem, it, [
 				val symbols = symbolFactory.create(model);
 				val result = constraintFactory.create(symbols, model);
-				println(result);
 				return result;		
 			]);
 		];
 		
 		val allConstraints = ConstraintSystem.combine(constraints);
 		val solution = constraintSolver.solve(allConstraints);
-		println(solution);
+		println('''
+		«allConstraints»
+		Issues:
+			«FOR issue : constraintSolver.issues SEPARATOR "\n"»«issue»«ENDFOR»
+		Solution:
+			«solution»
+		''')
 	}
 	
 	protected def void ensureLibrariesAreLoaded() {

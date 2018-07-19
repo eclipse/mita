@@ -47,4 +47,13 @@ class Substitution {
 		
 	}
 	
+	override toString() {
+		val sep = if(content.keySet.length < 3) {
+			' '
+		} else {
+			'\n'
+		};
+		return content.entrySet.map[ '''«it.key» ← «it.value»''' ].join(sep);
+	}
+	
 }
