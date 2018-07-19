@@ -24,5 +24,9 @@ class Equality extends AbstractTypeConstraint {
 	override getActiveVars() {
 		return left.freeVars + right.freeVars;
 	}
+	
+	override getOrigins() {
+		return #[left, right].map[ it.origin ];
+	}
 
 }

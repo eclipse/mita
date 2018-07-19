@@ -15,13 +15,10 @@ class ConstraintSolver {
 	
 	protected List<UnificationIssue> issues;
 	
-	def Substitution solve(ConstraintSystem system) {
+	def ConstraintSolution solve(ConstraintSystem system) {
 		issues = new ArrayList<UnificationIssue>();
-		return system.doSolve();
-	}
-	
-	public def getIssues() {
-		return issues;
+		val solution = system.doSolve();
+		return new ConstraintSolution(system, solution, issues);
 	}
 	
 	// equivalent to SOLVE(...) - call this function recursively from within the individual SOLVE dispatch functions
