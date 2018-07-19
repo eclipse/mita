@@ -26,6 +26,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import com.google.common.collect.Lists
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.types.TypedElement
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -121,7 +122,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			for(var i = 0; i < Integer.min(typeArguments.size, vars.size); i++) {
 				system.addConstraint(new Equality(vars.get(i), system.computeConstraints(typeArguments.get(i))));
 			}
-			system.associate(vars_typeScheme.value);
+			system.associate(vars_typeScheme.value, typeSpecifier);
 		}
 	}
 	
@@ -129,10 +130,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.associate(new AtomicType(enumerator, enumerator.name));
 	}
 	
-//	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
-//		
-//	}
-//	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypedElement element) {
+		return system.associate(system.computeConstraints(element.typeSpecifier), element);
+	}
+
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Void context) {
 		println('computeConstraints called on null');
 		return null;
@@ -148,7 +149,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		}
 		
 		val typeVar = TypeVariableAdapter.get(typeVarOrigin);
-		if(typeVar != t) {
+		if(typeVar != t && t !== null) {
 			system.addConstraint(new Equality(typeVar, t));
 		}
 		return typeVar;	

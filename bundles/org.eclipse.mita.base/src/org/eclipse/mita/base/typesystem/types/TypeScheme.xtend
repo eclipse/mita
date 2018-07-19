@@ -38,7 +38,7 @@ class TypeScheme extends AbstractType {
 	override instantiate() {
 		val newVars = new ArrayList<TypeVariable>();
 		val newOn = vars.fold(on, [term, boundVar | 
-			val freeVar = new TypeVariable(boundVar.origin);
+			val freeVar = new TypeVariable(null);
 			newVars.add(freeVar);
 			term.replace(boundVar, freeVar);
 		]);

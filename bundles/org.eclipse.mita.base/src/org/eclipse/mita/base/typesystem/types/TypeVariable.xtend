@@ -14,7 +14,7 @@ class TypeVariable extends AbstractType {
 	}
 	
 	override toString() {
-		'''«origin»∷ «name.replaceFirst("vf_", "t")»'''
+		'''[«origin»]«name.replaceFirst("vf_", "t")»'''
 	}
 	
 	override getFreeVars() {

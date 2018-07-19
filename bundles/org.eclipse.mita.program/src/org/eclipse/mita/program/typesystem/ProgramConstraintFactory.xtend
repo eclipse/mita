@@ -1,6 +1,8 @@
 package org.eclipse.mita.program.typesystem
 
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.ParameterList
+import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.Equality
@@ -9,12 +11,13 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.base.typesystem.types.TypeScheme
-import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -51,6 +54,24 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {
 		system.computeConstraints(function.body);
 		system._computeConstraints(function as Operation);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, VariableDeclaration vardecl) {
+		val explicitType = if(vardecl.typeSpecifier !== null) system._computeConstraints(vardecl as TypedElement);
+		val inferredType = if(vardecl.initialization !== null) system.computeConstraints(vardecl.initialization);
+		
+		var TypeVariable result;
+		if(explicitType !== null && inferredType !== null) {
+			// TODO: use implicit instance constraint (<=) instead of equality
+			system.addConstraint(new Equality(explicitType, inferredType));
+			result = explicitType;
+		} else if(explicitType !== null || inferredType !== null) {
+			result = explicitType ?: inferredType;
+		} else {
+			// the associate below will filter the X=X constraint we'd produce otherwise
+			result = TypeVariableAdapter.get(vardecl);
+		}
+		return system.associate(result, vardecl);
 	}
 	
 	protected def computeParameterConstraints(ConstraintSystem system, Operation function, ParameterList parms) {

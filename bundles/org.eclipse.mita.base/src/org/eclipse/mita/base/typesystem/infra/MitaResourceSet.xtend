@@ -61,9 +61,12 @@ class MitaResourceSet extends XtextResourceSet {
 		];
 		
 		val allConstraints = ConstraintSystem.combine(constraints);
-		val solution = constraintSolver.solve(allConstraints);
 		println('''
 		«allConstraints»
+		''')
+		
+		val solution = constraintSolver.solve(allConstraints);
+		println('''
 		Issues:
 			«FOR issue : constraintSolver.issues SEPARATOR "\n"»«issue»«ENDFOR»
 		Solution:
