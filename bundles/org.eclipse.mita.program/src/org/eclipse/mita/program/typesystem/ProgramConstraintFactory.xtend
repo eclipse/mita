@@ -14,6 +14,7 @@ import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.types.Operation
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -31,9 +32,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		return system.associate(new FunctionType(eventHandler, voidTypeAt, voidTypeAt));
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {
-		system.computeConstraints(function.body);
-		
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
 		val typeArgs = function.typeParameters.map[system.computeConstraints(it)].force()
 			
 		val fromType = system.computeParameterConstraints(function, function.parameters);
@@ -49,7 +48,12 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		return result;
 	}
 	
-	protected def computeParameterConstraints(ConstraintSystem system, FunctionDefinition function, ParameterList parms) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {
+		system.computeConstraints(function.body);
+		system._computeConstraints(function as Operation);
+	}
+	
+	protected def computeParameterConstraints(ConstraintSystem system, Operation function, ParameterList parms) {
 		val parmTypes = parms.parameters.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
 		system.associate(new ProdType(parms, parmTypes));
 	}

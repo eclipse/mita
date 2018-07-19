@@ -113,14 +113,38 @@ abstract class TypedElement {
 class ParameterList {
 	container Operation owningOperation opposite parameters
 	contains Parameter[] parameters opposite parameterList
+	op String toString() {
+		return parameters.join(", ")
+	}
 }
 
 class Operation extends Declaration, GenericElement {
 	contains ParameterList parameters opposite owningOperation
+	
+	op String toString() {
+		val typeParameterString = if(typeParameters.empty) {
+			""
+		} 
+		else {
+			"<" + typeParameters.join(", ") + ">"
+		}
+		val parameterString = parameters.toString
+		return name + typeParameterString + "(" + parameterString + ")"
+	}
 }
 class Parameter extends TypedElement, NamedElement {
 	container ParameterList parameterList opposite parameters
 	boolean optional
+	
+	op String toString() {
+		val optionalModifier = if(optional) {
+			"?"
+		}
+		else {
+			""
+		}
+		return name + ": " + typeSpecifier
+	}
 }
 class Enumerator extends Declaration {
 	container EnumerationType owningEnumeration opposite enumerator
