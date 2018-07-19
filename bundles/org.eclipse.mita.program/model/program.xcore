@@ -112,17 +112,26 @@ class FunctionDefinition extends ExportableOperation {
 	op String getId(){
 		return null;
 	}
+	op String toString() {
+		super.toString()
+	}
 }
 
 class GeneratedFunctionDefinition extends ExportableOperation, GeneratedElement {
 	op String getId(){
 		return null;
 	}
+	op String toString() {
+		super.toString()
+	}
 }
 
 class NativeFunctionDefinition extends ExportableOperation, GeneratedElement {
 	String header
 	boolean checked
+	op String toString() {
+		super.toString()
+	}
 }
 
 class FunctionParameterDeclaration extends Parameter {
