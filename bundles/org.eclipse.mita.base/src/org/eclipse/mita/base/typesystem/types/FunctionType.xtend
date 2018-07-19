@@ -2,8 +2,10 @@ package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.xtend.lib.annotations.Accessors
 
 @EqualsHashCode
+@Accessors
 class FunctionType extends AbstractType {
 	private static Integer instanceCount = 0;
 	

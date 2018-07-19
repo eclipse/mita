@@ -1,5 +1,6 @@
 package org.eclipse.mita.program.typesystem
 
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -7,9 +8,10 @@ import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.ParameterList
 import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
-import org.eclipse.mita.base.typesystem.constraints.Equality
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -23,7 +25,9 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
@@ -38,9 +42,14 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
 		system.computeConstraints(eventHandler.block);
 		
-		val voidType = system.symbolTable.content.get(StdlibTypeRegistry.voidTypeQID);
-		val voidTypeAt = new AtomicType(voidType, "void");
-		return system.associate(new FunctionType(eventHandler, voidTypeAt, voidTypeAt));
+		val voidType = eventHandler.voidType;
+		return system.associate(new FunctionType(eventHandler, voidType, voidType));
+	}
+	
+	protected def getVoidType(EObject context) {
+		val voidScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.typeSpecifier_Type);
+		val voidType = voidScope.getSingleElement(StdlibTypeRegistry.voidTypeQID).EObjectOrProxy;
+		return new AtomicType(voidType, "void");
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
@@ -70,8 +79,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		
 		var TypeVariable result;
 		if(explicitType !== null && inferredType !== null) {
-			// TODO: use implicit instance constraint (<=) instead of equality
-			system.addConstraint(new Equality(explicitType, inferredType));
+			system.addConstraint(new EqualityConstraint(inferredType, explicitType));
 			result = explicitType;
 		} else if(explicitType !== null || inferredType !== null) {
 			result = explicitType ?: inferredType;
@@ -116,7 +124,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		if(isFunctionCall) {
 			val argType = system.computeArgumentConstraints(varOrFun);
 			val supposedFunctionType = new FunctionType(varOrFun, argType, ourTypeVar);
-			system.addConstraint(new Equality(supposedFunctionType, referenceType));
+			system.addConstraint(new EqualityConstraint(supposedFunctionType, referenceType));
 			system.associate(ourTypeVar)		
 		} else {
 			system.associate(referenceType, varOrFun)
@@ -126,12 +134,35 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		return ourTypeVar;
 	}
 	
-	def AbstractType computeArgumentConstraints(ConstraintSystem system, ArgumentExpression expression) {
+	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, ArgumentExpression expression) {
 		val argTypes = expression.arguments.map[system.computeConstraints(it) as AbstractType].force();
-		return system.associate(new ProdType(expression, argTypes));
+		return new ProdType(null, argTypes);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument argument) {
 		return system.computeConstraints(argument.value);	
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnStatement statement) {
+		val enclosingFunction = EcoreUtil2.getContainerOfType(statement, FunctionDefinition);
+		val enclosingEventHandler = EcoreUtil2.getContainerOfType(statement, EventHandlerDeclaration);
+		if(enclosingFunction === null && enclosingEventHandler === null) {
+			return system.associate(new BottomType(statement, "Return outside of a function"));
+		}
+		
+		val functionReturnVar = if(enclosingFunction === null) {
+			statement.voidType;
+		} else {
+			system.computeConstraints(enclosingFunction.typeSpecifier)
+		}
+		val returnValVar = if(statement.value === null) {
+			system.associate(statement.voidType, statement);
+		} else {
+			system.associate(system.computeConstraints(statement.value), statement);
+		}
+		
+		// TODO: should be returnValVar <= functionReturnVar
+		system.addConstraint(new EqualityConstraint(returnValVar, functionReturnVar));
+		return returnValVar;	
 	}
 }

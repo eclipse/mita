@@ -36,7 +36,8 @@ import org.eclipse.mita.base.types.GeneratedElement
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.SumAlternative 
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils 
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -99,6 +100,11 @@ class TimeIntervalEvent extends EventSource {
 class SystemEventSource extends EventSource {
 	refers AbstractSystemResource origin
 	refers Event source
+	
+	op String toString() {
+		val refText = NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.systemEventSource_Source).head?.text;
+		return refText ?: "null";
+	}
 }
 
 enum TimeUnit {
@@ -214,6 +220,10 @@ class IfStatement extends ConditionalStatement {
 
 class ReturnStatement extends AbstractStatement {
 	contains Expression value
+	
+	op String toString() {
+		return 'return' + (if(value !== null) ' ...' else '');
+	}
 }
 
 class WhereIsStatement extends AbstractStatement {

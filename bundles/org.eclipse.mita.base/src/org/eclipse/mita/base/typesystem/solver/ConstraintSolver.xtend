@@ -4,8 +4,8 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.ArrayList
 import java.util.List
-import org.eclipse.mita.base.typesystem.constraints.Equality
-import org.eclipse.mita.base.typesystem.constraints.Subtype
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 
 class ConstraintSolver {
 	
@@ -22,12 +22,13 @@ class ConstraintSolver {
 	}
 	
 	// equivalent to SOLVE(...) - call this function recursively from within the individual SOLVE dispatch functions
+	// this function skips subtype constraints so that we can later solve them globally
 	protected def Substitution doSolve(ConstraintSystem system) {
 		if(system.constraints.empty) {
 			return Substitution.EMPTY;
 		}
 		
-		val takeOne = system.takeOne();
+		var takeOne = system.takeOne();
 		val result = takeOne.key.solve(takeOne.value);
 		if(result.isValid) {
 			return result.substition;
@@ -37,7 +38,7 @@ class ConstraintSolver {
 		}
 	}
 
-	protected dispatch def UnificationResult solve(Equality constraint, ConstraintSystem constraints) {
+	protected dispatch def UnificationResult solve(EqualityConstraint constraint, ConstraintSystem constraints) {
 		val unificationResult = mguComputer.compute(constraint.left, constraint.right);
 		if(unificationResult.valid) {
 			val mguSubstitution = unificationResult.substition;
@@ -47,9 +48,9 @@ class ConstraintSolver {
 		}
 	}
 	
-	protected dispatch def UnificationResult solve(Subtype constraint, ConstraintSystem constraints) {
+	protected dispatch def UnificationResult solve(ExplicitInstanceConstraint constraint, ConstraintSystem constraints) {
 		val instance = constraint.superType.instantiate();
-		return UnificationResult.success(constraints.plus(new Equality(constraint.subType, instance.value)).doSolve());
+		return UnificationResult.success(constraints.plus(new EqualityConstraint(constraint.subType, instance.value)).doSolve());
 	}
 	
 }

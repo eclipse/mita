@@ -12,4 +12,9 @@ abstract class AbstractTypeConstraint {
 	
 	abstract def Iterable<EObject> getOrigins();
 	
+	/**
+	 * @return all types involved in this constraint
+	 */
+	abstract def Iterable<AbstractType> getTypes();
+	
 }

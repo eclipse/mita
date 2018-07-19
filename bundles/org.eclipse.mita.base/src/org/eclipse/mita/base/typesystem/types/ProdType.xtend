@@ -3,8 +3,10 @@ package org.eclipse.mita.base.typesystem.types
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.xtend.lib.annotations.Accessors
 
 @EqualsHashCode
+@Accessors
 class ProdType extends AbstractType {
 	private static Integer instanceCount = 0;
 	

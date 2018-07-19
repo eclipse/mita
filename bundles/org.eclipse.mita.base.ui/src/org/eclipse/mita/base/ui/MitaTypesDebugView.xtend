@@ -10,8 +10,7 @@ import org.eclipse.jface.viewers.ISelection
 import org.eclipse.jface.viewers.TableViewer
 import org.eclipse.jface.viewers.TableViewerColumn
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.Equality
-import org.eclipse.mita.base.typesystem.constraints.Subtype
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.UnificationIssue
@@ -30,6 +29,7 @@ import org.eclipse.xtext.resource.EObjectAtOffsetHelper
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.xtext.util.concurrent.IUnitOfWork
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 
 class MitaTypesDebugView extends ViewPart {
 	protected TableViewer constraintViewer;
@@ -39,7 +39,7 @@ class MitaTypesDebugView extends ViewPart {
 	
 	override createPartControl(Composite parent) {
 		parent.layout = new FillLayout(SWT.HORIZONTAL.bitwiseOr(SWT.VERTICAL));
-		val tabFolder = new TabFolder(parent, SWT.BORDER);
+		val tabFolder = new TabFolder(parent, SWT.NONE);
 		
 		val constraintsItem = new TabItem(tabFolder, SWT.NONE);
 		constraintsItem.text = "Constraints";
@@ -78,38 +78,62 @@ class MitaTypesDebugView extends ViewPart {
 	}
 	
 	protected def addConstraintsColumn(TableViewer viewer) {
+		viewer.createTableViewerColumn("Left Origin", 100, 0)
+			.setLabelProvider(new ColumnLabelProvider() {
+            
+            override String getText(Object element) {
+                if(element instanceof EqualityConstraint) {
+                	return element.left?.origin?.toString() ?: "null";
+                } else if(element instanceof SubtypeConstraint) {
+                	return element.subType?.origin?.toString() ?: "null";
+                }
+            }
+            
+        });
 		viewer.createTableViewerColumn("Left", 100, 0)
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                if(element instanceof Equality) {
+                if(element instanceof EqualityConstraint) {
                 	return element.left?.toString() ?: "null";
-                } else if(element instanceof Subtype) {
+                } else if(element instanceof SubtypeConstraint) {
                 	return element.subType?.toString() ?: "null";
                 }
             }
             
         });
-        viewer.createTableViewerColumn("Operator", 100, 1)
+        viewer.createTableViewerColumn("Operator", 100, 0)
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                if(element instanceof Equality) {
+                if(element instanceof EqualityConstraint) {
                 	return '≡';
-                } else if(element instanceof Subtype) {
+                } else if(element instanceof SubtypeConstraint) {
                 	return '⩽';
                 }
             }
             
         });
-        viewer.createTableViewerColumn("Right", 100, 2)
+        viewer.createTableViewerColumn("Right", 100, 0)
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                if(element instanceof Equality) {
+                if(element instanceof EqualityConstraint) {
                 	return element.right?.toString() ?: "null";
-                } else if(element instanceof Subtype) {
+                } else if(element instanceof SubtypeConstraint) {
                 	return element.superType?.toString() ?: "null";
+                }
+            }
+            
+        });
+        viewer.createTableViewerColumn("Right Origin", 100, 0)
+			.setLabelProvider(new ColumnLabelProvider() {
+            
+            override String getText(Object element) {
+                if(element instanceof EqualityConstraint) {
+                	return element.right?.origin?.toString() ?: "null";
+                } else if(element instanceof SubtypeConstraint) {
+                	return element.superType?.origin?.toString() ?: "null";
                 }
             }
             
@@ -167,7 +191,7 @@ class MitaTypesDebugView extends ViewPart {
     		.map[ it as AbstractTypeConstraint ]
     	val result = origins
     		.filter[c| c.origins.exists[origin| objects.exists[obj| origin == obj ] ] ]
-    		.toList();
+    		.toSet();
 		this.constraintViewer.input = result;
     }
     
@@ -179,7 +203,7 @@ class MitaTypesDebugView extends ViewPart {
     		.map[ it as Entry<TypeVariable, AbstractType> ]
     	val result = origins
     		.filter[c| objects.exists[obj| c.key.origin == obj ] ]
-    		.toList();
+    		.toSet();
 		this.solutionViewer.input = result;
     }
     

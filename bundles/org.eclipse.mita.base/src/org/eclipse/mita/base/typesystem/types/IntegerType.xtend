@@ -1,14 +1,18 @@
 package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
+@Accessors
+@EqualsHashCode
 class IntegerType extends AbstractType {
-	protected final int byteLength;
+	protected final int widthInBytes;
 	protected final boolean signed;
 	
-	new(EObject origin, int byteLength, boolean signed) {
-		super(origin, '''«if(signed) 'i' else 'u'»«byteLength * 8»''');
-		this.byteLength = byteLength;
+	new(EObject origin, int widthInBytes, boolean signed) {
+		super(origin, '''«if(signed) 'i' else 'u'»«widthInBytes * 8»''');
+		this.widthInBytes = widthInBytes;
 		this.signed = signed;
 	}
 	
@@ -18,5 +22,5 @@ class IntegerType extends AbstractType {
 	
 	override getFreeVars() {
 		return #[];
-	}	
+	}
 }

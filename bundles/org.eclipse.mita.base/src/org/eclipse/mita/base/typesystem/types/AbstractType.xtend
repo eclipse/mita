@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.types
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 @Accessors
 @EqualsHashCode
@@ -20,6 +21,12 @@ abstract class AbstractType {
 	
 	override toString() {
 		name
+	}
+	
+	def generalize(ConstraintSystem system) {
+		val freeVarsInSystem = system.constraints.flatMap[ it.types.map[ it.freeVars ] ].toSet();
+		val quantifiedVars = freeVars.filter[ !freeVarsInSystem.contains(it) ].toList();
+		return new TypeScheme(origin, quantifiedVars, this);
 	}
 	
 }

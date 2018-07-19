@@ -7,7 +7,7 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 @FinalFieldsConstructor 
 @EqualsHashCode
-class InstanceOf extends AbstractTypeConstraint {
+class ImplicitInstanceOfConstraint extends AbstractTypeConstraint {
 	protected final AbstractType isInstance;
 	protected final AbstractType typeScheme;
 	
@@ -21,6 +21,10 @@ class InstanceOf extends AbstractTypeConstraint {
 	
 	override getOrigins() {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override getTypes() {
+		return #[isInstance, typeScheme];
 	}
 	
 }

@@ -11,7 +11,6 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.typesystem.constraints.Equality
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SymbolTable
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -27,6 +26,7 @@ import com.google.common.collect.Lists
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -120,7 +120,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val vars_typeScheme = system.translateTypeDeclaration(typeSpecifier.type).instantiate();
 			val vars = vars_typeScheme.key;
 			for(var i = 0; i < Integer.min(typeArguments.size, vars.size); i++) {
-				system.addConstraint(new Equality(vars.get(i), system.computeConstraints(typeArguments.get(i))));
+				system.addConstraint(new EqualityConstraint(vars.get(i), system.computeConstraints(typeArguments.get(i))));
 			}
 			system.associate(vars_typeScheme.value, typeSpecifier);
 		}
@@ -150,7 +150,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		val typeVar = TypeVariableAdapter.get(typeVarOrigin);
 		if(typeVar != t && t !== null) {
-			system.addConstraint(new Equality(typeVar, t));
+			system.addConstraint(new EqualityConstraint(typeVar, t));
 		}
 		return typeVar;	
 	}

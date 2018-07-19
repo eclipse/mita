@@ -9,7 +9,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 @FinalFieldsConstructor 
 @Accessors
 @EqualsHashCode
-class Equality extends AbstractTypeConstraint {
+class EqualityConstraint extends AbstractTypeConstraint {
 	protected final AbstractType left;
 	protected final AbstractType right;
 
@@ -18,7 +18,7 @@ class Equality extends AbstractTypeConstraint {
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		return new Equality(left.replace(from, with), right.replace(from, with));
+		return new EqualityConstraint(left.replace(from, with), right.replace(from, with));
 	}
 	
 	override getActiveVars() {
@@ -27,6 +27,10 @@ class Equality extends AbstractTypeConstraint {
 	
 	override getOrigins() {
 		return #[left, right].map[ it.origin ];
+	}
+	
+	override getTypes() {
+		return #[left, right];
 	}
 
 }
