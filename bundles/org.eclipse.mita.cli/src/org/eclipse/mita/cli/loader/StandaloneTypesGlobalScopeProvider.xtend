@@ -35,14 +35,14 @@ class StandaloneTypesGlobalScopeProvider extends TypesGlobalScopeProvider {
 	
 	override protected getLibraryScope(Resource context, EReference reference) {
 		val result = new HashSet();
-		for(URI uri : libraryProvider.getDefaultLibraries()) {
+		for(URI uri : libraryProvider.libraries) {
 			result.add(uri);
 		}
-		for(URI uri : libraryProvider.getImportedLibraries(context)) {
-			result.add(uri);
-		}
+//		for(URI uri : libraryProvider.getImportedLibraries(context)) {
+//			result.add(uri);
+//		}
 		
-		val objDescriptions = (libraryProvider.getDefaultLibraries() + libraryProvider.getImportedLibraries(context)).flatMap[
+		val objDescriptions = (libraryProvider.libraries).flatMap[
 			val resource = context.resourceSet.getResource(it, true);
 			val resourceServiceProvider = serviceProviderRegistry.getResourceServiceProvider(it);
 			

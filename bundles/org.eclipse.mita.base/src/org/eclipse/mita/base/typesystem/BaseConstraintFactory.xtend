@@ -5,11 +5,11 @@ import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
-import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.typesystem.constraints.Equality
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
@@ -22,9 +22,10 @@ import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
-import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
+import com.google.common.collect.Lists
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -45,8 +46,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
 		println('''computeConstraints is not implemented for «context.eClass.name»''');
-		context.eContents.forEach[ system.computeConstraints(it) ]
+		system.computeConstraintsForChildren(context);
 		return null;
+	}
+	
+	protected def void computeConstraintsForChildren(ConstraintSystem system, EObject context) {
+		context.eContents.forEach[ system.computeConstraints(it) ]
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Type type) {
@@ -65,51 +70,59 @@ class BaseConstraintFactory implements IConstraintFactory {
 		}
 	}
 
+	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, TypeParameter type) {
+		return TypeVariableAdapter.get(type);
+	}
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, StructureType structType) {
-		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ];
+		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		return new ProdType(structType, types);
 	}
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
-		val types = sumType.alternatives.map[ system.computeConstraints(it) as AbstractType ];
+		val types = sumType.alternatives.map[ system.computeConstraints(it) as AbstractType ].force();
 		return new SumType(sumType, types);
 	}
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
-		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ];
+		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		return new ProdType(sumAlt, types);
 	}
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
-		val atomicType = new AtomicType(genType);
+		val atomicType = new AtomicType(genType, genType.name);
 		if(typeParameters.empty) {
 			return atomicType;
 		}
 		else {
-			val typeArgs = typeParameters.map[ system.computeConstraints(it) ];
+			val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
 			return new TypeScheme(genType, typeArgs, atomicType);
 		}
 	}
 	
+	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, ExceptionTypeDeclaration genType) {
+		return new AtomicType(genType, genType.name);
+	}
+	
+	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, EObject genType) {
+		println('''No translateTypeDeclaration for «genType.eClass»''');
+		return new AtomicType(genType);
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
-		new TypeVariable(typeSpecifier) => [ typeVar |
-			
-			val typeArguments = typeSpecifier.typeArguments;
-			if(typeArguments.empty) {
-				system.addConstraint(new Equality(typeVar, system.computeConstraints(typeSpecifier.type)))
+		val typeArguments = typeSpecifier.typeArguments;
+		if(typeArguments.empty) {
+			system.associate(system.computeConstraints(typeSpecifier.type))
+		}
+		else {
+			val vars_typeScheme = system.translateTypeDeclaration(typeSpecifier.type).instantiate();
+			val vars = vars_typeScheme.key;
+			for(var i = 0; i < Integer.min(typeArguments.size, vars.size); i++) {
+				system.addConstraint(new Equality(vars.get(i), system.computeConstraints(typeArguments.get(i))));
 			}
-			else {
-				val vars_typeScheme = system.translateTypeDeclaration(typeSpecifier.type).instantiate();
-				system.addConstraint(new Equality(typeVar, vars_typeScheme.value));
-				
-				val vars = vars_typeScheme.key;
-				for(var i = 0; i < Integer.min(typeArguments.size, vars.size); i++) {
-					system.addConstraint(new Equality(vars.get(i), system.computeConstraints(typeArguments.get(i))));
-				}
-			}
-		]
+			system.associate(vars_typeScheme.value);
+		}
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NativeType enumerator) {
@@ -130,9 +143,19 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def associate(ConstraintSystem system, AbstractType t, EObject typeVarOrigin) {
-		val typeVar = new TypeVariable(typeVarOrigin);
-		system.addConstraint(new Equality(typeVar, t));
-		return typeVar;
+		if(typeVarOrigin === null) {
+			throw new UnsupportedOperationException("Associating a type variable without origin is not supported (on purpose)!");
+		}
+		
+		val typeVar = TypeVariableAdapter.get(typeVarOrigin);
+		if(typeVar != t) {
+			system.addConstraint(new Equality(typeVar, t));
+		}
+		return typeVar;	
+	}
+	
+	protected def <T> force(Iterable<T> list) {
+		return Lists.newArrayList(list);
 	}
 	
 }

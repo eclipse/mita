@@ -6,6 +6,6 @@ import org.eclipse.xtext.naming.QualifiedName
 
 interface IPackageResourceMapper {
 	
-	public def Iterable<URI> getResources(ResourceSet rs, QualifiedName packageName)
+	public def Iterable<URI> getResourceURIs(ResourceSet rs, QualifiedName packageName)
 	
 }

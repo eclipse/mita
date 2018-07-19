@@ -9,6 +9,8 @@ class ConstraintSolver {
 	
 	@Inject protected Provider<Substitution> substitutionProvider;
 	
+	@Inject protected MostGenericUnifierComputer mguComputer;
+	
 	def Substitution solve(ConstraintSystem system) {
 		if(system.constraints.empty) {
 			return Substitution.EMPTY;
@@ -19,7 +21,7 @@ class ConstraintSolver {
 	}
 
 	protected dispatch def Substitution solve(Equality constraint, ConstraintSystem constraints) {
-		val Substitution mguSubstitution = null;
+		val Substitution mguSubstitution = mguComputer.compute(constraint.left, constraint.right);
 		return mguSubstitution.apply(mguSubstitution.apply(constraints).solve());
 	}
 	

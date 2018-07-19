@@ -34,12 +34,17 @@ class ConstraintSystem {
 
 		res.append("Constraints:\n")
 		constraints.forEach[
-			res.append("\t")
-			res.append(it)
-			res.append("\n")
+			foo(res, it)
 		]
 		
 		return res.toString
+	}
+	
+	def foo(StringBuilder res, AbstractTypeConstraint it){
+			res.append("\t")
+			res.append(it)
+			res.append("\n")
+		
 	}
 	
 	def takeOne() {

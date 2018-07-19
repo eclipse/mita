@@ -18,4 +18,8 @@ abstract class AbstractType {
 	
 	abstract def Iterable<TypeVariable> getFreeVars();
 	
+	override toString() {
+		name
+	}
+	
 }

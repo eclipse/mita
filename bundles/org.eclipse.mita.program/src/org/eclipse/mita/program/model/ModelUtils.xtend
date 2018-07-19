@@ -17,6 +17,7 @@ import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.Iterator
 import java.util.NoSuchElementException
+import java.util.TreeMap
 import java.util.function.Predicate
 import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.common.util.EList
@@ -37,6 +38,7 @@ import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
@@ -49,16 +51,13 @@ import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.ProgramCopier
-import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.mita.base.types.SumAlternative
-import java.util.TreeMap
-import java.util.HashMap
+import org.eclipse.xtext.naming.QualifiedName
 
 class ModelUtils {
 
-	@Inject protected ILibraryProvider typesLibraryProvider;
+	@Inject protected IPackageResourceMapper packageResourceMapper;
 
 	/**
 	 * Retrieves the variable declaration this nested expression is referencing.
@@ -153,8 +152,10 @@ class ModelUtils {
 		val programResource = program.eResource;
 		val resourceSet = programResource.resourceSet;
 		
-		val libraries = typesLibraryProvider.getImportedLibraries(programResource);
-		val platformResourceUris = libraries.filter[r|r.fileExtension == 'platform'];
+		val libraries = program.imports
+			.map[ it.importedNamespace ]
+			.flatMap[ packageResourceMapper.getResourceURIs(resourceSet, QualifiedName.create(it.split("\\."))) ];
+		val platformResourceUris = libraries.filter[r | r.fileExtension == 'platform'];
 
 		val platforms = platformResourceUris
 			.flatMap[uri| resourceSet.getResource(uri, true).allContents.toIterable ]

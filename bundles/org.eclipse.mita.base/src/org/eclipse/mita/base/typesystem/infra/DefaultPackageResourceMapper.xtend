@@ -11,8 +11,9 @@ import org.eclipse.emf.common.util.URI
 
 class DefaultPackageResourceMapper implements IPackageResourceMapper {
 	
-	override getResources(ResourceSet rs, QualifiedName packageName) {
+	override getResourceURIs(ResourceSet rs, QualifiedName packageName) {
 		// TODO: optimize access across calls by caching result or previously building an index
+		// TODO: look at libraries to find required resources
 		val platformString = rs.resources.head.getURI().toPlatformString(true);
 		val myFile = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(platformString));
 		return myFile.project.listAllFiles.filter[ it.name.endsWith(".mita") ].map[ URI.createPlatformResourceURI(it.fullPath.toString(), true) ];
