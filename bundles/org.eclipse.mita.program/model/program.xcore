@@ -85,6 +85,10 @@ class SignalInstance extends VariableDeclaration {
 class EventHandlerDeclaration {
 	contains EventSource event
 	contains ProgramBlock block
+	
+	op String toString() {
+		return "every " + event.toString()
+	}
 }
 
 abstract class EventSource { }

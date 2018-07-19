@@ -117,6 +117,10 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		return MitaBaseResource
 	}
 	
+	override bindResourceSet() {
+		return MitaResourceSet
+	}
+	
 	override bindXtextResourceSet() {
 		return MitaResourceSet
 	}

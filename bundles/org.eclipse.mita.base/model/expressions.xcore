@@ -22,6 +22,7 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.emf.common.util.EList
 import org.eclipse.mita.base.expressions.util.ArgumentSorter
 import org.eclipse.emf.common.util.BasicEList
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 
 class GeneratedTypeParameter extends Parameter {
@@ -214,6 +215,14 @@ class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperat
 			return new BasicEList<Expression>();
 		}
 	}
+	
+	op String toString() {
+		val refText = NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text;
+		if(refText === null) {
+			return "null"
+		}
+		return refText + (if(!arguments.empty) "(" + arguments.join(", ") + ")" else "")
+	}
 }
 class ParenthesizedExpression extends Expression {
 	contains Expression expression
@@ -225,5 +234,11 @@ class TypeCastExpression extends Expression {
 class Argument {
 	refers Parameter parameter
 	contains Expression value
+	
+	op String toString() {
+		val refText = NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.argument_Parameter).head?.text;
+
+		return (if(refText !== null) refText + "=" else "") + value.toString();
+	}
 }
 

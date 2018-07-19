@@ -114,6 +114,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
+		if(false) 	
 		resource.resourceSet.doGenerate(fsa);
 	}
 	
