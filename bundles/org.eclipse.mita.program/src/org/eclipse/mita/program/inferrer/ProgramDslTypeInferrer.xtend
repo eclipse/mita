@@ -38,7 +38,9 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ListBasedValidationIssueAcceptor
@@ -74,9 +76,9 @@ import static org.eclipse.mita.base.scoping.MitaTypeSystem.ARRAY_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.BOOL_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.DOUBLE_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.FLOAT_TYPE
-import static org.eclipse.mita.base.scoping.MitaTypeSystem.INT32_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.MODALITY_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.REFERENCE_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.INT32_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.SIGINST_TYPE
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 
@@ -413,9 +415,17 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 	
 	override doInfer(FeatureCall fc) {
 		if (fc.feature instanceof SumAlternative) {
-			return InferenceResult.from(fc.feature as SumAlternative)
+			val owner = fc.owner;
+			if(owner instanceof ElementReferenceExpression) {
+				val ref = owner.reference;
+				if(ref instanceof SumType) {
+					return InferenceResult.from(ref);
+				}
+			}
 		}
-		return super.doInfer(fc);
+		else {
+			return super.doInfer(fc);
+		}
 	}
 	
 	def doInfer(SystemResourceSetup e) {
@@ -459,7 +469,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 				return InferenceResult.from(ref);
 			}
 			else if(ref instanceof SumAlternative) {
-				return InferenceResult.from(ref);
+				return InferenceResult.from(ref.eContainer as SumType);
 			}
 			return super.doInfer(e);
 		}
