@@ -211,24 +211,15 @@ class ImportStatement {
 
 class SumType extends ComplexType, Exportable {
 	// I would use features, but if I want to have SumAlternative as a ComplexType (which it is), then I can't make it a Declaration as well
-	contains SumAlternative[] alternatives opposite sumType
+	contains SumAlternative[] alternatives
 	
 	op String toString() {
 		return super.toString();
 	}
 }
 interface SumAlternative extends ComplexType, HasAccessors {
-	container SumType sumType opposite alternatives
-	
 	op Type realType() {
 		return this;
-	}
-	
-	op Type[] getSuperTypes() {
-		if (!super.superTypes.contains(sumType)) {
-			super.superTypes.add(sumType);
-		}
-		return super.superTypes
 	}
 }
 class Singleton extends SumAlternative {
