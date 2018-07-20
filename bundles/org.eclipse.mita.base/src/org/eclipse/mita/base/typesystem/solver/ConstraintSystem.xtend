@@ -6,6 +6,8 @@ import java.util.Collections
 import java.util.List
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class ConstraintSystem {
 	@Inject protected ConstraintSystemProvider constraintSystemProvider; 
@@ -41,6 +43,24 @@ class ConstraintSystem {
 		]
 		
 		return res.toString
+	}
+	
+	def toGraphviz() {
+		'''
+		digraph G {
+			«FOR c: constraints»
+			«IF c instanceof EqualityConstraint»
+			«IF c.left instanceof TypeVariable»
+			"«c.right»" -> "«c.left»";
+			«ELSEIF c.right instanceof TypeVariable»
+			"«c.left»" -> "«c.right»";
+			«ELSE»
+			"«c.left»" -- "«c.right»";
+			«ENDIF»
+			«ENDIF»
+			«ENDFOR»
+		}
+		'''
 	}
 	
 	def foo(StringBuilder res, AbstractTypeConstraint it){

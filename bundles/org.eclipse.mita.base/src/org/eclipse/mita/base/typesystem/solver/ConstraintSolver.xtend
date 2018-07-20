@@ -4,8 +4,9 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.ArrayList
 import java.util.List
-import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 
 class ConstraintSolver {
 	
@@ -51,6 +52,10 @@ class ConstraintSolver {
 	protected dispatch def UnificationResult solve(ExplicitInstanceConstraint constraint, ConstraintSystem constraints) {
 		val instance = constraint.superType.instantiate();
 		return UnificationResult.success(constraints.plus(new EqualityConstraint(constraint.subType, instance.value)).doSolve());
+	}
+	
+	protected dispatch def UnificationResult solve(SubtypeConstraint constraint, ConstraintSystem constraints) {
+		throw new UnsupportedOperationException("Cannot solve subtype constraints yet");
 	}
 	
 }

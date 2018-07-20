@@ -65,6 +65,7 @@ class MitaResourceSet extends XtextResourceSet {
 		
 		val allConstraints = ConstraintSystem.combine(constraints);
 		latestSolution = constraintSolver.solve(allConstraints);
+		println(allConstraints.toGraphviz());
 	}
 	
 	protected def void ensureLibrariesAreLoaded() {

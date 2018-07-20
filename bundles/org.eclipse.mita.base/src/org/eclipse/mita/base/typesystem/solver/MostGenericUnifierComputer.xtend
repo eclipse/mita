@@ -14,6 +14,10 @@ import org.eclipse.mita.base.typesystem.types.FunctionType
  *  Generalizing Hindley-Milner Type Inference Algorithms: https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
  *  Extending Hindley-Milner Type Inference wit Coercive Structural Subtyping: https://www21.in.tum.de/~nipkow/pubs/aplas11.pdf
  * 			(relevant for int, structs)
+ * 
+ *  Coercions in a polymorphic type system
+ *  Luo, see https://www.cs.rhul.ac.uk/home/zhaohui/WIT07.pdf
+ *     (introduces coercions as axioms or derived. Can also be used to solve function overloading)
  */
 class MostGenericUnifierComputer {
 	
@@ -25,9 +29,7 @@ class MostGenericUnifierComputer {
 		val t2IsFree = t2 instanceof TypeVariable;
 		
 		val result = substitutionProvider.get();
-		if(t1IsFree && t2IsFree) {
-			result.add(t1 as TypeVariable, t2);
-		} else if(t1IsFree) {
+		if(t1IsFree) {
 			result.add(t1 as TypeVariable, t2);
 		} else if(t2IsFree) {
 			result.add(t2 as TypeVariable, t1);

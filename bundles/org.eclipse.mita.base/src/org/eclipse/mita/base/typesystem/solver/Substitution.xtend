@@ -16,6 +16,10 @@ class Substitution {
 		this.content.put(variable, type);
 	}
 	
+	public def apply(TypeVariable typeVar) {
+		return content.get(typeVar) ?: typeVar;
+	}
+	
 	public def apply(Substitution to) {
 		val result = new Substitution();
 		result.constraintSystemProvider = to.constraintSystemProvider;
@@ -25,8 +29,6 @@ class Substitution {
 	}
 	
 	public def apply(ConstraintSystem system) {
-		println(content.entrySet.map[kv| '''«kv.key.name » -> «kv.value.name»''' ].join('\n'));
-		
 		val result = constraintSystemProvider.get();
 		result.constraints.addAll(system.constraints.map[c | 
 			var nc = c;
