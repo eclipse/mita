@@ -9,8 +9,8 @@ import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
-import org.eclipse.mita.base.typesystem.solver.ConstraintSolver
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.util.OnChangeEvictingCache
@@ -30,7 +30,7 @@ class MitaResourceSet extends XtextResourceSet {
 	protected IConstraintFactory constraintFactory;
 	
 	@Inject
-	protected ConstraintSolver constraintSolver;
+	protected IConstraintSolver constraintSolver;
 	
 	@Inject
 	protected ISymbolFactory symbolFactory;
@@ -65,7 +65,6 @@ class MitaResourceSet extends XtextResourceSet {
 		
 		val allConstraints = ConstraintSystem.combine(constraints);
 		latestSolution = constraintSolver.solve(allConstraints);
-		println(allConstraints.toGraphviz());
 	}
 	
 	protected def void ensureLibrariesAreLoaded() {

@@ -9,7 +9,7 @@ import org.eclipse.emf.ecore.EObject
 @FinalFieldsConstructor
 @Accessors
 @EqualsHashCode
-class BottomType extends AbstractType {
+class BottomType extends AbstractBaseType {
 	protected final String message;
 	
 	override replace(TypeVariable from, AbstractType with) {

@@ -187,6 +187,9 @@ class MitaTypesDebugView extends ViewPart {
     	if(constraintSolution === null) return;
     	
     	val input = constraintSolution.constraints?.constraints;
+    	if(input === null) {
+    		return;
+    	}
     	val origins = input
     		.map[ it as AbstractTypeConstraint ]
     	val result = origins
@@ -198,7 +201,10 @@ class MitaTypesDebugView extends ViewPart {
     protected def selectSolutions(Iterable<EObject> objects) {
     	if(constraintSolution === null) return;
     	
-    	val input = constraintSolution.solution?.substitutions.entrySet;
+    	val input = constraintSolution.solution?.substitutions?.entrySet;
+    	if(input === null) {
+    		return;
+    	}
     	val origins = input
     		.map[ it as Entry<TypeVariable, AbstractType> ]
     	val result = origins

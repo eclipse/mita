@@ -27,6 +27,8 @@ import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.Signedness
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -59,16 +61,20 @@ class BaseConstraintFactory implements IConstraintFactory {
 		system.associate(system.translateTypeDeclaration(type), type);
 	}
 
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, PrimitiveType type) {
+	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, NativeType type) {
 		val intPatternMatcher = Pattern.compile("(int|uint)(\\d+)$").matcher(type?.name ?: "");
 		if(intPatternMatcher.matches) {
 			val signed = intPatternMatcher.group(1) == 'int';
 			val size = Integer.parseInt(intPatternMatcher.group(2)) / 8;
 			
-			new IntegerType(type, size, signed);
+			new IntegerType(type, size, if(signed) Signedness.Signed else Signedness.Unsigned);
 		} else {
 			new AtomicType(type, type.name);
 		}
+	}
+	
+	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, PrimitiveType type) {
+		new AtomicType(type, type.name);
 	}
 
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, TypeParameter type) {
@@ -92,8 +98,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
+		val baseType = new AtomicType(genType, genType.name);
 		val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
-		val atomicType = new AtomicType(genType, genType.name, typeArgs.map[it as AbstractType].force());
+		val atomicType = new TypeConstructorType(genType, genType.name, baseType, typeArgs.map[it as AbstractType].force());
 		if(typeParameters.empty) {
 			return atomicType;
 		}
@@ -124,10 +131,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 			}
 			system.associate(vars_typeScheme.value, typeSpecifier);
 		}
-	}
-	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NativeType enumerator) {
-		return system.associate(new AtomicType(enumerator, enumerator.name));
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypedElement element) {

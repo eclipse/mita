@@ -30,6 +30,7 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -79,7 +80,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		
 		var TypeVariable result;
 		if(explicitType !== null && inferredType !== null) {
-			system.addConstraint(new EqualityConstraint(inferredType, explicitType));
+			system.addConstraint(new SubtypeConstraint(inferredType, explicitType));
 			result = explicitType;
 		} else if(explicitType !== null || inferredType !== null) {
 			result = explicitType ?: inferredType;
@@ -122,9 +123,12 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val ourTypeVar = TypeVariableAdapter.get(varOrFun);
 		
 		if(isFunctionCall) {
+			/* TODO: should emit subtype constraints between typecons for the arguments and an equality to the function base type
+			 * See the SubCT-App rule in Traytel et al.
+			 */
 			val argType = system.computeArgumentConstraints(varOrFun);
 			val supposedFunctionType = new FunctionType(varOrFun, argType, ourTypeVar);
-			system.addConstraint(new EqualityConstraint(supposedFunctionType, referenceType));
+			system.addConstraint(new SubtypeConstraint(supposedFunctionType, referenceType));
 			system.associate(ourTypeVar)		
 		} else {
 			system.associate(referenceType, varOrFun)

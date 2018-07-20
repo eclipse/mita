@@ -36,7 +36,9 @@ import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.program.formatting.ProgramDslFormatter
 import org.eclipse.mita.program.generator.ProgramDslGenerator
 import org.eclipse.mita.program.generator.ProgramDslGeneratorNodeProcessor
@@ -76,6 +78,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
 		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
+		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
 	}

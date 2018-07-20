@@ -8,7 +8,7 @@ import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 
-class ConstraintSolver {
+class ConstraintSolver implements IConstraintSolver {
 	
 	@Inject protected Provider<Substitution> substitutionProvider;
 	
@@ -16,7 +16,7 @@ class ConstraintSolver {
 	
 	protected List<UnificationIssue> issues;
 	
-	def ConstraintSolution solve(ConstraintSystem system) {
+	override ConstraintSolution solve(ConstraintSystem system) {
 		issues = new ArrayList<UnificationIssue>();
 		val solution = system.doSolve();
 		return new ConstraintSolution(system, solution, issues);
@@ -32,7 +32,7 @@ class ConstraintSolver {
 		var takeOne = system.takeOne();
 		val result = takeOne.key.solve(takeOne.value);
 		if(result.isValid) {
-			return result.substition;
+			return result.substituion;
 		} else {
 			issues.add(result.issue);
 			return Substitution.EMPTY;
@@ -42,7 +42,7 @@ class ConstraintSolver {
 	protected dispatch def UnificationResult solve(EqualityConstraint constraint, ConstraintSystem constraints) {
 		val unificationResult = mguComputer.compute(constraint.left, constraint.right);
 		if(unificationResult.valid) {
-			val mguSubstitution = unificationResult.substition;
+			val mguSubstitution = unificationResult.substituion;
 			return UnificationResult.success(mguSubstitution.apply(mguSubstitution.apply(constraints).doSolve()));			
 		} else {
 			return unificationResult;

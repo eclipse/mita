@@ -9,6 +9,8 @@ import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.Signedness
 
 /* Interesting papers:
  *  Generalizing Hindley-Milner Type Inference Algorithms: https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
@@ -48,14 +50,7 @@ class MostGenericUnifierComputer {
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, IntegerType t1, IntegerType t2) {
-		val maxSize = 4; //bytes
-		val newSize = Math.max(t1.widthInBytes, t2.widthInBytes);
-		if(newSize == maxSize && t1.signed != t2.signed) {
-			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
-		}
-		
-		// TODO: replace the original type??
-		return null;		
+		return t1.isSubtypeOf(t2) ?: t2.isSubtypeOf(t1);		
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, ProdType t1, ProdType t2) {
@@ -133,6 +128,15 @@ class MostGenericUnifierComputer {
 			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
 		}
 		
+		// not an issue
+		return null;
+	}
+	
+	protected dispatch def UnificationIssue unify(Substitution substitution, TypeConstructorType t1, TypeConstructorType t2) {
+		if(t1.name != t2.name) {
+			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
+		}
+		
 		if(t1.freeVars.size !== t2.freeVars.size) {
 			return new UnificationIssue(#[t1, t2], '''Cannot unify with different number of type arguments: «t1» and «t2»''')
 		}
@@ -150,6 +154,24 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, AbstractType t2) {
 		return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
+	}
+	
+	public dispatch def UnificationIssue isSubtypeOf(IntegerType sub, IntegerType sup) {
+		if(sub.signedness != sup.signedness && !(sub.signedness == Signedness.DontCare || sup.signedness == Signedness.DontCare)) {
+			return new UnificationIssue(#[sub, sup], '''Incompatible signedness between «sup.name» and «sub.name»''');
+		}
+		
+		if((sub.signedness == Signedness.Unsigned && sub.widthInBytes + 1 > sup.widthInBytes)
+		|| (sub.widthInBytes > sup.widthInBytes)
+		) {
+			return new UnificationIssue(#[sub, sup], '''«sup.name» is too small for «sub.name»''');
+		}
+		
+		return null;
+	}
+	
+	public dispatch def UnificationIssue isSubtypeOf(AbstractType sub, AbstractType sup) {
+		return new UnificationIssue(#[sub, sup], '''«sub.name» is not a subtype of «sup.name»''')
 	}
 
 }

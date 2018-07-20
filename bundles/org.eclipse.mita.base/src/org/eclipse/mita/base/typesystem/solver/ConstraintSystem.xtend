@@ -39,7 +39,9 @@ class ConstraintSystem {
 
 		res.append("Constraints:\n")
 		constraints.forEach[
-			foo(res, it)
+			res.append("\t")
+			res.append(it)
+			res.append("\n")
 		]
 		
 		return res.toString
@@ -61,13 +63,6 @@ class ConstraintSystem {
 			«ENDFOR»
 		}
 		'''
-	}
-	
-	def foo(StringBuilder res, AbstractTypeConstraint it){
-			res.append("\t")
-			res.append(it)
-			res.append("\n")
-		
 	}
 	
 	def takeOne() {
