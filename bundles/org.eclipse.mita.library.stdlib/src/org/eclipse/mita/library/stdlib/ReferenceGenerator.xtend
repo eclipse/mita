@@ -21,9 +21,9 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.expressions.expressions.AssignmentOperator
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.TypeSpecifier
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.TypeSpecifier
 
 class ReferenceGenerator extends AbstractTypeGenerator {
 	

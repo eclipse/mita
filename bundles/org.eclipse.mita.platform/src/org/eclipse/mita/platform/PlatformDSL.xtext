@@ -11,10 +11,9 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-grammar org.eclipse.mita.platform.PlatformDSL with org.eclipse.mita.types.TypeDsl
+grammar org.eclipse.mita.platform.PlatformDSL with org.eclipse.mita.base.TypeDsl
 
-import "http://www.yakindu.org/base/types/2.0.0"
-import "org.eclipse.mita.types" as types
+import "org.eclipse.mita.base.types"
 import "org.eclipse.mita.platform" as platform
 
 SystemSpecification returns platform::SystemSpecification:
@@ -30,9 +29,13 @@ SystemSpecification returns platform::SystemSpecification:
 /* PLATFORM SPEC *****************************************************************/
 
 PlatformSpecification returns platform::Platform: 
-	'platform' name=ID '{' (
+	'platform' name=ID '{' 
+		'module' module=STRING
+		('validator' validator=STRING)?
+	(
 		('has' resources+=[platform::AbstractSystemResource])
 		| (events += SystemResourceEvent)
+		| (configurationItems += ConfigurationItem)
 	)* '}'
 ;
 
@@ -61,6 +64,7 @@ AbstractSystemResource returns platform::AbstractSystemResource:
 	name=ID  '{'
 		'generator' generator=STRING
 		('validator' validator=STRING)?
+		('sizeInferrer' sizeInferrer=STRING)?
 		
 		( configurationItems += ConfigurationItem
 		| signals += Signal

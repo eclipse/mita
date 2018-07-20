@@ -78,7 +78,7 @@ native checked fn foobarWithRef(ref : &int32) : int32
 	header "foobar.h";
 	
 native checked fn foobarVoid(n : int32) : void
-	header "unfoobar.h";
+	header "foobar.h";
 ```
 expects `foobar.h` to look something like
 ```C

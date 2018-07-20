@@ -50,6 +50,9 @@ class EntryPointGenerator {
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 	
+	@Inject
+	protected UserCodeFileGenerator userCodeGenerator
+	
 	/**
 	 * Generates the main.c file
 	 */
@@ -75,7 +78,10 @@ class EntryPointGenerator {
 		for(systemResource : allResourcesUsed) {
 			baseIncludes.add(new IncludePath(systemResource.fileBasename + '.h', false));
 		}
-
+		for(program : context.allUnits.filter[containsCodeRelevantContent]) {
+			baseIncludes.add(new IncludePath(userCodeGenerator.getResourceBaseName(program) + '.h', false))
+		}
+		
 		// and produce code
 		codeFragmentProvider.create('''
 			int main(void)
@@ -102,8 +108,11 @@ class EntryPointGenerator {
 				
 				«ENDFOR»
 				«ENDIF»
-			
-				return NO_EXCEPTION;
+				«IF context.hasGlobalVariables»
+				exception = initGlobalVariables();
+				«"InitGlobalVars".generateLoggingExceptionHandler("setup")»
+				«ENDIF»
+				return exception;
 			}
 			
 			«exceptionType» Mita_goLive(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)

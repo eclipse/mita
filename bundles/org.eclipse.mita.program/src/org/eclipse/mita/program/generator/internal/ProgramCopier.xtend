@@ -18,6 +18,7 @@ import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl
 import org.eclipse.emf.ecore.util.EcoreUtil.Copier
+import org.eclipse.xtext.resource.XtextResourceSet
 
 class ProgramCopier {
 
@@ -47,8 +48,8 @@ class ProgramCopier {
 	}
 	
 	protected def createPseudoResource(Program original, Program copy) {
-		val set = new ResourceSetImpl
-		val res = set.createResource(original.eResource.URI)
+		val set = new XtextResourceSet();
+		val res = set.createResource(original.eResource.URI);
 		res.contents.add(copy);
 	}
 	

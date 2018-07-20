@@ -13,18 +13,23 @@
 
 package org.eclipse.mita.platform.xdk110.platform
 
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.generator.IPlatformMakefileGenerator
 import java.util.List
 import javax.inject.Inject
+import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.generator.CodeFragmentProvider
+import org.eclipse.mita.program.generator.IPlatformMakefileGenerator
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
 
 class MakefileGenerator implements IPlatformMakefileGenerator {
 	
 	@Inject
 	private CodeFragmentProvider codeFragmentProvider 
 	
-	override generateMakefile(Program program, List<String> sourceFiles) {
+	override generateMakefile(Iterable<Program> compilationUnits, List<String> sourceFiles) {
+		val setups = compilationUnits?.flatMap[it.setup];
+		val appName = StaticValueInferrer.infer(
+			setups?.findFirst[it.type.name == "XDK110"]?.getConfigurationItemValue("applicationName"), []
+		)?: "EclipseMitaApplication"
 		return codeFragmentProvider.create('''
 		# This makefile triggers the targets in the application.mk
 		
@@ -35,7 +40,7 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 		
 		# Macro to define Start-up method. change this macro to "CUSTOM_STARTUP" to have custom start-up.
 		export BCDS_SYSTEM_STARTUP_METHOD = DEFAULT_STARTUP
-		export BCDS_APP_NAME = XdkAliveApplication
+		export BCDS_APP_NAME = «appName»
 		export BCDS_APP_DIR = $(CURDIR)
 		export BCDS_APP_SOURCE_DIR = $(BCDS_APP_DIR)
 		
@@ -47,6 +52,7 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 		#List all the application header file under variable BCDS_XDK_INCLUDES 
 		export BCDS_XDK_INCLUDES = \
 			-I$(BCDS_BASE_DIR)/xdk110/Libraries/BSTLib/3rd-party/bstlib/BMA2x2_driver \
+			-I$(BCDS_BASE_DIR)/xdk110/Platform/BSP/source \
 			-I$(BCDS_APP_SOURCE_DIR) \
 			-I$(BCDS_APP_SOURCE_DIR)/.. \
 			-I$(BCDS_APP_SOURCE_DIR)/base \

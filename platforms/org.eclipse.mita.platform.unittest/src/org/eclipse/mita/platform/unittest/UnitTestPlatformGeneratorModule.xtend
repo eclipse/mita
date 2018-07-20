@@ -13,13 +13,13 @@
 
 package org.eclipse.mita.platform.unittest
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.EmptyPlatformGeneratorModule
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
-import com.google.inject.Inject
-import org.yakindu.base.types.Type
 
 class UnitTestPlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 

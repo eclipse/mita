@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
- *
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
- *
+ * 
  * Contributors:
  *    Bosch Connected Devices and Solutions GmbH - initial contribution
- *
+ * 
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
@@ -16,13 +16,53 @@
  */
 package org.eclipse.mita.program.ui.outline
 
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.ui.editor.outline.impl.DefaultOutlineTreeProvider
 
 /**
  * Customization of the default outline structure.
- *
+ * 
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#outline
  */
 class ProgramDslOutlineTreeProvider extends DefaultOutlineTreeProvider {
+
+	def dispatch boolean isLeaf(FunctionDefinition modelElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(VariableDeclaration modelElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(EventHandlerDeclaration modelElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(ExceptionTypeDeclaration modelElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(Parameter modeElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(TypeSpecifier modeElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(Operation modeElement) {
+		true
+	}
+
+	def dispatch boolean isLeaf(AnonymousProductType modeElement) {
+		true
+	}
 
 }

@@ -19,7 +19,7 @@ import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.yakindu.base.types.Operation
+import org.eclipse.mita.base.types.Operation
 
 class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 
@@ -49,7 +49,7 @@ class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 	}
 
 	def protected overridingName(Operation op) {
-		'''«op.name»_«FOR param : op.parameters.filter[!optional] SEPARATOR '_'»«param.type?.name»«ENDFOR»'''.toString
+		'''«op.name»_«FOR param : op.parameters.filter[!optional] SEPARATOR '_'»«param.typeSpecifier?.toString»«ENDFOR»'''.toString
 	}
 
 	@Inject

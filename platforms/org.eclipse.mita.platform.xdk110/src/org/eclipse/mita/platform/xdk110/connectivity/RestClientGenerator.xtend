@@ -13,6 +13,13 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
+import com.google.inject.Inject
+import java.net.URL
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
@@ -23,13 +30,6 @@ import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import java.net.URL
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.Enumerator
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 
 class RestClientGenerator extends AbstractSystemResourceGenerator {
 	

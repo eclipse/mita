@@ -13,6 +13,39 @@
 
 package org.eclipse.mita.program.inferrer
 
+import com.google.common.collect.Maps
+import com.google.inject.Inject
+import java.util.List
+import java.util.Map
+import java.util.TreeMap
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.BoolLiteral
+import org.eclipse.mita.base.expressions.DoubleLiteral
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FloatLiteral
+import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
+import org.eclipse.mita.base.scoping.MitaTypeSystem
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.HasAccessors
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ListBasedValidationIssueAcceptor
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.ArrayAccessExpression
@@ -37,58 +70,17 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.scoping.ExtensionMethodHelper
 import org.eclipse.mita.program.validation.ProgramDslTypeValidator
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.HasAccessors
-import org.eclipse.mita.types.StructureType
-import org.eclipse.mita.types.SumAlternative
-import org.eclipse.mita.types.SumType
-
-import com.google.common.collect.Maps
-import com.google.inject.Inject
-import java.util.List
-import java.util.Map
-import java.util.TreeMap
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.xtext.EcoreUtil2
-import org.yakindu.base.expressions.expressions.Argument
-import org.yakindu.base.expressions.expressions.ArgumentExpression
-import org.yakindu.base.expressions.expressions.AssignmentExpression
-import org.yakindu.base.expressions.expressions.BoolLiteral
-import org.yakindu.base.expressions.expressions.DoubleLiteral
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.expressions.expressions.FloatLiteral
-import org.yakindu.base.expressions.expressions.IntLiteral
-import org.yakindu.base.expressions.inferrer.ExpressionsTypeInferrer
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Property
-import org.yakindu.base.types.TypeParameter
-import org.yakindu.base.types.typesystem.ITypeSystem
-import org.yakindu.base.types.validation.IValidationIssueAcceptor.ListBasedValidationIssueAcceptor
-import org.yakindu.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.yakindu.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 
-
-
-
-
-
-
-
-
-import static org.yakindu.base.types.typesystem.ITypeSystem.VOID
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.yakindu.base.types.validation.IValidationIssueAcceptorimport static org.eclipse.mita.types.scoping.MitaTypeSystem.FLOAT_TYPE
-import static org.eclipse.mita.types.scoping.MitaTypeSystem.SIGINST_TYPE
-import org.eclipse.mita.types.scoping.MitaTypeSystem
-import static org.eclipse.mita.types.scoping.MitaTypeSystem.ARRAY_TYPE
-import static org.eclipse.mita.types.scoping.MitaTypeSystem.MODALITY_TYPE
-import static org.eclipse.mita.types.scoping.MitaTypeSystem.REFERENCE_TYPE
-import static org.eclipse.mita.types.scoping.MitaTypeSystem.BOOL_TYPE
-import static org.eclipse.mita.types.scoping.MitaTypeSystem.DOUBLE_TYPE
-import static org.eclipse.mita.types.scoping.MitaTypeSystem.INT32_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.ARRAY_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.BOOL_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.DOUBLE_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.FLOAT_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.MODALITY_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.REFERENCE_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.INT32_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.SIGINST_TYPE
+import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 
 class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 
@@ -249,7 +241,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 	def InferenceResult replace(InferenceResult result, VariableDeclaration object) {
 		if (registry.isSame(result?.type, registry.getType(ITypeSystem.INTEGER))) {
 			return object.doInferIntegerByUse(result)
-		} else if (!result.bindings.empty) {
+		} else if (result !== null && !result.bindings.empty) {
 			return InferenceResult.from(result.type, result.bindings.map[it.replace(null)])
 		}
 		return result
@@ -475,6 +467,9 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 			val ref = e.reference;
 			if (ref instanceof StructureType) {
 				return InferenceResult.from(ref);
+			}
+			else if(ref instanceof SumAlternative) {
+				return InferenceResult.from(ref.eContainer as SumType);
 			}
 			return super.doInfer(e);
 		}

@@ -13,6 +13,8 @@
 
 package org.eclipse.mita.platform.xdk110.sensors
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
@@ -20,8 +22,6 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
-import com.google.inject.Inject
-import org.yakindu.base.types.Enumerator
 
 class Bme280Generator extends AbstractSystemResourceGenerator {
     

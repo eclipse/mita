@@ -20,10 +20,11 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import java.util.HashMap
 import java.util.Map
 import java.util.NoSuchElementException
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.Enumerator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.program.SystemResourceSetup
 
 class MapBasedComponentConfiguration implements IComponentConfiguration {
 	
@@ -40,7 +41,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	
 	private final Map<String, ConfigItemValue> configurationItems;
 	
-	new(AbstractSystemResource resource, CompilationContext context) {
+	new(AbstractSystemResource resource, CompilationContext context, SystemResourceSetup setup) {
 		configurationItems = new HashMap();
 		
 		// add defaults
@@ -52,7 +53,6 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 		}
 		
 		// add user specified values
-		val setup = context.getSetupFor(resource);
 		if(setup !== null) {
 			for(value : setup.configurationItemValues) {
 				configurationItems.put(value.item.name, new ConfigItemValue(value.value, false));

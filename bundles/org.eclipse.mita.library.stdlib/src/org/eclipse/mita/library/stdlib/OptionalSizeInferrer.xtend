@@ -19,12 +19,12 @@ import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import com.google.inject.Inject
-import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.GeneratedFunctionDefinition
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
 
 class OptionalSizeInferrer extends ElementSizeInferrer {
 	

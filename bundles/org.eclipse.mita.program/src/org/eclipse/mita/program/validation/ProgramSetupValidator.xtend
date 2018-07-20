@@ -13,19 +13,21 @@
 
 package org.eclipse.mita.program.validation
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.platform.Instantiability
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
-import com.google.inject.Inject
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.yakindu.base.base.BasePackage
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.Type
-import org.yakindu.base.types.validation.TypeValidator
 
 class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	
@@ -60,7 +62,10 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 			]);
 			
 			if(itemValue instanceof ElementReferenceExpression) {
-				if(itemValue.reference instanceof Type) {
+				val ref = itemValue.reference;
+				if(ref instanceof SumAlternative || ref instanceof StructureType) {
+					/* do nothing, it's ok */
+				} else if(ref instanceof Type) {
 					error(String.format("Value has to be an instance of '%s'", configItemType), value,
 						ProgramPackage.eINSTANCE.configurationItemValue_Value, INCOMPATIBLE_VALUE_TYPE_CODE);
 				}
@@ -89,7 +94,7 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 		for (group : vcivGroups.entrySet) {
 			if (group.value.length > 1) {
 				error(String.format(ProgramDslValidator.VARIABLE_NOT_UNIQUE_MSG, group.key), group.value.last,
-					BasePackage.Literals.NAMED_ELEMENT__NAME, ProgramDslValidator.VARIABLE_NOT_UNIQUE_CODE);
+					TypesPackage.Literals.NAMED_ELEMENT__NAME, ProgramDslValidator.VARIABLE_NOT_UNIQUE_CODE);
 			}
 		}
 	}

@@ -13,9 +13,9 @@
 
 package org.eclipse.mita.program.inferrer;
 
-import org.yakindu.base.types.Type;
-import org.yakindu.base.types.TypeSpecifier;
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
+import org.eclipse.mita.base.types.Type;
+import org.eclipse.mita.base.types.TypeSpecifier;
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
 
 public class OptionalTypeExtensions {
 

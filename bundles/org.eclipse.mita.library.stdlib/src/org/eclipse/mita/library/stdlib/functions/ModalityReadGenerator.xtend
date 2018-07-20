@@ -16,7 +16,7 @@ package org.eclipse.mita.library.stdlib.functions
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
 import com.google.inject.Inject
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.generator.CodeFragment
 
 class ModalityReadGenerator extends AbstractFunctionGenerator {

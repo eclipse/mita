@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
- *
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
- *
+ * 
  * Contributors:
  *    Bosch Connected Devices and Solutions GmbH - initial contribution
- *
+ * 
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
@@ -16,20 +16,32 @@
  */
 package org.eclipse.mita.program.ui.quickfix
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.types.TypesFactory
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.ui.quickfix.TypeDslQuickfixProvider
 import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.generator.DefaultValueProvider
 import org.eclipse.mita.program.validation.ProgramImportValidator
 import org.eclipse.mita.program.validation.ProgramSetupValidator
-import org.eclipse.mita.types.TypesFactory
+import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.ui.editor.quickfix.Fix
 import org.eclipse.xtext.ui.editor.quickfix.IssueResolutionAcceptor
 import org.eclipse.xtext.validation.Issue
-import org.yakindu.base.expressions.expressions.ExpressionsFactory
-import org.yakindu.base.expressions.ui.quickfix.ExpressionsQuickfixProvider
 
-class ProgramDslQuickfixProvider extends ExpressionsQuickfixProvider {
+class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
+
+	@Inject
+	protected IScopeProvider scopeProvider;
+	
+	@Inject
+	protected ITypeSystem typeSystem;
+		
+	@Inject
+	DefaultValueProvider defaultValueProvider
 
 	@Fix(ProgramImportValidator.MISSING_TARGET_PLATFORM_CODE)
 	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {
@@ -46,23 +58,16 @@ class ProgramDslQuickfixProvider extends ExpressionsQuickfixProvider {
 
 	@Fix(ProgramSetupValidator.MISSING_CONIGURATION_ITEM_CODE)
 	def addMissingConfigItem(Issue issue, IssueResolutionAcceptor acceptor) {
-		acceptor.accept(issue, 'Add config item', 'Add missing configuration item', '', [ element, context |
+		acceptor.accept(issue, 'Add config items', 'Add missing configuration items', '', [ element, context |
 
 			val setup = element as SystemResourceSetup
-			setup.type.configurationItems
-			.filter[required] // item is mandatory
+			setup.type.configurationItems.filter[required] // item is mandatory
 			.filter[!setup.configurationItemValues.map[c|c.item].contains(it)] // item is not contained in setup
 			.forEach [ missingItem | // create dummy value
-				val dummyExpression = ExpressionsFactory.eINSTANCE.createPrimitiveValueExpression => [
-					value = ExpressionsFactory.eINSTANCE.createStringLiteral => [
-						value = 'replace_me'
-					]
-				]
-				val newConfigItemValue = ProgramFactory.eINSTANCE.createConfigurationItemValue => [
-					it.value = dummyExpression
-					it.item = missingItem
-				]
+				val newConfigItemValue = ProgramFactory.eINSTANCE.createConfigurationItemValue
 				setup.configurationItemValues.add(newConfigItemValue)
+				newConfigItemValue.item = missingItem
+				newConfigItemValue.value = defaultValueProvider.dummyExpression(missingItem.type, newConfigItemValue)
 			]
 		])
 	}

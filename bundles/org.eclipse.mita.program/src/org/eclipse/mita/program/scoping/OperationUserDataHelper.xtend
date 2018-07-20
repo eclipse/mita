@@ -15,18 +15,23 @@ package org.eclipse.mita.program.scoping
 
 import com.google.inject.Inject
 import java.util.List
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.xtext.resource.IEObjectDescription
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Type
-import org.yakindu.base.types.typesystem.ITypeSystem
 
 class OperationUserDataHelper {
 
 	@Inject
+	extension ITypeSystemInferrer inferrer;
+
+	@Inject
 	extension ITypeSystem typesystem;
 
-	def List<Type> getArgumentTypes(IEObjectDescription operation) {
-		val rawTypesArray = operation.typesArray
+	def List<Type> getParameterTypes(IEObjectDescription operation) {
+		val rawTypesArray = operation.parameterTypeNames
 		
 		if(rawTypesArray !== null) {
 			return rawTypesArray.map[ typesystem.getType(it) ]
@@ -41,41 +46,22 @@ class OperationUserDataHelper {
 		}
 	}
 	
-	def isCallable(IEObjectDescription it, List<Type> arguments) {
-		val paramArray = getTypesArray
-		if (paramArray.length == 0) {
-			return false
+	def List<InferenceResult> getParameterInferenceResults(IEObjectDescription operation) {
+		val objOrProxy = operation.EObjectOrProxy;
+		if (objOrProxy instanceof Operation) {
+			if (!objOrProxy.eIsProxy) {
+				return objOrProxy.parameters.map[it.infer]
+			}
 		}
-		
-		println("ParamArray " + paramArray)
-		println("arguments " + arguments)
-		
-		return true;
+		return #[];
 	}
 
-	def isExtensionTo(IEObjectDescription it, Type contextType) {
-		val paramArray = getTypesArray
-		if (paramArray === null) {
-			return false
-		}
-		val paramTypeName = paramArray.get(0)
-		return contextType.isSubtypeOf(paramTypeName)
-	}
-
-	protected def getTypesArray(IEObjectDescription description) {
+	def getParameterTypeNames(IEObjectDescription description) {
 		val params = description.getUserData(ProgramDslResourceDescriptionStrategy.OPERATION_PARAM_TYPES);
 		if (params === null) {
 			return null
 		}
 		return params.toArray
-	}
-
-	protected def isSubtypeOf(Type subType, String superTypeName) {
-		if (subType.name == superTypeName) {
-			return true
-		}
-		val match = subType.superTypes.findFirst[name == superTypeName]
-		return match !== null
 	}
 
 	protected def toArray(String paramArrayAsString) {

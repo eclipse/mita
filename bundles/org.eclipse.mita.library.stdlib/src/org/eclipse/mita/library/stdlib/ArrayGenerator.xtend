@@ -13,11 +13,20 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
@@ -26,22 +35,12 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
+import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
-import org.yakindu.base.expressions.expressions.AssignmentOperator
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.PrimitiveValueExpression
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.TypeSpecifier
-import org.eclipse.mita.program.ReturnStatement
-import org.yakindu.base.expressions.expressions.ArgumentExpression
-import org.eclipse.mita.program.FunctionParameterDeclaration
-import org.yakindu.base.base.NamedElement
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -56,6 +55,9 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	@Inject 
 	protected extension StatementGenerator statementGenerator
+	
+	@Inject
+	protected TypeGenerator typeGenerator
 		
 		
 	private static def Integer getArraySize(VariableDeclaration stmt, ElementSizeInferrer sizeInferrer) {
@@ -103,12 +105,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		val operationCallInit = (!topLevel) && stmt.initialization !== null 
 			&& stmt.initialization.isOperationCall;
-		val operationCall = if(stmt.initialization instanceof ElementReferenceExpression) {
-			stmt.initialization as ElementReferenceExpression;	
-		}
-		val operation = if(operationCall?.reference instanceof Operation) {
-			operationCall?.reference as Operation;
-		}
 		
 		val otherInit = stmt.initialization !== null 
 			&& !initWithValueLiteral
@@ -126,10 +122,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			.data = data_«stmt.name»_«occurrence»,
 			.length = «size»
 		}«ENDIF»;
-		«IF operationCallInit»
-		// «stmt.name» = «operation.name»(«FOR arg: operationCall.arguments SEPARATOR(", ")»«IF arg.parameter !== null»«arg.parameter.name» = «ENDIF»«arg.value.code»«ENDFOR»)
-		«statementGenerator.generateFunctionCall(operation, codeFragmentProvider.create('''&«stmt.name»'''), operationCall)»
-		«ENDIF»
 		«IF !topLevel && otherInit»
 		«generateExpression(type, stmt, AssignmentOperator.ASSIGN, stmt.initialization)»
 		«ENDIF»
@@ -278,7 +270,10 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			CodeFragment.EMPTY;
 		}
 		
+		val typeSize = codeFragmentProvider.create('''sizeof(«typeGenerator.code(type.typeArguments.head)»)''')
+		
 		codeFragmentProvider.create('''
+		«returnStatementLengthCheck»
 		«IF modifyLength»
 		// Need to modify length: «modifyLengthReason»
 		«lengthModifyStmt»;
@@ -286,16 +281,17 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		«IF createNewBuffer»
 		// Need to create new buffer: «createNewBufferReason»
 		«newBufferStmt»;
-		«IF !isReturnStmt» ««« we mustn't assign the new buffer
+		««« we mustn't assign the new buffer
+		«IF !isReturnStmt»
 		«dataLeft» = «reallocBufferName»;
 		«ENDIF»
 		«ENDIF»
-		«returnStatementLengthCheck»
 		«IF !rightExprIsValueLit»
 		// «varNameLeft» = «codeRightExpr»
-		memcpy(«dataLeft», «dataRight», «newLengthExpr»);
-		«ELSEIF isReturnStmt && createNewBuffer» ««« we had to create a new buffer, but we mustn't pass it out
-		memcpy(«dataLeft», «reallocBufferName», «newLengthExpr»);
+		memcpy(«dataLeft», «dataRight», «typeSize» * «newLengthExpr»);
+		««« we had to create a new buffer, but we mustn't pass it out
+		«ELSEIF isReturnStmt && createNewBuffer»
+		memcpy(«dataLeft», «reallocBufferName», «typeSize» * «newLengthExpr»);
 		«ENDIF»
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}

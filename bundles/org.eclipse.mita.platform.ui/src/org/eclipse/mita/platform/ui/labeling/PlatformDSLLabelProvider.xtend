@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
- *
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
- *
+ * 
  * Contributors:
  *    Bosch Connected Devices and Solutions GmbH - initial contribution
- *
+ * 
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
@@ -16,17 +16,27 @@
  */
 package org.eclipse.mita.platform.ui.labeling
 
+import com.google.inject.Inject
+import java.net.URL
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
+import org.eclipse.jface.resource.ImageDescriptor
+import org.eclipse.jface.viewers.StyledString
+import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.platform.Bus
+import org.eclipse.mita.platform.ConfigurationItem
+import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Sensor
+import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.platform.SignalEvent
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.SystemResourceEvent
-import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.platform.ConfigurationItem
 
 /**
  * Provides labels for EObjects.
@@ -42,55 +52,112 @@ class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
 	new(AdapterFactoryLabelProvider delegate) {
 		super(delegate);
 	}
-	
-	def image(Sensor element) {
-		'sensor.png'
+
+	// TODO define images for vci, modiality, bus, exception, signal
+	def dispatch Object image(EObject ele) {
+		return super.image(ele);
 	}
-	
-	def image(Modality element) {
-		return 'sensor.png'
+
+	def dispatch image(Enumerator element) {
+		loadImage('enumerator.png')
 	}
-	
+
+	def dispatch image(EnumerationType element) {
+		loadImage('enumerator.png')
+	}
+
+	def dispatch image(Sensor element) {
+		loadImage('sensor.png')
+	}
+
+	def dispatch image(Connectivity element) {
+		loadImage('connectivity.png')
+	}
+
+	def dispatch image(Event it) {
+		loadImage("event.png")
+	}
+
+	def dispatch image(ExceptionTypeDeclaration ele) {
+		loadImage('variable.png') // TODO define png for exception?
+	}
+
+	def dispatch Object image(SystemResourceAlias it) {
+		image(delegate)
+	}
+
 	def text(ConfigurationItem ele) {
-		'''«IF ele.required»required«ENDIF» configuration <b>«ele.name» : «ele.type»</b>'''
+		'''Â«IF ele.requiredÂ»requiredÂ«ENDIFÂ» configuration Â«ele.nameÂ» : Â«ele.typeÂ»'''
 	}
-	
+
 	def text(Sensor ele) {
-		'''sensor <b>«ele.name»</b>'''
+		'''sensor Â«ele.nameÂ»'''
 	}
-	
+
 	def text(SystemResourceAlias ele) {
-		'''«ele.label» <b>«ele.name» : «ele.delegate?.name»</b>'''
+		'''alias Â«ele.labelÂ» Â«ele.nameÂ» : Â«ele.delegate?.nameÂ»'''
 	}
-	
+
 	protected dispatch def String getLabel(SystemResourceAlias alias) {
 		return 'sensor';
 	}
-	
+
 	protected dispatch def String getLabel(EObject object) {
 		return object.eClass.name;
 	}
-	
+
 	def text(SystemResourceEvent ele) {
-		'''resource event <b>«ele.name»</b>'''
+		'''event Â«ele.nameÂ»'''
 	}
-	
+
 	def text(SignalEvent ele) {
-		'''signal event <b>«ele.name»</b>'''
+		'''signal event Â«ele.nameÂ»'''
 	}
-	
+
 	def text(Modality ele) {
 		val type = typeInferrer.infer(ele)?.type
-		'''«ele.eContainer.label.toLowerCase» modality <b>«ele.name» : «type»</b>'''
+		'''modality Â«ele.nameÂ» : Â«typeÂ»'''
+	}
+
+	def text(Connectivity it) {
+		'''connectivity Â«nameÂ»'''
+	}
+
+	def text(Bus it) {
+		'''bus Â«nameÂ»'''
+	}
+
+	def text(ExceptionTypeDeclaration it) {
+		'''exception Â«nameÂ»'''
+	}
+
+	def text(EnumerationType it) {
+		'''enum Â«nameÂ»'''
+	}
+
+	def text(Signal it) {
+		'''signal Â«nameÂ»'''
 	}
 
 	override protected convertToString(Object text) {
-		if(text instanceof CharSequence) {
+		if (text instanceof CharSequence) {
 			// enables us to use Xtend templates
 			return text.toString();
 		} else {
-			return super.convertToString(text);			
+			return super.convertToString(text);
 		}
 	}
-	
+
+	override protected StyledString convertToStyledString(Object text) {
+		if (text instanceof CharSequence) {
+			return new StyledString(text.toString);
+		}
+		return super.convertToStyledString(text)
+	}
+
+	private def loadImage(String imageName) {
+		val bundleIconUrl = 'platform:/plugin/org.eclipse.mita.program.ui/icons/';
+		return ImageDescriptor.createFromURL(new URL(bundleIconUrl + imageName));
+	}
+
 }

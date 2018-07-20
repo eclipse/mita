@@ -24,10 +24,10 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 	@Inject
 	private CodeFragmentProvider codeFragmentProvider 
 	
-	override generateMakefile(Program program, List<String> sourceFiles) {
+	override generateMakefile(Iterable<Program> program, List<String> sourceFiles) {
 		return codeFragmentProvider.create('''
 		export CC=gcc
-		export CCFLAGS=-Wall
+		export CCFLAGS=-Wall -std=c99
 		export BUILDDIR=./build
 		export SOURCE_INCLUDES = -I. -I./base
 		export SOURCE_DIR=.

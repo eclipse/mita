@@ -117,7 +117,13 @@ struct testRef {
 every 1 second {
     let m : testRef?;
     m.doSomething();
+    
+    let n : int16?;
+    n.doSomething();
 }
 
 fn doSomething(msg : testRef?) {
+}
+
+fn doSomething(msg : int16?) {
 }

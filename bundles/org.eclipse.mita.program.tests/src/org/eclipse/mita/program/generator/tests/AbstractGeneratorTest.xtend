@@ -14,7 +14,6 @@
 package org.eclipse.mita.program.generator.tests;
 
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.tests.util.CProjectHelper
 import org.eclipse.mita.program.tests.util.ProgramDslInjectorProvider
 import com.google.inject.Inject
 import com.google.inject.Provider
@@ -42,6 +41,7 @@ import org.junit.runner.RunWith
 
 import static org.junit.Assert.*
 import org.eclipse.core.runtime.Assert
+import org.eclipse.mita.program.tests.util.TestProjectHelper
 
 @RunWith(XtextRunner)
 @InjectWith(ProgramDslInjectorProvider)
@@ -56,11 +56,11 @@ public class AbstractGeneratorTest {
 	@Inject
 	private Provider<XtextResourceSet> resourceSetProvider;
 
-	@Inject extension CProjectHelper
+	@Inject extension TestProjectHelper
 
 	@Before
 	def void setup() {
-		createEmptyGenerationProject();
+		createEmptyTestProject();
 	}
 
 	/**
@@ -71,7 +71,7 @@ public class AbstractGeneratorTest {
 	 * @throws Exception if something goes wrong (very helpful, isn't it?)
 	 */
 	protected def InMemoryFileSystemAccess generateFrom(CharSequence Mita_code) throws Exception {
-		val project = generationProject;
+		val project = testProject;
 		Assert.isTrue(project.accessible)
 		val appfile = project.getFile("application.mita")
 		if (!appfile.exists) {
@@ -113,8 +113,12 @@ public class AbstractGeneratorTest {
 	 * @return the generated parsed C code
 	 */
 	protected def generateAndParseApplication(CharSequence application) throws Exception {
+		return generateAndParseApplication(application, "application.c")
+	}
+	
+	protected def generateAndParseApplication(CharSequence application, String fileName) throws Exception {
 		val fsa = generateFrom(application);
-		return parseCFile(fsa, "application.c");
+		return parseCFile(fsa, fileName);
 	}
 
 	protected def findFunction(IASTTranslationUnit unit, String name) {

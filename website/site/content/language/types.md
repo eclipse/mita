@@ -183,7 +183,7 @@ where(state) {
         println(`Device in motion: ${x} | ${y} | ${z}.`);
     }
     is(DeviceState.Shock -> intensity) {
-        println("Shock detected: ${intensity}!");
+        println(`Shock detected: ${intensity}!`);
     }
 }
 ```

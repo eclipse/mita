@@ -13,14 +13,14 @@
 
 package org.eclipse.mita.program.scoping
 
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.StructureType
 import com.google.common.collect.Lists
 import java.util.List
-import org.yakindu.base.expressions.expressions.Expression
-import org.yakindu.base.types.ComplexType
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.Type
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.Type
 
 class ExtensionMethodHelper {
 

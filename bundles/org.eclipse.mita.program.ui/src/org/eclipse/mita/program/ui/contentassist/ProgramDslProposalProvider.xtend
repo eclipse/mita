@@ -13,19 +13,33 @@
 
 package org.eclipse.mita.program.ui.contentassist
 
-import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.program.ProgramPackage
-import org.eclipse.mita.program.model.ImportHelper
-import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
-import org.eclipse.mita.types.ImportStatement
-import org.eclipse.mita.types.PackageAssociation
 import com.google.common.base.Function
 import com.google.inject.Inject
 import java.util.Arrays
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.jface.text.contentassist.ICompletionProposal
 import org.eclipse.jface.viewers.ILabelProvider
 import org.eclipse.jface.viewers.StyledString
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.scoping.MitaTypeSystem
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.ProgramPackage
+import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.generator.DefaultValueProvider
+import org.eclipse.mita.program.model.ImportHelper
+import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.RuleCall
 import org.eclipse.xtext.resource.IEObjectDescription
@@ -34,13 +48,6 @@ import org.eclipse.xtext.ui.editor.contentassist.AbstractJavaBasedContentProposa
 import org.eclipse.xtext.ui.editor.contentassist.ConfigurableCompletionProposal
 import org.eclipse.xtext.ui.editor.contentassist.ContentAssistContext
 import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor
-import org.eclipse.xtext.ui.editor.hover.IEObjectHover
-import org.yakindu.base.expressions.expressions.ExpressionsPackage
-import org.yakindu.base.types.Event
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.TypesPackage
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.types.scoping.MitaTypeSystem
 
 class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 
@@ -51,11 +58,11 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 	@Inject
 	private IScopeProvider scopeProvider;
 	@Inject
-	private IEObjectHover hover;
-	@Inject
 	protected ITypeSystemInferrer typeInferrer;
 	@Inject 
 	protected extension ImportHelper
+	@Inject 
+	DefaultValueProvider defaultValueProvider
 
 	override Function<IEObjectDescription, ICompletionProposal> getProposalFactory(String ruleName,
 		ContentAssistContext contentAssistContext) {
@@ -71,14 +78,6 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 				}
 
 				return proposal;
-			}
-
-			def createTypedElementProposal(IEObjectDescription candidate, ICompletionProposal proposal) {
-				val type = getType(candidate)
-				if (type !== null && proposal instanceof ConfigurableCompletionProposal) {
-					val configProposal = proposal as ConfigurableCompletionProposal;
-					configProposal.displayString = configProposal.displayString + " : " + type;
-				}
 			}
 
 			/**
@@ -132,10 +131,56 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 	override getPriorityHelper() {
 		priorityHelper
 	}
+	
+	def proposeComplexTypeConstructors(Boolean scoped, EObject model, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		val scope = scopeProvider.getScope(model, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+		for (element : scope.allElements) {
+			val obj = element.EObjectOrProxy;
+			val fromPlatform = EcoreUtil2.getContainerOfType(obj, Program) === null;
+			val inSetupBlock = EcoreUtil2.getContainerOfType(model, SystemResourceSetup) !== null;
+			// in setup blocks we use platform defined types and vice versa
+			if(fromPlatform === inSetupBlock) {
+				if(obj instanceof SumAlternative || obj instanceof StructureType) {
+					val prefix = if(scoped && obj instanceof SumAlternative) {
+						(obj.eContainer as SumType).name + ".";
+					}
+					else {
+						"";
+					}
+					val s = defaultValueProvider.getDummyConstructor(prefix, obj as ComplexType);
+					if(s !== null) {
+						val proposal = createCompletionProposal(
+							s,
+							new StyledString(s),
+							labelProvider.getImage(obj),
+							context
+						);
+						
+						if (proposal instanceof ConfigurableCompletionProposal) {
+							proposal.additionalProposalInfo = obj;
+							proposal.hover = hover;
+							getPriorityHelper.adjustCrossReferencePriority(proposal, prefix + (obj as ComplexType).name);
+						}
+						
+						acceptor.accept(proposal);	
+					}
+				}	
+			}
+		}
+	}
+	
+	override complete_ElementReferenceExpression(EObject model, RuleCall ruleCall, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+		if(EcoreUtil2.getContainerOfType(model, SystemResourceSetup) === null) {
+			return;
+		}
+		proposeComplexTypeConstructors(false, model, context, acceptor);
+	}
 
 	override complete_FeatureCall(EObject model, RuleCall ruleCall, ContentAssistContext context,
 		ICompletionProposalAcceptor acceptor) {
-
+		if(EcoreUtil2.getContainerOfType(model, SystemResourceSetup) !== null) {
+			return;
+		}
 		// resolve the element reference of the feature call and add all qualified sensor modalities
 		val scope = scopeProvider.getScope(model, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		for (element : scope.allElements) {
@@ -143,54 +188,49 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 			if (obj instanceof AbstractSystemResource) {
 				for (modality : obj.modalities) {
 					val proposalString = '''«element.name».«modality.name».read()''';
-					val proposal = createCompletionProposal(
-						proposalString,
-						new StyledString(proposalString),
-						labelProvider.getImage(modality),
-						context
-					);
-
-					if (proposal instanceof ConfigurableCompletionProposal) {
-						proposal.additionalProposalInfo = modality;
-						proposal.hover = hover;
-						getPriorityHelper.adjustCrossReferencePriority(proposal, context.prefix);
-					}
-
+					val proposal = createCustomProposal(proposalString, modality, context)
 					acceptor.accept(proposal);
 				}
 			}
 		}
+		proposeComplexTypeConstructors(true, model, context, acceptor);
 	}
 
 	override complete_SystemEventSource(EObject model, RuleCall ruleCall, ContentAssistContext context,
 		ICompletionProposalAcceptor acceptor) {
-		super.complete_SystemEventSource(model, ruleCall, context, acceptor)
 
-		// resolve the element reference of the feature call and add all qualified sensor modalities
+		// get all event origins and add all qualified events
 		val scope = scopeProvider.getScope(model, ProgramPackage.eINSTANCE.systemEventSource_Origin);
 		for (element : scope.allElements) {
 			val obj = element.EObjectOrProxy;
 			if (obj instanceof AbstractSystemResource) {
-				for (Event e : obj.events) {
-
-					val proposal = createCompletionProposal(
-						obj.name.toString + "." + e.name.toString,
-						new StyledString(obj.name.toString + "." + e.name.toString),
-						labelProvider.getImage(e),
-						context
-					);
-
-					if (proposal instanceof ConfigurableCompletionProposal) {
-						proposal.additionalProposalInfo = obj;
-						proposal.hover = hover;
-						getPriorityHelper.adjustCrossReferencePriority(proposal, context.prefix);
-					}
-
+				for (event : obj.events) {
+					val proposalString = obj.name + "." + event.name
+					val proposal = createCustomProposal(proposalString, event, context)
 					acceptor.accept(proposal);
 				}
 			}
 		}
 	}
+	
+	protected def ICompletionProposal createCustomProposal(String proposalString, EObject element, ContentAssistContext context) {
+					val proposal = createCompletionProposal(
+			proposalString,
+			new StyledString(proposalString),
+			labelProvider.getImage(element),
+						context
+					);
+		
+					if (proposal instanceof ConfigurableCompletionProposal) {
+			proposal.additionalProposalInfo = if (element.eIsProxy)
+				EcoreUtil.resolve(element, context.resource)
+			else
+				element;
+						proposal.hover = hover;
+						getPriorityHelper.adjustCrossReferencePriority(proposal, context.prefix);
+					}
+		proposal
+				}
 
 	override complete_QID(EObject model, RuleCall ruleCall, ContentAssistContext context,
 		ICompletionProposalAcceptor acceptor) {

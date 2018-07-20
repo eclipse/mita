@@ -13,6 +13,22 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.inject.Inject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.function.Function
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.Connectivity
@@ -23,6 +39,9 @@ import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.ModalityAccess
+import org.eclipse.mita.program.ModalityAccessPreparation
+import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ReturnStatement
@@ -33,39 +52,25 @@ import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.types.AnonymousProductType
-import org.eclipse.mita.types.ExceptionTypeDeclaration
-import org.eclipse.mita.types.NamedProductType
-import org.eclipse.mita.types.Singleton
-import org.eclipse.mita.types.SumAlternative
-import org.eclipse.mita.types.SumType
-import com.google.inject.Inject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.function.Function
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
-import org.yakindu.base.base.NamedElement
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.expressions.expressions.FeatureCall
-import org.yakindu.base.types.Event
-import org.yakindu.base.types.Operation
-import org.eclipse.mita.program.ModalityAccess
-import org.eclipse.mita.program.ModalityAccessPreparation
-import org.eclipse.mita.program.NativeFunctionDefinition
+import org.eclipse.xtext.scoping.IScopeProvider
 
 /**
- * Utility functions for the generating code. Eventually this will be moved into the model.
+ * Utility functions for generating code. Eventually this will be moved into the model.
  */
 class GeneratorUtils {
 
 	@Inject
 	protected extension ProgramCopier
+	
+	@Inject
+	protected IScopeProvider scopeProvider;
 
+	
 	def getOccurrence(EObject obj) {
 		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
 			?:EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration) as EObject
@@ -226,8 +231,7 @@ class GeneratorUtils {
 	def dispatch String getResourceTypeName(SystemResourceAlias alias) {
 		return alias.delegate.resourceTypeName;
 	}
-	
-	
+
 	def dispatch String getBaseName(Program p) {
 		return p.name?:"";
 	}
@@ -300,7 +304,11 @@ class GeneratorUtils {
 		return '''«sumType.name»_enum''';
 	}
 	dispatch def String getEnumName(SumAlternative singleton) {
-		return '''«singleton.name»_e''';
+		val parent = EcoreUtil2.getContainerOfType(singleton, SumType)
+		if(parent === null) {
+			return "ERROR: Model broken"
+		}
+		return '''«parent.name»_«singleton.name»_e''';
 	}
 	
 	dispatch def String getStructName(SumType sumType) {
@@ -359,6 +367,8 @@ class GeneratorUtils {
 				var isNewLineNode = node instanceof NewLineNode;
 				var isEmptyTextNode = if(node instanceof TextNode) {
 					node.text.length == 0
+				} else if(node instanceof CodeFragment) {
+					node == CodeFragment.EMPTY
 				} else {
 					false
 				}
@@ -421,6 +431,14 @@ class GeneratorUtils {
 	def IGeneratorNode noBraces(IGeneratorNode stmt) {
 		trim(stmt, false, [x|trimBraces(x)]);
 		trim(stmt, true, [x|trimBraces(x)]);
+	}
+	
+	def getAllTimeEvents(CompilationContext context) {
+		return context.allEventHandlers.filter[x|x.event instanceof TimeIntervalEvent]
+	}
+	
+	def boolean containsCodeRelevantContent(Program it) {
+		!eventHandlers.empty || !functionDefinitions.empty || !types.empty || !globalVariables.empty
 	}
 
 }

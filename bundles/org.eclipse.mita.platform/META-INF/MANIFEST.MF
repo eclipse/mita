@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: %pluginName
-Bundle-Vendor: %providerName
+Bundle-Name: Mita Platform Definition Language
+Bundle-Vendor: Eclipse.org/Mita
 Bundle-Localization: plugin
 Bundle-Version: 0.1.0.qualifier
 Bundle-ClassPath: .
@@ -10,19 +10,18 @@ Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.xtext,
  org.eclipse.xtext.xbase,
  org.eclipse.equinox.common,
- org.yakindu.base.types;visibility:=reexport,
+ org.eclipse.mita.base;visibility:=reexport,
  org.eclipse.core.runtime,
  org.eclipse.emf.ecore;visibility:=reexport,
  org.eclipse.xtext.xbase.lib,
  org.eclipse.emf.ecore.xcore.lib,
- org.eclipse.mita.types;visibility:=reexport,
+ org.eclipse.mita.base;visibility:=reexport,
  org.eclipse.xtext.xtext.generator,
  org.antlr.runtime,
  org.eclipse.xtext.util,
  org.eclipse.xtend.lib,
  org.eclipse.emf.ecore.xcore,
- org.eclipse.emf.mwe2.launch;resolution:=optional,
- org.yakindu.base.expressions;visibility:=reexport
+ org.eclipse.emf.mwe2.launch;resolution:=optional
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: org.eclipse.mita.platform,
  org.eclipse.mita.platform.impl,

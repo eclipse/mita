@@ -16,25 +16,30 @@ package org.eclipse.mita.program.linking;
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.transform;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import org.eclipse.xtext.resource.IEObjectDescription;
-import org.yakindu.base.expressions.expressions.ArgumentExpression;
-import org.yakindu.base.expressions.expressions.Expression;
-import org.yakindu.base.expressions.expressions.FeatureCall;
-import org.yakindu.base.expressions.expressions.util.ArgumentSorter;
-import org.yakindu.base.types.Operation;
-import org.yakindu.base.types.Type;
-import org.yakindu.base.types.TypesPackage;
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer;
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
-import org.yakindu.base.types.typesystem.ITypeSystem;
-
 import org.eclipse.mita.program.scoping.ExtensionMethodHelper;
 import org.eclipse.mita.program.scoping.OperationUserDataHelper;
+import org.eclipse.xtext.resource.IEObjectDescription;
+import org.eclipse.xtext.xbase.lib.IteratorExtensions;
+import org.eclipse.mita.base.expressions.ArgumentExpression;
+import org.eclipse.mita.base.expressions.Expression;
+import org.eclipse.mita.base.expressions.FeatureCall;
+import org.eclipse.mita.base.expressions.util.ArgumentSorter;
+import org.eclipse.mita.base.types.Operation;
+import org.eclipse.mita.base.types.Type;
+import org.eclipse.mita.base.types.TypesPackage;
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer;
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
+import org.eclipse.mita.base.types.typesystem.ITypeSystem;
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor;
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity;
+import org.eclipse.mita.base.types.validation.TypeValidator;
+
 import com.google.inject.Inject;
 
 public class OperationsLinker {
@@ -42,16 +47,16 @@ public class OperationsLinker {
 	protected class PolymorphicComparator implements Comparator<IEObjectDescription> {
 
 		public int compare(IEObjectDescription operation1, IEObjectDescription operation2) {
-			List<Type> parameters1 = operationUserDataHelper.getArgumentTypes(operation1);
-			List<Type> parameters2 = operationUserDataHelper.getArgumentTypes(operation2);
-			
+			List<Type> parameters1 = operationUserDataHelper.getParameterTypes(operation1);
+			List<Type> parameters2 = operationUserDataHelper.getParameterTypes(operation2);
+
 			if (parameters1.size() > parameters2.size()) {
 				return -1;
 			}
 			if (parameters1.size() < parameters2.size()) {
 				return 1;
 			}
-			
+
 			for (int i = 0; i < parameters1.size(); i++) {
 				final Type type1 = parameters1.get(i);
 				final Type type2 = parameters2.get(i);
@@ -72,6 +77,8 @@ public class OperationsLinker {
 	@Inject
 	protected ITypeSystemInferrer inferrer;
 	@Inject
+	protected TypeValidator validator;
+	@Inject
 	protected ITypeSystem typeSystem;
 	@Inject
 	protected ExtensionMethodHelper extensionMethodHelper;
@@ -79,10 +86,10 @@ public class OperationsLinker {
 	protected OperationUserDataHelper operationUserDataHelper;
 
 	public Optional<Operation> linkOperation(List<IEObjectDescription> candidates, ArgumentExpression call) {
-		if(candidates.size() == 1 && candidates.get(0).getEClass().isSuperTypeOf(TypesPackage.Literals.OPERATION)) {
+		if (candidates.size() == 1 && candidates.get(0).getEClass().isSuperTypeOf(TypesPackage.Literals.OPERATION)) {
 			return Optional.of((Operation) candidates.get(0).getEObjectOrProxy());
 		}
-		
+
 		Collections.sort(candidates, new PolymorphicComparator());
 		for (IEObjectDescription operation : candidates) {
 			if (isCallable(operation, call)) {
@@ -93,8 +100,9 @@ public class OperationsLinker {
 		return Optional.empty();
 	}
 
-	protected List<Type> getArgumentTypes(Operation operation, ArgumentExpression expression) {
-		List<Expression> orderedExpressions = ArgumentSorter.getOrderedExpressions(expression.getArguments(), operation);
+	protected List<InferenceResult> getArgumentTypes(Operation operation, ArgumentExpression expression) {
+		List<Expression> orderedExpressions = ArgumentSorter.getOrderedExpressions(expression.getArguments(),
+				operation);
 		if (expression instanceof FeatureCall) {
 			Expression owner = ((FeatureCall) expression).getOwner();
 			InferenceResult ownerType = inferrer.infer(owner);
@@ -104,19 +112,58 @@ public class OperationsLinker {
 			}
 
 		}
-		return newArrayList(transform(orderedExpressions, (e) -> inferrer.infer(e).getType()));
+		return newArrayList(transform(orderedExpressions, (e) -> inferrer.infer(e)));
 	}
 
 	protected boolean isCallable(IEObjectDescription operation, ArgumentExpression expression) {
-		List<Type> argumentTypes = getArgumentTypes((Operation) operation.getEObjectOrProxy(), expression);
-		List<Type> parameterTypes = operationUserDataHelper.getArgumentTypes(operation);
+		Operation op = (Operation) operation.getEObjectOrProxy();
+
+		if (!op.eIsProxy()) {
+			return isCallableByType(operation, getArgumentTypes(op, expression));
+		} else {
+			return isCallableByName(operation, getArgumentTypes(op, expression));
+		}
+
+	}
+
+	protected boolean isCallableByName(IEObjectDescription operation, List<InferenceResult> argumentTypes) {
+		List<String> parameterTypes = Arrays.asList(operationUserDataHelper.getParameterTypeNames(operation));
+
 		if (argumentTypes.size() != parameterTypes.size())
 			return false;
+
 		for (int i = 0; i < argumentTypes.size(); i++) {
-			Type type1 = argumentTypes.get(i);
-			Type type2 = parameterTypes.get(i);
-			if (!typeSystem.isSuperType(type2, type1))
+			String parameterTypeName = parameterTypes.get(i);
+			if (!isSubtype(argumentTypes.get(i).getType(), parameterTypeName)) {
 				return false;
+			}
+		}
+		return true;
+	}
+
+	protected boolean isSubtype(Type subType, String superTypeName) {
+		if (subType.getName().equals(superTypeName)) {
+			return true;
+		}
+		return IteratorExtensions.exists(typeSystem.getSuperTypes(subType).iterator(),
+				(t) -> t.getName().equals(superTypeName));
+	}
+
+	protected boolean isCallableByType(IEObjectDescription operation, List<InferenceResult> argumentTypes) {
+		List<InferenceResult> parameterTypes = operationUserDataHelper.getParameterInferenceResults(operation);
+
+		if (argumentTypes.size() != parameterTypes.size())
+			return false;
+
+		for (int i = 0; i < argumentTypes.size(); i++) {
+			InferenceResult argumentType = argumentTypes.get(i);
+			InferenceResult parameterType = parameterTypes.get(i);
+			IValidationIssueAcceptor.ListBasedValidationIssueAcceptor acceptor = new IValidationIssueAcceptor.ListBasedValidationIssueAcceptor();
+			validator.assertAssignable(parameterType, argumentType,
+					String.format("Types are incompatible", argumentType, parameterType), acceptor);
+			if (!acceptor.getTraces(Severity.ERROR).isEmpty()) {
+				return false;
+			}
 		}
 		return true;
 	}

@@ -13,6 +13,14 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ReturnStatement
@@ -23,14 +31,6 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.types.GeneratedType
-import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
-import org.yakindu.base.expressions.expressions.AssignmentOperator
-import org.yakindu.base.expressions.expressions.ElementReferenceExpression
-import org.yakindu.base.types.Operation
-import org.yakindu.base.types.TypeSpecifier
-import org.yakindu.base.types.inferrer.ITypeSystemInferrer
 
 class OptionalGenerator extends AbstractTypeGenerator {
 	
@@ -62,7 +62,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)» «generateExpression(type, stmt, AssignmentOperator.ASSIGN, stmt.initialization)»''')
+		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»;''')
 	}
 	
 	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {

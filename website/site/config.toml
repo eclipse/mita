@@ -1,6 +1,6 @@
 baseURL = "/"
 languageCode = "en-us"
-title = "Mita"
+title = "Eclipse Mita"
 theme = "hugo-material-docs"
 metadataformat = "yaml"
 relativeURLs = true
@@ -8,7 +8,7 @@ Paginate = 4
 PygmentsCodeFences = true
 PygmentsUseClasses = true
 PygmentsStyle = "monokai"
-uglyUrls = true
+canonifyurls = true
 
 [blackfriday]
   smartypants = true
@@ -19,46 +19,46 @@ uglyUrls = true
 
 [params]
 	# General information
-	description = "The documentation of the Mita language."
-	copyright = "Bosch Connected Devices and Solutions GmbH"
+	description = "The documentation of Eclipse Mita."
+	copyright = "The Eclipse Mita Project"
 
-	logo = "images/logo.png"
+	logo = "images/mita.svg"
 	favicon = ""
 
 	permalink = "#"
 
 	# Custom assets
-	custom_css = []
+	custom_css = [ "css/custom.css" ]
 	custom_js  = []
 
 	# Syntax highlighting theme
 	highlight_css  = ""
 
 	[params.palette]
-    	primary = "yellow"
-    	accent  = "teal"
+    	primary = "blue-grey"
+    	accent  = "light-blue"
 
     [params.font]
     	text = "Ubuntu"
     	code = "Ubuntu Mono"
 
+[social]
+	twitter = "eclipse_mita"
+	github  = "eclipse/mita"
+
 [[menu.main]]
     name = "Download"
-    weight = -300
-    url = "/download"
+    weight = -400
+    url = "http://github.com/eclipse/mita"
 [[menu.main]]
     name = "Concepts"
-    weight = -200
-    url = "/concepts/"
+    weight = -300
+    url = "concepts/"
 [[menu.main]]
     name = "Language"
     weight = -200
-    url = "/language"
+    url = "language/"
 [[menu.main]]
     name = "Platforms"
     weight = -100
-    url = "/platforms/"
-#[[menu.main]]
-#    name = "FAQ"
-#    weight = -1
-#    url = "/faq/"
+    url = "platforms/"

@@ -42,6 +42,34 @@ function testLoopsSuccess() : void {
 		var x = element;
 	}
 	
+	// in nested loops all vars are in scope
+	
+	let l = [1,2,3,4];
+	for(var j in l) {
+		for(var i = 0; i < 4; i++) {
+			var k = i + j;
+		}
+	}
+	for(var i = 0; i < 4; i++) {
+		for(var j in l) {
+			var k = i + j;
+		}
+	}
+	
+	
+	for(var i in l) {
+		for(var j in l) {
+			var k = i + j;
+		}
+	}
+	
+	for(var i = 0; i < 4; i++) {
+		for(var j = 0; j < 4; j++) {
+			var k = i + j;
+		}
+	}
+	
+	
 	//While loops are supported
 	while(true) { }
 	//and do while loops are supported

@@ -1,9 +1,9 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <!-- Schema file written by PDE -->
-<schema targetNamespace="org.eclipse.mita.types" xmlns="http://www.w3.org/2001/XMLSchema">
+<schema targetNamespace="org.eclipse.mita.base" xmlns="http://www.w3.org/2001/XMLSchema">
 <annotation>
       <appInfo>
-         <meta.schema plugin="org.eclipse.mita.types" id="type_library" name="Mita library extensions"/>
+         <meta.schema plugin="org.eclipse.mita.base" id="type_library" name="Mita library extensions"/>
       </appInfo>
       <documentation>
          [Enter description of this extension point.]
@@ -51,7 +51,6 @@
       <complexType>
          <sequence minOccurs="0" maxOccurs="unbounded">
             <element ref="ResourceURI"/>
-            <element ref="Dependency"/>
          </sequence>
          <attribute name="id" type="string" use="required">
             <annotation>
@@ -88,34 +87,12 @@
                </documentation>
             </annotation>
          </attribute>
-         <attribute name="module" type="string">
-            <annotation>
-               <documentation>
-                  
-               </documentation>
-               <appInfo>
-                  <meta.attribute kind="java" basedOn=":com.google.inject.Module"/>
-               </appInfo>
-            </annotation>
-         </attribute>
       </complexType>
    </element>
 
    <element name="ResourceURI">
       <complexType>
          <attribute name="uri" type="string" use="required">
-            <annotation>
-               <documentation>
-                  
-               </documentation>
-            </annotation>
-         </attribute>
-      </complexType>
-   </element>
-
-   <element name="Dependency">
-      <complexType>
-         <attribute name="id" type="string">
             <annotation>
                <documentation>
                   
