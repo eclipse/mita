@@ -16,6 +16,7 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.types.FunctionType
 
 /**
  * Solves coercive subtyping as described in 
@@ -72,6 +73,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		while(!resultSystem.hasAtomicConstraintsOnly()) {
 			val constraintAndSystem = resultSystem.takeOne;
 			val simplification = doSimplify(constraintAndSystem.value, resultSub, constraintAndSystem.key);
+			if(simplification === null) {
+				doSimplify(constraintAndSystem.value, resultSub, constraintAndSystem.key);
+			}
 			if(!simplification.valid) {
 				return simplification;
 			}
@@ -143,6 +147,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			} else {
 				return SimplificationResult.failure(issue);
 			}
+		} else {
+			return SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.SubtypeConstraint not implemented for «sub.class.simpleName» and «sub.class.simpleName»''')));
 		}
 	}
 	
