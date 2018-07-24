@@ -169,7 +169,7 @@ class MostGenericUnifierComputer {
 		
 		return null;
 	}
-	
+		
 	public dispatch def UnificationIssue isSubtypeOf(AbstractType sub, AbstractType sup) {
 		return new UnificationIssue(#[sub, sup], '''«sub.name» is not a subtype of «sup.name»''')
 	}
