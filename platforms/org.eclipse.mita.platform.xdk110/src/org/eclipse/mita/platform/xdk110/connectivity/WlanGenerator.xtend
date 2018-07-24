@@ -33,18 +33,24 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	protected IPlatformLoggingGenerator loggingGenerator
 	
 	override generateSetup() {
-		CodeFragment.EMPTY
+		CodeFragment.EMPTY;
 	}
 	
 	@Inject
 	protected extension StatementGenerator statementGenerator
-		
+			
 	override generateEnable() {
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentification"), []);
 		val result = codeFragmentProvider.create('''
-		Retcode_T retcode;
+		Retcode_T retcode = PAL_initialize();
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
 		
+		PAL_socketMonitorInit();
+
 		/* The order of calls is important here. WlanConnect_init initializes the CC3100 and prepares
 		 * its future use. Calls to NetworkConfig_ fail if WlanConnect_Init was not called beforehand.
 		 */
@@ -183,6 +189,8 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('BCDS_NetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
+		.addHeader("PAL_initialize_ih.h", true)
+		.addHeader('PAL_socketMonitor_ih.h', true)
 		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
 		if(auth instanceof SumTypeRepr) {
 			if(auth.name == "Enterprise") {
