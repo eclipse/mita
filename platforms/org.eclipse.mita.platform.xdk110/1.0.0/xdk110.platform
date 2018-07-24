@@ -466,6 +466,8 @@ sensor MAX44009 {
  * At the moment we only support slave mode where the XDK becomes a device that can be connected to (as compared to connecting to some other device).
  */
 
+export exception NoDeviceConnectedException;
+
 connectivity named-singleton BLE {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.BleGenerator"
 	validator "org.eclipse.mita.platform.xdk110.connectivity.BleValidator"
