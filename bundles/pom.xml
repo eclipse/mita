@@ -47,6 +47,74 @@
 	</modules>
 
     <profiles>
+    		<profile>
+					<id>itemis-signer</id>
+					<properties>
+						<dirtyWorkingDirectoryTimestampBehavior>error</dirtyWorkingDirectoryTimestampBehavior>
+					</properties>
+					<build>
+						<plugins>
+							<plugin>
+								<groupId>de.itemis.signing</groupId>
+								<artifactId>itemis-jarsigner</artifactId>
+								<version>0.0.5-SNAPSHOT</version>
+								<configuration>
+									<skip>${skip.signing}</skip>
+									<signerUrl>${signer.url}</signerUrl>
+									<!-- <sshArgs>-o ServerAliveInterval=20 -o ServerAliveCountMax=5 -o 
+										LogLevel=DEBUG3</sshArgs> -->
+									<sshArgs>-o LogLevel=VERBOSE</sshArgs>
+									<signOpts>${signer.opts}</signOpts>
+									<!-- add - -noTSA to disabel time stamp authority -->
+									<signCommand>${signer.command} --jar ${signer.opts} -digestalg SHA1</signCommand>
+									<timeout>360000</timeout>
+									<!-- <sshKey>${ssh.key}</sshKey> -->
+								</configuration>
+								<executions>
+									<execution>
+										<id>sign</id>
+										<goals>
+											<goal>sign</goal>
+										</goals>
+										<phase>package</phase>
+									</execution>
+								</executions>
+								<dependencies>
+									<dependency>
+										<groupId>org.apache.maven</groupId>
+										<artifactId>maven-core</artifactId>
+										<version>3.0.5</version>
+									</dependency>
+									<dependency>
+										<groupId>org.apache.maven</groupId>
+										<artifactId>maven-plugin-api</artifactId>
+										<version>2.0</version>
+									</dependency>
+									<dependency>
+										<groupId>org.apache.commons</groupId>
+										<artifactId>commons-exec</artifactId>
+										<version>1.1</version>
+									</dependency>
+									<dependency>
+										<groupId>org.apache.httpcomponents</groupId>
+										<artifactId>httpclient</artifactId>
+										<version>4.1.3</version>
+									</dependency>
+									<dependency>
+										<groupId>org.apache.httpcomponents</groupId>
+										<artifactId>httpmime</artifactId>
+										<version>4.1.3</version>
+									</dependency>
+									<dependency>
+										<groupId>org.codehaus.plexus</groupId>
+										<artifactId>plexus-utils</artifactId>
+										<version>3.0.10</version>
+									</dependency>
+								</dependencies>
+							</plugin>
+						</plugins>
+					</build>
+				</profile>
         <profile>
             <id>plugins</id>
             <activation>
