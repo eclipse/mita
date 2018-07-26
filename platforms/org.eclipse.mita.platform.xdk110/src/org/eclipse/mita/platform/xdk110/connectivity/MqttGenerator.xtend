@@ -13,15 +13,21 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
+import com.google.inject.Inject
+import java.net.URI
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
+import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
+import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import java.net.URI
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
+	
+	@Inject(optional=true)
+	protected IPlatformLoggingGenerator loggingGenerator
 	
 	override generateSetup() {
 		val brokerUri = new URI(configuration.getString("url"));
@@ -30,38 +36,38 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
-		MqttSubscribeHandle = xSemaphoreCreateBinary();
-		if (NULL == MqttSubscribeHandle)
+		mqttSubscribeHandle = xSemaphoreCreateBinary();
+		if (NULL == mqttSubscribeHandle)
 		{
 			retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 		}
 		if (RETCODE_OK == retcode)
 		{
-			MqttPublishHandle = xSemaphoreCreateBinary();
-			if (NULL == MqttPublishHandle)
+			mqttPublishHandle = xSemaphoreCreateBinary();
+			if (NULL == mqttPublishHandle)
 			{
-				vSemaphoreDelete(MqttSubscribeHandle);
+				vSemaphoreDelete(mqttSubscribeHandle);
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 			}
 		}
 		if (RETCODE_OK == retcode)
 		{
-			MqttSendHandle = xSemaphoreCreateBinary();
-			if (NULL == MqttSendHandle)
+			mqttSendHandle = xSemaphoreCreateBinary();
+			if (NULL == mqttSendHandle)
 			{
-				vSemaphoreDelete(MqttSubscribeHandle);
-				vSemaphoreDelete(MqttPublishHandle);
+				vSemaphoreDelete(mqttSubscribeHandle);
+				vSemaphoreDelete(mqttPublishHandle);
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 			}
 		}
 		if (RETCODE_OK == retcode)
 		{
-			MqttConnectHandle = xSemaphoreCreateBinary();
-			if (NULL == MqttConnectHandle)
+			mqttConnectHandle = xSemaphoreCreateBinary();
+			if (NULL == mqttConnectHandle)
 			{
-				vSemaphoreDelete(MqttSubscribeHandle);
-				vSemaphoreDelete(MqttPublishHandle);
-				vSemaphoreDelete(MqttSendHandle);
+				vSemaphoreDelete(mqttSubscribeHandle);
+				vSemaphoreDelete(mqttPublishHandle);
+				vSemaphoreDelete(mqttSendHandle);
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 			}
 		}
@@ -88,67 +94,42 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		/**
 		 * @brief   Structure to represent the MQTT connect features.
 		 */
-		struct ConnectivityMQTT_Connect_S
+		typedef struct
 		{
 			const char * ClientId; /**< The client identifier which is a identifier of each MQTT client connecting to a MQTT broker. It needs to be unique for the broker to know the state of the client. */
 			const char * BrokerURL; /**< The URL pointing to the MQTT broker */
 			uint16_t BrokerPort; /**< The port number of the MQTT broker */
 			bool CleanSession; /**< The clean session flag indicates to the broker whether the client wants to establish a clean session or a persistent session where all subscriptions and messages (QoS 1 & 2) are stored for the client. */
 			uint32_t KeepAliveInterval; /**< The keep alive interval (in seconds) is the time the client commits to for when sending regular pings to the broker. The broker responds to the pings enabling both sides to determine if the other one is still alive and reachable */
-		};
-		
-		/**
-		 * @brief   Typedef to represent the MQTT connect feature.
-		 */
-		typedef struct ConnectivityMQTT_Connect_S ConnectivityMQTT_Connect_T;
-		
+		} ConnectivityMQTT_Connect_T;
+				
 		/**
 		 * @brief   Structure to represent the MQTT publish features.
 		 */
-		struct ConnectivityMQTT_Publish_S
+		typedef struct
 		{
 			const char * Topic; /**< The MQTT topic to which the messages are to be published */
 			uint32_t QoS; /**< The MQTT Quality of Service level. If 0, the message is send in a fire and forget way and it will arrive at most once. If 1 Message reception is acknowledged by the other side, retransmission could occur. */
 			const char * Payload; /**< Pointer to the payload to be published */
 			uint32_t PayloadLength; /**< Length of the payload to be published */
-		};
-		
-		/**
-		 * @brief   Typedef to represent the MQTT publish feature.
-		 */
-		typedef struct ConnectivityMQTT_Publish_S ConnectivityMQTT_Publish_T;
-		
+		} ConnectivityMQTT_Publish_T;
+				
 		/**< Handle for MQTT subscribe operation  */
-		static SemaphoreHandle_t MqttSubscribeHandle;
+		static SemaphoreHandle_t mqttSubscribeHandle;
 		/**< Handle for MQTT publish operation  */
-		static SemaphoreHandle_t MqttPublishHandle;
+		static SemaphoreHandle_t mqttPublishHandle;
 		/**< Handle for MQTT send operation  */
-		static SemaphoreHandle_t MqttSendHandle;
+		static SemaphoreHandle_t mqttSendHandle;
 		/**< Handle for MQTT send operation  */
-		static SemaphoreHandle_t MqttConnectHandle;
+		static SemaphoreHandle_t mqttConnectHandle;
 		/**< MQTT session instance */
-		static MqttSession_T MqttSession;
+		static MqttSession_T mqttSession;
 		/**< MQTT connection status */
-		static bool MqttConnectionStatus = false;
+		static bool mqttIsConnected = false;
 		/**< MQTT subscription status */
-		static bool MqttSubscriptionStatus = false;
+		static bool mqttIsSubscribed = false;
 		/**< MQTT publish status */
-		static bool MqttPublishStatus = false;
-		
-		/**
-		 * @brief Callback function used by the stack to communicate events to the application.
-		 * Each event will bring with it specialized data that will contain more information.
-		 *
-		 * @param[in] session
-		 * MQTT session
-		 *
-		 * @param[in] event
-		 * MQTT event
-		 *
-		 * @param[in] eventData
-		 * MQTT data based on the event
-		 *
-		 */
+		static bool mqttWasPublished = false;
 		''')
 		.addHeader("Serval_Mqtt.h", true, IncludePath.LOW_PRIORITY)
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
@@ -165,15 +146,20 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		char mqttBrokerURL[30] = { 0 };
 		char serverIpStringBuffer[16] = { 0 };
 
-		if (RC_OK != Mqtt_initialize())
+		retcode_t mqttRetcode = RC_OK;
+		mqttRetcode = Mqtt_initialize();
+		if (RC_OK != mqttRetcode)
 		{
+			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : MQTT init failed: %x", codeFragmentProvider.create('''mqttRetcode'''))»
 			retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_INIT_FAILED);
 		}
 
 		if (RETCODE_OK == retcode)
 		{
-			if (RC_OK != Mqtt_initializeInternalSession(&MqttSession))
+			mqttRetcode = Mqtt_initializeInternalSession(&mqttSession);
+			if (RC_OK != mqttRetcode)
 			{
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : MQTT init session failed: %x", codeFragmentProvider.create('''mqttRetcode'''))»
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_INIT_INTERNAL_SESSION_FAILED);
 			}
 		}
@@ -181,56 +167,68 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		if (RETCODE_OK == retcode)
 		{
 			retcode = NetworkConfig_GetIpAddress((uint8_t *) MQTT_BROKER_HOST, &brokerIpAddress);
+			if(RETCODE_OK != retcode) {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to resolve host: %s", codeFragmentProvider.create('''MQTT_BROKER_HOST'''))»
+			}
 		}
 		if (RETCODE_OK == retcode)
 		{
 			if (0 > Ip_convertAddrToString(&brokerIpAddress, serverIpStringBuffer))
 			{
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to convert IP")»
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_IPCONIG_FAIL);
 			}
 		}
 		if (RETCODE_OK == retcode)
 		{
-			MqttSession.MQTTVersion = 3;
-			MqttSession.keepAliveInterval = 60;
-			MqttSession.cleanSession = false;
-			MqttSession.will.haveWill = false;
-			MqttSession.onMqttEvent = MqttEventHandler;
+			mqttSession.MQTTVersion = 3;
+			mqttSession.keepAliveInterval = 60;
+			mqttSession.cleanSession = false;
+			mqttSession.will.haveWill = false;
+			mqttSession.onMqttEvent = MqttEventHandler;
 
 			StringDescr_wrap(&clientID, MQTT_CLIENT_ID);
-			MqttSession.clientID = clientID;
+			mqttSession.clientID = clientID;
 
-			sprintf(mqttBrokerURL, MQTT_URL_FORMAT_NON_SECURE, serverIpStringBuffer, MQTT_BROKER_PORT);
-			MqttSession.target.scheme = SERVAL_SCHEME_MQTT;
-
-			if (RC_OK == SupportedUrl_fromString((const char *) mqttBrokerURL, (uint16_t) strlen((const char *) mqttBrokerURL), &MqttSession.target))
+			size_t neccessaryBytes = snprintf(mqttBrokerURL, sizeof(mqttBrokerURL), MQTT_URL_FORMAT_NON_SECURE, serverIpStringBuffer, MQTT_BROKER_PORT);
+			if(neccessaryBytes > sizeof(mqttBrokerURL)) {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to convert IP")»
+				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+			}
+		}
+		if (RETCODE_OK == retcode)
+		{
+			mqttSession.target.scheme = SERVAL_SCHEME_MQTT;
+			if (RC_OK == SupportedUrl_fromString((const char *) mqttBrokerURL, (uint16_t) strlen((const char *) mqttBrokerURL), &mqttSession.target))
 			{
-				MqttConnectionStatus = false;
+				mqttIsConnected = false;
 				/* This is a dummy take. In case of any callback received
 				 * after the previous timeout will be cleared here. */
-				 (void) xSemaphoreTake(MqttConnectHandle, 0UL);
-				if (RC_OK != Mqtt_connect(&MqttSession))
+				(void) xSemaphoreTake(mqttConnectHandle, 0UL);
+				if (RC_OK != Mqtt_connect(&mqttSession))
 				{
-					printf("MQTT_Enable : Failed to connect MQTT \r\n");
+					«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to connect MQTT")»
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_FAILED);
 				}
 			}
 			else
 			{
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to parse IP/port: %s", codeFragmentProvider.create('''mqttBrokerURL'''))»
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PARSING_ERROR);
 			}
 		}
 		if (RETCODE_OK == retcode)
 		{
-			if (pdTRUE != xSemaphoreTake(MqttConnectHandle, pdMS_TO_TICKS(30000)))
+			if (pdTRUE != xSemaphoreTake(mqttConnectHandle, pdMS_TO_TICKS(30000)))
 			{
-				printf("MQTT_Enable : Failed since Post CB was not received \r\n");
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed since Post CB was not received")»
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_CB_NOT_RECEIVED);
 			}
 			else
 			{
-				if (true != MqttConnectionStatus)
+				if (true != mqttIsConnected)
 				{
+					«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to connect")»
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_STATUS_ERROR);
 				}
 			}
@@ -242,16 +240,29 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateAdditionalImplementation() {
 		codeFragmentProvider.create('''
+		/**
+		 * @brief Callback function used by the stack to communicate events to the application.
+		 * Each event will bring with it specialized data that will contain more information.
+		 *
+		 * @param[in] session
+		 * MQTT session
+		 *
+		 * @param[in] event
+		 * MQTT event
+		 *
+		 * @param[in] eventData
+		 * MQTT data based on the event
+		 *
+		 */
 		static retcode_t MqttEventHandler(MqttSession_T* session, MqttEvent_t event, const MqttEventData_t* eventData)
 		{
 			BCDS_UNUSED(session);
 			Retcode_T retcode = RETCODE_OK;
-			printf("MqttEventHandler : Event - %d\r\n", (int) event);
 			switch (event)
 			{
 			case MQTT_CONNECTION_ESTABLISHED:
-				MqttConnectionStatus = true;
-				if (pdTRUE != xSemaphoreGive(MqttConnectHandle))
+				mqttIsConnected = true;
+				if (pdTRUE != xSemaphoreGive(mqttConnectHandle))
 				{
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
@@ -259,28 +270,28 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			case MQTT_CONNECTION_ERROR:
 			case MQTT_CONNECT_SEND_FAILED:
 			case MQTT_CONNECT_TIMEOUT:
-				MqttConnectionStatus = false;
-				if (pdTRUE != xSemaphoreGive(MqttConnectHandle))
+				mqttIsConnected = false;
+				if (pdTRUE != xSemaphoreGive(mqttConnectHandle))
 				{
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 		
 				break;
 			case MQTT_CONNECTION_CLOSED:
-				MqttConnectionStatus = false;
+				mqttIsConnected = false;
 				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECTION_CLOSED);
 				break;
 			case MQTT_SUBSCRIPTION_ACKNOWLEDGED:
-				MqttSubscriptionStatus = true;
-				if (pdTRUE != xSemaphoreGive(MqttSubscribeHandle))
+				mqttIsSubscribed = true;
+				if (pdTRUE != xSemaphoreGive(mqttSubscribeHandle))
 				{
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
 			case MQTT_SUBSCRIBE_SEND_FAILED:
 			case MQTT_SUBSCRIBE_TIMEOUT:
-				MqttSubscriptionStatus = false;
-				if (pdTRUE != xSemaphoreGive(MqttSubscribeHandle))
+				mqttIsSubscribed = false;
+				if (pdTRUE != xSemaphoreGive(mqttSubscribeHandle))
 				{
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
@@ -291,8 +302,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			case MQTT_INCOMING_PUBLISH:
 				break;
 			case MQTT_PUBLISHED_DATA:
-				MqttPublishStatus = true;
-				if (pdTRUE != xSemaphoreGive(MqttPublishHandle))
+				mqttWasPublished = true;
+				if (pdTRUE != xSemaphoreGive(mqttPublishHandle))
 				{
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
@@ -300,14 +311,14 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			case MQTT_PUBLISH_SEND_FAILED:
 			case MQTT_PUBLISH_SEND_ACK_FAILED:
 			case MQTT_PUBLISH_TIMEOUT:
-				MqttPublishStatus = false;
-				if (pdTRUE != xSemaphoreGive(MqttPublishHandle))
+				mqttWasPublished = false;
+				if (pdTRUE != xSemaphoreGive(mqttPublishHandle))
 				{
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
 			default:
-				printf("MqttEventHandler : Unhandled MQTT Event\r\n");
+				printf("MqttEventHandler : Unhandled MQTT Event: %x\r\n", event);
 				break;
 			}
 		
@@ -341,23 +352,23 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			static char *topic = "«StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, 'name'), [ ])»";
 			StringDescr_wrap(&publishTopicDescription, topic);
 			
-			MqttPublishStatus = false;
+			mqttWasPublished = false;
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
-			(void) xSemaphoreTake(MqttPublishHandle, 0UL);
-			if (RC_OK != Mqtt_publish(&MqttSession, publishTopicDescription, *value, strlen(*value), (uint8_t) MQTT_QOS_AT_MOST_ONE, false))
+			(void) xSemaphoreTake(mqttPublishHandle, 0UL);
+			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, *value, strlen(*value), (uint8_t) MQTT_QOS_AT_MOST_ONE, false))
 			{
 			    retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 			}
 			if (RETCODE_OK == retcode)
 			{
-			    if (pdTRUE != xSemaphoreTake(MqttPublishHandle, pdMS_TO_TICKS(5000)))
+			    if (pdTRUE != xSemaphoreTake(mqttPublishHandle, pdMS_TO_TICKS(5000)))
 			    {
 			        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_CB_NOT_RECEIVED);
 			    }
 			    else
 			    {
-			        if (true != MqttPublishStatus)
+			        if (true != mqttWasPublished)
 			        {
 			            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_STATUS_ERROR);
 			        }
