@@ -22,6 +22,7 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.HasAccessors
 import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
@@ -138,7 +139,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 			}
 			else if(ref instanceof AnonymousProductType) {
 				val realTypeSpecifiers = if(realType instanceof StructureType) {
-					realType.parameters.map[it.typeSpecifier];
+					realType.parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier);
 				} else {
 					ref.typeSpecifiers;
 				}
@@ -176,7 +177,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 	
 	@Check(CheckType.FAST)
 	def checkIsAssignmentCaseCantAssignSingletons(IsAssignmentCase assignmentCase) {
-		if(assignmentCase.assignmentVariable.typeSpecifier.type instanceof Singleton) {
+		if((assignmentCase.assignmentVariable.typeSpecifier as PresentTypeSpecifier).type instanceof Singleton) {
 			error(CANT_ASSIGN_SINGLETONS_MSG, assignmentCase.assignmentVariable, null);
 		}
 	}

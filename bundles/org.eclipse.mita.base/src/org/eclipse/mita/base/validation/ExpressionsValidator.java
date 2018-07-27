@@ -30,6 +30,7 @@ import org.eclipse.mita.base.types.ComplexType;
 import org.eclipse.mita.base.types.GenericElement;
 import org.eclipse.mita.base.types.Operation;
 import org.eclipse.mita.base.types.Parameter;
+import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Property;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeParameter;
@@ -130,7 +131,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	}
 
 	@Check
-	public void checkIsRaw(TypeSpecifier typedElement) {
+	public void checkIsRaw(PresentTypeSpecifier typedElement) {
 		Type type = typedElement.getType();
 		if (!(type instanceof GenericElement))
 			return;
@@ -138,24 +139,24 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		if (typedElement.getTypeArguments().size() == 0 && typeParameter.size() > 0) {
 			String s1 = typedElement.getType().getName();
 			String s2 = s1 + printer.concatTypeParameter(typeParameter);
-			warning(String.format(WARNING_IS_RAW_MSG, s1, s2), typedElement, TypesPackage.Literals.TYPE_SPECIFIER__TYPE,
+			warning(String.format(WARNING_IS_RAW_MSG, s1, s2), typedElement, TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE,
 					WARNING_IS_RAW_CODE);
 		}
 	}
 
 	@Check
-	public void checkTypedElementNotGeneric(TypeSpecifier typedElement) {
+	public void checkTypedElementNotGeneric(PresentTypeSpecifier typedElement) {
 		if (typedElement.getTypeArguments().size() > 0 && ((!(typedElement.getType() instanceof GenericElement))
 				|| ((GenericElement) typedElement.getType()).getTypeParameters().size() == 0)) {
 			String s1 = typedElement.getType().getName();
 			String s2 = printer.concatTypeArguments(typedElement.getTypeArguments());
 			error(String.format(ERROR_NOT_GENERIC_MSG, s1, s2), typedElement,
-					TypesPackage.Literals.TYPE_SPECIFIER__TYPE, ERROR_NOT_GENERIC_CODE);
+					TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE, ERROR_NOT_GENERIC_CODE);
 		}
 	}
 
 	@Check
-	public void checkNofArguments(TypeSpecifier typedElement) {
+	public void checkNofArguments(PresentTypeSpecifier typedElement) {
 		if (!(typedElement.getType() instanceof GenericElement)) {
 			return;
 		}
@@ -166,7 +167,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 			String s1 = type.getName() + printer.concatTypeParameter(typeParameter);
 			String s2 = printer.concatTypeArguments(typedElement.getTypeArguments());
 			error(String.format(ERROR_ARGUMENTED_SPECIFIER_INCORRECT_ARGUMENT_NR_MSG, s1, s2), typedElement,
-					TypesPackage.Literals.TYPE_SPECIFIER__TYPE, ERROR_ARGUMENTED_SPECIFIER_INCORRECT_ARGUMENT_NR_CODE);
+					TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE, ERROR_ARGUMENTED_SPECIFIER_INCORRECT_ARGUMENT_NR_CODE);
 		}
 	}
 
@@ -185,7 +186,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	}
 
 	@Check
-	public void checkTypeParameterBounds(TypeSpecifier typedElement) {
+	public void checkTypeParameterBounds(PresentTypeSpecifier typedElement) {
 		if (!(typedElement.getType() instanceof GenericElement)) {
 			return;
 		}
@@ -197,10 +198,10 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		for (int i = 0; i < typeParameter.size(); i++) {
 			TypeParameter parameter = typeParameter.get(i);
 			if (parameter.getBound() != null) {
-				Type argument = typedElement.getTypeArguments().get(i).getType();
+				Type argument = ((PresentTypeSpecifier) typedElement.getTypeArguments().get(i)).getType();
 				if (!typeSystem.isSuperType(argument, parameter.getBound())) {
 					error(String.format(ERROR_BOUND_MISSMATCH_MSG, argument.getName(), (parameter.getBound()).getName(),
-							type.getName()), typedElement, TypesPackage.Literals.TYPE_SPECIFIER__TYPE_ARGUMENTS, i,
+							type.getName()), typedElement, TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE_ARGUMENTS, i,
 							ERROR_BOUND_MISSMATCH_CODE);
 				}
 			}

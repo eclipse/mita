@@ -23,8 +23,10 @@ import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
@@ -43,7 +45,6 @@ import org.eclipse.xtext.util.Tuples
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.eclipse.mita.base.types.TypesPackage
 
 class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {
 	
@@ -183,7 +184,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	}
 
 	
-	dispatch def Integer maxRefCount(TypeSpecifier ts) {
+	dispatch def Integer maxRefCount(PresentTypeSpecifier ts) {
 		maxRefCount(ts.type) + if(typeSystem.isSuperType(ts.type, typeSystem.getType(REFERENCE_TYPE))) {
 			1 + maxRefCount(ts.typeArguments.head)
 		}
@@ -207,7 +208,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		0;
 	}
 	
-	def Optional<Pair<Integer, TypeSpecifier>> typeSpecifierContainsRefRefs(TypeSpecifier ts) {
+	def Optional<Pair<Integer, PresentTypeSpecifier>> typeSpecifierContainsRefRefs(PresentTypeSpecifier ts) {
 		structuralFeatureContainsRefRefs(ts.type).or(
 		if(typeSystem.isSuperType(ts.type, typeSystem.getType(REFERENCE_TYPE))) {
 			typeSpecifierContainsRefRefs(ts.typeArguments.head);
@@ -254,19 +255,19 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	}
 	
 	dispatch def structuralFeatureContainsRefRefs(StructureType s) {
-		s.parameters.map[it.typeSpecifier].typeSpecsContainRefRefs
+		s.parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(AnonymousProductType s) {
 		s.typeSpecifiers.typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(NamedProductType s) {
-		s.parameters.map[it.typeSpecifier].typeSpecsContainRefRefs
+		s.parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(EObject e) {
 		Optional.absent;
 	}
 	
-	def typeSpecsContainRefRefs(List<TypeSpecifier> tss) {
+	def typeSpecsContainRefRefs(Iterable<PresentTypeSpecifier> tss) {
 		for(idx_ts: tss.indexed) {
 			if(typeSystem.isSuperType(idx_ts.value.type, typeSystem.getType(REFERENCE_TYPE))) {
 				val innerType = idx_ts.value.typeArguments.head;

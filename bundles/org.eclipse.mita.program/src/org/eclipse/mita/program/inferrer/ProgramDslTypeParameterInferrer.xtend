@@ -16,6 +16,7 @@ package org.eclipse.mita.program.inferrer
 import com.google.inject.Inject
 import java.util.Map
 import org.eclipse.mita.base.expressions.inferrer.TypeParameterInferrer
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
@@ -26,7 +27,7 @@ class ProgramDslTypeParameterInferrer extends TypeParameterInferrer {
 	@Inject
 	extension OptionalTypeExtensions
 	
-	override assertArgumentAndParameterSoftCompatible(InferenceResult argumentResult, TypeSpecifier parameter,
+	override assertArgumentAndParameterSoftCompatible(InferenceResult argumentResult, PresentTypeSpecifier parameter,
 			IValidationIssueAcceptor acceptor) {
 		
 		// do not check soft compatibility for optional types as optional<integer> and integer should be compatible

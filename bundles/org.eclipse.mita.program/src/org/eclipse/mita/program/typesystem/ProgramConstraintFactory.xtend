@@ -48,7 +48,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	}
 	
 	protected def getVoidType(EObject context) {
-		val voidScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.typeSpecifier_Type);
+		val voidScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		val voidType = voidScope.getSingleElement(StdlibTypeRegistry.voidTypeQID).EObjectOrProxy;
 		return new AtomicType(voidType, "void");
 	}
@@ -128,7 +128,8 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			 */
 			val argType = system.computeArgumentConstraints(varOrFun);
 			val supposedFunctionType = new FunctionType(varOrFun, argType, ourTypeVar);
-			system.addConstraint(new SubtypeConstraint(supposedFunctionType, referenceType));
+			// the actual function should be a subtype of the expected function so it can be used here
+			system.addConstraint(new SubtypeConstraint(referenceType, supposedFunctionType));
 			system.associate(ourTypeVar)		
 		} else {
 			system.associate(referenceType, varOrFun)
@@ -166,7 +167,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		}
 		
 		// TODO: should be returnValVar <= functionReturnVar
-		system.addConstraint(new EqualityConstraint(returnValVar, functionReturnVar));
+		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar));
 		return returnValVar;	
 	}
 }

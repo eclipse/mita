@@ -13,8 +13,18 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.inject.Inject
+import java.util.LinkedList
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
@@ -28,18 +38,8 @@ import org.eclipse.mita.program.generator.transformation.EscapeWhitespaceInStrin
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import java.util.LinkedList
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.program.ReturnStatement
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 
 class StringGenerator extends AbstractTypeGenerator {
 	
@@ -76,7 +76,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override checkExpressionSupport(TypeSpecifier type, AssignmentOperator operator, TypeSpecifier otherType) {
+	override checkExpressionSupport(PresentTypeSpecifier type, AssignmentOperator operator, PresentTypeSpecifier otherType) {
 		var result = false;
 
 		// inline expression support
@@ -91,7 +91,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		return result; 
 	}
 	
-	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
+	override generateExpression(PresentTypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
 		return if(operator === null) {
 			val stmt = left as EObject;
 						
@@ -124,7 +124,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
+	override generateVariableDeclaration(PresentTypeSpecifier type, VariableDeclaration stmt) {
 		return codeFragmentProvider.create(trace(stmt).append(generateVariableDeclaration(stmt.name, stmt.initialization)));
 	}
 	
@@ -231,11 +231,11 @@ class StringGenerator extends AbstractTypeGenerator {
 		return result;
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
+	override generateTypeSpecifier(PresentTypeSpecifier type, EObject context) {
 		codeFragmentProvider.create('''char*''')
 	}
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(PresentTypeSpecifier type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	

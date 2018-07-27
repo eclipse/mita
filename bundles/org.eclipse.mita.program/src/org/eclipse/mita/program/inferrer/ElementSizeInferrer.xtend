@@ -27,6 +27,7 @@ import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
@@ -193,7 +194,9 @@ class ElementSizeInferrer {
 	}
 		
 	protected def ElementSizeInferenceResult inferFromType(EObject obj, TypeSpecifier typeSpec) {
-		val type = typeSpec?.type;
+		val type = if(typeSpec instanceof PresentTypeSpecifier) {
+			typeSpec.type;
+		}
 		return inferFromType(obj, typeSpec, type);	
 	}
 	protected def ElementSizeInferenceResult inferFromType(EObject obj, TypeSpecifier typeSpec, Type type) {
@@ -431,7 +434,11 @@ abstract class ElementSizeInferenceResult {
 	}
 		
 	override toString() {
-		var result = typeOf?.type?.name;
+		var result = if(typeOf instanceof PresentTypeSpecifier) {
+			typeOf.type.name;
+		} else {
+			""
+		}
 		result += ' {' + children.map[x | x.toString ].join(', ') + '}';
 		return result;
 	}
@@ -468,7 +475,9 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 	}
 	
 	def public Integer getByteCount() {
-		val type = typeOf?.type;
+		val type = if(typeOf instanceof PresentTypeSpecifier) { 
+			(typeOf as PresentTypeSpecifier).type;
+		}
 		val ownSize = (
 			if(type instanceof EnumerationType) {
 				// enums are uint16

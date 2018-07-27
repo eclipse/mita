@@ -1,34 +1,34 @@
 package org.eclipse.mita.base.typesystem
 
+import com.google.common.collect.Lists
 import com.google.inject.Inject
 import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeParameter
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SymbolTable
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
-import com.google.common.collect.Lists
-import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
-import org.eclipse.mita.base.types.TypedElement
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.typesystem.types.Signedness
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -118,7 +118,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return new AtomicType(genType);
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeSpecifier typeSpecifier) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {
 		val typeArguments = typeSpecifier.typeArguments;
 		if(typeArguments.empty) {
 			system.associate(system.computeConstraints(typeSpecifier.type))

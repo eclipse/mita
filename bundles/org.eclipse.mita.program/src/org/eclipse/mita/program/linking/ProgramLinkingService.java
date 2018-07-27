@@ -25,6 +25,7 @@ import org.eclipse.mita.base.expressions.ArgumentExpression;
 import org.eclipse.mita.base.expressions.ElementReferenceExpression;
 import org.eclipse.mita.base.expressions.FeatureCall;
 import org.eclipse.mita.base.types.Operation;
+import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.base.types.TypesFactory;
@@ -60,13 +61,13 @@ public class ProgramLinkingService extends DefaultLinkingService {
 
 	@Override
 	public List<EObject> getLinkedObjects(EObject context, EReference ref, INode node) throws IllegalNodeException {
-		if (context instanceof TypeSpecifier && ref == TypesPackage.Literals.TYPE_SPECIFIER__TYPE) {
-			TypeSpecifier _context = (TypeSpecifier) context;
+		if (context instanceof PresentTypeSpecifier && ref == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
+			PresentTypeSpecifier _context = (PresentTypeSpecifier) context;
 			if (_context.isOptional()) {
-				return getOptionalLinkedObjects((TypeSpecifier) context, ref, node);
+				return getOptionalLinkedObjects((PresentTypeSpecifier) context, ref, node);
 			}
 			if (_context.getReferenceModifiers().size() > 0) {
-				return getReferenceLinkedObjects((TypeSpecifier) context, ref, node);
+				return getReferenceLinkedObjects((PresentTypeSpecifier) context, ref, node);
 			}
 		}
 		if (context instanceof ArgumentExpression && isOperationCall(context)) {
@@ -123,7 +124,7 @@ public class ProgramLinkingService extends DefaultLinkingService {
 	 * Adaptation to handle syntactic sugar "?" for optional types, e.g. for
 	 * "int32?" we need to link it as it were "optional<int32>"
 	 */
-	protected List<EObject> getOptionalLinkedObjects(TypeSpecifier context, EReference ref, INode node) {
+	protected List<EObject> getOptionalLinkedObjects(PresentTypeSpecifier context, EReference ref, INode node) {
 		List<EObject> result = super.getLinkedObjects(context, ref, node);
 		if (result.size() != 1)
 			return result;
@@ -134,7 +135,7 @@ public class ProgramLinkingService extends DefaultLinkingService {
 			return result;
 		EObject optionalType = optionalDescription.getEObjectOrProxy();
 
-		TypeSpecifier specifier = TypesFactory.eINSTANCE.createTypeSpecifier();
+		PresentTypeSpecifier specifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier();
 		specifier.setType((Type) result.get(0));
 		context.getTypeArguments().clear();
 		context.getTypeArguments().add(specifier);
@@ -145,7 +146,7 @@ public class ProgramLinkingService extends DefaultLinkingService {
 	 * Adaptation to handle syntactic sugar "*" for reference types, e.g. for
 	 * "*int32" we need to link it as it were "reference<int32>"
 	 */
-	protected List<EObject> getReferenceLinkedObjects(TypeSpecifier context, EReference ref, INode node) {
+	protected List<EObject> getReferenceLinkedObjects(PresentTypeSpecifier context, EReference ref, INode node) {
 		List<EObject> result = super.getLinkedObjects(context, ref, node);
 		if (result.size() != 1) {
 			return result;
@@ -163,11 +164,11 @@ public class ProgramLinkingService extends DefaultLinkingService {
 			referenceModifierCount += modifier.length();
 		}
 		
-		TypeSpecifier innerSpecifier = TypesFactory.eINSTANCE.createTypeSpecifier();
+		PresentTypeSpecifier innerSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier();
 		innerSpecifier.setType((Type) result.get(0));
 		// skip one, since we return an additional in the last line.
 		for (int i = 0; i < referenceModifierCount - 1; i++) {
-			TypeSpecifier outerSpecifier = TypesFactory.eINSTANCE.createTypeSpecifier();
+			PresentTypeSpecifier outerSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier();
 			context.getTypeArguments().clear();
 			outerSpecifier.setType((Type) referenceType);
 			outerSpecifier.getTypeArguments().add(innerSpecifier);

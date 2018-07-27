@@ -13,17 +13,17 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
-import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.TypeSpecifier
 
 class ReferenceGenerator extends AbstractTypeGenerator {
 	
@@ -33,11 +33,11 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	@Inject
 	protected extension GeneratorUtils
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(PresentTypeSpecifier type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
+	override generateTypeSpecifier(PresentTypeSpecifier type, EObject context) {
 		if(type.typeArguments.empty) {
 			// We have nothing to dereference here
 			return CodeFragment.EMPTY;
@@ -50,10 +50,10 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 		
 	}
 	
-	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
+	override generateVariableDeclaration(PresentTypeSpecifier type, VariableDeclaration stmt) {
 		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»«IF stmt.initialization !== null» = «stmt.initialization.code»«ENDIF»;''')
 	}
-	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
+	override generateExpression(PresentTypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
 		val leftCode = if(left instanceof VariableDeclaration) {
 			codeFragmentProvider.create('''«left.name»''');
 		} else {

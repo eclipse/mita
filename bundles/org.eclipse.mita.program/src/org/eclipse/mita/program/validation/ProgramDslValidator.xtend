@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
@@ -32,6 +33,7 @@ import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
@@ -75,7 +77,6 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import org.eclipse.mita.base.expressions.Argument
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -164,7 +165,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val sizeInferenceResult = elementSizeInferrer.infer(variable);
 		val invalidElements = sizeInferenceResult.invalidSelfOrChildren;
 		for(invalidElement : invalidElements) {
-			if(invalidElement.typeOf !== null && invalidElement.typeOf.type.name == "array") {
+			if(invalidElement.typeOf instanceof PresentTypeSpecifier && (invalidElement.typeOf as PresentTypeSpecifier).type.name == "array") {
 			}
 			else {
 				var invalidObj = if(invalidElement.root?.eResource == variable.eResource) {
@@ -665,12 +666,14 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		
 		typesAndArgs.forEach[ts_arg | 
 			val ts = ts_arg.key;
-			if(ts.type instanceof GeneratedType && ts.type.name == "optional") {
-				val arg = ts_arg.value;
-				val argType = ModelUtils.toSpecifier(inferrer.infer(arg.value));
-				if(ModelUtils.typeSpecifierEqualsWith([t1, t2 | typeSystem.haveCommonType(t1, t2)], ts.typeArguments.head, argType)) {
-					error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "function calls"), arg, null);
-				}
+			if(ts instanceof PresentTypeSpecifier) {
+				if(ts.type instanceof GeneratedType && ts.type.name == "optional") {
+					val arg = ts_arg.value;
+					val argType = ModelUtils.toSpecifier(inferrer.infer(arg.value));
+					if(ModelUtils.typeSpecifierEqualsWith([t1, t2 | typeSystem.haveCommonType(t1, t2)], ts.typeArguments.head, argType)) {
+						error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "function calls"), arg, null);
+					}
+				}	
 			}
 		]
 	}

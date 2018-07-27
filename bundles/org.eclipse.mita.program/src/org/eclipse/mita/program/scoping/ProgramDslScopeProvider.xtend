@@ -32,6 +32,7 @@ import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
@@ -237,14 +238,20 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	def IScope scope_VariableDeclarationImpl_feature(VariableDeclarationImpl context, EReference reference) {
-		val type = context.getTypeSpecifier().type;
+		val typeSpecifier = context.getTypeSpecifier();
+		val type = if(typeSpecifier instanceof PresentTypeSpecifier) {
+			typeSpecifier.type;
+		}
 		if(!(type instanceof ComplexType)) return IScope.NULLSCOPE;
 
 		return Scopes.scopeFor((type as ComplexType).allFeatures)
 	}
 
 	def IScope scope_FeatureValue_feature(VariableDeclaration context, EReference reference) {
-		val type = context.typeSpecifier.type;
+		val typeSpecifier = context.getTypeSpecifier();
+		val type = if(typeSpecifier instanceof PresentTypeSpecifier) {
+			typeSpecifier.type;
+		}
 		if(!(type instanceof ComplexType)) return IScope.NULLSCOPE;
 
 		return Scopes.scopeFor((type as ComplexType).allFeatures)
@@ -609,7 +616,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	override IScope getScope(EObject context, EReference reference) {
 		// Performance improvement: hard-code well traveled routes
-		val scope = if (reference == TypesPackage.Literals.TYPE_SPECIFIER__TYPE) {
+		val scope = if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 				scope_ElementReferenceExpression_reference(context, reference);

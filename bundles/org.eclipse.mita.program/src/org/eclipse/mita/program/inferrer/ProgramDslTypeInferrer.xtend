@@ -35,6 +35,7 @@ import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.HasAccessors
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
@@ -338,11 +339,13 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 				ModelUtils.toSpecifier(parentDecl.inferTypeDispatch);
 			}
 			
-			if(parentTypeSpec !== null && parentTypeSpec.type.name == op.type.name) {
-				val finalMap = typeParameterMapping2
-				op.typeParameters.indexed.forEach[idx_tp | 
-					finalMap.put(idx_tp.value, parentTypeSpec.typeArguments.get(idx_tp.key).inferTypeDispatch);
-				]
+			if(parentTypeSpec instanceof PresentTypeSpecifier) {
+				if(parentTypeSpec.type.name == op.type.name) {
+					val finalMap = typeParameterMapping2
+					op.typeParameters.indexed.forEach[idx_tp | 
+						finalMap.put(idx_tp.value, parentTypeSpec.typeArguments.get(idx_tp.key).inferTypeDispatch);
+					]
+				}
 			}
 		}
 		if (e instanceof FeatureCall) {
@@ -437,10 +440,13 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 	}
 
 	def doInfer(FunctionDefinition operation) {
-		if (operation.getTypeSpecifier() === null) {
+		val typeSpecifier = operation.typeSpecifier;
+		if(typeSpecifier instanceof PresentTypeSpecifier) {
+			return doInfer(typeSpecifier);			
+		}
+		else {
 			return inferTypeFromReturnStatements(operation.getBody());
 		}
-		return doInfer(operation.getTypeSpecifier());
 	}
 
 	def doInfer(ArrayAccessExpression e) {

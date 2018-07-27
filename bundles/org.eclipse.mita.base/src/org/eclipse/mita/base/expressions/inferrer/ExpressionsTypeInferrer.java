@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.mita.base.expressions.ArgumentExpression;
 import org.eclipse.mita.base.expressions.AssignmentExpression;
 import org.eclipse.mita.base.expressions.BitwiseAndExpression;
@@ -58,6 +57,7 @@ import org.eclipse.mita.base.types.Enumerator;
 import org.eclipse.mita.base.types.GenericElement;
 import org.eclipse.mita.base.types.Operation;
 import org.eclipse.mita.base.types.Parameter;
+import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Property;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeAlias;
@@ -65,6 +65,7 @@ import org.eclipse.mita.base.types.TypeParameter;
 import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.base.types.inferrer.AbstractTypeSystemInferrer;
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor;
+import org.eclipse.xtext.EcoreUtil2;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -383,11 +384,11 @@ public class ExpressionsTypeInferrer extends AbstractTypeSystemInferrer implemen
 		return inferTypeDispatch(e.getTypeSpecifier());
 	}
 
-	public InferenceResult doInfer(TypeSpecifier specifier) {
+	public InferenceResult doInfer(PresentTypeSpecifier specifier) {
 		if (specifier.getType() instanceof GenericElement
 				&& ((GenericElement) specifier.getType()).getTypeParameters().size() > 0) {
 			List<InferenceResult> bindings = new ArrayList<>();
-			EList<TypeSpecifier> arguments = specifier.getTypeArguments();
+			EList<PresentTypeSpecifier> arguments = specifier.getTypeArguments();
 			for (TypeSpecifier typeSpecifier : arguments) {
 				InferenceResult binding = inferTypeDispatch(typeSpecifier);
 				if (binding != null) {

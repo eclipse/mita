@@ -32,6 +32,7 @@ import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.Type
@@ -52,8 +53,8 @@ import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 class ModelUtils {
 
@@ -180,7 +181,7 @@ class ModelUtils {
 		ir.bindings.fold(false, [b, x | b || containsTypeBy(onNull, pred, x)])
 	}
 	
-	static def boolean containsAbstractType(TypeSpecifier ts) {
+	static def boolean containsAbstractType(PresentTypeSpecifier ts) {
 		if(ts === null) {
 			return true;
 		}
@@ -213,18 +214,18 @@ class ModelUtils {
 		return false;
 	}
 
-	def static TypeSpecifier toSpecifier(InferenceResult inference) {
+	def static PresentTypeSpecifier toSpecifier(InferenceResult inference) {
 		if (inference === null) {
 			return null;
 		} else {
-			val result = TypesFactory.eINSTANCE.createTypeSpecifier;
+			val result = TypesFactory.eINSTANCE.createPresentTypeSpecifier;
 			result.type = inference.type;
 			result.typeArguments.addAll(inference.bindings.map[x|x.toSpecifier]);
 			return result;
 		}
 	}
 
-	static def String typeSpecifierIdentifier(TypeSpecifier x) {
+	static def String typeSpecifierIdentifier(PresentTypeSpecifier x) {
 		val innerTypes = x.typeArguments.map[typeSpecifierIdentifier].reduce[p1, p2|p1 + ", " + p2];
 		val innerString = if (innerTypes === null) {
 				""
@@ -317,15 +318,15 @@ class ModelUtils {
 		return typesAndArgsInOrder;
 	}	
 	
-	def static boolean typeSpecifierEqualsByName(TypeSpecifier ts, Object o) {
+	def static boolean typeSpecifierEqualsByName(PresentTypeSpecifier ts, Object o) {
 		return typeSpecifierEqualsWith([t1, t2 | t1.name == t2.name], ts, o)
 	}
 		
-	def static boolean typeSpecifierEqualsWith((Type, Type) => Boolean equalityCheck, TypeSpecifier ts1, Object o) {
-		if(!(o instanceof TypeSpecifier)) {
+	def static boolean typeSpecifierEqualsWith((Type, Type) => Boolean equalityCheck, PresentTypeSpecifier ts1, Object o) {
+		if(!(o instanceof PresentTypeSpecifier)) {
 			return false;
 		}
-		val ts2 = o as TypeSpecifier;
+		val ts2 = o as PresentTypeSpecifier;
 		if(!equalityCheck.apply(ts1.type, ts2.type) || ts1.typeArguments.length != ts2.typeArguments.length) {
 			return false;
 		}
@@ -416,7 +417,7 @@ class ModelUtils {
 		return if(node === null) null else NodeModelUtils.getTokenText(node);
 	}
 
-	static def boolean isPrimitiveType(TypeSpecifier typeSpec) {
+	static def boolean isPrimitiveType(PresentTypeSpecifier typeSpec) {
 		val type = typeSpec?.type;
 		return if (type instanceof PrimitiveType) {
 			true

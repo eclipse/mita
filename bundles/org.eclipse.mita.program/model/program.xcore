@@ -34,7 +34,7 @@ import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Exportable
 import org.eclipse.mita.base.types.GeneratedElement
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils 
@@ -271,7 +271,7 @@ class CatchStatement extends AbstractStatement {
 }
 
 class NewInstanceExpression extends ElementReferenceExpression {
-	contains TypeSpecifier ^type
+	contains PresentTypeSpecifier ^type
 	
 	op EObject getReference() {
 		val t = ^type.^type

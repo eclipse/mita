@@ -18,6 +18,7 @@ import java.util.List
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Exportable
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeSpecifier
@@ -51,7 +52,7 @@ class TypeDSLResourceDescriptionStrategy extends DefaultResourceDescriptionStrat
 	}
 
 	static def String getTypeSpecifierType(TypeSpecifier specifier) {
-		if(specifier instanceof TypeSpecifier){
+		if(specifier instanceof PresentTypeSpecifier){
 			if(specifier.optional){
 				return MitaTypeSystem.OPTINAL_TYPE
 			}else if (!specifier.referenceModifiers.isEmpty){
@@ -59,7 +60,7 @@ class TypeDSLResourceDescriptionStrategy extends DefaultResourceDescriptionStrat
 			}
 		}
 		var List<INode> typeNode = NodeModelUtils.findNodesForFeature(specifier,
-			TypesPackage.Literals.TYPE_SPECIFIER__TYPE)
+			TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE)
 		if (typeNode.size() === 1) {
 			return typeNode.get(0).getText().trim()
 		} else {

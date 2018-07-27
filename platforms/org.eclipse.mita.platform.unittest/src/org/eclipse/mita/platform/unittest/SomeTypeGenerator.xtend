@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
@@ -37,15 +38,15 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 
 	
 	
-	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
+	override generateVariableDeclaration(PresentTypeSpecifier type, VariableDeclaration stmt) {
 		codeFragmentProvider.create('''«typeGenerator.code(type.typeArguments.head)» «stmt.name»;''');
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
+	override generateTypeSpecifier(PresentTypeSpecifier type, EObject context) {
 		codeFragmentProvider.create('''«typeGenerator.code(type.typeArguments.head)»''')
 	}
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(PresentTypeSpecifier type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	

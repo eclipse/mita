@@ -16,6 +16,7 @@ import java.util.Map
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.GenericElement
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.Type
@@ -65,7 +66,7 @@ class TypeParameterInferrer {
 		Map<TypeParameter, InferenceResult> inferredTypeParameterTypes, IValidationIssueAcceptor acceptor) {
 		if (parameters.size <= arguments.size) {
 			for (var i = 0; i < parameters.size; i++) {
-				val parameter = parameters.get(i).typeSpecifier;
+				val parameter = parameters.get(i).typeSpecifier as PresentTypeSpecifier;
 				val argument = arguments.get(i);
 				if (parameterContainsTypeParameter(parameter)) {
 					val thisIssueAcceptor = createIssueAcceptor
@@ -83,20 +84,22 @@ class TypeParameterInferrer {
 	}
 
 	def protected boolean parameterContainsTypeParameter(TypeSpecifier specifier) {
-		val type = specifier?.type
-		if (type instanceof PrimitiveType) {
-			return false
-		}
-		if (type instanceof TypeParameter) {
-			return true
-		}
-		if (type instanceof ComplexType) {
-			if (type.typeParameters !== null) {
-				return true;
-			} else {
-				for (prop : type.features.filter(Property)) {
-					if (prop.typeSpecifier.parameterContainsTypeParameter) {
-						return true
+		if(specifier instanceof PresentTypeSpecifier) {
+			val type = specifier?.type
+			if (type instanceof PrimitiveType) {
+				return false
+			}
+			if (type instanceof TypeParameter) {
+				return true
+			}
+			if (type instanceof ComplexType) {
+				if (type.typeParameters !== null) {
+					return true;
+				} else {
+					for (prop : type.features.filter(Property)) {
+						if (prop.typeSpecifier.parameterContainsTypeParameter) {
+							return true
+						}
 					}
 				}
 			}
@@ -104,7 +107,7 @@ class TypeParameterInferrer {
 		return false
 	}
 
-	def protected void inferTypeParameterFromOperationArgument(TypeSpecifier parameterTypeSpecifier,
+	def protected void inferTypeParameterFromOperationArgument(PresentTypeSpecifier parameterTypeSpecifier,
 		InferenceResult argumentType, Map<TypeParameter, InferenceResult> inferredTypeParameterTypes,
 		IValidationIssueAcceptor acceptor) {
 		val parameterType = parameterTypeSpecifier?.type
@@ -117,17 +120,18 @@ class TypeParameterInferrer {
 		}
 	}
 
-	def protected doInferGenericTypeFromOperationArgument(TypeSpecifier parameterTypeSpecifier,
+	def protected doInferGenericTypeFromOperationArgument(PresentTypeSpecifier parameterTypeSpecifier,
 		InferenceResult argumentType, Map<TypeParameter, InferenceResult> inferredTypeParameterTypes,
 		IValidationIssueAcceptor acceptor) {
 		for (var i = 0; i < parameterTypeSpecifier.typeArguments.size; i++) {
-			val typeParameter = parameterTypeSpecifier.typeArguments.get(i);
+			val typeParameter = parameterTypeSpecifier.typeArguments.get(i) as PresentTypeSpecifier;
 			if (argumentType.bindings.size <= i) {
 				acceptor.error(typeParameter, NOT_INFERRABLE_TYPE_PARAMETER_CODE)
 			} else {
 				val typeArgument = argumentType.bindings.get(i);
-				inferTypeParameterFromOperationArgument(typeParameter, typeArgument, inferredTypeParameterTypes,
-					acceptor);
+				if(typeParameter instanceof PresentTypeSpecifier) {
+	 				inferTypeParameterFromOperationArgument(typeParameter, typeArgument, inferredTypeParameterTypes, acceptor);	
+ 				}
 			}
 		}
 	}
@@ -222,7 +226,7 @@ class TypeParameterInferrer {
 	 * <li><code>integer</code></li>
 	 * </ul>
 	 */
-	def protected assertArgumentAndParameterSoftCompatible(InferenceResult argumentResult, TypeSpecifier parameter,
+	def protected assertArgumentAndParameterSoftCompatible(InferenceResult argumentResult, PresentTypeSpecifier parameter,
 		IValidationIssueAcceptor acceptor) {
 		// I can't think of anything that's not compatible to a TypeParameter, so...
 		if (parameter?.type instanceof TypeParameter) {
@@ -236,9 +240,9 @@ class TypeParameterInferrer {
 		if (thisIssueAcceptor.traces.isEmpty && parameter.typeArguments !== null &&
 			parameter.typeArguments.size != argumentResult.bindings.size) {
 			// build temporary binding list for error message
-			val bindings = parameter.typeArguments.map [
-				InferenceResult.from(type)
-			]
+			val bindings = parameter.typeArguments.filter(PresentTypeSpecifier).map [
+				InferenceResult.from(it.type)
+			].toList
 			acceptor.error(
 				String.format(INCOMPATIBLE_TYPES, argumentResult, InferenceResult.from(parameter.type, bindings)),
 				NOT_COMPATIBLE_CODE)
@@ -253,7 +257,7 @@ class TypeParameterInferrer {
 		acceptor.accept(new ValidationIssue(Severity.ERROR, msg, issueCode));
 	}
 
-	def protected error(IValidationIssueAcceptor acceptor, TypeSpecifier typeSpecifier, String issueCode) {
+	def protected error(IValidationIssueAcceptor acceptor, PresentTypeSpecifier typeSpecifier, String issueCode) {
 		acceptor.accept(
 			new ValidationIssue(Severity.ERROR, String.format(INFER_TYPE_PARAMETER, typeSpecifier.type.name),
 				issueCode));

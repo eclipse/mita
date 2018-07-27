@@ -12,11 +12,11 @@ import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
 
 /**
@@ -109,63 +109,71 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint) {
 		val sub = constraint.subType;
-		val sup = constraint.superType;
+		val top = constraint.superType;
 		
-		val result = doSimplify(system, substitution, constraint, sub, sup);
+		val result = doSimplify(system, substitution, constraint, sub, top);
 		return result;
 	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType sup) {
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
 		
 		// decompose:  Ct1...tn <: Cs1...sn
-		if(sub.baseType != sup.baseType) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, sup], "Can only decompose equal base types"));
+		if(sub.baseType != top.baseType) {
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], "Can only decompose equal base types"));
 		}
-		if(sub.typeArguments.length !== sup.typeArguments.length) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, sup], "Unequal number of type arguments"));
+		if(sub.typeArguments.length !== top.typeArguments.length) {
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], "Unequal number of type arguments"));
 		}
 		
 		val ncs = constraintSystemProvider.get();
 		sub.typeArguments.indexed.forEach[tsub_i|
 			val tsub = tsub_i.value;
-			val tsup = sup.typeArguments.get(tsub_i.key);
+			val tsup = top.typeArguments.get(tsub_i.key);
 			ncs.addConstraint(sub.baseType.getVariance(tsub, tsup));
 		];
 		return SimplificationResult.success(ConstraintSystem.combine(#[ncs, system]), substitution);
 	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, TypeConstructorType sup) {
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, TypeConstructorType top) {
 		// expand-l:   a <: Ct1...tn
-		val expansion = sup.expand(sub);
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, sup)));
+		val expansion = top.expand(sub);
+		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	} 
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeVariable sup) {
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeVariable top) {
 		// expand-r:   Ct1...tn <: a
-		val expansion = sub.expand(sup);
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, sup)));
+		val expansion = sub.expand(top);
+		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, AbstractBaseType sub, AbstractBaseType sup) { 
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, AbstractBaseType sub, AbstractBaseType top) { 
 		// eliminate:  U <: T
-		val issue = mguComputer.isSubtypeOf(sub, sup);
+		val issue = mguComputer.isSubtypeOf(sub, top);
 		if(issue === null) {
 			return SimplificationResult.success(system, substitution);
 		} else {
 			return SimplificationResult.failure(issue);
 		}
 	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, FunctionType sub, FunctionType sup) { 
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, FunctionType sub, FunctionType top) { 
 		//    fa :: a -> b   <:   fb :: c -> d 
 		// ⟺ every fa can be used as fb 
-		// ⟺ b <: d ∧    a >: c
-		val newSystem = system.plus(new SubtypeConstraint(sup.from, sub.from)).plus(new SubtypeConstraint(sub.to, sup.to));		
+		// ⟺ b >: d ∧    a <: c
+		val newSystem = system.plus(new SubtypeConstraint(top.from, sub.from)).plus(new SubtypeConstraint(sub.to, top.to));		
 		return SimplificationResult.success(newSystem, substitution);
 	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, AbstractBaseType sup) { 
-		val mgu = mguComputer.compute(sub, sup);
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, AbstractBaseType top) { 
+		val mgu = mguComputer.compute(sub, top);
+		if(!mgu.valid) {
+			return SimplificationResult.failure(mgu.issue);
+		}
+		
+		return SimplificationResult.success(mgu.substituion.apply(system), mgu.substituion.apply(substitution));
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, AbstractBaseType sub, TypeVariable top) { 
+		val mgu = mguComputer.compute(sub, top);
 		if(!mgu.valid) {
 			return SimplificationResult.failure(mgu.issue);
 		}
@@ -173,8 +181,23 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return SimplificationResult.success(mgu.substituion.apply(system), mgu.substituion.apply(substitution));
 	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, Object sub, Object sup) { 
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.SubtypeConstraint not implemented for «sub.class.simpleName» and «sup.class.simpleName»''')))
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, ProdType sub, ProdType top) { 
+		if(sub.types.length > top.types.length) {
+			return SimplificationResult.failure(new UnificationIssue(substitution, '''subtype has more fields than topertype'''));
+		}
+		
+		val ncs = constraintSystemProvider.get();
+		
+		sub.types.indexed.forEach[tsub_i|
+			val tsub = tsub_i.value;
+			val tsup = top.types.get(tsub_i.key);
+			ncs.addConstraint(new SubtypeConstraint(tsub, tsup));
+		]
+		return SimplificationResult.success(ConstraintSystem.combine(#[ncs, system]), substitution);
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, Object sub, Object top) { 
+		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.SubtypeConstraint not implemented for «sub.class.simpleName» and «top.class.simpleName»''')))
 	}
 	
 	protected def AbstractTypeConstraint getVariance(AbstractType baseType, AbstractType tau, AbstractType sigma) {
@@ -199,11 +222,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val supremum = graph.getSupremum(v);
 			val successors = graph.getBaseTypeSuccecessors(v);
 			val infimum = graph.getInfimum(v);
-			val supremumIsValid = successors.forall[ it == supremum || graph.getBaseTypePredecessors(it).exists[ it == supremum ] ];
+			val topremumIsValid = successors.forall[ it == supremum || graph.getBaseTypePredecessors(it).exists[ it == supremum ] ];
 			val infimumIsValid = predecessors.forall[ it == infimum || graph.getBaseTypeSuccecessors(it).exists[ it == infimum ] ];
 			
 			if(!predecessors.empty) {
-				if(supremum !== null && supremumIsValid) {
+				if(supremum !== null && topremumIsValid) {
 					// assign-sup
 					graph.replace(v, supremum);
 					subtitution.add(v, supremum);					

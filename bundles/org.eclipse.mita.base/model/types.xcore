@@ -5,9 +5,10 @@ import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.common.util.BasicEList
 
-class TypeSpecifier {
+class TypeSpecifier {}
+class PresentTypeSpecifier extends TypeSpecifier {
 	refers Type ^type
-	contains TypeSpecifier[] typeArguments
+	contains PresentTypeSpecifier[] typeArguments
 	
 	transient boolean optional
 	transient String[] referenceModifiers
@@ -33,6 +34,8 @@ class TypeSpecifier {
 		return typeName + args;
 	}
 }
+
+class NullTypeSpecifier extends TypeSpecifier {}
 
 abstract class NamedElement {
 	String name
@@ -103,8 +106,8 @@ abstract class TypedElement {
 	contains TypeSpecifier typeSpecifier
 	
 	op Type getType() {
-		if (getTypeSpecifier() !== null) {
-			return getTypeSpecifier().getType();
+		if (getTypeSpecifier() instanceof PresentTypeSpecifier) {
+			return (getTypeSpecifier() as PresentTypeSpecifier).getType();
 		}
 		return null;
 	}
@@ -178,7 +181,7 @@ interface HasAccessors {
 	/**
 	 * caution: this is only the type from the parsed model, not neccessarily the inferred type. Use with caution for type inferrence.
 	 */
-	op TypeSpecifier[] accessorsTypes()
+	op PresentTypeSpecifier[] accessorsTypes()
 }
 
 class Exportable {
@@ -207,8 +210,8 @@ class NativeType extends PrimitiveType, Exportable {
 
 class StructureType extends ComplexType, HasAccessors, Exportable {
 	contains Parameter[] parameters
-	op TypeSpecifier[] accessorsTypes() {
-		return parameters.map[it.typeSpecifier];
+	op PresentTypeSpecifier[] accessorsTypes() {
+		return parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).toEList;
 	}
 	
 	op String toString() {
@@ -256,28 +259,28 @@ interface SumAlternative extends ComplexType, HasAccessors {
 	}
 }
 class Singleton extends SumAlternative {
-	op TypeSpecifier[] accessorsTypes() {
+	op PresentTypeSpecifier[] accessorsTypes() {
 		return #[].asEList;
 	}
 }
 class AnonymousProductType extends SumAlternative {
-	contains TypeSpecifier[] typeSpecifiers 
+	contains PresentTypeSpecifier[] typeSpecifiers 
 	op Type realType() {
 		if(typeSpecifiers.length == 1) {
-			return typeSpecifiers.get(0).^type;
+			val actualType = typeSpecifiers.get(0);
+			return actualType.^type;
 		}
-		else {
-			return this;
-		}
+		return this;	
 	}
-	op TypeSpecifier[] accessorsTypes() {
+	op PresentTypeSpecifier[] accessorsTypes() {
 		// need to duplicate functionality, since calling realType and deferring to that ones accessor types would create infinite recursion if it returns this
 		// could check with == this, but that would be more confusing I think
 		if(typeSpecifiers.length == 1) {
-			val realType = typeSpecifiers.get(0).^type;
-			if(realType instanceof HasAccessors) {
-				return realType.accessorsTypes;
-			}
+			val actualTypeSpec = typeSpecifiers.get(0)
+				val actualType = actualTypeSpec.^type;
+				if(actualType instanceof HasAccessors) {
+					return actualType.accessorsTypes;
+				}				
 		}
 		return typeSpecifiers;
 	}
@@ -285,8 +288,8 @@ class AnonymousProductType extends SumAlternative {
 class NamedProductType extends SumAlternative, HasAccessors {
 	contains Parameter[] parameters
 	// always return parameter types, since we never embed
-	op TypeSpecifier[] accessorsTypes() {
-		return parameters.map[it.typeSpecifier];
+	op PresentTypeSpecifier[] accessorsTypes() {
+		return parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).toEList;
 	}
 }
 class ProductMember extends Parameter { }

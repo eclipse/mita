@@ -20,6 +20,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.ArrayLiteral
@@ -77,7 +78,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override CodeFragment generateHeader(TypeSpecifier type) {
+	override CodeFragment generateHeader(PresentTypeSpecifier type) {
 		codeFragmentProvider.create('''
 		typedef struct { 
 			«typeGenerator.code(type.typeArguments.head)»* data;
@@ -93,7 +94,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return false;
 	}
 	
-	override CodeFragment generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
+	override CodeFragment generateVariableDeclaration(PresentTypeSpecifier type, VariableDeclaration stmt) {
 		val size = stmt.getArraySize(sizeInferrer);
 		// if we are top-level, we must do initialization if there is any
 		val topLevel = (EcoreUtil2.getContainerOfType(stmt, FunctionDefinition) === null) && (EcoreUtil2.getContainerOfType(stmt, EventHandlerDeclaration) === null);
@@ -129,11 +130,11 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return cf;
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
+	override generateTypeSpecifier(PresentTypeSpecifier type, EObject context) {
 		codeFragmentProvider.create('''array_«typeGenerator.code(type.typeArguments.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(PresentTypeSpecifier type, NewInstanceExpression expr) {
 		// if we are not in a function we are top-level and must do nothing, since we can't modify top-level anyway
 		if(EcoreUtil2.getContainerOfType(expr, FunctionDefinition) === null && EcoreUtil2.getContainerOfType(expr, EventHandlerDeclaration) === null) {
 			return CodeFragment.EMPTY;
@@ -158,7 +159,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
+	override generateExpression(PresentTypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
 		val isReturnStmt = left instanceof ReturnStatement;
 		
 		val varNameLeft = if(left instanceof VariableDeclaration) {

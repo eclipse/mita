@@ -45,8 +45,8 @@ import org.eclipse.emf.ecore.util.EcoreUtil.Copier;
 import org.eclipse.mita.base.expressions.ElementReferenceExpression;
 import org.eclipse.mita.base.expressions.FeatureCall;
 import org.eclipse.mita.base.types.ImportStatement;
+import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Type;
-import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.program.Program;
 import org.eclipse.mita.program.ProgramFactory;
 import org.eclipse.mita.program.ThrowExceptionStatement;
@@ -185,8 +185,8 @@ public class GenerationTest {
 					}
 				}
 			}
-			if (next instanceof TypeSpecifier) {
-				Type type = ((TypeSpecifier) next).getType();
+			if (next instanceof PresentTypeSpecifier) {
+				Type type = ((PresentTypeSpecifier) next).getType();
 				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(type))) {
 					program.getTypes().add((Type) c.get(type));
 				}

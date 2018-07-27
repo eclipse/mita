@@ -19,6 +19,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
@@ -139,7 +140,7 @@ class CompilationContext {
 				program.eAllContents.filter(VariableDeclaration).map[
 					ModelUtils.toSpecifier(typeInferrer.infer(it))
 				]
-			).filterNull.filter[
+			).filter(PresentTypeSpecifier).filter[
 				it.type !== null && it.type instanceof GeneratedType && noUnboundTypeParameters(it)
 			].toIterable
 		].groupBy[ModelUtils.typeSpecifierIdentifier(it)].entrySet.map[it.value.head];
@@ -150,7 +151,7 @@ class CompilationContext {
 		return resourceGraph;
 	}
 	
-	private def Boolean noUnboundTypeParameters(TypeSpecifier specifier) {
+	private def Boolean noUnboundTypeParameters(PresentTypeSpecifier specifier) {
 		assertInited();
 		if(specifier.type instanceof TypeParameter) {
 			return false;

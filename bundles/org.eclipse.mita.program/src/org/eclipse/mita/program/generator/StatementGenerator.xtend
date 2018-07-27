@@ -49,6 +49,7 @@ import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.Singleton
@@ -182,7 +183,7 @@ class StatementGenerator {
 		/* TODO: replace this hack with a typecast expression that supports TypeSpecifier
 		 * see https://github.com/Yakindu/statecharts/issues/1779
 		 */
-		val typeSpec = TypesFactory.eINSTANCE.createTypeSpecifier();
+		val typeSpec = TypesFactory.eINSTANCE.createPresentTypeSpecifier();
 		typeSpec.type = stmt.type;
 
 		'''(«typeGenerator.code(typeSpec)») («stmt.operand.code.noTerminator»)'''
@@ -386,7 +387,7 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode code(ReturnStatement stmt) {
 		val hasValue = stmt.value !== null;
 		var AbstractTypeGenerator _generatedTypeGenerator = null;
-		var TypeSpecifier _resultType = null;
+		var PresentTypeSpecifier _resultType = null;
 		if(hasValue) {
 			val value = stmt.value;
 			val inference = typeInferrer.infer(value);
@@ -756,7 +757,7 @@ class StatementGenerator {
 	}
 	
 	@Traced dispatch def IGeneratorNode code(IsAssignmentCase stmt) {
-		val varTypeSpec = stmt.assignmentVariable.typeSpecifier;
+		val varTypeSpec = stmt.assignmentVariable.typeSpecifier as PresentTypeSpecifier;
 		val varType = varTypeSpec.type as SumAlternative;
 		val where = stmt.eContainer as WhereIsStatement;
 		'''
@@ -927,7 +928,7 @@ class StatementGenerator {
 	}
 
 	private def getCtype(TypeSpecifier type) {
-		if(type === null) codeFragmentProvider.create('''void*''') else typeGenerator.code(type);
+		if(type instanceof PresentTypeSpecifier) typeGenerator.code(type) else codeFragmentProvider.create('''void*''');
 	}
 
 }

@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.program.inferrer;
 
+import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
@@ -22,8 +23,10 @@ public class OptionalTypeExtensions {
 	public static final String OPTIONAL_TYPE_NAME = "optional";
 	
 	public TypeSpecifier getOptionalBaseType(TypeSpecifier result) {
-		if (isOptional(result.getType()) && !result.getTypeArguments().isEmpty()) {
-			return getOptionalBaseType(result.getTypeArguments().get(0));
+		if(result instanceof PresentTypeSpecifier) {
+			if (isOptional(((PresentTypeSpecifier) result).getType()) && !((PresentTypeSpecifier) result).getTypeArguments().isEmpty()) {
+				return getOptionalBaseType(((PresentTypeSpecifier) result).getTypeArguments().get(0));		
+			}
 		}
 		return result;
 	}

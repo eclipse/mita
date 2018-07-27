@@ -226,8 +226,8 @@ Argument:
 ParenthesizedExpression returns Expression:
 	{ParenthesizedExpression} '(' expression=Expression ')';
 
-TypeSpecifier returns TypeSpecifier:
-	{TypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
+TypeSpecifier returns PresentTypeSpecifier:
+	{PresentTypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
 
 Literal:
 	BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;

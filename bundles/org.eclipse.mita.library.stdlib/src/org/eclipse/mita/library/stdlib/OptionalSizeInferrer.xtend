@@ -13,18 +13,19 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.program.GeneratedFunctionDefinition
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.types.TypeSpecifier
 
 class OptionalSizeInferrer extends ElementSizeInferrer {
 	
@@ -36,13 +37,15 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 		if(result instanceof ValidElementSizeInferenceResult) { 
 			return result;	
 		}
-		val type = obj.typeSpecifier?.typeArguments?.get(0);
-		if(type !== null) {
-			return new ValidElementSizeInferenceResult(obj, type, 1);	
+		val typeSpecifier = obj.typeSpecifier;
+		if(typeSpecifier instanceof PresentTypeSpecifier) {
+			val type = typeSpecifier.typeArguments?.get(0);
+			if(type !== null) {
+				return new ValidElementSizeInferenceResult(obj, type, 1);	
+			}	
 		}
-		else {
-			return newInvalidResult(obj, "Cannot infer size for this optional, since I can't infer the type of it");
-		} 
+		return newInvalidResult(obj, "Cannot infer size for this optional, since I can't infer the type of it");
+		 
 	}
 	
 	override protected dispatch doInfer(ElementReferenceExpression obj) {

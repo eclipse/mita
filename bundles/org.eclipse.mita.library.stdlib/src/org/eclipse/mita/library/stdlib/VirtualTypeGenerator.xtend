@@ -13,23 +13,23 @@
 
 package org.eclipse.mita.library.stdlib
 
-import org.eclipse.mita.program.generator.AbstractTypeGenerator
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.generator.AbstractTypeGenerator
 
 class VirtualTypeGenerator extends AbstractTypeGenerator {
 	
-	override checkExpressionSupport(TypeSpecifier type, AssignmentOperator operator, TypeSpecifier otherType) {
+	override checkExpressionSupport(PresentTypeSpecifier type, AssignmentOperator operator, PresentTypeSpecifier otherType) {
 		return false;
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
+	override generateTypeSpecifier(PresentTypeSpecifier type, EObject context) {
 		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(PresentTypeSpecifier type, NewInstanceExpression expr) {
 		return codeFragmentProvider.create('''''');
 	}
 	

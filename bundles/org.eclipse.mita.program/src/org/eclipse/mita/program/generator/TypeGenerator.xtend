@@ -21,6 +21,7 @@ import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.NativeType
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.Type
@@ -46,7 +47,7 @@ class TypeGenerator implements IGenerator {
 	@Inject
 	protected extension GeneratorUtils
 
-	def CodeFragment code(TypeSpecifier typeSpec) {
+	def CodeFragment code(PresentTypeSpecifier typeSpec) {
 		return if(typeSpec === null) {
 			CodeFragment.EMPTY
 		} else {
@@ -74,7 +75,7 @@ class TypeGenerator implements IGenerator {
 		return exceptionGenerator.exceptionType;
 	}
 	
-	protected dispatch def CodeFragment code(GeneratedType type, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(GeneratedType type, PresentTypeSpecifier typeSpec) {
 		return generatorRegistry.getGenerator(type)?.generateTypeSpecifier(typeSpec, type);
 	}
 	

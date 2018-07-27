@@ -19,6 +19,7 @@ import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.GeneratedFunctionDefinition
@@ -53,19 +54,19 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	public static final String OPTIONAL_FLAG_MEMBER = "flag";
 	public static final String OPTIONAL_DATA_MEMBER = "data";
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(PresentTypeSpecifier type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
+	override generateTypeSpecifier(PresentTypeSpecifier type, EObject context) {
 		codeFragmentProvider.create('''optional_«typeGenerator.code(type.typeArguments.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
+	override generateVariableDeclaration(PresentTypeSpecifier type, VariableDeclaration stmt) {
 		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»;''')
 	}
 	
-	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
+	override generateExpression(PresentTypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
 		val isReturnStmt = left instanceof ReturnStatement;
 		
 		if(operator != AssignmentOperator.ASSIGN) {
@@ -171,7 +172,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		''')
 	}
 	
-	override CodeFragment generateHeader(TypeSpecifier type) {
+	override CodeFragment generateHeader(PresentTypeSpecifier type) {
 		codeFragmentProvider.create('''
 		typedef struct { 
 			«typeGenerator.code(type.typeArguments.head)» «OPTIONAL_DATA_MEMBER»;

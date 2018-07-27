@@ -50,12 +50,12 @@ ConfigurationItemValue returns program::ConfigurationItemValue:
 ;
 
 SignalInstance returns program::SignalInstance: 
-	(writeable ?= 'var') name=ID (':' typeSpecifier=TypeSpecifier)? '=' initialization=Expression ';'
+	(writeable ?= 'var') name=ID typeSpecifier=OptionalTypeSpecifier '=' initialization=Expression ';'
 ;
 
 GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
 	(exported?='export')?
-	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID parameters=FunctionParameters (':' typeSpecifier=TypeSpecifier)
+	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID parameters=FunctionParameters typeSpecifier=OptionalTypeSpecifier
 	'generator' generator=STRING
 	('validator' validator=STRING)?
 	';'
@@ -63,14 +63,18 @@ GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition:
 
 NativeFunctionDefinition returns program::NativeFunctionDefinition:
 	(exported?='export')?
-	'native' (checked?='checked' | 'unchecked') ('fn' | 'function')  name=ID parameters=FunctionParameters (':' typeSpecifier=TypeSpecifier)?
+	'native' (checked?='checked' | 'unchecked') ('fn' | 'function')  name=ID parameters=FunctionParameters typeSpecifier=OptionalTypeSpecifier
 	'header' header=STRING ';'
 ;
 
 FunctionDefinition returns program::FunctionDefinition:
 	(exported?='export')?
-	('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID parameters=FunctionParameters (':' typeSpecifier=TypeSpecifier)?
+	('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID parameters=FunctionParameters typeSpecifier=OptionalTypeSpecifier
 	(body = ProgramBlock)?
+;
+
+OptionalTypeSpecifier returns types::TypeSpecifier:
+	(':' TypeSpecifier) | ({types::NullTypeSpecifier})
 ;
 
 FunctionParameters returns types::ParameterList:
@@ -86,7 +90,7 @@ FunctionParameterDeclaration returns program::FunctionParameterDeclaration:
 ;
 
 VariableDeclaration returns program::VariableDeclaration: 
-	(writeable ?= 'var' | 'let') name=ID (':' typeSpecifier=TypeSpecifier)? ('=' initialization=Expression)? ';'
+	(writeable ?= 'var' | 'let') name=ID typeSpecifier=OptionalTypeSpecifier ('=' initialization=Expression)? ';'
 ;
 
 EventHandlerDeclaration returns program::EventHandlerDeclaration: 
@@ -211,7 +215,7 @@ ForEachLoopIteratorVariableDeclaration returns program::ForEachLoopIteratorVaria
 ;
 
 ForLoopVariableDeclaration returns program::VariableDeclaration:
-	writeable ?= 'var' name=ID (':' typeSpecifier=TypeSpecifier)? '=' initialization=Expression;
+	writeable ?= 'var' name=ID typeSpecifier=OptionalTypeSpecifier '=' initialization=Expression;
 
 IfStatement returns program::IfStatement:
 	'if' '(' condition=Expression ')' 	
