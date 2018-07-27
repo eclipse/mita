@@ -1,11 +1,10 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.mita.base.typesystem.types.AtomicType
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -13,11 +12,18 @@ import org.eclipse.mita.base.typesystem.types.AtomicType
  * by Traytel et al., see https://www21.in.tum.de/~nipkow/pubs/aplas11.pdf
  */
 @Accessors
-@FinalFieldsConstructor
 @EqualsHashCode
 class SubtypeConstraint extends AbstractTypeConstraint {
 	protected final AbstractType subType;
 	protected final AbstractType superType;
+	
+	new(AbstractType sub, AbstractType top) {
+		if(sub === null || top === null) {
+			throw new NullPointerException;
+		}
+		subType = sub;
+		superType = top;
+	}
 	
 	override toString() {
 		subType + " ⩽ " + superType

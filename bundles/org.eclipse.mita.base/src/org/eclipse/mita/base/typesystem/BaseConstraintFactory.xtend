@@ -50,7 +50,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
 		println('''computeConstraints is not implemented for «context.eClass.name»''');
 		system.computeConstraintsForChildren(context);
-		return null;
+		return TypeVariableAdapter.get(context);
 	}
 	
 	protected def void computeConstraintsForChildren(ConstraintSystem system, EObject context) {
