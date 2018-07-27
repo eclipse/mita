@@ -157,11 +157,11 @@ class MostGenericUnifierComputer {
 	}
 	
 	public dispatch def UnificationIssue isSubtypeOf(IntegerType sub, IntegerType sup) {
-		if(sub.signedness != sup.signedness && !(sub.signedness == Signedness.DontCare || sup.signedness == Signedness.DontCare)) {
+		if(sub.signedness != sup.signedness && sub.signedness == Signedness.Signed && sup.signedness == Signedness.Unsigned && !(sub.signedness == Signedness.DontCare || sup.signedness == Signedness.DontCare)) {
 			return new UnificationIssue(#[sub, sup], '''Incompatible signedness between «sup.name» and «sub.name»''');
 		}
 		
-		if((sub.signedness == Signedness.Unsigned && sub.widthInBytes + 1 > sup.widthInBytes)
+		if((sub.signedness == Signedness.Unsigned && sup.signedness != Signedness.Unsigned && sub.widthInBytes + 1 > sup.widthInBytes)
 		|| (sub.widthInBytes > sup.widthInBytes)
 		) {
 			return new UnificationIssue(#[sub, sup], '''«sup.name» is too small for «sub.name»''');

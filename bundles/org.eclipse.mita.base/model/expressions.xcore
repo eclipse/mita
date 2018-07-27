@@ -52,19 +52,37 @@ abstract class Literal {
 }
 class BoolLiteral extends Literal {
 	boolean value
+	op String toString() {
+		return "b(" + value + ")"
+	}
 }
 class IntLiteral extends Literal {
-	int value
+	long value
+	op String toString() {
+		return "i(" + value + ")"
+	}
 }
 class DoubleLiteral extends Literal {
 	double value
+	op String toString() {
+		return "d(" + value + ")"
+	}
 }
 class FloatLiteral extends Literal {
 	float value
+	op String toString() {
+		return "f(" + value + ")"
+	}
 }
 class HexLiteral extends IntLiteral {
+	op String toString() {
+		return "x(" + Long.toHexString(value) + ")"
+	}
 }
 class BinaryLiteral extends IntLiteral {
+	op String toString() {
+		return "b(" + Long.toBinaryString(value) + ")"
+	}
 }
 class StringLiteral extends Literal {
 	String value

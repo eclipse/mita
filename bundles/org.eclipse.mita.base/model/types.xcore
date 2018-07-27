@@ -35,7 +35,11 @@ class PresentTypeSpecifier extends TypeSpecifier {
 	}
 }
 
-class NullTypeSpecifier extends TypeSpecifier {}
+class NullTypeSpecifier extends TypeSpecifier {
+	op String toString() {
+		return "";
+	}
+}
 
 abstract class NamedElement {
 	String name

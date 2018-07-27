@@ -29,6 +29,7 @@ public class ExpressionsValueConverterService extends DefaultTerminalConverters 
 	public static final String HEX = "HEX";
 	public static final String BINARY = "BINARY";
 	public static final String FLOAT = "FLOAT";
+	public static final String LONG = "LONG";
 	
 	@Inject
 	protected AbstractIDValueConverter idValueConverter;
@@ -47,6 +48,9 @@ public class ExpressionsValueConverterService extends DefaultTerminalConverters 
 	
 	@Inject
 	protected FloatValueConverter floatConverter;
+	
+	@Inject
+	protected LongValueConverter longConverter;
 	
 	@ValueConverter(rule = BOOL)
 	public IValueConverter<Boolean> BOOL() {
@@ -72,6 +76,11 @@ public class ExpressionsValueConverterService extends DefaultTerminalConverters 
 	@ValueConverter(rule = FLOAT)
 	public IValueConverter<Float> FLOAT() {
 		return floatConverter;
+	}
+	
+	@ValueConverter(rule = LONG)
+	public IValueConverter<Long> LONG() {
+		return longConverter;
 	}
 
 }

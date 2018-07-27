@@ -29,6 +29,13 @@ import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.types.NullTypeSpecifier
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.expressions.UnaryExpression
+import org.eclipse.mita.base.expressions.NumericalUnaryExpression
+import org.eclipse.mita.base.expressions.UnaryOperator
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -135,6 +142,70 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypedElement element) {
 		return system.associate(system.computeConstraints(element.typeSpecifier), element);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PrimitiveValueExpression t) {
+		return system.computeConstraints(t.value);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalUnaryExpression expr) {
+		val operand = expr.operand;
+		if(expr.operator == UnaryOperator.NEGATIVE) {
+			if(operand instanceof IntLiteral) {
+				return computeConstraints(system, expr, -operand.value);
+			}
+		}
+		return system.associate(system.computeConstraints(operand), expr);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IntLiteral lit) {
+		return system.computeConstraints(lit, lit.value);
+	}
+
+	protected def TypeVariable computeConstraints(ConstraintSystem system, EObject source, long value) {
+		val sign = if(value < 0) {
+			Signedness.Signed;
+		} else {
+			if(value > 127 && value <= 255) {
+				Signedness.Unsigned;
+			}
+			else if(value > 32767 && value <= 65535) {
+				Signedness.Unsigned;
+			}
+			else if(value > 2147483647L && value <= 4294967295L) {
+				Signedness.Unsigned;
+			}
+			else {
+				Signedness.DontCare;
+			}
+		}
+		val byteCount = 
+			if(value >= 0 && value <= 255) {
+				1;
+			}
+			else if(value > 255 && value <= 65535) {
+				2;
+			}
+			else if(value > 65535 && value <= 4294967295L) {
+				4;
+			}
+			else if(value >= -128 && value < 0) {
+				1;
+			} 
+			else if(value >= -32768 && value < -128) {
+				2;
+			}
+			else if(value >= -2147483648L && value < -32768) {
+				4;
+			}
+			else {
+				return system.associate(new BottomType(source, "Value out of bounds: " + value));
+			}
+		return system.associate(new IntegerType(source, byteCount, sign));
+	}
+
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NullTypeSpecifier context) {
+		return TypeVariableAdapter.get(context);
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Void context) {

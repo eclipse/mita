@@ -165,8 +165,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		} else {
 			system.associate(system.computeConstraints(statement.value), statement);
 		}
-		
-		// TODO: should be returnValVar <= functionReturnVar
+
 		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar));
 		return returnValVar;	
 	}

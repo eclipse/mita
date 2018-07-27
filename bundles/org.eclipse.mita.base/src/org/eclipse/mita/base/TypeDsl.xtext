@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-grammar org.eclipse.mita.base.TypeDsl with org.eclipse.xtext.common.Terminals
+grammar org.eclipse.mita.base.TypeDsl hidden(WS, ML_COMMENT, SL_COMMENT)
 
 import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 import "org.eclipse.mita.base.types"
@@ -236,7 +236,7 @@ BoolLiteral:
 	{BoolLiteral} value=BOOL;
 
 IntLiteral:
-	{IntLiteral} value=INT;
+	{IntLiteral} value=LONG;
 
 DoubleLiteral:
 	{DoubleLiteral} value=DOUBLE;
@@ -310,18 +310,31 @@ enum RelationalOperator:
 terminal BOOL returns ecore::EBoolean:
 	'true' | 'false' | 'yes' | 'no';
 
-terminal HEX returns ecore::EInt:
+terminal HEX returns ecore::ELong:
 	('0') ('x' | 'X') ('0'..'9' | 'a'..'f' | 'A'..'F')+;
 
-terminal BINARY returns ecore::EInt: 
+terminal BINARY returns ecore::ELong: 
 	('0')('b' | 'B') ('0'|'1')+
 ;
 terminal DOUBLE returns ecore::EDouble:
-	(INT '.' INT) ('e' ('-' | '+') INT)? ('d' | 'D')?;
+	(LONG '.' LONG) ('e' ('-' | '+') LONG)? ('d' | 'D')?;
 
 terminal FLOAT returns ecore::EFloat:
-	(INT '.' INT) ('e' ('-' | '+') INT)? ('f' | 'F')?;
+	(LONG '.' LONG) ('e' ('-' | '+') LONG)? ('f' | 'F')?;
 
 QID:
 	ID ('.' ID)*;
+
+terminal ID: '^'?('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+terminal LONG returns ecore::ELong: ('0'..'9')+;
+terminal STRING:
+			'"' ( '\\' . /* 'b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\' */ | !('\\'|'"') )* '"' |
+			"'" ( '\\' . /* 'b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\' */ | !('\\'|"'") )* "'"
+		;
+terminal ML_COMMENT : '/*' -> '*/';
+terminal SL_COMMENT : '//' !('\n'|'\r')* ('\r'? '\n')?;
+
+terminal WS         : (' '|'\t'|'\r'|'\n')+;
+
+terminal ANY_OTHER: .;
 

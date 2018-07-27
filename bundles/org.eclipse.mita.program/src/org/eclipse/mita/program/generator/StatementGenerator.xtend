@@ -145,7 +145,7 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(HexLiteral stmt) {
-		'''0x«Integer.toHexString(stmt.value)»'''
+		'''0x«Long.toHexString(stmt.value)»'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(FloatLiteral stmt) {

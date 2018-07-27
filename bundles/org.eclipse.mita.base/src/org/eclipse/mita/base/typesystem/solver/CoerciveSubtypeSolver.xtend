@@ -164,6 +164,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return SimplificationResult.success(newSystem, substitution);
 	}
 	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, TypeVariable top) { 
+		substitution.add(sub, top);
+		return SimplificationResult.success(system, substitution)
+	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, AbstractBaseType top) { 
 		val mgu = mguComputer.compute(sub, top);
 		if(!mgu.valid) {

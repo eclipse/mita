@@ -194,7 +194,7 @@ class ModelUtils {
 	/**
 	 * Computes the time interval of an event in milliseconds.
 	 */
-	static def int getIntervalInMilliseconds(TimeIntervalEvent event) {
+	static def long getIntervalInMilliseconds(TimeIntervalEvent event) {
 		val base = event.interval.value;
 		val factor = switch event.unit {
 			case MILLISECOND: 1

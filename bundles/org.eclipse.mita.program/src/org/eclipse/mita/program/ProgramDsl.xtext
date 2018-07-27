@@ -195,7 +195,7 @@ InterpolatedStringExpression returns program::InterpolatedStringExpression hidde
 	{program::InterpolatedStringExpression}
 	'`' ((=>'${' content+=Expression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
 ;
-IntAsString returns ecore::EString: INT;
+IntAsString returns ecore::EString: LONG;
 
 DoWhileStatement returns program::DoWhileStatement: 
 	'do' body=ProgramBlock 'while' '(' condition=Expression ')'
