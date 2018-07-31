@@ -3,9 +3,11 @@ package org.eclipse.mita.base.typesystem.types
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 @EqualsHashCode
+@Accessors
 class TypeScheme extends AbstractType {
 	private static Integer instanceCount = 0;
 	

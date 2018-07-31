@@ -1,7 +1,6 @@
 package org.eclipse.mita.base.ui
 
 import java.util.HashSet
-import java.util.Map.Entry
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.jface.text.ITextSelection
 import org.eclipse.jface.viewers.ArrayContentProvider
@@ -10,6 +9,7 @@ import org.eclipse.jface.viewers.ISelection
 import org.eclipse.jface.viewers.TableViewer
 import org.eclipse.jface.viewers.TableViewerColumn
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
@@ -29,7 +29,6 @@ import org.eclipse.xtext.resource.EObjectAtOffsetHelper
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.xtext.util.concurrent.IUnitOfWork
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 
 class MitaTypesDebugView extends ViewPart {
 	protected TableViewer constraintViewer;
@@ -201,16 +200,18 @@ class MitaTypesDebugView extends ViewPart {
     protected def selectSolutions(Iterable<EObject> objects) {
     	if(constraintSolution === null) return;
     	
-    	val input = constraintSolution.solution?.substitutions?.entrySet;
+    	val substitution = constraintSolution.solution;
+    	val input = constraintSolution.solution?.substitutions?.keySet;
     	if(input === null) {
     		return;
     	}
     	val origins = input
-    		.map[ it as Entry<TypeVariable, AbstractType> ]
+    		.map[ it as TypeVariable ]
     	val result = origins
-    		.filter[c| objects.exists[obj| c.key.origin == obj ] ]
-    		.toSet();
-		this.solutionViewer.input = result;
+    		.filter[c| objects.exists[obj| c.origin == obj ] ]
+    		.map[tv | tv -> substitution.apply(tv)];
+    	
+		this.solutionViewer.input = result.toSet;
     }
     
 	protected def addIssueColumns(TableViewer viewer) {
@@ -237,7 +238,7 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return (element as Entry<TypeVariable, AbstractType>).key?.origin?.toString() ?: "null";
+                return (element as Pair<TypeVariable, AbstractType>).key?.origin?.toString() ?: "null";
             }
             
         });
@@ -245,7 +246,7 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return (element as Entry<TypeVariable, AbstractType>).key?.name?.toString() ?: "null";
+                return (element as Pair<TypeVariable, AbstractType>).key?.name?.toString() ?: "null";
             }
             
         });
@@ -253,7 +254,7 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return (element as Entry<TypeVariable, AbstractType>).value?.toString() ?: "null";
+                return (element as Pair<TypeVariable, AbstractType>).value?.toString() ?: "null";
             }
             
         });

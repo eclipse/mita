@@ -17,15 +17,30 @@ class Substitution {
 	}
 	
 	public def apply(TypeVariable typeVar) {
-		return content.get(typeVar) ?: typeVar;
+		var AbstractType result = typeVar;
+		var nextResult = content.get(result); 
+		while(nextResult !== null && result != nextResult && !result.freeVars.empty) {
+			result = nextResult;
+			nextResult = applyToType(result);
+		}
+		return result;
 	}
 	
-	public def apply(Substitution to) {
+	public def Substitution apply(Substitution to) {
 		val result = new Substitution();
-		result.constraintSystemProvider = to.constraintSystemProvider;
+		result.constraintSystemProvider = this.constraintSystemProvider;
 		result.content.putAll(content);
 		result.content.putAll(to.content);
 		return result;
+	}
+	
+	public def AbstractType applyToType(AbstractType typ) {
+		return content.entrySet.fold(typ, [t1, tv_t2 | 
+			t1.replace(tv_t2.key, tv_t2.value);
+		]);
+	}
+	public def Iterable<AbstractType> applyToTypes(Iterable<AbstractType> types) {
+		return types.map[applyToType];
 	}
 	
 	public def apply(ConstraintSystem system) {
@@ -45,6 +60,10 @@ class Substitution {
 	}
 	
 	public static final Substitution EMPTY = new Substitution() {
+		
+		override apply(Substitution to) {
+			return to;
+		}
 		
 		override apply(ConstraintSystem system) {
 			return system;

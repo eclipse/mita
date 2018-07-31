@@ -7,7 +7,11 @@ import java.util.List
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+
+import static extension org.eclipse.mita.base.util.BaseUtils.*
 
 class ConstraintSystem {
 	@Inject protected ConstraintSystemProvider constraintSystemProvider; 
@@ -71,8 +75,33 @@ class ConstraintSystem {
 			return (null -> result);
 		}
 		
-		result.constraints = constraints.subList(1, constraints.length);
-		return constraints.get(0) -> result;
+		result.constraints = constraints.tail.toList;
+		return constraints.head -> result;
+	}
+	
+	public def takeOneNonAtomic() {
+		val result = new ConstraintSystem(symbolTable);
+		val atomics = constraints.filter[constraintIsAtomic];
+		val nonAtomics = constraints.filter[!constraintIsAtomic];
+		if(nonAtomics.empty) {
+			val x = hasNonAtomicConstraints;
+			result.constraints = atomics.force;
+			return (null -> result);
+		}
+		
+		result.constraints = (nonAtomics.tail + atomics).force;
+		return nonAtomics.head -> result;
+	}
+	
+	public def hasNonAtomicConstraints() {
+		return this.constraints.exists[!constraintIsAtomic];
+	}
+	
+	public def constraintIsAtomic(AbstractTypeConstraint c) {
+		(c instanceof SubtypeConstraint)
+			&&((((c as SubtypeConstraint).subType instanceof TypeVariable) && (c as SubtypeConstraint).superType instanceof TypeVariable)
+			|| (((c as SubtypeConstraint).subType instanceof TypeVariable) && (c as SubtypeConstraint).superType instanceof AbstractBaseType)
+			|| (((c as SubtypeConstraint).subType instanceof AbstractBaseType) && (c as SubtypeConstraint).superType instanceof TypeVariable))
 	}
 	
 	def plus(AbstractTypeConstraint constraint) {
@@ -88,11 +117,15 @@ class ConstraintSystem {
 		}
 		
 		val csp = systems.head.constraintSystemProvider;
-		return systems.fold(csp.get(), [r, t|
+		val result = systems.fold(csp.get(), [r, t|
 			r.constraints.addAll(t.constraints);
 			r.symbolTable.content.putAll(t.symbolTable.content);
 			return r;
 		]);
+		return csp.get() => [
+			it.constraints.addAll(result.constraints.toSet);
+			it.symbolTable.content.putAll(result.symbolTable.content);
+		]
 	}
 	
 }

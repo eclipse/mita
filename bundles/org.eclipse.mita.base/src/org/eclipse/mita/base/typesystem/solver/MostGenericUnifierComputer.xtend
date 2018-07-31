@@ -12,6 +12,9 @@ import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.Signedness
 
+import static extension org.eclipse.mita.base.util.BaseUtils.*
+import org.eclipse.mita.base.typesystem.types.TypeScheme
+
 /* Interesting papers:
  *  Generalizing Hindley-Milner Type Inference Algorithms: https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
  *  Extending Hindley-Milner Type Inference wit Coercive Structural Subtyping: https://www21.in.tum.de/~nipkow/pubs/aplas11.pdf
@@ -54,69 +57,30 @@ class MostGenericUnifierComputer {
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, ProdType t1, ProdType t2) {
-		val issues = t1.types.indexed.map[i_type |
-			substitution.unify(i_type.value, t2.types.get(i_type.key))
-		].filterNull
-		if(issues.size === 1) {
-			return issues.head;	
-		}
-		else if(!issues.empty) {
-			return new UnificationIssue(issues, 
-			'''
-			multiple issues:
-				«FOR issue: issues»
-				«issue»
-				«ENDFOR»
-			'''
-			);
-		}
-		return null;
+		val issues = t1.types.zip(t2.types).map[t1_t2 |
+			substitution.unify(t1_t2.key, t1_t2.value)
+		]
+		return ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, SumType t1, SumType t2) {
-		val issues = t1.types.indexed.map[i_type |
-			substitution.unify(i_type.value, t2.types.get(i_type.key))
-		].filterNull
-		if(issues.size === 1) {
-			return issues.head;	
-		}
-		else if(!issues.empty) {
-			return new UnificationIssue(issues, 
-			'''
-			multiple issues:
-				«FOR issue: issues»
-				«issue»
-				«ENDFOR»
-			'''
-			);
-		}
-		return null;
+		val issues = t1.types.zip(t2.types).map[t1_t2 |
+			substitution.unify(t1_t2.key, t1_t2.value)
+		]
+		ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, FunctionType t1, FunctionType t2) {
 		val issues = #[
 			substitution.unify(t1.from, t2.from),
 			substitution.unify(t1.to, t2.to)
-		].filterNull;
-		
-		if(issues.size === 1) {
-			return issues.head;	
-		}
-		else if(!issues.empty) {
-			return new UnificationIssue(issues, 
-			'''
-			multiple issues:
-				«FOR issue: issues»
-				«issue»
-				«ENDFOR»
-			'''
-			);
-		}
-		return null;
+		]
+		ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, TypeVariable t1, AbstractType t2) {
-		return substitution.unify(t2, t1);
+		substitution.add(t1, t2);
+		return null;
 	}
 	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, TypeVariable t2) {
 		substitution.add(t2, t1);
@@ -153,9 +117,11 @@ class MostGenericUnifierComputer {
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, AbstractType t2) {
-		return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
+		if(t1 != t2) { 
+			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
+		}
 	}
-	
+		
 	public dispatch def UnificationIssue isSubtypeOf(IntegerType sub, IntegerType sup) {
 		if(sub.signedness != sup.signedness && sub.signedness == Signedness.Signed && sup.signedness == Signedness.Unsigned && !(sub.signedness == Signedness.DontCare || sup.signedness == Signedness.DontCare)) {
 			return new UnificationIssue(#[sub, sup], '''Incompatible signedness between «sup.name» and «sub.name»''');

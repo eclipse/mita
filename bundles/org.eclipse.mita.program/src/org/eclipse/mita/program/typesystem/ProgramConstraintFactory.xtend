@@ -7,11 +7,12 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.ParameterList
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -30,7 +31,8 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+
+import static extension org.eclipse.mita.base.util.BaseUtils.*
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	

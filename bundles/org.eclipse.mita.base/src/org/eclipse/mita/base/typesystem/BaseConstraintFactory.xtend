@@ -37,6 +37,8 @@ import org.eclipse.mita.base.expressions.UnaryExpression
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
 
+import static extension org.eclipse.mita.base.util.BaseUtils.*
+
 class BaseConstraintFactory implements IConstraintFactory {
 	
 	@Inject
@@ -145,21 +147,23 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PrimitiveValueExpression t) {
-		return system.computeConstraints(t.value);
+		return system.associate(system.computeConstraints(t.value), t);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalUnaryExpression expr) {
 		val operand = expr.operand;
-		if(expr.operator == UnaryOperator.NEGATIVE) {
-			if(operand instanceof IntLiteral) {
-				return computeConstraints(system, expr, -operand.value);
+		if(operand instanceof IntLiteral) {
+			if(expr.operator == UnaryOperator.NEGATIVE) {
+				return system.associate(computeConstraints(system, operand, -operand.value), expr);
 			}
+			println('''Unhandled operator: «expr.operator»''')
 		}
+		println('''Unhandled operand: «operand.eClass.name»''')
 		return system.associate(system.computeConstraints(operand), expr);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IntLiteral lit) {
-		return system.computeConstraints(lit, lit.value);
+		return system.associate(system.computeConstraints(lit, lit.value), lit);
 	}
 
 	protected def TypeVariable computeConstraints(ConstraintSystem system, EObject source, long value) {
@@ -227,10 +231,5 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.addConstraint(new EqualityConstraint(typeVar, t));
 		}
 		return typeVar;	
-	}
-	
-	protected def <T> force(Iterable<T> list) {
-		return Lists.newArrayList(list);
-	}
-	
+	}	
 }

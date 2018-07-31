@@ -6,19 +6,19 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 @FinalFieldsConstructor
 @Accessors
 class UnificationResult {
-	protected final Substitution substituion;
+	protected final Substitution substitution;
 	protected final UnificationIssue issue;
 	
 	override toString() {
 		if(isValid) {
-			substituion.toString();
+			substitution.toString();
 		} else {
 			issue.toString();
 		}
 	}
 	
 	def isValid() {
-		return substituion !== null && issue === null;
+		return substitution !== null && issue === null;
 	}
 	
 	static def UnificationResult success(Substitution substitution) {

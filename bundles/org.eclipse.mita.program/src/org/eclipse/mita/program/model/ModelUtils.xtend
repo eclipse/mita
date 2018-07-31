@@ -55,6 +55,9 @@ import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.util.BaseUtils
+
+import static extension org.eclipse.mita.base.util.BaseUtils.*
 
 class ModelUtils {
 
@@ -266,29 +269,6 @@ class ModelUtils {
 		}
 	}
 	
-	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
-		new Iterator<Pair<X, Y>>() {
-			override hasNext() {
-				xs.hasNext() && ys.hasNext();
-			}
-			
-			override next() {
-				if(!hasNext()) {
-					throw new NoSuchElementException();
-				}
-				return (xs.next() -> ys.next());
-			}
-			
-		}
-	}
-	def static <X, Y> Iterable<Pair<X, Y>> zip(Iterable<X> xs, Iterable<Y> ys) {
-		new Iterable<Pair<X, Y>>() {
-			override iterator() {
-				return zip(xs.iterator, ys.iterator);
-			}			
-		}
-	}
-	
 	def static getFunctionCallArguments(ElementReferenceExpression functionCall) {
 		if(functionCall === null || !functionCall.operationCall || functionCall.arguments.empty){
 			return null;
@@ -297,19 +277,19 @@ class ModelUtils {
 		val funRef = functionCall.reference;
 		val arguments = functionCall.arguments;
 		val typesAndArgsInOrder = if(funRef instanceof FunctionDefinition) {
-			ModelUtils.zip(
+			zip(
 				funRef.parameters.parameters.map[typeSpecifier],
 				ModelUtils.getSortedArguments(funRef.parameters.parameters, arguments));
 		} else if(funRef instanceof StructureType) {
-			ModelUtils.zip(
+			zip(
 				funRef.parameters.map[typeSpecifier],
 				ModelUtils.getSortedArguments(funRef.parameters, arguments));
 		} else if(funRef instanceof NamedProductType) {
-			ModelUtils.zip(
+			zip(
 				funRef.parameters.map[typeSpecifier],
 				ModelUtils.getSortedArguments(funRef.parameters, arguments));
 		} else if(funRef instanceof AnonymousProductType) {
-			ModelUtils.zip(
+			zip(
 				funRef.typeSpecifiers,
 				functionCall.arguments);
 		} else {

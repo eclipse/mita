@@ -1,9 +1,13 @@
 package org.eclipse.mita.base.typesystem.infra
 
+import com.google.common.collect.Iterables
 import com.google.inject.Inject
+import java.util.ArrayList
 import java.util.HashSet
+import java.util.List
 import java.util.Set
 import org.eclipse.emf.common.util.URI
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.typesystem.IConstraintFactory
@@ -14,6 +18,8 @@ import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.util.OnChangeEvictingCache
+
+import static extension org.eclipse.mita.base.util.BaseUtils.*
 
 class MitaResourceSet extends XtextResourceSet {
 	
@@ -38,13 +44,15 @@ class MitaResourceSet extends XtextResourceSet {
 	protected ConstraintSolution latestSolution;
 	
 	override getResource(URI uri, boolean loadOnDemand) {
+		val alreadyLoadedResource = this.resources.findFirst[it.URI == uri]
 		val result = super.getResource(uri, loadOnDemand);
 		if(result instanceof MitaBaseResource) {
 			if(loadOnDemand) {
-				ensureLibrariesAreLoaded();
-				loadRequiredResources(result, new HashSet());
+				val loadedLibraries = ensureLibrariesAreLoaded();
+				val loadedResources = loadRequiredResources(loadedLibraries.filter(MitaBaseResource), new HashSet());
 				
-				linkTypes();
+				//linkTypes(loadedResources.filter(MitaBaseResource));
+				linkTypes(this.resources.filter(MitaBaseResource));
 				result.doLinking();
 				
 				computeTypes();
@@ -67,32 +75,33 @@ class MitaResourceSet extends XtextResourceSet {
 		latestSolution = constraintSolver.solve(allConstraints);
 	}
 	
-	protected def void ensureLibrariesAreLoaded() {
-		for(uri : libraryProvider.libraries.filter[ it.lastSegment.startsWith("stdlib_") ]) {
-			if(this.resources.findFirst[ it.URI == uri ] === null) {
-				getResource(uri, true);				
-			}
-		}
+	protected def List<Resource> ensureLibrariesAreLoaded() {
+		return libraryProvider.libraries
+			.filter[ it.lastSegment.startsWith("stdlib_") ]
+			.filter[ uri | !this.resources.exists[ it.URI == uri ] ]
+			.map[uri | getResource(uri, true)]
+			.force
 	}
 	
-	protected def void loadRequiredResources(MitaBaseResource resource, Set<URI> loadedDependencies) {
+	protected def List<Resource> loadRequiredResources(Iterable<MitaBaseResource> resources, Set<URI> loadedDependencies) {
 		// TODO: not sure we need this here ... we're loading all libraries into the resource set anyways, what do a few more files in the project matter?
-		val root = resource.contents.flatMap[ it.eAllContents.toIterable().filter(ImportStatement) ].toList();
-		val requiredResources = root.flatMap[ packageResourceMapper.getResourceURIs(this, QualifiedName.create(it.importedNamespace?.split("\\."))) ];
-		
-		for(dep : requiredResources) {
-			if(!loadedDependencies.contains(dep)) {
-				loadedDependencies.add(dep);
-				val r = super.getResource(dep, true);
-				if(r instanceof MitaBaseResource) {
-					loadRequiredResources(r, loadedDependencies);
-				}
-			}
-		}			
+		resources.flatMap[resource | 
+			val root = resource.contents.flatMap[ it.eAllContents.toIterable().filter(ImportStatement) ].toList();
+			val requiredResourceURIs = root
+				.flatMap[ packageResourceMapper.getResourceURIs(this, QualifiedName.create(it.importedNamespace?.split("\\."))) ]
+				.filter[!loadedDependencies.contains(it)];
+			loadedDependencies.addAll(requiredResourceURIs);
+			val requiredResources = requiredResourceURIs
+				.map[dep |
+					loadedDependencies.add(dep);
+					super.getResource(dep, true);
+				].force
+			Iterables.concat(requiredResources.filter[!(it instanceof MitaBaseResource)], loadRequiredResources(requiredResources.filter(MitaBaseResource), loadedDependencies));			
+		].force
 	}
 	
-	protected def linkTypes() {
-		resources.filter(MitaBaseResource).forEach[ it.doLinkTypes ];
+	protected def linkTypes(Iterable<MitaBaseResource> resources) {
+		resources.forEach[ it.doLinkTypes ];
 	}
 	
 	public def getLatestSolution() {

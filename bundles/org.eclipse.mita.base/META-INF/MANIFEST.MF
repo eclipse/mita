@@ -49,5 +49,6 @@ Export-Package: org.eclipse.mita.base,
  org.eclipse.mita.base.typesystem.infra,
  org.eclipse.mita.base.typesystem.solver,
  org.eclipse.mita.base.typesystem.types,
+ org.eclipse.mita.base.util,
  org.eclipse.mita.base.validation
 Import-Package: org.apache.log4j

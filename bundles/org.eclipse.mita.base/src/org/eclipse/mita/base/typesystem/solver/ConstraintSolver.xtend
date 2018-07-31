@@ -32,7 +32,7 @@ class ConstraintSolver implements IConstraintSolver {
 		var takeOne = system.takeOne();
 		val result = takeOne.key.solve(takeOne.value);
 		if(result.isValid) {
-			return result.substituion;
+			return result.substitution;
 		} else {
 			issues.add(result.issue);
 			return Substitution.EMPTY;
@@ -42,7 +42,7 @@ class ConstraintSolver implements IConstraintSolver {
 	protected dispatch def UnificationResult solve(EqualityConstraint constraint, ConstraintSystem constraints) {
 		val unificationResult = mguComputer.compute(constraint.left, constraint.right);
 		if(unificationResult.valid) {
-			val mguSubstitution = unificationResult.substituion;
+			val mguSubstitution = unificationResult.substitution;
 			return UnificationResult.success(mguSubstitution.apply(mguSubstitution.apply(constraints).doSolve()));			
 		} else {
 			return unificationResult;
