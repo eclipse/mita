@@ -6,14 +6,12 @@ import org.eclipse.xtend.lib.annotations.Accessors
 
 @EqualsHashCode
 @Accessors
-class FunctionType extends AbstractType {
-	private static Integer instanceCount = 0;
-	
+class FunctionType extends AbstractType {	
 	protected final AbstractType from;
 	protected final AbstractType to;
 	
 	new(EObject origin, AbstractType from, AbstractType to) {
-		super(origin, '''fun_«instanceCount++»''');
+		super(origin, '''fun''');
 		this.from = from;
 		this.to = to;
 	}

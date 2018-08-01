@@ -8,14 +8,12 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 @EqualsHashCode
 @Accessors
-class TypeScheme extends AbstractType {
-	private static Integer instanceCount = 0;
-	
+class TypeScheme extends AbstractType {	
 	protected final List<TypeVariable> vars;
 	protected final AbstractType on;
 	
 	new(EObject origin, List<TypeVariable> vars, AbstractType on) {
-		super(origin, '''tscheme_«instanceCount++»''');
+		super(origin, '''tscheme''');
 		this.vars = vars;
 		this.on = on;
 	}

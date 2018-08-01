@@ -8,12 +8,11 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 @EqualsHashCode
 @Accessors
 class SumType extends AbstractType {
-	private static Integer instanceCount = 0;
 	
 	protected final List<AbstractType> types;
 	
 	new(EObject origin, List<AbstractType> types) {
-		super(origin, '''sum_«instanceCount++»''');
+		super(origin, '''sum''');
 		this.types = types;
 	}
 	

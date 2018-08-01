@@ -597,7 +597,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	def IScope scope_SystemEventSource_source(SystemEventSource context, EReference reference) {
-		return if (context === null) {
+		return if (context === null || context.origin === null) {
 			IScope.NULLSCOPE;
 		} else {
 			Scopes.scopeFor(context.origin.events);

@@ -1,7 +1,6 @@
 package org.eclipse.mita.base.typesystem.solver
 
 import com.google.common.base.Optional
-import com.google.common.collect.BiMap
 import com.google.common.collect.HashBiMap
 import com.google.common.collect.Lists
 import com.google.inject.Inject
@@ -24,6 +23,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
@@ -114,10 +114,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, Object constraint) {
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.ImplicitInstanceConstraint not implemented for «constraint»''')))
+		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify not implemented for «constraint»''')))
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, Void constraint) {
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.ImplicitInstanceConstraint not implemented for null''')))
+		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify not implemented for null''')))
 	}
 	
 	
@@ -180,6 +180,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return SimplificationResult.failure(issue);
 		}
 	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeScheme sub, AbstractType top) {
+		val vars_instance = sub.instantiate
+		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top));
+		return SimplificationResult.success(newSystem, substitution);
+	} 
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, FunctionType sub, FunctionType top) { 
 		//    fa :: a -> b   <:   fb :: c -> d 
 		// ⟺ every fa can be used as fb 
@@ -396,10 +401,7 @@ class Graph<T> implements Cloneable {
 		return idx;
 	}
 	
-	def addEdge(T from, T to) {		
-		val fromIndex = addNode(from)
-		val toIndex = addNode(to);
-		
+	def addEdge(Integer fromIndex, Integer toIndex) {
 		val outgoingAdjacencyList = outgoing.get(fromIndex) ?: new HashSet<Integer>();
 		outgoingAdjacencyList.add(toIndex);
 		outgoing.put(fromIndex, outgoingAdjacencyList);
@@ -407,6 +409,13 @@ class Graph<T> implements Cloneable {
 		val incomingAdjacencyList = incoming.get(toIndex) ?: new HashSet<Integer>();
 		incomingAdjacencyList.add(fromIndex);
 		incoming.put(toIndex, incomingAdjacencyList);
+	}
+	
+	def addEdge(T from, T to) {		
+		val fromIndex = addNode(from)
+		val toIndex = addNode(to);
+		
+		addEdge(fromIndex, toIndex);
 	}
 
 	def Optional<List<Integer>> getCycleHelper(Integer v, Set<Integer> visited, Stack<Integer> recStack) {
@@ -440,8 +449,7 @@ class Graph<T> implements Cloneable {
 	}
 	
 	def getCycle() {
-		for(t : nodes) {
-			val v = addNode(t);
+		for(v : nodeIndex.keySet) {
 			val mbCycle = getCycleHelper(v, new HashSet(), new Stack());
 			if(mbCycle.present) {
 				return mbCycle
@@ -450,6 +458,12 @@ class Graph<T> implements Cloneable {
 		return Optional.absent;
 	} 
 	
+	def removeNode(Integer nodeIdx) {
+		incoming.remove(nodeIdx);
+		outgoing.remove(nodeIdx);
+		reverseMap.remove(nodeIndex.get(nodeIdx));
+		nodeIndex.remove(nodeIdx);
+	}
 		
 	def static <S, T extends Graph<S>> T removeCycles(T g0, (Iterable<Pair<S, S>>)=>S cycleCombiner) {
 		var g = g0.clone() as T;
@@ -457,15 +471,18 @@ class Graph<T> implements Cloneable {
 		while(mbCycle.present) {
 			val _g = g;
 			val biMap = HashBiMap.create(g.nodeIndex);
-			val cycle = mbCycle.get.map[_g.nodeIndex.get(it)];
-			val cycleEdges = cycle.init.zip(cycle.tail);
+			val cycle = mbCycle.get.map[it -> _g.nodeIndex.get(it)];
+			val cycleNodesOnly = mbCycle.get.map[_g.nodeIndex.get(it)];
+			val cycleEdges = cycleNodesOnly.init.zip(cycleNodesOnly.tail);
 			val replacementNode = cycleCombiner.apply(cycleEdges);
 			// a cycle contains one node twice: start and end. remove it here
 			val cycleNodes = cycle.tail.toList;
-			val p = cycleNodes.flatMap[_g.incoming.get(it)].filter[!cycleNodes.contains(it)]
-			val s = cycleNodes.flatMap[_g.outgoing.get(it)].filter[!cycleNodes.contains(it)]
-			p.forEach[_g.addEdge(_g.nodeIndex.get(it), replacementNode)];
-			p.forEach[_g.addEdge(replacementNode, _g.nodeIndex.get(it))];
+			val p = cycleNodes.flatMap[_g.incoming.get(it.key)].filter[cycleNodes.findFirst[k_v | it == k_v.key] === null]
+			val s = cycleNodes.flatMap[_g.outgoing.get(it.key)].filter[cycleNodes.findFirst[k_v | it == k_v.key] === null]
+			p.forEach[_g.addEdge(it, _g.addNode(replacementNode))];
+			s.forEach[_g.addEdge(_g.addNode(replacementNode), it)];
+			
+			cycleNodes.forEach[_g.removeNode(it.key)];
 			
 			println(g.toGraphviz);		
 			mbCycle = g.getCycle;

@@ -7,13 +7,11 @@ import org.eclipse.xtend.lib.annotations.Accessors
 
 @EqualsHashCode
 @Accessors
-class ProdType extends AbstractType {
-	private static Integer instanceCount = 0;
-	
+class ProdType extends AbstractType {	
 	protected final List<AbstractType> types;
 	
 	new(EObject origin, List<AbstractType> types) {
-		super(origin, '''prod_«instanceCount++»''');
+		super(origin, '''prod''');
 		this.types = types;
 	}
 	
