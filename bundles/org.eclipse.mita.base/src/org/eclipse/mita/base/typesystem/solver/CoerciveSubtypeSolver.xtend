@@ -267,8 +267,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val supremum = graph.getSupremum(predecessors);
 			val successors = graph.getBaseTypeSuccecessors(v);
 			val infimum = graph.getInfimum(successors);
-			val supremumIsValid = successors.forall[ t | graph.isSubType(supremum, t) ];
-			val infimumIsValid = predecessors.forall[ t | graph.isSubType(t, infimum) ];
+			val supremumIsValid = supremum !== null && successors.forall[ t | graph.isSubType(supremum, t) ];
+			val infimumIsValid = infimum !== null && predecessors.forall[ t | graph.isSubType(t, infimum) ];
 			
 			if(!predecessors.empty) {
 				if(supremum !== null && supremumIsValid) {
@@ -500,7 +500,9 @@ class Graph<T> implements Cloneable {
 	
 	
 	protected def <S> Iterable<S> walk(Map<Integer, Set<Integer>> g, T start, (T) => S visitor) {
-		return reverseMap.get(start).flatMap[g.walk(it, visitor)].force
+		return reverseMap.get(start).flatMap[
+			g.walk(it, visitor)
+		].force
 	}
 	protected def <S> Iterable<S> walk(Map<Integer, Set<Integer>> g, Integer idx, (T) => S visitor) {
 		return (g.get(idx) ?: #[]).flatMap[

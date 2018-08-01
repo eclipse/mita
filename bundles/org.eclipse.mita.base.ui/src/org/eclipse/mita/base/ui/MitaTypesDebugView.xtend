@@ -29,6 +29,7 @@ import org.eclipse.xtext.resource.EObjectAtOffsetHelper
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.xtext.util.concurrent.IUnitOfWork
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 
 class MitaTypesDebugView extends ViewPart {
 	protected TableViewer constraintViewer;
@@ -154,7 +155,7 @@ class MitaTypesDebugView extends ViewPart {
 							
 							val selectedObjects = new HashSet<EObject>();
 							for(var i = 0; i < selection.length; i++) {
-								val obj = offsetHelper.resolveElementAt(state, selection.offset + i);
+								val obj = offsetHelper.resolveContainedElementAt(state, selection.offset + i);
 								if(obj !== null) {
 									selectedObjects.add(obj);
 								}
@@ -205,11 +206,9 @@ class MitaTypesDebugView extends ViewPart {
     	if(input === null) {
     		return;
     	}
-    	val origins = input
-    		.map[ it as TypeVariable ]
-    	val result = origins
-    		.filter[c| objects.exists[obj| c.origin == obj ] ]
-    		.map[tv | tv -> substitution.apply(tv)];
+    	val origins = objects.map[TypeVariableAdapter.get(it)];
+
+    	val result = origins.map[tv | tv -> substitution.apply(tv)];
     	
 		this.solutionViewer.input = result.toSet;
     }
