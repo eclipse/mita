@@ -20,7 +20,7 @@ All Mita code compiles to C code. This is a very powerful feature.
 It allows developers to inspect the generated code, learn from it and when they hit that inevitable glass ceiling continue where they left off, but in C.
 Further, once you leave the prototyping phase or feel that you need more control over your system, you can always fall back to the C level and go from there.
 
-## Anatomy of an Mita program
+## Anatomy of a Mita program
 Mita programs live in files ending with `.x`, for example `application.x`. Let's have a look at an example which implements a simple Bluetooth enabled shock detector:
 ```TypeScript
 package main;
