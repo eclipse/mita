@@ -17,10 +17,12 @@ import com.google.inject.Inject
 import java.util.LinkedList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.EnumerationType
@@ -35,12 +37,10 @@ import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
@@ -215,12 +215,9 @@ class ElementSizeInferrer {
 					obj.arguments.head.value; 
 				}
 			}
-			else if (obj instanceof FeatureCall) {
-				obj.owner;
-			}
 			if(instance !== null) {
 				if(instance instanceof FeatureCall) {
-					val resourceRef = instance.owner;
+					val resourceRef = instance.arguments.head.value;
 					if(resourceRef instanceof ElementReferenceExpression) {
 						var resourceSetup = resourceRef.reference;
 						var Object loadedInferrer = null;

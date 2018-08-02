@@ -56,13 +56,6 @@ class TypeDslScopeProvider extends AbstractDeclarativeScopeProvider {
 		else
 			null
 	}
-
-	def dispatch getOperation(FeatureCall it) {
-		return if (feature instanceof Operation)
-			feature as Operation
-		else
-			null
-	}
 	
 	def dispatch getOperation(EObject object) {
 	}

@@ -169,24 +169,6 @@ ReferenceExpression returns program::ReferenceExpression hidden():
     '(' Expression ')'
 ;
 
-@Override
-FeatureCall returns expressions::Expression:
-    (ElementReferenceExpression | ParenthesizedExpression) (
-    	({expressions::FeatureCall.owner=current} '.' feature=[ecore::EObject] (=> operationCall?='('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
-	  | ({program::ArrayAccessExpression.owner=current} '[' (arraySelector=arraySelector) ']')
-    )*
-;
-
-@Override
-ElementReferenceExpression returns expressions::Expression:
-	{expressions::ElementReferenceExpression} reference=[ecore::EObject|ID]
-	(=> operationCall?='('	(arguments+=Argument (',' arguments+=Argument)*)?	')' )?;
-
-arraySelector returns expressions::Expression:
-	  Expression ({program::ValueRange.lowerBound=current} ':' (upperBound=Expression)?)?
-	| ({program::ValueRange} ':' (upperBound=Expression)?)
-;
-
 NewInstanceExpression returns program::NewInstanceExpression:
 	'new' type=TypeSpecifier operationCall?='(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
 ;

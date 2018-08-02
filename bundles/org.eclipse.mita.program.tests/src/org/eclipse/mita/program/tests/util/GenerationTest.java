@@ -178,7 +178,7 @@ public class GenerationTest {
 			if (next instanceof FeatureCall) {
 				FeatureCall feature = (FeatureCall) next;
 				if (feature.isOperationCall()) {
-					EObject featureObject = feature.getFeature();
+					EObject featureObject = feature.getReference();
 					if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(featureObject))
 							&& !EcoreUtil.isAncestor(contextObject, featureObject)) {
 						addToContainingFeature(program, featureObject, c.get(featureObject));

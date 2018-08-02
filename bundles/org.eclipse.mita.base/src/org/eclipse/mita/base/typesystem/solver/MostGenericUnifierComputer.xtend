@@ -52,25 +52,25 @@ class MostGenericUnifierComputer {
 		return UnificationResult.success(result);
 	}
 	
-	protected dispatch def UnificationIssue unify(Substitution substitution, IntegerType t1, IntegerType t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, IntegerType t1, IntegerType t2) {
 		return t1.isSubtypeOf(t2) ?: t2.isSubtypeOf(t1);		
 	}
 	
-	protected dispatch def UnificationIssue unify(Substitution substitution, ProdType t1, ProdType t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, ProdType t1, ProdType t2) {
 		val issues = t1.types.zip(t2.types).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
 		]
 		return ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
-	protected dispatch def UnificationIssue unify(Substitution substitution, SumType t1, SumType t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, SumType t1, SumType t2) {
 		val issues = t1.types.zip(t2.types).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
 		]
 		ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
-	protected dispatch def UnificationIssue unify(Substitution substitution, FunctionType t1, FunctionType t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, FunctionType t1, FunctionType t2) {
 		val issues = #[
 			substitution.unify(t1.from, t2.from),
 			substitution.unify(t1.to, t2.to)
@@ -78,16 +78,16 @@ class MostGenericUnifierComputer {
 		ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
-	protected dispatch def UnificationIssue unify(Substitution substitution, TypeVariable t1, AbstractType t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, TypeVariable t1, AbstractType t2) {
 		substitution.add(t1, t2);
 		return null;
 	}
-	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, TypeVariable t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, TypeVariable t2) {
 		substitution.add(t2, t1);
 		return null;
 	}
 	
-	protected dispatch def UnificationIssue unify(Substitution substitution, AtomicType t1, AtomicType t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, AtomicType t1, AtomicType t2) {
 		if(t1.name != t2.name) {
 			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
 		}
@@ -96,7 +96,7 @@ class MostGenericUnifierComputer {
 		return null;
 	}
 	
-	protected dispatch def UnificationIssue unify(Substitution substitution, TypeConstructorType t1, TypeConstructorType t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, TypeConstructorType t1, TypeConstructorType t2) {
 		if(t1.name != t2.name) {
 			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
 		}
@@ -116,13 +116,13 @@ class MostGenericUnifierComputer {
 		return null;
 	}
 	
-	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, AbstractType t2) {
+	static protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, AbstractType t2) {
 		if(t1 != t2) { 
 			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
 		}
 	}
 		
-	public dispatch def UnificationIssue isSubtypeOf(IntegerType sub, IntegerType sup) {
+	static public dispatch def UnificationIssue isSubtypeOf(IntegerType sub, IntegerType sup) {
 		if(sub.signedness != sup.signedness && sub.signedness == Signedness.Signed && sup.signedness == Signedness.Unsigned && !(sub.signedness == Signedness.DontCare || sup.signedness == Signedness.DontCare)) {
 			return new UnificationIssue(#[sub, sup], '''Incompatible signedness between «sup.name» and «sub.name»''');
 		}
@@ -135,9 +135,18 @@ class MostGenericUnifierComputer {
 		
 		return null;
 	}
-		
-	public dispatch def UnificationIssue isSubtypeOf(AbstractType sub, AbstractType sup) {
-		return new UnificationIssue(#[sub, sup], '''«sub.name» is not a subtype of «sup.name»''')
+	
+	static public dispatch def UnificationIssue isSubtypeOf(FunctionType sub, FunctionType top) {
+		//    fa :: a -> b   <:   fb :: c -> d 
+		// ⟺ every fa can be used as fb 
+		// ⟺ b >: d ∧    a <: c
+		return top.from.isSubtypeOf(sub.from) ?: sub.to.isSubtypeOf(top.to);
+	}
+	
+	static public dispatch def UnificationIssue isSubtypeOf(AbstractType sub, AbstractType sup) {
+		if(sub != sup) { 
+			return new UnificationIssue(#[sub, sup], '''«sub.name» is not a subtype of «sup.name»''')	
+		}
 	}
 
 }

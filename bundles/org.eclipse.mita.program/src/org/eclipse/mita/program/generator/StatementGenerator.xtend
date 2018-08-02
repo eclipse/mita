@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.Status
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.BinaryExpression
@@ -43,6 +44,7 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.GeneratedType
@@ -61,7 +63,6 @@ import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.AbstractStatement
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ArrayRuntimeCheckStatement
 import org.eclipse.mita.program.DereferenceExpression
@@ -92,7 +93,6 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SourceCodeComment
 import org.eclipse.mita.program.ThrowExceptionStatement
 import org.eclipse.mita.program.TryStatement
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.mita.program.WhileStatement
@@ -273,14 +273,15 @@ class StatementGenerator {
 
 	@Traced dispatch def IGeneratorNode code(FeatureCall stmt) {
 		if (stmt.operationCall) {
-			val feature = stmt.feature;
+			val feature = stmt.reference;
 			if(feature instanceof SumAlternative) {
 				val altAccessor = feature.structName;
-				if(!(stmt.owner instanceof ElementReferenceExpression) 
-				|| !((stmt.owner as ElementReferenceExpression).reference instanceof SumType)) {
+				val owner = stmt.arguments.head.value
+				if(!(owner instanceof ElementReferenceExpression) 
+				|| !((owner as ElementReferenceExpression).reference instanceof SumType)) {
 					return '''UNKNOWN ERROR @FeatureCall'''
 				}
-				val sumType = (stmt.owner as ElementReferenceExpression).reference as SumType;
+				val sumType = (owner as ElementReferenceExpression).reference as SumType;
 				val dataType = if(feature instanceof AnonymousProductType) {
 					if(feature.typeSpecifiers.length == 1) {
 						feature.typeSpecifiers.head.ctype;
@@ -317,23 +318,23 @@ class StatementGenerator {
 				'''// function calls as feature calls are not supported'''
 			}
 		} else if (stmt.isArrayAccess) {
-			'''«stmt.owner.code.noTerminator»[«stmt.arraySelector.head.code.noTerminator»];'''
-		} else if (stmt.feature instanceof Modality) {
+			'''«stmt.arguments.head.value.code.noTerminator»[«stmt.arraySelector.head.code.noTerminator»];'''
+		} else if (stmt.reference instanceof Modality) {
 			throw new CoreException(new Status(IStatus.ERROR, null, 'Sensor access should not be a feature call'));
-		} else if (stmt.feature instanceof SignalInstance) {
+		} else if (stmt.reference instanceof SignalInstance) {
 			'''/* Signal instance access should have been rewritten by the compiler. */'''
-		} else if (stmt.feature instanceof VariableDeclaration) {
+		} else if (stmt.reference instanceof VariableDeclaration) {
 			/* This slightly obscure case is for signal read access where the transformation pipeline
 			 * replaces the original feature with the SignalInstanceReadAccess variable declaration.
 			 */
-			val declaration = stmt.feature as VariableDeclaration;
+			val declaration = stmt.reference as VariableDeclaration;
 			'''«declaration.name»'''
-		} else if (stmt.feature instanceof Property) {
-			val _feature = stmt.feature as Property
-			'''«stmt.owner.code.noTerminator».«_feature.name»'''
-		} else if (stmt.feature instanceof Parameter) {
-			val _feature = stmt.feature as Parameter
-			'''«stmt.owner.code.noTerminator».«_feature.name»'''
+		} else if (stmt.reference instanceof Property) {
+			val _feature = stmt.reference as Property
+			'''«stmt.reference.code.noTerminator».«_feature.name»'''
+		} else if (stmt.reference instanceof Parameter) {
+			val _feature = stmt.reference as Parameter
+			'''«stmt.arguments.head.value.code.noTerminator».«_feature.name»'''
 		}
 	}
 

@@ -22,6 +22,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.DoubleLiteral
@@ -30,6 +31,7 @@ import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
@@ -47,7 +49,6 @@ import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.Validatio
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.SystemResourceAlias
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.ForEachLoopIteratorVariableDeclaration
@@ -64,7 +65,6 @@ import org.eclipse.mita.program.ReferenceExpression
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.scoping.ExtensionMethodHelper
@@ -298,10 +298,6 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 		reference as Operation
 	}
 
-	def dispatch operation(FeatureCall it) {
-		feature as Operation
-	}
-
 	override protected inferOperation(ArgumentExpression e, Operation op, Map<TypeParameter, InferenceResult> typeParameterMapping) {
 		// we need to compare by (not hashcode) here, since I can't seem to find the exact type parameter super. ... tries to look up.
 		var Map<TypeParameter, InferenceResult> typeParameterMapping2 = new TreeMap([x, y | 
@@ -324,7 +320,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 					varRef = varRef.owner;
 				}
 				while(varRef instanceof FeatureCall) {
-					varRef = varRef.owner;
+					varRef = varRef.arguments.head.value;
 				}
 				if(varRef instanceof ElementReferenceExpression) {
 					parentDecl = varRef.reference;
@@ -349,7 +345,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 			}
 		}
 		if (e instanceof FeatureCall) {
-			val ownerType = inferTypeDispatch(e.getOwner())
+			val ownerType = inferTypeDispatch(e.arguments.head.value)
 			if (op.isExtensionMethodOn(ownerType.type)) {
 				return super.inferOperation(e, op, typeParameterMapping2.adjustForExtensionMethod(op))
 			}
@@ -415,8 +411,8 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 	}
 	
 	override doInfer(FeatureCall fc) {
-		if (fc.feature instanceof SumAlternative) {
-			return InferenceResult.from(fc.feature as SumAlternative)
+		if (fc.reference instanceof SumAlternative) {
+			return InferenceResult.from(fc.reference as SumAlternative)
 		}
 		return super.doInfer(fc);
 	}
@@ -430,12 +426,6 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 	}
 
 	override List<Expression> getOperationArguments(ArgumentExpression e) {
-		if (e instanceof FeatureCall) {
-			val operation = e.feature as Operation
-			if (e.owner !== null && operation.isExtensionMethodOn(inferTypeDispatch(e.owner)?.type)) {
-				return combine(e.owner, e.expressions);
-			}
-		}
 		return e.expressions
 	}
 

@@ -96,7 +96,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 	
 	@Check
 	def checkSumAlternativeConstructorsHaveCorrectArgumentsForFeatureCall(FeatureCall fc) {
-		val ref = fc.feature;
+		val ref = fc.reference;
 		if(ref instanceof SumAlternative) {
 			checkSumAlternativeConstructorsHaveCorrectArguments(fc, fc.arguments, ref);
 		}

@@ -1,12 +1,16 @@
 package org.eclipse.mita.base.typesystem
 
-import com.google.common.collect.Lists
 import com.google.inject.Inject
-import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
+import org.eclipse.mita.base.expressions.NumericalUnaryExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.UnaryOperator
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
+import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
@@ -15,11 +19,13 @@ import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SymbolTable
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
@@ -29,13 +35,6 @@ import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.mita.base.expressions.IntLiteral
-import org.eclipse.mita.base.types.NullTypeSpecifier
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.expressions.UnaryExpression
-import org.eclipse.mita.base.expressions.NumericalUnaryExpression
-import org.eclipse.mita.base.expressions.UnaryOperator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
 
@@ -49,6 +48,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	@Inject
 	protected IScopeProvider scopeProvider;
+	
+	@Inject 
+	protected StdlibTypeRegistry typeRegistry;
 	
 	public override ConstraintSystem create(SymbolTable symbols, EObject context) {
 		val result = constraintSystemProvider.get(symbols);
@@ -66,21 +68,23 @@ class BaseConstraintFactory implements IConstraintFactory {
 		context.eContents.forEach[ system.computeConstraints(it) ]
 	}
 
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalAddSubtractExpression expr) {
+		val leftType = system.computeConstraints(expr.leftOperand);
+		val rightType = system.computeConstraints(expr.rightOperand);
+		val ourType = TypeVariableAdapter.get(expr);
+		system.addConstraint(new SubtypeConstraint(leftType, ourType));
+		system.addConstraint(new SubtypeConstraint(rightType, ourType));
+		return ourType;
+	}
+
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Type type) {
 		system.associate(system.translateTypeDeclaration(type), type);
 	}
 
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, NativeType type) {
-		val intPatternMatcher = Pattern.compile("(int|uint)(\\d+)$").matcher(type?.name ?: "");
-		if(intPatternMatcher.matches) {
-			val signed = intPatternMatcher.group(1) == 'int';
-			val size = Integer.parseInt(intPatternMatcher.group(2)) / 8;
-			
-			new IntegerType(type, size, if(signed) Signedness.Signed else Signedness.Unsigned);
-		} else {
-			new AtomicType(type, type.name);
-		}
+		return typeRegistry.translateNativeType(type)
 	}
+	
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, PrimitiveType type) {
 		new AtomicType(type, type.name);

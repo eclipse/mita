@@ -38,12 +38,12 @@ class ProgramDslSemanticHighlightingCalculator implements ISemanticHighlightingC
 	}
 	
 	protected dispatch def highlight(FeatureCall obj, INode node, IHighlightedPositionAcceptor acceptor) {
-		if(obj.feature instanceof Modality) {
+		if(obj.reference instanceof Modality) {
 			acceptor.addPosition(node.offset, node.length, ProgramDslHighlightingConfiguration.SENSOR_ID);
-		} else if(obj.feature instanceof GeneratedFunctionDefinition) {
-			val owner = obj.owner;
+		} else if(obj.reference instanceof GeneratedFunctionDefinition) {
+			val owner = obj.arguments.head.value;
 			if(owner instanceof FeatureCall) {
-				if(owner.feature instanceof Modality) {
+				if(owner.reference instanceof Modality) {
 					acceptor.addPosition(node.offset, node.length, ProgramDslHighlightingConfiguration.SENSOR_ID);
 				}
 			}

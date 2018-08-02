@@ -56,9 +56,14 @@ class MitaResourceSet extends XtextResourceSet {
 				result.doLinking();
 				
 				computeTypes();
+				linkWithTypes(result);
 			}
 		}
 		return result;
+	}
+	
+	def linkWithTypes(MitaBaseResource resource) {
+		resource.doLinkReferences;
 	}
 	
 	protected def computeTypes() {

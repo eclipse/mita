@@ -60,20 +60,20 @@ class PlatformDSLScopeProvider extends AbstractPlatformDSLScopeProvider {
 		return superScope;
 	}
 
-	def IScope scope_FeatureCall_feature(FeatureCall context, EReference reference) {
-		val owner = context.owner;
-		var EObject element = owner.element;
-		
-		if (element === null) {
-			return getDelegate().getScope(context, reference);
-		}
-
-		val scope = IScope.NULLSCOPE;
-		val result = typeInferrer.infer(owner);
-		val ownerType = result?.type;
-		
-		return addScopeForType(ownerType, scope);
-	}
+//	def IScope scope_FeatureCall_feature(FeatureCall context, EReference reference) {
+//		val owner = context.arguments.head.value;
+//		var EObject element = owner.element;
+//		
+//		if (element === null) {
+//			return getDelegate().getScope(context, reference);
+//		}
+//
+//		val scope = IScope.NULLSCOPE;
+//		val result = typeInferrer.infer(owner);
+//		val ownerType = result?.type;
+//		
+//		return addScopeForType(ownerType, scope);
+//	}
 
 	def dispatch IScope addScopeForType(EnumerationType type, IScope scope) {
 		return Scopes.scopeFor(type.getEnumerator(), scope);
@@ -93,9 +93,5 @@ class PlatformDSLScopeProvider extends AbstractPlatformDSLScopeProvider {
 	
 	def dispatch getElement(ElementReferenceExpression it) {
 		reference
-	}
-	
-	def dispatch getElement(FeatureCall it) {
-		feature
 	}
 }

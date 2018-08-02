@@ -17,16 +17,10 @@ class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 				obj.arguments.head.value; 
 			}
 		}
-		else if (obj instanceof FeatureCall) {
-			obj.owner;
-		}
 		val method = if(obj instanceof ElementReferenceExpression) {
 			if(obj.isOperationCall && obj.arguments.size > 0) {
 				obj.reference;
 			}
-		}
-		else if (obj instanceof FeatureCall) {
-			obj.feature;
 		}
 		if(instance !== null && method !== null) {
 			if(method instanceof GeneratedFunctionDefinition) {
@@ -34,7 +28,7 @@ class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 					return newInvalidResult(obj, "Can't infer for non-read method");
 				}
 				if(instance instanceof FeatureCall) {
-					val signal = instance.feature;
+					val signal = instance.reference;
 					if(signal instanceof SignalInstance) {
 						val lengthArg = ModelUtils.getArgumentValue(signal, 'length');
 						if(lengthArg !== null) {

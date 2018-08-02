@@ -195,12 +195,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	protected def String getHttpMethod(Expression expression) {
 		var result = 'Http_Method_Post';
-		val enumerator = if(expression instanceof FeatureCall) {
-			val feature = expression.feature;
-			if(feature instanceof Enumerator) {
-				feature
-			}
-		} else if(expression instanceof ElementReferenceExpression) {
+		val enumerator = if(expression instanceof ElementReferenceExpression) {
 			val ref = expression.reference;
 			if(ref instanceof Enumerator) {
 				ref

@@ -103,10 +103,10 @@ class GeneratorUtils {
 	}
 	
 	private def dispatch String getUniqueIdentifierInternal(FeatureCall feature) {
-		if(feature.feature instanceof SignalInstance) {
-			return feature.feature.baseName.toFirstLower;
+		if(feature.reference instanceof SignalInstance) {
+			return feature.reference.baseName.toFirstLower;
 		} else {
-			return feature.owner.uniqueIdentifierInternal + feature.feature.baseName.toFirstUpper;			
+			return feature.arguments.head.value.uniqueIdentifierInternal + feature.reference.baseName.toFirstUpper;			
 		}
 	}
 	

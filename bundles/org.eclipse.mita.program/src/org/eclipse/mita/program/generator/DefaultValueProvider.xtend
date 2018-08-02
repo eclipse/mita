@@ -102,11 +102,11 @@ class DefaultValueProvider {
 			]];
 			if(EcoreUtil2.getContainerOfType(context, SystemResourceSetup) === null) {
 				return ExpressionsFactory.eINSTANCE.createFeatureCall => [
-					feature = alt;
+					reference = alt;
 					operationCall = true;
-					owner = ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
+					arguments += ExpressionsFactory.eINSTANCE.createArgument => [ value = ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
 						reference = itemType;
-					]
+					]]
 					arguments += args;
 				]
 			}

@@ -43,7 +43,7 @@ class Validation implements IResourceValidator {
 		
 		override toString() {
 			val setup = EcoreUtil2.getContainerOfType(sigInst, SystemResourceSetup)
-			return '''«setup?.name».«sigInst.name».«method.name»(«FOR arg : source.arguments SEPARATOR(", ")»«StaticValueInferrer.infer(arg.value, [])?.toString?:"null"»«ENDFOR»)'''
+			return '''ï¿½setup?.nameï¿½.ï¿½sigInst.nameï¿½.ï¿½method.nameï¿½(ï¿½FOR arg : source.arguments SEPARATOR(", ")ï¿½ï¿½StaticValueInferrer.infer(arg.value, [])?.toString?:"null"ï¿½ï¿½ENDFORï¿½)'''
 		}
 		
 		override hashCode() {
@@ -65,14 +65,14 @@ class Validation implements IResourceValidator {
 		val sigInstAccesses = (
 			functionCalls1.map[
 				val ArgumentExpression source = it;
-				val method = it.feature;
-				val owner = it.owner;
+				val method = it.reference;
+				val owner = it.arguments.head.value;
 				if(owner instanceof FeatureCall) {
-					val sigInst = owner.feature;
+					val sigInst = owner.reference;
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}
-					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE)
+					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
 				}
 				return null;
 			] + functionCalls2.map[

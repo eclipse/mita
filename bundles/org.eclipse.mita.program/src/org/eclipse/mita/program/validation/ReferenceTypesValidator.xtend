@@ -17,6 +17,7 @@ import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
@@ -25,12 +26,10 @@ import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.FunctionParameterDeclaration
@@ -154,7 +153,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		if(a.operationCall) {
 			error(CANT_REFERENCE_FUNCTION_RESULTS, source, null);
 		}
-		a.owner.checkNoFunCall(source);
+		a.arguments.head.value.checkNoFunCall(source);
 	}
 	dispatch def void checkNoFunCall(ElementReferenceExpression a, EObject source) {
 		if(a.operationCall) {
@@ -231,8 +230,8 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 			Tuples.create(0, false, #[e as EObject]);
 		}
 		else {
-			val t1 = e.feature.innerMostReferences;
-			val t2 = e.owner.innerMostReferences;
+			val t1 = e.reference.innerMostReferences;
+			val t2 = e.arguments.head.value.innerMostReferences;
 			Tuples.create(t1.first + t2.first, t1.second || t2.second, (t1.third + t2.third).toList)
 		}
 	}

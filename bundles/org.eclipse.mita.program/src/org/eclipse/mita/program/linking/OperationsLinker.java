@@ -103,15 +103,15 @@ public class OperationsLinker {
 	protected List<InferenceResult> getArgumentTypes(Operation operation, ArgumentExpression expression) {
 		List<Expression> orderedExpressions = ArgumentSorter.getOrderedExpressions(expression.getArguments(),
 				operation);
-		if (expression instanceof FeatureCall) {
-			Expression owner = ((FeatureCall) expression).getOwner();
-			InferenceResult ownerType = inferrer.infer(owner);
-			if (extensionMethodHelper.isExtensionMethodOn(operation, ownerType.getType())) {
-				orderedExpressions = extensionMethodHelper.combine(((FeatureCall) expression).getOwner(),
-						orderedExpressions);
-			}
-
-		}
+//		if (expression instanceof FeatureCall) {
+//			Expression owner = ((FeatureCall) expression).getOwner();
+//			InferenceResult ownerType = inferrer.infer(owner);
+//			if (extensionMethodHelper.isExtensionMethodOn(operation, ownerType.getType())) {
+//				orderedExpressions = extensionMethodHelper.combine(((FeatureCall) expression).getOwner(),
+//						orderedExpressions);
+//			}
+//
+//		}
 		return newArrayList(transform(orderedExpressions, (e) -> inferrer.infer(e)));
 	}
 

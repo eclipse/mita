@@ -12,6 +12,7 @@ class MitaBaseResource extends XtextResource {
 	
 	@Inject
 	protected MitaTypeLinker typeLinker;
+
 	
 	override load(Map<?, ?> options) throws IOException {
 		super.load(options)
@@ -43,6 +44,17 @@ class MitaBaseResource extends XtextResource {
 
 		val consumer = new ListBasedDiagnosticConsumer();
 		typeLinker.linkModel(parseResult.getRootASTElement(), consumer);
+		if (!validationDisabled) {
+			getErrors().addAll(consumer.getResult(Severity.ERROR));
+			getWarnings().addAll(consumer.getResult(Severity.WARNING));
+		}
+	}
+	
+	def doLinkReferences() {
+		if (parseResult === null || parseResult.getRootASTElement() === null)
+			return;
+		val consumer = new ListBasedDiagnosticConsumer();
+		linker.linkModel(parseResult.getRootASTElement(), consumer);
 		if (!validationDisabled) {
 			getErrors().addAll(consumer.getResult(Severity.ERROR));
 			getWarnings().addAll(consumer.getResult(Severity.WARNING));

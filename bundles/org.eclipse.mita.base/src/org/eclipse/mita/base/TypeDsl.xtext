@@ -197,29 +197,29 @@ TypeCastExpression returns Expression:
 
 PrimaryExpression returns Expression:
 	PrimitiveValueExpression
-	| FeatureCall
-	| ParenthesizedExpression;
+	| FeatureCall;
 
 PrimitiveValueExpression returns Expression:
 	{PrimitiveValueExpression} value=Literal;
 
 
+arraySelector returns Expression:
+	  Expression ({ValueRange.lowerBound=current} ':' (upperBound=Expression)?)?
+	| ({ValueRange} ':' (upperBound=Expression)?)
+;
 
 FeatureCall returns Expression:
-	ElementReferenceExpression ({FeatureCall.owner=current} '.' feature=[ecore::EObject]
-	(=> operationCall?= '('(arguments+=Argument (',' arguments+=Argument)*)?')'
-		|
-	=> (arrayAccess ?= '[' arraySelector+=Expression ']') => ('[' arraySelector+=Expression ']')* 
-	)?)*;
+    (ElementReferenceExpression | ParenthesizedExpression) (
+	      ({Argument.value=current} {FeatureCall.arguments+=current} '.' reference=[ecore::EObject] (=> operationCall?='('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
+		| ({ArrayAccessExpression.owner=current} '[' (arraySelector=arraySelector) ']')
+    )*
+;
 
 ElementReferenceExpression returns Expression:
 	{ElementReferenceExpression} reference=[ecore::EObject|ID]
-	(=> operationCall?='('	(arguments+=Argument (',' arguments+=Argument)*)?	')' 
-		|
-	=> (arrayAccess ?= '[' arraySelector+=Expression ']') => ('[' arraySelector+=Expression ']')*
-	)?;
+	(=> operationCall?='('	(arguments+=Argument (',' arguments+=Argument)*)?	')' )?;
 
-Argument:
+Argument returns Argument:
 	(parameter=[Parameter] '=')?  value=ConditionalExpression
 ;
 

@@ -221,16 +221,16 @@ public class ExpressionsTypeInferrer extends AbstractTypeSystemInferrer implemen
 	public InferenceResult doInfer(FeatureCall e) {
 		// map to hold inference results for type parameters
 		Map<TypeParameter, InferenceResult> inferredTypeParameterTypes = Maps.newHashMap();
-		typeParameterInferrer.inferTypeParametersFromOwner(inferTypeDispatch(e.getOwner()), inferredTypeParameterTypes);
+		typeParameterInferrer.inferTypeParametersFromOwner(inferTypeDispatch(e.getArguments().get(0)), inferredTypeParameterTypes);
 
 		if (e.isOperationCall()) {
-			if (!e.getFeature().eIsProxy()) {
-				return inferOperation(e, (Operation) e.getFeature(), inferredTypeParameterTypes);
+			if (!e.getReference().eIsProxy()) {
+				return inferOperation(e, (Operation) e.getReference(), inferredTypeParameterTypes);
 			} else {
 				return getAnyType();
 			}
 		}
-		InferenceResult result = inferTypeDispatch(e.getFeature());
+		InferenceResult result = inferTypeDispatch(e.getReference());
 		if (result != null) {
 			result = typeParameterInferrer.buildInferenceResult(result, inferredTypeParameterTypes, acceptor);
 		}

@@ -13,19 +13,19 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 class ArraySizeInferrer extends ElementSizeInferrer {
 	

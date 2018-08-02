@@ -15,8 +15,6 @@ package org.eclipse.mita.program.model
 
 import com.google.common.base.Optional
 import com.google.inject.Inject
-import java.util.Iterator
-import java.util.NoSuchElementException
 import java.util.TreeMap
 import java.util.function.Predicate
 import org.eclipse.emf.common.notify.impl.AdapterImpl
@@ -24,6 +22,7 @@ import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
@@ -36,7 +35,6 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
@@ -44,7 +42,6 @@ import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.SignalParameter
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SignalInstance
@@ -55,7 +52,6 @@ import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.mita.base.util.BaseUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
 
@@ -72,7 +68,7 @@ class ModelUtils {
 		acc.owner.underlyingVariableDeclaration;
 	}
 	static dispatch def VariableDeclaration getUnderlyingVariableDeclaration(FeatureCall fc) {
-		fc.owner.underlyingVariableDeclaration;
+		fc.arguments.head.value.underlyingVariableDeclaration;
 	}
 	static dispatch def VariableDeclaration getUnderlyingVariableDeclaration(ElementReferenceExpression ere) {
 		ere.reference.underlyingVariableDeclaration;
@@ -209,8 +205,8 @@ class ModelUtils {
 	}
 
 	def static boolean isModalityAccess(EObject statement) {
-		if (statement instanceof FeatureCall) {
-			if (statement.feature instanceof Modality) {
+		if (statement instanceof ElementReferenceExpression) {
+			if (statement.reference instanceof Modality) {
 				return true;
 			}
 		}
@@ -340,7 +336,7 @@ class ModelUtils {
 		if(expr instanceof FeatureCall) {
 			if(expr.operationCall) {
 				if(argIndex == 0) {
-					return expr.owner;
+					return expr.arguments.head.value;
 				}
 				argIndex--;	
 			}
@@ -363,7 +359,7 @@ class ModelUtils {
 		if(expr instanceof FeatureCall) {
 			if(expr.operationCall) {
 				if(argIndex == 0) {
-					return expr.owner;
+					return expr.arguments.head.value;
 				}
 				argIndex--;	
 			}

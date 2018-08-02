@@ -33,8 +33,8 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
 	override generate(ElementReferenceExpression functionCall, String resultVariableName) {
 		val firstArg = functionCall.arguments.get(0)?.value;
-		val siginst = if(firstArg instanceof FeatureCall && (firstArg as FeatureCall).feature instanceof SignalInstance) {
-			(firstArg as FeatureCall).feature as SignalInstance;
+		val siginst = if(firstArg instanceof FeatureCall && (firstArg as FeatureCall).reference instanceof SignalInstance) {
+			(firstArg as FeatureCall).reference as SignalInstance;
 		} else if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {
 			(firstArg as ElementReferenceExpression).reference as SignalInstance;
 		} else {

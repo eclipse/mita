@@ -19,12 +19,14 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrerMessages
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ComplexType
@@ -44,7 +46,6 @@ import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
@@ -60,7 +61,6 @@ import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhileStatement
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
@@ -183,13 +183,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	
 	@Check(CheckType.NORMAL)
 	def checkSiginstOrModalityIsUsedImediately(FeatureCall featureCall) {
-		val isSiginst = featureCall.feature instanceof SignalInstance;
-		val isModality = featureCall.feature instanceof Modality;
+		val isSiginst = featureCall.reference instanceof SignalInstance;
+		val isModality = featureCall.reference instanceof Modality;
 		if(!(isSiginst || isModality)) return;
 
 		val container = featureCall.eContainer;
 		if (container instanceof FeatureCall) {
-			if (container.feature instanceof GeneratedFunctionDefinition) {
+			if (container.reference instanceof GeneratedFunctionDefinition) {
 				return
 			}
 		} else if (container instanceof Argument) {
@@ -201,14 +201,14 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			}
 		}
 
-		val featureName = (featureCall.feature as NamedElement).name;
+		val featureName = (featureCall.reference as NamedElement).name;
 		val msg = if (isModality) {
 				String.format(MUST_BE_USED_IMMEDIATELY_MSG, "Modalities", '''Add .read() after «featureName»''')
 			} else {
 				String.format(MUST_BE_USED_IMMEDIATELY_MSG,
 					"Signal instances", '''Add .read() or .write() after «featureName»''')
 			}
-		error(msg, featureCall, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE, MUST_BE_USED_IMMEDIATELY_CODE);
+		error(msg, featureCall, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE, MUST_BE_USED_IMMEDIATELY_CODE);
 	}
 
 	@Check(CheckType.NORMAL)
@@ -275,14 +275,14 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Check(CheckType.FAST)
 	override checkOperationArguments_FeatureCall(FeatureCall call) {
-		val feature = call.feature
+		val feature = call.reference
 		if (feature instanceof Operation) {
 			if(!call.isOperationCall) {
-				error(FUNCTIONS_CAN_NOT_BE_REFERENCED_MSG, call, ExpressionsPackage.eINSTANCE.featureCall_Feature, FUNCTIONS_CAN_NOT_BE_REFERENCED_CODE);
+				error(FUNCTIONS_CAN_NOT_BE_REFERENCED_MSG, call, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, FUNCTIONS_CAN_NOT_BE_REFERENCED_CODE);
 			}
 			
-			if (call.owner !== null && feature.isExtensionMethodOn(inferrer.infer(call.owner, this)?.type)) {
-				assertOperationArguments(feature, combine(call.owner, call.expressions));
+			if (call.arguments.head.value !== null && feature.isExtensionMethodOn(inferrer.infer(call.arguments.head.value, this)?.type)) {
+				assertOperationArguments(feature, combine(call.arguments.head.value, call.expressions));
 			} else {
 				assertOperationArguments(feature, call.expressions);
 			}
@@ -441,7 +441,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		while(nested) {
 			if(innerExpr instanceof FeatureCall) {
 				if(!innerExpr.operationCall) {
-					innerExpr = innerExpr.feature;	
+					innerExpr = innerExpr.reference;	
 				}
 				else {
 					nested = false;
@@ -612,7 +612,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			val idx = staticVal as Integer;
 			val len = (sizeInfRes as ValidElementSizeInferenceResult).elementCount;
 			if(idx < 0 || len <= idx) {
-				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ProgramPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
+				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ExpressionsPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
 			}
 		}
 	}

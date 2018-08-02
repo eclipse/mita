@@ -90,14 +90,14 @@ class Validation implements IResourceValidator {
 		val sigInstAccesses = (
 			functionCalls1.map[
 				val ArgumentExpression source = it;
-				val method = it.feature;
-				val owner = it.owner;
+				val method = it.reference;
+				val owner = it.arguments.head.value;
 				if(owner instanceof FeatureCall) {
-					val sigInst = owner.feature;
+					val sigInst = owner.reference;
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}
-					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE)
+					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
 				}
 				return null;
 			] + functionCalls2.map[

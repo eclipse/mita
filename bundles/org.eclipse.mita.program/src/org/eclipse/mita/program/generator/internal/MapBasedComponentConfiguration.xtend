@@ -124,7 +124,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	 */
 	protected static def reduce(Expression expression) {
 		return if(expression instanceof FeatureCall) {
-			expression.feature;
+			expression.reference;
 		} else if(expression instanceof ElementReferenceExpression) {
 			expression.reference;
 		} else if(expression !== null) {

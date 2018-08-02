@@ -13,6 +13,10 @@
 
 package stdlib; 
 
+export native-type xint32 alias-of int32_t subtype-of integer header "stdint.h"
+export native-type xint16 alias-of int16_t subtype-of int32 header "stdint.h"
+export native-type xint8 alias-of int8_t subtype-of int16 header "stdint.h"
+
 export native-type int32 alias-of int32_t subtype-of integer header "stdint.h"
 export native-type int16 alias-of int16_t subtype-of int32 header "stdint.h"
 export native-type int8 alias-of int8_t subtype-of int16 header "stdint.h"

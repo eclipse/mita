@@ -25,6 +25,7 @@ import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.NamedProductType
@@ -32,7 +33,6 @@ import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
 

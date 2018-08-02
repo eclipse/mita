@@ -16,7 +16,7 @@ package org.eclipse.mita.program
  
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.Literal
@@ -46,6 +46,9 @@ class Program extends PackageAssociation {
 	contains Operation[] functionDefinitions
 	contains EventHandlerDeclaration[] eventHandlers
 	contains Type[] types
+	op String toString() {
+		return "PROGRAM " + name;
+	}
 }
 
 class SystemResourceSetup {
@@ -159,6 +162,9 @@ class FunctionParameterDeclaration extends Parameter {
 
 class ProgramBlock {
 	contains AbstractStatement[] content
+	op String toString() {
+		return "PROGRAM_BLOCK {...}"
+	}
 }
 
 
@@ -302,15 +308,6 @@ class ReferenceExpression extends Expression {
 	contains Expression variable
 } 
 
-class ArrayAccessExpression extends Expression {
-	contains Expression owner
-	contains Expression arraySelector
-}
-
-class ValueRange extends Expression {
-	contains Expression lowerBound
-	contains Expression upperBound
-}
 
 /**
  * Post-transformation classes

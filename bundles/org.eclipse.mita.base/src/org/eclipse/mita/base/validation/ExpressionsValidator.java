@@ -240,7 +240,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		Expression varRef = exp.getVarRef();
 		EObject referencedObject = null;
 		if (varRef instanceof FeatureCall)
-			referencedObject = ((FeatureCall) varRef).getFeature();
+			referencedObject = ((FeatureCall) varRef).getReference();
 		else if (varRef instanceof ElementReferenceExpression)
 			referencedObject = ((ElementReferenceExpression) varRef).getReference();
 		if (referencedObject instanceof Property) {
@@ -255,7 +255,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	public void checkLeftHandAssignment(final AssignmentExpression expression) {
 		Expression varRef = expression.getVarRef();
 		if (varRef instanceof FeatureCall) {
-			EObject referencedObject = ((FeatureCall) varRef).getFeature();
+			EObject referencedObject = ((FeatureCall) varRef).getReference();
 			if (!(referencedObject instanceof Property)) {
 				error(ERROR_LEFT_HAND_ASSIGNMENT_MSG, ExpressionsPackage.Literals.ASSIGNMENT_EXPRESSION__VAR_REF,
 						ERROR_LEFT_HAND_ASSIGNMENT_CODE);
@@ -275,8 +275,8 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 
 	@Check(CheckType.FAST)
 	public void checkOperationArguments_FeatureCall(final FeatureCall call) {
-		if (call.getFeature() instanceof Operation) {
-			Operation operation = (Operation) call.getFeature();
+		if (call.getReference() instanceof Operation) {
+			Operation operation = (Operation) call.getReference();
 			assertOperationArguments(operation, call.getExpressions());
 		}
 	}

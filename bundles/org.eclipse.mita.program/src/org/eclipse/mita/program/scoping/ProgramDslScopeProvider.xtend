@@ -38,8 +38,9 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Sensor
@@ -71,9 +72,6 @@ import org.eclipse.xtext.util.OnChangeEvictingCache
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	@Inject
-	ITypeSystemInferrer typeInferrer
-
-	@Inject
 	IQualifiedNameConverter fqnConverter
 
 	@Inject
@@ -85,15 +83,14 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	override scope_Argument_parameter(Argument argument, EReference ref) {
 		if (EcoreUtil2.getContainerOfType(argument, SystemResourceSetup) !== null) {
-			scopeInSetupBlock(argument, ref);
+			return scopeInSetupBlock(argument, ref);
 		} else {
 			val ec = argument.eContainer;
 			if (ec instanceof ElementReferenceExpression) {
-				scope_Argument_parameter(ec as ElementReferenceExpression, ref)
-			} else if (ec instanceof FeatureCall) {
-				scope_Argument_parameter(ec as FeatureCall, ref)
-			}
+				return scope_Argument_parameter(ec as ElementReferenceExpression, ref)
+			} 
 		}
+		return IScope.NULLSCOPE;
 	}
 
 	override scope_Argument_parameter(ElementReferenceExpression exp, EReference _ref) {
@@ -114,7 +111,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		if (EcoreUtil2.getContainerOfType(fc, SystemResourceSetup) !== null) {
 			scopeInSetupBlock(fc, ref);
 		} else {
-			val nodes = NodeModelUtils.findNodesForFeature(fc, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE)
+			val nodes = NodeModelUtils.findNodesForFeature(fc, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
 			if (nodes.isEmpty) {
 				return IScope.NULLSCOPE
 			}
@@ -212,11 +209,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	
 	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, IScope globalScope) {
 		if (context instanceof FeatureCall) {
-			if (context.owner instanceof ElementReferenceExpression) {
-				val owner = context.owner as ElementReferenceExpression;
+			if (context.arguments.head.value instanceof ElementReferenceExpression) {
+				val owner = context.arguments.head.value as ElementReferenceExpression;
 				val reference = owner.reference;
 				if (reference instanceof SumType) {
-					val feature = context.feature;
+					val feature = context.reference;
 					if(feature instanceof SumAlternative) {
 						return getCandidateParameterScope(globalScope, reference, feature, crossRefString);
 					}
@@ -261,11 +258,10 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def IScope scope_FeatureCall_feature(FeatureCall context, EReference reference) {
 		scope_FeatureCall_feature_cache.get(context, context.eResource, [
-			val owner = context.owner
+			val owner = context.arguments.head.value
 
 			var scope = IScope.NULLSCOPE;
-			val result = typeInferrer.infer(owner);
-			val ownerType = result?.getType ?: null
+			val ownerType = BaseUtils.getType(owner);
 
 			if (owner instanceof ElementReferenceExpression) {
 				if (owner.reference instanceof AbstractSystemResource ||
@@ -288,14 +284,14 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		])
 	}
 
-	protected def getExtensionMethodScope(Expression context, EReference reference, Type type) {
+	protected def getExtensionMethodScope(Expression context, EReference reference, AbstractType type) {
 		return new FilteringScope(delegate.getScope(context, reference), [ x |
 			(x.EClass == ProgramPackage.Literals.FUNCTION_DEFINITION ||
 				x.EClass == ProgramPackage.Literals.GENERATED_FUNCTION_DEFINITION) && x.isApplicableOn(type)
 		]);
 	}
 
-	protected def isApplicableOn(IEObjectDescription operationDesc, Type contextType) {
+	protected def isApplicableOn(IEObjectDescription operationDesc, AbstractType contextType) {
 		var params = operationDesc.getUserData(ProgramDslResourceDescriptionStrategy.OPERATION_PARAM_TYPES);
 		val paramArray = if (params === null) {
 				if (operationDesc.EObjectOrProxy instanceof Operation) {
@@ -319,11 +315,12 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return contextType.isSubtypeOf(paramTypeName)
 	}
 
-	protected def isSubtypeOf(Type subType, String superTypeName) {
-		if (subType.name == superTypeName) {
-			return true
-		}
-		return typeSystem.getSuperTypes(subType).exists[name == superTypeName]
+	protected def isSubtypeOf(AbstractType subType, String superTypeName) {
+		return subType.name == superTypeName;
+//		if (subType.name == superTypeName) {
+//			return true
+//		}
+//		return typeSystem.getSuperTypes(subType).exists[name == superTypeName]
 	}
 
 	protected def toArray(String paramArrayAsString) {
@@ -358,7 +355,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return if(owner.delegate === null) scope else addFeatureScope(owner.delegate, scope)
 	}
 
-	dispatch protected def addFeatureScope(EObject owner, IScope scope) {
+	dispatch protected def addFeatureScope(Object owner, IScope scope) {
+		// fall-back
+		scope
+	}
+	dispatch protected def addFeatureScope(Void owner, IScope scope) {
 		// fall-back
 		scope
 	}
@@ -428,7 +429,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
-		return if (setup !== null && typeInferrer.infer(setup) !== null) {
+		return if (setup !== null && BaseUtils.getType(setup) !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
 			scopeInSetupBlock(context, ref);
 		} else {
@@ -444,7 +445,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			return result;
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 			val globalScope = getDelegate().getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE);
-			val enumTypes = context.instanceOf.parameters.parameters.map[typeInferrer.infer(it.type)?.type].filter(EnumerationType)
+			val enumTypes = context.instanceOf.parameters.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
 			val enumeratorScope = filteredEnumeratorScope(globalScope, enumTypes)
 			val paramScope = Scopes.scopeFor(context.instanceOf.parameters.parameters)
 			val scope = new CombiningScope(paramScope, enumeratorScope)
@@ -457,7 +458,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	dispatch def IScope scopeInSetupBlock(ConfigurationItemValue context, EReference reference) {
 		// configuration item values and unqualified enumerator values
 		val originalScope = getDelegate().getScope(context, reference);
-		val itemType = typeInferrer.infer(context.item)?.type;
+		val itemType = BaseUtils.getType(context.item)?.origin;
 
 		if (itemType instanceof EnumerationType) {
 			return filteredEnumeratorScope(originalScope, itemType);
@@ -501,7 +502,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 		if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 			if (context.parameter !== null) {
-				val itemType = typeInferrer.infer(context.parameter)?.type;
+				val itemType = BaseUtils.getType(context.parameter)?.origin;
 				if (itemType instanceof EnumerationType) {
 					// unqualified resolving of enumeration values
 					return filteredEnumeratorScope(originalScope, itemType);
@@ -510,7 +511,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				val signal = (context.eContainer() as ElementReferenceExpression).reference
 				if (signal instanceof Operation) {
 					// unqualified resolving of enumeration values
-					val enumTypes = signal.parameters.parameters.map[typeInferrer.infer(it.type)?.type].filter(EnumerationType)
+					val enumTypes = signal.parameters.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
 					return filteredEnumeratorScope(originalScope, enumTypes)
 				}
 			}
@@ -620,7 +621,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 				scope_ElementReferenceExpression_reference(context, reference);
-			} else if (reference == ExpressionsPackage.Literals.FEATURE_CALL__FEATURE &&
+			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE &&
 				context instanceof FeatureCall) {
 				scope_FeatureCall_feature(context as FeatureCall, reference);
 			} else if (reference == ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__ITEM &&

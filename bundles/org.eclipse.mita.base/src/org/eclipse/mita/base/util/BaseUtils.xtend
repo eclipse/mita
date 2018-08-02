@@ -2,11 +2,13 @@ package org.eclipse.mita.base.util
 
 import com.google.common.collect.Iterables
 import com.google.common.collect.Lists
-import java.util.ArrayList
 import java.util.Iterator
 import java.util.List
 import java.util.NoSuchElementException
-import java.util.Stack
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 
 class BaseUtils {
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
@@ -50,6 +52,14 @@ class BaseUtils {
 	}
 	def static <T> List<T> force(Iterable<T> list) {
 		return Lists.newArrayList(list);
+	}
+	
+	def static AbstractType getType(EObject obj) {
+		val rs = obj.eResource?.resourceSet;
+		if(rs instanceof MitaResourceSet) {
+			return rs.latestSolution?.solution?.apply(TypeVariableAdapter.get(obj));	
+		}
+		return null;
 	}
 }
 

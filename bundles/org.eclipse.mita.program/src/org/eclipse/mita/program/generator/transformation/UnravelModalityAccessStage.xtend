@@ -50,8 +50,8 @@ class UnravelModalityAccessStage extends AbstractUnravelingStage {
 		 */
 		val firstArgument = (unravelingObject as ArgumentExpression).arguments.head?.value;
 		val featureCall = firstArgument as FeatureCall
-		val modality = featureCall.feature as Modality;
-		val systemResource = (featureCall.owner as ElementReferenceExpression).reference as AbstractSystemResource;
+		val modality = featureCall.reference as Modality;
+		val systemResource = (featureCall.arguments.head.value as ElementReferenceExpression).reference as AbstractSystemResource;
 		
 		val result = ProgramFactory.eINSTANCE.createModalityAccessPreparation();
 		result.modalities.add(modality);
