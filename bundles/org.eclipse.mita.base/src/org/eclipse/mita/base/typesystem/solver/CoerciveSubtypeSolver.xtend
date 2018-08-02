@@ -214,6 +214,21 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return SimplificationResult.success(newSystem, newSubstitution);
 	}
 	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, ProdType top) { 
+		// expand-l:   a <: Ct1...tn
+		val expansion = top.expand(sub);
+		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
+		val newSubstitution = expansion.apply(substitution);
+		return SimplificationResult.success(newSystem, newSubstitution);
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, ProdType sub, TypeVariable top) { 
+		// expand-r:   Ct1...tn <: a
+		val expansion = sub.expand(top);
+		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
+		val newSubstitution = expansion.apply(substitution);
+		return SimplificationResult.success(newSystem, newSubstitution);
+	}
+	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, ProdType sub, ProdType top) { 
 		if(sub.types.length < top.types.length) {
 			return SimplificationResult.failure(new UnificationIssue(substitution, '''subtype has less fields than super type'''));
@@ -239,14 +254,20 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected def Substitution expand(TypeConstructorType c, TypeVariable tv) {
-		val newTypeVars = Lists.newArrayList(c.typeArguments.map[ new TypeVariable(it.origin) as AbstractType ]).force;
+		val newTypeVars = c.typeArguments.map[ new TypeVariable(it.origin) as AbstractType ].force;
 		val newCType = new TypeConstructorType(c.origin, 'nc_' + c.name, c.baseType, newTypeVars);
 		return substitutionProvider.get() => [ it.add(tv, newCType) ];
 	}
 	
+	protected def Substitution expand(ProdType p, TypeVariable tv) {
+		val newTypeVars = p.types.map[ new TypeVariable(it.origin) as AbstractType ].force;
+		val newPType = new ProdType(p.origin, newTypeVars);
+		return substitutionProvider.get() => [ it.add(tv, newPType) ];
+		
+	}
 	protected def Substitution expand(FunctionType f, TypeVariable tv) {
-		val newCType = new FunctionType(f.origin, new TypeVariable(f.from.origin), new TypeVariable(f.to.origin));
-		return substitutionProvider.get() => [ it.add(tv, newCType) ];
+		val newFType = new FunctionType(f.origin, new TypeVariable(f.from.origin), new TypeVariable(f.to.origin));
+		return substitutionProvider.get() => [ it.add(tv, newFType) ];
 	}
 
 	protected def Pair<ConstraintGraph, UnificationResult> buildConstraintGraph(ConstraintSystem system, Substitution substitution) {
@@ -375,7 +396,9 @@ class ConstraintGraph extends Graph<AbstractType> {
 	}
 	
 	def <T extends AbstractType> getSupremum(Iterable<T> ts) {
-		val tsCut = ts.map[it.getSuperTypes.toSet].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
+		val tsCut = ts.map[
+			it.getSuperTypes.toSet
+		].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
 		return tsCut.findFirst[candidate | 
 			tsCut.forall[u | 
 				candidate.isSubType(u)
@@ -390,12 +413,10 @@ class ConstraintGraph extends Graph<AbstractType> {
 	
 	def getSupremum(AbstractType t) {
 		return getSupremum(#[t])
-		//return t.baseTypeSuccecessors.findFirst[ (outgoing.get(it) ?: #[]).empty ]
 	}
 	
 	def getInfimum(AbstractType t) {
 		return getInfimum(#[t])
-		//return t.getBaseTypePredecessors.findFirst[ (incoming.get(it) ?: #[]).empty ]
 	}
 }
 
@@ -571,7 +592,7 @@ class Graph<T> implements Cloneable {
 			«««FOR ft : nodes.flatMap[f| f.getBaseTypeSuccecessors().map[t| f -> t] ]»
 			«FOR n_childs : outgoing.entrySet»
 			«FOR child : n_childs.value»
-			"«n_childs.key»(«nodeIndex.get(n_childs.key)»)" -> "«child»(«nodeIndex.get(child)»)"; 
+			"«nodeIndex.get(n_childs.key)»(«n_childs.key»)" -> "«nodeIndex.get(child)»(«child»)"; 
 			«ENDFOR»
 			«ENDFOR»
 		}

@@ -22,7 +22,7 @@ class ConstraintSystem {
 		this.symbolTable = symbolTable;
 	}
 	
-	def addConstraint(AbstractTypeConstraint constraint) {
+	def void addConstraint(AbstractTypeConstraint constraint) {
 		this.constraints.add(constraint);
 	}
 	

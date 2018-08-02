@@ -38,6 +38,10 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
+import org.eclipse.mita.program.ExpressionStatement
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 		
@@ -76,6 +80,19 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ProgramBlock pb) {
 		system.computeConstraintsForChildren(pb);
+		return null;
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae) {
+		if(ae.operator == AssignmentOperator.ASSIGN) {
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(ae.expression), system.computeConstraints(ae.varRef)));
+		}
+		else {
+			println('''computeConstraints.AssignmentExpression not implemented for «ae.operator»''');
+		}
+		return null;
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ExpressionStatement se) {
+		system.computeConstraintsForChildren(se);
 		return null;
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {

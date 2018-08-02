@@ -132,6 +132,9 @@ class MostGenericUnifierComputer {
 		) {
 			return new UnificationIssue(#[sub, sup], '''«sup.name» is too small for «sub.name»''');
 		}
+		if((sub.widthInBytes != sup.widthInBytes) && (sub.signedness != sup.signedness && sub.signedness != Signedness.DontCare)) {
+			return new UnificationIssue(#[sub, sup], '''«sup.name» is too small for «sub.name»''');
+		}
 		
 		return null;
 	}
