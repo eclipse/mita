@@ -317,6 +317,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					graph.replace(v, supremum);
 					subtitution.add(v, supremum);
 				} else {
+					//redo for debugging
+					graph.getBaseTypePredecessors(v);
+					graph.getSupremum(predecessors);
+					supremum !== null && successors.forall[ t | 
+						StdlibTypeRegistry.isSubType(supremum, t)
+					];
 					return null -> UnificationResult.failure(v, "Unable to find valid subtype for " + v.name);					
 				}
 			}

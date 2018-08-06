@@ -141,7 +141,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val candidates = scope.getElements(QualifiedName.create(name));
 		
 		val alreadyResolvedFeature = if(origin.eIsSet(featureToResolve)) {
-			origin.eGet(featureToResolve);	
+			origin.eGet(featureToResolve, false);	
 		} else { null }
 		
 		val referenceType = if(alreadyResolvedFeature !== null && alreadyResolvedFeature instanceof EObject) {

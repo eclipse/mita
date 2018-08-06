@@ -160,22 +160,37 @@ class MostGenericUnifierComputer {
 			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
 		}
 	}
-		
-	static public dispatch def UnificationIssue isSubtypeOf(IntegerType sub, IntegerType sup) {
-		if(sub.signedness != sup.signedness && sub.signedness == Signedness.Signed && sup.signedness == Signedness.Unsigned && !(sub.signedness == Signedness.DontCare || sup.signedness == Signedness.DontCare)) {
-			return new UnificationIssue(#[sub, sup], '''Incompatible signedness between «sup.name» and «sub.name»''');
+	
+	static protected def UnificationIssue checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
+		if(bSub > bTop) {
+			return new UnificationIssue(#[sub, top], '''«top.name» is too small for «sub.name»''');
 		}
-		
-		if((sub.signedness == Signedness.Unsigned && sup.signedness != Signedness.Unsigned && sub.widthInBytes + 1 > sup.widthInBytes)
-		|| (sub.widthInBytes > sup.widthInBytes)
-		) {
-			return new UnificationIssue(#[sub, sup], '''«sup.name» is too small for «sub.name»''');
-		}
-		if((sub.widthInBytes != sup.widthInBytes) && (sub.signedness != sup.signedness && sub.signedness != Signedness.DontCare)) {
-			return new UnificationIssue(#[sub, sup], '''«sup.name» is too small for «sub.name»''');
-		}
-		
 		return null;
+	}
+	
+	static public dispatch def UnificationIssue isSubtypeOf(IntegerType sub, IntegerType top) {		
+		val bTop = top.widthInBytes;
+		val int bSub = switch(sub.signedness) {
+			case Signed: {
+				if(top.signedness != Signedness.Signed) {
+					return new UnificationIssue(#[sub, top], '''Incompatible signedness between «top.name» and «sub.name»''');
+				}
+				sub.widthInBytes;
+			}
+			case Unsigned: {
+				if(top.signedness != Signedness.Unsigned) {
+					sub.widthInBytes + 1;
+				}
+				else {
+					sub.widthInBytes;	
+				}
+			}
+			case DontCare: {
+				sub.widthInBytes;
+			}
+		}
+		
+		return checkByteWidth(sub, top, bSub, bTop);
 	}
 	
 	static public dispatch def UnificationIssue isSubtypeOf(FunctionType sub, FunctionType top) {
