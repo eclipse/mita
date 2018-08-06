@@ -16,6 +16,14 @@ class Substitution {
 		this.content.put(variable, type);
 	}
 	
+	public def void add(Map<TypeVariable, AbstractType> content) {
+		this.content.putAll(content);
+	}
+	
+	public def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
+		content.forEach[add(it.key, it.value)];
+	}
+	
 	public def apply(TypeVariable typeVar) {
 		var AbstractType result = typeVar;
 		var nextResult = content.get(result); 
@@ -30,6 +38,7 @@ class Substitution {
 		val result = new Substitution();
 		result.constraintSystemProvider = this.constraintSystemProvider;
 		result.content.putAll(content);
+		result.content.mapValues[to.applyToType(it)];
 		result.content.putAll(to.content);
 		return result;
 	}

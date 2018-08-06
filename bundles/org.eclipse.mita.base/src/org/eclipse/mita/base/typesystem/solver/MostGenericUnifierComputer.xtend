@@ -4,16 +4,16 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
-import org.eclipse.mita.base.typesystem.types.SumType
-import org.eclipse.mita.base.typesystem.types.FunctionType
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
-import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.typesystem.types.BottomType
 
 /* Interesting papers:
  *  Generalizing Hindley-Milner Type Inference Algorithms: https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
@@ -28,6 +28,45 @@ class MostGenericUnifierComputer {
 	
 	@Inject
 	protected Provider<Substitution> substitutionProvider;
+	
+	def UnificationResult compute(Iterable<Pair<AbstractType, AbstractType>> typeEqualities) {
+		val result = UnificationResult.success(substitutionProvider.get());
+
+		return typeEqualities.fold(result, [u1, t1_t2 | 
+			if(!u1.valid) {
+				return u1;
+			} 
+			val t1 = t1_t2.key;
+			val t2 = t1_t2.value;
+			val u2 = compute(t1, t2);
+			return combine(u1, u2);
+		])
+	}
+	
+	protected def UnificationResult combine(UnificationResult u1, UnificationResult u2) {
+		if(!u1.valid && !u2.valid) {
+			return UnificationResult.failure(ComposedUnificationIssue.fromMultiple(#[u1.issue, u2.issue]));
+		}
+		else if(!u1.valid) {
+			return u1;
+		}
+		else if(!u2.valid) {
+			return u2;
+		}
+		val s1 = u1.substitution;
+		val s2 = u2.substitution;
+		
+		return combine(s1, s2); 
+	}
+	
+	protected def UnificationResult combine(Substitution s1, Substitution s2) {
+		val conflictsS1 = s1.content.filter[p1, __ | s2.content.containsKey(p1)].entrySet;
+		val conflictsS2 = s2.content.filter[p1, __ | s1.content.containsKey(p1)].entrySet;
+		if(conflictsS1 != conflictsS2) {
+			return UnificationResult.failure(new UnificationIssue(#[conflictsS1, conflictsS2], '''substitutions don't agree'''))
+		}
+		return UnificationResult.success(s1.apply(s2));
+	}
 	
 	def UnificationResult compute(AbstractType t1, AbstractType t2) {
 		val t1IsFree = t1 instanceof TypeVariable;
@@ -144,6 +183,11 @@ class MostGenericUnifierComputer {
 		// ⟺ every fa can be used as fb 
 		// ⟺ b >: d ∧    a <: c
 		return top.from.isSubtypeOf(sub.from) ?: sub.to.isSubtypeOf(top.to);
+	}
+	
+	static public dispatch def UnificationIssue isSubtypeOf(BottomType sub, AbstractType sup) {
+		// ⊥ is subtype of everything
+		return null
 	}
 	
 	static public dispatch def UnificationIssue isSubtypeOf(AbstractType sub, AbstractType sup) {

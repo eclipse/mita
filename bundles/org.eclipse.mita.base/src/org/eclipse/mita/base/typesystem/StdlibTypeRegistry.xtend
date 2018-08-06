@@ -11,6 +11,8 @@ import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
+import org.eclipse.mita.base.typesystem.types.BottomType
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
@@ -24,7 +26,7 @@ class StdlibTypeRegistry {
 		return new AtomicType(voidType, "void");
 	}
 	
-	public def getIntegerTypes(EObject context) {
+	public def Iterable<AbstractType> getIntegerTypes(EObject context) {
 		val typesScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		return StdlibTypeRegistry.integerTypeQIDs
 			.map[typesScope.getSingleElement(it).EObjectOrProxy]
@@ -43,5 +45,28 @@ class StdlibTypeRegistry {
 		} else {
 			new AtomicType(type, type.name);
 		}
+	}
+	
+	dispatch def Iterable<AbstractType> getSuperTypes(IntegerType t) {
+		return getIntegerTypes(t.origin).filter[t.isSubType(it)]
+	}
+	dispatch def Iterable<AbstractType> getSuperTypes(AbstractType t) {
+		return #[t];
+	}
+	dispatch def Iterable<AbstractType> getSuperTypes(Object t) {
+		return #[];
+	}
+	dispatch def Iterable<AbstractType> getSubTypes(IntegerType t) {
+		return getIntegerTypes(t.origin).filter[it.isSubType(t)]
+	}
+	dispatch def Iterable<AbstractType> getSubTypes(AbstractType t) {
+		return #[t, new BottomType(null, "")];
+	}
+	dispatch def getSubTypes(Object t) {
+		return #[];
+	}
+	
+	static public def boolean isSubType(AbstractType sub, AbstractType top) {
+		return MostGenericUnifierComputer.isSubtypeOf(sub, top) === null;
 	}
 }

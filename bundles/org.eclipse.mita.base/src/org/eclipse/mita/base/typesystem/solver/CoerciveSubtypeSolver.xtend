@@ -13,6 +13,7 @@ import java.util.Map
 import java.util.Set
 import java.util.Stack
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
@@ -20,7 +21,9 @@ import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
@@ -29,9 +32,6 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
-import org.eclipse.mita.base.typesystem.types.IntegerType
-import org.eclipse.mita.base.typesystem.types.Signedness
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 /**
  * Solves coercive subtyping as described in 
@@ -273,18 +273,32 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected def Pair<ConstraintGraph, UnificationResult> buildConstraintGraph(ConstraintSystem system, Substitution substitution) {
 		val gWithCycles = constraintGraphProvider.get(system);
 		println(gWithCycles.toGraphviz);
-		val substitutionHolder = new Object() {
-			var s = substitution;
+		val finalState = new Object() {
+			var Substitution s = substitution;
+			var Boolean success = true;
+			var String msg = "";
+			var Iterable<Pair<AbstractType, AbstractType>> origin = null;
 		}
 		val gWithoutCycles = Graph.removeCycles(gWithCycles, [cycle | 
-			val mgu = unify(cycle, substitutionHolder.s); 
+			val mgu = mguComputer.compute(cycle); 
 			if(mgu.valid) {
 				val newTypes = mgu.substitution.applyToTypes(cycle.flatMap[t1_t2 | #[t1_t2.key, t1_t2.value]]);
-				substitutionHolder.s = substitutionHolder.s.apply(mgu.substitution);
+				finalState.s = finalState.s.apply(mgu.substitution);
 				return newTypes.head;
 			}
+			else {
+				finalState.success = false;
+				finalState.origin = cycle.toList;
+				finalState.msg = '''Cyclic dependencies could not be resolved: «finalState.origin.map[it.key.origin ?: it.key].join(' ⩽ ')»''';
+				return new BottomType(null, finalState.msg);
+			}
 		])
-		return (gWithoutCycles -> UnificationResult.success(substitutionHolder.s));
+		if(finalState.success) {
+			return (gWithoutCycles -> UnificationResult.success(finalState.s));
+		}
+		else {
+			return (gWithoutCycles -> UnificationResult.failure(finalState.origin, finalState.msg));
+		}
 	}
 	
 	protected def Pair<ConstraintGraph, UnificationResult> resolve(ConstraintGraph graph, Substitution subtitution) {
@@ -294,28 +308,24 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val supremum = graph.getSupremum(predecessors);
 			val successors = graph.getBaseTypeSuccecessors(v);
 			val infimum = graph.getInfimum(successors);
-			val supremumIsValid = supremum !== null && successors.forall[ t | graph.isSubType(supremum, t) ];
-			val infimumIsValid = infimum !== null && predecessors.forall[ t | graph.isSubType(t, infimum) ];
-			
+			val supremumIsValid = supremum !== null && successors.forall[ t | StdlibTypeRegistry.isSubType(supremum, t) ];
+			val infimumIsValid = infimum !== null && predecessors.forall[ t | StdlibTypeRegistry.isSubType(t, infimum) ];
+						
 			if(!predecessors.empty) {
-				if(supremum !== null && supremumIsValid) {
+				if(supremumIsValid) {
 					// assign-sup
 					graph.replace(v, supremum);
 					subtitution.add(v, supremum);
 				} else {
-					graph.getSupremum(predecessors);
-					supremum !== null && successors.forall[ t | graph.isSubType(supremum, t) ]
 					return null -> UnificationResult.failure(v, "Unable to find valid subtype for " + v.name);					
 				}
 			}
 			else if(!successors.empty) {
-				if(infimum !== null && infimumIsValid) {
+				if(infimumIsValid) {
 					// assign-inf
 					graph.replace(v, infimum);
 					subtitution.add(v, infimum);
 				} else {
-					graph.getInfimum(successors);
-					infimum !== null && predecessors.forall[ t | graph.isSubType(t, infimum) ];
 					return null -> UnificationResult.failure(v, "Unable to find valid supertype for " + v.name);
 				}
 			}
@@ -379,36 +389,21 @@ class ConstraintGraph extends Graph<AbstractType> {
 	def getBaseTypeSuccecessors(AbstractType t) {
 		return getSuccessors(t).filter(AbstractBaseType)
 	}
-	dispatch def getSuperTypes(IntegerType t) {
-		return typeRegistry.getIntegerTypes(t.origin).filter[t.isSubType(it)]
-	}
-	dispatch def getSuperTypes(Object t) {
-		return #[];
-	}
-	dispatch def getSubTypes(AbstractType t) {
-		return typeRegistry.getIntegerTypes(t.origin).filter[it.isSubType(t)]
-	}
-	dispatch def getSubTypes(Object t) {
-		return #[];
-	}
-	def isSubType(AbstractType sub, AbstractType top) {
-		return MostGenericUnifierComputer.isSubtypeOf(sub, top) === null;
-	}
 	
 	def <T extends AbstractType> getSupremum(Iterable<T> ts) {
 		val tsCut = ts.map[
-			it.getSuperTypes.toSet
+			typeRegistry.getSuperTypes(it).toSet
 		].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
 		return tsCut.findFirst[candidate | 
 			tsCut.forall[u | 
-				candidate.isSubType(u)
+				StdlibTypeRegistry.isSubType(candidate, u)
 			]
 		];
 	}
 	
 	def <T extends AbstractType> getInfimum(Iterable<T> ts) {
-		val tsCut = ts.map[it.getSubTypes.toSet].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet;
-		return tsCut.findFirst[candidate | tsCut.forall[l | l.isSubType(candidate)]];
+		val tsCut = ts.map[typeRegistry.getSubTypes(it).toSet].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet;
+		return tsCut.findFirst[candidate | tsCut.forall[l | StdlibTypeRegistry.isSubType(l, candidate)]];
 	}
 	
 	def getSupremum(AbstractType t) {
@@ -418,7 +413,16 @@ class ConstraintGraph extends Graph<AbstractType> {
 	def getInfimum(AbstractType t) {
 		return getInfimum(#[t])
 	}
-}
+	
+	override nodeToString(Integer i) {
+		val t = nodeIndex.get(i);
+		if(t?.origin === null) {
+			return super.nodeToString(i)	
+		}
+		return '''«t.origin»(«t», «i»)'''
+	}
+	
+} 
 
 class Graph<T> implements Cloneable {
 	protected Map<Integer, Set<Integer>> outgoing = new HashMap();
@@ -444,6 +448,9 @@ class Graph<T> implements Cloneable {
 	}
 	
 	def addNode(T t) {
+		if(t === null) {
+			throw new NullPointerException;
+		}
 		if(!reverseMap.containsKey(t)) {
 			val idx = nextNodeInt++;
 			reverseMap.put(t, new HashSet(#[idx]))
@@ -490,7 +497,7 @@ class Graph<T> implements Cloneable {
 		
 		visited.add(v);
 		recStack.push(v);
-		for(c: outgoing.get(v)) {
+		for(c: outgoing.get(v) ?: #[]) {
 			val mbCycle = getCycleHelper(c, visited, recStack);
 			if(mbCycle.present) {
 				return mbCycle;
@@ -535,7 +542,7 @@ class Graph<T> implements Cloneable {
 			val biMap = HashBiMap.create(g.nodeIndex);
 			val cycle = mbCycle.get.map[it -> _g.nodeIndex.get(it)];
 			val cycleNodesOnly = mbCycle.get.map[_g.nodeIndex.get(it)];
-			val cycleEdges = cycleNodesOnly.init.zip(cycleNodesOnly.tail);
+			val cycleEdges = cycleNodesOnly.init.zip(cycleNodesOnly.tail).force;
 			val replacementNode = cycleCombiner.apply(cycleEdges);
 			// a cycle contains one node twice: start and end. remove it here
 			val cycleNodes = cycle.tail.toList;
@@ -582,8 +589,13 @@ class Graph<T> implements Cloneable {
 	 */
 	def Pair<Iterable<Pair<T, T>>, Iterable<Pair<T, T>>> getEdges(T t) {
 		val idx = addNode(t);
-		return outgoing.get(idx).map[ t -> nodeIndex.get(it) ] -> 
-			   incoming.get(idx).map[ nodeIndex.get(it) -> t ];
+		return outgoing.get(idx).map[ t -> nodeIndex.get(it) ].force -> 
+			   incoming.get(idx).map[ nodeIndex.get(it) -> t ].force;
+	}
+	
+	def nodeToString(Integer i) {
+		val t = nodeIndex.get(i);
+		return '''«t»(«i»)''';
 	}
 	
 	def toGraphviz() {
@@ -592,7 +604,7 @@ class Graph<T> implements Cloneable {
 			«««FOR ft : nodes.flatMap[f| f.getBaseTypeSuccecessors().map[t| f -> t] ]»
 			«FOR n_childs : outgoing.entrySet»
 			«FOR child : n_childs.value»
-			"«nodeIndex.get(n_childs.key)»(«n_childs.key»)" -> "«nodeIndex.get(child)»(«child»)"; 
+			"«nodeToString(n_childs.key)»" -> "«nodeToString(child)»"; 
 			«ENDFOR»
 			«ENDFOR»
 		}
