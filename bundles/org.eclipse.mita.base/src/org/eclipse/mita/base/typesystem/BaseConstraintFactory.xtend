@@ -37,6 +37,9 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
+import java.util.ArrayList
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.types.Singleton
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -100,20 +103,30 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
-		val types = sumType.alternatives.map[ system.computeConstraints(it) as AbstractType ].force();
-		return new SumType(sumType, types);
+		val subTypes = new ArrayList();
+		val ourType = new SumType(sumType, subTypes);
+		sumType.alternatives.forEach[ sumAlt |
+			val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
+			val prodTypeRepr = new TypeConstructorType(null, sumAlt.name, new ProdType(null, types), ourType);
+			subTypes.add(prodTypeRepr);
+			//system.associate(prodTypeRepr);
+			val constructor = new FunctionType(sumAlt, new ProdType(null, (#[ourType] + types).toList), prodTypeRepr);
+			system.associate(constructor);
+		];
+		return ourType;
 	}
 	
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
-		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		return new ProdType(sumAlt, types);
+	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, Singleton s) {
+		//return new TypeConstructorType(s, new AtomicType(null, s.name));
+		//return new AtomicType(null, s.name);
+		return TypeVariableAdapter.get(s); 
 	}
-	
+		
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
 		val baseType = new AtomicType(genType, genType.name);
 		val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
-		val atomicType = new TypeConstructorType(genType, genType.name, baseType, typeArgs.map[it as AbstractType].force());
+		val atomicType = new TypeConstructorType(genType, genType.name, baseType, typeArgs);
 		if(typeParameters.empty) {
 			return atomicType;
 		}

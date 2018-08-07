@@ -280,7 +280,7 @@ class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperat
 		if (reference instanceof Operation) {
 			return ArgumentSorter.getOrderedExpressions(getArguments(), reference as Operation);
 		} else {
-			return new BasicEList<Expression>();
+			return arguments.map[value];
 		}
 	}
 	

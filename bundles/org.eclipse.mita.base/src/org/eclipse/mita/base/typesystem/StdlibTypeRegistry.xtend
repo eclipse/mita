@@ -1,18 +1,22 @@
 package org.eclipse.mita.base.typesystem
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.solver.UnificationIssue
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
-import org.eclipse.mita.base.typesystem.types.BottomType
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
@@ -50,6 +54,9 @@ class StdlibTypeRegistry {
 	dispatch def Iterable<AbstractType> getSuperTypes(IntegerType t) {
 		return getIntegerTypes(t.origin).filter[t.isSubType(it)]
 	}
+	dispatch def Iterable<AbstractType> getSuperTypes(TypeConstructorType t) {
+		return t.superType.superTypes + #[t];
+	}
 	dispatch def Iterable<AbstractType> getSuperTypes(AbstractType t) {
 		return #[t];
 	}
@@ -59,6 +66,9 @@ class StdlibTypeRegistry {
 	dispatch def Iterable<AbstractType> getSubTypes(IntegerType t) {
 		return getIntegerTypes(t.origin).filter[it.isSubType(t)]
 	}
+	dispatch def Iterable<AbstractType> getSubTypes(SumType t) {
+		return t.types.flatMap[getSubTypes] + #[t];
+	}
 	dispatch def Iterable<AbstractType> getSubTypes(AbstractType t) {
 		return #[t, new BottomType(null, "")];
 	}
@@ -66,7 +76,66 @@ class StdlibTypeRegistry {
 		return #[];
 	}
 	
-	static public def boolean isSubType(AbstractType sub, AbstractType top) {
-		return MostGenericUnifierComputer.isSubtypeOf(sub, top) === null;
+	public def boolean isSubType(AbstractType sub, AbstractType top) {
+		return !isSubtypeOf(sub, top).present;
+	}
+	
+	protected def Optional<String> checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
+		return (bSub <= bTop).subtypeMsgFromBoolean('''«top.name» is too small for «sub.name»''');
+	}
+	
+	public dispatch def Optional<String> isSubtypeOf(IntegerType sub, IntegerType top) {		
+		val bTop = top.widthInBytes;
+		val int bSub = switch(sub.signedness) {
+			case Signed: {
+				if(top.signedness != Signedness.Signed) {
+					return Optional.of('''Incompatible signedness between «top.name» and «sub.name»''');
+				}
+				sub.widthInBytes;
+			}
+			case Unsigned: {
+				if(top.signedness != Signedness.Unsigned) {
+					sub.widthInBytes + 1;
+				}
+				else {
+					sub.widthInBytes;	
+				}
+			}
+			case DontCare: {
+				sub.widthInBytes;
+			}
+		}
+		
+		return checkByteWidth(sub, top, bSub, bTop);
+	}
+	
+	public dispatch def Optional<String> isSubtypeOf(FunctionType sub, FunctionType top) {
+		//    fa :: a -> b   <:   fb :: c -> d 
+		// ⟺ every fa can be used as fb 
+		// ⟺ b >: d ∧    a <: c
+		return top.from.isSubtypeOf(sub.from).or(sub.to.isSubtypeOf(top.to));
+	}
+	
+	public dispatch def Optional<String> isSubtypeOf(TypeConstructorType sub, AbstractType top) {
+		return sub.superTypes.toList.contains(top).subtypeMsgFromBoolean(sub, top);
+	}
+	
+	public dispatch def Optional<String> isSubtypeOf(BottomType sub, AbstractType sup) {
+		// ⊥ is subtype of everything
+		return Optional.absent;
+	}
+	
+	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, AbstractType top) {
+		return (sub == top).subtypeMsgFromBoolean(sub, top);
+	}
+	
+	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {
+		return isSuperType.subtypeMsgFromBoolean('''«sub.name» is not a subtype of «top.name»''')
+	}
+	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, String msg) {
+		if(!isSuperType) {
+			return Optional.of(msg);
+		}
+		return Optional.absent;
 	}
 }

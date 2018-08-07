@@ -5,7 +5,7 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 @FinalFieldsConstructor
 @Accessors
-class UnificationResult {
+class UnificationResult { 
 	protected final Substitution substitution;
 	protected final UnificationIssue issue;
 	

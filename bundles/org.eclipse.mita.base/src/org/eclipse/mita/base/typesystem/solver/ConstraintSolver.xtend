@@ -20,7 +20,7 @@ class ConstraintSolver implements IConstraintSolver {
 		issues = new ArrayList<UnificationIssue>();
 		val solution = system.doSolve();
 		return new ConstraintSolution(system, solution, issues);
-	}
+	} 
 	
 	// equivalent to SOLVE(...) - call this function recursively from within the individual SOLVE dispatch functions
 	// this function skips subtype constraints so that we can later solve them globally

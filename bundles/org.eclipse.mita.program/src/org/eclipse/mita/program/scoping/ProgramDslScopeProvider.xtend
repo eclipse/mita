@@ -619,11 +619,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		// Performance improvement: hard-code well traveled routes
 		val scope = if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
-			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
-				scope_ElementReferenceExpression_reference(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE &&
 				context instanceof FeatureCall) {
 				scope_FeatureCall_feature(context as FeatureCall, reference);
+			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
+				scope_ElementReferenceExpression_reference(context, reference);
 			} else if (reference == ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__ITEM &&
 				context instanceof SystemResourceSetup) {
 				scope_ConfigurationItemValue_item(context as SystemResourceSetup, reference);
