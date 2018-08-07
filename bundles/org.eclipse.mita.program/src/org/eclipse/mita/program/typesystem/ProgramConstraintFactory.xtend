@@ -55,7 +55,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		system.computeConstraints(eventHandler.block);
 		
 		val voidType = typeRegistry.getVoidType(eventHandler);
-		return system.associate(new FunctionType(eventHandler, voidType, voidType));
+		return system.associate(new FunctionType(eventHandler, eventHandler.event.toString, voidType, voidType));
 	}
 		
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
@@ -63,7 +63,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			
 		val fromType = system.computeParameterConstraints(function, function.parameters);
 		val toType = system.computeConstraints(function.typeSpecifier);
-		val funType = new FunctionType(function, fromType, toType);
+		val funType = new FunctionType(function, function.name, fromType, toType);
 		var result = system.associate(	
 			if(typeArgs.empty) {
 				funType
@@ -119,24 +119,24 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	
 	protected def computeParameterConstraints(ConstraintSystem system, Operation function, ParameterList parms) {
 		val parmTypes = parms.parameters.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		system.associate(new ProdType(parms, parmTypes));
+		system.associate(new ProdType(parms, function.name, null, parmTypes));
 	}
 	
-	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject origin, AbstractType function, Iterable<Expression> arguments) {
-		val argType = system.computeArgumentConstraints(arguments);
+	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject origin, String functionName, AbstractType function, Iterable<Expression> arguments) {
+		val argType = system.computeArgumentConstraints(functionName, arguments);
 		val ourTypeVar = TypeVariableAdapter.get(origin);
-		val supposedFunctionType = new FunctionType(origin, argType, ourTypeVar);
+		val supposedFunctionType = new FunctionType(origin, functionName, argType, ourTypeVar);
 		// the actual function should be a subtype of the expected function so it can be used here
 		system.addConstraint(new SubtypeConstraint(function, supposedFunctionType));
 		return ourTypeVar;		
 	}
 	
-	protected def AbstractType computeConstraintsForReference(ConstraintSystem system, EObject origin, EReference featureToResolve) {
+	protected def Pair<String, AbstractType> computeConstraintsForReference(ConstraintSystem system, EObject origin, EReference featureToResolve) {
 		val scope = scopeProvider.getScope(origin, featureToResolve);
 		
 		val name = NodeModelUtils.findNodesForFeature(origin, featureToResolve).head?.text;
 		if(name === null) {
-			return system.associate(new BottomType(origin, "Reference is not set"));
+			return name -> system.associate(new BottomType(origin, "Reference text is null"));
 		}
 		val candidates = scope.getElements(QualifiedName.create(name));
 		
@@ -160,15 +160,15 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		else {
 			// TODO: this should be done by "OR" instead of "SUM" so the solver can decide
 			val types = candidates.map[system.computeConstraints(it.EObjectOrProxy) as AbstractType].force();
-			new SumType(null, types);
+			new SumType(null, name + "_polymorph", null, types);
 		}
-		return referenceType;
+		return name -> referenceType;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
-		val referenceType = system.computeConstraintsForReference(varOrFun, featureToResolve);
+		val name_referenceType = system.computeConstraintsForReference(varOrFun, featureToResolve);
 		
 		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;
 				
@@ -177,26 +177,26 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			 * See the SubCT-App rule in Traytel et al.
 			 */
 			val argExprs = varOrFun.arguments.map[it.value].force;
-			return system.computeConstraintsForFunctionCall(varOrFun, referenceType, argExprs);
+			return system.computeConstraintsForFunctionCall(varOrFun, name_referenceType.key, name_referenceType.value, argExprs);
 		} 
 		else {
-			return system.associate(referenceType, varOrFun)
+			return system.associate(name_referenceType.value, varOrFun)
 		}
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FeatureCall funCall) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
-		val referenceType = system.computeConstraintsForReference(funCall, featureToResolve);
+		val name_referenceType = system.computeConstraintsForReference(funCall, featureToResolve);
 		
 		val args = (funCall.expressions).force;
 		
-		return system.computeConstraintsForFunctionCall(funCall, referenceType, args);
+		return system.computeConstraintsForFunctionCall(funCall, name_referenceType.key, name_referenceType.value, args);
 	}
 	
-	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, Iterable<Expression> expression) {
+	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {
 		val argTypes = expression.map[system.computeConstraints(it) as AbstractType].force();
-		return new ProdType(null, argTypes);
+		return new ProdType(null, functionName + "_args", null, argTypes);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnStatement statement) {

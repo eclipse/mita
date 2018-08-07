@@ -6,12 +6,12 @@ import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.typesystem.solver.UnificationIssue
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
+import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -115,16 +115,24 @@ class StdlibTypeRegistry {
 		// ⟺ b >: d ∧    a <: c
 		return top.from.isSubtypeOf(sub.from).or(sub.to.isSubtypeOf(top.to));
 	}
-	
-	public dispatch def Optional<String> isSubtypeOf(TypeConstructorType sub, AbstractType top) {
-		return sub.superTypes.toList.contains(top).subtypeMsgFromBoolean(sub, top);
-	}
-	
+			
 	public dispatch def Optional<String> isSubtypeOf(BottomType sub, AbstractType sup) {
 		// ⊥ is subtype of everything
 		return Optional.absent;
 	}
 	
+	public dispatch def Optional<String> isSubtypeOf(SumType sub, SumType top) {
+		top.types.forall[topAlt | sub.types.exists[subAlt | subAlt.isSubType(topAlt)]].subtypeMsgFromBoolean(sub, top)
+	}
+	
+	public dispatch def Optional<String> isSubtypeOf(ProdType sub, SumType top) {
+		top.types.exists[sub.isSubType(it)].subtypeMsgFromBoolean(sub, top)
+	}
+	
+	public dispatch def Optional<String> isSubtypeOf(ProdType sub, ProdType top) {
+		
+	}
+		
 	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, AbstractType top) {
 		return (sub == top).subtypeMsgFromBoolean(sub, top);
 	}

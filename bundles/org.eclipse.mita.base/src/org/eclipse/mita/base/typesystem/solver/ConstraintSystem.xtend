@@ -81,6 +81,7 @@ class ConstraintSystem {
 	
 	public def takeOneNonAtomic() {
 		val result = new ConstraintSystem(symbolTable);
+		result.constraintSystemProvider = constraintSystemProvider;
 		val atomics = constraints.filter[constraintIsAtomic];
 		val nonAtomics = constraints.filter[!constraintIsAtomic];
 		if(nonAtomics.empty) {

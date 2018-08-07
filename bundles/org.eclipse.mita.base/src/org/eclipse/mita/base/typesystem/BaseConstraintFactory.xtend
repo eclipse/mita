@@ -99,24 +99,27 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		return new ProdType(structType, types);
+		val ourType = new ProdType(structType, structType.name, null, types);
+		val constructor = new FunctionType(structType, structType.name, new ProdType(null, structType.name + "_args", null, (#[ourType] + types).toList), ourType);
+		system.associate(constructor);
+		return ourType;
 	}
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
 		val subTypes = new ArrayList();
-		val ourType = new SumType(sumType, subTypes);
+		val ourType = new SumType(sumType, sumType.name, null, subTypes);
 		sumType.alternatives.forEach[ sumAlt |
 			val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-			val prodTypeRepr = new TypeConstructorType(null, sumAlt.name, new ProdType(null, types), ourType);
-			subTypes.add(prodTypeRepr);
+			val prodType = new ProdType(sumAlt, sumAlt.name, ourType, types);
+			subTypes.add(prodType);
 			//system.associate(prodTypeRepr);
-			val constructor = new FunctionType(sumAlt, new ProdType(null, (#[ourType] + types).toList), prodTypeRepr);
+			val constructor = new FunctionType(sumAlt, sumAlt.name, new ProdType(null, sumAlt.name + "_args", null, (#[ourType] + types).toList), prodType);
 			system.associate(constructor);
 		];
 		return ourType;
 	}
 	
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, Singleton s) {
+	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, SumAlternative s) {
 		//return new TypeConstructorType(s, new AtomicType(null, s.name));
 		//return new AtomicType(null, s.name);
 		return TypeVariableAdapter.get(s); 
@@ -124,9 +127,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
-		val baseType = new AtomicType(genType, genType.name);
 		val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
-		val atomicType = new TypeConstructorType(genType, genType.name, baseType, typeArgs);
+		val atomicType = new AtomicType(genType, genType.name);
 		if(typeParameters.empty) {
 			return atomicType;
 		}

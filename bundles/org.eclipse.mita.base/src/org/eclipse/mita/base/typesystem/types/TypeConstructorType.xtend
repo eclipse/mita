@@ -1,70 +1,38 @@
 package org.eclipse.mita.base.typesystem.types
 
-import java.util.List
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import java.util.Collections
-
-import static extension org.eclipse.mita.base.util.BaseUtils.*
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtend.lib.annotations.Accessors
 
 @FinalFieldsConstructor
 @EqualsHashCode
-class TypeConstructorType extends AbstractType {
+@Accessors
+abstract class TypeConstructorType extends AbstractType {
 	protected static Integer instanceCount = 0;
-	protected final AbstractType baseType;
 	protected final transient AbstractType superType;
-	protected final List<TypeVariable> typeArguments;
-	
-	new(EObject origin, AbstractType baseType) {
-		this(origin, '''tcon_«instanceCount++»''', baseType);
-	}
-	new(EObject origin, AbstractType baseType, AbstractType superType) {
-		this(origin, '''tcon_«instanceCount++»''', baseType, superType);
-	}
-	
-	new(EObject origin, AbstractType baseType, List<TypeVariable> typeArguments) {
-		this(origin, '''tcon_«instanceCount++»''', baseType, null, typeArguments);
-	}
-	new(EObject origin, String name, AbstractType baseType, List<TypeVariable> typeArguments) {
-		this(origin, name, baseType, null, typeArguments);
-	}
-	new(EObject origin, AbstractType baseType, AbstractType superType, List<TypeVariable> typeArguments) {
-		this(origin, '''tcon_«instanceCount++»''', baseType, superType, typeArguments);
-	}
-	
-	new(EObject origin, String name, AbstractType baseType) {
-		this(origin, name, baseType, null, #[]);
-	}
-	new(EObject origin, String name, AbstractType baseType, AbstractType superType) {
-		this(origin, name, baseType, superType, #[]);
-	}
+		
+	abstract def Iterable<AbstractType> getTypeArguments();	
+	abstract def SubtypeConstraint getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma);
+	abstract def void expand(Substitution s, TypeVariable tv);
 	
 	override replace(TypeVariable from, AbstractType with) {
 		// we bind some type variables so they aren't replaced
-		if(typeArguments.contains(from)) {
-			return this;
-		}
-		return new TypeConstructorType(origin, name, baseType.replace(from, with), superType, typeArguments);
+		return this;
 	}
 	
 	override getFreeVars() {
-		return typeArguments.flatMap[it.freeVars];
+		return #[];
 	}
-	
-	def getTypeArguments() {
-		return Collections.unmodifiableList(typeArguments);
-	}
-	
-	def getBaseType() {
-		return baseType;
-	}
+		
 	def getSuperType() {
 		return superType;
 	}
 	
 	override toString() {
-		return '''«super.toString»«IF !typeArguments.empty»<«typeArguments.join(",")»>«ENDIF»'''
+		return '''«super.toString»«IF superType !== null» ⩽ «superType.name»«ENDIF»'''
 	}
 		
 }

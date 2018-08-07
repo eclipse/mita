@@ -58,13 +58,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(!system.isWeaklyUnifiable()) {
 			return new ConstraintSolution(system, null, #[ new UnificationIssue(system, 'Subtype solving cannot terminate') ]);
 		}
-		
+		println(system);
 		val simplification = system.simplify(Substitution.EMPTY);
 		if(!simplification.valid) {
 			return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), simplification.substitution, #[simplification.issue]);
 		}
 		val simplifiedSystem = simplification.system;
 		val simplifiedSubst = simplification.substitution;
+		println(simplification);
 		
 		val constraintGraphAndSubst = simplifiedSystem.buildConstraintGraph(simplifiedSubst);
 		if(!constraintGraphAndSubst.value.valid) {
@@ -95,7 +96,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		var resultSub = subtitution;
 		
 		while(resultSystem.hasNonAtomicConstraints()) {
-			val constraintAndSystem = resultSystem.takeOneNonAtomic;
+			val constraintAndSystem = resultSystem.takeOneNonAtomic();
 			val constraint = constraintAndSystem.key;
 			if(constraint instanceof SubtypeConstraint) {
 				if(constraint.atomic) {
@@ -148,34 +149,48 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return result;
 	}
 	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, ProdType sub, SumType top) {
+		if(sub.superType == top) {
+			return SimplificationResult.success(system, substitution);
+		} else if(sub.superType.name == top.name) {
+			return system.doSimplify(substitution, constraint, sub.superType, top);
+		}
+		else {
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''«sub» is not a subtype of «top»'''))
+		}
+	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
-		
-		// decompose:  Ct1...tn <: Cs1...sn
-		if(sub.baseType != top.baseType) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], "Can only decompose equal base types"));
+		val typeArgs1 = sub.typeArguments.force;
+		val typeArgs2 = top.typeArguments.force;
+		if(typeArgs1.length !== typeArgs2.length) {
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''«sub» and «top» differ in their type arguments'''));
 		}
-		if(sub.typeArguments.length !== top.typeArguments.length) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], "Unequal number of type arguments"));
+		if(sub.name != top.name) {
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''«sub» and «top» are not constructed the same'''));
 		}
 		
-		val ncs = constraintSystemProvider.get();
-		sub.typeArguments.zip(top.typeArguments).forEach[s_t |
-			val tsub = s_t.key;
-			val tsup = s_t.value;
-			ncs.addConstraint(sub.baseType.getVariance(tsub, tsup));
-		];
-		return SimplificationResult.success(ConstraintSystem.combine(#[ncs, system]), substitution);
+		val typeArgs = sub.typeArguments.zip(top.typeArguments).indexed;
+		val nc = constraintSystemProvider.get();
+		typeArgs.forEach[i_t1t2 |
+			val tIdx = i_t1t2.key;
+			val tSub = i_t1t2.value.key;
+			val tTop = i_t1t2.value.value;
+			nc.addConstraint(sub.getVariance(tIdx, tSub, tTop));
+		]
+		
+		return SimplificationResult.success(ConstraintSystem.combine(#[system, nc]), substitution);
+		
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, TypeConstructorType top) {
 		// expand-l:   a <: Ct1...tn
-		val expansion = top.expand(sub);
+		val expansion = substitutionProvider.get() => [top.expand(it, sub)];
 		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	} 
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeVariable top) {
 		// expand-r:   Ct1...tn <: a
-		val expansion = sub.expand(top);
+		val expansion = substitutionProvider.get() => [sub.expand(it, top)];
 		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
@@ -194,91 +209,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top));
 		return SimplificationResult.success(newSystem, substitution);
 	} 
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, FunctionType sub, FunctionType top) { 
-		//    fa :: a -> b   <:   fb :: c -> d 
-		// ⟺ every fa can be used as fb 
-		// ⟺ b >: d ∧    a <: c
-		val newSystem = system.plus(new SubtypeConstraint(top.from, sub.from)).plus(new SubtypeConstraint(sub.to, top.to));		
-		return SimplificationResult.success(newSystem, substitution);
-	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, FunctionType top) { 
-		// expand-l:   a <: Ct1...tn
-		val expansion = top.expand(sub);
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
-		val newSubstitution = expansion.apply(substitution);
-		return SimplificationResult.success(newSystem, newSubstitution);
-	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, FunctionType sub, TypeVariable top) { 
-		// expand-r:   Ct1...tn <: a
-		val expansion = sub.expand(top);
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
-		val newSubstitution = expansion.apply(substitution);
-		return SimplificationResult.success(newSystem, newSubstitution);
-	}
-	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeVariable sub, ProdType top) { 
-		// expand-l:   a <: Ct1...tn
-		val expansion = top.expand(sub);
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
-		val newSubstitution = expansion.apply(substitution);
-		return SimplificationResult.success(newSystem, newSubstitution);
-	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, ProdType sub, TypeVariable top) { 
-		// expand-r:   Ct1...tn <: a
-		val expansion = sub.expand(top);
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
-		val newSubstitution = expansion.apply(substitution);
-		return SimplificationResult.success(newSystem, newSubstitution);
-	}
-	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, ProdType sub, ProdType top) { 
-		if(sub.types.length < top.types.length) {
-			return SimplificationResult.failure(new UnificationIssue(substitution, '''subtype has less fields than super type'''));
-		}
-		
-		val ncs = constraintSystemProvider.get();
-		
-		sub.types.zip(top.types).forEach[s_t|
-			val tsub = s_t.key;
-			val tsup = s_t.value;
-			ncs.addConstraint(new SubtypeConstraint(tsub, tsup));
-		]
-		return SimplificationResult.success(ConstraintSystem.combine(#[ncs, system]), substitution);
-	}
-	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, SumType sub, SumType top) {
-		if(sub == top) {
-			return SimplificationResult.success(system, substitution);
-		}
-		return SimplificationResult.failure(new UnificationIssue(substitution, '''sum types are not the same: «sub» <-> «top»'''))
-	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, Object sub, Object top) {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.SubtypeConstraint not implemented for «sub.class.simpleName» and «top.class.simpleName»''')))
 	}
-	
-	protected def AbstractTypeConstraint getVariance(AbstractType baseType, AbstractType tau, AbstractType sigma) {
-		// assume tau covariant to tau in baseType
-		return new SubtypeConstraint(tau, sigma);
-	}
-	
-	protected def Substitution expand(TypeConstructorType c, TypeVariable tv) {
-		val newTypeVars = c.typeArguments.map[ new TypeVariable(it.origin) ].force;
-		val newCType = new TypeConstructorType(c.origin, 'nc_' + c.name, c.baseType, newTypeVars);
-		return substitutionProvider.get() => [ it.add(tv, newCType) ];
-	}
-	
-	protected def Substitution expand(ProdType p, TypeVariable tv) {
-		val newTypeVars = p.types.map[ new TypeVariable(it.origin) as AbstractType ].force;
-		val newPType = new ProdType(p.origin, newTypeVars);
-		return substitutionProvider.get() => [ it.add(tv, newPType) ];
 		
-	}
-	protected def Substitution expand(FunctionType f, TypeVariable tv) {
-		val newFType = new FunctionType(f.origin, new TypeVariable(f.from.origin), new TypeVariable(f.to.origin));
-		return substitutionProvider.get() => [ it.add(tv, newFType) ];
-	}
-
 	protected def Pair<ConstraintGraph, UnificationResult> buildConstraintGraph(ConstraintSystem system, Substitution substitution) {
 		val gWithCycles = constraintGraphProvider.get(system);
 		println(gWithCycles.toGraphviz);
@@ -311,11 +246,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected def Pair<ConstraintGraph, UnificationResult> resolve(ConstraintGraph graph, Substitution subtitution) {
-		val vars = Lists.newArrayList(graph.typeVariables);
-		for(v : vars) {
-			val predecessors = graph.getBaseTypePredecessors(v);
+		val varIdxs = graph.typeVariables;
+		for(vIdx : varIdxs) {
+			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
+			val predecessors = graph.getBaseTypePredecessors(vIdx);
 			val supremum = graph.getSupremum(predecessors);
-			val successors = graph.getBaseTypeSuccecessors(v);
+			val successors = graph.getBaseTypeSuccecessors(vIdx);
 			val infimum = graph.getInfimum(successors);
 			val supremumIsValid = supremum !== null && successors.forall[ t | typeRegistry.isSubType(supremum, t) ];
 			val infimumIsValid = infimum !== null && predecessors.forall[ t | typeRegistry.isSubType(t, infimum) ];
@@ -327,7 +263,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					subtitution.add(v, supremum);
 				} else {
 					//redo for debugging
-					graph.getBaseTypePredecessors(v);
+					graph.getBaseTypePredecessors(vIdx);
 					graph.getSupremum(predecessors);
 					supremum !== null && successors.forall[ t | 
 						typeRegistry.isSubType(supremum, t)
@@ -350,7 +286,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected def UnificationResult unify(ConstraintGraph graph, Substitution substitution) {
-		val loselyConnectedComponents = graph.typeVariables.map[graph.getEdges(it)].flatMap[it.key + it.value];
+		val loselyConnectedComponents = graph.typeVariables.map[graph.getEdges(it)].flatMap[it.key + it.value].map[graph.nodeIndex.get(it.key) -> graph.nodeIndex.get(it.key)];
 		return unify(loselyConnectedComponents, substitution);
 	}
 	protected def UnificationResult unify(Iterable<Pair<AbstractType, AbstractType>> loselyConnectedComponents, Substitution substitution) {
@@ -395,13 +331,13 @@ class ConstraintGraph extends Graph<AbstractType> {
 			.forEach[ addEdge(it.subType, it.superType) ];
 	}
 	def getTypeVariables() {
-		return nodes.filter(TypeVariable);
+		return nodeIndex.filter[k, v| v instanceof TypeVariable].keySet;
 	}
-	def getBaseTypePredecessors(AbstractType t) {
+	def getBaseTypePredecessors(Integer t) {
 		return getPredecessors(t).filter(AbstractBaseType)
 	}
 
-	def getBaseTypeSuccecessors(AbstractType t) {
+	def getBaseTypeSuccecessors(Integer t) {
 		return getSuccessors(t).filter(AbstractBaseType)
 	}
 	
@@ -435,6 +371,13 @@ class ConstraintGraph extends Graph<AbstractType> {
 			return super.nodeToString(i)	
 		}
 		return '''«t.origin»(«t», «i»)'''
+	}
+	
+	override addEdge(Integer fromIndex, Integer toIndex) {
+		if(fromIndex == toIndex) {
+			return;
+		}
+		super.addEdge(fromIndex, toIndex);
 	}
 	
 } 
@@ -485,7 +428,7 @@ class Graph<T> implements Cloneable {
 		return idx;
 	}
 	
-	def addEdge(Integer fromIndex, Integer toIndex) {
+	def void addEdge(Integer fromIndex, Integer toIndex) {
 		val outgoingAdjacencyList = outgoing.get(fromIndex) ?: new HashSet<Integer>();
 		outgoingAdjacencyList.add(toIndex);
 		outgoing.put(fromIndex, outgoingAdjacencyList);
@@ -543,9 +486,14 @@ class Graph<T> implements Cloneable {
 	} 
 	
 	def removeNode(Integer nodeIdx) {
+		val preds = incoming.get(nodeIdx) ?: #[];
+		val succs = outgoing.get(nodeIdx) ?: #[];
+		preds.forEach[outgoing.get(it).remove(nodeIdx)];
+		succs.forEach[incoming.get(it).remove(nodeIdx)];
 		incoming.remove(nodeIdx);
 		outgoing.remove(nodeIdx);
-		reverseMap.remove(nodeIndex.get(nodeIdx));
+
+		reverseMap.get(nodeIndex.get(nodeIdx)).remove(nodeIdx);
 		nodeIndex.remove(nodeIdx);
 	}
 		
@@ -559,14 +507,19 @@ class Graph<T> implements Cloneable {
 			val cycleNodesOnly = mbCycle.get.map[_g.nodeIndex.get(it)];
 			val cycleEdges = cycleNodesOnly.init.zip(cycleNodesOnly.tail).force;
 			val replacementNode = cycleCombiner.apply(cycleEdges);
+			val replacementNodeIdx = _g.addNode(replacementNode);
 			// a cycle contains one node twice: start and end. remove it here
 			val cycleNodes = cycle.tail.toList;
-			val p = cycleNodes.flatMap[_g.incoming.get(it.key)].filter[cycleNodes.findFirst[k_v | it == k_v.key] === null]
-			val s = cycleNodes.flatMap[_g.outgoing.get(it.key)].filter[cycleNodes.findFirst[k_v | it == k_v.key] === null]
-			p.forEach[_g.addEdge(it, _g.addNode(replacementNode))];
-			s.forEach[_g.addEdge(_g.addNode(replacementNode), it)];
+
+			val p = cycleNodes.flatMap[_g.incoming.get(it.key)].filter[cycleNodes.findFirst[k_v | it == k_v.key] === null];
+			val s = cycleNodes.flatMap[_g.outgoing.get(it.key)].filter[cycleNodes.findFirst[k_v | it == k_v.key] === null];
 			
-			cycleNodes.forEach[_g.removeNode(it.key)];
+			// don't add edges to nodes that will be deleted
+			p.reject[pred | cycleNodes.exists[it.key == pred]].forEach[_g.addEdge(it, replacementNodeIdx)];
+			s.reject[succ | cycleNodes.exists[it.key == succ]].forEach[_g.addEdge(replacementNodeIdx, it)];
+			
+			// filter the new node in case the MGU is already in the graph. Then we would change edges to all point to the MGU and remove it afterwards, leaving a broken graph.
+			cycleNodes.filter[it.key != replacementNodeIdx].forEach[_g.removeNode(it.key)];
 			
 			println(g.toGraphviz);		
 			mbCycle = g.getCycle;
@@ -574,11 +527,11 @@ class Graph<T> implements Cloneable {
 		return g;
 	}
 	
-	def getPredecessors(T t) {
+	def getPredecessors(Integer t) {
 		return incoming.walk(t) [ it ];
 	}
 	
-	def getSuccessors(T t) {
+	def getSuccessors(Integer t) {
 		return outgoing.walk(t) [ it ];
 	}
 	
@@ -602,10 +555,9 @@ class Graph<T> implements Cloneable {
 	/**
 	 * @returns A pair of iterables of edges: outgoing and incoming
 	 */
-	def Pair<Iterable<Pair<T, T>>, Iterable<Pair<T, T>>> getEdges(T t) {
-		val idx = addNode(t);
-		return outgoing.get(idx).map[ t -> nodeIndex.get(it) ].force -> 
-			   incoming.get(idx).map[ nodeIndex.get(it) -> t ].force;
+	def Pair<Iterable<Pair<Integer, Integer>>, Iterable<Pair<Integer, Integer>>> getEdges(Integer idx) {
+		return outgoing.get(idx).map[ idx -> it ].force -> 
+			   incoming.get(idx).map[ it -> idx ].force;
 	}
 	
 	def nodeToString(Integer i) {

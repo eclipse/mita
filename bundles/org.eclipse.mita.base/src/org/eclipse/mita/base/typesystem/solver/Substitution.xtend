@@ -13,10 +13,16 @@ class Substitution {
 	protected Map<TypeVariable, AbstractType> content = new HashMap();
 	
 	public def void add(TypeVariable variable, AbstractType type) {
+		if(type === null) {
+			throw new NullPointerException;
+		}
 		this.content.put(variable, type);
 	}
 	
 	public def void add(Map<TypeVariable, AbstractType> content) {
+		if(content.values.contains(null)) {
+			throw new NullPointerException;
+		}
 		this.content.putAll(content);
 	}
 	
