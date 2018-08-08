@@ -434,7 +434,30 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			scopeInSetupBlock(context, ref);
 		} else {
 			val superScope = new FilteringScope(delegate.getScope(context, ref), globalElementFilter);
-			new ElementReferenceScope(superScope, context);
+			val scope = (if(context instanceof ElementReferenceExpression) {
+				if(context.isOperationCall && context.arguments.size > 0) {
+					val owner = context.arguments.head.value;
+					val ownerType = BaseUtils.getType(owner);
+
+					if (owner instanceof ElementReferenceExpression) {
+						if (owner.reference instanceof AbstractSystemResource ||
+							owner.reference instanceof SystemResourceSetup) {
+							/* Special case: the type inferrer delivers a valid type for system resources and their setup.
+							 * 				 However, we musn't use that type to provide the scope but rather the direct rules (addFeatureScope).
+							 */
+							addFeatureScope(owner.reference, superScope);
+						}
+					}
+		
+					if (ownerType !== null) {
+						val s2 = getExtensionMethodScope(context, ref, ownerType);
+						return addFeatureScope(ownerType, superScope)
+					} else if (owner instanceof ElementReferenceExpression) {
+						return addFeatureScope(owner.reference, superScope)
+					}
+				}
+			}) ?: superScope;
+			new ElementReferenceScope(scope, context);
 		}
 	}
 
@@ -621,7 +644,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE &&
 				context instanceof FeatureCall) {
-				scope_FeatureCall_feature(context as FeatureCall, reference);
+				//scope_FeatureCall_feature(context as FeatureCall, reference);
+				scope_ElementReferenceExpression_reference(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 				scope_ElementReferenceExpression_reference(context, reference);
 			} else if (reference == ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__ITEM &&

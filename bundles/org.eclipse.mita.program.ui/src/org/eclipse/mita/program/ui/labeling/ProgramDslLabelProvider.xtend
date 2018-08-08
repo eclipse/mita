@@ -37,6 +37,7 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.util.BaseUtils
 
 /**
  * Provides labels for EObjects.
@@ -44,9 +45,6 @@ import org.eclipse.emf.ecore.EObject
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#label-provider
  */
 class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
-
-	@Inject
-	ITypeSystemInferrer typeInferrer
 
 	@Inject
 	new(AdapterFactoryLabelProvider delegate) {
@@ -121,14 +119,14 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	
 	def text(SignalInstance ele) {
 		var vci = ele.instanceOf;
-		val type = typeInferrer.infer(ele)?.type
+		val typeIR = BaseUtils.getType(ele);
 		
-		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci.name» <b>«ele.name» : «type»</b>'''
+		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci.name» <b>«ele.name» : «typeIR»</b>'''
 	}
 	
 	def text(VariableDeclaration ele) {
-		val typeIR = typeInferrer.infer(ele)
-		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name» : «getText(typeIR)»</b>'''
+		val typeIR = BaseUtils.getType(ele);
+		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name» : «typeIR»</b>'''
 	}
 	
 	def text(InferenceResult ir) {

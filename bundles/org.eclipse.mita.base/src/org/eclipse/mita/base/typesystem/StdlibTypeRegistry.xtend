@@ -81,7 +81,7 @@ class StdlibTypeRegistry {
 	}
 	
 	protected def Optional<String> checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
-		return (bSub <= bTop).subtypeMsgFromBoolean('''«top.name» is too small for «sub.name»''');
+		return (bSub <= bTop).subtypeMsgFromBoolean('''STR: «top.name» is too small for «sub.name»''');
 	}
 	
 	public dispatch def Optional<String> isSubtypeOf(IntegerType sub, IntegerType top) {		
@@ -89,7 +89,7 @@ class StdlibTypeRegistry {
 		val int bSub = switch(sub.signedness) {
 			case Signed: {
 				if(top.signedness != Signedness.Signed) {
-					return Optional.of('''Incompatible signedness between «top.name» and «sub.name»''');
+					return Optional.of('''STR: Incompatible signedness between «top.name» and «sub.name»''');
 				}
 				sub.widthInBytes;
 			}
@@ -138,7 +138,7 @@ class StdlibTypeRegistry {
 	}
 	
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {
-		return isSuperType.subtypeMsgFromBoolean('''«sub.name» is not a subtype of «top.name»''')
+		return isSuperType.subtypeMsgFromBoolean('''STR: «sub.name» is not a subtype of «top.name»''')
 	}
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, String msg) {
 		if(!isSuperType) {

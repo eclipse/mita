@@ -42,9 +42,12 @@ import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.program.IsDeconstructionCase
+import org.eclipse.mita.program.WhereIsStatement
+import org.eclipse.mita.program.ProgramPackage
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
-		
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
 		println('''Prog: «program.eResource»''');
 		system.computeConstraintsForChildren(program);
@@ -117,9 +120,20 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		return system.associate(result, vardecl);
 	}
 	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase decon) {
+		// target points to the constructor function, so we'll add an equality constraint to match var types.
+		val target = system.computeConstraints((decon.eContainer as WhereIsStatement).matchElement);
+		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType];
+		val combinedType = new ProdType(decon, decon.productType.toString, null, (vars).toList);
+		val name_deconType = computeConstraintsForReference(system, decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
+		system.addConstraint(new EqualityConstraint(new FunctionType(null, name_deconType.key, new ProdType(decon, decon.productType.toString + "_args", null, (#[target] + vars).toList), combinedType), name_deconType.value));
+		system.computeConstraints(decon.body);
+		return system.associate(combinedType);
+	}
+	
 	protected def computeParameterConstraints(ConstraintSystem system, Operation function, ParameterList parms) {
 		val parmTypes = parms.parameters.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		system.associate(new ProdType(parms, function.name, null, parmTypes));
+		system.associate(new ProdType(parms, function.name + "_args", null, parmTypes));
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject origin, String functionName, AbstractType function, Iterable<Expression> arguments) {
@@ -154,6 +168,9 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		}
 		else if(candidates.size === 1) {
 			val candidate = candidates.head.EObjectOrProxy;
+			if(candidate.eIsProxy) {
+				println("!PROXY!")
+			}
 			origin.eSet(featureToResolve, candidate);
 			system.computeConstraints(candidate);
 		}

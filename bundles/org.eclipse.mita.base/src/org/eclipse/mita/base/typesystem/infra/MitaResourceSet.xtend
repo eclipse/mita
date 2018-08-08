@@ -43,6 +43,8 @@ class MitaResourceSet extends XtextResourceSet {
 	
 	protected ConstraintSolution latestSolution;
 	
+	protected boolean isLinkingTypes = false;
+	
 	override getResource(URI uri, boolean loadOnDemand) {
 		val alreadyLoadedResource = this.resources.findFirst[it.URI == uri]
 		val result = super.getResource(uri, loadOnDemand);
@@ -60,6 +62,10 @@ class MitaResourceSet extends XtextResourceSet {
 			}
 		}
 		return result;
+	}
+	
+	override getEObject(URI uri, boolean loadOnDemand) {
+		super.getEObject(uri, loadOnDemand)
 	}
 	
 	def linkWithTypes(MitaBaseResource resource) {
@@ -106,7 +112,12 @@ class MitaResourceSet extends XtextResourceSet {
 	}
 	
 	protected def linkTypes(Iterable<MitaBaseResource> resources) {
+		if(isLinkingTypes) {
+			return;
+		}
+		isLinkingTypes = true;
 		resources.forEach[ it.doLinkTypes ];
+		isLinkingTypes = false;
 	}
 	
 	public def getLatestSolution() {

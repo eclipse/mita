@@ -23,6 +23,8 @@ import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
 import org.eclipse.xtext.scoping.impl.MultimapBasedSelectable
 
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
+
 class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProvider {
 
 	@Inject
@@ -59,7 +61,7 @@ class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProv
 			return super.internalGetAllDescriptions(resource);
 		}
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
-		val exportedObjects = visibleContainers.map[x|x.exportedObjects].flatten();
+		val exportedObjects = visibleContainers.map[x|x.exportedObjects].flatten().force();
 		return new MultimapBasedSelectable(exportedObjects);
 	}
 

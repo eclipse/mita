@@ -24,7 +24,7 @@ class ProdType extends TypeConstructorType {
 	}
 	
 	override toString() {
-		"(" + types.join(", ") + ")"
+		(name ?: "") + "(" + types.join(", ") + ")"
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {

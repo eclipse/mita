@@ -117,17 +117,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 		
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ExplicitInstanceConstraint constraint) {
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.ExplicitInstanceConstraint not implemented for «constraint»''')))
+		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ExplicitInstanceConstraint not implemented for «constraint»''')))
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ImplicitInstanceConstraint constraint) {
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.ImplicitInstanceConstraint not implemented for «constraint»''')))
+		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ImplicitInstanceConstraint not implemented for «constraint»''')))
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, Object constraint) {
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify not implemented for «constraint»''')))
+		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify not implemented for «constraint»''')))
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, Void constraint) {
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify not implemented for null''')))
+		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify not implemented for null''')))
 	}
 	
 	
@@ -156,17 +156,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return system.doSimplify(substitution, constraint, sub.superType, top);
 		}
 		else {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''«sub» is not a subtype of «top»'''))
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» is not a subtype of «top»'''))
 		}
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
 		val typeArgs1 = sub.typeArguments.force;
 		val typeArgs2 = top.typeArguments.force;
 		if(typeArgs1.length !== typeArgs2.length) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''«sub» and «top» differ in their type arguments'''));
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» and «top» differ in their type arguments'''));
 		}
 		if(sub.name != top.name) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''«sub» and «top» are not constructed the same'''));
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» and «top» are not constructed the same'''));
 		}
 		
 		val typeArgs = sub.typeArguments.zip(top.typeArguments).indexed;
@@ -211,7 +211,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	} 
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, Object sub, Object top) {
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''doSimplify.SubtypeConstraint not implemented for «sub.class.simpleName» and «top.class.simpleName»''')))
+		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.SubtypeConstraint not implemented for «sub.class.simpleName» and «top.class.simpleName»''')))
 	}
 		
 	protected def Pair<ConstraintGraph, UnificationResult> buildConstraintGraph(ConstraintSystem system, Substitution substitution) {
@@ -233,7 +233,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			else {
 				finalState.success = false;
 				finalState.origin = cycle.toList;
-				finalState.msg = '''Cyclic dependencies could not be resolved: «finalState.origin.map[it.key.origin ?: it.key].join(' ⩽ ')»''';
+				finalState.msg = '''CSS: Cyclic dependencies could not be resolved: «finalState.origin.map[it.key.origin ?: it.key].join(' ⩽ ')»''';
 				return new BottomType(null, finalState.msg);
 			}
 		])

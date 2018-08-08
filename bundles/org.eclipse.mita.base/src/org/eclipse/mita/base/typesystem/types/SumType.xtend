@@ -18,7 +18,7 @@ class SumType extends TypeConstructorType {
 	protected final List<AbstractType> types;
 		
 	override toString() {
-		"(" + types.map[name].join(" | ") + ")"
+		(name ?: "") + "(" + types.map[name].join(" | ") + ")"
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {

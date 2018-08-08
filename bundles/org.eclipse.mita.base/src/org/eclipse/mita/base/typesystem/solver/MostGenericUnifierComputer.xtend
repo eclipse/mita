@@ -65,7 +65,7 @@ class MostGenericUnifierComputer {
 		val conflictsS1 = s1.content.filter[p1, __ | s2.content.containsKey(p1)].entrySet;
 		val conflictsS2 = s2.content.filter[p1, __ | s1.content.containsKey(p1)].entrySet;
 		if(conflictsS1 != conflictsS2) {
-			return UnificationResult.failure(new UnificationIssue(#[conflictsS1, conflictsS2], '''substitutions don't agree'''))
+			return UnificationResult.failure(new UnificationIssue(#[conflictsS1, conflictsS2], '''MGU: substitutions don't agree'''))
 		}
 		return UnificationResult.success(s1.apply(s2));
 	}
@@ -86,7 +86,7 @@ class MostGenericUnifierComputer {
 				return UnificationResult.failure(error);
 			}
 		} else {
-			return UnificationResult.failure(#[t1, t2], '''Cannot unify «t1» and «t2»''');
+			return UnificationResult.failure(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
 		}
 		
 		// none is free - ask the defined types
@@ -132,7 +132,7 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, AtomicType t1, AtomicType t2) {
 		if(t1.name != t2.name) {
-			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
+			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
 		}
 		
 		// not an issue
@@ -141,11 +141,11 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, TypeConstructorType t1, TypeConstructorType t2) {
 		if(t1.name != t2.name) {
-			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
+			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
 		}
 		
 		if(t1.freeVars.size !== t2.freeVars.size) {
-			return new UnificationIssue(#[t1, t2], '''Cannot unify with different number of type arguments: «t1» and «t2»''')
+			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify with different number of type arguments: «t1» and «t2»''')
 		}
 		
 		if(!t1.freeVars.empty) {
@@ -161,7 +161,7 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, AbstractType t2) {
 		if(t1 != t2) { 
-			return new UnificationIssue(#[t1, t2], '''Cannot unify «t1» and «t2»''');
+			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
 		}
 	}
 }

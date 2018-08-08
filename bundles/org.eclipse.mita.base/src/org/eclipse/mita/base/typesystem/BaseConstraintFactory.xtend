@@ -100,9 +100,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		val ourType = new ProdType(structType, structType.name, null, types);
-		val constructor = new FunctionType(structType, structType.name, new ProdType(null, structType.name + "_args", null, (#[ourType] + types).toList), ourType);
+		val constructor = new FunctionType(structType, structType.name, new ProdType(null, structType.name + "_args", null, types), ourType);
 		system.associate(constructor);
-		return ourType;
+		return constructor;
 	}
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
@@ -110,7 +110,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val ourType = new SumType(sumType, sumType.name, null, subTypes);
 		sumType.alternatives.forEach[ sumAlt |
 			val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-			val prodType = new ProdType(sumAlt, sumAlt.name, ourType, types);
+			val prodType = new ProdType(null, sumAlt.name, ourType, types);
 			subTypes.add(prodType);
 			//system.associate(prodTypeRepr);
 			val constructor = new FunctionType(sumAlt, sumAlt.name, new ProdType(null, sumAlt.name + "_args", null, (#[ourType] + types).toList), prodType);
