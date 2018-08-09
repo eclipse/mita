@@ -31,4 +31,5 @@ abstract class AbstractType {
 		return new TypeScheme(origin, freeVars.toList, this);
 	}
 	
+	abstract def String toGraphviz();
 }

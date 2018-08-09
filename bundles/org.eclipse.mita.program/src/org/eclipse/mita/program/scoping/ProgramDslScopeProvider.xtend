@@ -447,9 +447,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 							addFeatureScope(owner.reference, superScope);
 						}
 					}) ?: superScope;
-					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref).head.text;
+					
+					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref).head?.text ?: "";
 					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
 					new ImportScope(Collections.singletonList(normalizer), s2, null, TypesPackage.Literals.COMPLEX_TYPE, false);
+					
 				}
 			}) ?: superScope;
 			new ElementReferenceScope(scope, context);

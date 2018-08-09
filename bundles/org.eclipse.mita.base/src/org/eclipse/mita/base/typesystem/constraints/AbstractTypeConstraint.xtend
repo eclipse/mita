@@ -17,4 +17,6 @@ abstract class AbstractTypeConstraint {
 	 */
 	abstract def Iterable<AbstractType> getTypes();
 	
+	abstract def String toGraphviz();
+	
 }

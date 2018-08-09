@@ -51,4 +51,8 @@ class ProdType extends TypeConstructorType {
 		s.add(tv, newPType);
 	}
 	
+	override toGraphviz() {
+		'''«FOR t: types»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
+	}
+	
 }

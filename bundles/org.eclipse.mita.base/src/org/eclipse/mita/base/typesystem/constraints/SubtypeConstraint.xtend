@@ -5,6 +5,7 @@ import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -49,6 +50,10 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return (subType instanceof TypeVariable && superType instanceof TypeVariable)
 			|| (subType instanceof TypeVariable && superType instanceof AtomicType)
 			|| (subType instanceof AtomicType && superType instanceof TypeVariable);
+	}
+	
+	override toGraphviz() {
+		return '''"«subType»" -> "«superType»"; «subType.toGraphviz» «superType.toGraphviz»'''
 	}
 	
 }

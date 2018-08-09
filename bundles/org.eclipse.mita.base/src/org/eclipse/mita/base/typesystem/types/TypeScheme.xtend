@@ -32,7 +32,7 @@ class TypeScheme extends AbstractType {
 	}
 	
 	override getFreeVars() {
-		return #[on.freeVars].filter(TypeVariable).reject[vars.contains(it)];
+		return on.freeVars.filter(TypeVariable).reject[vars.contains(it)];
 	}
 	
 	override instantiate() {
@@ -44,6 +44,10 @@ class TypeScheme extends AbstractType {
 		]);
 		
 		return (newVars -> newOn);
+	}
+	
+	override toGraphviz() {
+		'''«FOR v: vars»"«v»" -> "«this»";«ENDFOR»'''
 	}
 	
 }

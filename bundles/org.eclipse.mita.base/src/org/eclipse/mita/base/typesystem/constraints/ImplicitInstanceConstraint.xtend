@@ -27,4 +27,8 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 		return #[isInstance, typeScheme];
 	}
 	
+	override toGraphviz() {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
 }

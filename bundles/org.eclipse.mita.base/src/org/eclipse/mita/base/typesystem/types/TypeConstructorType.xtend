@@ -33,6 +33,5 @@ abstract class TypeConstructorType extends AbstractType {
 	
 	override toString() {
 		return '''«super.toString»«IF superType !== null» ⩽ «superType.name»«ENDIF»'''
-	}
-		
+	}	
 }

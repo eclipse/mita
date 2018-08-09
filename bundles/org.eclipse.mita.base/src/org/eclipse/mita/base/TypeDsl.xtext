@@ -64,6 +64,7 @@ ExceptionTypeDeclaration:
 
 GeneratedType returns ComplexType:
 	{GeneratedType} 
+	constructor = TypeConstructor
 	(exported?='export')?
 	'generated' 'type' name=ID ('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')? ('subtype-of' superTypes+=[ComplexType|QID])?
 		'generator' generator=STRING
@@ -71,11 +72,6 @@ GeneratedType returns ComplexType:
 		('validator' validator=STRING)?
 		'constructor' ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
 	';'
-;
-
-GeneratedTypeConstructor returns Operation:
-	{Operation}
-	'constructor' name=ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
 ;
 
 GeneratedTypeParameter returns Parameter:
@@ -100,19 +96,22 @@ SumAlternative returns SumAlternative:
 	)
 ;
 
-Singleton returns Singleton:
-	constructor=TypeConstructor
-	name=ID
+SumSubTypeConstructor returns SumSubTypeConstructor:
+	{SumSubTypeConstructor}
 ;
 
+Singleton returns Singleton:
+	constructor=SumSubTypeConstructor
+	name=ID
+;
 AnonymousProductType returns AnonymousProductType: 
 	{AnonymousProductType}
-	constructor=TypeConstructor
+	constructor=SumSubTypeConstructor
 	name=ID ':' typeSpecifiers+=TypeSpecifier (',' typeSpecifiers+=TypeSpecifier)*
 ;
 NamedProductType returns NamedProductType:
 	{NamedProductType}
-	constructor=TypeConstructor
+	constructor=SumSubTypeConstructor
 	name=ID ':' '{' parameters+=ProductMember (',' parameters+=ProductMember)* '}'
 ;
 

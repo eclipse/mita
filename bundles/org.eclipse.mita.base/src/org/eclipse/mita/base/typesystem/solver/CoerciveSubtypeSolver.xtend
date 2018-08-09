@@ -59,6 +59,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return new ConstraintSolution(system, null, #[ new UnificationIssue(system, 'Subtype solving cannot terminate') ]);
 		}
 		println(system);
+		println(system.toGraphviz);
 		val simplification = system.simplify(Substitution.EMPTY);
 		if(!simplification.valid) {
 			return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), simplification.substitution, #[simplification.issue]);
@@ -83,6 +84,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val resolvedGraph = resolvedGraphAndSubst.key;
 		
 		val solution = resolvedGraph.unify(resolvedGraphAndSubst.value.substitution);
+		println(solution);
 		return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), solution.substitution, #[solution.issue].filterNull.toList);
 	}
 	
@@ -286,8 +288,15 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected def UnificationResult unify(ConstraintGraph graph, Substitution substitution) {
-		val loselyConnectedComponents = graph.typeVariables.map[graph.getEdges(it)].flatMap[it.key + it.value].map[graph.nodeIndex.get(it.key) -> graph.nodeIndex.get(it.key)];
-		return unify(loselyConnectedComponents, substitution);
+		val loselyConnectedComponents = graph.typeVariables.map[graph.looselyConnectedComponent(it)].toSet;
+		loselyConnectedComponents.map[it.map[ni | graph.nodeIndex.get(ni)].toList].fold(UnificationResult.success(substitution), [ur, lcc |
+			if(ur.valid === false) {
+				return ur;
+			}
+			val lccEdges = lcc.tail.zip(lcc.init);
+			val sub = ur.substitution;
+			return unify(lccEdges, sub);
+		])
 	}
 	protected def UnificationResult unify(Iterable<Pair<AbstractType, AbstractType>> loselyConnectedComponents, Substitution substitution) {
 		var result = substitution;
@@ -379,6 +388,8 @@ class ConstraintGraph extends Graph<AbstractType> {
 		}
 		super.addEdge(fromIndex, toIndex);
 	}
+	
+	
 	
 } 
 
@@ -576,7 +587,17 @@ class Graph<T> implements Cloneable {
 			«ENDFOR»
 		}
 		'''
-	}	
+	}
+	def Iterable<Integer> looselyConnectedComponent(Integer integer) {
+		return looselyConnectedComponentWalker(new HashSet(), integer);
+	}
+	protected def Set<Integer> looselyConnectedComponentWalker(Set<Integer> visited, Integer node) {
+		if(visited.contains(node)) {
+			return visited;
+		}
+		visited.add(node);
+		return outgoing.get(node).fold(incoming.get(node).fold(visited, [v, n | looselyConnectedComponentWalker(v, n)]), [v, n | looselyConnectedComponentWalker(v, n)]);
+	}
 }
 
 @FinalFieldsConstructor

@@ -38,4 +38,8 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		return #[subType, superType];
 	}
 	
+	override toGraphviz() {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
 }

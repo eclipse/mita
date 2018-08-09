@@ -11,5 +11,7 @@ abstract class AbstractBaseType extends AbstractType {
 	new(EObject origin, String name) {
 		super(origin, name)
 	}
-	
+	override toGraphviz() {
+		return "";
+	}
 }

@@ -51,5 +51,8 @@ class FunctionType extends TypeConstructorType {
 		s.add(tv, newFType);
 	}
 	
-
+	override toGraphviz() {
+		'''"«to»" -> "«this»"; "«this»" -> "«from»"; «to.toGraphviz» «from.toGraphviz»''';
+	}
+	
 }

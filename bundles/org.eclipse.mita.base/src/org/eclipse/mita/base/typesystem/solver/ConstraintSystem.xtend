@@ -55,15 +55,7 @@ class ConstraintSystem {
 		'''
 		digraph G {
 			«FOR c: constraints»
-			«IF c instanceof EqualityConstraint»
-			«IF c.left instanceof TypeVariable»
-			"«c.right»" -> "«c.left»";
-			«ELSEIF c.right instanceof TypeVariable»
-			"«c.left»" -> "«c.right»";
-			«ELSE»
-			"«c.left»" -- "«c.right»";
-			«ENDIF»
-			«ENDIF»
+			«c.toGraphviz»
 			«ENDFOR»
 		}
 		'''

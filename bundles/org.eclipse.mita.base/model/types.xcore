@@ -4,6 +4,7 @@ package org.eclipse.mita.base.types
 import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.common.util.BasicEList
+import org.eclipse.mita.base.util.BaseUtils
 
 class TypeSpecifier {}
 class PresentTypeSpecifier extends TypeSpecifier {
@@ -37,7 +38,7 @@ class PresentTypeSpecifier extends TypeSpecifier {
 
 class NullTypeSpecifier extends TypeSpecifier {
 	op String toString() {
-		return "";
+		return "NullTypeSpecifier";
 	}
 }
 
@@ -75,18 +76,55 @@ class PrimitiveType extends Type, Exportable {
 	}
 }
 class TypeConstructor extends Operation {
-	container ComplexType ^type opposite constructor
+	container transient ComplexType constructedType opposite constructor
 	op String getName() {
-		return ^type.name + "_cons";
+		return constructedType.name + "_cons";
 	}
-	op Parameter[] parameters() {
-		return ^type.parameters;
+	op Parameter[] getParameters() {
+		return constructedType.parameters;
+	} 
+	contains transient PresentTypeSpecifier generatedTypeSpecifier
+	op TypeSpecifier getTypeSpecifier() {
+		if(generatedTypeSpecifier === null) {
+			generatedTypeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
+				ts.^type = constructedType;
+				ts.typeArguments += BaseUtils.force(constructedType.typeParameters.map[ tp |
+					TypesFactory.eINSTANCE.createPresentTypeSpecifier => [
+						it.^type = tp
+					]
+				])
+			]
+		}
+		if(generatedTypeSpecifier.^type === null) {
+			generatedTypeSpecifier.^type = constructedType;
+		}
+		if(generatedTypeSpecifier.typeArguments.exists[it.^type === null]) {
+			BaseUtils.zip(generatedTypeSpecifier.typeArguments, constructedType.typeParameters).forEach[ ta_tp |
+				ta_tp.key.^type = ta_tp.value
+			]	
+		}
+		return generatedTypeSpecifier;
+	}
+	op TypeParameter[] getTypeParameters() {
+		return constructedType.typeParameters;
+	}
+}
+class SumSubTypeConstructor extends TypeConstructor {
+	contains transient Parameter sumTypeParameter
+	op Parameter[] getParameters() {
+		if(sumTypeParameter === null) {
+			sumTypeParameter = TypesFactory.eINSTANCE.createParameter => [ p | 
+				p.name = "superType";
+				p.typeSpecifier = TypesFactory.eINSTANCE.createNullTypeSpecifier;
+			]
+		}
+		return (#[sumTypeParameter] + constructedType.parameters).toEList;
 	} 
 }
 class ComplexType extends Type, GenericElement {
 	contains Parameter[] parameters
 	contains Declaration[] features
-	contains TypeConstructor constructor opposite ^type
+	contains transient TypeConstructor constructor opposite constructedType
 	
 	op Declaration[] getAllFeatures() {
 		val features = new BasicEList<Declaration>();
@@ -287,15 +325,29 @@ class AnonymousProductType extends SumAlternative {
 		}
 		return typeSpecifiers;
 	}
+	contains transient Parameter[] generatedParameters
 	op Parameter[] getParameters() {
-		return typeSpecifiers.indexed.map[ i_ts |
-			val name = "_" + i_ts.key;
-			val ts = i_ts.value;
-			return TypesFactory.eINSTANCE.createParameter() => [
-				it.name = name;
-				it.typeSpecifier = ts;
-			];
-		].toEList
+		if(generatedParameters.empty) {
+			generatedParameters.clear;
+			generatedParameters += BaseUtils.force(typeSpecifiers.indexed.map[ i_ts |
+				val name = "_" + i_ts.key;
+				val ts = i_ts.value;
+				return TypesFactory.eINSTANCE.createParameter() => [
+					it.name = name;
+					it.typeSpecifier = ts.copy;
+				];
+			])
+		}
+		if(generatedParameters.exists[(it.typeSpecifier as PresentTypeSpecifier).^type === null]) {
+			BaseUtils.zip(generatedParameters, typeSpecifiers).indexed.forEach[i__p_ts |
+				val name = "_" + i__p_ts.key;
+				val p = i__p_ts.value.key;
+				val psTs = p.typeSpecifier as PresentTypeSpecifier;
+				val ts = i__p_ts.value.value;
+				psTs.^type = ts.^type;
+			]
+		}
+		return generatedParameters;
 	}
 }
 class NamedProductType extends SumAlternative, HasAccessors {

@@ -29,4 +29,9 @@ class TypeVariable extends AbstractType {
 			this;	
 		}
 	}
+	
+	override toGraphviz() {
+		return "";
+	}
+	
 }

@@ -99,6 +99,9 @@ abstract class EventSource { }
 class TimeIntervalEvent extends EventSource {
 	contains IntLiteral interval
 	TimeUnit unit
+	op String toString() {
+		return interval.toString + " " + unit.toString
+	}
 }
 class SystemEventSource extends EventSource {
 	refers AbstractSystemResource origin
@@ -180,8 +183,9 @@ class VariableDeclaration extends Property, AbstractStatement {
 	op String toString() {
 		return (if(this.writeable) 'var' else 'let') + ' ' 
 			+ name 
-			+ (if(typeSpecifier !== null) ': ' + typeSpecifier else '') 
-			+ (if(initialization !== null) ' = ...' else '');
+			+ (if(typeSpecifier instanceof PresentTypeSpecifier) ': ' + typeSpecifier else '') 
+			+ (if(initialization !== null) ' = ' + initialization else '')
+			+ ';';
 	}
 }
 

@@ -1,10 +1,11 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.xtend.lib.annotations.Accessors
 
 @FinalFieldsConstructor 
 @Accessors
@@ -32,5 +33,9 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	override getTypes() {
 		return #[left, right];
 	}
-
+	
+	override toGraphviz() {
+		return '''"«left»" -> "«right»" [dir=both]; «left.toGraphviz» «right.toGraphviz»''';
+	}
+	
 }

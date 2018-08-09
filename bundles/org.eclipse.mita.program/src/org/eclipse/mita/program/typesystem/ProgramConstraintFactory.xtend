@@ -56,7 +56,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val voidType = typeRegistry.getVoidType(eventHandler);
 		return system.associate(new FunctionType(eventHandler, eventHandler.event.toString, voidType, voidType));
 	}
-		
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
 		val typeArgs = function.typeParameters.map[system.computeConstraints(it)].force()
 			
@@ -86,7 +86,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			system.addConstraint(new SubtypeConstraint(system.computeConstraints(ae.expression), system.computeConstraints(ae.varRef)));
 		}
 		else {
-			println('''computeConstraints.AssignmentExpression not implemented for «ae.operator»''');
+			println('''PCF: computeConstraints.AssignmentExpression not implemented for «ae.operator»''');
 		}
 		return null;
 	}
@@ -128,7 +128,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val deconTypeCandidates = resolveReference(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
 		val deconType = if(deconTypeCandidates.size != 1) {
 			//TODO: handle mutliple candidates
-			new BottomType(decon, 'TODO: handle mutliple candidates');
+			new BottomType(decon, 'PCF: TODO: handle mutliple candidates');
 		} else {
 			TypeVariableAdapter.get(deconTypeCandidates.head);
 		}
@@ -179,24 +179,6 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			}
 			origin.eSet(featureToResolve, candidate);
 		}
-//		else if(candidates.empty) {
-//			scopeProvider.getScope(origin, featureToResolve);
-//			scope.getElements(QualifiedName.create(name));
-//			new BottomType(origin, '''Couldn't resolve: «name»''');
-//		}
-//		else if(candidates.size === 1) {
-//			val candidate = candidates.head.EObjectOrProxy;
-//			if(candidate.eIsProxy) {
-//				println("!PROXY!")
-//			}
-//			origin.eSet(featureToResolve, candidate);
-//			TypeVariableAdapter.get(candidate);
-//		}
-//		else {
-//			// TODO: this should be done by "OR" instead of "SUM" so the solver can decide
-//			val types = candidates.map[TypeVariableAdapter.get(it.EObjectOrProxy) as AbstractType].force();
-//			new SumType(null, name + "_polymorph", null, types);
-//		}
 		
 		return resultObjects;
 	}
@@ -207,7 +189,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val candidates = varOrFun.resolveReference(featureToResolve);
 		
 		if(candidates.empty) {
-			return system.associate(new BottomType(varOrFun, '''Couldn't resolve: «NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text»'''));
+			return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text»'''));
 		}
 		if(candidates.size == 1) {
 			val rawReference = candidates.head;
@@ -232,7 +214,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			
 		} else {
 			//TODO: handle multiple candidates
-			return system.associate(new BottomType(varOrFun, 'TODO: handle mutliple candidates'));
+			return system.associate(new BottomType(varOrFun, 'PCF: TODO: handle mutliple candidates'));
 		}
 	}
 	
@@ -245,7 +227,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val enclosingFunction = EcoreUtil2.getContainerOfType(statement, FunctionDefinition);
 		val enclosingEventHandler = EcoreUtil2.getContainerOfType(statement, EventHandlerDeclaration);
 		if(enclosingFunction === null && enclosingEventHandler === null) {
-			return system.associate(new BottomType(statement, "Return outside of a function"));
+			return system.associate(new BottomType(statement, "PCF: Return outside of a function"));
 		}
 		
 		val functionReturnVar = if(enclosingFunction === null) {

@@ -10,6 +10,8 @@ import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.nodemodel.INode
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.TypeConstructor
 
 class MitaTypeLinker extends Linker {
 	
@@ -21,6 +23,13 @@ class MitaTypeLinker extends Linker {
 				println('''Linking types: «obj.eResource?.URI.lastSegment»: «NodeModelUtils.getTokenText(node)» on («obj.eClass?.name»)«obj»''');
 			}
 		}
+	}
+	
+	override protected clearReferences(EObject obj) {
+		if(obj instanceof TypeConstructor || EcoreUtil2.getContainerOfType(obj, TypeConstructor) !== null) {
+			return;
+		}
+		super.clearReferences(obj)
 	}
 	
 }
