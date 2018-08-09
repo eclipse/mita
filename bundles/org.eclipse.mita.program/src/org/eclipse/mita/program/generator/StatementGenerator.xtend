@@ -104,6 +104,8 @@ import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 
+import static extension org.eclipse.emf.common.util.ECollections.asEList
+
 class StatementGenerator {
 
 	@Inject extension ProgramDslTraceExtensions
@@ -840,7 +842,7 @@ class StatementGenerator {
 	}
 	
 	def IGeneratorNode structureTypeCode(StructureType definition) {
-		return structureTypeCodeDecl(definition, definition.parameters, definition.baseName);
+		return structureTypeCodeDecl(definition, definition.parameters.map[it as Parameter].asEList, definition.baseName);
 	}
 	
 	def IGeneratorNode structureTypeCodeDecl(EObject obj, List<Parameter> parameters, String typeName) {
@@ -869,7 +871,7 @@ class StatementGenerator {
 		
 		'''
 		«FOR alternative: definition.alternatives.filter(NamedProductType)»
-		«structureTypeCodeDecl(alternative, alternative.parameters, alternative.structType)»
+		«structureTypeCodeDecl(alternative, alternative.parameters.map[it as Parameter].asEList, alternative.structType)»
 		«ENDFOR»
 		
 		««« anonymous alternatives get tuple-like accessors (_1, _2, ...)

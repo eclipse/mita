@@ -75,13 +75,75 @@ class PrimitiveType extends Type, Exportable {
 		return super.toString();
 	}
 }
-class TypeConstructor extends Operation {
-	container transient ComplexType constructedType opposite constructor
+
+class VirtualFunction extends Operation { /* stub for now */}
+
+class TypeAccessor extends VirtualFunction {
+	op StructuralParameter getAccessedFeature() {
+		val f = eContainer;
+		if(f instanceof StructuralParameter) {
+			return f;
+		}
+		return null;
+	}
+	op String getName() {
+		return accessedFeature.name + "_accessor";
+	}
+	
+	contains transient Parameter generatedParameter
+	op Parameter[] getParameters() {
+		if(generatedParameter === null) {
+			generatedParameter = TypesFactory.eINSTANCE.createParameter;
+			generatedParameter.typeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier
+		}
+		if((generatedParameter.typeSpecifier as PresentTypeSpecifier).^type === null) {
+			(generatedParameter.typeSpecifier as PresentTypeSpecifier).^type = accessedFeature.structuralType;
+		} 
+		return #[generatedParameter].asEList;
+	}
+	contains transient PresentTypeSpecifier generatedTypeSpecifier
+	op TypeSpecifier getTypeSpecifier() {
+		if(generatedTypeSpecifier === null) {
+			generatedTypeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
+				ts.^type = accessedFeature.structuralType;
+				ts.typeArguments += BaseUtils.force(accessedFeature.structuralType.typeParameters.map[ tp |
+					TypesFactory.eINSTANCE.createPresentTypeSpecifier => [
+						it.^type = tp
+					]
+				])
+			]
+		}
+		if(generatedTypeSpecifier.^type === null) {
+			generatedTypeSpecifier.^type = accessedFeature.structuralType;
+		}
+		if(generatedTypeSpecifier.typeArguments.exists[it.^type === null]) {
+			BaseUtils.zip(generatedTypeSpecifier.typeArguments, accessedFeature.structuralType.typeParameters).forEach[ ta_tp |
+				ta_tp.key.^type = ta_tp.value
+			]	
+		}
+		return generatedTypeSpecifier;
+	}
+	op TypeParameter[] getTypeParameters() {
+		return accessedFeature.structuralType.typeParameters;
+	}
+}
+class StructuralParameter extends Parameter {
+	op StructuralType getStructuralType() {
+		val st = eContainer;
+		if(st instanceof StructuralType) {
+			return st;
+		}
+	}
+	contains transient TypeAccessor accessor
+}
+
+class TypeConstructor extends VirtualFunction {
+	container transient StructuralType constructedType opposite constructor
 	op String getName() {
 		return constructedType.name + "_cons";
 	}
 	op Parameter[] getParameters() {
-		return constructedType.parameters;
+		return constructedType.parameters.map[it as Parameter];
 	} 
 	contains transient PresentTypeSpecifier generatedTypeSpecifier
 	op TypeSpecifier getTypeSpecifier() {
@@ -122,9 +184,8 @@ class SumSubTypeConstructor extends TypeConstructor {
 	} 
 }
 class ComplexType extends Type, GenericElement {
-	contains Parameter[] parameters
 	contains Declaration[] features
-	contains transient TypeConstructor constructor opposite constructedType
+	
 	
 	op Declaration[] getAllFeatures() {
 		val features = new BasicEList<Declaration>();
@@ -144,8 +205,12 @@ class ComplexType extends Type, GenericElement {
 		}
 		visited.add(tpe);
 	}
-	
 }
+class StructuralType extends ComplexType {
+	contains StructuralParameter[] parameters
+	contains transient TypeConstructor constructor opposite constructedType
+}
+
 class GenericElement extends NamedElement {
 	contains TypeParameter[] typeParameters
 }
@@ -193,6 +258,9 @@ class Parameter extends TypedElement, NamedElement {
 		return name + ": " + typeSpecifier
 	}
 }
+
+
+
 class Enumerator extends Declaration {
 	container EnumerationType owningEnumeration opposite enumerator
 }
@@ -252,7 +320,7 @@ class NativeType extends PrimitiveType, Exportable {
 	}
 }
 
-class StructureType extends ComplexType, HasAccessors, Exportable {
+class StructureType extends StructuralType, HasAccessors, Exportable {
 	op PresentTypeSpecifier[] accessorsTypes() {
 		return parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).toEList;
 	}
@@ -265,6 +333,38 @@ class StructureType extends ComplexType, HasAccessors, Exportable {
 class GeneratedType extends ComplexType, GeneratedElement, Exportable {	
 	op String toString() {
 		super.toString
+	}
+	contains Operation constructor
+}
+
+class GeneratedTypeConstructor extends Operation {
+	contains transient PresentTypeSpecifier generatedTypeSpecifier
+	op TypeSpecifier getTypeSpecifier() {
+		val generatedType = if(eContainer instanceof GeneratedType) {
+			eContainer as GeneratedType;
+		} 
+		else {
+			null;
+		}
+		if(generatedTypeSpecifier === null) {
+			generatedTypeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
+				ts.^type = generatedType;
+				ts.typeArguments += BaseUtils.force(generatedType.typeParameters.map[ tp |
+					TypesFactory.eINSTANCE.createPresentTypeSpecifier => [
+						it.^type = tp
+					]
+				])
+			]
+		}
+		if(generatedTypeSpecifier.^type === null) {
+			generatedTypeSpecifier.^type = generatedType;
+		}
+		if(generatedTypeSpecifier.typeArguments.exists[it.^type === null]) {
+			BaseUtils.zip(generatedTypeSpecifier.typeArguments, generatedType.typeParameters).forEach[ ta_tp |
+				ta_tp.key.^type = ta_tp.value
+			]	
+		}
+		return generatedTypeSpecifier;
 	}
 }
 
@@ -285,7 +385,7 @@ class SumType extends ComplexType, Exportable {
 		return super.toString();
 	}
 }
-interface SumAlternative extends ComplexType, HasAccessors {
+interface SumAlternative extends StructuralType, HasAccessors {
 	container SumType sumType opposite alternatives
 	
 	op Type realType() {
@@ -325,16 +425,17 @@ class AnonymousProductType extends SumAlternative {
 		}
 		return typeSpecifiers;
 	}
-	contains transient Parameter[] generatedParameters
-	op Parameter[] getParameters() {
+	contains transient StructuralParameter[] generatedParameters
+	op StructuralParameter[] getParameters() {
 		if(generatedParameters.empty) {
 			generatedParameters.clear;
 			generatedParameters += BaseUtils.force(typeSpecifiers.indexed.map[ i_ts |
 				val name = "_" + i_ts.key;
 				val ts = i_ts.value;
-				return TypesFactory.eINSTANCE.createParameter() => [
-					it.name = name;
-					it.typeSpecifier = ts.copy;
+				return TypesFactory.eINSTANCE.createStructuralParameter() => [ p |
+					p.name = name;
+					p.typeSpecifier = ts.copy;
+					p.accessor = TypesFactory.eINSTANCE.createTypeAccessor();
 				];
 			])
 		}
@@ -356,7 +457,8 @@ class NamedProductType extends SumAlternative, HasAccessors {
 		return parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).toEList;
 	}
 }
-class ProductMember extends Parameter { }
+
+class ProductMember extends StructuralParameter { }
 
 class TypeAlias extends Type, Declaration {
 	

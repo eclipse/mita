@@ -1,18 +1,21 @@
 package org.eclipse.mita.base.typesystem
 
 import com.google.inject.Inject
+import java.util.ArrayList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
+import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
+import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
@@ -20,6 +23,7 @@ import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.infra.TypeTranslationAdapter
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SymbolTable
@@ -30,18 +34,12 @@ import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import java.util.ArrayList
-import org.eclipse.mita.base.typesystem.types.FunctionType
-import org.eclipse.mita.base.types.Singleton
-import org.eclipse.mita.base.types.ComplexType
-import org.eclipse.mita.base.typesystem.infra.TypeTranslationAdapter
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -194,6 +192,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IntLiteral lit) {
 		return system.associate(system.computeConstraints(lit, lit.value), lit);
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructuralParameter sParam) {
+		system.computeConstraints(sParam.accessor);
+		return system._computeConstraints(sParam as TypedElement);
 	}
 
 	protected def TypeVariable computeConstraints(ConstraintSystem system, EObject source, long value) {

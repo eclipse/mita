@@ -52,8 +52,12 @@ StructureTypeDeclaration returns ComplexType:
 TypeConstructor returns TypeConstructor:
 	{TypeConstructor}
 ;
+TypeAccessor returns TypeAccessor:
+	{TypeAccessor}
+;
 
-StructureField returns Parameter: 
+StructureField returns StructuralParameter: 
+	accessor = TypeAccessor
 	'var' name=ID ':' typeSpecifier=TypeSpecifier ';'
 ;
 
@@ -62,19 +66,23 @@ ExceptionTypeDeclaration:
 	'exception' name=ID ';'
 ;
 
-GeneratedType returns ComplexType:
+GeneratedType returns GeneratedType:
 	{GeneratedType} 
-	constructor = TypeConstructor
 	(exported?='export')?
 	'generated' 'type' name=ID ('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')? ('subtype-of' superTypes+=[ComplexType|QID])?
 		'generator' generator=STRING
 		'size-inferrer' sizeInferrer=STRING
 		('validator' validator=STRING)?
-		'constructor' ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
+		constructor = GeneratedTypeConstructor
 	';'
 ;
 
-GeneratedTypeParameter returns Parameter:
+GeneratedTypeConstructor returns GeneratedTypeConstructor:
+	{GeneratedTypeConstructor}
+	'constructor' name=ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')' 
+;
+
+GeneratedTypeParameter returns GeneratedTypeParameter:
 	{GeneratedTypeParameter}
 	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' value=Expression)?
 ;
@@ -116,6 +124,7 @@ NamedProductType returns NamedProductType:
 ;
 
 ProductMember returns ProductMember: 
+	accessor = TypeAccessor
 	name=ID ':' typeSpecifier=TypeSpecifier
 ;
 
@@ -130,6 +139,7 @@ ProductMember returns ProductMember:
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributors:
  * 	committers of YAKINDU - initial API and implementation
+ *  Bosch Connected Devices and Solutions GmbH - modifications
  * 
  */
 Expression:
@@ -326,6 +336,16 @@ terminal FLOAT returns ecore::EFloat:
 
 QID:
 	ID ('.' ID)*;
+
+/*******************************************************************************
+ * BELOW THIS LINE
+ * 
+ * Copyright (c) 2008 itemis AG and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *******************************************************************************/
 
 terminal ID: '^'?('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
 terminal LONG returns ecore::ELong: ('0'..'9')+;

@@ -41,6 +41,9 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.StructuralType
+import org.eclipse.mita.base.types.StructuralParameter
+import org.eclipse.mita.program.GeneratedFunctionDefinition
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -94,6 +97,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		system.computeConstraintsForChildren(se);
 		return null;
 	}
+
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {
 		system.computeConstraints(function.body);
 		return system._computeConstraints(function as Operation);
@@ -194,9 +198,13 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		if(candidates.size == 1) {
 			val rawReference = candidates.head;
 			// if we reference a complex type we reference its constructor and not its type
-			val reference = if(rawReference instanceof ComplexType) {
+			val reference = if(rawReference instanceof StructuralType) {
 				rawReference.constructor ?: rawReference;
-			} else {
+			} 
+			else if(rawReference instanceof StructuralParameter) {
+				rawReference.accessor ?: rawReference;
+			}
+			else {
 				rawReference;
 			} as NamedElement
 			

@@ -115,7 +115,7 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeAccess.sizeInferrerKeyword_9)
 		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeAccess.validatorKeyword_11_0)
 		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeConstructorRule)
-		config.setIndentationDecrement.after(grammar.generatedTypeAccess.semicolonKeyword_17)
+		config.setIndentationDecrement.after(grammar.generatedTypeAccess.semicolonKeyword_13)
 	}
 
 	def formatStructureField(FormattingConfig config) {

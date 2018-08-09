@@ -53,7 +53,8 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
-import static extension org.eclipse.mita.base.util.BaseUtils.*
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import static extension org.eclipse.emf.common.util.ECollections.asEList
 
 class ModelUtils {
 
@@ -88,7 +89,7 @@ class ModelUtils {
 		return Optional.of(op.parameters);
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(StructureType st) {
-		return Optional.of(st.parameters);	
+		return Optional.of(st.parameters.map[it as Parameter].asEList);	
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(AnonymousProductType apt) {
 		val tss = apt.typeSpecifiers;
@@ -99,7 +100,7 @@ class ModelUtils {
 		return Optional.absent;
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(NamedProductType npt) {
-		return Optional.of(npt.parameters);
+		return Optional.of(npt.parameters.map[it as Parameter].asEList);
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(EObject obj) {
 		Optional.absent;
@@ -253,7 +254,7 @@ class ModelUtils {
 		return map;
 	}
 	
-	def static getSortedArguments(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
+	def static <T extends Parameter> getSortedArguments(Iterable<T> parameters, Iterable<Argument> arguments) {
 		if(arguments.empty || arguments.head.parameter === null) {
 			arguments;
 		}
