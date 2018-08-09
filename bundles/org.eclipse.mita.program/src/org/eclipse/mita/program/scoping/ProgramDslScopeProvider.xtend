@@ -437,9 +437,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			val scope = (if(context instanceof ElementReferenceExpression) {
 				if(context.isOperationCall && context.arguments.size > 0) {
 					val owner = context.arguments.head.value;
-					val ownerType = BaseUtils.getType(owner);
 
-					if (owner instanceof ElementReferenceExpression) {
+					val s2 = (if (owner instanceof ElementReferenceExpression) {
 						if (owner.reference instanceof AbstractSystemResource ||
 							owner.reference instanceof SystemResourceSetup) {
 							/* Special case: the type inferrer delivers a valid type for system resources and their setup.
@@ -447,14 +446,10 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 							 */
 							addFeatureScope(owner.reference, superScope);
 						}
-					}
-		
-					if (ownerType !== null) {
-						val s2 = getExtensionMethodScope(context, ref, ownerType);
-						return addFeatureScope(ownerType, superScope)
-					} else if (owner instanceof ElementReferenceExpression) {
-						return addFeatureScope(owner.reference, superScope)
-					}
+					}) ?: superScope;
+					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref).head.text;
+					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
+					new ImportScope(Collections.singletonList(normalizer), s2, null, TypesPackage.Literals.COMPLEX_TYPE, false);
 				}
 			}) ?: superScope;
 			new ElementReferenceScope(scope, context);
@@ -468,9 +463,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			return result;
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 			val globalScope = getDelegate().getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE);
-			val enumTypes = context.instanceOf.parameters.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
+			val enumTypes = context.instanceOf.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
 			val enumeratorScope = filteredEnumeratorScope(globalScope, enumTypes)
-			val paramScope = Scopes.scopeFor(context.instanceOf.parameters.parameters)
+			val paramScope = Scopes.scopeFor(context.instanceOf.parameters)
 			val scope = new CombiningScope(paramScope, enumeratorScope)
 			return scope
 		} else {
@@ -534,7 +529,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				val signal = (context.eContainer() as ElementReferenceExpression).reference
 				if (signal instanceof Operation) {
 					// unqualified resolving of enumeration values
-					val enumTypes = signal.parameters.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
+					val enumTypes = signal.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
 					return filteredEnumeratorScope(originalScope, enumTypes)
 				}
 			}

@@ -120,12 +120,12 @@ class ConstraintSystem {
 		val csp = systems.head.constraintSystemProvider;
 		val result = systems.fold(csp.get(), [r, t|
 			r.constraints.addAll(t.constraints);
-			r.symbolTable.content.putAll(t.symbolTable.content);
+			//r.symbolTable.content.putAll(t.symbolTable.content);
 			return r;
 		]);
 		return csp.get() => [
 			it.constraints.addAll(result.constraints.toSet);
-			it.symbolTable.content.putAll(result.symbolTable.content);
+			//it.symbolTable.content.putAll(result.symbolTable.content);
 		]
 	}
 	

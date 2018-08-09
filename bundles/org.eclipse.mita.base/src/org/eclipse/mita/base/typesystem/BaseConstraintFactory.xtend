@@ -100,9 +100,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		val ourType = new ProdType(structType, structType.name, null, types);
-		val constructor = new FunctionType(structType, structType.name, new ProdType(null, structType.name + "_args", null, types), ourType);
+		val constructor = new FunctionType(structType.constructor, structType.constructor.name, new ProdType(null, structType.constructor.name + "_args", null, types), ourType);
 		system.associate(constructor);
-		return constructor;
+		system.associate(ourType);
+		return ourType;
 	}
 	
 	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
@@ -110,11 +111,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val ourType = new SumType(sumType, sumType.name, null, subTypes);
 		sumType.alternatives.forEach[ sumAlt |
 			val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-			val prodType = new ProdType(null, sumAlt.name, ourType, types);
+			val prodType = new ProdType(sumAlt, sumAlt.name, ourType, types);
 			subTypes.add(prodType);
 			//system.associate(prodTypeRepr);
-			val constructor = new FunctionType(sumAlt, sumAlt.name, new ProdType(null, sumAlt.name + "_args", null, (#[ourType] + types).toList), prodType);
+			val constructor = new FunctionType(sumAlt.constructor, sumAlt.constructor.name, new ProdType(null, sumAlt.constructor.name + "_args", null, (#[ourType] + types).toList), prodType);
 			system.associate(constructor);
+			system.associate(prodType);
 		];
 		return ourType;
 	}
@@ -149,7 +151,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {
 		val typeArguments = typeSpecifier.typeArguments;
 		if(typeArguments.empty) {
-			system.associate(system.computeConstraints(typeSpecifier.type))
+			if(typeSpecifier.type === null) {
+				return system.associate(new BottomType(typeSpecifier, "Unresolved type"));
+			}
+			return system.associate(system.computeConstraints(typeSpecifier.type))
 		}
 		else {
 			val vars_typeScheme = system.translateTypeDeclaration(typeSpecifier.type).instantiate();
@@ -157,7 +162,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			for(var i = 0; i < Integer.min(typeArguments.size, vars.size); i++) {
 				system.addConstraint(new EqualityConstraint(vars.get(i), system.computeConstraints(typeArguments.get(i))));
 			}
-			system.associate(vars_typeScheme.value, typeSpecifier);
+			return system.associate(vars_typeScheme.value, typeSpecifier);
 		}
 	}
 	

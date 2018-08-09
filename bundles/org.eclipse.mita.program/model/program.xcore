@@ -235,6 +235,9 @@ class ReturnStatement extends AbstractStatement {
 class WhereIsStatement extends AbstractStatement {
 	contains Expression matchElement
 	contains IsCase[] isCases
+	op String toString() {
+		return "where(" + matchElement + ") { ...[" + isCases.length + "]... }"
+	}
 }
 
 abstract class IsCase extends AbstractStatement { 
@@ -243,10 +246,16 @@ abstract class IsCase extends AbstractStatement {
 
 class IsTypeMatchCase extends IsCase {
 	refers SumAlternative productType
+	op String toString() {
+		return NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isTypeMatchCase_ProductType).head?.text;
+	}
 }
 
 class IsAssignmentCase extends IsCase {
 	contains VariableDeclaration assignmentVariable
+	op String toString() {
+		return "is(" + assignmentVariable.name + ": " + assignmentVariable.typeSpecifier + ") { ... }" 
+	}
 }
 class IsDeconstructionCase extends IsCase {
 	refers SumAlternative productType
@@ -254,11 +263,18 @@ class IsDeconstructionCase extends IsCase {
 	op Boolean isAnonymous() {
 		return deconstructors.map[it.productMember === null].contains(true);
 	}
+	op String toString() {
+		val refText = NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType).head?.text;
+		return "is(" + refText + " -> " + deconstructors.join(", ") + ") { ... }" 
+	}
 }
 
 class IsOtherCase extends IsCase { }
 class IsDeconstructor extends VariableDeclaration { 
 	refers Parameter productMember
+	op String toString() {
+		return NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember).head?.text;
+	}
 }
 
 class ThrowExceptionStatement extends AbstractStatement {

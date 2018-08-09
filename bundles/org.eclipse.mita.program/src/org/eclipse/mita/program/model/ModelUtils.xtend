@@ -85,7 +85,7 @@ class ModelUtils {
 	
 	
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(Operation op) {
-		return Optional.of(op.parameters.parameters);
+		return Optional.of(op.parameters);
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(StructureType st) {
 		return Optional.of(st.parameters);	
@@ -274,8 +274,8 @@ class ModelUtils {
 		val arguments = functionCall.arguments;
 		val typesAndArgsInOrder = if(funRef instanceof FunctionDefinition) {
 			zip(
-				funRef.parameters.parameters.map[typeSpecifier],
-				ModelUtils.getSortedArguments(funRef.parameters.parameters, arguments));
+				funRef.parameters.map[typeSpecifier],
+				ModelUtils.getSortedArguments(funRef.parameters, arguments));
 		} else if(funRef instanceof StructureType) {
 			zip(
 				funRef.parameters.map[typeSpecifier],
@@ -329,9 +329,9 @@ class ModelUtils {
 		if(namedArg !== null) return namedArg.value;
 
 		// we did not find a named arg. Let's look it up based on the index
-		val sortedArgs = getSortedArguments(op.parameters.parameters, expr.arguments);
+		val sortedArgs = getSortedArguments(op.parameters, expr.arguments);
 		
-		var argIndex = op.parameters.parameters.indexed.findFirst[x|x.value.name == name]?.key
+		var argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
 		// for extension methods the first arg is on the left side
 		if(expr instanceof FeatureCall) {
 			if(expr.operationCall) {
@@ -383,7 +383,7 @@ class ModelUtils {
 			}
 
 		val item = signalInstance.instanceOf;
-		val defaultValue = (item.parameters.parameters.findFirst[ it.name == name ] as SignalParameter)?.defaultValue;
+		val defaultValue = (item.parameters.findFirst[ it.name == name ] as SignalParameter)?.defaultValue;
 		return configuredValue ?: defaultValue;
 	}
 

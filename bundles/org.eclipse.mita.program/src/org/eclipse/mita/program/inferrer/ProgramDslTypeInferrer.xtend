@@ -286,8 +286,8 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 			val argumentExpression = argument.eContainer as ArgumentExpression
 			var op = argumentExpression.operation;
 			var index = argumentExpression.arguments.indexOf(argument)
-			index += op.parameters.parameters.size - argumentExpression.arguments.size
-			inferTypeDispatch(op.parameters.parameters.get(index).type)
+			index += op.parameters.size - argumentExpression.arguments.size
+			inferTypeDispatch(op.parameters.get(index).type)
 		} else
 			registry.getType(INT_LITERAL_TYPE).inferTypeDispatch
 	}
@@ -305,7 +305,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 		])
 		typeParameterMapping2.putAll(typeParameterMapping);
 		
-		if(op instanceof GeneratedFunctionDefinition && op.parameters.parameters.empty) {
+		if(op instanceof GeneratedFunctionDefinition && op.parameters.empty) {
 			var EObject parentDecl = EcoreUtil2.getContainerOfType(e, VariableDeclaration);
 			if(parentDecl === null) {
 				val retStmt = EcoreUtil2.getContainerOfType(e, ReturnStatement);
@@ -356,9 +356,9 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 	override validateParameters(Map<TypeParameter, InferenceResult> typeParameterMapping, Operation operation, List<Expression> args, IValidationIssueAcceptor acceptor) {
 		val parameters = operation.getParameters();
 
-		for (var parameter = 0; parameter < parameters.parameters.size(); parameter++) {
+		for (var parameter = 0; parameter < parameters.size(); parameter++) {
 			if (args.size() > parameter) {
-				val varArgs = parameters.parameters.get(parameter);
+				val varArgs = parameters.get(parameter);
 				val argType = this.inferTypeDispatch(varArgs);
 				val parameterValue = args.get(parameter);
 				
@@ -503,7 +503,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 	 * This method finds a mapping from T to S (callerTypeParamToOperationTypeParam) and from there derives the mapping S to int16.
 	 */
 	def adjustForExtensionMethod(Map<TypeParameter, InferenceResult> inferredTypeParameters, Operation operation) {
-		val p = operation.parameters.parameters.head
+		val p = operation.parameters.head
 		val pType = inferTypeDispatch(p)
 		val callerTypeParamToOperationTypeParam = Maps.newHashMap();
 		typeParameterInferrer.inferTypeParametersFromOwner(pType, callerTypeParamToOperationTypeParam);

@@ -113,7 +113,7 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(FunctionDefinition ele) {
-		val params = ele.parameters.parameters.map[name + " : " + type.name]
+		val params = ele.parameters.map[name + " : " + type.name]
 		ele.name + "(" + params.toString.replace("[", "").replace("]", "") + ")"
 	}
 	

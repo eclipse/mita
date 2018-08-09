@@ -33,7 +33,7 @@ class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProv
 	IContainer.Manager containerManager;
 
 	override protected String getImportedNamespace(EObject object) {
-		// PAX imports are always wildcard imports. We do not support fully qualified references. 
+		// Mita imports are always wildcard imports. We do not support fully qualified references. 
 		if (object instanceof ImportStatement) {
 			return object.importedNamespace + ".*"
 		}

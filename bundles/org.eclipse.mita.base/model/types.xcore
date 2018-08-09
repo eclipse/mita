@@ -74,8 +74,19 @@ class PrimitiveType extends Type, Exportable {
 		return super.toString();
 	}
 }
+class TypeConstructor extends Operation {
+	container ComplexType ^type opposite constructor
+	op String getName() {
+		return ^type.name + "_cons";
+	}
+	op Parameter[] parameters() {
+		return ^type.parameters;
+	} 
+}
 class ComplexType extends Type, GenericElement {
+	contains Parameter[] parameters
 	contains Declaration[] features
+	contains TypeConstructor constructor opposite ^type
 	
 	op Declaration[] getAllFeatures() {
 		val features = new BasicEList<Declaration>();
@@ -117,16 +128,8 @@ abstract class TypedElement {
 	}
 }
 
-class ParameterList {
-	container Operation owningOperation opposite parameters
-	contains Parameter[] parameters opposite parameterList
-	op String toString() {
-		return parameters.join(", ")
-	}
-}
-
 class Operation extends Declaration, GenericElement {
-	contains ParameterList parameters opposite owningOperation
+	contains Parameter[] parameters
 	
 	op String toString() {
 		val typeParameterString = if(typeParameters.empty) {
@@ -140,7 +143,6 @@ class Operation extends Declaration, GenericElement {
 	}
 }
 class Parameter extends TypedElement, NamedElement {
-	container ParameterList parameterList opposite parameters
 	boolean optional
 	
 	op String toString() {
@@ -213,7 +215,6 @@ class NativeType extends PrimitiveType, Exportable {
 }
 
 class StructureType extends ComplexType, HasAccessors, Exportable {
-	contains Parameter[] parameters
 	op PresentTypeSpecifier[] accessorsTypes() {
 		return parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).toEList;
 	}
@@ -223,9 +224,7 @@ class StructureType extends ComplexType, HasAccessors, Exportable {
 	}
 }
 
-class GeneratedType extends ComplexType, GeneratedElement, Exportable {
-	contains Operation constructor
-	
+class GeneratedType extends ComplexType, GeneratedElement, Exportable {	
 	op String toString() {
 		super.toString
 	}
@@ -288,9 +287,18 @@ class AnonymousProductType extends SumAlternative {
 		}
 		return typeSpecifiers;
 	}
+	op Parameter[] getParameters() {
+		return typeSpecifiers.indexed.map[ i_ts |
+			val name = "_" + i_ts.key;
+			val ts = i_ts.value;
+			return TypesFactory.eINSTANCE.createParameter() => [
+				it.name = name;
+				it.typeSpecifier = ts;
+			];
+		].toEList
+	}
 }
 class NamedProductType extends SumAlternative, HasAccessors {
-	contains Parameter[] parameters
 	// always return parameter types, since we never embed
 	op PresentTypeSpecifier[] accessorsTypes() {
 		return parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).toEList;

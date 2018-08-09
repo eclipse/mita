@@ -290,7 +290,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	}
 
 	protected void assertOperationArguments(Operation operation, List<Expression> args) {
-		EList<Parameter> parameters = operation.getParameters().getParameters();
+		EList<Parameter> parameters = operation.getParameters();
 		List<Parameter> optionalParameters = filterOptionalParameters(parameters);
 		if ((!(args.size() <= parameters.size()
 						&& args.size() >= parameters.size() - optionalParameters.size()))) {
@@ -316,7 +316,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	@Check(CheckType.FAST)
 	public void checkOptionalArgumentsAreLast(Operation op) {
 		boolean foundOptional = false;
-		for (Parameter p : op.getParameters().getParameters()) {
+		for (Parameter p : op.getParameters()) {
 			if (foundOptional && !p.isOptional()) {
 				error(ERROR_OPTIONAL_MUST_BE_LAST_MSG, p, null, ERROR_OPTIONAL_MUST_BE_LAST_CODE);
 			}

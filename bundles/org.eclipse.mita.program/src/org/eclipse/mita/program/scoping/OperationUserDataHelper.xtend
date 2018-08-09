@@ -22,6 +22,8 @@ import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.xtext.resource.IEObjectDescription
 
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
+
 class OperationUserDataHelper {
 
 	@Inject
@@ -34,12 +36,12 @@ class OperationUserDataHelper {
 		val rawTypesArray = operation.parameterTypeNames
 		
 		if(rawTypesArray !== null) {
-			return rawTypesArray.map[ typesystem.getType(it) ]
+			return rawTypesArray.map[ typesystem.getType(it) ].force;
 		} else {
 			val objOrProxy = operation.EObjectOrProxy;
 			if(objOrProxy instanceof Operation) {
 				if(!objOrProxy.eIsProxy) {
-					return objOrProxy.parameters.parameters.map[ it.type ]
+					return objOrProxy.parameters.map[ it.type ].force;
 				}
 			}
 			return #[];
@@ -50,7 +52,7 @@ class OperationUserDataHelper {
 		val objOrProxy = operation.EObjectOrProxy;
 		if (objOrProxy instanceof Operation) {
 			if (!objOrProxy.eIsProxy) {
-				return objOrProxy.parameters.parameters.map[it.infer]
+				return objOrProxy.parameters.map[it.infer].force;
 			}
 		}
 		return #[];

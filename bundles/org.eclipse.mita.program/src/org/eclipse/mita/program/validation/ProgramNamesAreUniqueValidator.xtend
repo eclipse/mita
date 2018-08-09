@@ -49,7 +49,7 @@ class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 	}
 
 	def protected overridingName(Operation op) {
-		'''«op.name»_«FOR param : op.parameters.parameters.filter[!optional] SEPARATOR '_'»«param.typeSpecifier?.toString»«ENDFOR»'''.toString
+		'''«op.name»_«FOR param : op.parameters.filter[!optional] SEPARATOR '_'»«param.typeSpecifier?.toString»«ENDFOR»'''.toString
 	}
 
 	@Inject

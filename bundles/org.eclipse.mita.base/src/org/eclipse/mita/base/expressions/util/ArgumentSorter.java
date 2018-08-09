@@ -37,9 +37,9 @@ public class ArgumentSorter {
 				// operation.getParameters().indexOf(argument.getParameter() can
 				// not be used here since it uses object.equals instead of
 				// EcoreUtil.equals.)
-				for (Parameter param : operation.getParameters().getParameters()) {
+				for (Parameter param : operation.getParameters()) {
 					if (param.getName().equals(argument.getParameter().getName())) {
-						int parameterIndex = operation.getParameters().getParameters().indexOf(param);
+						int parameterIndex = operation.getParameters().indexOf(param);
 						if (parameterIndex < result.length)
 							result[parameterIndex] = argument.getValue();
 						break;

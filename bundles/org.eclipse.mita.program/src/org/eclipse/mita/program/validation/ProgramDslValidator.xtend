@@ -309,8 +309,8 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	override assertOperationArguments(Operation op, List<Expression> args) {
 		val parameters = op.parameters
-		if (args.size() < parameters.parameters.filter[!optional].size || args.size > parameters.parameters.size) {
-			error(String.format(WRONG_NR_OF_ARGS_MSG, parameters.parameters.map[type]), null, WRONG_NR_OF_ARGS_CODE);
+		if (args.size() < parameters.filter[!optional].size || args.size > parameters.size) {
+			error(String.format(WRONG_NR_OF_ARGS_MSG, parameters.map[type]), null, WRONG_NR_OF_ARGS_CODE);
 		}
 	}
 
@@ -325,7 +325,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Check(CheckType.FAST)
 	def checkNoModalityOrSiginstParameters(FunctionDefinition op) {
-		val hasModalityOrSiginstParam = op.parameters.parameters.findFirst[ it.type.name == 'modality' || it.type.name == 'siginst' ]
+		val hasModalityOrSiginstParam = op.parameters.findFirst[ it.type.name == 'modality' || it.type.name == 'siginst' ]
 		if(hasModalityOrSiginstParam !== null) {
 			error(SIGINST_MODALITY_CANT_BE_FUNC_PARAM_MSG, hasModalityOrSiginstParam, TypesPackage.Literals.TYPED_ELEMENT__TYPE_SPECIFIER);
 		}

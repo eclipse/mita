@@ -82,10 +82,6 @@ Signal returns platform::Signal:
 	'signal' name=ID  ':' typeSpecifier=TypeSpecifier
 ;
 
-SignalParameters returns ParameterList:
-	{ParameterList}
-	'(' (parameters+=SignalParameter (',' parameters+=SignalParameter)*)? ')'
-;
 SignalParameter returns platform::SignalParameter:
 	name=ID ':' typeSpecifier=TypeSpecifier (optional?='=' defaultValue=Expression)?
 ;

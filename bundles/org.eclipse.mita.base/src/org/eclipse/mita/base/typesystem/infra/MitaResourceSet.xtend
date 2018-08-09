@@ -55,7 +55,7 @@ class MitaResourceSet extends XtextResourceSet {
 				
 				//linkTypes(loadedResources.filter(MitaBaseResource));
 				linkTypes(this.resources.filter(MitaBaseResource));
-				result.doLinking();
+				//result.doLinking();
 				
 				computeTypes();
 				linkWithTypes(result);
@@ -76,8 +76,8 @@ class MitaResourceSet extends XtextResourceSet {
 		val constraints = resources.map[ 
 			val model = it.contents.head;
 			cache.get(ConstraintSystem, it, [
-				val symbols = symbolFactory.create(model);
-				val result = constraintFactory.create(symbols, model);
+				//val symbols = symbolFactory.create(model);
+				val result = constraintFactory.create(null, model);
 				return result;		
 			]);
 		];

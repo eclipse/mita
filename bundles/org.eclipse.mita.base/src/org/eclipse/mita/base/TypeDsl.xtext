@@ -44,8 +44,13 @@ Enumerator returns Enumerator:
 
 StructureTypeDeclaration returns ComplexType: 
 	{StructureType}
+	constructor=TypeConstructor
 	(exported?='export')?
 	'struct' name=ID '{' (parameters+=StructureField)+ '}'
+;
+
+TypeConstructor returns TypeConstructor:
+	{TypeConstructor}
 ;
 
 StructureField returns Parameter: 
@@ -64,18 +69,13 @@ GeneratedType returns ComplexType:
 		'generator' generator=STRING
 		'size-inferrer' sizeInferrer=STRING
 		('validator' validator=STRING)?
-		constructor = GeneratedTypeConstructor
+		'constructor' ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
 	';'
 ;
 
 GeneratedTypeConstructor returns Operation:
 	{Operation}
-	'constructor' name=ID parameters=GeneratedTypeParameterList
-;
-
-GeneratedTypeParameterList returns ParameterList:
-	{ParameterList}
-	'(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
+	'constructor' name=ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
 ;
 
 GeneratedTypeParameter returns Parameter:
@@ -101,15 +101,18 @@ SumAlternative returns SumAlternative:
 ;
 
 Singleton returns Singleton:
+	constructor=TypeConstructor
 	name=ID
 ;
 
 AnonymousProductType returns AnonymousProductType: 
 	{AnonymousProductType}
+	constructor=TypeConstructor
 	name=ID ':' typeSpecifiers+=TypeSpecifier (',' typeSpecifiers+=TypeSpecifier)*
 ;
 NamedProductType returns NamedProductType:
 	{NamedProductType}
+	constructor=TypeConstructor
 	name=ID ':' '{' parameters+=ProductMember (',' parameters+=ProductMember)* '}'
 ;
 
@@ -210,7 +213,7 @@ arraySelector returns Expression:
 
 FeatureCall returns Expression:
     (ElementReferenceExpression | ParenthesizedExpression) (
-	      ({Argument.value=current} {FeatureCall.arguments+=current} '.' reference=[ecore::EObject] (=> operationCall?='('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
+	      ({Argument.value=current} {FeatureCall.arguments+=current} operationCall?='.' reference=[ecore::EObject] (=> '('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
 		| ({ArrayAccessExpression.owner=current} '[' (arraySelector=arraySelector) ']')
     )*
 ;

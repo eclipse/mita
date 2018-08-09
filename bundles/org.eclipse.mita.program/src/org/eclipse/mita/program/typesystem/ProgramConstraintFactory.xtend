@@ -1,50 +1,46 @@
 package org.eclipse.mita.program.typesystem
 
-import com.google.inject.Inject
+import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
+import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.ImportStatement
-import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.ParameterList
+import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.TypedElement
-import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
-import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.IsAssignmentCase
+import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
+import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
-import static extension org.eclipse.mita.base.util.BaseUtils.*
-import org.eclipse.mita.program.ExpressionStatement
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.program.IsDeconstructionCase
-import org.eclipse.mita.program.WhereIsStatement
-import org.eclipse.mita.program.ProgramPackage
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.NamedElement
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -64,7 +60,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
 		val typeArgs = function.typeParameters.map[system.computeConstraints(it)].force()
 			
-		val fromType = system.computeParameterConstraints(function, function.parameters);
+		val fromType = system.computeParameterType(function, function.parameters);
 		val toType = system.computeConstraints(function.typeSpecifier);
 		val funType = new FunctionType(function, function.name, fromType, toType);
 		var result = system.associate(	
@@ -120,20 +116,35 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		return system.associate(result, vardecl);
 	}
 	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, WhereIsStatement stmt) {
+		stmt.isCases.forEach[system.computeConstraints(it)];
+		return null;
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase decon) {
-		// target points to the constructor function, so we'll add an equality constraint to match var types.
-		val target = system.computeConstraints((decon.eContainer as WhereIsStatement).matchElement);
+		val matchVariable = system.computeConstraints((decon.eContainer as WhereIsStatement).matchElement);
 		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType];
 		val combinedType = new ProdType(decon, decon.productType.toString, null, (vars).toList);
-		val name_deconType = computeConstraintsForReference(system, decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
-		system.addConstraint(new EqualityConstraint(new FunctionType(null, name_deconType.key, new ProdType(decon, decon.productType.toString + "_args", null, (#[target] + vars).toList), combinedType), name_deconType.value));
+		val deconTypeCandidates = resolveReference(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
+		val deconType = if(deconTypeCandidates.size != 1) {
+			//TODO: handle mutliple candidates
+			new BottomType(decon, 'TODO: handle mutliple candidates');
+		} else {
+			TypeVariableAdapter.get(deconTypeCandidates.head);
+		}
+		system.addConstraint(new EqualityConstraint(deconType, combinedType));
 		system.computeConstraints(decon.body);
 		return system.associate(combinedType);
 	}
 	
-	protected def computeParameterConstraints(ConstraintSystem system, Operation function, ParameterList parms) {
-		val parmTypes = parms.parameters.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		system.associate(new ProdType(parms, function.name + "_args", null, parmTypes));
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsAssignmentCase asign) {
+		system.computeConstraints(asign.body);
+		return system.computeConstraints(asign.assignmentVariable);
+	}
+	
+	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
+		val parmTypes = parms.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
+		return new ProdType(null, function.name + "_args", null, parmTypes);
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject origin, String functionName, AbstractType function, Iterable<Expression> arguments) {
@@ -145,70 +156,84 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		return ourTypeVar;		
 	}
 	
-	protected def Pair<String, AbstractType> computeConstraintsForReference(ConstraintSystem system, EObject origin, EReference featureToResolve) {
+	protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
 		val scope = scopeProvider.getScope(origin, featureToResolve);
 		
 		val name = NodeModelUtils.findNodesForFeature(origin, featureToResolve).head?.text;
 		if(name === null) {
-			return name -> system.associate(new BottomType(origin, "Reference text is null"));
+			return #[];//system.associate(new BottomType(origin, "Reference text is null"));
 		}
+		
+		if(origin.eIsSet(featureToResolve)) {
+			return #[origin.eGet(featureToResolve, false) as EObject];	
+		}
+		
 		val candidates = scope.getElements(QualifiedName.create(name));
 		
-		val alreadyResolvedFeature = if(origin.eIsSet(featureToResolve)) {
-			origin.eGet(featureToResolve, false);	
-		} else { null }
+		val List<EObject> resultObjects = candidates.map[it.EObjectOrProxy].force;
 		
-		val referenceType = if(alreadyResolvedFeature !== null && alreadyResolvedFeature instanceof EObject) {
-				system.computeConstraints(alreadyResolvedFeature as EObject);
-		} 
-		else if(candidates.empty) {
-			scopeProvider.getScope(origin, featureToResolve);
-			scope.getElements(QualifiedName.create(name));
-			new BottomType(origin, '''Couldn't resolve: «name»''');
-		}
-		else if(candidates.size === 1) {
-			val candidate = candidates.head.EObjectOrProxy;
+		if(resultObjects.size === 1) {
+			val candidate = resultObjects.head;
 			if(candidate.eIsProxy) {
 				println("!PROXY!")
 			}
 			origin.eSet(featureToResolve, candidate);
-			system.computeConstraints(candidate);
 		}
-		else {
-			// TODO: this should be done by "OR" instead of "SUM" so the solver can decide
-			val types = candidates.map[system.computeConstraints(it.EObjectOrProxy) as AbstractType].force();
-			new SumType(null, name + "_polymorph", null, types);
-		}
-		return name -> referenceType;
+//		else if(candidates.empty) {
+//			scopeProvider.getScope(origin, featureToResolve);
+//			scope.getElements(QualifiedName.create(name));
+//			new BottomType(origin, '''Couldn't resolve: «name»''');
+//		}
+//		else if(candidates.size === 1) {
+//			val candidate = candidates.head.EObjectOrProxy;
+//			if(candidate.eIsProxy) {
+//				println("!PROXY!")
+//			}
+//			origin.eSet(featureToResolve, candidate);
+//			TypeVariableAdapter.get(candidate);
+//		}
+//		else {
+//			// TODO: this should be done by "OR" instead of "SUM" so the solver can decide
+//			val types = candidates.map[TypeVariableAdapter.get(it.EObjectOrProxy) as AbstractType].force();
+//			new SumType(null, name + "_polymorph", null, types);
+//		}
+		
+		return resultObjects;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
-		val name_referenceType = system.computeConstraintsForReference(varOrFun, featureToResolve);
+		val candidates = varOrFun.resolveReference(featureToResolve);
 		
-		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;
-				
-		if(isFunctionCall) {
-			/* TODO: should emit subtype constraints between typecons for the arguments and an equality to the function base type
-			 * See the SubCT-App rule in Traytel et al.
-			 */
-			val argExprs = varOrFun.arguments.map[it.value].force;
-			return system.computeConstraintsForFunctionCall(varOrFun, name_referenceType.key, name_referenceType.value, argExprs);
-		} 
-		else {
-			return system.associate(name_referenceType.value, varOrFun)
+		if(candidates.empty) {
+			return system.associate(new BottomType(varOrFun, '''Couldn't resolve: «NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text»'''));
 		}
-	}
-	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FeatureCall funCall) {
-		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
-		
-		val name_referenceType = system.computeConstraintsForReference(funCall, featureToResolve);
-		
-		val args = (funCall.expressions).force;
-		
-		return system.computeConstraintsForFunctionCall(funCall, name_referenceType.key, name_referenceType.value, args);
+		if(candidates.size == 1) {
+			val rawReference = candidates.head;
+			// if we reference a complex type we reference its constructor and not its type
+			val reference = if(rawReference instanceof ComplexType) {
+				rawReference.constructor ?: rawReference;
+			} else {
+				rawReference;
+			} as NamedElement
+			
+			val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
+			if(isFunctionCall) {
+				/* TODO: should emit subtype constraints between typecons for the arguments and an equality to the function base type
+				 * See the SubCT-App rule in Traytel et al.
+				 */
+				val argExprs = varOrFun.arguments.map[it.value].force;
+				return system.computeConstraintsForFunctionCall(varOrFun, reference.name, TypeVariableAdapter.get(reference), argExprs);
+			} 
+			else {
+				return system.associate(TypeVariableAdapter.get(reference), varOrFun)
+			}
+			
+		} else {
+			//TODO: handle multiple candidates
+			return system.associate(new BottomType(varOrFun, 'TODO: handle mutliple candidates'));
+		}
 	}
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {
