@@ -184,8 +184,7 @@ class VariableDeclaration extends Property, AbstractStatement {
 		return (if(this.writeable) 'var' else 'let') + ' ' 
 			+ name 
 			+ (if(typeSpecifier instanceof PresentTypeSpecifier) ': ' + typeSpecifier else '') 
-			+ (if(initialization !== null) ' = ' + initialization else '')
-			+ ';';
+			+ (if(initialization !== null) ' = ' + initialization else '');
 	}
 }
 
@@ -277,7 +276,7 @@ class IsOtherCase extends IsCase { }
 class IsDeconstructor extends VariableDeclaration { 
 	refers Parameter productMember
 	op String toString() {
-		return NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember).head?.text;
+		return super.toString + "(" + NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember).head?.text + ")";
 	}
 }
 

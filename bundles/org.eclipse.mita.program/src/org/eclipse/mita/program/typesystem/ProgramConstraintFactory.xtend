@@ -1,5 +1,6 @@
 package org.eclipse.mita.program.typesystem
 
+import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
@@ -8,10 +9,13 @@ import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.StructuralParameter
+import org.eclipse.mita.base.types.StructuralType
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
@@ -40,10 +44,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.NamedElement
-import org.eclipse.mita.base.types.StructuralType
-import org.eclipse.mita.base.types.StructuralParameter
-import org.eclipse.mita.program.GeneratedFunctionDefinition
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -134,7 +135,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			//TODO: handle mutliple candidates
 			new BottomType(decon, 'PCF: TODO: handle mutliple candidates');
 		} else {
-			TypeVariableAdapter.get(deconTypeCandidates.head);
+			system.translateTypeDeclaration(deconTypeCandidates.head);
 		}
 		system.addConstraint(new EqualityConstraint(deconType, combinedType));
 		system.computeConstraints(decon.body);
@@ -191,9 +192,10 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
 		val candidates = varOrFun.resolveReference(featureToResolve);
+		val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
 		
 		if(candidates.empty) {
-			return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text»'''));
+			return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 		}
 		if(candidates.size == 1) {
 			val rawReference = candidates.head;
@@ -222,6 +224,9 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			
 		} else {
 			//TODO: handle multiple candidates
+			val subTypes = new ArrayList();
+			val sumType = new org.eclipse.mita.base.typesystem.types.SumType(null, txt + "_anonymous", null, subTypes);		
+			
 			return system.associate(new BottomType(varOrFun, 'PCF: TODO: handle mutliple candidates'));
 		}
 	}

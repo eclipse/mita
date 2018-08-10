@@ -45,6 +45,7 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.util.PreventRecursionAdapter
 
 /**
  * Hierarchically infers the size of a data element.
@@ -86,7 +87,7 @@ class ElementSizeInferrer {
 	}
 
 	protected def dispatch ElementSizeInferenceResult doInfer(FunctionDefinition obj) {
-		return ModelUtils.preventRecursion(obj, [
+		return PreventRecursionAdapter.preventRecursion(obj, [
 			val allReturnSizes = obj.eAllContents.filter(ReturnStatement).map[x | x.infer ].toList();
 			var result = if(allReturnSizes.empty) {
 				obj.inferFromType
@@ -254,7 +255,7 @@ class ElementSizeInferrer {
 				return new InvalidElementSizeInferenceResult(obj, typeSpec, "Type has no size inferrer");
 			} else {
 				
-				return ModelUtils.preventRecursion(obj, 
+				return PreventRecursionAdapter.preventRecursion(obj, 
 				[|
 					return finalInferrer.infer(obj);
 				], [|
@@ -263,7 +264,7 @@ class ElementSizeInferrer {
 			}
 		} else if (type instanceof StructureType) {
 			// it's a struct, let's build our children, but mark the type first
-			return ModelUtils.preventRecursion(type, [
+			return PreventRecursionAdapter.preventRecursion(type, [
 				val result = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
 				result.children.addAll(type.parameters.map[x|x.infer]);
 				return result;
@@ -272,7 +273,7 @@ class ElementSizeInferrer {
 			]);
 			
 		} else if (type instanceof SumType) {
-			return ModelUtils.preventRecursion(type, [
+			return PreventRecursionAdapter.preventRecursion(type, [
 				val childs = type.alternatives.map[it.infer];
 				val result = if(childs.filter(InvalidElementSizeInferenceResult).empty) {
 					 new ValidElementSizeInferenceResult(obj, typeSpec, 1);
@@ -295,7 +296,7 @@ class ElementSizeInferrer {
 			
 		} else if (type instanceof NamedProductType) {
 			// it's a struct, let's build our children, but mark the type first
-			return ModelUtils.preventRecursion(type, [
+			return PreventRecursionAdapter.preventRecursion(type, [
 				val childs = type.parameters.map[x|x.infer];
 				val result = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
 				result.children.addAll(childs);
@@ -309,7 +310,7 @@ class ElementSizeInferrer {
 			
 		} else if (type instanceof AnonymousProductType) {
 			// it's a struct, let's build our children, but mark the type first
-			return ModelUtils.preventRecursion(type, [
+			return PreventRecursionAdapter.preventRecursion(type, [
 				val childs = type.typeSpecifiers.map[x|inferFromType(obj, x)];
 				val result = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
 				result.children.addAll(childs);
@@ -321,7 +322,7 @@ class ElementSizeInferrer {
 			
 		}	else if (type instanceof ComplexType) {
 			// it's a struct, let's build our children, but mark the type first
-			return ModelUtils.preventRecursion(type, [
+			return PreventRecursionAdapter.preventRecursion(type, [
 				val result = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
 				result.children.addAll(type.features.map[x|x.infer]);
 

@@ -17,16 +17,7 @@ abstract class TypeConstructorType extends AbstractType {
 	abstract def Iterable<AbstractType> getTypeArguments();	
 	abstract def SubtypeConstraint getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma);
 	abstract def void expand(Substitution s, TypeVariable tv);
-	
-	override replace(TypeVariable from, AbstractType with) {
-		// we bind some type variables so they aren't replaced
-		return this;
-	}
-	
-	override getFreeVars() {
-		return #[];
-	}
-		
+			
 	def getSuperType() {
 		return superType;
 	}

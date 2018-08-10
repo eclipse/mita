@@ -21,6 +21,10 @@ class TypeTranslationAdapter extends AdapterImpl {
 		var candidate = obj.eAdapters.filter(TypeTranslationAdapter).map[ it.typeTranslation ].head;
 		if(candidate === null) {
 			candidate = calculateType.apply;
+			val alreadySet = obj.eAdapters.filter(TypeTranslationAdapter).map[ it.typeTranslation ].head;
+			if(alreadySet !== null) {
+				println("Overwriting: " + alreadySet + " | with: " + candidate);
+			}
 			obj.eAdapters.add(new TypeTranslationAdapter(candidate));
 		}
 		return candidate;

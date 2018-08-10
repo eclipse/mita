@@ -32,10 +32,14 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
+import com.google.inject.Inject
 
 class TypeDSLResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
 	public static final String EXPORTED = "EXPORTED"
+	
+	@Inject 
+	TypeQualifiedNameProvider typeQualifiedNameProvider;
 
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
 		if (eObject instanceof TypedElement) {
@@ -82,6 +86,10 @@ class TypeDSLResourceDescriptionStrategy extends DefaultResourceDescriptionStrat
 				var Map<String, String> userData = Maps.newHashMap()
 				defineUserData(eObject, userData)
 				acceptor.accept(EObjectDescription.create(qualifiedName, eObject, userData))
+				val secondQN = typeQualifiedNameProvider.getFullyQualifiedName(eObject);
+				if(secondQN !== null && secondQN != qualifiedName) {
+					acceptor.accept(EObjectDescription.create(secondQN, eObject, userData))
+				}
 			}
 		} catch (Exception exc) {
 			exc.printStackTrace()

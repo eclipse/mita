@@ -32,6 +32,8 @@ import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.AbstractScope
 
 import static extension org.eclipse.xtext.EcoreUtil2.*
+import org.eclipse.mita.base.types.StructuralParameter
+import org.eclipse.mita.base.types.TypeAccessor
 
 class ElementReferenceScope extends AbstractScope {
 
@@ -59,6 +61,7 @@ class ElementReferenceScope extends AbstractScope {
 		result.addGlobalVariables(context)
 		result.addDeconstructorVariables(context)
 		result.addStructureTypes(context)
+		result.addStructureAccessors(context)
 		//result.addSumTypes(context)
 		Scopes.scopedElementsFor(result)
 	}
@@ -83,6 +86,10 @@ class ElementReferenceScope extends AbstractScope {
 	     * unit. The outer scope will provide structures defined elsewhere.
 	     */
 		result += object.getContainerOfType(Program).types.filter(StructureType)
+	}
+	
+	def addStructureAccessors(ArrayList<EObject> result, EObject object) {
+		result += object.getContainerOfType(Program).types.allContents.filter(TypeAccessor).toIterable;
 	}
 	
 	def addFunctionParameter(ArrayList<EObject> result, EObject object) {

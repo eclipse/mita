@@ -20,6 +20,8 @@ class MitaTypeLinker extends Linker {
 		if(classifier instanceof EClass) {
 			if(TypesPackage.eINSTANCE.type.isSuperTypeOf(classifier)) {
 				super.ensureIsLinked(obj, node, ref, handledReferences, producer);
+				val txt = NodeModelUtils.getTokenText(node);
+				println(txt);
 				println('''Linking types: «obj.eResource?.URI.lastSegment»: «NodeModelUtils.getTokenText(node)» on («obj.eClass?.name»)«obj»''');
 			}
 		}

@@ -404,7 +404,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
 			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass));
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
 
 		val exclusion = (PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
 			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
@@ -450,7 +451,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					
 					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref).head?.text ?: "";
 					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
-					new ImportScope(Collections.singletonList(normalizer), s2, null, TypesPackage.Literals.COMPLEX_TYPE, false);
+					addFeatureScope(owner, new ImportScope(Collections.singletonList(normalizer), s2, null, TypesPackage.Literals.COMPLEX_TYPE, false));
 					
 				}
 			}) ?: superScope;

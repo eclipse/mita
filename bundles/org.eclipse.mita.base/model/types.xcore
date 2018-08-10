@@ -76,7 +76,7 @@ class PrimitiveType extends Type, Exportable {
 	}
 }
 
-class VirtualFunction extends Operation { /* stub for now */}
+class VirtualFunction extends Operation { /* stub for now */ }
 
 class TypeAccessor extends VirtualFunction {
 	op StructuralParameter getAccessedFeature() {
@@ -87,14 +87,15 @@ class TypeAccessor extends VirtualFunction {
 		return null;
 	}
 	op String getName() {
-		return accessedFeature.name + "_accessor";
+		return accessedFeature.name;
 	}
 	
 	contains transient Parameter generatedParameter
 	op Parameter[] getParameters() {
 		if(generatedParameter === null) {
 			generatedParameter = TypesFactory.eINSTANCE.createParameter;
-			generatedParameter.typeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier
+			generatedParameter.typeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier;
+			generatedParameter.name = "self";
 		}
 		if((generatedParameter.typeSpecifier as PresentTypeSpecifier).^type === null) {
 			(generatedParameter.typeSpecifier as PresentTypeSpecifier).^type = accessedFeature.structuralType;
@@ -103,25 +104,26 @@ class TypeAccessor extends VirtualFunction {
 	}
 	contains transient PresentTypeSpecifier generatedTypeSpecifier
 	op TypeSpecifier getTypeSpecifier() {
-		if(generatedTypeSpecifier === null) {
-			generatedTypeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
-				ts.^type = accessedFeature.structuralType;
-				ts.typeArguments += BaseUtils.force(accessedFeature.structuralType.typeParameters.map[ tp |
-					TypesFactory.eINSTANCE.createPresentTypeSpecifier => [
-						it.^type = tp
-					]
-				])
-			]
-		}
-		if(generatedTypeSpecifier.^type === null) {
-			generatedTypeSpecifier.^type = accessedFeature.structuralType;
-		}
-		if(generatedTypeSpecifier.typeArguments.exists[it.^type === null]) {
-			BaseUtils.zip(generatedTypeSpecifier.typeArguments, accessedFeature.structuralType.typeParameters).forEach[ ta_tp |
-				ta_tp.key.^type = ta_tp.value
-			]	
-		}
-		return generatedTypeSpecifier;
+//		if(generatedTypeSpecifier === null) {
+//			generatedTypeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
+//				ts.^type = accessedFeature.structuralType;
+//				ts.typeArguments += BaseUtils.force(accessedFeature.structuralType.typeParameters.map[ tp |
+//					TypesFactory.eINSTANCE.createPresentTypeSpecifier => [
+//						it.^type = tp
+//					]
+//				])
+//			]
+//		}
+//		if(generatedTypeSpecifier.^type === null) {
+//			generatedTypeSpecifier.^type = accessedFeature.structuralType;
+//		}
+//		if(generatedTypeSpecifier.typeArguments.exists[it.^type === null]) {
+//			BaseUtils.zip(generatedTypeSpecifier.typeArguments, accessedFeature.structuralType.typeParameters).forEach[ ta_tp |
+//				ta_tp.key.^type = ta_tp.value
+//			]	
+//		}
+//		return generatedTypeSpecifier;
+		return accessedFeature.typeSpecifier;
 	}
 	op TypeParameter[] getTypeParameters() {
 		return accessedFeature.structuralType.typeParameters;

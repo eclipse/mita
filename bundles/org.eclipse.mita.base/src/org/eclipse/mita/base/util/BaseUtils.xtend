@@ -1,16 +1,18 @@
 package org.eclipse.mita.base.util
 
+import com.google.common.base.Optional
 import com.google.common.collect.Iterables
 import com.google.common.collect.Lists
 import java.util.Iterator
 import java.util.List
 import java.util.NoSuchElementException
+import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.typesystem.types.AbstractType
 
-class BaseUtils {
+class BaseUtils {	
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
 		new Iterator<Pair<X, Y>>() {
 			override hasNext() {

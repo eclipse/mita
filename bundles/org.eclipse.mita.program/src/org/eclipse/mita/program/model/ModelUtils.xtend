@@ -109,41 +109,8 @@ class ModelUtils {
 		Optional.absent;
 	}
 	
-	static def <T> Optional<T> preventRecursion(EObject obj, () => T action) {
-		preventRecursion(obj, [| Optional.fromNullable(action.apply)], [| return Optional.absent]);
-	}
-	static def <T> T preventRecursion(EObject obj, () => T action, () => T onRecursion) {
-		if(PreventRecursionAdapter.isMarked(obj)) {
-			return onRecursion.apply();
-		}
-		val adapter = PreventRecursionAdapter.applyTo(obj);
-		try {
-			return action.apply();	
-		}
-		finally {
-			adapter.removeFrom(obj);
-		}
-	}
-	static class PreventRecursionAdapter extends AdapterImpl {
-		
-		static def boolean isMarked(EObject obj) {
-			return obj.eAdapters.exists[it instanceof PreventRecursionAdapter];
-		}
-		
-		static def PreventRecursionAdapter applyTo(EObject target) {
-			val adapter = new PreventRecursionAdapter();
-			target.eAdapters.add(adapter);
-			return adapter;
-		}
-		
-		static def removeFromBySearch(EObject target) {
-			target.eAdapters.removeIf[it instanceof PreventRecursionAdapter];
-		}
-		
-		def removeFrom(EObject target) {
-			target.eAdapters.remove(this);
-		}
-	}
+	
+	
 	
 	/**
 	 * Retrieves the platform a program was written against.

@@ -40,6 +40,8 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.PreventRecursionAdapter
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -81,49 +83,61 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Type type) {
-		system.associate(TypeTranslationAdapter.get(type, [system.translateTypeDeclaration(type)]), type);
+		system.associate(system.translateTypeDeclaration(type), type);
 	}
 
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, NativeType type) {
+	protected def AbstractType translateTypeDeclaration(ConstraintSystem system, EObject obj) {
+		// some types may have circular dependencies. 
+		// To make it easy to solve this we cache type translations, reducing the required number of translations to O(1).
+		// So if some translation needs to recurse it can safely do so, as long as at least one member in the recursive circle sets its type translation before recursing.
+		val typeTrans = TypeTranslationAdapter.get(obj, [system.doTranslateTypeDeclaration(obj)])
+		// if we compile more than once without changes we need to associate again. Hence we always associate here to be safe.
+		system.associate(typeTrans, obj);
+		// for the same reason we need to iterate over all children of these types.
+		// since some of these types might call computeConstrains on their eContainer we need to get out the big guns or have a translateForChildren dispatch method.
+		PreventRecursionAdapter.preventRecursion(obj, [|system.computeConstraintsForChildren(obj); return null;]);
+		return typeTrans;
+	}
+
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, NativeType type) {
 		return typeRegistry.translateNativeType(type)
 	}
 	
 	
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, PrimitiveType type) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, PrimitiveType type) {
 		new AtomicType(type, type.name);
 	}
 
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, TypeParameter type) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, TypeParameter type) {
 		return TypeVariableAdapter.get(type);
 	}
 	
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, StructureType structType) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		return TypeTranslationAdapter.set(structType, new ProdType(structType, structType.name, null, types)) => [
-			system.associate(it);
 			system.computeConstraints(structType.constructor);	
 		];
 	}
 	
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
 		val subTypes = new ArrayList();
 		return TypeTranslationAdapter.set(sumType, new SumType(sumType, sumType.name, null, subTypes)) => [
-			system.associate(it);
 			sumType.alternatives.forEach[ sumAlt |
-				subTypes.add(TypeTranslationAdapter.get(sumAlt, [system.computeConstraints(sumAlt)]));
+				subTypes.add(system.translateTypeDeclaration(sumAlt));
 			];
 		]
 	}
 	 
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
+		println(sumAlt);
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		val prodType = new ProdType(sumAlt, sumAlt.name, TypeTranslationAdapter.get(sumAlt.eContainer, [system.computeConstraints(it)]), types);
+		val prodType = new ProdType(sumAlt, sumAlt.name, system.translateTypeDeclaration(sumAlt.eContainer), types);
 		return TypeTranslationAdapter.set(sumAlt, prodType) => [
 			system.computeConstraints(sumAlt.constructor);
 		];
 	}
 		
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
 		val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
 		val atomicType = new AtomicType(genType, genType.name);
@@ -137,12 +151,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		]
 	}
 	
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, ExceptionTypeDeclaration genType) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, ExceptionTypeDeclaration genType) {
 		return new AtomicType(genType, genType.name);
 	}
 	
-	protected dispatch def AbstractType translateTypeDeclaration(ConstraintSystem system, EObject genType) {
-		println('''BCF: No translateTypeDeclaration for «genType.eClass»''');
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, EObject genType) {
+		println('''BCF: No doTranslateTypeDeclaration for «genType.eClass»''');
 		return new AtomicType(genType);
 	}
 	
@@ -152,7 +166,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			return system.associate(new BottomType(typeSpecifier, "BCF: Unresolved type"));
 		}
 		if(typeArguments.empty) {
-			return system.associate(system.computeConstraints(typeSpecifier.type))
+			return system.associate(system.translateTypeDeclaration(typeSpecifier.type), typeSpecifier);
 		}
 		else {
 			if(!(typeSpecifier.type instanceof ComplexType)) {
@@ -161,7 +175,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			if(typeArguments.size !== (typeSpecifier.type as ComplexType).typeParameters.size) {
 				return system.associate(new BottomType(typeSpecifier, "BCF: Specified and the type's type arguments differ in length"))
 			}
-			val vars_typeScheme = TypeTranslationAdapter.get(typeSpecifier.type, [system.translateTypeDeclaration(it)]).instantiate();
+			val vars_typeScheme = system.translateTypeDeclaration(typeSpecifier.type).instantiate();
 			val vars = vars_typeScheme.key;
 			for(var i = 0; i < Integer.min(typeArguments.size, vars.size); i++) {
 				system.addConstraint(new EqualityConstraint(vars.get(i), system.computeConstraints(typeArguments.get(i))));

@@ -2,30 +2,30 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import java.util.Collections
 import java.util.HashMap
 import java.util.Map
+import java.util.Map.Entry
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
-import java.util.Collections
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
 	protected Map<TypeVariable, AbstractType> content = new HashMap();
 	
 	public def void add(TypeVariable variable, AbstractType type) {
-		if(type === null) {
+		if(variable === null || type === null) {
 			throw new NullPointerException;
+		}
+		if(content.containsKey(variable)) {
+			println('''overriding «variable» ≔ «content.get(variable)» with «type»''')
 		}
 		this.content.put(variable, type);
 	}
 	
 	public def void add(Map<TypeVariable, AbstractType> content) {
-		if(content.values.contains(null)) {
-			throw new NullPointerException;
-		}
-		this.content.putAll(content);
+		this.add(content.entrySet.map[it.key->it.value])
 	}
-	
 	public def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
 		content.forEach[add(it.key, it.value)];
 	}
@@ -42,10 +42,9 @@ class Substitution {
 	
 	public def Substitution apply(Substitution to) {
 		val result = new Substitution();
-		result.constraintSystemProvider = this.constraintSystemProvider;
+		result.constraintSystemProvider = this.constraintSystemProvider ?: to.constraintSystemProvider;
 		result.content.putAll(content);
-		result.content.mapValues[to.applyToType(it)];
-		result.content.putAll(to.content);
+		result.add(to.content);
 		return result;
 	}
 	

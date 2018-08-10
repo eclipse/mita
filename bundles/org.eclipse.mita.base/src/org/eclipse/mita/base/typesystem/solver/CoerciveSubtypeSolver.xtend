@@ -74,16 +74,20 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), failure.substitution, #[failure.issue]);
 		}
 		val constraintGraph = constraintGraphAndSubst.key;
+		val constraintGraphSubstitution = constraintGraphAndSubst.value.substitution;
 		println(constraintGraph.toGraphviz());
+		println(constraintGraphSubstitution);
 		
-		val resolvedGraphAndSubst = constraintGraph.resolve(constraintGraphAndSubst.value.substitution);
+		val resolvedGraphAndSubst = constraintGraph.resolve(constraintGraphSubstitution);
 		if(!resolvedGraphAndSubst.value.valid) {
 			val failure = resolvedGraphAndSubst.value;
 			return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), failure.substitution, #[failure.issue]);
 		}
 		val resolvedGraph = resolvedGraphAndSubst.key;
+		val resolvedGraphSubstitution = resolvedGraphAndSubst.value.substitution;
+		println(resolvedGraphSubstitution);
 		
-		val solution = resolvedGraph.unify(resolvedGraphAndSubst.value.substitution);
+		val solution = resolvedGraph.unify(resolvedGraphSubstitution);
 		println(solution);
 		return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), solution.substitution, #[solution.issue].filterNull.toList);
 	}
@@ -100,11 +104,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		while(resultSystem.hasNonAtomicConstraints()) {
 			val constraintAndSystem = resultSystem.takeOneNonAtomic();
 			val constraint = constraintAndSystem.key;
-			if(constraint instanceof SubtypeConstraint) {
-				if(constraint.atomic) {
-					resultSystem.takeOneNonAtomic;
-				}
-			}
+
 			val simplification = doSimplify(constraintAndSystem.value, resultSub, constraintAndSystem.key);
 			if(!simplification.valid) {
 				return simplification;
