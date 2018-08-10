@@ -815,6 +815,24 @@ bus named-singleton GPIO {
 	signal digitalOut(pin : GPIOPin, initialValue : bool = false) : bool
 }
 
+exception EndOfFileException
+
+io named-singleton SDCard {
+	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
+	sizeInferrer "org.eclipse.mita.platform.xdk110.io.SDCardSizeInferrer"
+
+	signal persistentFile_Text(filePath: string, blockSize: uint32) : string
+	signal rewindingFile_Text(filePath: string, fileSize: uint32) : string
+
+	signal persistentFile_Binary(filePath: string, blockSize: uint32) : array<uint8>
+	signal rewindingFile_Binary(filePath: string, fileSize: uint32) : array<uint8>
+
+	modality SDCardAvailable
+
+	//event SDCardRemoved
+	//event SDCardInserted
+}
+
 
 alias environment for BME280
 alias accelerometer for BMA280
@@ -844,6 +862,8 @@ platform XDK110 {
 	has WLAN
 	has MQTT
 	has HttpRestClient
+	
+	has SDCard
 	
 	configuration-item applicationName : string = "EclipseMitaApplication"
 	
