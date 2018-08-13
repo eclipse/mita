@@ -55,7 +55,7 @@ class StdlibTypeRegistry {
 		return getIntegerTypes(t.origin).filter[t.isSubType(it)]
 	}
 	dispatch def Iterable<AbstractType> getSuperTypes(TypeConstructorType t) {
-		return t.superType.superTypes + #[t];
+		return t.superTypes.flatMap[it.superTypes] + #[t];
 	}
 	dispatch def Iterable<AbstractType> getSuperTypes(AbstractType t) {
 		return #[t];

@@ -44,7 +44,7 @@ import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.TypeValidator
-import org.eclipse.mita.base.util.PreventRecursionAdapter
+import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.ArrayLiteral
@@ -583,7 +583,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val hasGeneratedTypeNextFinal = hasGeneratedTypeNext;
 		val containsReferenceTypesNextFinal = containsReferenceTypesNext;	
 		subTypes.forEach[
-			PreventRecursionAdapter.preventRecursion(it.type, [| 
+			PreventRecursion.preventRecursion(it.type, [| 
 				checkTypesAreNotNestedGeneratedTypes(obj, it, hasGeneratedTypeNextFinal, containsReferenceTypesNextFinal);
 				return null;
 			]);

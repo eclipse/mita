@@ -2,7 +2,6 @@ package org.eclipse.mita.base.typesystem.infra
 
 import com.google.common.collect.Iterables
 import com.google.inject.Inject
-import java.util.ArrayList
 import java.util.HashSet
 import java.util.List
 import java.util.Set
@@ -15,6 +14,7 @@ import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.util.OnChangeEvictingCache
@@ -57,8 +57,11 @@ class MitaResourceSet extends XtextResourceSet {
 				linkTypes(this.resources.filter(MitaBaseResource));
 				//result.doLinking();
 				
-				computeTypes();
-				linkWithTypes(result);
+				PreventRecursion.preventRecursion(result, [|
+					computeTypes();
+					linkWithTypes(result);	
+					return null;
+				]);
 			}
 		}
 		return result;

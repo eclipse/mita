@@ -16,6 +16,17 @@
  */
 package org.eclipse.mita.program.ui.labeling
 
+import com.google.inject.Inject
+import java.net.URL
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
+import org.eclipse.jface.resource.ImageDescriptor
+import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
@@ -25,19 +36,7 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.VariableDeclaration
-import com.google.inject.Inject
-import java.net.URL
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
-import org.eclipse.jface.resource.ImageDescriptor
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
-import org.eclipse.mita.base.types.Enumerator
-import org.eclipse.mita.base.types.Event
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.util.BaseUtils
 
 /**
  * Provides labels for EObjects.
@@ -93,12 +92,12 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 
 	def text(SystemResourceSetup ele) {
 		if(ele.type instanceof Connectivity) {
-			'''connectivity <b>«ele.name» : «EcoreUtil.getID(ele.type)»</b>'''
+			'''connectivity <b>«ele.name» : «BaseUtils.getType(ele.type)»</b>'''
 		} else {
-			'''resource <b>«ele.name» : «EcoreUtil.getID(ele.type)»</b>'''
+			'''resource <b>«ele.name» : «BaseUtils.getType(ele.type)»</b>'''
 		}
 	}
-
+	
 	def text(TimeIntervalEvent ele) {
 		'''time event every «ele.interval.value» «ele.unit.literal»'''
 	}
@@ -112,21 +111,18 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 		'''«eventType» «EcoreUtil.getID(source)».«EcoreUtil.getID(ele)»'''
 	}
 
-	def text(FunctionDefinition ele) {
-		val params = ele.parameters.map[name + " : " + type.name]
-		ele.name + "(" + params.toString.replace("[", "").replace("]", "") + ")"
+	def text(Operation ele) {
+		'''fun <b>«ele.name»: «BaseUtils.getType(ele)»</b>'''
 	}
 	
 	def text(SignalInstance ele) {
 		var vci = ele.instanceOf;
-		val typeIR = BaseUtils.getType(ele);
 		
-		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci.name» <b>«ele.name» : «typeIR»</b>'''
+		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci.name» <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
 	}
 	
 	def text(VariableDeclaration ele) {
-		val typeIR = BaseUtils.getType(ele);
-		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name» : «typeIR»</b>'''
+		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
 	}
 	
 	def text(InferenceResult ir) {

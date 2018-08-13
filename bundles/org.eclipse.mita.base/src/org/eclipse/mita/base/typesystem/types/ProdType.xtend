@@ -10,25 +10,18 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
+@FinalFieldsConstructor
 @EqualsHashCode
 @Accessors
 class ProdType extends TypeConstructorType {	
 	protected final List<AbstractType> types;
-		
-	new(EObject origin, String name, AbstractType superType, List<AbstractType> types) {
-		super(origin, name, superType);
-		this.types = types;
-		if(types.contains(null)){
-			println("!NULL!");
-		}
-	}
-	
+			
 	override toString() {
 		(name ?: "") + "(" + types.join(", ") + ")"
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		new ProdType(origin, name, superType, types.map[ it.replace(from, with) ].force);
+		new ProdType(origin, name, superTypes, types.map[ it.replace(from, with) ].force);
 	}
 	
 	override getFreeVars() {
@@ -47,7 +40,7 @@ class ProdType extends TypeConstructorType {
 	
 	override void expand(Substitution s, TypeVariable tv) {
 		val newTypeVars = types.map[ new TypeVariable(it.origin) as AbstractType ].force;
-		val newPType = new ProdType(origin, name, superType, newTypeVars);
+		val newPType = new ProdType(origin, name, superTypes, newTypeVars);
 		s.add(tv, newPType);
 	}
 	

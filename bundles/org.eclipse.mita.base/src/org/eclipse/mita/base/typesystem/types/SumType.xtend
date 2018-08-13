@@ -22,7 +22,7 @@ class SumType extends TypeConstructorType {
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		return new SumType(origin, name, superType, this.types.map[ it.replace(from, with) ].force);
+		return new SumType(origin, name, superTypes, this.types.map[ it.replace(from, with) ].force);
 	}
 	
 	override getFreeVars() {
@@ -39,7 +39,7 @@ class SumType extends TypeConstructorType {
 	
 	override expand(Substitution s, TypeVariable tv) {
 		val newTypeVars = types.map[ new TypeVariable(it.origin) as AbstractType ].force;
-		val newSType = new SumType(origin, name, superType, newTypeVars);
+		val newSType = new SumType(origin, name, superTypes, newTypeVars);
 		s.add(tv, newSType);
 	}
 	override toGraphviz() {

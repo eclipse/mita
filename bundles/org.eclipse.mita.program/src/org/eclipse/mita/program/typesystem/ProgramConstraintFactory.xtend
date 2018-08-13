@@ -129,7 +129,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase decon) {
 		val matchVariable = system.computeConstraints((decon.eContainer as WhereIsStatement).matchElement);
 		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType];
-		val combinedType = new ProdType(decon, decon.productType.toString, null, (vars).toList);
+		val combinedType = new ProdType(decon, decon.productType.toString, #[], (vars).toList);
 		val deconTypeCandidates = resolveReference(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
 		val deconType = if(deconTypeCandidates.size != 1) {
 			//TODO: handle mutliple candidates
@@ -149,7 +149,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	
 	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
 		val parmTypes = parms.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		return new ProdType(null, function.name + "_args", null, parmTypes);
+		return new ProdType(null, function.name + "_args", #[], parmTypes);
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject origin, String functionName, AbstractType function, Iterable<Expression> arguments) {
@@ -224,16 +224,27 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			
 		} else {
 			//TODO: handle multiple candidates
-			val subTypes = new ArrayList();
-			val sumType = new org.eclipse.mita.base.typesystem.types.SumType(null, txt + "_anonymous", null, subTypes);		
-			
+			//This doesn't work
+			//val subTypes = new ArrayList<AbstractType>();
+			//val sumType = new org.eclipse.mita.base.typesystem.types.SumType(null, txt + "_anonymous", #[], subTypes);
+			//candidates.forEach[
+			//	val transl = system.translateTypeDeclaration(it);
+			//	if(transl instanceof TypeConstructorType) {
+			//		transl.superTypes += sumType;
+			//		subTypes += transl;
+			//	}
+			//	else {
+			//		subTypes += system.computeConstraints(it);
+			//	}
+			//]
+			//return system.associate(sumType, varOrFun);
 			return system.associate(new BottomType(varOrFun, 'PCF: TODO: handle mutliple candidates'));
 		}
 	}
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {
 		val argTypes = expression.map[system.computeConstraints(it) as AbstractType].force();
-		return new ProdType(null, functionName + "_args", null, argTypes);
+		return new ProdType(null, functionName + "_args", #[], argTypes);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnStatement statement) {

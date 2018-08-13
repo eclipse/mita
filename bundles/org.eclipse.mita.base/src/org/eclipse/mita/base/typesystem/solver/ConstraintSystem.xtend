@@ -6,20 +6,23 @@ import java.util.Collections
 import java.util.List
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 
-import static extension org.eclipse.mita.base.util.BaseUtils.*
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
 class ConstraintSystem {
 	@Inject protected ConstraintSystemProvider constraintSystemProvider; 
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected final SymbolTable symbolTable;
+	protected final Graph<AbstractType> explicitSubtypeRelations;
 
 	new(SymbolTable symbolTable) {
 		this.symbolTable = symbolTable;
+		this.explicitSubtypeRelations = new Graph();
 	}
 	
 	def void addConstraint(AbstractTypeConstraint constraint) {

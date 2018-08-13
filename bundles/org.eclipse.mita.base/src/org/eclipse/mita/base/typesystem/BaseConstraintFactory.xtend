@@ -36,12 +36,11 @@ import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.util.PreventRecursionAdapter
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -90,12 +89,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// some types may have circular dependencies. 
 		// To make it easy to solve this we cache type translations, reducing the required number of translations to O(1).
 		// So if some translation needs to recurse it can safely do so, as long as at least one member in the recursive circle sets its type translation before recursing.
-		val typeTrans = TypeTranslationAdapter.get(obj, [system.doTranslateTypeDeclaration(obj)])
+		val typeTrans = TypeTranslationAdapter.get(obj, [|system.doTranslateTypeDeclaration(obj)])
 		// if we compile more than once without changes we need to associate again. Hence we always associate here to be safe.
 		system.associate(typeTrans, obj);
 		// for the same reason we need to iterate over all children of these types.
 		// since some of these types might call computeConstrains on their eContainer we need to get out the big guns or have a translateForChildren dispatch method.
-		PreventRecursionAdapter.preventRecursion(obj, [|system.computeConstraintsForChildren(obj); return null;]);
+		PreventRecursion.preventRecursion(obj, [|system.computeConstraintsForChildren(obj); return null;]);
 		return typeTrans;
 	}
 
@@ -114,14 +113,14 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		return TypeTranslationAdapter.set(structType, new ProdType(structType, structType.name, null, types)) => [
+		return TypeTranslationAdapter.set(structType, new ProdType(structType, structType.name, #[], types)) => [
 			system.computeConstraints(structType.constructor);	
 		];
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
 		val subTypes = new ArrayList();
-		return TypeTranslationAdapter.set(sumType, new SumType(sumType, sumType.name, null, subTypes)) => [
+		return TypeTranslationAdapter.set(sumType, new SumType(sumType, sumType.name, #[], subTypes)) => [
 			sumType.alternatives.forEach[ sumAlt |
 				subTypes.add(system.translateTypeDeclaration(sumAlt));
 			];
@@ -131,7 +130,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
 		println(sumAlt);
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		val prodType = new ProdType(sumAlt, sumAlt.name, system.translateTypeDeclaration(sumAlt.eContainer), types);
+		val prodType = new ProdType(sumAlt, sumAlt.name, #[system.translateTypeDeclaration(sumAlt.eContainer)], types);
 		return TypeTranslationAdapter.set(sumAlt, prodType) => [
 			system.computeConstraints(sumAlt.constructor);
 		];
