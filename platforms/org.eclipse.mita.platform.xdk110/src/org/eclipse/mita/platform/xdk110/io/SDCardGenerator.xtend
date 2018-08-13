@@ -21,22 +21,24 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("ff.h", true)
 		.addHeader("BCDS_SDCard_Driver.h", true)
 		.setPreamble('''
-			static FATFS StorageSDCardFatFSObject; /** File system specific objects */
-			/**< Macro to define default logical drive */
-			#define STORAGE_DEFAULT_LOGICAL_DRIVE           ""
-			
-			/**< Macro to define force mount */
-			#define STORAGE_SDCARD_FORCE_MOUNT              UINT8_C(1)
-			
-			/**< SD Card Drive 0 location */
-			#define STORAGE_SDCARD_DRIVE_NUMBER             UINT8_C(0)
-			
-			/**< File seek to the first location */
-			#define STORAGE_SEEK_FIRST_LOCATION             UINT8_C(0)
+		static FATFS StorageSDCardFatFSObject; /** File system specific objects */
+		/**< Macro to define default logical drive */
+		#define STORAGE_DEFAULT_LOGICAL_DRIVE           ""
+
+		/**< Macro to define force mount */
+		#define STORAGE_SDCARD_FORCE_MOUNT              UINT8_C(1)
+
+		/**< SD Card Drive 0 location */
+		#define STORAGE_SDCARD_DRIVE_NUMBER             UINT8_C(0)
+
+		/**< File seek to the first location */
+		#define STORAGE_SEEK_FIRST_LOCATION             UINT8_C(0)
 
 		«FOR sigInst : setup.signalInstances»
-		
-		static uint8_t «sigInst.name»Data[«sigInst.size»] = {0};
+		«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+		static uint32_t «sigInst.name»DataRead = 0UL;
+		static uint32_t «sigInst.name»DataWrite = 0UL;
+		«ENDIF»
 		«ENDFOR»
 
 		''')
@@ -46,7 +48,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	
 	def CodeFragment getSize(SignalInstance instance) {
 		val result = StaticValueInferrer.infer(ModelUtils.getArgumentValue(instance, instance.sizeName), []);
-		if(result instanceof Long) {
+		if(result instanceof Integer) {
 			return codeFragmentProvider.create('''«result»''');
 		}
 		else {
@@ -96,26 +98,31 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 		val len = sigInst.getSize;
 		val filename = sigInst.filenameAccessor(valueVariableName);
 		codeFragmentProvider.create('''
-			Retcode_T retcode, fileOpenRetcode = RETCODE_OK;
-			
-			bool status = false;
-			
-			FRESULT sdCardReturn, fileOpenReturn = FR_OK;
+			Retcode_T retcode = RETCODE_OK;
+			FRESULT sdCardReturn = FR_OK, fileOpenReturn = FR_OK;
 			FILINFO sdCardFileInfo;
 			#if _USE_LFN
 			sdCardFileInfo.lfname = NULL;
 			#endif
 			FIL fileReadHandle;
 			UINT bytesRead;
+			uint32_t fileSeekIndex = 0UL;
 			
-			sdCardReturn = f_stat(readCredentials->FileName, &sdCardFileInfo);
+			sdCardReturn = f_stat(«filename», &sdCardFileInfo);
 			if (FR_OK == sdCardReturn)
 			{
 				fileOpenReturn = f_open(&fileReadHandle, «filename», FA_OPEN_EXISTING | FA_READ);
 			}
+			«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+			fileSeekIndex = «sigInst.name»DataRead;
+			«ENDIF»
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
-			    sdCardReturn = f_lseek(&fileReadHandle, 0UL);
+			    sdCardReturn = f_lseek(&fileReadHandle, fileSeekIndex);
+			}
+			if(fileSeekIndex > sdCardFileInfo.fsize)
+			{
+				return EXCEPTION_ENDOFFILEEXCEPTION;
 			}
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
@@ -123,13 +130,16 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			}
 			if (FR_OK == fileOpenReturn)
 			{
+				«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+				«sigInst.name»DataRead += bytesRead;
+				«ENDIF»
 			    sdCardReturn = f_close(&fileReadHandle);
 			}
 			if ((FR_OK != sdCardReturn) || (FR_OK != fileOpenReturn))
 			{
 			    retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_STORAGE_SDCARD_READ_FAILED);
 			}
-
+			return retcode;
 		''')
 	}
 		
@@ -139,16 +149,19 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 		val filename = sigInst.filenameAccessor(valueVariableName);
 		
 		codeFragmentProvider.create('''
-			Retcode_T retcode, fileOpenRetcode = RETCODE_OK;
+			Retcode_T retcode = RETCODE_OK;
 			uint32_t length = 0;
 			FRESULT sdCardReturn = FR_OK, fileOpenReturn = FR_OK;
 			FIL fileWriteHandle;
 			UINT bytesWritten;
-			bool status = false;
+			uint32_t fileSeekIndex = 0UL;
 			fileOpenReturn = f_open(&fileWriteHandle, «filename», FA_WRITE | FA_CREATE_ALWAYS);
-			if (FR_OK == fileOpenReturn)
+			«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+			fileSeekIndex = «sigInst.name»DataWrite;
+			«ENDIF»
+			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
-			    sdCardReturn = f_lseek(&fileWriteHandle, 0UL);
+			    sdCardReturn = f_lseek(&fileWriteHandle, fileSeekIndex);
 			}
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
@@ -156,6 +169,9 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			}
 			if (FR_OK == fileOpenReturn)
 			{
+				«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+				«sigInst.name»DataWrite += bytesWritten;
+				«ENDIF»
 			    sdCardReturn = f_close(&fileWriteHandle);
 			}
 			if ((FR_OK != sdCardReturn) || (FR_OK != fileOpenReturn))
