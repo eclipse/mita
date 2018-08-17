@@ -80,7 +80,7 @@ class MitaResourceSet extends XtextResourceSet {
 			val model = it.contents.head;
 			cache.get(ConstraintSystem, it, [
 				//val symbols = symbolFactory.create(model);
-				val result = constraintFactory.create(null, model);
+				val result = constraintFactory.create(model);
 				return result;		
 			]);
 		];

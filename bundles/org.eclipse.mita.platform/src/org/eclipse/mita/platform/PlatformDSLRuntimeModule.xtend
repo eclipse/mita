@@ -24,7 +24,6 @@ import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.BaseSymbolFactory
-import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.infra.DefaultPackageResourceMapper
@@ -50,7 +49,6 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
 
 		binder.bind(IConstraintFactory).to(BaseConstraintFactory);
-		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
 	}

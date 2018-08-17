@@ -28,7 +28,6 @@ import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.base.typesystem.BaseSymbolFactory
-import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.infra.DefaultPackageResourceMapper
@@ -37,7 +36,6 @@ import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.program.formatting.ProgramDslFormatter
 import org.eclipse.mita.program.generator.ProgramDslGenerator
@@ -77,7 +75,6 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
 		
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
-		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
