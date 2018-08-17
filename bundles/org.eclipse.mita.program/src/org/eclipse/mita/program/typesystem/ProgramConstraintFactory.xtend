@@ -218,7 +218,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 				reference.name;
 			} else {
 				txt;
-			}
+			} 
 			TypeVariableAdapter.get(reference);
 		} else {
 			if(isFunctionCall && candidates.forall[it instanceof Operation]) {
@@ -238,7 +238,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			
 				//TODO: handle multiple candidates
 				val subTypes = new ArrayList<AbstractType>();
-				val coSumType = new CoSumType(null, refName + "_anonymous", #[], subTypes);
+				val coSumType = new CoSumType(null, txt + "_anonymous", #[], subTypes);
 				candidates.forEach[
 					val transl = system.computeConstraints(it);
 					subTypes += transl;

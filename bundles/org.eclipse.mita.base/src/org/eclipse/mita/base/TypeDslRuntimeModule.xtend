@@ -42,7 +42,6 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 		super.configure(binder);
 		binder.bind(ITypeSystem).toInstance(MitaTypeSystem.getInstance());
 		binder.bind(IConstraintFactory).to(BaseConstraintFactory);
-		binder.bind(ConstraintSystem).toProvider(ConstraintSystemProvider);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 	}
 	

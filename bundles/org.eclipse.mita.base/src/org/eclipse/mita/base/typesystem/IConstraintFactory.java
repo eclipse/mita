@@ -6,6 +6,6 @@ import org.eclipse.mita.base.typesystem.solver.SymbolTable;
 
 public interface IConstraintFactory {
 
-	ConstraintSystem create(SymbolTable symbols, EObject context);
+	ConstraintSystem create(EObject context);
 	
 }

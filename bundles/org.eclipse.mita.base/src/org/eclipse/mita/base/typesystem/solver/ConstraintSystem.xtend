@@ -1,14 +1,16 @@
 package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
+import com.google.inject.Provider
 import java.util.ArrayList
 import java.util.Collections
+import java.util.HashMap
 import java.util.List
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
@@ -18,19 +20,15 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import java.util.HashMap
-import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 
 @Accessors
 class ConstraintSystem {
-	@Inject protected ConstraintSystemProvider constraintSystemProvider; 
+	@Inject protected Provider<ConstraintSystem> constraintSystemProvider; 
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
-	protected final SymbolTable symbolTable;
 	protected Graph<AbstractType> explicitSubtypeRelations;
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
 
-	new(SymbolTable symbolTable) {
-		this.symbolTable = symbolTable;
+	new() {
 		this.explicitSubtypeRelations = new Graph<AbstractType>() {
 			
 			override replace(AbstractType from, AbstractType with) {
@@ -84,11 +82,7 @@ class ConstraintSystem {
 		}
 		return typeClasses.get(qn);
 	}
-	
-	def getSymbolTable() {
-		return symbolTable;
-	}
-	
+		
 	def getConstraints() {
 		return Collections.unmodifiableList(constraints);
 	}
@@ -96,10 +90,6 @@ class ConstraintSystem {
 	override toString() {
 		val res = new StringBuilder()
 		
-		res.append("Symbols:\n")
-		res.append(symbolTable)
-		res.append("\n\n")
-
 		res.append("Constraints:\n")
 		constraints.forEach[
 			res.append("\t")
@@ -121,7 +111,7 @@ class ConstraintSystem {
 	}
 	
 	def takeOne() {
-		val result = new ConstraintSystem(symbolTable);
+		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
 		if(constraints.empty) {
 			return (null -> result);
 		}
@@ -132,13 +122,12 @@ class ConstraintSystem {
 		return constraints.head -> result;
 	}
 	
-	public def takeOneNonAtomic() {
-		val result = new ConstraintSystem(symbolTable);
+	def takeOneNonAtomic() {
+		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
 		result.constraintSystemProvider = constraintSystemProvider;
 		val atomics = constraints.filter[constraintIsAtomic];
 		val nonAtomics = constraints.filter[!constraintIsAtomic];
 		if(nonAtomics.empty) {
-			val x = hasNonAtomicConstraints;
 			result.constraints = atomics.force;
 			return (null -> result);
 		}
@@ -149,11 +138,11 @@ class ConstraintSystem {
 		return nonAtomics.head -> result;
 	}
 	
-	public def hasNonAtomicConstraints() {
+	def hasNonAtomicConstraints() {
 		return this.constraints.exists[!constraintIsAtomic];
 	}
 	
-	public def constraintIsAtomic(AbstractTypeConstraint c) {
+	def constraintIsAtomic(AbstractTypeConstraint c) {
 		(
 			(c instanceof SubtypeConstraint)
 			&& (
@@ -171,7 +160,8 @@ class ConstraintSystem {
 	}
 	
 	def plus(AbstractTypeConstraint constraint) {
-		val result = new ConstraintSystem(symbolTable);
+		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
+		result.constraintSystemProvider = constraintSystemProvider;
 		result.constraints.add(constraint);
 		return ConstraintSystem.combine(#[this, result]);
 	}
@@ -181,16 +171,24 @@ class ConstraintSystem {
 			return null;
 		}
 		
-		val csp = systems.head.constraintSystemProvider;
-		val result = systems.fold(csp.get(), [r, t|
+		val csp = systems.map[it.constraintSystemProvider].filterNull.head;
+		val result = systems.fold(csp?.get() ?: new ConstraintSystem(), [r, t|
 			r.constraints.addAll(t.constraints);
 			r.typeClasses.putAll(t.typeClasses);
+			t.explicitSubtypeRelations => [g | g.nodes.forEach[typeNode | 
+				g.reverseMap.get(typeNode).forEach[typeIdx |
+					g.getPredecessors(typeIdx).forEach[r.explicitSubtypeRelations.addEdge(it, typeNode)]
+					g.getSuccessors(typeIdx).forEach[r.explicitSubtypeRelations.addEdge(typeNode, it)]
+				]
+			]]
 			//r.symbolTable.content.putAll(t.symbolTable.content);
 			return r;
 		]);
 		return csp.get() => [
+			it.constraintSystemProvider = csp;
 			it.constraints.addAll(result.constraints.toSet);
-			it.typeClasses.putAll(result.typeClasses);
+			it.typeClasses = result.typeClasses
+			it.explicitSubtypeRelations = result.explicitSubtypeRelations
 			//it.symbolTable.content.putAll(result.symbolTable.content);
 		]
 	}

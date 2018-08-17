@@ -2,12 +2,12 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -21,7 +21,6 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
-import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 
 /**
  * Solves coercive subtyping as described in 
@@ -33,7 +32,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected MostGenericUnifierComputer mguComputer
 	
 	@Inject
-	protected ConstraintSystemProvider constraintSystemProvider;
+	protected Provider<ConstraintSystem> constraintSystemProvider;
 	
 	@Inject 
 	protected Provider<Substitution> substitutionProvider;
@@ -396,7 +395,7 @@ class ConstraintGraphProvider implements Provider<ConstraintGraph> {
 	StdlibTypeRegistry typeRegistry;
 	
 	@Inject
-	ConstraintSystemProvider constraintSystemProvider;
+	Provider<ConstraintSystem> constraintSystemProvider;
 	
 	override get() {
 		return new ConstraintGraph(constraintSystemProvider.get(), typeRegistry);

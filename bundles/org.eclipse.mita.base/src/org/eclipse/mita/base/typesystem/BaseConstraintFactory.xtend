@@ -1,12 +1,14 @@
 package org.eclipse.mita.base.typesystem
 
 import com.google.inject.Inject
+import com.google.inject.Provider
 import java.util.ArrayList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.UnaryOperator
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
@@ -26,7 +28,6 @@ import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeTranslationAdapter
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.SymbolTable
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BottomType
@@ -41,7 +42,6 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.expressions.StringLiteral
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -49,7 +49,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected IQualifiedNameProvider nameProvider;
 	
 	@Inject
-	protected ConstraintSystemProvider constraintSystemProvider;
+	protected Provider<ConstraintSystem> constraintSystemProvider;
 	
 	@Inject
 	protected IScopeProvider scopeProvider;
@@ -57,8 +57,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 	@Inject 
 	protected StdlibTypeRegistry typeRegistry;
 	
-	public override ConstraintSystem create(SymbolTable symbols, EObject context) {
-		val result = constraintSystemProvider.get(symbols);
+	public override ConstraintSystem create(EObject context) {
+		val result = constraintSystemProvider.get();
 		result.computeConstraints(context);
 		return result;
 	}
