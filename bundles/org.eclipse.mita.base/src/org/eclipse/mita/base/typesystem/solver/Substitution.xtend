@@ -10,6 +10,8 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.infra.Graph
 
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
+
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
 	protected Map<TypeVariable, AbstractType> content = new HashMap();
@@ -68,7 +70,7 @@ class Substitution {
 				result.explicitSubtypeRelations.replace(kv.key, kv.value);
 			}
 			return nc;
-		]);
+		].force);
 		result.typeClasses.putAll(system.typeClasses.mapValues[this.content.entrySet.fold(it, [tc, tv_ty | tc.replace(tv_ty.key, tv_ty.value)])])
 		return result;
 	}

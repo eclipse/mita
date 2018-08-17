@@ -20,15 +20,18 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.mita.base.typesystem.types.CoSumType
+import org.eclipse.mita.base.expressions.ExpressionsPackage
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
 	public static val stringTypeQID = QualifiedName.create(#["stdlib", "string"]);
 	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#["stdlib", it])];
+	public static val arithmeticFunctionQIDs = #['__plus__', '__minus__', '__times__', '__division__', '__modulo__'].map[QualifiedName.create(#["stdlib", it])];
+	
 	
 	@Inject IScopeProvider scopeProvider;
 	
-	public def getVoidType(EObject context) {
+	def getVoidType(EObject context) {
 		val voidScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		val voidType = voidScope.getSingleElement(StdlibTypeRegistry.voidTypeQID).EObjectOrProxy;
 		return new AtomicType(voidType, "void");
@@ -38,6 +41,11 @@ class StdlibTypeRegistry {
 		val stringScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		val stringType = stringScope.getSingleElement(StdlibTypeRegistry.stringTypeQID).EObjectOrProxy;
 		return new AtomicType(stringType, "string");
+	}
+	
+	def getArithmeticFunctions(EObject context, String name) {
+		val scope = scopeProvider.getScope(context, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+		return arithmeticFunctionQIDs.filter[it.lastSegment.contains(name)].flatMap[scope.getElements(it)].map[EObjectOrProxy]
 	}
 	
 	public def Iterable<AbstractType> getIntegerTypes(EObject context) {

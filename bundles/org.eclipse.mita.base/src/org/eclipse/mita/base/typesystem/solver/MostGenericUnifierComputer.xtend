@@ -64,10 +64,32 @@ class MostGenericUnifierComputer {
 	protected def UnificationResult combine(Substitution s1, Substitution s2) {
 		val conflictsS1 = s1.content.filter[p1, __ | s2.content.containsKey(p1)].entrySet;
 		val conflictsS2 = s2.content.filter[p1, __ | s1.content.containsKey(p1)].entrySet;
-		if(conflictsS1 != conflictsS2) {
-			return UnificationResult.failure(new UnificationIssue(#[conflictsS1, conflictsS2], '''MGU: substitutions don't agree'''))
+		// try to unify conflicts
+		val unificationResult = conflictsS1.reject[conflictsS2.contains(it)].fold(UnificationResult.success(substitutionProvider.get()), [ur, tv_t |
+			if(!ur.valid) {
+				// short-circuit failure
+				return ur;
+			}
+			val tv = tv_t.key;
+			val t1 = tv_t.value;
+			val t2 = s2.content.get(tv);
+			val unification = compute(t1, t2);
+			if(unification.valid) {
+				if(unification.substitution.content.containsKey(tv)) {
+					ur.substitution.add(tv, unification.substitution.content.get(tv));
+				}
+				// else nothing to do because types just agree
+				// finally return the built unification
+				return ur;
+			}
+			else {
+				return unification;
+			}
+		])
+		if(!unificationResult.valid) {
+			return UnificationResult.failure(new UnificationIssue(#[unificationResult], '''MGU: substitutions don't agree'''))
 		}
-		return UnificationResult.success(s1.apply(s2));
+		return UnificationResult.success(s1.apply(s2).apply(unificationResult.substitution));
 	}
 	
 	def UnificationResult compute(AbstractType t1, AbstractType t2) {

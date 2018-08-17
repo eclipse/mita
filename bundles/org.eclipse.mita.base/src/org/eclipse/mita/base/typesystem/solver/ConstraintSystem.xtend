@@ -52,7 +52,7 @@ class ConstraintSystem {
 						return (with -> (incoming.get(it) -> outgoing.get(it)));
 					}
 					return null;
-				].filterNull;
+				].filterNull.force;
 				newNodes.forEach([t__i_o | 
 					val nt = t__i_o.key;
 					val inc = t__i_o.value.key;

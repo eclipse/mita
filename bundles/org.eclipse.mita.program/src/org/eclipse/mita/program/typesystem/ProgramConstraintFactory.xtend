@@ -226,7 +226,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 				val argExprs = varOrFun.arguments.map[it.value].force;
 				val argType = system.computeArgumentConstraints(txt, argExprs);
 				val tcQN = QualifiedName.create(txt);
-				val typeClass = system.getTypeClass(QualifiedName.create(txt), candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject])
+				val typeClass = system.getTypeClass(QualifiedName.create(txt), candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject].force)
 				system.addConstraint(new TypeClassConstraint(argType, tcQN, [s, sub, fun, typ |
 					val nc = constraintSystemProvider.get(); 
 					nc.computeConstraintsForFunctionCall(varOrFun, txt, TypeVariableAdapter.get(fun), argExprs);
