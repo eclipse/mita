@@ -69,6 +69,7 @@ class Substitution {
 			}
 			return nc;
 		]);
+		result.typeClasses.putAll(system.typeClasses.mapValues[this.content.entrySet.fold(it, [tc, tv_ty | tc.replace(tv_ty.key, tv_ty.value)])])
 		return result;
 	}
 	

@@ -4,16 +4,22 @@ import com.google.inject.Inject
 import java.util.ArrayList
 import java.util.Collections
 import java.util.List
+import java.util.Map
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.ConstraintSystemProvider
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
+import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import java.util.HashMap
+import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 
 @Accessors
 class ConstraintSystem {
@@ -21,6 +27,7 @@ class ConstraintSystem {
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected final SymbolTable symbolTable;
 	protected Graph<AbstractType> explicitSubtypeRelations;
+	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
 
 	new(SymbolTable symbolTable) {
 		this.symbolTable = symbolTable;
@@ -70,6 +77,14 @@ class ConstraintSystem {
 		this.constraints.add(constraint);
 	}
 	
+	def TypeClass getTypeClass(QualifiedName qn, Iterable<Pair<AbstractType, EObject>> candidates) {
+		if(!typeClasses.containsKey(qn)) {
+			val typeClass = new TypeClass(candidates);
+			typeClasses.put(qn, typeClass);
+		}
+		return typeClasses.get(qn);
+	}
+	
 	def getSymbolTable() {
 		return symbolTable;
 	}
@@ -112,6 +127,8 @@ class ConstraintSystem {
 		}
 		
 		result.constraints = constraints.tail.toList;
+		result.explicitSubtypeRelations = explicitSubtypeRelations;
+		result.typeClasses = typeClasses;
 		return constraints.head -> result;
 	}
 	
@@ -127,6 +144,8 @@ class ConstraintSystem {
 		}
 		
 		result.constraints = (nonAtomics.tail + atomics).force;
+		result.explicitSubtypeRelations = explicitSubtypeRelations;
+		result.typeClasses = typeClasses;
 		return nonAtomics.head -> result;
 	}
 	
@@ -135,17 +154,26 @@ class ConstraintSystem {
 	}
 	
 	public def constraintIsAtomic(AbstractTypeConstraint c) {
-		(c instanceof SubtypeConstraint)
-			&&((((c as SubtypeConstraint).subType instanceof TypeVariable) && (c as SubtypeConstraint).superType instanceof TypeVariable)
-			|| (((c as SubtypeConstraint).subType instanceof TypeVariable) && (c as SubtypeConstraint).superType instanceof AbstractBaseType)
-			|| (((c as SubtypeConstraint).subType instanceof AbstractBaseType) && (c as SubtypeConstraint).superType instanceof TypeVariable))
+		(
+			(c instanceof SubtypeConstraint)
+			&& (
+				(((c as SubtypeConstraint).subType instanceof TypeVariable) && (c as SubtypeConstraint).superType instanceof TypeVariable)
+			 || (((c as SubtypeConstraint).subType instanceof TypeVariable) && (c as SubtypeConstraint).superType instanceof AbstractBaseType)
+			 || (((c as SubtypeConstraint).subType instanceof AbstractBaseType) && (c as SubtypeConstraint).superType instanceof TypeVariable)
+			)	
+		)
+		|| (
+			(c instanceof TypeClassConstraint)
+			&& (
+				(!(c as TypeClassConstraint).types.flatMap[it.freeVars].empty)
+			)
+		)
 	}
 	
 	def plus(AbstractTypeConstraint constraint) {
 		val result = new ConstraintSystem(symbolTable);
 		result.constraints.add(constraint);
-		result.constraints.addAll(this.constraints);
-		return result;
+		return ConstraintSystem.combine(#[this, result]);
 	}
 	
 	def static combine(Iterable<ConstraintSystem> systems) {
@@ -156,11 +184,13 @@ class ConstraintSystem {
 		val csp = systems.head.constraintSystemProvider;
 		val result = systems.fold(csp.get(), [r, t|
 			r.constraints.addAll(t.constraints);
+			r.typeClasses.putAll(t.typeClasses);
 			//r.symbolTable.content.putAll(t.symbolTable.content);
 			return r;
 		]);
 		return csp.get() => [
 			it.constraints.addAll(result.constraints.toSet);
+			it.typeClasses.putAll(result.typeClasses);
 			//it.symbolTable.content.putAll(result.symbolTable.content);
 		]
 	}

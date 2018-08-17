@@ -44,6 +44,8 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
+import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -194,6 +196,9 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
 		
 		var refName = "";
+		
+		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
+		
 		val refType = if(candidates.empty) {
 			return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 		}
@@ -216,19 +221,35 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			}
 			TypeVariableAdapter.get(reference);
 		} else {
-			//TODO: handle multiple candidates
-			val subTypes = new ArrayList<AbstractType>();
-			val coSumType = new CoSumType(null, refName + "_anonymous", #[], subTypes);
-			candidates.forEach[
-				val transl = system.computeConstraints(it);
-				subTypes += transl;
-				system.explicitSubtypeRelations.addEdge(transl, coSumType);
-			]
-			coSumType
+			if(isFunctionCall && candidates.forall[it instanceof Operation]) {
+				val translations = candidates.map[it -> system.computeConstraints(it) as AbstractType];
+				val argExprs = varOrFun.arguments.map[it.value].force;
+				val argType = system.computeArgumentConstraints(txt, argExprs);
+				val tcQN = QualifiedName.create(txt);
+				val typeClass = system.getTypeClass(QualifiedName.create(txt), candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject])
+				system.addConstraint(new TypeClassConstraint(argType, tcQN, [s, sub, fun, typ |
+					val nc = constraintSystemProvider.get(); 
+					nc.computeConstraintsForFunctionCall(varOrFun, txt, TypeVariableAdapter.get(fun), argExprs);
+					return SimplificationResult.success(ConstraintSystem.combine(#[nc, s]), sub)
+				]));
+				return TypeVariableAdapter.get(varOrFun);
+			}
+			else {
+			
+				//TODO: handle multiple candidates
+				val subTypes = new ArrayList<AbstractType>();
+				val coSumType = new CoSumType(null, refName + "_anonymous", #[], subTypes);
+				candidates.forEach[
+					val transl = system.computeConstraints(it);
+					subTypes += transl;
+					system.explicitSubtypeRelations.addEdge(transl, coSumType);
+				]
+				
+				coSumType
 			//return system.associate(new BottomType(varOrFun, 'PCF: TODO: handle mutliple candidates'));
+			}
 		}
 		
-		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
 		if(isFunctionCall) {
 			/* TODO: should emit subtype constraints between typecons for the arguments and an equality to the function base type
 			 * See the SubCT-App rule in Traytel et al.

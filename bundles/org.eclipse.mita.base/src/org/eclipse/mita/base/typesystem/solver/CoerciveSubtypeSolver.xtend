@@ -21,6 +21,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
+import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 
 /**
  * Solves coercive subtyping as described in 
@@ -114,6 +115,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ImplicitInstanceConstraint not implemented for «constraint»''')))
 	}
 	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, TypeClassConstraint constraint) {
+		val refType = constraint.typ;
+		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
+		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
+			return constraint.onResolve.apply(system, substitution, typeClass.instances.get(refType), refType);
+		}
+		return SimplificationResult.failure(new UnificationIssue(constraint, '''«refType» not instance of «typeClass»'''))
+	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, Object constraint) {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify not implemented for «constraint»''')))
 	}
