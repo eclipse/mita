@@ -12,7 +12,7 @@ import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.CoSumType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
@@ -140,26 +140,103 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return result;
 	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, ProdType sub, SumType top) {
-		val superTypesWithSameName = sub.superTypes.filter[it.name == top.name];
-		if(sub.superTypes.contains(top)) {
-			return SimplificationResult.success(system, substitution);
-		} else if(superTypesWithSameName.size == 1) {
-			return system.doSimplify(substitution, constraint, superTypesWithSameName.head, top);
-		}
-		else {
-			//TODO: handle multiple super types with same name
-			//already handled: superTypesWithSameName.empty --> failure
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» is not a subtype of «top»'''))
-		}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, SumType sub, SumType top) {
+		return system._doSimplify(substitution, constraint, sub as TypeConstructorType, top as TypeConstructorType);
 	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, CoSumType sub, CoSumType top) {
+		return system._doSimplify(substitution, constraint, sub as TypeConstructorType, top as TypeConstructorType);
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, SumType top) {
+		val subTypes = typeRegistry.getSubTypes(top).toSet;
+		val similarSubTypes = subTypes.filter[sub.class == it.class];
+		val subTypesWithSameName = subTypes.filter[sub.name == it.name];
+		if(subTypes.contains(sub)) {
+			return SimplificationResult.success(system, substitution);
+		}
+		val topTypes = typeRegistry.getSuperTypes(system, sub);
+		val similarTopTypes = topTypes.filter[it.class == top.class];
+		val superTypesWithSameName = topTypes.filter[it.name == top.name];
+		if(topTypes.contains(top)) {
+			return SimplificationResult.success(system, substitution);
+		} 
+		
+		if(similarSubTypes.size == 1) {
+			return system.doSimplify(substitution, constraint, sub, similarSubTypes.head);
+		}
+		if(similarTopTypes.size == 1) {
+			return system.doSimplify(substitution, constraint, similarTopTypes.head, top);
+		}
+		
+		if(similarSubTypes.size > 1) {
+			return similarSubTypes.map[system.doSimplify(substitution, constraint, sub, it)].reduce[p1, p2| p1.or(p2)]
+		}
+		if(similarTopTypes.size > 1) {
+			return similarTopTypes.map[system.doSimplify(substitution, constraint, it, top)].reduce[p1, p2| p1.or(p2)]
+		}
+		
+		if(subTypesWithSameName.size == 1) {
+			return system.doSimplify(substitution, constraint, sub, subTypesWithSameName.head);
+		}
+	
+		if(superTypesWithSameName.size == 1) {
+			return system._doSimplify(substitution, constraint, superTypesWithSameName.head, top);
+		}
+	
+	
+		//TODO: handle multiple super types with same name
+		//already handled: superTypesWithSameName.empty --> failure
+		return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» is not a subtype of «top»'''))
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, CoSumType sub, TypeConstructorType top) {
+		val subTypes = typeRegistry.getSubTypes(top).toSet;
+		val similarSubTypes = subTypes.filter[sub.class == it.class];
+		val subTypesWithSameName = subTypes.filter[sub.name == it.name];
+		if(subTypes.contains(sub)) {
+			return SimplificationResult.success(system, substitution);
+		}
+		val topTypes = typeRegistry.getSuperTypes(system, sub);
+		val similarTopTypes = topTypes.filter[it.class == top.class];
+		val superTypesWithSameName = topTypes.filter[it.name == top.name];
+		if(topTypes.contains(top)) {
+			return SimplificationResult.success(system, substitution);
+		} 
+		
+		if(similarSubTypes.size == 1) {
+			return system.doSimplify(substitution, constraint, sub, similarSubTypes.head);
+		}
+		if(similarTopTypes.size == 1) {
+			return system.doSimplify(substitution, constraint, similarTopTypes.head, top);
+		}
+		
+		if(similarSubTypes.size > 1) {
+			return similarSubTypes.map[system.doSimplify(substitution, constraint, sub, it)].reduce[p1, p2| p1.or(p2)]
+		}
+		if(similarTopTypes.size > 1) {
+			return similarTopTypes.map[system.doSimplify(substitution, constraint, it, top)].reduce[p1, p2| p1.or(p2)]
+		}
+		
+		if(subTypesWithSameName.size == 1) {
+			return system.doSimplify(substitution, constraint, sub, subTypesWithSameName.head);
+		}
+		if(superTypesWithSameName.size == 1) {
+			return system._doSimplify(substitution, constraint, superTypesWithSameName.head, top);
+		}
+	
+	
+		//TODO: handle multiple super types with same name
+		//already handled: superTypesWithSameName.empty --> failure
+		return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» is not a subtype of «top»'''))
+	}
+	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
 		val typeArgs1 = sub.typeArguments.force;
 		val typeArgs2 = top.typeArguments.force;
 		if(typeArgs1.length !== typeArgs2.length) {
 			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» and «top» differ in their type arguments'''));
 		}
-		if(sub.name != top.name) {
+		if(sub.class != top.class) {
 			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» and «top» are not constructed the same'''));
 		}
 		
@@ -249,7 +326,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val infimum = graph.getInfimum(successors);
 			val supremumIsValid = supremum !== null && successors.forall[ t | typeRegistry.isSubType(supremum, t) ];
 			val infimumIsValid = infimum !== null && predecessors.forall[ t | typeRegistry.isSubType(t, infimum) ];
-						
+
 			if(!predecessors.empty) {
 				if(supremumIsValid) {
 					// assign-sup
@@ -324,9 +401,11 @@ class ConstraintGraphProvider implements Provider<ConstraintGraph> {
 class ConstraintGraph extends Graph<AbstractType> {
 	
 	protected val StdlibTypeRegistry typeRegistry;
+	protected val ConstraintSystem constraintSystem;
 	
 	new(ConstraintSystem system, StdlibTypeRegistry typeRegistry) {
 		this.typeRegistry = typeRegistry;
+		this.constraintSystem = system;
 		system.constraints
 			.filter(SubtypeConstraint)
 			.forEach[ addEdge(it.subType, it.superType) ];
@@ -344,7 +423,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	
 	def <T extends AbstractType> getSupremum(Iterable<T> ts) {
 		val tsCut = ts.map[
-			typeRegistry.getSuperTypes(it).toSet
+			typeRegistry.getSuperTypes(constraintSystem, it).toSet
 		].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
 		return tsCut.findFirst[candidate | 
 			tsCut.forall[u | 
@@ -380,6 +459,12 @@ class ConstraintGraph extends Graph<AbstractType> {
 		}
 		super.addEdge(fromIndex, toIndex);
 	}
+	
+	override replace(AbstractType from, AbstractType with) {
+		super.replace(from, with)
+		constraintSystem?.explicitSubtypeRelations?.replace(from, with);
+	}
+	
 } 
 
 @FinalFieldsConstructor
@@ -393,5 +478,25 @@ class SimplificationResult extends UnificationResult {
 	
 	static def SimplificationResult failure(UnificationIssue issue) {
 		return new SimplificationResult(null, issue, null);
+	}
+	
+	def SimplificationResult or(SimplificationResult other) {
+		if(this.valid) {
+			if(other.valid) {
+				return new SimplificationResult(this.substitution.apply(other.substitution), null, ConstraintSystem.combine(#[this.system, other.system]))
+			}
+			else {
+				return this;
+			}
+		}
+		else {
+			if(other.valid) {
+				return other;
+			}
+			else {
+				return new SimplificationResult(null, ComposedUnificationIssue.fromMultiple(#[this.issue, other.issue]), null);
+			}
+		}
+		
 	}
 }

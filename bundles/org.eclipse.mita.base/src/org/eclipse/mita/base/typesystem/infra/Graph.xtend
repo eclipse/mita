@@ -161,28 +161,41 @@ class Graph<T> implements Cloneable {
 	}
 	
 	def getPredecessors(Integer t) {
-		return incoming.walk(t) [ it ];
+		return incoming.walk(new HashSet(), t) [ it ];
 	}
 	
 	def getSuccessors(Integer t) {
-		return outgoing.walk(t) [ it ];
+		return outgoing.walk(new HashSet(), t) [ it ];
 	}
 	
 	
 	protected def <S> Iterable<S> walk(Map<Integer, Set<Integer>> g, T start, (T) => S visitor) {
 		return reverseMap.get(start).flatMap[
-			g.walk(it, visitor)
+			g.walk(new HashSet(), it, visitor)
 		].force
 	}
-	protected def <S> Iterable<S> walk(Map<Integer, Set<Integer>> g, Integer idx, (T) => S visitor) {
+	protected def <S> Iterable<S> walk(Map<Integer, Set<Integer>> g, Set<Integer> visited, Integer idx, (T) => S visitor) {
+		if(visited.contains(idx)) {
+			return #[];
+		}
+		visited.add(idx);
 		return (g.get(idx) ?: #[]).flatMap[
 			val node = nodeIndex.get(it);
-			g.walk(it, visitor) + #[ visitor.apply(node) ]
+			g.walk(visited, it, visitor) + #[ visitor.apply(node) ]
 		].force;
 	}
 	
 	def replace(T from, T with) {
-		nodeIndex.replaceAll([k, v | if(v == from) with else v])
+		if(reverseMap.containsKey(from)) {
+			reverseMap.put(with, reverseMap.get(from));
+			reverseMap.remove(from);		
+		}
+		nodeIndex.replaceAll([k, v | 
+			if(v == from) {
+				return with; 
+			} else {
+				return v;
+			}])
 	}
 	
 	/**

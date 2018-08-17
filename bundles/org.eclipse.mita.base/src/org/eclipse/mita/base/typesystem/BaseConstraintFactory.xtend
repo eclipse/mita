@@ -41,6 +41,7 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.expressions.StringLiteral
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -205,6 +206,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IntLiteral lit) {
 		return system.associate(system.computeConstraints(lit, lit.value), lit);
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StringLiteral lit) {
+		return system.associate(typeRegistry.getStringType(lit), lit);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructuralParameter sParam) {
 		system.computeConstraints(sParam.accessor);

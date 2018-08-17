@@ -15,7 +15,6 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructuralType
-import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
@@ -24,6 +23,7 @@ import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.CoSumType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
@@ -44,7 +44,6 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class ProgramConstraintFactory extends BaseConstraintFactory {
 	
@@ -194,10 +193,11 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		val candidates = varOrFun.resolveReference(featureToResolve);
 		val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
 		
-		if(candidates.empty) {
+		var refName = "";
+		val refType = if(candidates.empty) {
 			return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 		}
-		if(candidates.size == 1) {
+		else if(candidates.size == 1) {
 			val rawReference = candidates.head;
 			// if we reference a complex type we reference its constructor and not its type
 			val reference = if(rawReference instanceof StructuralType) {
@@ -208,38 +208,38 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 			}
 			else {
 				rawReference;
-			} as NamedElement
-			
-			val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
-			if(isFunctionCall) {
-				/* TODO: should emit subtype constraints between typecons for the arguments and an equality to the function base type
-				 * See the SubCT-App rule in Traytel et al.
-				 */
-				val argExprs = varOrFun.arguments.map[it.value].force;
-				return system.computeConstraintsForFunctionCall(varOrFun, reference.name, TypeVariableAdapter.get(reference), argExprs);
-			} 
-			else {
-				return system.associate(TypeVariableAdapter.get(reference), varOrFun)
 			}
-			
+			refName = if(reference instanceof NamedElement) {
+				reference.name;
+			} else {
+				txt;
+			}
+			TypeVariableAdapter.get(reference);
 		} else {
 			//TODO: handle multiple candidates
-			//This doesn't work
-			//val subTypes = new ArrayList<AbstractType>();
-			//val sumType = new org.eclipse.mita.base.typesystem.types.SumType(null, txt + "_anonymous", #[], subTypes);
-			//candidates.forEach[
-			//	val transl = system.translateTypeDeclaration(it);
-			//	if(transl instanceof TypeConstructorType) {
-			//		transl.superTypes += sumType;
-			//		subTypes += transl;
-			//	}
-			//	else {
-			//		subTypes += system.computeConstraints(it);
-			//	}
-			//]
-			//return system.associate(sumType, varOrFun);
-			return system.associate(new BottomType(varOrFun, 'PCF: TODO: handle mutliple candidates'));
+			val subTypes = new ArrayList<AbstractType>();
+			val coSumType = new CoSumType(null, refName + "_anonymous", #[], subTypes);
+			candidates.forEach[
+				val transl = system.computeConstraints(it);
+				subTypes += transl;
+				system.explicitSubtypeRelations.addEdge(transl, coSumType);
+			]
+			coSumType
+			//return system.associate(new BottomType(varOrFun, 'PCF: TODO: handle mutliple candidates'));
 		}
+		
+		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
+		if(isFunctionCall) {
+			/* TODO: should emit subtype constraints between typecons for the arguments and an equality to the function base type
+			 * See the SubCT-App rule in Traytel et al.
+			 */
+			val argExprs = varOrFun.arguments.map[it.value].force;
+			return system.computeConstraintsForFunctionCall(varOrFun, refName, refType, argExprs);
+		} 
+		else {
+			return system.associate(refType, varOrFun)
+		}
+		
 	}
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {

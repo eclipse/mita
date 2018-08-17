@@ -2,10 +2,12 @@ package org.eclipse.mita.base.typesystem
 
 import com.google.common.base.Optional
 import com.google.inject.Inject
+import java.util.Set
 import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BottomType
@@ -17,9 +19,11 @@ import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.base.typesystem.types.CoSumType
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
+	public static val stringTypeQID = QualifiedName.create(#["stdlib", "string"]);
 	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#["stdlib", it])];
 	
 	@Inject IScopeProvider scopeProvider;
@@ -28,6 +32,12 @@ class StdlibTypeRegistry {
 		val voidScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		val voidType = voidScope.getSingleElement(StdlibTypeRegistry.voidTypeQID).EObjectOrProxy;
 		return new AtomicType(voidType, "void");
+	}
+	
+	def getStringType(EObject context) {
+		val stringScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+		val stringType = stringScope.getSingleElement(StdlibTypeRegistry.stringTypeQID).EObjectOrProxy;
+		return new AtomicType(stringType, "string");
 	}
 	
 	public def Iterable<AbstractType> getIntegerTypes(EObject context) {
@@ -51,16 +61,25 @@ class StdlibTypeRegistry {
 		}
 	}
 	
-	dispatch def Iterable<AbstractType> getSuperTypes(IntegerType t) {
+	def Set<AbstractType> getSuperTypes(ConstraintSystem s, Object t) {
+		val idxs = s.explicitSubtypeRelations.reverseMap.get(t) ?: #[];
+		val explicitSuperTypes = #[t] + idxs.flatMap[s.explicitSubtypeRelations.getSuccessors(it)];
+		return explicitSuperTypes.flatMap[s.doGetSuperTypes(it)].toSet;
+	}
+	
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, IntegerType t) {
 		return getIntegerTypes(t.origin).filter[t.isSubType(it)]
 	}
-	dispatch def Iterable<AbstractType> getSuperTypes(TypeConstructorType t) {
-		return t.superTypes.flatMap[it.superTypes] + #[t];
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, TypeConstructorType t) {
+		return t.superTypes.flatMap[s.getSuperTypes(it)] + #[t];
 	}
-	dispatch def Iterable<AbstractType> getSuperTypes(AbstractType t) {
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, AbstractType t) {
 		return #[t];
 	}
-	dispatch def Iterable<AbstractType> getSuperTypes(Object t) {
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, CoSumType t) {
+		return #[t] + t.types.flatMap[s.getSuperTypes(it)];
+	}
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Object t) {
 		return #[];
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(IntegerType t) {
@@ -146,4 +165,5 @@ class StdlibTypeRegistry {
 		}
 		return Optional.absent;
 	}
+	
 }

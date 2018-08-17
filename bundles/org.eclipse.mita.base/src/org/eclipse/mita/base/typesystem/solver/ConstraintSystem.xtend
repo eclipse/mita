@@ -11,18 +11,59 @@ import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.xtend.lib.annotations.Accessors
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
+@Accessors
 class ConstraintSystem {
 	@Inject protected ConstraintSystemProvider constraintSystemProvider; 
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected final SymbolTable symbolTable;
-	protected final Graph<AbstractType> explicitSubtypeRelations;
+	protected Graph<AbstractType> explicitSubtypeRelations;
 
 	new(SymbolTable symbolTable) {
 		this.symbolTable = symbolTable;
-		this.explicitSubtypeRelations = new Graph();
+		this.explicitSubtypeRelations = new Graph<AbstractType>() {
+			
+			override replace(AbstractType from, AbstractType with) {
+				// in this graph when we replace we keep old nodes and do replacement on types (based on the fact that nodes contain AbstractTypes).
+				// this means that for each node:
+				// - get it
+				// - if from is a typeVariable, do replacement on types 
+				//   * if the resulting type differs by anything (compare by ===), get incoming and outgoing edges
+				// - else compare for weak equality (==), on match get incoming and outcoming edges
+				// - otherwise return nothing. Since we are in Java we get a List<Nullable Pair<AbstractType, Pair<Set<Integer>, Set<Integer>>>> instead of optionals. So filterNull to only get replacements.
+				// this results in a list of triples which we then re-add to the graph.
+				val newNodes = nodeIndex.keySet.map[
+					val typ = nodeIndex.get(it);
+					if(from instanceof TypeVariable) {
+						val newTyp = typ.replace(from, with);
+						if(newTyp !== typ) {
+							return (newTyp -> (incoming.get(it) -> outgoing.get(it)));
+						}
+					}
+					else if(typ == from) {
+						return (with -> (incoming.get(it) -> outgoing.get(it)));
+					}
+					return null;
+				].filterNull;
+				newNodes.forEach([t__i_o | 
+					val nt = t__i_o.key;
+					val inc = t__i_o.value.key;
+					val out = t__i_o.value.value;
+					
+					val idx = addNode(nt);
+					inc.forEach[ i | 
+						addEdge(i, idx);
+					]
+					out.forEach[ o | 
+						addEdge(idx, o);
+					]
+				])
+				return;
+			}
+		};
 	}
 	
 	def void addConstraint(AbstractTypeConstraint constraint) {

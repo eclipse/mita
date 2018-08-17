@@ -8,6 +8,7 @@ import java.util.Map
 import java.util.Map.Entry
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.infra.Graph
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
@@ -59,10 +60,12 @@ class Substitution {
 	
 	public def apply(ConstraintSystem system) {
 		val result = constraintSystemProvider.get();
+		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>
 		result.constraints.addAll(system.constraints.map[c | 
 			var nc = c;
 			for(kv : this.content.entrySet) {
 				nc = nc.replace(kv.key, kv.value);
+				result.explicitSubtypeRelations.replace(kv.key, kv.value);
 			}
 			return nc;
 		]);
