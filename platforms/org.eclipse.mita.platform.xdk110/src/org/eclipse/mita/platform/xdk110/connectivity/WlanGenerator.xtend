@@ -40,16 +40,32 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	protected extension StatementGenerator statementGenerator
 			
 	override generateEnable() {
+
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentification"), []);
+		val static CmdProcessor_T * ServalPALCmdProcessorHandle;
+		ServalPalWiFi_StateChangeInfo_T stateChangeInfo = { SERVALPALWIFI_OPEN, 0 };
 		val result = codeFragmentProvider.create('''
-		Retcode_T retcode = PAL_initialize();
+
+		Retcode_T retcode = ServalPal_Initialize(ServalPALCmdProcessorHandle);
 		if(RETCODE_OK != retcode)
 		{
 			return retcode;
 		}
-		
-		PAL_socketMonitorInit();
+
+		Retcode_T retcode = ServalPalWiFi_Init();
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
+
+		Retcode_T retcode = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_STATE_CHANGE, &stateChangeInfo);
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
+
+		// PAL_socketMonitorInit();
 
 		/* The order of calls is important here. WlanConnect_init initializes the CC3100 and prepares
 		 * its future use. Calls to NetworkConfig_ fail if WlanConnect_Init was not called beforehand.
@@ -189,8 +205,8 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('BCDS_NetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
-		.addHeader("PAL_initialize_ih.h", true)
-		.addHeader('PAL_socketMonitor_ih.h', true)
+		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
+		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
 		if(auth instanceof SumTypeRepr) {
 			if(auth.name == "Enterprise") {

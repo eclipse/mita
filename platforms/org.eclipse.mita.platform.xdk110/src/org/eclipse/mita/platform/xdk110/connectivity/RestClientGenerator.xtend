@@ -225,14 +225,29 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	override generateEnable() {
-		codeFragmentProvider.create('''
-	    Retcode_T retcode = PAL_initialize();
-	    if (retcode != RETCODE_OK)
-	    {
-	        return retcode;
-	    }
 
-	    PAL_socketMonitorInit();
+		val static CmdProcessor_T * ServalPALCmdProcessorHandle;
+		val ServalPalWiFi_StateChangeInfo_T stateChangeInfo = { SERVALPALWIFI_OPEN, 0 };
+		codeFragmentProvider.create('''
+		Retcode_T retcode = ServalPal_Initialize(ServalPALCmdProcessorHandle);
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
+
+		Retcode_T retcode = ServalPalWiFi_Init();
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
+
+		Retcode_T retcode = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_STATE_CHANGE, &stateChangeInfo);
+		if(RETCODE_OK != retcode)
+		{
+			return retcode;
+		}
+
+	    // PAL_socketMonitorInit();
 
 	    retcode = HttpClient_initialize();
 	    if(retcode != RETCODE_OK) 
@@ -244,7 +259,8 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('Serval_HttpClient.h', true)
 		.addHeader('Serval_Network.h', true)
 		.addHeader('PAL_socketMonitor_ih.h', true)
-		.addHeader('PAL_initialize_ih.h', true)
+		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
+		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
 	}
 	
 }

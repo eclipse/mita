@@ -235,7 +235,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		}
 		return retcode;
 		''')
-		.addHeader('PAL_initialize_ih.h', true)
+		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
+		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
 	}
 	
 	override generateAdditionalImplementation() {
