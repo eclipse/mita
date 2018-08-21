@@ -125,10 +125,10 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		}
 		
 		memcpy(httpBodyBuffer, *«variableName», strlen(*«variableName»));
-		
+
 		retcode_t rc;
 		Ip_Address_T destAddr;
-		rc = PAL_getIpaddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
+		rc = NetworkConfig_GetIpAddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
 		if (rc != RC_OK)
 		{
 			return rc;
@@ -148,7 +148,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		{
 		    return rc;
 		}
-		
+
 		const char* url_ptr = "«url»";
 		rc = HttpMsg_setReqUrl(msg_ptr, url_ptr);
 		if (rc != RC_OK)
@@ -191,6 +191,8 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			return EXCEPTION_TIMEOUTEXCEPTION;
 		}
 		''')
+
+		.addHeader('BCDS_NetworkConfig.h', true);
 	}
 	
 	protected def String getHttpMethod(Expression expression) {
@@ -259,6 +261,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('Serval_Network.h', true)
 		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
+
 	}
 	
 }
