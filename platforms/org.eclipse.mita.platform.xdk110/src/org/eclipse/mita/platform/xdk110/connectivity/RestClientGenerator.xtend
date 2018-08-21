@@ -247,7 +247,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			return retcode;
 		}
 
-	    // PAL_socketMonitorInit();
 
 	    retcode = HttpClient_initialize();
 	    if(retcode != RETCODE_OK) 
@@ -258,7 +257,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("BCDS_Basics.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_HttpClient.h', true)
 		.addHeader('Serval_Network.h', true)
-		.addHeader('PAL_socketMonitor_ih.h', true)
 		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
 	}

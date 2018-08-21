@@ -65,7 +65,6 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 			return retcode;
 		}
 
-		// PAL_socketMonitorInit();
 
 		/* The order of calls is important here. WlanConnect_init initializes the CC3100 and prepares
 		 * its future use. Calls to NetworkConfig_ fail if WlanConnect_Init was not called beforehand.
