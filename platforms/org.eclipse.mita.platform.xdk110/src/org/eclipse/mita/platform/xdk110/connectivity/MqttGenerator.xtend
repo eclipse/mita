@@ -88,8 +88,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		}
 		return retcode;
 		''')
-		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
-		
+
 		.setPreamble('''
 		/**
 		 * The client identifier (here: clientID) is a identifier of each MQTT client
@@ -152,6 +151,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("XdkCommonInfo.h", true)
 		.addHeader("BCDS_NetworkConfig.h", true)
+		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
 	}
 	
 	override generateEnable() {
