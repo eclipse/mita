@@ -23,6 +23,7 @@ import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.platform.xdk110.connectivity.ServalPalCommonGenerator
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 	
@@ -33,9 +34,23 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		val brokerUri = new URI(configuration.getString("url"));
 		var brokerPortRaw = brokerUri.port;
 		val brokerPort = if(brokerPortRaw < 0) 1883 else brokerPortRaw;
-		
+
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
+
+		retcode = ServalPal_Call()
+		if (retcode != RETCODE_OK)
+		{
+			return retcode;
+		}
+
+		retcode = ServalPAL_Enable()
+
+		if (retcode != RETCODE_OK)
+		{
+			return retcode;
+		}
+
 		mqttSubscribeHandle = xSemaphoreCreateBinary();
 		if (NULL == mqttSubscribeHandle)
 		{
@@ -73,6 +88,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		}
 		return retcode;
 		''')
+		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
+		
 		.setPreamble('''
 		/**
 		 * The client identifier (here: clientID) is a identifier of each MQTT client
@@ -235,8 +252,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		}
 		return retcode;
 		''')
-		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
-		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
+
 	}
 	
 	override generateAdditionalImplementation() {

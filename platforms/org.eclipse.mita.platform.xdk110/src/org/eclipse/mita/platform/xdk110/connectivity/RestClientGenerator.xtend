@@ -30,6 +30,7 @@ import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.platform.xdk110.connectivity.ServalPalCommonGenerator
 
 class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
@@ -111,7 +112,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
 		val baseUrl = new URL(configuration.getString('endpointBase'));
-		
 		val httpMethod = ModelUtils.getArgumentValue(signalInstance, "writeMethod").httpMethod;
 		val contentType = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "contentType"), []);
 		val url = '''«baseUrl.path»«StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, 'endpoint'), [ ])»''';
@@ -123,17 +123,18 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		{
 			return EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION;
 		}
-		
+
 		memcpy(httpBodyBuffer, *«variableName», strlen(*«variableName»));
 
-		retcode_t rc;
+		Retcode_T retcode = RETCODE_OK;
 		Ip_Address_T destAddr;
-		rc = NetworkConfig_GetIpAddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
-		if (rc != RC_OK)
+		retcode = NetworkConfig_GetIpAddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
+		if (retcode != RETCODE_OK)
 		{
-			return rc;
+			return retcode;
 		}
 		
+		retcode_t retcode;
 		Msg_T* msg_ptr;
 		rc = HttpClient_initRequest(&destAddr, Ip_convertIntToPort(«port»), &msg_ptr);
 		if (rc != RC_OK || msg_ptr == NULL)
@@ -228,27 +229,21 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateEnable() {
 
-		val static CmdProcessor_T * ServalPALCmdProcessorHandle;
-		val ServalPalWiFi_StateChangeInfo_T stateChangeInfo = { SERVALPALWIFI_OPEN, 0 };
 		codeFragmentProvider.create('''
-		Retcode_T retcode = ServalPal_Initialize(ServalPALCmdProcessorHandle);
-		if(RETCODE_OK != retcode)
+		Retcode_T retcode = RETCODE_OK;
+
+		retcode = ServalPal_Call()
+		if (retcode != RETCODE_OK)
 		{
 			return retcode;
 		}
 
-		Retcode_T retcode = ServalPalWiFi_Init();
-		if(RETCODE_OK != retcode)
+		retcode = ServalPAL_Enable()
+
+		if (retcode != RETCODE_OK)
 		{
 			return retcode;
 		}
-
-		Retcode_T retcode = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_STATE_CHANGE, &stateChangeInfo);
-		if(RETCODE_OK != retcode)
-		{
-			return retcode;
-		}
-
 
 	    retcode = HttpClient_initialize();
 	    if(retcode != RETCODE_OK) 
@@ -260,7 +255,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('Serval_HttpClient.h', true)
 		.addHeader('Serval_Network.h', true)
 		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
-		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
 
 	}
 	
