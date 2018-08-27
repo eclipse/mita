@@ -186,7 +186,7 @@ class Bma280Generator extends AbstractSystemResourceGenerator {
             «IF !eventHandler.empty»
 
             /* Enqueue Event Resolver */
-            «eventLoopGenerator.generateEventloopInject('BMA280_Event', 'NULL', '0')»
+            «eventLoopGenerator.generateEventloopInjectFromIsr('BMA280_Event', 'NULL', '0')»
             «ENDIF»
         }
         
@@ -343,9 +343,9 @@ class Bma280Generator extends AbstractSystemResourceGenerator {
         val activation = switch event.baseName.toUpperCase {
             case 'BMA280ANY_MOTION' :
             '''
-            bma2x2_set_intr_enable(BMA2x2_SLOPE_X_INTR, INTR_DISABLE);
-            bma2x2_set_intr_enable(BMA2x2_SLOPE_Y_INTR, INTR_DISABLE);
-            bma2x2_set_intr_enable(BMA2x2_SLOPE_Z_INTR, INTR_DISABLE);
+            bma2x2_set_intr_enable(BMA2x2_SLOPE_X_INTR, INTR_ENABLE);
+            bma2x2_set_intr_enable(BMA2x2_SLOPE_Y_INTR, INTR_ENABLE);
+            bma2x2_set_intr_enable(BMA2x2_SLOPE_Z_INTR, INTR_ENABLE);
             '''    
             case 'BMA280NO_MOTION' :
             '''
@@ -373,23 +373,23 @@ class Bma280Generator extends AbstractSystemResourceGenerator {
             '''
             case 'BMA280FLAT' :
             '''
-            bma2x2_set_intr_enable(BMA2x2_FLAT_INTR, INTR_DISABLE);
+            bma2x2_set_intr_enable(BMA2x2_FLAT_INTR, INTR_ENABLE);
             '''
             case 'BMA280ORIENTATION' :
             '''
-            bma2x2_set_intr_enable(BMA2x2_ORIENT_INTR, INTR_DISABLE);
+            bma2x2_set_intr_enable(BMA2x2_ORIENT_INTR, INTR_ENABLE);
             '''
             case 'BMA280FIFO_FULL':
             '''
-            bma2x2_set_intr_enable(BMA2x2_FIFO_FULL_INTR, INTR_DISABLE);
+            bma2x2_set_intr_enable(BMA2x2_FIFO_FULL_INTR, INTR_ENABLE);
             '''
             case 'BMA280FIFO_WML' :
             '''
-            bma2x2_set_intr_enable(BMA2x2_FIFO_WM_INTR, INTR_DISABLE);
+            bma2x2_set_intr_enable(BMA2x2_FIFO_WM_INTR, INTR_ENABLE);
             '''
             case 'BMA280NEW_DATA' :
             '''
-            bma2x2_set_intr_enable(BMA2x2_FIFO_FULL_INTR, INTR_DISABLE);
+            bma2x2_set_intr_enable(BMA2x2_FIFO_FULL_INTR, INTR_ENABLE);
             '''
         }
         
