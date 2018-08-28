@@ -22,6 +22,8 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.mita.base.typesystem.types.CoSumType
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 
+import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
 	public static val stringTypeQID = QualifiedName.create(#["stdlib", "string"]);
@@ -157,7 +159,11 @@ class StdlibTypeRegistry {
 	}
 	
 	public dispatch def Optional<String> isSubtypeOf(ProdType sub, ProdType top) {
-		
+		val msg = sub.types.zip(top.types).map[it.key.isSubtypeOf(it.value).orNull].filterNull.join("\n")
+		if(msg != "") {
+			return Optional.of(msg);
+		}
+		return Optional.absent;
 	}
 		
 	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, AbstractType top) {

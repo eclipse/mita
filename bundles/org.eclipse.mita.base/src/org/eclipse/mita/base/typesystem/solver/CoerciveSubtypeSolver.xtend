@@ -47,6 +47,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(!system.isWeaklyUnifiable()) {
 			return new ConstraintSolution(system, null, #[ new UnificationIssue(system, 'Subtype solving cannot terminate') ]);
 		}
+		println("------------------")
 		println(system);
 		println(system.toGraphviz);
 		val simplification = system.simplify(Substitution.EMPTY);
@@ -57,28 +58,43 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val simplifiedSubst = simplification.substitution;
 		println(simplification);
 		
-		val constraintGraphAndSubst = simplifiedSystem.buildConstraintGraph(simplifiedSubst);
+		val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst);
+		val lastSimplification = simplification.system.simplify(solution.solution);
+		println("------------------")
+		println(lastSimplification)
+		val sol2 = solveSubtypeConstraints(lastSimplification.substitution.apply(lastSimplification.system), lastSimplification.substitution);
+		val sol3 = sol2.solution.apply(sol2.constraints).simplify(sol2.solution);
+		if(!sol3.valid) {
+			return new ConstraintSolution(sol2.constraints, sol2.solution, #[sol3.issue]);
+		}
+		return sol3.substitution.apply(sol3.system).solveSubtypeConstraints(sol3.substitution);
+	}
+	
+	protected def ConstraintSolution solveSubtypeConstraints(ConstraintSystem system, Substitution substitution) {
+		val constraintGraphAndSubst = system.buildConstraintGraph(substitution);
 		if(!constraintGraphAndSubst.value.valid) {
 			val failure = constraintGraphAndSubst.value;
-			return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), failure.substitution, #[failure.issue]);
+			return new ConstraintSolution(system, failure.substitution, #[failure.issue]);
 		}
 		val constraintGraph = constraintGraphAndSubst.key;
 		val constraintGraphSubstitution = constraintGraphAndSubst.value.substitution;
+		println("------------------")
 		println(constraintGraph.toGraphviz());
 		println(constraintGraphSubstitution);
 		
 		val resolvedGraphAndSubst = constraintGraph.resolve(constraintGraphSubstitution);
 		if(!resolvedGraphAndSubst.value.valid) {
 			val failure = resolvedGraphAndSubst.value;
-			return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), failure.substitution, #[failure.issue]);
+			return new ConstraintSolution(system, failure.substitution, #[failure.issue]);
 		}
 		val resolvedGraph = resolvedGraphAndSubst.key;
 		val resolvedGraphSubstitution = resolvedGraphAndSubst.value.substitution;
+		println("------------------")
 		println(resolvedGraphSubstitution);
 		
 		val solution = resolvedGraph.unify(resolvedGraphSubstitution);
-		println(solution);
-		return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), solution.substitution, #[solution.issue].filterNull.toList);
+		
+		return new ConstraintSolution(system, solution.substitution, #[solution.issue].filterNull.toList);
 	}
 	
 	protected def boolean isWeaklyUnifiable(ConstraintSystem system) {
@@ -119,6 +135,24 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
 		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
 			return constraint.onResolve.apply(system, substitution, typeClass.instances.get(refType), refType);
+		}
+		if(typeClass !== null) {
+			val result = typeClass.instances.entrySet.map[k_v | 
+				val typ = k_v.key;
+				val fun = k_v.value;
+				val optMsg = typeRegistry.isSubtypeOf(refType, typ);
+				val unification = if(optMsg.present) {
+					UnificationResult.failure(refType, optMsg.get);
+				} else {
+					// TODO insert coercion
+					UnificationResult.success(Substitution.EMPTY);
+				}
+				unification -> typ -> fun;
+			].findFirst[it.key.key.valid]
+			if(result !== null) {
+				val sub = substitution.apply(result.key.key.substitution);
+				return constraint.onResolve.apply(system, sub, result.value, sub.applyToType(result.key.value));
+			}
 		}
 		return SimplificationResult.failure(new UnificationIssue(constraint, '''«refType» not instance of «typeClass»'''))
 	}
@@ -486,6 +520,15 @@ class SimplificationResult extends UnificationResult {
 	
 	static def SimplificationResult failure(UnificationIssue issue) {
 		return new SimplificationResult(null, issue, null);
+	}
+	
+	override toString() {
+		if(isValid) {
+			system.toString
+		}
+		else {
+			""
+		} + "\n" + super.toString()
 	}
 	
 	def SimplificationResult or(SimplificationResult other) {
