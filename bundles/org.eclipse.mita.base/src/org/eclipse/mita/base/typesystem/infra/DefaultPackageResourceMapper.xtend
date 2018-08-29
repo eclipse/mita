@@ -16,7 +16,7 @@ class DefaultPackageResourceMapper implements IPackageResourceMapper {
 		// TODO: look at libraries to find required resources
 		val platformString = rs.resources.head.getURI().toPlatformString(true);
 		val myFile = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(platformString));
-		return myFile.project.listAllFiles.filter[ it.name.endsWith(".mita") ].map[ URI.createPlatformResourceURI(it.fullPath.toString(), true) ];
+		return myFile.project.listAllFiles.filter[ it.name.endsWith(".mita") || it.name.endsWith(".platform") ].map[ URI.createPlatformResourceURI(it.fullPath.toString(), true) ];
 	}
 	
 	protected def Iterable<IFile> listAllFiles(IResource resource) {

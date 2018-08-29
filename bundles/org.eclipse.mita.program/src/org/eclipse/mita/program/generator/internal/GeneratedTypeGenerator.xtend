@@ -21,6 +21,7 @@ import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.base.util.BaseUtils
 
 class GeneratedTypeGenerator {
 	
@@ -47,7 +48,7 @@ class GeneratedTypeGenerator {
 			«"\n"»«««explicit newline
 
 			«FOR typeSpecifier_generator : generatorsWithTypeSpecs SEPARATOR("\n")»
-			«typeSpecifier_generator.value.generateHeader(typeSpecifier_generator.key)»
+			«typeSpecifier_generator.value.generateHeader(BaseUtils.getType(typeSpecifier_generator.key))»
 			«ENDFOR»
 		''').addHeader(userTypeFiles.map[new IncludePath(it, false)])
 		.toHeader(context, 'MITA_GENERATED_TYPES_H')

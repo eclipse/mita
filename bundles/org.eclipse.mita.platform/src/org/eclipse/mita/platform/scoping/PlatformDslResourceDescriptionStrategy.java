@@ -22,6 +22,7 @@ import org.eclipse.mita.base.scoping.TypeDSLResourceDescriptionStrategy;
 import org.eclipse.mita.base.types.StructureType;
 import org.eclipse.mita.base.types.SumAlternative;
 import org.eclipse.mita.base.types.TypeSpecifier;
+import org.eclipse.mita.base.util.BaseUtils;
 import org.eclipse.mita.platform.AbstractSystemResource;
 import org.eclipse.mita.platform.Platform;
 import org.eclipse.mita.platform.PlatformPackage;
@@ -75,7 +76,7 @@ public class PlatformDslResourceDescriptionStrategy extends TypeDSLResourceDescr
 		super.createEObjectDescriptions(platform, acceptor);
 		
 		// Export all resources the platform has
-		for(AbstractSystemResource systemResource : platform.getResources()) {
+		for(AbstractSystemResource systemResource : BaseUtils.force(platform.getResources())) {
 			if(systemResource == null || (systemResource instanceof SystemResourceAlias && ((SystemResourceAlias) systemResource).getDelegate() == null)) continue;
 			super.createEObjectDescriptions(systemResource, acceptor);
 		}

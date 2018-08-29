@@ -18,6 +18,9 @@ class FunctionType extends TypeConstructorType {
 		super(origin, cons, #[from, to]);
 		this.from = from;
 		this.to = to;
+		if(from === null || to === null) {
+			throw new NullPointerException;
+		}
 	}
 	
 	override toString() {

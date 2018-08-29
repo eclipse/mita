@@ -13,15 +13,15 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import org.eclipse.mita.base.types.NamedElement
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
@@ -54,7 +54,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			val value = functionCall.arguments.get(1).value;
 			val variableName = '''_new«firstArg.uniqueIdentifier.toFirstUpper»''';
 			
-			val siginstType = ModelUtils.toSpecifier(typeInferrer.infer(siginst.instanceOf));
+			val siginstType = BaseUtils.getType(siginst.instanceOf);
 			
 			return codeFragmentProvider.create('''
 			«typeGenerator.code(siginstType)» «variableName» = «statementGenerator.code(value).noTerminator»;

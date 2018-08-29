@@ -13,14 +13,16 @@
 
 package org.eclipse.mita.program.ui.builder
 
-import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import com.google.inject.Inject
+import com.google.inject.Provider
 import java.util.List
 import java.util.Map
 import org.eclipse.core.resources.IMarker
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.emf.common.util.URI
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.xtext.builder.BuilderParticipant
 import org.eclipse.xtext.builder.EclipseResourceFileSystemAccess2
 import org.eclipse.xtext.generator.IFileSystemAccess2
@@ -36,7 +38,10 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 
 		private final IBuildContext delegate
 
-		public new(IBuildContext delegate) {
+		MitaResourceSet resourceSet;
+
+		public new(MitaResourceSet resourceSet, IBuildContext delegate) {
+			this.resourceSet = resourceSet;
 			this.delegate = delegate;
 		}
 
@@ -53,7 +58,7 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 		}
 
 		override getResourceSet() {
-			return delegate.resourceSet;
+			return resourceSet;
 		}
 
 		override isSourceLevelURI(URI uri) {
@@ -78,6 +83,9 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 
 	@Inject
 	private IContainer.Manager containerManager;
+	
+	@Inject
+	Provider<MitaResourceSet> resourceSetProvider;
 
 	override build(IBuildContext context, IProgressMonitor monitor) throws CoreException {
 		buildSemaphore.set(false);
@@ -112,7 +120,7 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 		Map<OutputConfiguration, Iterable<IMarker>> generatorMarkers, IBuildContext context,
 		EclipseResourceFileSystemAccess2 access, IProgressMonitor progressMonitor) throws CoreException {
 
-		super.doBuild(deltas, outputConfigurations, generatorMarkers, new NoRebuildBuildContextDecorator(context),
+		super.doBuild(deltas, outputConfigurations, generatorMarkers, new NoRebuildBuildContextDecorator(resourceSetProvider.get(), context),
 			access, progressMonitor)
 	}
 

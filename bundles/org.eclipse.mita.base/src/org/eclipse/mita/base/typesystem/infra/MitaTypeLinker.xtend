@@ -15,14 +15,18 @@ import org.eclipse.mita.base.types.TypeConstructor
 
 class MitaTypeLinker extends Linker {
 	
+	def boolean shouldLink(EClass classifier) {
+		return TypesPackage.eINSTANCE.type.isSuperTypeOf(classifier);
+	}
+	
 	override ensureIsLinked(EObject obj, INode node, CrossReference ref, Set<EReference> handledReferences, IDiagnosticProducer producer) {
 		val classifier = ref.type?.classifier;
 		if(classifier instanceof EClass) {
-			if(TypesPackage.eINSTANCE.type.isSuperTypeOf(classifier)) {
+			if(shouldLink(classifier)) {
 				super.ensureIsLinked(obj, node, ref, handledReferences, producer);
 				val txt = NodeModelUtils.getTokenText(node);
-				println(txt);
-				println('''Linking types: «obj.eResource?.URI.lastSegment»: «NodeModelUtils.getTokenText(node)» on («obj.eClass?.name»)«obj»''');
+//				println(txt);
+				//println('''Linking types: «obj.eResource?.URI.lastSegment»: «NodeModelUtils.getTokenText(node)» on («obj.eClass?.name»)«obj»''');
 			}
 		}
 	}

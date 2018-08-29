@@ -13,6 +13,11 @@
 
 package org.eclipse.mita.program.generator.internal
 
+import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.SystemEventSource
@@ -25,10 +30,6 @@ import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 
 class SystemResourceHandlingGenerator {
 
@@ -81,7 +82,7 @@ class SystemResourceHandlingGenerator {
 	
 				«IF setup !== null»
 				«FOR signalInstance : setup?.signalInstances»
-				«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
+				«val signalType = BaseUtils.getType(signalInstance.instanceOf)»
 				/**
 				 * Provides read access to «signalInstance.name».
 				 */
@@ -133,7 +134,7 @@ class SystemResourceHandlingGenerator {
 				
 				«IF setup !== null»
 				«FOR signalInstance : setup?.signalInstances»
-				«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
+				«val signalType = BaseUtils.getType(signalInstance.instanceOf)»
 				/**
 				 * Provides read access to the «signalInstance.name» signal.
 				 */

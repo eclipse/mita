@@ -12,7 +12,6 @@ class MitaBaseResource extends XtextResource {
 	
 	@Inject
 	protected MitaTypeLinker typeLinker;
-
 	
 	override load(Map<?, ?> options) throws IOException {
 		super.load(options)

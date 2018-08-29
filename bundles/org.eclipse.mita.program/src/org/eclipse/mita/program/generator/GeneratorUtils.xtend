@@ -310,12 +310,18 @@ class GeneratorUtils {
 		}
 		return '''«parent.name»_«singleton.name»_e''';
 	}
+	dispatch def String getEnumName(EObject obj) {
+		return "ERROR: getEnumName";
+	}
 	
 	dispatch def String getStructName(SumType sumType) {
 		return '''«sumType.name»''';
 	}
 	dispatch def String getStructName(SumAlternative sumType) {
 		return '''«sumType.name»''';
+	}
+	dispatch def String getStructName(EObject obj) {
+		return "ERROR: getStructName";
 	}
 	
 	dispatch def String getStructType(Singleton singleton) {
@@ -334,6 +340,7 @@ class GeneratorUtils {
 	dispatch def String getStructType(NamedProductType productType) {
 		return '''«productType.baseName»_t''';
 	}
+	
 	
 	def dispatch String getBaseName(Sensor sensor) {
 		return sensor.name.toFirstUpper

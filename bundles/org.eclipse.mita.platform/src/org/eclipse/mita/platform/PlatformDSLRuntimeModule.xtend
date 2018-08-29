@@ -37,6 +37,10 @@ import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
+import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
+import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
+import org.eclipse.emf.ecore.EClass
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 
@@ -47,10 +51,12 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(IDefaultResourceDescriptionStrategy).to(PlatformDslResourceDescriptionStrategy)
 		binder.bind(DefaultRuntimeModule).annotatedWith(Names.named("injectingModule")).toInstance(this)
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
-
+	
+		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(IConstraintFactory).to(BaseConstraintFactory);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
+		binder.bind(MitaTypeLinker).to(PlaformLinker);
 	}
 
 	override bindIGlobalScopeProvider() {
@@ -70,6 +76,14 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 	
 	override bindXtextResourceSet() {
 		return MitaResourceSet
+	}
+
+	static class PlaformLinker extends MitaTypeLinker {
+		
+		override shouldLink(EClass classifier) {
+			super.shouldLink(classifier) || PlatformPackage.eINSTANCE.abstractSystemResource.isSuperTypeOf(classifier);
+		}
+		
 	}
 
 }

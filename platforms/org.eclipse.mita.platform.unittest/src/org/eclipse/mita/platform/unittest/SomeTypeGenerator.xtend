@@ -18,7 +18,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
@@ -27,6 +27,7 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class SomeTypeGenerator extends AbstractTypeGenerator {
 	
@@ -38,15 +39,15 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 
 	
 	
-	override generateVariableDeclaration(PresentTypeSpecifier type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type.typeArguments.head)» «stmt.name»;''');
+	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
+		codeFragmentProvider.create('''«typeGenerator.code((type as TypeConstructorType).typeArguments.head)» «stmt.name»;''');
 	}
 	
-	override generateTypeSpecifier(PresentTypeSpecifier type, EObject context) {
-		codeFragmentProvider.create('''«typeGenerator.code(type.typeArguments.head)»''')
+	override generateTypeSpecifier(AbstractType type, EObject context) {
+		codeFragmentProvider.create('''«typeGenerator.code((type as TypeConstructorType).typeArguments.head)»''')
 	}
 	
-	override generateNewInstance(PresentTypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	

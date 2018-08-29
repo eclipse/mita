@@ -59,6 +59,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSetProvider
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 

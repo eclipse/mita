@@ -54,6 +54,7 @@ import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
 /**
  * Generates code from your model files on save.
  * 
@@ -114,7 +115,6 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
-		if(false) 	
 		resource.resourceSet.doGenerate(fsa);
 	}
 	
@@ -138,9 +138,6 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	}
 	
 	override doGenerate(ResourceSet input, IFileSystemAccess2 fsa, Function1<Resource, Boolean> includeInBuildPredicate) {
-		if(true) {
-			return;
-		}
 		val resourcesToCompile = input
 			.resources
 			.filter(includeInBuildPredicate)
@@ -153,7 +150,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		// Include libraries such as the stdlib in the compilation context
 		val libs = libraryProvider.libraries;
 		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
-		val stdlib = stdlibUri.map[input.getResource(it, true).contents.filter(Program).head]
+		val stdlib = stdlibUri.map[input.getResource(it, true).contents.filter(Program).head].force;
 	
 		/*
 		 * Steps:
@@ -166,12 +163,12 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val compilationUnits = (resourcesToCompile)
 			.map[x | x.contents.filter(Program).head ]
 			.filterNull
-			.map[x | transformer.get.transform(x.copy) ]
-			.toList();
+//			.map[x | transformer.get.transform(x.copy) ]
+//			.toList();
 		
 		val someProgram = compilationUnits.head;
 		val platform = modelUtils.getPlatform(someProgram);
-		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);		
+		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
 		
 		val context = compilationContextProvider.get(compilationUnits, stdlib);
 		

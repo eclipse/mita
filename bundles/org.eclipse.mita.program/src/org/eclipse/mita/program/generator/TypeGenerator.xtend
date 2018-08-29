@@ -27,8 +27,10 @@ import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
+import org.eclipse.mita.base.util.BaseUtils
 
 /**
  * Facade for generating types.
@@ -47,49 +49,49 @@ class TypeGenerator implements IGenerator {
 	@Inject
 	protected extension GeneratorUtils
 
-	def CodeFragment code(PresentTypeSpecifier typeSpec) {
-		return if(typeSpec === null) {
+	def CodeFragment code(AbstractType type) {
+		return if(type === null || !(type.origin instanceof Type)) {
 			CodeFragment.EMPTY
 		} else {
-			code(typeSpec.type, typeSpec);
+			code(type.origin as Type, type);
 		} 
 	}
 	
-	protected dispatch def CodeFragment code(Singleton singleton, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(Singleton singleton, AbstractType typeSpec) {
 		return codeFragmentProvider.create('''«singleton.structType»''');
 	}
-	protected dispatch def CodeFragment code(AnonymousProductType productType, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(AnonymousProductType productType, AbstractType typeSpec) {
 		// if we have multiple members, we have an actual struct, otherwise we are just an alias
 		if(productType.typeSpecifiers.length > 1) {
 			return codeFragmentProvider.create('''«productType.structType»''');	
 		}
 		else {
-			return productType.typeSpecifiers.head.code;
+			return BaseUtils.getType(productType.typeSpecifiers.head).code;
 		}
 	}
-	protected dispatch def CodeFragment code(NamedProductType productType, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(NamedProductType productType, AbstractType typeSpec) {
 		return codeFragmentProvider.create('''«productType.structType»''');
 	}
 	
-	protected dispatch def CodeFragment code(ExceptionTypeDeclaration exception, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(ExceptionTypeDeclaration exception, AbstractType typeSpec) {
 		return exceptionGenerator.exceptionType;
 	}
 	
-	protected dispatch def CodeFragment code(GeneratedType type, PresentTypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(GeneratedType type, AbstractType typeSpec) {
 		return generatorRegistry.getGenerator(type)?.generateTypeSpecifier(typeSpec, type);
 	}
 	
-	protected dispatch def CodeFragment code(ComplexType type, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(ComplexType type, AbstractType typeSpec) {
 		// TODO: find defining resource and header
 		return codeFragmentProvider.create('''«type.name»'''); 
 	}
 	
-	protected dispatch def CodeFragment code(EnumerationType type, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(EnumerationType type, AbstractType typeSpec) {
 		// TODO: find defining resource and header
 		return codeFragmentProvider.create('''«type.name»''');
 	}
 	
-	protected dispatch def CodeFragment code(NativeType type, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(NativeType type, AbstractType typeSpec) {
 		var result = codeFragmentProvider.create('''«type.CName»''')
 		if(type.header !== null) {
 			result = result.addHeader(type.header, true);
@@ -97,7 +99,7 @@ class TypeGenerator implements IGenerator {
 		return result;
 	}
 	
-	protected dispatch def CodeFragment code(PrimitiveType type, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(PrimitiveType type, AbstractType typeSpec) {
 		return if(type.name == ITypeSystem.STRING) {
 			codeFragmentProvider.create('''char*''');
 		} else {
@@ -105,11 +107,11 @@ class TypeGenerator implements IGenerator {
 		}
 	}
 	
-	protected dispatch def CodeFragment code(AbstractSystemResource type, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(AbstractSystemResource type, AbstractType typeSpec) {
 		throw new UnsupportedOperationException('Cannot use system resources as types yet');
 	}
 	
-	protected dispatch def CodeFragment code(Type type, TypeSpecifier typeSpec) {
+	protected dispatch def CodeFragment code(Type type, AbstractType typeSpec) {
 		throw new UnsupportedOperationException('''Mita implementation error: missing type «type»''');
 	}
 	

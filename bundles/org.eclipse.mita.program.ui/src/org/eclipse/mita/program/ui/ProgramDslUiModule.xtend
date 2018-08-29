@@ -31,6 +31,9 @@ import org.eclipse.xtext.ui.editor.IURIEditorOpener
 import org.eclipse.xtext.ui.editor.contentassist.ContentProposalPriorities
 import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration
+import org.eclipse.xtext.ui.resource.IResourceSetProvider
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSetProvider
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 @FinalFieldsConstructor
 class ProgramDslUiModule extends AbstractProgramDslUiModule {
@@ -39,7 +42,7 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 		if (PlatformUI.isWorkbenchRunning())
 			binder.bind(IURIEditorOpener).annotatedWith(LanguageSpecific).to(LibraryURIEditorOpener);
 		binder.bind(ContentProposalPriorities).to(ProposalPriorityHelper)
-		binder.bind(XtextResourceSet).to(MitaResourceSet)
+		
 	}
 
 	def Class<? extends IEObjectHoverProvider> bindIEObjectHoverProvider() {
@@ -54,6 +57,15 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 		return ProgramDslSemanticHighlightingCalculator;
 	}
 
+	override configure(Binder binder) {
+		super.configure(binder)
+		binder.bind(XtextResourceSet).to(MitaResourceSet)
+	}
+
+	override configureBuilderPreferenceStoreInitializer(Binder binder) {
+		super.configureBuilderPreferenceStoreInitializer(binder)
+	}
+
 	override bindIXtextEditorCallback() {
 		return ProgramDslEditorCallback;
 	}
@@ -61,9 +73,8 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 	override bindIXtextBuilderParticipant() {
 		return ProgramDslBuilderParticipant
 	}
-	
+			
 	override bindIShouldGenerate() {
 		return ProjectErrorShouldGenerate
 	}
-
 }

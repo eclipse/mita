@@ -58,9 +58,10 @@ import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesFactory
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.ArrayLiteral
@@ -109,8 +110,6 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 class StatementGenerator {
 
 	@Inject extension ProgramDslTraceExtensions
-
-	@Inject ITypeSystemInferrer typeInferrer
 	
 	@Inject
 	protected extension GeneratorUtils
@@ -185,10 +184,9 @@ class StatementGenerator {
 		/* TODO: replace this hack with a typecast expression that supports TypeSpecifier
 		 * see https://github.com/Yakindu/statecharts/issues/1779
 		 */
-		val typeSpec = TypesFactory.eINSTANCE.createPresentTypeSpecifier();
-		typeSpec.type = stmt.type;
+		val type = BaseUtils.getType(stmt.type)
 
-		'''(«typeGenerator.code(typeSpec)») («stmt.operand.code.noTerminator»)'''
+		'''(«typeGenerator.code(type)») («stmt.operand.code.noTerminator»)'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(PrimitiveValueExpression stmt) {
@@ -286,7 +284,7 @@ class StatementGenerator {
 				val sumType = (owner as ElementReferenceExpression).reference as SumType;
 				val dataType = if(feature instanceof AnonymousProductType) {
 					if(feature.typeSpecifiers.length == 1) {
-						feature.typeSpecifiers.head.ctype;
+						BaseUtils.getType(feature.typeSpecifiers.head).ctype;
 					}
 					else {
 						feature.structType
@@ -390,15 +388,14 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode code(ReturnStatement stmt) {
 		val hasValue = stmt.value !== null;
 		var AbstractTypeGenerator _generatedTypeGenerator = null;
-		var PresentTypeSpecifier _resultType = null;
+		var AbstractType _resultType = null;
 		if(hasValue) {
 			val value = stmt.value;
-			val inference = typeInferrer.infer(value);
-			val expressionType = inference?.type;
-			
-			if (expressionType instanceof GeneratedType) {
-				_generatedTypeGenerator = registry.getGenerator(expressionType);
-				_resultType = ModelUtils.toSpecifier(inference);
+			val expressionType = BaseUtils.getType(value);
+			val origin = expressionType.origin
+			if (origin instanceof GeneratedType) {
+				_generatedTypeGenerator = registry.getGenerator(origin);
+				_resultType = expressionType;
 			}
 		}
 		val generatedTypeGenerator = _generatedTypeGenerator;
@@ -421,13 +418,13 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(AssignmentExpression stmt) {
-		val inference = typeInferrer.infer(stmt);
-		val expressionType = inference?.type;
+		val expressionType = BaseUtils.getType(stmt)
+		
 		val expression = stmt.expression;
 		
 		if (expressionType instanceof GeneratedType) {
 			val generator = registry.getGenerator(expressionType);
-			val cf = generator.generateExpression(ModelUtils.toSpecifier(inference), stmt.varRef, stmt.operator, stmt.expression);
+			val cf = generator.generateExpression(expressionType, stmt.varRef, stmt.operator, stmt.expression);
 			return '''«cf»''';
 		} else if (expression instanceof ElementReferenceExpression) {
 				val reference = expression.reference;
@@ -457,12 +454,12 @@ class StatementGenerator {
 		 * the StringGenerator (i.e. the code generator registered at the generated-type string). Inelegantly, we
 		 * explicitly encode this case anddevolve code generation the registered code generator of the generated-type. 
 		 */
-		val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));
-		val type = typeSpec?.type;
-		if (type instanceof GeneratedType) {
-			val generator = registry.getGenerator(type);
-			if (generator !== null && generator.checkExpressionSupport(typeSpec, null, null)) {
-				return '''«generator.generateExpression(typeSpec, stmt, null, null)»''';
+		val type = BaseUtils.getType(stmt);
+		val origin = type.origin;
+		if (origin instanceof GeneratedType) {
+			val generator = registry.getGenerator(origin);
+			if (generator !== null && generator.checkExpressionSupport(type, null, null)) {
+				return '''«generator.generateExpression(type, stmt, null, null)»''';
 			} else {
 				throw new CoreException(
 					new Status(IStatus.ERROR, "org.eclipse.mita.program",
@@ -484,7 +481,7 @@ class StatementGenerator {
 	}
 	
 	
-	def IGeneratorNode generateFunCallStmt(String variableName, TypeSpecifier inferenceResult, ElementReferenceExpression initialization) {
+	def IGeneratorNode generateFunCallStmt(String variableName, AbstractType type, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
 		if (reference instanceof FunctionDefinition) {
 			return codeFragmentProvider.create('''
@@ -509,24 +506,25 @@ class StatementGenerator {
 	
 	def IGeneratorNode initializationCode(VariableDeclaration stmt) {
 		val initialization = stmt.initialization;
-		val inferenceResult = stmt.inferType;
-		val type = inferenceResult?.type;
-		val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));	
+		val type = BaseUtils.getType(stmt)	
+		val origin = type.origin;
 		
-		if (type instanceof GeneratedType) {
-			val generator = registry.getGenerator(type);
+		if (origin instanceof GeneratedType) {
+			val op = AssignmentOperator.ASSIGN;
+			val generator = registry.getGenerator(origin);
 			if (initialization instanceof NewInstanceExpression) {
-				return generator.generateNewInstance(typeSpec, initialization);
+				return generator.generateNewInstance(type, initialization);
 			} else if (initialization instanceof ArrayAccessExpression) {
-				val op = AssignmentOperator.ASSIGN;
-				return generator.generateExpression(typeSpec, stmt, op, initialization);
+				return generator.generateExpression(type, stmt, op, initialization);
 			} else if (initialization instanceof ElementReferenceExpression) {
 				if(initialization.isOperationCall) {
-					return generateFunCallStmt(stmt.name, inferenceResult, initialization);
+					return generateFunCallStmt(stmt.name, type, initialization);
 				}
+			} else {
+				return generator.generateExpression(type, stmt, op, initialization);
 			}
 		} else if (initialization instanceof ElementReferenceExpression) {
-			return generateFunCallStmt(stmt.name, inferenceResult, initialization);
+			return generateFunCallStmt(stmt.name, type, initialization);
 		}
 		return CodeFragment.EMPTY;
 	}
@@ -534,9 +532,8 @@ class StatementGenerator {
 	dispatch def IGeneratorNode code(VariableDeclaration stmt) {
 		// «platformGenerator.typeGenerator.code(stmt.typeSpecifier)»
 		val initialization = stmt.initialization;
-		val inferenceResult = stmt.inferType;
-		val type = inferenceResult?.type;
-		val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));
+		val type = BaseUtils.getType(stmt);
+		val origin = type.origin;
 	
 		var result = stmt.trace;
 		
@@ -544,9 +541,9 @@ class StatementGenerator {
 		
 		// generate declaration
 		// generated types
-		if (type instanceof GeneratedType) {
-			val generator = registry.getGenerator(type);
-			result.children += generator.generateVariableDeclaration(inferenceResult, stmt);
+		if (origin instanceof GeneratedType) {
+			val generator = registry.getGenerator(origin);
+			result.children += generator.generateVariableDeclaration(type, stmt);
 			
 		// Exception base variable
 		} else if (stmt instanceof ExceptionBaseVariableDeclaration) {
@@ -565,24 +562,24 @@ class StatementGenerator {
 				// constructors of structural types are done directly
 				!(ref instanceof SumAlternative || ref instanceof StructureType)
 			) {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
+				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name»;''');
 			}
 			// copy assigmnent
 			// since type != generatedType we can copy with assignment
 			else {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
+				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
 				initializationDone = true;
 			}
 		// constant assignments and similar get here
 		} else {
 			if (stmt.initialization !== null) {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
+				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
 			} else if (type instanceof StructureType) {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = {0};''');
+				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = {0};''');
 			} else if (type instanceof PrimitiveType) {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = 0;''');
+				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = 0;''');
 			} else {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = WARNING unsupported initialization;''');
+				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = WARNING unsupported initialization;''');
 			}
 			// all of the above did initialization
 			initializationDone = true;
@@ -760,12 +757,12 @@ class StatementGenerator {
 	}
 	
 	@Traced dispatch def IGeneratorNode code(IsAssignmentCase stmt) {
-		val varTypeSpec = stmt.assignmentVariable.typeSpecifier as PresentTypeSpecifier;
-		val varType = varTypeSpec.type as SumAlternative;
+		val varType = BaseUtils.getType(stmt.assignmentVariable);
+		val origin = varType.origin;
 		val where = stmt.eContainer as WhereIsStatement;
 		'''
-		case «varType.enumName»: {
-			«varTypeSpec.ctype» «stmt.assignmentVariable.name» = «where.matchElement.code».data.«varType.structName»;
+		case «origin.enumName»: {
+			«varType.ctype» «stmt.assignmentVariable.name» = «where.matchElement.code».data.«origin.structName»;
 			«stmt.body.code.noBraces»
 			break;
 		}
@@ -807,7 +804,7 @@ class StatementGenerator {
 	}
 	
 	@Traced dispatch def IGeneratorNode code(IsDeconstructor stmt) {
-		val varTypeSpec = stmt.inferType;
+		val varType = BaseUtils.getType(stmt);
 		val isDeconstructionCase = stmt.eContainer as IsDeconstructionCase;
 		val isDeconstructionCaseType = isDeconstructionCase.productType;
 		val where = isDeconstructionCase.eContainer as WhereIsStatement;
@@ -815,7 +812,7 @@ class StatementGenerator {
 		val idx = isDeconstructionCase.deconstructors.indexOf(stmt);
 		val productType = isDeconstructionCase.productType;
 		val member = accessor(productType, stmt.productMember, ".", "").apply(idx);
-		'''«varTypeSpec.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«member»;'''
+		'''«varType.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«member»;'''
 	}
 	
 	@Traced dispatch def IGeneratorNode code(LoopBreakerStatement stmt) {
@@ -833,8 +830,8 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def header(FunctionDefinition definition) {
-		val resultType = definition.inferType;
-		'''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.ctype»* _result«IF !definition.parameters.empty», «ENDIF»«FOR x : definition.parameters SEPARATOR ', '»«x.inferType.ctype» «x.name»«ENDFOR»);'''
+		val resultType = BaseUtils.getType(definition);
+		'''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.ctype»* _result«IF !definition.parameters.empty», «ENDIF»«FOR x : definition.parameters SEPARATOR ', '»«BaseUtils.getType(x).ctype» «x.name»«ENDFOR»);'''
 	}
 	
 	dispatch def IGeneratorNode header(StructureType definition) {
@@ -846,7 +843,7 @@ class StatementGenerator {
 	}
 	
 	def IGeneratorNode structureTypeCodeDecl(EObject obj, List<Parameter> parameters, String typeName) {
-		return structureTypeCodeReal(obj, parameters.map[new Pair(it.inferType.ctype, it.baseName)], typeName);
+		return structureTypeCodeReal(obj, parameters.map[new Pair(BaseUtils.getType(it).ctype, it.baseName)], typeName);
 	
 	}
 	@Traced def IGeneratorNode structureTypeCodeReal(EObject obj, List<Pair<CodeFragment, String>> typesAndNames, String typeName) {
@@ -878,7 +875,7 @@ class StatementGenerator {
 		«FOR alternative: definition.alternatives.filter(AnonymousProductType)»
 		««« If we have only one typeSpecifier, we shorten to an alias, so we don't create a struct here 	
 		«IF alternative.typeSpecifiers.length > 1»
-		«structureTypeCodeReal(alternative, alternative.typeSpecifiers.indexed.map[new Pair(it.value.inferType.ctype, '''_«it.key»''')].toList, alternative.structType)»
+		«structureTypeCodeReal(alternative, alternative.typeSpecifiers.indexed.map[new Pair(BaseUtils.getType(it.value).ctype, '''_«it.key»''')].toList, alternative.structType)»
 		«ENDIF»		
 		«ENDFOR»
 		
@@ -891,7 +888,7 @@ class StatementGenerator {
 		typedef struct {
 			«definition.enumName» tag;
 			union {
-				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«(alternative as AnonymousProductType).typeSpecifiers.head.ctype»«ELSE»«alternative.structType»«ENDIF» «alternative.structName»;
+				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«BaseUtils.getType(alternative as AnonymousProductType).ctype»«ELSE»«alternative.structType»«ENDIF» «alternative.structName»;
 			«ENDFOR»
 			} data;
 		} «definition.structName»;
@@ -926,12 +923,8 @@ class StatementGenerator {
 		«generateExceptionHandler(args, 'exception')»'''
 	}
 
-	private def inferType(EObject expr) {
-		return ModelUtils.toSpecifier(typeInferrer.infer(expr));
-	}
-
-	private def getCtype(TypeSpecifier type) {
-		if(type instanceof PresentTypeSpecifier) typeGenerator.code(type) else codeFragmentProvider.create('''void*''');
+	private def getCtype(AbstractType type) {
+		if(type instanceof TypeVariable) codeFragmentProvider.create('''void*''') else typeGenerator.code(type);
 	}
 
 }

@@ -75,7 +75,12 @@ class MitaResourceSet extends XtextResourceSet {
 		resource.doLinkReferences;
 	}
 	
+	var isComputingTypes = false;
 	protected def computeTypes() {
+		if(isComputingTypes) {
+			return;
+		}
+		isComputingTypes = true;
 		val constraints = resources.map[ 
 			val model = it.contents.head;
 			cache.get(ConstraintSystem, it, [
@@ -83,10 +88,11 @@ class MitaResourceSet extends XtextResourceSet {
 				val result = constraintFactory.create(model);
 				return result;		
 			]);
-		];
+		].force;
 		
 		val allConstraints = ConstraintSystem.combine(constraints);
 		latestSolution = constraintSolver.solve(allConstraints);
+		isComputingTypes = false;
 	}
 	
 	protected def List<Resource> ensureLibrariesAreLoaded() {

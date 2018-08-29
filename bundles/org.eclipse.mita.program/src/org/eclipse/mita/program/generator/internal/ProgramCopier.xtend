@@ -13,15 +13,19 @@
 
 package org.eclipse.mita.program.generator.internal
 
-import org.eclipse.mita.program.Program
+import com.google.inject.Inject
+import com.google.inject.Provider
 import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl
 import org.eclipse.emf.ecore.util.EcoreUtil.Copier
+import org.eclipse.mita.program.Program
 import org.eclipse.xtext.resource.XtextResourceSet
 
 class ProgramCopier {
-
+	
+	@Inject
+	Provider<XtextResourceSet> resourceSetProvider;
+	
 	private static class CopySourceAdapter extends AdapterImpl {
 		private final EObject origin;
 		
@@ -48,7 +52,7 @@ class ProgramCopier {
 	}
 	
 	protected def createPseudoResource(Program original, Program copy) {
-		val set = new XtextResourceSet();
+		val set = resourceSetProvider.get;
 		val res = set.createResource(original.eResource.URI);
 		res.contents.add(copy);
 	}

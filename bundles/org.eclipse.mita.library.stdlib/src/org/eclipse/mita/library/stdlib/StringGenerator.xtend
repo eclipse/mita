@@ -19,9 +19,8 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ReturnStatement
@@ -40,6 +39,7 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
+import org.eclipse.mita.base.util.BaseUtils
 
 class StringGenerator extends AbstractTypeGenerator {
 	
@@ -58,9 +58,6 @@ class StringGenerator extends AbstractTypeGenerator {
 	protected TypeGenerator typeGenerator
 	
 	@Inject
-	protected ITypeSystemInferrer typeInferrer
-	
-	@Inject
 	protected extension StatementGenerator
 	
 	@Inject
@@ -76,22 +73,22 @@ class StringGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override checkExpressionSupport(PresentTypeSpecifier type, AssignmentOperator operator, PresentTypeSpecifier otherType) {
+	override checkExpressionSupport(AbstractType type, AssignmentOperator operator, AbstractType otherType) {
 		var result = false;
 
 		// inline expression support
 		result = result || operator === null;
 		
 		// assign to string
-		result = result || (operator == AssignmentOperator.ASSIGN && type.type == otherType.type && type.type?.name == 'string')
+		result = result || (operator == AssignmentOperator.ASSIGN && type == otherType && type.name == 'string')
 		
 		// append to string
-		result = result || (operator == AssignmentOperator.ADD_ASSIGN && type.type == otherType.type && type.type?.name == 'string')
+		result = result || (operator == AssignmentOperator.ADD_ASSIGN && type == otherType && type.name == 'string')
 		
 		return result; 
 	}
 	
-	override generateExpression(PresentTypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
+	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
 		return if(operator === null) {
 			val stmt = left as EObject;
 						
@@ -124,7 +121,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override generateVariableDeclaration(PresentTypeSpecifier type, VariableDeclaration stmt) {
+	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
 		return codeFragmentProvider.create(trace(stmt).append(generateVariableDeclaration(stmt.name, stmt.initialization)));
 	}
 	
@@ -210,7 +207,7 @@ class StringGenerator extends AbstractTypeGenerator {
 			if(i < expression.content.length) {
 				val sub = expression.content.get(i);
 				if(sub !== null) {
-					val type = typeInferrer.infer(sub)?.type;
+					val type = BaseUtils.getType(sub);
 					var typePattern = switch(type?.name) {
 						case 'uint32': '%" PRIu32 "'
 						case 'uint16': '%" PRIu16 "'
@@ -231,11 +228,11 @@ class StringGenerator extends AbstractTypeGenerator {
 		return result;
 	}
 	
-	override generateTypeSpecifier(PresentTypeSpecifier type, EObject context) {
+	override generateTypeSpecifier(AbstractType type, EObject context) {
 		codeFragmentProvider.create('''char*''')
 	}
 	
-	override generateNewInstance(PresentTypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	

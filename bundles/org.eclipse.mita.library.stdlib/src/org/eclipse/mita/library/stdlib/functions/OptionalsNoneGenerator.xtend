@@ -25,30 +25,29 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 	
 	@Inject 
 	protected extension StatementGenerator statementGenerator
-		
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
-	
+			
 	@Inject
 	protected GeneratorRegistry registry
 	
 	override generate(ElementReferenceExpression functionCall, String resultVariableName) {
 		// need the optionalGenerator
-		val funTypeIR = typeInferrer.infer(functionCall);
-		val funType = funTypeIR.type;
-		if(!(funType instanceof GeneratedType)) {
+		val funType = BaseUtils.getType(functionCall);
+		val funTypeOrigin = funType.origin;
+		if(!(funType instanceof TypeConstructorType)) {
 			return CodeFragment.EMPTY;
 		}
 		val optGen = registry.getGenerator(funType as GeneratedType);
 				
 		codeFragmentProvider.create('''
 			«IF resultVariableName === null || resultVariableName.empty»
-			(«optGen?.generateTypeSpecifier(ModelUtils.toSpecifier(funTypeIR), functionCall)») {
+			(«optGen?.generateTypeSpecifier(funType, functionCall)») {
 				.«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.None.name»
 			}
 			«ELSE»
@@ -59,11 +58,10 @@ class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 	
 	override callShouldBeUnraveled(ElementReferenceExpression expression) {
 		// if we can't fully infer the type we need to unravel
-		val refTypeIR = typeInferrer.infer(expression);
-		val refType = refTypeIR.type;
-		if(!(refType instanceof GeneratedType) || refType.name != "optional") {
+		val refType = BaseUtils.getType(expression);
+		if(!(refType instanceof TypeConstructorType) || refType.name != "optional") {
 			return true;
 		}
-		return ModelUtils.containsTypeBy(true, [t | t.abstract || t instanceof TypeParameter], refTypeIR);
+		return !refType.freeVars.empty;
 	}
 }

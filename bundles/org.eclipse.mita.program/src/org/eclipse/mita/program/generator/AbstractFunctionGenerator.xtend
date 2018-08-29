@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.util.BaseUtils
 
 /**
  * Generates code implementing a function call. 
@@ -28,9 +29,6 @@ abstract class AbstractFunctionGenerator implements IGenerator {
 	
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider;
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer;
 	
 	/**
 	 * Generates code from a function application and stores the result in a variable named resultVariableName.
@@ -46,8 +44,8 @@ abstract class AbstractFunctionGenerator implements IGenerator {
 	 * The default implementation returns true here, which means that the function call will be unraveled (unless the function's return type is void).
 	 */
 	def boolean callShouldBeUnraveled(ElementReferenceExpression expression) {
-		val inferenceResult = typeInferrer.infer(expression?.reference);
-		if(inferenceResult?.type?.name == 'void') {
+		val inferenceResult = BaseUtils.getType(expression?.reference);
+		if(inferenceResult?.name == 'void') {
 			// don't unravel void function calls
 			return false;
 		} else {

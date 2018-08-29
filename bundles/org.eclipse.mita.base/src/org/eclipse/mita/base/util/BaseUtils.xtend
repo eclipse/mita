@@ -59,7 +59,8 @@ class BaseUtils {
 	def static AbstractType getType(EObject obj) {
 		val rs = obj.eResource?.resourceSet;
 		if(rs instanceof MitaResourceSet) {
-			return rs.latestSolution?.solution?.apply(TypeVariableAdapter.get(obj));	
+			val solution = rs.latestSolution?.solution;
+			return solution?.apply(TypeVariableAdapter.get(obj));	
 		}
 		return null;
 	}
