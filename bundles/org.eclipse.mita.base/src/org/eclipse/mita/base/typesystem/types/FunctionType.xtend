@@ -15,7 +15,7 @@ class FunctionType extends TypeConstructorType {
 	protected final AbstractType to;
 	
 	new(EObject origin, String cons, AbstractType from, AbstractType to) {
-		super(origin, cons);
+		super(origin, cons, #[from, to]);
 		this.from = from;
 		this.to = to;
 	}
@@ -25,7 +25,7 @@ class FunctionType extends TypeConstructorType {
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		new FunctionType(origin, name, superTypes, this.from.replace(from, with), this.to.replace(from, with));
+		new FunctionType(origin, name, #[], superTypes, this.from.replace(from, with), this.to.replace(from, with));
 	}
 	
 	override getFreeVars() {

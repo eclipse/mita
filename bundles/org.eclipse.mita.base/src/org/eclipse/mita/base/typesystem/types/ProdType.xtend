@@ -13,39 +13,28 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force;
 @FinalFieldsConstructor
 @EqualsHashCode
 @Accessors
-class ProdType extends TypeConstructorType {	
-	protected final List<AbstractType> types;
+class ProdType extends TypeConstructorType {
 			
 	override toString() {
-		(name ?: "") + "(" + types.join(", ") + ")"
+		(name ?: "") + "(" + typeArguments.join(", ") + ")"
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		new ProdType(origin, name, superTypes, types.map[ it.replace(from, with) ].force);
+		new ProdType(origin, name, typeArguments.map[ it.replace(from, with) ].force, superTypes);
 	}
 	
-	override getFreeVars() {
-		return types.filter(TypeVariable);
-	}
-	
-	override getTypeArguments() {
-		return types;
-	}
-	
-	
-
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
 		return new SubtypeConstraint(tau, sigma);
 	}
 	
 	override void expand(Substitution s, TypeVariable tv) {
-		val newTypeVars = types.map[ new TypeVariable(it.origin) as AbstractType ].force;
-		val newPType = new ProdType(origin, name, superTypes, newTypeVars);
+		val newTypeVars = typeArguments.map[ new TypeVariable(it.origin) as AbstractType ].force;
+		val newPType = new ProdType(origin, name, newTypeVars, superTypes);
 		s.add(tv, newPType);
 	}
 	
 	override toGraphviz() {
-		'''«FOR t: types»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
+		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
 	}
 	
 }

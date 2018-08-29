@@ -130,7 +130,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase decon) {
 		val matchVariable = system.computeConstraints((decon.eContainer as WhereIsStatement).matchElement);
 		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType];
-		val combinedType = new ProdType(decon, decon.productType.toString, #[], (vars).toList);
+		val combinedType = new ProdType(decon, decon.productType.toString, (vars).toList, #[]);
 		val deconTypeCandidates = resolveReference(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
 		val deconType = if(deconTypeCandidates.size != 1) {
 			//TODO: handle mutliple candidates
@@ -150,7 +150,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	
 	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
 		val parmTypes = parms.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		return new ProdType(null, function.name + "_args", #[], parmTypes);
+		return new ProdType(null, function.name + "_args", parmTypes, #[]);
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject origin, String functionName, AbstractType function, Iterable<Expression> arguments) {
@@ -265,7 +265,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {
 		val argTypes = expression.map[system.computeConstraints(it) as AbstractType].force();
-		return new ProdType(null, functionName + "_args", #[], argTypes);
+		return new ProdType(null, functionName + "_args", argTypes, #[]);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnStatement statement) {

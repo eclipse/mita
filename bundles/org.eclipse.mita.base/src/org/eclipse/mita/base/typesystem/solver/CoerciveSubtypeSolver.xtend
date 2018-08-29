@@ -59,6 +59,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		println(simplification);
 		
 		val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst);
+		if(!solution.issues.empty) {
+			return new ConstraintSolution(system, solution.solution, solution.issues);
+		}
 		val lastSimplification = simplification.system.simplify(solution.solution);
 		println("------------------")
 		println(lastSimplification)
@@ -317,6 +320,15 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return SimplificationResult.success(system, substitution);
 		}
 	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, AbstractType sub, AbstractType top) { 
+		// eliminate:  U <: T
+		val issue = typeRegistry.isSubtypeOf(sub, top);
+		if(issue.present) {
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], issue.get()));
+		} else {
+			return SimplificationResult.success(system, substitution);
+		}
+	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeScheme sub, AbstractType top) {
 		val vars_instance = sub.instantiate
 		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top));
@@ -381,7 +393,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					supremum !== null && successors.forall[ t | 
 						typeRegistry.isSubType(supremum, t)
 					];
-					return null -> UnificationResult.failure(v, "Unable to find valid subtype for " + v.name);					
+					return null -> UnificationResult.failure(v, "CSS: Unable to find valid subtype for " + v.name);					
 				}
 			}
 			else if(!successors.empty) {
@@ -390,7 +402,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					graph.replace(v, infimum);
 					subtitution.add(v, infimum);
 				} else {
-					return null -> UnificationResult.failure(v, "Unable to find valid supertype for " + v.name);
+					return null -> UnificationResult.failure(v, "CSS: Unable to find valid supertype for " + v.name);
 				}
 			}
 			println(graph.toGraphviz);
@@ -456,11 +468,11 @@ class ConstraintGraph extends Graph<AbstractType> {
 		return nodeIndex.filter[k, v| v instanceof TypeVariable].keySet;
 	}
 	def getBaseTypePredecessors(Integer t) {
-		return getPredecessors(t).filter(AbstractBaseType)
+		return getPredecessors(t).filter(AbstractBaseType).force
 	}
 
 	def getBaseTypeSuccecessors(Integer t) {
-		return getSuccessors(t).filter(AbstractBaseType)
+		return getSuccessors(t).filter(AbstractBaseType).force
 	}
 	
 	def <T extends AbstractType> getSupremum(Iterable<T> ts) {

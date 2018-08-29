@@ -42,6 +42,7 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -114,14 +115,14 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		return TypeTranslationAdapter.set(structType, new ProdType(structType, structType.name, #[], types)) => [
+		return TypeTranslationAdapter.set(structType, new ProdType(structType, structType.name, types, #[])) => [
 			system.computeConstraints(structType.constructor);	
 		];
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
 		val subTypes = new ArrayList();
-		return TypeTranslationAdapter.set(sumType, new SumType(sumType, sumType.name, #[], subTypes)) => [
+		return TypeTranslationAdapter.set(sumType, new SumType(sumType, sumType.name, subTypes, #[])) => [
 			sumType.alternatives.forEach[ sumAlt |
 				subTypes.add(system.translateTypeDeclaration(sumAlt));
 			];
@@ -131,7 +132,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
 		println(sumAlt);
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		val prodType = new ProdType(sumAlt, sumAlt.name, #[system.translateTypeDeclaration(sumAlt.eContainer)], types);
+		val prodType = new ProdType(sumAlt, sumAlt.name, types, #[system.translateTypeDeclaration(sumAlt.eContainer)]);
 		return TypeTranslationAdapter.set(sumAlt, prodType) => [
 			system.computeConstraints(sumAlt.constructor);
 		];
@@ -140,12 +141,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
 		val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
-		val atomicType = new AtomicType(genType, genType.name);
+
 		return TypeTranslationAdapter.set(genType, if(typeParameters.empty) {
-			atomicType;
+			new AtomicType(genType, genType.name);
 		}
 		else {
-			new TypeScheme(genType, typeArgs, atomicType);
+			new TypeScheme(genType, typeArgs, new TypeConstructorType(genType, genType.name, typeArgs.map[it as AbstractType].force));
 		}) => [
 			system.computeConstraints(genType.constructor);			
 		]

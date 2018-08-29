@@ -11,11 +11,11 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 class CoSumType extends ProdType {
 	
 	override replace(TypeVariable from, AbstractType with) {
-		new CoSumType(origin, name, superTypes, types.map[ it.replace(from, with) ].force);
+		new CoSumType(origin, name, typeArguments.map[ it.replace(from, with) ].force, superTypes);
 	}
 	override void expand(Substitution s, TypeVariable tv) {
-		val newTypeVars = types.map[ new TypeVariable(it.origin) as AbstractType ].force;
-		val newPType = new CoSumType(origin, name, superTypes, newTypeVars);
+		val newTypeVars = typeArguments.map[ new TypeVariable(it.origin) as AbstractType ].force;
+		val newPType = new CoSumType(origin, name, newTypeVars, superTypes);
 		s.add(tv, newPType);
 	}
 }

@@ -39,8 +39,10 @@ class TypeReferenceScope extends AbstractScope {
 	
 	def addTypeParameter(ArrayList<EObject> result, EObject object) {
 		val container = object.getContainerOfType(GenericElement)
-		if (container !== null)
+		if (container !== null) {
+			result.addTypeParameter(if(object === container) container.eContainer else container);
 			result += container.typeParameters
+		}
 	}
 	
 }

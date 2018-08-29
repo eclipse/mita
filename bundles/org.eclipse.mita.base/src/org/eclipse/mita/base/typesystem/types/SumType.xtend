@@ -14,35 +14,25 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force;
 @Accessors
 @FinalFieldsConstructor
 class SumType extends TypeConstructorType {
-	
-	protected final List<AbstractType> types;
-		
+			
 	override toString() {
-		(name ?: "") + "(" + types.map[name].join(" | ") + ")"
+		(name ?: "") + "(" + typeArguments.map[name].join(" | ") + ")"
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		return new SumType(origin, name, superTypes, this.types.map[ it.replace(from, with) ].force);
+		return new SumType(origin, name, this.typeArguments.map[ it.replace(from, with) ].force, superTypes);
 	}
-	
-	override getFreeVars() {
-		return types.filter(TypeVariable);
-	}
-	
-	override getTypeArguments() {
-		return types;
-	}
-	
+			
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
 		return new SubtypeConstraint(tau, sigma);
 	}
 	
 	override expand(Substitution s, TypeVariable tv) {
-		val newTypeVars = types.map[ new TypeVariable(it.origin) as AbstractType ].force;
-		val newSType = new SumType(origin, name, superTypes, newTypeVars);
+		val newTypeVars = typeArguments.map[ new TypeVariable(it.origin) as AbstractType ].force;
+		val newSType = new SumType(origin, name, newTypeVars, superTypes);
 		s.add(tv, newSType);
 	}
 	override toGraphviz() {
-		'''«FOR t: types»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
+		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
 	}
 }

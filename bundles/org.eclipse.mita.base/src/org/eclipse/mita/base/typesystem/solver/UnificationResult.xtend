@@ -3,11 +3,18 @@ package org.eclipse.mita.base.typesystem.solver
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
-@FinalFieldsConstructor
 @Accessors
 class UnificationResult { 
 	protected final Substitution substitution;
 	protected final UnificationIssue issue;
+	
+	new(Substitution sub, UnificationIssue issue) {
+		this.substitution = sub;
+		this.issue = issue;
+		if(substitution === null && issue === null) {
+			throw new NullPointerException();
+		}
+	}
 	
 	override toString() {
 		if(isValid) {
