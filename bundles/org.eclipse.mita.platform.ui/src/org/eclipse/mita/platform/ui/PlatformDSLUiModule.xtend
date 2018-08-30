@@ -16,15 +16,14 @@
  */
 package org.eclipse.mita.platform.ui
 
-import org.eclipse.mita.platform.ui.labeling.PlatformDslEObjectHoverProvider
-import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
 import com.google.inject.Binder
+import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
+import org.eclipse.mita.platform.ui.labeling.PlatformDslEObjectHoverProvider
 import org.eclipse.ui.PlatformUI
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.ui.LanguageSpecific
 import org.eclipse.xtext.ui.editor.IURIEditorOpener
 import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSetProvider
 
 /**
  * Use this class to register components to be used within the Eclipse IDE.

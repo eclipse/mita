@@ -17,14 +17,13 @@
 package org.eclipse.mita.base.ui
 
 import com.google.inject.Binder
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSetProvider
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
 import org.eclipse.ui.PlatformUI
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.ui.LanguageSpecific
 import org.eclipse.xtext.ui.editor.IURIEditorOpener
-import org.eclipse.xtext.resource.XtextResourceSet
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 
 /**
  * Use this class to register components to be used within the Eclipse IDE.

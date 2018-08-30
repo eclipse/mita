@@ -31,9 +31,6 @@ import org.eclipse.xtext.ui.editor.IURIEditorOpener
 import org.eclipse.xtext.ui.editor.contentassist.ContentProposalPriorities
 import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration
-import org.eclipse.xtext.ui.resource.IResourceSetProvider
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSetProvider
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 @FinalFieldsConstructor
 class ProgramDslUiModule extends AbstractProgramDslUiModule {
