@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.types
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.solver.Substitution
 
 @FinalFieldsConstructor
 @EqualsHashCode
@@ -32,6 +33,10 @@ class TypeVariable extends AbstractType {
 	
 	override toGraphviz() {
 		return "";
+	}
+	
+	override replace(Substitution sub) {
+		sub.substitutions.getOrDefault(this, this);
 	}
 	
 }

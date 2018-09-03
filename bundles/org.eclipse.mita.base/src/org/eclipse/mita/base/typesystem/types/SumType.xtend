@@ -35,4 +35,9 @@ class SumType extends TypeConstructorType {
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
 	}
+	
+	override replace(Substitution sub) {
+		return new SumType(origin, name, this.typeArguments.map[ it.replace(sub) ].force, superTypes);
+	}
+	
 }

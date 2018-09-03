@@ -24,13 +24,14 @@ Require-Bundle: org.eclipse.xtext,
  org.eclipse.emf.mwe2.launch;resolution:=optional
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: org.eclipse.mita.platform,
+ org.eclipse.mita.platform.generator,
  org.eclipse.mita.platform.impl,
- org.eclipse.mita.platform.util,
+ org.eclipse.mita.platform.infra,
+ org.eclipse.mita.platform.parser.antlr,
  org.eclipse.mita.platform.parser.antlr.internal,
  org.eclipse.mita.platform.scoping,
- org.eclipse.mita.platform.parser.antlr,
- org.eclipse.mita.platform.generator,
- org.eclipse.mita.platform.validation,
+ org.eclipse.mita.platform.serializer,
  org.eclipse.mita.platform.services,
- org.eclipse.mita.platform.serializer
+ org.eclipse.mita.platform.util,
+ org.eclipse.mita.platform.validation
 Import-Package: org.apache.log4j

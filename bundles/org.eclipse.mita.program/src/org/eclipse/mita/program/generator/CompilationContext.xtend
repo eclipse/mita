@@ -22,7 +22,8 @@ import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.program.EventHandlerDeclaration
@@ -133,30 +134,19 @@ class CompilationContext {
 		return (unitAndStdlibExceptions + platformExceptions).groupBy[it.name].entrySet.map[it.value.head];
 	}
 		
-	public def getAllGeneratedTypesUsed(ITypeSystemInferrer typeInferrer) {
+	public def getAllGeneratedTypesUsed() {
 		assertInited();
 		return (units + stdlib).flatMap[program |
-			(   program.eAllContents.filter(TypeSpecifier) + 
-				program.eAllContents.filter(VariableDeclaration).map[
-					ModelUtils.toSpecifier(typeInferrer.infer(it))
-				]
-			).filter(PresentTypeSpecifier).filter[
-				it.type !== null && it.type instanceof GeneratedType && noUnboundTypeParameters(it)
+			(program.eAllContents.filter(TypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
+				BaseUtils.getType(it)
+			].filter[
+				!(it instanceof TypeVariable) && it.origin instanceof GeneratedType
 			].toIterable
-		].groupBy[ModelUtils.typeSpecifierIdentifier(it)].entrySet.map[it.value.head];
+		].groupBy[it.toString].entrySet.map[it.value.head];
 	}
 	
 	public def getResourceGraph() {
 		assertInited();
 		return resourceGraph;
 	}
-	
-	private def Boolean noUnboundTypeParameters(PresentTypeSpecifier specifier) {
-		assertInited();
-		if(specifier.type instanceof TypeParameter) {
-			return false;
-		}
-		return specifier.typeArguments.map[noUnboundTypeParameters].fold(true, [x, y | x && y]);
-	}
-
 }

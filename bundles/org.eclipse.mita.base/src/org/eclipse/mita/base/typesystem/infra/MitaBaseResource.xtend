@@ -7,12 +7,19 @@ import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
 import org.eclipse.xtext.diagnostics.Severity
 import java.util.Map
 import java.io.IOException
+import org.eclipse.emf.ecore.impl.EObjectImpl
+import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.emf.common.util.URI
+import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class MitaBaseResource extends XtextResource {
 	
 	@Inject
 	protected MitaTypeLinker typeLinker;
 	
+	@Accessors
+	protected boolean dependenciesLoaded = false;
+		
 	override load(Map<?, ?> options) throws IOException {
 		super.load(options)
 	}
@@ -31,6 +38,7 @@ class MitaBaseResource extends XtextResource {
 		
 		// We trigger linking in the resource set once all required resources are loaded
 		// doLinking();
+		// mark everything as not-a-proxy
 	}
 	
 	override public doLinking() {
@@ -47,6 +55,13 @@ class MitaBaseResource extends XtextResource {
 			getErrors().addAll(consumer.getResult(Severity.ERROR));
 			getWarnings().addAll(consumer.getResult(Severity.WARNING));
 		}
+		this.contents.map[it.eAllContents].forEach[ l | l.forEach[
+			if(it.eIsProxy) {
+				if(it instanceof EObjectImpl) {
+					it.eSetProxyURI(null);
+				}
+			}	
+		]]
 	}
 	
 	def doLinkReferences() {

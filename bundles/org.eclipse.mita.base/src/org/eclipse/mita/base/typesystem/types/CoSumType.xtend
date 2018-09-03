@@ -18,4 +18,9 @@ class CoSumType extends ProdType {
 		val newPType = new CoSumType(origin, name, newTypeVars, superTypes);
 		s.add(tv, newPType);
 	}
+	
+	override replace(Substitution sub) {
+		new CoSumType(origin, name, typeArguments.map[ it.replace(sub) ].force, superTypes);
+	}
+	
 }

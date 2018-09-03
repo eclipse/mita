@@ -107,7 +107,7 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 			config.setNoSpace.before(k.first)
 			config.setSpace(" ").before(k.second)
 		]
-	}
+	} 
 
 	def formatGeneratedType(FormattingConfig config) {
 		config.setIndentationIncrement.before(grammar.generatedTypeAccess.generatorKeyword_7)

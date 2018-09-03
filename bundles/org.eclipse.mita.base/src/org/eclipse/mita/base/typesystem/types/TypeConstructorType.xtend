@@ -40,7 +40,7 @@ class TypeConstructorType extends AbstractType {
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		return new TypeConstructorType(origin, name, typeArguments.map[it.replace(from, with)].force, superTypes)
+		return new TypeConstructorType(origin, name, typeArguments.map[it.replace(from, with)].force, superTypes);
 	}
 	
 	override getFreeVars() {
@@ -49,6 +49,10 @@ class TypeConstructorType extends AbstractType {
 	
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; "«this»" -> "«t»" «t.toGraphviz»«ENDFOR»''';
+	}
+	
+	override replace(Substitution sub) {
+		return new TypeConstructorType(origin, name, typeArguments.map[it.replace(sub)].force, superTypes);
 	}
 	
 }

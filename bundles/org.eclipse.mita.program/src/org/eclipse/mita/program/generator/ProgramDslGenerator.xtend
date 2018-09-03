@@ -150,7 +150,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		// Include libraries such as the stdlib in the compilation context
 		val libs = libraryProvider.libraries;
 		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
-		val stdlib = stdlibUri.map[input.getResource(it, true).contents.filter(Program).head].force;
+		val stdlib = stdlibUri.map[input.getResource(it, false)].filterNull.map[it.contents.filter(Program).head].force;
 	
 		/*
 		 * Steps:

@@ -30,7 +30,7 @@ class PresentTypeSpecifier extends TypeSpecifier {
 //		};
 		val typeName = if(^type === null) {
 			val refText = NodeModelUtils.findNodesForFeature(this, TypesPackage.eINSTANCE.presentTypeSpecifier_Type).head?.text;
-			refText
+			refText.trim
 		} else {
 			^type.toString
 		}

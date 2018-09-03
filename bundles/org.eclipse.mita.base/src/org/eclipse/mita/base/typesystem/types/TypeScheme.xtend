@@ -5,6 +5,7 @@ import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.solver.Substitution
 
 @EqualsHashCode
 @Accessors
@@ -48,6 +49,17 @@ class TypeScheme extends AbstractType {
 	
 	override toGraphviz() {
 		'''«FOR v: vars»"«v»" -> "«this»";«ENDFOR»'''
+	}
+	
+	override replace(Substitution sub) {
+		// slow path: collisions between bound vars and substitution. need to filter and apply manually.
+		if(vars.exists[sub.substitutions.containsKey(it)]) {
+			return new TypeScheme(origin, this.vars, 
+				sub.substitutions.entrySet.reject[vars.contains(it.key)].fold(this.on, [t0, tv_t | t0.replace(tv_t.key, tv_t.value)])	
+			);
+		} else {
+			return new TypeScheme(origin, this.vars, this.on.replace(sub));			
+		}
 	}
 	
 }

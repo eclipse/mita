@@ -2,6 +2,7 @@ package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
@@ -13,6 +14,8 @@ abstract class AbstractType {
 	protected final String name;
 	
 	abstract def AbstractType replace(TypeVariable from, AbstractType with);
+	
+	abstract def AbstractType replace(Substitution sub);
 	
 	def Pair<Iterable<TypeVariable>, AbstractType> instantiate() {
 		return #[] -> this;

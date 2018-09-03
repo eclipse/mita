@@ -37,4 +37,8 @@ class ProdType extends TypeConstructorType {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
 	}
 	
+	override replace(Substitution sub) {
+		new ProdType(origin, name, typeArguments.map[ it.replace(sub) ].force, superTypes);
+	}
+	
 }

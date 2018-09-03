@@ -58,4 +58,8 @@ class FunctionType extends TypeConstructorType {
 		'''"«to»" -> "«this»"; "«this»" -> "«from»"; «to.toGraphviz» «from.toGraphviz»''';
 	}
 	
+	override replace(Substitution sub) {
+		new FunctionType(origin, name, #[], superTypes, this.from.replace(sub), this.to.replace(sub));
+	}
+	
 }

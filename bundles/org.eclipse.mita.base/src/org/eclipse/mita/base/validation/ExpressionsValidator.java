@@ -105,8 +105,8 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	public void checkExpression(Expression expression) {
 		// Only infer root expressions since inferType infers the expression
 		// containment hierarchy
-		if (!(expression.eContainer() instanceof Expression))
-			typeInferrer.infer(expression, this);
+//		if (!(expression.eContainer() instanceof Expression))
+//			typeInferrer.infer(expression, this);
 	}
 
 	public void accept(ValidationIssue issue) {
@@ -130,7 +130,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		}
 	}
 
-	@Check
+	//@Check
 	public void checkIsRaw(PresentTypeSpecifier typedElement) {
 		Type type = typedElement.getType();
 		if (!(type instanceof GenericElement))
@@ -144,7 +144,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		}
 	}
 
-	@Check
+	//@Check
 	public void checkTypedElementNotGeneric(PresentTypeSpecifier typedElement) {
 		if (typedElement.getTypeArguments().size() > 0 && ((!(typedElement.getType() instanceof GenericElement))
 				|| ((GenericElement) typedElement.getType()).getTypeParameters().size() == 0)) {
@@ -155,7 +155,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		}
 	}
 
-	@Check
+	//@Check
 	public void checkNofArguments(PresentTypeSpecifier typedElement) {
 		if (!(typedElement.getType() instanceof GenericElement)) {
 			return;

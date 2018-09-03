@@ -59,6 +59,8 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
+import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
+import org.eclipse.mita.program.typesystem.ProgramLinker
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -78,6 +80,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
+		binder.bind(MitaTypeLinker).to(ProgramLinker);
 	}
 
 	override configureIScopeProviderDelegate(Binder binder) {

@@ -2,6 +2,7 @@ package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.solver.Substitution
 
 @EqualsHashCode
 class AtomicType extends AbstractBaseType {
@@ -21,6 +22,10 @@ class AtomicType extends AbstractBaseType {
 	
 	override getFreeVars() {
 		return #[]
+	}
+	
+	override replace(Substitution sub) {
+		return this;
 	}
 		
 }

@@ -12,6 +12,7 @@ import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.mita.base.types.VirtualFunction
 
 class MitaTypeLinker extends Linker {
 	
@@ -31,8 +32,20 @@ class MitaTypeLinker extends Linker {
 		}
 	}
 	
+	override protected clearReference(EObject obj, EReference ref) {
+		return;
+//		if(shouldNotClearReference(obj, ref)) {
+//			return;
+//		}
+//		super.clearReference(obj, ref)
+	}
+	
+	def shouldNotClearReference(EObject object, EReference reference) {
+		return reference.eClass == TypesPackage.eINSTANCE.type || reference.eClass == TypesPackage.eINSTANCE.event;
+	}
+	
 	override protected clearReferences(EObject obj) {
-		if(obj instanceof TypeConstructor || EcoreUtil2.getContainerOfType(obj, TypeConstructor) !== null) {
+		if(obj instanceof VirtualFunction || EcoreUtil2.getContainerOfType(obj, VirtualFunction) !== null) {
 			return;
 		}
 		super.clearReferences(obj)

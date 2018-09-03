@@ -52,9 +52,7 @@ class Substitution {
 	}
 	
 	public def AbstractType applyToType(AbstractType typ) {
-		return content.entrySet.fold(typ, [t1, tv_t2 | 
-			t1.replace(tv_t2.key, tv_t2.value);
-		]);
+		typ.replace(this);
 	}
 	public def Iterable<AbstractType> applyToTypes(Iterable<AbstractType> types) {
 		return types.map[applyToType];

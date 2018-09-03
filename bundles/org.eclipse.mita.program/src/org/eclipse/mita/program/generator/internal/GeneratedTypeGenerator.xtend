@@ -38,8 +38,8 @@ class GeneratedTypeGenerator {
 
 	def generateHeader(CompilationContext context, List<String> userTypeFiles) {
 		
-		val generatorsWithTypeSpecs = context.getAllGeneratedTypesUsed(typeInferrer).map[new Pair(it, registry.getGenerator(it.type as GeneratedType))].toList;
-		val generators = context.getAllGeneratedTypesUsed(typeInferrer).map[it.type].groupBy[it.name].values.map[it.head].map[registry.getGenerator(it as GeneratedType)].toList;
+		val generatorsWithTypeSpecs = context.getAllGeneratedTypesUsed().map[new Pair(it, registry.getGenerator(it.origin as GeneratedType))].toList;
+		val generators = context.getAllGeneratedTypesUsed().map[it.origin as GeneratedType].groupBy[it.name].values.map[it.head].map[registry.getGenerator(it as GeneratedType)].toList;
 		
 		return codeFragmentProvider.create('''
 			«FOR generator: generators SEPARATOR("\n")» 
@@ -47,8 +47,8 @@ class GeneratedTypeGenerator {
 			«ENDFOR»
 			«"\n"»«««explicit newline
 
-			«FOR typeSpecifier_generator : generatorsWithTypeSpecs SEPARATOR("\n")»
-			«typeSpecifier_generator.value.generateHeader(BaseUtils.getType(typeSpecifier_generator.key))»
+			«FOR type_generator : generatorsWithTypeSpecs SEPARATOR("\n")»
+			«type_generator.value.generateHeader(type_generator.key)»
 			«ENDFOR»
 		''').addHeader(userTypeFiles.map[new IncludePath(it, false)])
 		.toHeader(context, 'MITA_GENERATED_TYPES_H')

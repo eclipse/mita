@@ -228,6 +228,7 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 				val tcQN = QualifiedName.create(txt);
 				val typeClass = system.getTypeClass(QualifiedName.create(txt), candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject].force)
 				system.addConstraint(new TypeClassConstraint(argType, tcQN, [s, sub, fun, typ |
+					varOrFun.eSet(featureToResolve, fun);
 					val nc = constraintSystemProvider.get(); 
 					nc.computeConstraintsForFunctionCall(varOrFun, txt, TypeVariableAdapter.get(fun), argExprs);
 					return SimplificationResult.success(ConstraintSystem.combine(#[nc, s]), sub)
@@ -235,17 +236,21 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 				return TypeVariableAdapter.get(varOrFun);
 			}
 			else {
-			
-				//TODO: handle multiple candidates
-				val subTypes = new ArrayList<AbstractType>();
-				val coSumType = new CoSumType(null, txt + "_anonymous", #[], subTypes);
-				candidates.forEach[
-					val transl = system.computeConstraints(it);
-					subTypes += transl;
-					system.explicitSubtypeRelations.addEdge(transl, coSumType);
-				]
+				// if we have multiple candidates we use the last one (since that's the one that was last added to scope). Let's hope that's the one the user wanted...
+				val ref = candidates.last;
+				varOrFun.eSet(featureToResolve, ref);
+				return system.associate(TypeVariableAdapter.get(ref), varOrFun); 
 				
-				coSumType
+				//TODO: handle multiple candidates
+//				val subTypes = new ArrayList<AbstractType>();
+//				val coSumType = new CoSumType(null, txt + "_anonymous", #[], subTypes);
+//				candidates.forEach[
+//					val transl = system.computeConstraints(it);
+//					subTypes += transl;
+//					system.explicitSubtypeRelations.addEdge(transl, coSumType);
+//				]
+//				
+//				coSumType
 			//return system.associate(new BottomType(varOrFun, 'PCF: TODO: handle mutliple candidates'));
 			}
 		}
