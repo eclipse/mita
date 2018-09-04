@@ -821,16 +821,13 @@ io named-singleton SDCard {
 	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
 	sizeInferrer "org.eclipse.mita.platform.xdk110.io.SDCardSizeInferrer"
 
-	signal persistentFile_Text(filePath: string, blockSize: uint32) : string
+	signal appendingFile_Text(filePath: string, blockSize: uint32) : string
 	signal rewindingFile_Text(filePath: string, fileSize: uint32) : string
 
-	signal persistentFile_Binary(filePath: string, blockSize: uint32) : array<uint8>
+	signal appendingFile_Binary(filePath: string, blockSize: uint32) : array<uint8>
 	signal rewindingFile_Binary(filePath: string, fileSize: uint32) : array<uint8>
 
 	modality SDCardAvailable
-
-	//event SDCardRemoved
-	//event SDCardInserted
 }
 
 

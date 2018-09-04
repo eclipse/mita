@@ -1,3 +1,16 @@
+/********************************************************************************
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 package org.eclipse.mita.platform.xdk110.io
 
 import org.eclipse.mita.program.SignalInstance
@@ -7,8 +20,15 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.generator.CodeFragment
 
+import com.google.inject.Inject
+import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
+import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
+
 class SDCardGenerator extends AbstractSystemResourceGenerator {
 	
+	@Inject(optional=true)
+	protected IPlatformLoggingGenerator loggingGenerator
+
 	override generateSetup() {
 		codeFragmentProvider.create('''
 		''')
@@ -31,11 +51,8 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 		/**< SD Card Drive 0 location */
 		#define STORAGE_SDCARD_DRIVE_NUMBER             UINT8_C(0)
 
-		/**< File seek to the first location */
-		#define STORAGE_SEEK_FIRST_LOCATION             UINT8_C(0)
-
 		«FOR sigInst : setup.signalInstances»
-		«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+		«IF sigInst.instanceOf.name.startsWith("appendingFile")»
 		static uint32_t «sigInst.name»DataRead = 0UL;
 		static uint32_t «sigInst.name»DataWrite = 0UL;
 		«ENDIF»
@@ -58,7 +75,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	static def String getSizeName(SignalInstance instance) {
-		if(instance.instanceOf.name.startsWith("persistentFile")) {
+		if(instance.instanceOf.name.startsWith("appendingFile")) {
 			return "blockSize";
 		} 
 		else {
@@ -74,6 +91,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			{
 				if (SDCARD_INSERTED != SDCardDriver_GetDetectStatus())
 				{
+					«loggingGenerator.generateLogStatement(LogLevel.Error, "SD card was not detected for Storage")»
 					retcode = RETCODE(RETCODE_SEVERITY_WARNING, RETCODE_STORAGE_SDCARD_NOT_AVAILABLE);
 				}
 			}
@@ -113,14 +131,14 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			{
 				fileOpenReturn = f_open(&fileReadHandle, «filename», FA_OPEN_EXISTING | FA_READ);
 			}
-			«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+			«IF sigInst.instanceOf.name.startsWith("appendingFile")»
 			fileSeekIndex = «sigInst.name»DataRead;
 			«ENDIF»
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
 			    sdCardReturn = f_lseek(&fileReadHandle, fileSeekIndex);
 			}
-			if(fileSeekIndex > sdCardFileInfo.fsize)
+			if(fileSeekIndex >= sdCardFileInfo.fsize)
 			{
 				return EXCEPTION_ENDOFFILEEXCEPTION;
 			}
@@ -128,9 +146,9 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			{
 			    sdCardReturn = f_read(&fileReadHandle, «data», «len», &bytesRead); /* Read a chunk of source file */
 			}
-			if (FR_OK == fileOpenReturn)
+			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
-				«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+				«IF sigInst.instanceOf.name.startsWith("appendingFile")»
 				«sigInst.name»DataRead += bytesRead;
 				«ENDIF»
 			    sdCardReturn = f_close(&fileReadHandle);
@@ -156,7 +174,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			UINT bytesWritten;
 			uint32_t fileSeekIndex = 0UL;
 			fileOpenReturn = f_open(&fileWriteHandle, «filename», FA_WRITE | FA_CREATE_ALWAYS);
-			«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+			«IF sigInst.instanceOf.name.startsWith("appendingFile")»
 			fileSeekIndex = «sigInst.name»DataWrite;
 			«ENDIF»
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
@@ -167,9 +185,9 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			{
 			    sdCardReturn = f_write(&fileWriteHandle, «data», «len», &bytesWritten); /* Write it to the destination file */
 			}
-			if (FR_OK == fileOpenReturn)
+			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
-				«IF sigInst.instanceOf.name.startsWith("persistentFile")»
+				«IF sigInst.instanceOf.name.startsWith("appendingFile")»
 				«sigInst.name»DataWrite += bytesWritten;
 				«ENDIF»
 			    sdCardReturn = f_close(&fileWriteHandle);
