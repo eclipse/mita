@@ -4,6 +4,7 @@ import java.util.HashMap
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -32,4 +33,9 @@ class TypeClass {
 		])
 	}
 	
+	def replace(Substitution sub) {
+		return new TypeClass(instances.entrySet.map[
+			it.key.replace(sub) -> it.value
+		])
+	}
 }
