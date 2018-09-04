@@ -30,6 +30,10 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 			.addHeader('BCDS_CmdProcessor.h', true);
 	}
 	
+	public def generateEventloopInjectFromIsr(String functionName, String userParam1, String userParam2) {
+		return codeFragmentProvider.create('''CmdProcessor_EnqueueFromIsr(&Mita_EventQueue, «functionName», «userParam1», «userParam2»);''')
+			.addHeader('BCDS_CmdProcessor.h', true);
+	}
 	
 	public def generateEventloopInject(String functionName) {
 		return generateEventloopInject(functionName, '''NULL''', '''0''');

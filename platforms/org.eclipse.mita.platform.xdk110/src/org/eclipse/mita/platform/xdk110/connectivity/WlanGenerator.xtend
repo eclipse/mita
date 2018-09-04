@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
+
 import com.google.inject.Inject
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
@@ -43,18 +44,15 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentification"), []);
 		val result = codeFragmentProvider.create('''
-		Retcode_T retcode = PAL_initialize();
-		if(RETCODE_OK != retcode)
-		{
-			return retcode;
-		}
 		
-		PAL_socketMonitorInit();
+		Retcode_T retcode = RETCODE_OK;
 
 		/* The order of calls is important here. WlanConnect_init initializes the CC3100 and prepares
 		 * its future use. Calls to NetworkConfig_ fail if WlanConnect_Init was not called beforehand.
 		 */
+
 		retcode = WlanConnect_Init();
+
 		if(RETCODE_OK != retcode)
 		{
 			return retcode;
@@ -189,8 +187,6 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('BCDS_NetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
-		.addHeader("PAL_initialize_ih.h", true)
-		.addHeader('PAL_socketMonitor_ih.h', true)
 		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
 		if(auth instanceof SumTypeRepr) {
 			if(auth.name == "Enterprise") {
