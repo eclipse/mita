@@ -140,7 +140,7 @@ class CompilationContext {
 			(program.eAllContents.filter(TypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
 				BaseUtils.getType(it)
 			].filter[
-				!(it instanceof TypeVariable) && it.origin instanceof GeneratedType
+				it.freeVars.empty && it.origin instanceof GeneratedType
 			].toIterable
 		].groupBy[it.toString].entrySet.map[it.value.head];
 	}

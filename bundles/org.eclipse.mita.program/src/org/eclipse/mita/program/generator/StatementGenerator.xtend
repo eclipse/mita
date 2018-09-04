@@ -106,6 +106,7 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import org.eclipse.mita.base.typesystem.types.FunctionType
 
 class StatementGenerator {
 
@@ -831,7 +832,12 @@ class StatementGenerator {
 
 	@Traced dispatch def header(FunctionDefinition definition) {
 		val resultType = BaseUtils.getType(definition);
-		'''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.ctype»* _result«IF !definition.parameters.empty», «ENDIF»«FOR x : definition.parameters SEPARATOR ', '»«BaseUtils.getType(x).ctype» «x.name»«ENDFOR»);'''
+		if(resultType instanceof FunctionType) {
+			return '''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.to.ctype»* _result«IF !definition.parameters.empty», «ENDIF»«FOR x : definition.parameters SEPARATOR ', '»«BaseUtils.getType(x).ctype» «x.name»«ENDFOR»);'''
+		}
+		else {
+			return '''!!!NOT A FUNCTION!!!'''
+		}
 	}
 	
 	dispatch def IGeneratorNode header(StructureType definition) {

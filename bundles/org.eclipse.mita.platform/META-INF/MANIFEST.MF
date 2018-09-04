@@ -6,6 +6,7 @@ Bundle-Localization: plugin
 Bundle-Version: 0.1.0.qualifier
 Bundle-ClassPath: .
 Bundle-SymbolicName: org.eclipse.mita.platform;singleton:=true
+Automatic-Module-Name: org.eclipse.mita.platform
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.xtext,
  org.eclipse.xtext.xbase,
