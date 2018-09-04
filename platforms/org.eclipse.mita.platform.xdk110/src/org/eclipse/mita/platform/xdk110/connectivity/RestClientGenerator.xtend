@@ -47,7 +47,10 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
-	
+
+	@Inject
+	protected ServalPALGenerator servalpalGenerator
+
 	override generateAdditionalImplementation() {
 		// TODO: infer buffer size based on signal instance use - at the moment generators have no way of doing that
 		val httpBodyBufferSize = 512;
@@ -125,15 +128,16 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		}
 		
 		memcpy(httpBodyBuffer, *«variableName», strlen(*«variableName»));
-		
-		retcode_t rc;
+
+		Retcode_T retcode = RETCODE_OK;
 		Ip_Address_T destAddr;
-		rc = PAL_getIpaddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
-		if (rc != RC_OK)
+		retcode = NetworkConfig_GetIpAddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
+		if (retcode != RETCODE_OK)
 		{
-			return rc;
+			return retcode;
 		}
-		
+
+		retcode_t rc;
 		Msg_T* msg_ptr;
 		rc = HttpClient_initRequest(&destAddr, Ip_convertIntToPort(«port»), &msg_ptr);
 		if (rc != RC_OK || msg_ptr == NULL)
@@ -191,6 +195,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			return EXCEPTION_TIMEOUTEXCEPTION;
 		}
 		''')
+		.addHeader('BCDS_NetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
 	}
 	
 	protected def String getHttpMethod(Expression expression) {
@@ -220,19 +225,19 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSetup() {
 		codeFragmentProvider.create('''
+		Retcode_T retcode = RETCODE_OK;
+
+		«servalpalGenerator.generateSetup()»
+
 		responseReceivedSemaphore = xSemaphoreCreateBinary();
 		''')
 	}
 	
 	override generateEnable() {
 		codeFragmentProvider.create('''
-	    Retcode_T retcode = PAL_initialize();
-	    if (retcode != RETCODE_OK)
-	    {
-	        return retcode;
-	    }
+	    Retcode_T retcode = RETCODE_OK;
 
-	    PAL_socketMonitorInit();
+	    «servalpalGenerator.generateEnable()»
 
 	    retcode = HttpClient_initialize();
 	    if(retcode != RETCODE_OK) 
@@ -243,8 +248,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("BCDS_Basics.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_HttpClient.h', true)
 		.addHeader('Serval_Network.h', true)
-		.addHeader('PAL_socketMonitor_ih.h', true)
-		.addHeader('PAL_initialize_ih.h', true)
+
 	}
 	
 }

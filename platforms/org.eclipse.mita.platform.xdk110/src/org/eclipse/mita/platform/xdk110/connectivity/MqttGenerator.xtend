@@ -28,14 +28,20 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
-	
+
+	@Inject
+	protected ServalPALGenerator servalpalGenerator
+
 	override generateSetup() {
 		val brokerUri = new URI(configuration.getString("url"));
 		var brokerPortRaw = brokerUri.port;
 		val brokerPort = if(brokerPortRaw < 0) 1883 else brokerPortRaw;
-		
+
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
+
+		«servalpalGenerator.generateSetup()»
+
 		mqttSubscribeHandle = xSemaphoreCreateBinary();
 		if (NULL == mqttSubscribeHandle)
 		{
@@ -140,11 +146,13 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	override generateEnable() {
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
-		
+
 		Ip_Address_T brokerIpAddress = 0UL;
 		StringDescr_T clientID;
 		char mqttBrokerURL[30] = { 0 };
 		char serverIpStringBuffer[16] = { 0 };
+
+		«servalpalGenerator.generateEnable()»
 
 		retcode_t mqttRetcode = RC_OK;
 		mqttRetcode = Mqtt_initialize();
@@ -235,7 +243,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		}
 		return retcode;
 		''')
-		.addHeader('PAL_initialize_ih.h', true)
+
 	}
 	
 	override generateAdditionalImplementation() {
