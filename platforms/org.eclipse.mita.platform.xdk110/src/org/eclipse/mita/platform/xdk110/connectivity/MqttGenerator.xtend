@@ -23,13 +23,15 @@ import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.platform.xdk110.connectivity.ServalPalCommonGenerator
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
-	
+
+	@Inject
+	protected ServalPALGenerator servalpalGenerator
+
 	override generateSetup() {
 		val brokerUri = new URI(configuration.getString("url"));
 		var brokerPortRaw = brokerUri.port;
@@ -38,18 +40,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
 
-		retcode = ServalPal_Call()
-		if (retcode != RETCODE_OK)
-		{
-			return retcode;
-		}
-
-		retcode = ServalPAL_Enable()
-
-		if (retcode != RETCODE_OK)
-		{
-			return retcode;
-		}
+		«servalpalGenerator.generateSetup()»
 
 		mqttSubscribeHandle = xSemaphoreCreateBinary();
 		if (NULL == mqttSubscribeHandle)
@@ -88,7 +79,6 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		}
 		return retcode;
 		''')
-
 		.setPreamble('''
 		/**
 		 * The client identifier (here: clientID) is a identifier of each MQTT client
@@ -151,17 +141,18 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("XdkCommonInfo.h", true)
 		.addHeader("BCDS_NetworkConfig.h", true)
-		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
 	}
 	
 	override generateEnable() {
 		codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
-		
+
 		Ip_Address_T brokerIpAddress = 0UL;
 		StringDescr_T clientID;
 		char mqttBrokerURL[30] = { 0 };
 		char serverIpStringBuffer[16] = { 0 };
+
+		«servalpalGenerator.generateEnable()»
 
 		retcode_t mqttRetcode = RC_OK;
 		mqttRetcode = Mqtt_initialize();

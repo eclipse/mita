@@ -30,7 +30,6 @@ import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.platform.xdk110.connectivity.ServalPalCommonGenerator
 
 class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
@@ -48,7 +47,10 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
-	
+
+	@Inject
+	protected ServalPALGenerator servalpalGenerator
+
 	override generateAdditionalImplementation() {
 		// TODO: infer buffer size based on signal instance use - at the moment generators have no way of doing that
 		val httpBodyBufferSize = 512;
@@ -112,6 +114,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
 		val baseUrl = new URL(configuration.getString('endpointBase'));
+		
 		val httpMethod = ModelUtils.getArgumentValue(signalInstance, "writeMethod").httpMethod;
 		val contentType = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "contentType"), []);
 		val url = '''«baseUrl.path»«StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, 'endpoint'), [ ])»''';
@@ -123,7 +126,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		{
 			return EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION;
 		}
-
+		
 		memcpy(httpBodyBuffer, *«variableName», strlen(*«variableName»));
 
 		Retcode_T retcode = RETCODE_OK;
@@ -133,8 +136,8 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		{
 			return retcode;
 		}
-		
-		retcode_t retcode;
+
+		retcode_t rc;
 		Msg_T* msg_ptr;
 		rc = HttpClient_initRequest(&destAddr, Ip_convertIntToPort(«port»), &msg_ptr);
 		if (rc != RC_OK || msg_ptr == NULL)
@@ -149,7 +152,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		{
 		    return rc;
 		}
-
+		
 		const char* url_ptr = "«url»";
 		rc = HttpMsg_setReqUrl(msg_ptr, url_ptr);
 		if (rc != RC_OK)
@@ -192,8 +195,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			return EXCEPTION_TIMEOUTEXCEPTION;
 		}
 		''')
-
-		.addHeader('BCDS_NetworkConfig.h', true);
+		.addHeader('BCDS_NetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
 	}
 	
 	protected def String getHttpMethod(Expression expression) {
@@ -223,27 +225,19 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSetup() {
 		codeFragmentProvider.create('''
+		Retcode_T retcode = RETCODE_OK;
+
+		«servalpalGenerator.generateSetup()»
+
 		responseReceivedSemaphore = xSemaphoreCreateBinary();
 		''')
 	}
 	
 	override generateEnable() {
-
 		codeFragmentProvider.create('''
-		Retcode_T retcode = RETCODE_OK;
+	    Retcode_T retcode = RETCODE_OK;
 
-		retcode = ServalPal_Call()
-		if (retcode != RETCODE_OK)
-		{
-			return retcode;
-		}
-
-		retcode = ServalPAL_Enable()
-
-		if (retcode != RETCODE_OK)
-		{
-			return retcode;
-		}
+	    «servalpalGenerator.generateEnable()»
 
 	    retcode = HttpClient_initialize();
 	    if(retcode != RETCODE_OK) 
@@ -254,7 +248,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("BCDS_Basics.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_HttpClient.h', true)
 		.addHeader('Serval_Network.h', true)
-		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
 
 	}
 	

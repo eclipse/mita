@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
+
 import com.google.inject.Inject
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
@@ -43,11 +44,15 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentification"), []);
 		val result = codeFragmentProvider.create('''
+		
+		Retcode_T retcode = RETCODE_OK;
 
 		/* The order of calls is important here. WlanConnect_init initializes the CC3100 and prepares
 		 * its future use. Calls to NetworkConfig_ fail if WlanConnect_Init was not called beforehand.
 		 */
+
 		retcode = WlanConnect_Init();
+
 		if(RETCODE_OK != retcode)
 		{
 			return retcode;
@@ -138,6 +143,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		«ENDIF»
 		
 		
+
 		NetworkConfig_IpSettings_T currentIpSettings;
 		retcode = NetworkConfig_GetIpSettings(&currentIpSettings);
 		if(RETCODE_OK != retcode)
