@@ -156,8 +156,9 @@ class StringGenerator extends AbstractTypeGenerator {
 		if(initialization instanceof InterpolatedStringExpression) {
 			codeFragmentProvider.create(
 			'''
-				char «name»[«size»];
-				snprintf(«name», sizeof(«name»), "«initialization.pattern»"«FOR x : initialization.content BEFORE ', ' SEPARATOR ', '»«x.code»«ENDFOR»);
+				char «name»_buf[«size»];
+				char *«name» = «name»_buf;
+				snprintf(«name», sizeof(«name»_buf), "«initialization.pattern»"«FOR x : initialization.content BEFORE ', ' SEPARATOR ', '»«x.code»«ENDFOR»);
 			''')
 			.addHeader('stdio.h', true)
 			.addHeader('inttypes.h', true)
@@ -165,14 +166,16 @@ class StringGenerator extends AbstractTypeGenerator {
 			val elementReference = initialization as ElementReferenceExpression;
 			codeFragmentProvider.create(
 			'''
-				char «name»[«byteCount»] = {0};
+				char «name»_buf[«byteCount»] = {0};
+				char *«name» = «name»_buf;
 			''')
 			.addHeader('string.h', true)
 			.addHeader('inttypes.h', true)
 		} else if(initialization !== null && !(initialization instanceof NewInstanceExpression)) {
 			codeFragmentProvider.create(
 			'''
-				char «name»[«byteCount»];
+				char «name»_buf[«byteCount»] = {0};
+				char *«name» = «name»_buf;
 				const char* _«name»Init = «initialization.code.noTerminator»;
 				strcpy(«name», _«name»Init);
 			''')
@@ -181,7 +184,8 @@ class StringGenerator extends AbstractTypeGenerator {
 		} else {
 			codeFragmentProvider.create(
 			'''
-				char «name»[«byteCount»] = {0};
+				char «name»_buf[«byteCount»] = {0};
+				char *«name» = «name»_buf;
 			''')
 			.addHeader('string.h', true)
 		}
