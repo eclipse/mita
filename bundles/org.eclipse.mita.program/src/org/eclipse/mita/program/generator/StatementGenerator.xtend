@@ -419,7 +419,7 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode code(AssignmentExpression stmt) {
 		val inference = typeInferrer.infer(stmt);
 		val expressionType = inference?.type;
-		val expression = stmt.expression;
+		val expression = stmt.expression; 
 		
 		if (expressionType instanceof GeneratedType) {
 			val generator = registry.getGenerator(expressionType);
@@ -627,26 +627,28 @@ class StatementGenerator {
 
 	@Traced dispatch def IGeneratorNode code(TryStatement stmt) {
 		val bool = codeFragmentProvider.create('''bool''').addHeader('stdbool.h', true);
-		val runOnce = '''_runOnce«stmt.hashCode»'''
 		'''
 			// TRY
 			returnFromWithinTryCatch = false;
-			for(«bool» «runOnce» = true; «runOnce»; «runOnce» = false)
+			do
 			«stmt.^try.code»
+			while(false);
 			«FOR idx_catchStmt : stmt.catchStatements.indexed»
 				// CATCH «idx_catchStmt.value.exceptionType.name»
 				«IF idx_catchStmt.key > 0»else «ENDIF»if(exception «IF idx_catchStmt.value.exceptionType.name == 'Exception'»!= NO_EXCEPTION«ELSE»== «idx_catchStmt.value.exceptionType.baseName»«ENDIF»)
 				{
 					exception = NO_EXCEPTION;
 «««If we are in try OR in catch we need to only exit the try/catch block, since we also need to execute finally. Therefore we generate a for loop as well
-					for(bool «runOnce» = true; «runOnce»; «runOnce» = false)
+					do
 					«idx_catchStmt.value.body.code»
+					while(«false»);
 				}
 			«ENDFOR»
 			«IF stmt.^finally !== null»
 				// FINALLY
-				for(bool «runOnce» = true; «runOnce»; «runOnce» = false)
+				do
 				«stmt.^finally.code»
+				while(false);
 			«ENDIF»
 ««« If we returned in a try-, catch- or finally-block, we only exited that block. Furthermore, if we didn't catch an exception, we need to fall through.
 			if(returnFromWithinTryCatch || exception != NO_EXCEPTION) {
