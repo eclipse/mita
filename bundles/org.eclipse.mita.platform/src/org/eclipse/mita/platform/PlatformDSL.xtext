@@ -40,7 +40,7 @@ PlatformSpecification returns platform::Platform:
 ;
 
 SystemResourceEvent returns platform::SystemResourceEvent: 
-	'event' name=ID
+	'event' name=ID typeSpecifier=NullTypeSpecifier
 ;
 
 SystemResourceAlias returns platform::SystemResourceAlias: 

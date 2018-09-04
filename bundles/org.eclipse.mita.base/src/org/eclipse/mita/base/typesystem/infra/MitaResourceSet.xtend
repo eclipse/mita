@@ -47,6 +47,7 @@ class MitaResourceSet extends XtextResourceSet {
 	
 	protected boolean isLoadingResources = false;
 	protected boolean isLinkingTypes = false;
+	protected boolean isLinkingTypeDependent = false;
 	
 	override getResource(URI uri, boolean loadOnDemand) {
 		val alreadyLoadedResource = this.resources.findFirst[it.URI == uri]
@@ -66,7 +67,9 @@ class MitaResourceSet extends XtextResourceSet {
 			}
 			if(thisIsLoadingResources) {
 					//linkTypes(loadedResources.filter(MitaBaseResource));
-				linkTypes(this.resources.filter(MitaBaseResource).force);
+				val mitaResources = this.resources.filter(MitaBaseResource).force;
+				linkTypes(mitaResources);
+				linkOthers(mitaResources);
 			}
 			if(thisIsLoadingResources) {
 				//result.doLinking();
@@ -147,6 +150,15 @@ class MitaResourceSet extends XtextResourceSet {
 		isLinkingTypes = true;
 		resources.forEach[ it.doLinkTypes ];
 		isLinkingTypes = false;
+	}
+	
+	protected def linkOthers(Iterable<MitaBaseResource> resources) {
+		if(isLinkingTypeDependent) {
+			return;
+		}
+		isLinkingTypeDependent = true;
+		resources.forEach[ it.doLinkTypeDependent ];
+		isLinkingTypeDependent = false;
 	}
 	
 	public def getLatestSolution() {

@@ -92,6 +92,9 @@ class BinaryLiteral extends IntLiteral {
 }
 class StringLiteral extends Literal {
 	String value
+	op String toString() {
+		return "s»" + '"' + value + '"'
+	}
 }
 class NullLiteral extends Literal {
 }

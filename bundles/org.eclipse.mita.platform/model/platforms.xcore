@@ -22,6 +22,7 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeSpecifier
 
 enum Instantiability {
 	/**
@@ -67,6 +68,9 @@ abstract class AbstractSystemResource extends Type, GeneratedElement {
 class ConfigurationItem extends Property {
 	Boolean required = "false"
 	contains Expression defaultValue
+	op String toString() {
+		return super.toString() + (if(defaultValue !== null) "(=" + defaultValue + ")" else "")
+	}
 }
 
 class Signal extends Operation {

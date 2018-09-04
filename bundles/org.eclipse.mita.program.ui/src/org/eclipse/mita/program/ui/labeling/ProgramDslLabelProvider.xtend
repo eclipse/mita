@@ -92,9 +92,9 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 
 	def text(SystemResourceSetup ele) {
 		if(ele.type instanceof Connectivity) {
-			'''connectivity <b>«ele.name» : «BaseUtils.getType(ele.type)»</b>'''
+			'''connectivity <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
 		} else {
-			'''resource <b>«ele.name» : «BaseUtils.getType(ele.type)»</b>'''
+			'''resource <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
 		}
 	}
 	
@@ -118,7 +118,7 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	def text(SignalInstance ele) {
 		var vci = ele.instanceOf;
 		
-		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci.name» <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
+		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci?.name» <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
 	}
 	
 	def text(VariableDeclaration ele) {

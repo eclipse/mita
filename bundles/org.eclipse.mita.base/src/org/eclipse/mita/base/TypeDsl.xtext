@@ -40,7 +40,11 @@ EnumerationDeclaration returns EnumerationType:
 	'}';
 
 Enumerator returns Enumerator:
-	name=ID;
+	name=ID typeSpecifier=NullTypeSpecifier;
+
+NullTypeSpecifier returns NullTypeSpecifier:
+	{NullTypeSpecifier}
+;
 
 StructureTypeDeclaration returns ComplexType: 
 	{StructureType}

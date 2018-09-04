@@ -40,6 +40,7 @@ import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
+import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 
@@ -52,10 +53,11 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
 	
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
-		binder.bind(IConstraintFactory).to(BaseConstraintFactory);
+		binder.bind(IConstraintFactory).to(PlatformConstraintFactory);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
-		binder.bind(MitaTypeLinker).to(PlatformLinker);
+		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
+		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(PlatformLinker);
 	}
 
 	override bindIGlobalScopeProvider() {

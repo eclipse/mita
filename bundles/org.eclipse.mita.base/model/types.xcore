@@ -222,7 +222,9 @@ class TypeParameter extends Type {
 	refers Type bound
 }
 class Declaration extends TypedElement, NamedElement, PackageMember {
-	
+	op String toString() {
+		return name + if(typeSpecifier instanceof org.eclipse.mita.base.types.PresentTypeSpecifier) ": " + typeSpecifier else ""
+	}
 }
 abstract class TypedElement {
 	contains TypeSpecifier typeSpecifier
@@ -480,6 +482,9 @@ class Property extends Declaration {
 	boolean const
 	boolean external
 	boolean ^readonly
+	op String toString() {
+		return super.toString();
+	}
 }
 
 class Event extends Declaration {

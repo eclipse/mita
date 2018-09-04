@@ -68,6 +68,10 @@ class SystemResourceSetup {
 class ConfigurationItemValue {
 	refers ConfigurationItem item
 	contains Expression value
+	op String toString() {
+		val itemRefText = NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.configurationItemValue_Item).head?.text;
+		return (item?.toString() ?: itemRefText.trim()) + " = " + value.toString();
+	}
 }
 
 /*

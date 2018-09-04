@@ -11,11 +11,14 @@ import org.eclipse.emf.ecore.impl.EObjectImpl
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.emf.common.util.URI
 import org.eclipse.xtext.util.OnChangeEvictingCache
+import com.google.inject.name.Named
 
 class MitaBaseResource extends XtextResource {
 	
-	@Inject
+	@Inject @Named("typeLinker")
 	protected MitaTypeLinker typeLinker;
+	@Inject @Named("typeDependentLinker")
+	protected MitaTypeLinker typeDependentLinker;
 	
 	@Accessors
 	protected boolean dependenciesLoaded = false;
@@ -51,6 +54,18 @@ class MitaBaseResource extends XtextResource {
 
 		val consumer = new ListBasedDiagnosticConsumer();
 		typeLinker.linkModel(parseResult.getRootASTElement(), consumer);
+		if (!validationDisabled) {
+			getErrors().addAll(consumer.getResult(Severity.ERROR));
+			getWarnings().addAll(consumer.getResult(Severity.WARNING));
+		}
+		
+	}
+	def doLinkTypeDependent() {
+		if (parseResult === null || parseResult.getRootASTElement() === null)
+			return;
+
+		val consumer = new ListBasedDiagnosticConsumer();
+		typeDependentLinker.linkModel(parseResult.getRootASTElement(), consumer);
 		if (!validationDisabled) {
 			getErrors().addAll(consumer.getResult(Severity.ERROR));
 			getWarnings().addAll(consumer.getResult(Severity.WARNING));

@@ -1,6 +1,5 @@
 package org.eclipse.mita.program.typesystem
 
-import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
@@ -16,18 +15,20 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructuralType
 import org.eclipse.mita.base.types.TypedElement
-import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.CoSumType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
+import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.FunctionDefinition
@@ -37,6 +38,7 @@ import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.xtext.EcoreUtil2
@@ -44,10 +46,8 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
-import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 
-class ProgramConstraintFactory extends BaseConstraintFactory {
+class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
 		println('''Prog: «program.eResource»''');
@@ -188,6 +188,17 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 		
 		return resultObjects;
 	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemResourceSetup setup) {
+		system.computeConstraintsForChildren(setup);
+		return null;
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConfigurationItemValue configItemValue) {
+		// assumption: Linking worked, so item is not null. Otherwise do the song and dance of ERefExpr.
+		val leftSide = TypeVariableAdapter.get(configItemValue.item);
+		val rightSide = system.computeConstraints(configItemValue.value);
+		system.addConstraint(new SubtypeConstraint(rightSide, leftSide));
+		return leftSide;
+	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
@@ -233,25 +244,14 @@ class ProgramConstraintFactory extends BaseConstraintFactory {
 					nc.computeConstraintsForFunctionCall(varOrFun, txt, TypeVariableAdapter.get(fun), argExprs);
 					return SimplificationResult.success(ConstraintSystem.combine(#[nc, s]), sub)
 				]));
+				// this is an explicit return! we skip something here, since we introduce the function call restraints only after resolving the type class constraint.
 				return TypeVariableAdapter.get(varOrFun);
 			}
 			else {
 				// if we have multiple candidates we use the last one (since that's the one that was last added to scope). Let's hope that's the one the user wanted...
 				val ref = candidates.last;
 				varOrFun.eSet(featureToResolve, ref);
-				return system.associate(TypeVariableAdapter.get(ref), varOrFun); 
-				
-				//TODO: handle multiple candidates
-//				val subTypes = new ArrayList<AbstractType>();
-//				val coSumType = new CoSumType(null, txt + "_anonymous", #[], subTypes);
-//				candidates.forEach[
-//					val transl = system.computeConstraints(it);
-//					subTypes += transl;
-//					system.explicitSubtypeRelations.addEdge(transl, coSumType);
-//				]
-//				
-//				coSumType
-			//return system.associate(new BottomType(varOrFun, 'PCF: TODO: handle mutliple candidates'));
+				TypeVariableAdapter.get(ref)
 			}
 		}
 		

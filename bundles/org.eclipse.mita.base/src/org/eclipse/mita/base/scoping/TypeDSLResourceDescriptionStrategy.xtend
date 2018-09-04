@@ -39,7 +39,7 @@ class TypeDSLResourceDescriptionStrategy extends DefaultResourceDescriptionStrat
 	public static final String EXPORTED = "EXPORTED"
 	
 	@Inject 
-	TypeQualifiedNameProvider typeQualifiedNameProvider;
+	protected TypeQualifiedNameProvider typeQualifiedNameProvider;
 
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
 		if (eObject instanceof TypedElement) {

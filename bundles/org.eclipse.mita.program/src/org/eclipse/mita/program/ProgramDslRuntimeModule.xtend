@@ -80,7 +80,8 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
-		binder.bind(MitaTypeLinker).to(ProgramLinker);
+		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
+		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(ProgramLinker);
 	}
 
 	override configureIScopeProviderDelegate(Binder binder) {

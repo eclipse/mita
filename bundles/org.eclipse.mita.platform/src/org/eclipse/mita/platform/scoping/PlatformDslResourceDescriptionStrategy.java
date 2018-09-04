@@ -27,6 +27,7 @@ import org.eclipse.mita.platform.AbstractSystemResource;
 import org.eclipse.mita.platform.Platform;
 import org.eclipse.mita.platform.PlatformPackage;
 import org.eclipse.mita.platform.SystemResourceAlias;
+import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.EObjectDescription;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.util.IAcceptor;
@@ -47,7 +48,12 @@ public class PlatformDslResourceDescriptionStrategy extends TypeDSLResourceDescr
 	void export(EObject obj, IAcceptor<IEObjectDescription> acceptor) {
 		Map<String, String> map = new HashMap<>();
 		map.put(EXPORTED, String.valueOf(true));
-		acceptor.accept(EObjectDescription.create(getQualifiedNameProvider().getFullyQualifiedName(obj), obj, map));
+		QualifiedName firstQN = getQualifiedNameProvider().getFullyQualifiedName(obj);
+		acceptor.accept(EObjectDescription.create(firstQN, obj, map));
+		QualifiedName secondQN = typeQualifiedNameProvider.getFullyQualifiedName(obj);
+		if(secondQN != null && !secondQN.equals(firstQN)) {
+			acceptor.accept(EObjectDescription.create(secondQN, obj, map));
+		}
 	}
 	
 	@Override

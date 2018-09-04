@@ -365,7 +365,10 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	def IScope scope_ConfigurationItemValue_item(SystemResourceSetup context, EReference reference) {
-		val items = context.type.configurationItems
+		val items = context.type?.configurationItems
+		if(items === null) {
+			return IScope.NULLSCOPE;
+		}
 		return Scopes.scopeFor(items);
 	}
 
