@@ -1,5 +1,6 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -42,4 +43,7 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
+	override replace(Substitution sub) {
+		return new ExplicitInstanceConstraint(subType.replace(sub), superType.replace(sub));
+	}
 }

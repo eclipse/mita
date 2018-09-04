@@ -6,6 +6,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
+import org.eclipse.mita.base.typesystem.solver.Substitution
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -54,6 +55,10 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	override toGraphviz() {
 		return '''"«subType»" -> "«superType»"; «subType.toGraphviz» «superType.toGraphviz»'''
+	}
+	
+	override replace(Substitution sub) {
+		return new SubtypeConstraint(subType.replace(sub), superType.replace(sub));
 	}
 	
 }

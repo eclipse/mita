@@ -45,4 +45,9 @@ class TypeClassConstraint extends AbstractTypeConstraint {
 		return '''«typ» :: «instanceOfQN»'''
 	}
 	
+	override replace(Substitution sub) {
+		val newType = typ.replace(sub);
+		return new TypeClassConstraint(newType, instanceOfQN, onResolve);
+	}
+	
 }

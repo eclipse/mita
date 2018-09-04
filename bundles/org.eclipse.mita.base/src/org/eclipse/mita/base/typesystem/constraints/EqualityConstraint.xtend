@@ -6,6 +6,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.solver.Substitution
 
 @FinalFieldsConstructor 
 @Accessors
@@ -36,6 +37,10 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	
 	override toGraphviz() {
 		return '''"«left»" -> "«right»" [dir=both]; «left.toGraphviz» «right.toGraphviz»''';
+	}
+	
+	override replace(Substitution sub) {
+		return new EqualityConstraint(left.replace(sub), right.replace(sub));
 	}
 	
 }

@@ -61,14 +61,7 @@ class Substitution {
 	public def apply(ConstraintSystem system) {
 		val result = constraintSystemProvider.get();
 		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>
-		result.constraints.addAll(system.constraints.map[c | 
-			var nc = c;
-			for(kv : this.content.entrySet) {
-				nc = nc.replace(kv.key, kv.value);
-				result.explicitSubtypeRelations.replace(kv.key, kv.value);
-			}
-			return nc;
-		].force);
+		result.constraints.addAll(system.constraints.map[c | c.replace(this)].force);
 		result.typeClasses.putAll(system.typeClasses.mapValues[this.content.entrySet.fold(it, [tc, tv_ty | tc.replace(tv_ty.key, tv_ty.value)])])
 		return result;
 	}
