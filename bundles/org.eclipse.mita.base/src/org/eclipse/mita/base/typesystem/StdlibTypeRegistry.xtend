@@ -35,6 +35,7 @@ class StdlibTypeRegistry {
 	public static val arithmeticFunctionQIDs = #['__plus__', '__minus__', '__times__', '__division__', '__modulo__'].map[QualifiedName.create(#["stdlib", it])];
 	public static val optionalTypeQID = QualifiedName.create(#["stdlib", "optional"]);
 	public static val sigInstTypeQID = QualifiedName.create(#["stdlib", "siginst"]);
+	public static val modalityTypeQID = QualifiedName.create(#["stdlib", "modality"]);
 	
 	@Inject IScopeProvider scopeProvider;
 	
@@ -43,7 +44,7 @@ class StdlibTypeRegistry {
 		val obj = scope.getSingleElement(qn).EObjectOrProxy;
 		return obj;
 	}
-	
+		
 	def getVoidType(EObject context) {
 		val voidType = getTypeModelObject(context, StdlibTypeRegistry.voidTypeQID);
 		return new AtomicType(voidType, "void");
@@ -64,6 +65,12 @@ class StdlibTypeRegistry {
 		val sigInstType = getTypeModelObject(context, StdlibTypeRegistry.sigInstTypeQID) as GeneratedType;
 		val typeArgs = #[new TypeVariable(sigInstType.typeParameters.head)]
 		return new TypeScheme(sigInstType, typeArgs, new TypeConstructorType(sigInstType, "siginst", typeArgs.map[it as AbstractType]));
+	}
+
+	def getModalityType(EObject context) {
+		val modalityType = getTypeModelObject(context, StdlibTypeRegistry.modalityTypeQID) as GeneratedType;
+		val typeArgs = #[new TypeVariable(modalityType.typeParameters.head)]
+		return new TypeScheme(modalityType, typeArgs, new TypeConstructorType(modalityType, "modality", typeArgs.map[it as AbstractType]));
 	}
 	
 	def getArithmeticFunctions(EObject context, String name) {

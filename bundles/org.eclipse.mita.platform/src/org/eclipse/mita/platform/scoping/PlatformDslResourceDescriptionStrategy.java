@@ -24,6 +24,7 @@ import org.eclipse.mita.base.types.SumAlternative;
 import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.base.util.BaseUtils;
 import org.eclipse.mita.platform.AbstractSystemResource;
+import org.eclipse.mita.platform.Modality;
 import org.eclipse.mita.platform.Platform;
 import org.eclipse.mita.platform.PlatformPackage;
 import org.eclipse.mita.platform.SystemResourceAlias;
@@ -85,6 +86,20 @@ public class PlatformDslResourceDescriptionStrategy extends TypeDSLResourceDescr
 		for(AbstractSystemResource systemResource : BaseUtils.force(platform.getResources())) {
 			if(systemResource == null || (systemResource instanceof SystemResourceAlias && ((SystemResourceAlias) systemResource).getDelegate() == null)) continue;
 			super.createEObjectDescriptions(systemResource, acceptor);
+			// export all modalities the system resource has
+			for(Modality m : systemResource.getModalities()) {
+				if(m == null) continue;
+				if(systemResource instanceof SystemResourceAlias) {
+					QualifiedName qnSystemResource = getQualifiedNameProvider().getFullyQualifiedName(systemResource);
+					QualifiedName qn = qnSystemResource.append(m.getName());
+					Map<String, String> map = new HashMap<>();
+					map.put(EXPORTED, String.valueOf(true));
+					acceptor.accept(EObjectDescription.create(qn, m, map));
+				}
+				else {
+					super.createEObjectDescriptions(m, acceptor);
+				}
+			}
 		}
 		
 		return true;
