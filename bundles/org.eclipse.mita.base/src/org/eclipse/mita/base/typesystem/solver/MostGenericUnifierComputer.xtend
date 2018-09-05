@@ -166,19 +166,15 @@ class MostGenericUnifierComputer {
 			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
 		}
 		
-		if(t1.freeVars.size !== t2.freeVars.size) {
+		if(t1.typeArguments.size !== t2.typeArguments.size) {
 			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify with different number of type arguments: «t1» and «t2»''')
 		}
 		
-		if(!t1.freeVars.empty) {
-			// order of replacing free vars doesn't matter
-			t1.freeVars.indexed.forEach[i_var | 
-				substitution.add(i_var.value, t2.freeVars.get(i_var.key))	
-			]
-		}
-		
+		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
+			substitution.unify(t1_t2.key, t1_t2.value);
+		].filterNull		
 		// not an issue
-		return null;
+		return ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, AbstractType t2) {

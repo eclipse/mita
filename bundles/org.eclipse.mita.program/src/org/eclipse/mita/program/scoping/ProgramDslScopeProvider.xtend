@@ -408,10 +408,10 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
+			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
 
 		val exclusion = (PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
-			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
 			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass))
 
 		inclusion && !exclusion;
@@ -433,7 +433,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
-		return if (setup !== null && BaseUtils.getType(setup) !== null) {
+		return if (setup !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
 			scopeInSetupBlock(context, ref);
 		} else {
@@ -452,7 +452,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 						}
 					}) ?: superScope;
 					
-					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref).head?.text ?: "";
+					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref)?.head?.text ?: "";
 					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
 					addFeatureScope(owner, new ImportScope(Collections.singletonList(normalizer), s2, null, TypesPackage.Literals.COMPLEX_TYPE, false));
 					
@@ -553,7 +553,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		
 		// Erefs should only be constructors or refs in arguments.
 		val ref = context.eGet(ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE, false) as EObject;
-		if(ref.eIsProxy){
+		if(ref === null || ref.eIsProxy){
 			val container = context.eContainer;
 			if (container !== null && container != context) {
 				if(container instanceof ConfigurationItemValue) {

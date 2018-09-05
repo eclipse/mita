@@ -46,6 +46,8 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -188,16 +190,48 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		
 		return resultObjects;
 	}
+	
+	protected def EObject resolveReferenceToSingleAndLink(EObject origin, EReference featureToResolve) {
+		val candidates = resolveReference(origin, featureToResolve);
+		val result = candidates.last;
+		if(result !== null && origin.eGet(featureToResolve) === null) {
+			origin.eSet(featureToResolve, result);
+		}
+		return result;
+	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemResourceSetup setup) {
 		system.computeConstraintsForChildren(setup);
 		return null;
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConfigurationItemValue configItemValue) {
-		// assumption: Linking worked, so item is not null. Otherwise do the song and dance of ERefExpr.
+		// assumption: Linking worked, so item is not null. Otherwise we need to do the song and dance of ERefExpr.
 		val leftSide = TypeVariableAdapter.get(configItemValue.item);
 		val rightSide = system.computeConstraints(configItemValue.value);
 		system.addConstraint(new SubtypeConstraint(rightSide, leftSide));
 		return leftSide;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SignalInstance sigInst) {
+		val init = sigInst.initialization;
+		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
+		val signal = resolveReferenceToSingleAndLink(init, featureToResolve);
+		// args -> concreteType
+		val signalType = TypeVariableAdapter.get(signal);
+		// concreteType
+		val retTypeVar = new TypeVariable(null);
+		val supposedSignalType = new FunctionType(null, "", new TypeVariable(null), retTypeVar);
+		system.addConstraint(new EqualityConstraint(signalType, supposedSignalType));
+		// \T. siginst<T>
+		val sigInstType = typeRegistry.getSigInstType(sigInst) as TypeScheme;
+		// siginst<T>
+		val instantiation = sigInstType.instantiate();
+		// T
+		val typeVar = instantiation.key.head;
+		// sigInst<concreteType>
+		val returnType = instantiation.value.replace(typeVar, retTypeVar);
+		
+		val actualType = new FunctionType(sigInst, sigInst.name, new TypeVariable(null), returnType);
+		system.associate(actualType, sigInst);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {

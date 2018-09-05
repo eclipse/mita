@@ -143,12 +143,21 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val result = typeClass.instances.entrySet.map[k_v | 
 				val typ = k_v.key;
 				val fun = k_v.value;
+				// two possible ways to be part of this type class:
+				// - via subtype (uint8 < uint32)
 				val optMsg = typeRegistry.isSubtypeOf(refType, typ);
-				val unification = if(optMsg.present) {
+				// - via unification (i.e. siginst<T> ? siginst<uint32>
+				val mbUnification = mguComputer.compute(refType, typ);
+				val unification = if(optMsg.present && !mbUnification.valid) {
 					UnificationResult.failure(refType, optMsg.get);
 				} else {
 					// TODO insert coercion
-					UnificationResult.success(Substitution.EMPTY);
+					if(!optMsg.present) {
+						UnificationResult.success(Substitution.EMPTY);
+					}
+					else {
+						mbUnification;
+					}
 				}
 				unification -> typ -> fun;
 			].findFirst[it.key.key.valid]
@@ -157,7 +166,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return constraint.onResolve.apply(system, sub, result.value, sub.applyToType(result.key.value));
 			}
 		}
-		return SimplificationResult.failure(new UnificationIssue(constraint, '''«refType» not instance of «typeClass»'''))
+		return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «refType» not instance of «typeClass»'''))
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, Object constraint) {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify not implemented for «constraint»''')))

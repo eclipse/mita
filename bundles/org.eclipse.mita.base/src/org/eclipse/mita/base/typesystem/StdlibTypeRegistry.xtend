@@ -34,26 +34,36 @@ class StdlibTypeRegistry {
 	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#["stdlib", it])];
 	public static val arithmeticFunctionQIDs = #['__plus__', '__minus__', '__times__', '__division__', '__modulo__'].map[QualifiedName.create(#["stdlib", it])];
 	public static val optionalTypeQID = QualifiedName.create(#["stdlib", "optional"]);
+	public static val sigInstTypeQID = QualifiedName.create(#["stdlib", "siginst"]);
 	
 	@Inject IScopeProvider scopeProvider;
 	
+	def getTypeModelObject(EObject context, QualifiedName qn) {
+		val scope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+		val obj = scope.getSingleElement(qn).EObjectOrProxy;
+		return obj;
+	}
+	
 	def getVoidType(EObject context) {
-		val voidScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		val voidType = voidScope.getSingleElement(StdlibTypeRegistry.voidTypeQID).EObjectOrProxy;
+		val voidType = getTypeModelObject(context, StdlibTypeRegistry.voidTypeQID);
 		return new AtomicType(voidType, "void");
 	}
 	
 	def getStringType(EObject context) {
-		val stringScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		val stringType = stringScope.getSingleElement(StdlibTypeRegistry.stringTypeQID).EObjectOrProxy;
+		val stringType = getTypeModelObject(context, StdlibTypeRegistry.stringTypeQID);
 		return new AtomicType(stringType, "string");
 	}
 	
 	def getOptionalType(EObject context) {
-		val scope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		val optionalType = scope.getSingleElement(StdlibTypeRegistry.optionalTypeQID).EObjectOrProxy as GeneratedType;
+		val optionalType = getTypeModelObject(context, StdlibTypeRegistry.optionalTypeQID) as GeneratedType;
 		val typeArgs = #[new TypeVariable(optionalType.typeParameters.head)]
 		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, "optional", typeArgs.map[it as AbstractType]));
+	}
+	
+	def getSigInstType(EObject context) {
+		val sigInstType = getTypeModelObject(context, StdlibTypeRegistry.sigInstTypeQID) as GeneratedType;
+		val typeArgs = #[new TypeVariable(sigInstType.typeParameters.head)]
+		return new TypeScheme(sigInstType, typeArgs, new TypeConstructorType(sigInstType, "siginst", typeArgs.map[it as AbstractType]));
 	}
 	
 	def getArithmeticFunctions(EObject context, String name) {
@@ -197,7 +207,7 @@ class StdlibTypeRegistry {
 	}
 	
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {
-		return isSuperType.subtypeMsgFromBoolean('''STR: «sub.name» is not a subtype of «top.name»''')
+		return isSuperType.subtypeMsgFromBoolean('''STR: «sub» is not a subtype of «top»''')
 	}
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, String msg) {
 		if(!isSuperType) {

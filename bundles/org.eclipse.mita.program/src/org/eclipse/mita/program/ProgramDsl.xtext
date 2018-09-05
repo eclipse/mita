@@ -50,7 +50,7 @@ ConfigurationItemValue returns program::ConfigurationItemValue:
 ;
 
 SignalInstance returns program::SignalInstance: 
-	(writeable ?= 'var') name=ID typeSpecifier=OptionalTypeSpecifier '=' initialization=Expression ';'
+	(writeable ?= 'var') name=ID typeSpecifier=NullTypeSpecifier '=' initialization=ElementReferenceExpression ';'
 ;
 
 GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
