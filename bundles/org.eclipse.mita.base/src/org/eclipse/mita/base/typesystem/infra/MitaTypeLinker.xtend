@@ -45,9 +45,7 @@ class MitaTypeLinker extends Linker {
 	}
 	
 	override protected clearReferences(EObject obj) {
-		if(obj instanceof VirtualFunction || EcoreUtil2.getContainerOfType(obj, VirtualFunction) !== null) {
-			return;
-		}
+		
 		super.clearReferences(obj)
 	}
 	

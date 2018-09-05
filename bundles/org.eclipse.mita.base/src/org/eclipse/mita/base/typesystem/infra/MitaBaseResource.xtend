@@ -12,6 +12,8 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.emf.common.util.URI
 import org.eclipse.xtext.util.OnChangeEvictingCache
 import com.google.inject.name.Named
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl
 
 class MitaBaseResource extends XtextResource {
 	
@@ -73,6 +75,9 @@ class MitaBaseResource extends XtextResource {
 		this.contents.map[it.eAllContents].forEach[ l | l.forEach[
 			if(it.eIsProxy) {
 				if(it instanceof EObjectImpl) {
+					it.eSetProxyURI(null);
+				}
+				if(it instanceof MinimalEObjectImpl) {
 					it.eSetProxyURI(null);
 				}
 			}	
