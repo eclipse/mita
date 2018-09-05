@@ -67,7 +67,7 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 			unravelModalityAccessStage,
 			groupModalityAccessStage,
 			resolveGeneratedTypeConstructorStage,
-			unravelFunctionCallsStage,
+			//unravelFunctionCallsStage,
 			unravelInterpolatedStringsStage,
 			prepareLoopForFunctionUnvravelingStage,
 			prepareArrayRuntimeChecksStage,

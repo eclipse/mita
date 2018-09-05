@@ -15,9 +15,10 @@ package org.eclipse.mita.program.generator.internal
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil.Copier
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.CopySourceAdapter
 import org.eclipse.mita.program.Program
 import org.eclipse.xtext.resource.XtextResourceSet
 
@@ -26,18 +27,6 @@ class ProgramCopier {
 	@Inject
 	Provider<XtextResourceSet> resourceSetProvider;
 	
-	private static class CopySourceAdapter extends AdapterImpl {
-		private final EObject origin;
-		
-		new(EObject origin) {
-			this.origin = origin;
-		}
-		
-		def getOrigin() {
-			origin;
-		}
-	}
-
 	def copy(Program program) {
 		val copier = new Copier();
 		val copy = copier.copy(program) as Program;
@@ -55,6 +44,7 @@ class ProgramCopier {
 		val set = resourceSetProvider.get;
 		val res = set.createResource(original.eResource.URI);
 		res.contents.add(copy);
+		set.getResource(original.eResource.URI, true);
 	}
 	
 	def void linkOrigin(EObject copy, EObject origin) {
@@ -62,15 +52,8 @@ class ProgramCopier {
 	}
 	
 	def EObject getOrigin(EObject obj) {
-		computeOrigin(obj);
+		BaseUtils.computeOrigin(obj);
 	}
 	
-	static def EObject computeOrigin(EObject obj) {
-		val adapter = obj.eAdapters.filter(CopySourceAdapter).head;
-		return if(adapter === null) {
-			obj;
-		} else {
-			computeOrigin(adapter.getOrigin());
-		}
-	}
+	
 }

@@ -43,7 +43,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	@Inject
 	protected StdlibTypeRegistry typeRegistry;
 	
-	public override ConstraintSolution solve(ConstraintSystem system) {
+	override ConstraintSolution solve(ConstraintSystem system) {
 		var currentSystem = system;
 		var currentSubstitution = Substitution.EMPTY;
 		var ConstraintSolution result = null;
@@ -112,8 +112,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		while(resultSystem.hasNonAtomicConstraints()) {
 			val constraintAndSystem = resultSystem.takeOneNonAtomic();
 			val constraint = constraintAndSystem.key;
+			val constraintSystem = constraintAndSystem.value;
 
-			val simplification = doSimplify(constraintAndSystem.value, resultSub, constraintAndSystem.key);
+			val simplification = doSimplify(constraintSystem, resultSub, constraint);
 			if(!simplification.valid) {
 				return simplification;
 			}

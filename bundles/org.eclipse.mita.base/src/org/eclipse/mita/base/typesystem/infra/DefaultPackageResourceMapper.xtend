@@ -14,6 +14,11 @@ class DefaultPackageResourceMapper implements IPackageResourceMapper {
 	override getResourceURIs(ResourceSet rs, QualifiedName packageName) {
 		// TODO: optimize access across calls by caching result or previously building an index
 		// TODO: look at libraries to find required resources
+		if(rs instanceof MitaResourceSet) {
+			if(rs.projectConfig.containsKey(packageName.toString)) {
+				return rs.projectConfig.get(packageName.toString).map[URI.createURI(it)]
+			}
+		}
 		val platformString = rs.resources.head.getURI().toPlatformString(true);
 		val myFile = ResourcesPlugin.getWorkspace().getRoot().getFile(new Path(platformString));
 		return myFile.project.listAllFiles.filter[ it.name.endsWith(".mita") || it.name.endsWith(".platform") ].map[ URI.createPlatformResourceURI(it.fullPath.toString(), true) ];

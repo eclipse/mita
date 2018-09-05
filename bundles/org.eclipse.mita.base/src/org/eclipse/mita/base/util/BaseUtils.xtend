@@ -1,12 +1,10 @@
 package org.eclipse.mita.base.util
 
-import com.google.common.base.Optional
 import com.google.common.collect.Iterables
 import com.google.common.collect.Lists
 import java.util.Iterator
 import java.util.List
 import java.util.NoSuchElementException
-import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
@@ -57,12 +55,21 @@ class BaseUtils {
 	}
 	
 	def static AbstractType getType(EObject obj) {
-		val rs = obj.eResource?.resourceSet;
+		val rs = computeOrigin(obj).eResource?.resourceSet;
 		if(rs instanceof MitaResourceSet) {
 			val solution = rs.latestSolution?.solution;
 			return solution?.apply(TypeVariableAdapter.get(obj));	
 		}
 		return null;
+	}
+	
+	def static EObject computeOrigin(EObject obj) {
+		val adapter = obj.eAdapters.filter(CopySourceAdapter).head;
+		return if(adapter === null) {
+			obj;
+		} else {
+			computeOrigin(adapter.getOrigin());
+		}
 	}
 }
 

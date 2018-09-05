@@ -51,15 +51,15 @@ import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.TypesFactory
+import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Modality
@@ -106,7 +106,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
-import org.eclipse.mita.base.typesystem.types.FunctionType
 
 class StatementGenerator {
 
@@ -361,8 +360,15 @@ class StatementGenerator {
 					.«IF i_arg.value.parameter !== null»«i_arg.value.parameter.name»«ELSE»«ref.parameters.get(i_arg.key).name»«ENDIF» = «i_arg.value.value.code»
 					«ENDFOR»
 				}'''
-			}  else {
+			} else if(ref instanceof TypeAccessor) {
+				'''«stmt.arguments.head.code».«ref.name»'''
+			} else { 
+				if(ref instanceof Modality || ref instanceof SignalInstance) {
+					return '''''';
+				}
+				else {
 				'''!UNKNOWN REF < EOBJECT!''';
+				}
 			}
 		} else if (stmt.isArrayAccess && !(stmt.arraySelector.head instanceof ValueRange)) {
 			
