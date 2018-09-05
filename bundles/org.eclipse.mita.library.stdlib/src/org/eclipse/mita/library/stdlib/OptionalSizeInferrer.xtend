@@ -18,8 +18,9 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
@@ -28,9 +29,6 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 
 class OptionalSizeInferrer extends ElementSizeInferrer {
-	
-	@Inject ITypeSystemInferrer typeInferrer;
-	
 	
 	override protected dispatch doInfer(VariableDeclaration obj) {
 		val result = obj.initialization?.infer;
@@ -41,7 +39,7 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 		if(typeSpecifier instanceof PresentTypeSpecifier) {
 			val type = typeSpecifier.typeArguments?.get(0);
 			if(type !== null) {
-				return new ValidElementSizeInferenceResult(obj, type, 1);	
+				return new ValidElementSizeInferenceResult(obj, BaseUtils.getType(type), 1);	
 			}	
 		}
 		return newInvalidResult(obj, "Cannot infer size for this optional, since I can't infer the type of it");
@@ -51,10 +49,10 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 	override protected dispatch doInfer(ElementReferenceExpression obj) {
 		if(obj.operationCall) {
 			val refFun = obj.reference;
-			val refType = typeInferrer.infer(refFun);
+			val refType = BaseUtils.getType(refFun);
 			if(refFun instanceof GeneratedFunctionDefinition) {
-				if((refFun.name == "none" || refFun.name == "some") && refType?.type?.name == "optional") {
-					return new ValidElementSizeInferenceResult(obj, ModelUtils.toSpecifier(refType), 1);
+				if((refFun.name == "none" || refFun.name == "some") && refType?.name == "optional") {
+					return new ValidElementSizeInferenceResult(obj, refType, 1);
 				}
 			}
 		}
@@ -62,7 +60,7 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 	}
 	
 	override protected dispatch doInfer(PrimitiveValueExpression obj) {
-		val parentType = ModelUtils.toSpecifier(typeInferrer.infer(obj.eContainer));
+		val parentType = BaseUtils.getType(obj.eContainer);
 		if(parentType === null) {
 			return new InvalidElementSizeInferenceResult(obj, parentType, "parent type unknown");
 		} else {
@@ -70,12 +68,12 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 		}
 	}
 	
-	override protected inferFromType(EObject obj, TypeSpecifier typeSpec) {
-		if(typeSpec !== null) {
-			val res = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
+	override protected inferFromType(EObject obj, AbstractType type) {
+		if(type !== null) {
+			val res = new ValidElementSizeInferenceResult(obj, type, 1);
 			return res;
 		}
-		return super.inferFromType(obj, typeSpec);
+		return super.inferFromType(obj, type);
 	}
 	
 }

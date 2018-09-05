@@ -50,7 +50,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(!system.isWeaklyUnifiable()) {
 			return new ConstraintSolution(system, null, #[ new UnificationIssue(system, 'Subtype solving cannot terminate') ]);
 		}
-		for(var i = 0; i < 2; i++) {
+		for(var i = 0; i < 4; i++) {
 			println("------------------")
 			println(currentSystem);
 			println(currentSystem.toGraphviz);
@@ -68,7 +68,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			result = solution;
 			currentSubstitution = result.solution;
-			currentSystem = result.constraints;
+			currentSystem = currentSubstitution.apply(result.constraints);
 		}
 		return result;
 	}

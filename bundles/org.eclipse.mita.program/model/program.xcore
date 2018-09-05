@@ -37,7 +37,8 @@ import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils 
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.program.model.ModelUtils 
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -315,6 +316,9 @@ class NewInstanceExpression extends ElementReferenceExpression {
 class InterpolatedStringExpression extends Expression {
 	String[] text
 	contains Expression[] content
+	op String toString() {
+		return ModelUtils.getOriginalSourceCode(this);
+	}
 }
 
 class DereferenceExpression extends Expression {

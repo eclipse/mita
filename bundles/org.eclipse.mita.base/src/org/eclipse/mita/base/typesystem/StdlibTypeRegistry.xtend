@@ -36,6 +36,7 @@ class StdlibTypeRegistry {
 	public static val optionalTypeQID = QualifiedName.create(#["stdlib", "optional"]);
 	public static val sigInstTypeQID = QualifiedName.create(#["stdlib", "siginst"]);
 	public static val modalityTypeQID = QualifiedName.create(#["stdlib", "modality"]);
+	public static val arrayTypeQID = QualifiedName.create(#["stdlib", "array"]);
 	
 	@Inject IScopeProvider scopeProvider;
 	

@@ -137,7 +137,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		val qosLevel = #[ "MQTT_QOS_AT_MOST_ONE", "MQTT_QOS_AT_LEAST_ONCE", "MQTT_QOS_EXACTLY_ONCE"	];
 		val qosRaw = ModelUtils.getArgumentValue(signalInstance, 'qos');
 		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]);
-		val qos = qosLevel.get((qosRawValue ?: 0) as Integer);
+		val qos = qosLevel.get(((qosRawValue ?: 0) as Long).longValue as int);
 		
 		return codeFragmentProvider.create('''
 			static StringDescr_T topicDescription;

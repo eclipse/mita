@@ -40,6 +40,10 @@ class MitaTypeLinker extends Linker {
 //		super.clearReference(obj, ref)
 	}
 	
+	override protected isNullValidResult(EObject obj, EReference eRef, INode node) {
+		return true;
+	}
+	
 	def shouldNotClearReference(EObject object, EReference reference) {
 		return reference.eClass == TypesPackage.eINSTANCE.type || reference.eClass == TypesPackage.eINSTANCE.event;
 	}

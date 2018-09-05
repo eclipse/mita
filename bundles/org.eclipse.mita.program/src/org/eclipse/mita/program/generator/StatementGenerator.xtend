@@ -316,7 +316,7 @@ class StatementGenerator {
 				/* The pogram transformation pipeline rewrites extension methods to regular element reference expressions.
 				 * Thus, we should never get here.
 				 */
-				'''// function calls as feature calls are not supported'''
+				return '''«_code(stmt as ElementReferenceExpression)»'''
 			}
 		} else if (stmt.isArrayAccess) {
 			'''«stmt.arguments.head.value.code.noTerminator»[«stmt.arraySelector.head.code.noTerminator»];'''

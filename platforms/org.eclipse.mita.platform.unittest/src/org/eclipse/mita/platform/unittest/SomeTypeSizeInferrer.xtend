@@ -13,25 +13,28 @@
 
 package org.eclipse.mita.platform.unittest
 
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.BottomType
 
 class SomeTypeSizeInferrer extends ElementSizeInferrer {
 	
 	override protected dispatch doInfer(NewInstanceExpression obj) {
-		val parentType = ModelUtils.toSpecifier(typeInferrer.infer(obj.eContainer));
+		val parentType = BaseUtils.getType(obj.eContainer);
 
-		if(parentType === null) {
-			return new InvalidElementSizeInferenceResult(obj, parentType, "parent type unknown");
+		if(parentType instanceof TypeVariable || parentType instanceof BottomType) {
+			return new InvalidElementSizeInferenceResult(obj, parentType, "parent type unknown: " + parentType);
 		} else {
 			val staticSizeValue = 1;
-			val typeOfChildren = parentType.typeArguments.head;
+			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.head;
 			val result = new ValidElementSizeInferenceResult(obj, parentType, staticSizeValue as Integer);
-			result.children.add(super.infer(typeOfChildren));
+			result.children.add(super.inferFromType(typeOfChildren.origin, typeOfChildren));
 			return result;
 		}
 	}

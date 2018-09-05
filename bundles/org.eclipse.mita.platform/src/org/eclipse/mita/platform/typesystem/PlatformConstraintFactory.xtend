@@ -7,6 +7,7 @@ import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 
 class PlatformConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AbstractSystemResource res) {

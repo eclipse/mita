@@ -20,14 +20,15 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ReferenceSizeInferrer extends ElementSizeInferrer {
 	
 	@Inject
-	protected ITypeSystem registry;
+	protected StdlibTypeRegistry typeRegistry;
 	
 	protected override dispatch doInfer(EObject obj) {
-		return new ValidElementSizeInferenceResult(obj, ModelUtils.toSpecifier(InferenceResult.from(registry.getType("int32"))), 1);
+		return new ValidElementSizeInferenceResult(obj, typeRegistry.getIntegerTypes(obj).findFirst[it.name == "int32"], 1);
 	}
 	
 }

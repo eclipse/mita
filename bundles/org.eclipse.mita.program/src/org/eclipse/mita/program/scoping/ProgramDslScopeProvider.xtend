@@ -487,7 +487,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		if (itemType instanceof EnumerationType) {
 			return filteredEnumeratorScope(originalScope, itemType);
 		} else if(itemType instanceof SumType) {
-			return filteredSumTypeScope(originalScope, itemType);
+			return originalScope;
+			//return filteredSumTypeScope(originalScope, itemType);
 		} else if(itemType instanceof SumAlternative) {
 			return originalScope
 		} else {
@@ -537,6 +538,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					// unqualified resolving of enumeration values
 					val enumTypes = signal.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
 					return filteredEnumeratorScope(originalScope, enumTypes)
+				}
+				else {
+					return originalScope;
 				}
 			}
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {

@@ -13,6 +13,16 @@
 
 package org.eclipse.mita.library.stdlib
 
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.AbstractLoopStatement
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
@@ -24,16 +34,7 @@ import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.expressions.StringLiteral
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class StringSizeInferrer extends ElementSizeInferrer {
 	
@@ -165,7 +166,7 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		
 		// sum expression value part
 		for(subexpr : expr.content) {
-			val type = typeInferrer.infer(subexpr)?.type;
+			val type = BaseUtils.getType(subexpr);
 			var typeLengthInBytes = switch(type?.name) {
 				case 'uint32': 10
 				case 'uint16':  5

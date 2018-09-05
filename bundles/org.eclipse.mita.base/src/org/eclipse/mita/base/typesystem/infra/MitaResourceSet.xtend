@@ -74,12 +74,16 @@ class MitaResourceSet extends XtextResourceSet {
 			if(thisIsLoadingResources) {
 				//result.doLinking();
 				
-				PreventRecursion.preventRecursion(result, [|
-					computeTypes();
-					//linkWithTypes(result);	
-					return null;
-				]);
-				isLoadingResources = false;
+				try {
+					PreventRecursion.preventRecursion(result, [|
+						computeTypes();
+						//linkWithTypes(result);	
+						return null;
+					]);
+				}
+				finally {
+					isLoadingResources = false;
+				}
 			}
 			
 		}
