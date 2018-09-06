@@ -131,6 +131,7 @@ class Validation implements IResourceValidator {
 		
 		val i2cs = filterSigInstName.apply("I2C").toSet
 		val gpios = filterSigInstName.apply("GPIO").toSet
+		val sdcard = filterSigInstName.apply("SDCard").toSet
 		
 		
 		
@@ -153,6 +154,8 @@ class Validation implements IResourceValidator {
 		val i2cWrites  = new HashSet(i2cs ) => [retainAll(writes)]
 		val gpioReads  = new HashSet(gpios) => [retainAll(reads)]
 		val gpioWrites = new HashSet(gpios) => [retainAll(writes)]
+		val sdCardReads  = new HashSet(sdcard) => [retainAll(reads)]
+		val sdCardWrites = new HashSet(sdcard) => [retainAll(writes)]
 		
 		i2cReads.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Read", "read from", acceptor)]
 		i2cWrites.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Write", "write to", acceptor)]
@@ -161,6 +164,9 @@ class Validation implements IResourceValidator {
 		
 		gpioReads.forEach[validateGpioRead(it, acceptor)]
 		gpioWrites.forEach[validateGpioWrite(it, acceptor)]
+
+		sdCardReads.forEach[validateSdCardRead(it, acceptor)]
+		sdCardWrites.forEach[validateSdCardWrite(it, acceptor)]
 	}
 	
 	def validateGpioRead(MethodCall call, ValidationMessageAcceptor acceptor) {
@@ -214,6 +220,20 @@ class Validation implements IResourceValidator {
 		
 	}
 
+	def validateSdCardRead(MethodCall call, ValidationMessageAcceptor acceptor) {
+		val init = call.sigInst.initialization as ElementReferenceExpression;
+		val signal = init.reference as Signal;
+		if(signal.name.contains("_Write")) {
+			acceptor.acceptError("Can not read from " + signal.name, call.source, call.structFeature, 0, "CANT_READ_FROM_" + signal.name.toUpperCase)
+		}
+	}
+	def validateSdCardWrite(MethodCall call, ValidationMessageAcceptor acceptor) {
+		val init = call.sigInst.initialization as ElementReferenceExpression;
+		val signal = init.reference as Signal;
+		if(signal.name.contains("_Read")) {
+			acceptor.acceptError("Can not write to " + signal.name, call.source, call.structFeature, 0, "CANT_WRITE_TO_" + signal.name.toUpperCase)
+		}
+	}
 }
 
 

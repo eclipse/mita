@@ -53,8 +53,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 
 		«FOR sigInst : setup.signalInstances»
 		«IF sigInst.instanceOf.name.startsWith("appendingFile")»
-		static uint32_t «sigInst.name»DataRead = 0UL;
-		static uint32_t «sigInst.name»DataWrite = 0UL;
+		static uint16_t «sigInst.name»FilePosition = 0UL;
 		«ENDIF»
 		«ENDFOR»
 
@@ -115,6 +114,12 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 		val data = sigInst.dataAccessor(valueVariableName);
 		val len = sigInst.getSize;
 		val filename = sigInst.filenameAccessor(valueVariableName);
+		val fileSeekIndex = if(sigInst.instanceOf.name.startsWith("persistentFile")) {
+			    codeFragmentProvider.create('''«sigInst.name»FilePosition''');
+			} 
+			else {
+			    codeFragmentProvider.create('''0''');
+			}
 		codeFragmentProvider.create('''
 			Retcode_T retcode = RETCODE_OK;
 			FRESULT sdCardReturn = FR_OK, fileOpenReturn = FR_OK;
@@ -124,21 +129,17 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			#endif
 			FIL fileReadHandle;
 			UINT bytesRead;
-			uint32_t fileSeekIndex = 0UL;
 			
 			sdCardReturn = f_stat(«filename», &sdCardFileInfo);
 			if (FR_OK == sdCardReturn)
 			{
 				fileOpenReturn = f_open(&fileReadHandle, «filename», FA_OPEN_EXISTING | FA_READ);
 			}
-			«IF sigInst.instanceOf.name.startsWith("appendingFile")»
-			fileSeekIndex = «sigInst.name»DataRead;
-			«ENDIF»
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
-			    sdCardReturn = f_lseek(&fileReadHandle, fileSeekIndex);
+			    sdCardReturn = f_lseek(&fileReadHandle, «fileSeekIndex»);
 			}
-			if(fileSeekIndex >= sdCardFileInfo.fsize)
+			if(«fileSeekIndex» >= sdCardFileInfo.fsize)
 			{
 				return EXCEPTION_ENDOFFILEEXCEPTION;
 			}
@@ -149,7 +150,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
 				«IF sigInst.instanceOf.name.startsWith("appendingFile")»
-				«sigInst.name»DataRead += bytesRead;
+				«sigInst.name»FilePosition += bytesRead;
 				«ENDIF»
 			    sdCardReturn = f_close(&fileReadHandle);
 			}
@@ -165,6 +166,12 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 		val data = sigInst.dataAccessor(valueVariableName);
 		val len = sigInst.lenAccessor(valueVariableName);
 		val filename = sigInst.filenameAccessor(valueVariableName);
+		val fileSeekIndex = if(sigInst.instanceOf.name.startsWith("persistentFile")) {
+			    codeFragmentProvider.create('''«sigInst.name»FilePosition''');
+			} 
+			else {
+			    codeFragmentProvider.create('''0''');
+			}
 		
 		codeFragmentProvider.create('''
 			Retcode_T retcode = RETCODE_OK;
@@ -172,14 +179,10 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			FRESULT sdCardReturn = FR_OK, fileOpenReturn = FR_OK;
 			FIL fileWriteHandle;
 			UINT bytesWritten;
-			uint32_t fileSeekIndex = 0UL;
 			fileOpenReturn = f_open(&fileWriteHandle, «filename», FA_WRITE | FA_CREATE_ALWAYS);
-			«IF sigInst.instanceOf.name.startsWith("appendingFile")»
-			fileSeekIndex = «sigInst.name»DataWrite;
-			«ENDIF»
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
-			    sdCardReturn = f_lseek(&fileWriteHandle, fileSeekIndex);
+			    sdCardReturn = f_lseek(&fileWriteHandle, «fileSeekIndex»);
 			}
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
@@ -188,7 +191,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
 				«IF sigInst.instanceOf.name.startsWith("appendingFile")»
-				«sigInst.name»DataWrite += bytesWritten;
+				«sigInst.name»FilePosition += bytesWritten;
 				«ENDIF»
 			    sdCardReturn = f_close(&fileWriteHandle);
 			}
@@ -201,7 +204,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	def CodeFragment dataAccessor(SignalInstance sigInst, String varName) {
-		return if(sigInst.instanceOf.name.endsWith("Text")) {
+		return if(sigInst.instanceOf.name.contains("Text")) {
 			codeFragmentProvider.create('''*«varName»''');
 		} 
 		else {	
@@ -210,7 +213,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	}
 		
 	def CodeFragment lenAccessor(SignalInstance sigInst, String varName) {
-		return if(sigInst.instanceOf.name.endsWith("Text")) {
+		return if(sigInst.instanceOf.name.contains("Text")) {
 			codeFragmentProvider.create('''strlen(*«varName»)''');
 		} 
 		else {	
