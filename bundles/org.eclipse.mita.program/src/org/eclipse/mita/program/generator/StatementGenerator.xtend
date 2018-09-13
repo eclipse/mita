@@ -302,7 +302,7 @@ class StatementGenerator {
 					««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
 
 					.data.«altAccessor» = («dataType») {
-						«FOR i_arg: stmt.arguments.indexed SEPARATOR(',\n')»
+						«FOR i_arg: stmt.arguments.tail.indexed SEPARATOR(',\n')»
 						«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«i_arg.value.value.code.noTerminator»
 						«ENDFOR»	
 					}

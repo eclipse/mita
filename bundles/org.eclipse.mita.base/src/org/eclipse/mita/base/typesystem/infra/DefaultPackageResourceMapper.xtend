@@ -16,7 +16,7 @@ class DefaultPackageResourceMapper implements IPackageResourceMapper {
 		// TODO: look at libraries to find required resources
 		if(rs instanceof MitaResourceSet) {
 			if(rs.projectConfig.containsKey(packageName.toString)) {
-				return rs.projectConfig.get(packageName.toString).map[URI.createURI(it)]
+				return rs.projectConfig.get("dependencies").get(packageName.toString).map[URI.createURI(it)]
 			}
 		}
 		val platformString = rs.resources.head.getURI().toPlatformString(true);

@@ -52,7 +52,7 @@ class MitaResourceSet extends XtextResourceSet {
 	protected ConstraintSolution latestSolution;
 	
 	@Accessors
-	protected Map<String, List<String>> projectConfig = new HashMap();
+	protected Map<String, Map<String, List<String>>> projectConfig = new HashMap();
 	
 	protected boolean isLoadingResources = false;
 	protected boolean isLinkingTypes = false;

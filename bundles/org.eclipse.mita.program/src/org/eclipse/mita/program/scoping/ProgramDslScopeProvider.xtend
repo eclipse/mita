@@ -76,10 +76,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	@Inject
 	IQualifiedNameProvider qualifiedNameProvider
-	
-	@Inject
-	ITypeSystem typeSystem
-	
 
 	override scope_Argument_parameter(Argument argument, EReference ref) {
 		if (EcoreUtil2.getContainerOfType(argument, SystemResourceSetup) !== null) {
@@ -643,9 +639,12 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			.or(originalScope)
 	}
 
+	val cache = new OnChangeEvictingCache();
+
 	override IScope getScope(EObject context, EReference reference) {
 		// Performance improvement: hard-code well traveled routes
-		val scope = if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
+		
+		val scope = cache.get(context -> reference, context.eResource, [if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE &&
 				context instanceof FeatureCall) {
@@ -661,7 +660,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 //				println(methodName + ' -> ' + context.eClass.name);
 				super.getScope(context, reference);
 			}
-
+		]);
 		return TypesGlobalScopeProvider.filterExportable(context.eResource, reference, scope);
 	}
 
