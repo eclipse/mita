@@ -38,6 +38,7 @@ import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
@@ -46,8 +47,6 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -234,72 +233,126 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		system.associate(actualType, sigInst);
 	}
 	
+	protected def EObject getConstructorFromType(EObject rawReference) {
+		// if we reference a complex type we reference its constructor and not its type
+		val reference = if(rawReference instanceof StructuralType) {
+			rawReference.constructor;
+		} 
+		// referencing a structParameter references its accessor/"getter"
+		else if(rawReference instanceof StructuralParameter) {
+			rawReference.accessor;
+		}
+		return reference ?: rawReference;
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
+		/*
+		 * This function is pretty complicated. It handles both function calls and normal references to for example `f`, i.e.
+		 * - var y = f;
+		 * - var y = f(x);
+		 * - var y = x.f();
+		 * 
+		 * For this we need to look into scope to find all objects that could be referenced by f. 
+		 * If varOrFun is a function call, we want to do polymorphic dispatch, which means we need to create a typeClassConstraint.
+		 * Otherwise we resolve to the *last* candidate, which came into scope last and therefore is the nearest one. 
+		 * 
+		 * For function calls we do the following:
+		 * - compute x: a
+		 * - assert f: A -> B
+		 * - assert A >: a
+		 * - assert f(x): B
+		 * - if f ∈ {f_1, f_2, ...}:
+		 *   - compute {A_1, A_2 | f_i: A_i -> B_i}
+		 *   - create TypeClass T for {A_1, ...}
+		 *   - on resolve of T with function f_k: A_k -> B_k:
+		 *     - we already know that A = A_k
+		 *     - set the reference and assert B >: B_k 
+		 * - otherwise f = f_1: A_1 -> B_1
+		 * 	 - assert A -> B super type of A_1 -> B_1 (with indirection to prevent duplicate work)
+		 * - return B (the type of this expression)
+		 * 
+		 * Now we know that:
+		 * - f: A -> B
+		 * - f = f_k
+		 * - f_k: A_k -> B_k
+		 * - A = A_k
+		 * - B = B_k
+		 */
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
-		val candidates = varOrFun.resolveReference(featureToResolve);
-		val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
-		
-		var refName = "";
-		
 		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
-		
-		val refType = if(candidates.empty) {
+		val allCandidates = varOrFun.resolveReference(featureToResolve);
+		val candidates = allCandidates.map[getConstructorFromType(it)].filter[
+			// function call --> operation
+			// else --> not operation
+			// => isFunctionCall = it is Operation
+			isFunctionCall === (it instanceof Operation)
+		].force;
+
+		val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
+
+		if(candidates.empty) {
 			return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 		}
-		else if(candidates.size == 1) {
-			val rawReference = candidates.head;
-			// if we reference a complex type we reference its constructor and not its type
-			val reference = if(rawReference instanceof StructuralType) {
-				rawReference.constructor ?: rawReference;
-			} 
-			else if(rawReference instanceof StructuralParameter) {
-				rawReference.accessor ?: rawReference;
-			}
-			else {
-				rawReference;
-			}
-			refName = if(reference instanceof NamedElement) {
-				reference.name;
-			} else {
-				txt;
-			} 
-			TypeVariableAdapter.get(reference);
-		} else {
-			if(isFunctionCall && candidates.forall[it instanceof Operation]) {
-				val translations = candidates.map[it -> system.computeConstraints(it) as AbstractType];
-				val argExprs = varOrFun.arguments.map[it.value].force;
-				val argType = system.computeArgumentConstraints(txt, argExprs);
+				
+		// if isFunctionCall --> varOrFun must be operation. Allocate TypeVariables for this. 
+		val refType = if(isFunctionCall) {
+			// A
+			val fromTV = new TypeVariable(null);
+			// B
+			val toTV = new TypeVariable(null);
+			// A -> B
+			val refType = new FunctionType(null, txt + "_call", fromTV, toTV);
+			
+			val argExprs = varOrFun.arguments.map[it.value].force;
+			// a
+			val argType = system.computeArgumentConstraints(txt, argExprs);
+			// a <: A
+			system.addConstraint(new SubtypeConstraint(argType, fromTV));
+			
+			if(candidates.size > 1) {
 				val tcQN = QualifiedName.create(txt);
-				val typeClass = system.getTypeClass(QualifiedName.create(txt), candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject].force)
+				val candidateTypes = candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject];
+				// this would be nicer since we can spare some computation, but since right now the type variables are bound to EObjects this is not possible.
+				// we should probably replace this by some IdentityMap which keeps track of the types instead.
+				//val candidateTypes = candidates.filter(Operation).map[TypeVariableAdapter.get(it.parameters) as AbstractType -> it as EObject];
+				// this function call has the side effect of creating the type class.
+				val typeClass = system.getTypeClass(QualifiedName.create(txt), candidateTypes);
+				// add all candidates this TC doesn't already contain
+				candidateTypes.reject[typeClass.instances.containsKey(it)].force.forEach[
+					typeClass.instances.put(it.key, it.value);
+				]
 				system.addConstraint(new TypeClassConstraint(argType, tcQN, [s, sub, fun, typ |
 					varOrFun.eSet(featureToResolve, fun);
 					val nc = constraintSystemProvider.get(); 
-					nc.computeConstraintsForFunctionCall(varOrFun, txt, TypeVariableAdapter.get(fun), argExprs);
+					// the returned type should be smaller than the expected type so it can be assigned
+					nc.addConstraint(new SubtypeConstraint(TypeVariableAdapter.get(fun.typeSpecifier), toTV));
 					return SimplificationResult.success(ConstraintSystem.combine(#[nc, s]), sub)
 				]));
-				// this is an explicit return! we skip something here, since we introduce the function call restraints only after resolving the type class constraint.
-				return TypeVariableAdapter.get(varOrFun);
 			}
 			else {
-				// if we have multiple candidates we use the last one (since that's the one that was last added to scope). Let's hope that's the one the user wanted...
-				val ref = candidates.last;
-				varOrFun.eSet(featureToResolve, ref);
-				TypeVariableAdapter.get(ref)
+				val funRef = candidates.head;
+				if(varOrFun.eGet(featureToResolve) === null) {
+					varOrFun.eSet(featureToResolve, funRef);	
+				}
+				// the actual function should be a subtype of the expected function so it can be used here
+				system.addConstraint(new SubtypeConstraint(TypeVariableAdapter.get(funRef), refType));
 			}
+			// B
+			toTV;
 		}
-		
-		if(isFunctionCall) {
-			/* TODO: should emit subtype constraints between typecons for the arguments and an equality to the function base type
-			 * See the SubCT-App rule in Traytel et al.
-			 */
-			val argExprs = varOrFun.arguments.map[it.value].force;
-			return system.computeConstraintsForFunctionCall(varOrFun, refName, refType, argExprs);
-		} 
+		// otherwise use the last candidate. We can check here for ambiguity, otherwise this is just the "closest" candidate.
 		else {
-			return system.associate(refType, varOrFun)
+			val ref = candidates.last;
+			if(varOrFun.eGet(featureToResolve) === null) {
+				varOrFun.eSet(featureToResolve, ref);	
+			}
+			TypeVariableAdapter.get(ref)
 		}
 		
+		// refType is the type of the referenced thing (or the function application)
+		// assert f/f(x): refType
+		return system.associate(refType, varOrFun);		
 	}
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {

@@ -2,6 +2,7 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
@@ -138,7 +139,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val refType = constraint.typ;
 		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
 		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
-			return constraint.onResolve.apply(system, substitution, typeClass.instances.get(refType), refType);
+			val fun = typeClass.instances.get(refType);
+			if(fun instanceof Operation) {
+				return constraint.onResolve.apply(system, substitution, fun, refType);				
+			}
+			else {
+				return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «fun» not an Operation'''))
+			}
 		}
 		if(typeClass !== null) {
 			val result = typeClass.instances.entrySet.map[k_v | 
@@ -161,10 +168,18 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					}
 				}
 				unification -> typ -> fun;
-			].findFirst[it.key.key.valid]
+			].map[
+				if(!it.key.key.valid) {
+					return it;
+				}
+				val sub = substitution.apply(it.key.key.substitution);
+				UnificationResult.success(sub) -> sub.applyToType(it.key.value) -> it.value
+			].findFirst[
+				it.key.key.valid && it.value instanceof Operation
+			]
 			if(result !== null) {
-				val sub = substitution.apply(result.key.key.substitution);
-				return constraint.onResolve.apply(system, sub, result.value, sub.applyToType(result.key.value));
+				val sub = result.key.key.substitution;
+				return constraint.onResolve.apply(system, sub, result.value as Operation, result.key.value);
 			}
 		}
 		return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «refType» not instance of «typeClass»'''))
