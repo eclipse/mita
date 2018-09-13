@@ -15,7 +15,7 @@ class DefaultPackageResourceMapper implements IPackageResourceMapper {
 		// TODO: optimize access across calls by caching result or previously building an index
 		// TODO: look at libraries to find required resources
 		if(rs instanceof MitaResourceSet) {
-			if(rs.projectConfig.containsKey(packageName.toString)) {
+			if(rs.projectConfig.get("dependencies")?.containsKey(packageName.toString)) {
 				return rs.projectConfig.get("dependencies").get(packageName.toString).map[URI.createURI(it)]
 			}
 		}
