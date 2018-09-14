@@ -58,10 +58,16 @@ class BaseConstraintFactory implements IConstraintFactory {
 	@Inject 
 	protected StdlibTypeRegistry typeRegistry;
 	
+	protected boolean isLinking;
+	
 	public override ConstraintSystem create(EObject context) {
 		val result = constraintSystemProvider.get();
 		result.computeConstraints(context);
 		return result;
+	}
+	
+	public override setIsLinking(boolean isLinking) {
+		this.isLinking = isLinking;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
@@ -162,6 +168,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {
+		if(isLinking) {
+			return TypeVariableAdapter.getProxy(typeSpecifier);
+		}
+		
 		val typeArguments = typeSpecifier.typeArguments;
 		if(typeSpecifier.type === null) {
 			return system.associate(new BottomType(typeSpecifier, "BCF: Unresolved type"));
@@ -266,7 +276,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		println('BCF: computeConstraints called on null');
 		return null;
 	}
-	
+
 	protected def associate(ConstraintSystem system, AbstractType t) {
 		return associate(system, t, t.origin);
 	}
@@ -281,5 +291,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.addConstraint(new EqualityConstraint(typeVar, t));
 		}
 		return typeVar;	
-	}	
+	}
+	
 }

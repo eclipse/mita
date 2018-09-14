@@ -17,6 +17,7 @@ import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.generator.AbstractFileSystemAccess2
@@ -24,7 +25,6 @@ import org.eclipse.xtext.generator.OutputConfiguration
 import org.eclipse.xtext.generator.URIBasedFileSystemAccess
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.XtextResourceSet
-import org.eclipse.xtext.util.IResourceScopeCache
 import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
@@ -91,9 +91,9 @@ class MitaResourceSet extends XtextResourceSet {
 			}
 			if(thisIsLoadingResources) {
 					//linkTypes(loadedResources.filter(MitaBaseResource));
-				val mitaResources = this.resources.filter(MitaBaseResource).force;
-				linkTypes(mitaResources);
-				linkOthers(mitaResources);
+//				val mitaResources = this.resources.filter(MitaBaseResource).force;
+//				linkTypes(mitaResources);
+//				linkOthers(mitaResources);
 			}
 			if(thisIsLoadingResources) {
 				//result.doLinking();
@@ -122,13 +122,13 @@ class MitaResourceSet extends XtextResourceSet {
 		resource.doLinkReferences;
 	}
 	
-	protected def getConstraints(Resource res, IResourceScopeCache cache) {
-		cache.get(ConstraintSystem, res, [
-			//val symbols = symbolFactory.create(model);
-			val result = constraintFactory.create(res.contents.head);
-			return result;		
-		]);
-	}
+//	protected def getConstraints(Resource res, IResourceScopeCache cache) {
+//		cache.get(ConstraintSystem, res, [
+//			//val symbols = symbolFactory.create(model);
+//			val result = constraintFactory.create(res.contents.head);
+//			return result;		
+//		]);
+//	}
 	
 	var isComputingTypes = false;
 	protected def computeTypes() {
@@ -136,13 +136,45 @@ class MitaResourceSet extends XtextResourceSet {
 			return;
 		}
 		isComputingTypes = true;
-		val constraints = resources.filter(MitaBaseResource).map[ 
-			getConstraints(it, it.cache);
-		].force;
 		
-		val allConstraints = ConstraintSystem.combine(constraints);
+		// pre linking constraints (executed during resource description generation)
+		constraintFactory.isLinking = true;
+		val constraints = resources.filter(MitaBaseResource)
+			.map[ constraintFactory.create(it.contents.head) ]
+			.force;
+		
+		// post linking constraints (executed per resource)
+		constraintFactory.isLinking = false;
+		val allPreLinkingConstraints = ConstraintSystem.combine(constraints);
+		val postLinkingSystem = allPreLinkingConstraints.constraints
+			.flatMap[ it.activeVars ]
+			.filter(TypeVariableProxy)
+			.map[ it -> replaceTypeVarProxy(it) ]
+			.force;
+		val postLinkingConstraints = postLinkingSystem.map[ it.value ];
+		val typevarProxyReplacement = buildTypeVarProxySubstitution(postLinkingSystem.map[ it.key ]);
+		val allConstraints = ConstraintSystem
+			.combine(#[ allPreLinkingConstraints ] + postLinkingConstraints)
+			.replace(typevarProxyReplacement);
+		
 		latestSolution = constraintSolver.solve(allConstraints);
 		isComputingTypes = false;
+	}
+	
+	protected def buildTypeVarProxySubstitution(Iterable<TypeVariableProxy> proxies) {
+		val result = new Substitution();
+		proxies.forEach[ result.add(it, TypeVariableAdapter.get(it.getOrigin(this))) ];
+		return result;
+	}
+	
+	protected def ConstraintSystem replaceTypeVarProxy(TypeVariableProxy proxy) {
+		/* for each proxy, we first get it's origin (by resolving its URL),
+		 * clear any TypeVarAdapter on the origin,
+		 * and re-compute the constraints with linking set to false
+		 */
+		val origin = proxy.getOrigin(this);
+		TypeVariableAdapter.clear(origin);
+		constraintFactory.create(origin);
 	}
 	
 	protected def List<Resource> ensureLibrariesAreLoaded() {

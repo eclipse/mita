@@ -79,7 +79,7 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 			public boolean apply(IEObjectDescription input) {
 				boolean inSamePackage = resourcePackageName != null 
 						&& input.getQualifiedName().toString().startsWith(resourcePackageName);
-				String isExported = input.getUserData(TypeDSLResourceDescriptionStrategy.EXPORTED);
+				String isExported = input.getUserData(BaseResourceDescriptionStrategy.EXPORTED);
 				
 				boolean includeInScope = inSamePackage || isExported == null || "true".equals(isExported);
 				return includeInScope;

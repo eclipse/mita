@@ -14,6 +14,7 @@
 package org.eclipse.mita.base.scoping
 
 import com.google.common.collect.Maps
+import com.google.inject.Inject
 import java.util.List
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
@@ -24,6 +25,7 @@ import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.INode
@@ -32,14 +34,19 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
-import com.google.inject.Inject
+import com.google.gson.Gson
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
-class TypeDSLResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
+class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
 	public static final String EXPORTED = "EXPORTED"
+	public static final String CONSTRAINTS = "CONSTRAINTS";
 	
 	@Inject 
 	protected TypeQualifiedNameProvider typeQualifiedNameProvider;
+	
+	@Inject
+	protected IConstraintFactory constraintFactory;
 
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
 		if (eObject instanceof TypedElement) {
@@ -52,6 +59,15 @@ class TypeDSLResourceDescriptionStrategy extends DefaultResourceDescriptionStrat
 			userData.put(EXPORTED, Boolean.toString((eObject.eContainer as SumType).exported));
 		} else {
 			userData.put(EXPORTED, Boolean.toString(true));
+		}
+		
+		if(eObject.eContainer === null) {
+			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
+			constraintFactory.isLinking = true;
+			val constraints = constraintFactory.create(eObject);
+			val json = new Gson().toJson(constraints);
+			val loadedConstraints = new Gson().fromJson(json, ConstraintSystem);
+			println(json);
 		}
 	}
 

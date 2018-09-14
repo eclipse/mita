@@ -18,7 +18,7 @@ import java.util.Map;
 
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.mita.base.scoping.TypeDSLResourceDescriptionStrategy;
+import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy;
 import org.eclipse.mita.base.types.StructureType;
 import org.eclipse.mita.base.types.SumAlternative;
 import org.eclipse.mita.base.types.TypeSpecifier;
@@ -36,7 +36,7 @@ import org.eclipse.xtext.util.IAcceptor;
 
 import com.google.common.collect.ImmutableList;
 
-public class PlatformDslResourceDescriptionStrategy extends TypeDSLResourceDescriptionStrategy {
+public class PlatformDslResourceDescriptionStrategy extends BaseResourceDescriptionStrategy {
 
 	private ImmutableList<EClass> SUPPRESSED_OBJECTS = ImmutableList.of(
 			PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE, // we expose resources bound to the platform

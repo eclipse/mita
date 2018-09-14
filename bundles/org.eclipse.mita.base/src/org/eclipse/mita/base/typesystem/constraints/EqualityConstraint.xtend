@@ -1,12 +1,11 @@
 package org.eclipse.mita.base.typesystem.constraints
 
-import org.eclipse.mita.base.typesystem.types.AbstractBaseType
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.mita.base.typesystem.solver.Substitution
 
 @FinalFieldsConstructor 
 @Accessors

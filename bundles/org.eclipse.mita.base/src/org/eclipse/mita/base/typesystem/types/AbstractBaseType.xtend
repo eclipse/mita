@@ -14,4 +14,5 @@ abstract class AbstractBaseType extends AbstractType {
 	override toGraphviz() {
 		return "";
 	}
+
 }

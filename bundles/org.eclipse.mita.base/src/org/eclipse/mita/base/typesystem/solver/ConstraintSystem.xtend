@@ -25,10 +25,13 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 class ConstraintSystem {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider; 
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
-	protected Graph<AbstractType> explicitSubtypeRelations;
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
 
+	// not use atm - is not passed through/serialized in the index
+	protected Graph<AbstractType> explicitSubtypeRelations;
+	
 	new() {
+		
 		this.explicitSubtypeRelations = new Graph<AbstractType>() {
 			
 			override replace(AbstractType from, AbstractType with) {
@@ -191,6 +194,13 @@ class ConstraintSystem {
 			it.explicitSubtypeRelations = result.explicitSubtypeRelations
 			//it.symbolTable.content.putAll(result.symbolTable.content);
 		]
+	}
+	
+	def replace(Substitution substitution) {
+		val newConstraints = new ArrayList();
+		newConstraints.addAll(constraints.map[ it.replace(substitution) ]);
+		this.constraints = newConstraints;
+		return this;
 	}
 	
 }

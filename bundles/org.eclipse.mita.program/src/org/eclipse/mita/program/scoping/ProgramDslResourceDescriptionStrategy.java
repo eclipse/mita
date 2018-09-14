@@ -21,10 +21,10 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.mita.base.types.Operation;
 
 import org.eclipse.mita.program.ProgramPackage;
-import org.eclipse.mita.base.scoping.TypeDSLResourceDescriptionStrategy;
+import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy;
 import com.google.common.collect.ImmutableList;
 
-public class ProgramDslResourceDescriptionStrategy extends TypeDSLResourceDescriptionStrategy {
+public class ProgramDslResourceDescriptionStrategy extends BaseResourceDescriptionStrategy {
 
 	public static final String OPERATION_PARAM_TYPES = "OPERATION_PARAM_TYPES";
 

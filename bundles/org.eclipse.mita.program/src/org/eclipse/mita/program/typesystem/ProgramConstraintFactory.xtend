@@ -246,6 +246,10 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
+		if(isLinking) {
+			return TypeVariableAdapter.getProxy(varOrFun);
+		}
+		
 		/*
 		 * This function is pretty complicated. It handles both function calls and normal references to for example `f`, i.e.
 		 * - var y = f;

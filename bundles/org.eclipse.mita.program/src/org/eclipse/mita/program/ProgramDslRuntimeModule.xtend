@@ -35,6 +35,7 @@ import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.program.formatting.ProgramDslFormatter
@@ -47,6 +48,7 @@ import org.eclipse.mita.program.linking.ProgramLinkingService
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.mita.program.typesystem.ProgramConstraintFactory
+import org.eclipse.mita.program.typesystem.ProgramLinker
 import org.eclipse.mita.program.validation.NullProgramDslValidator
 import org.eclipse.mita.program.validation.ProgramDslTypeValidator
 import org.eclipse.mita.program.validation.ProgramDslValidator
@@ -59,8 +61,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
-import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
-import org.eclipse.mita.program.typesystem.ProgramLinker
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -128,6 +128,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 	override bindXtextResourceSet() {
 		return MitaResourceSet
 	}
+  
 //
 //	override bindIQualifiedNameProvider() {
 //		return BaseQualifiedNameProvider
