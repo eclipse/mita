@@ -127,10 +127,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return SimplificationResult.success(resultSystem, resultSub);
 	}
 		
-		
+	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ExplicitInstanceConstraint constraint) {
-		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ExplicitInstanceConstraint not implemented for «constraint»''')))
+		val instance = constraint.typeScheme.instantiate();
+		println(instance);
+		println(constraint.instance);
+		return SimplificationResult.success(system.plus(new EqualityConstraint(constraint.instance, instance.value, "CSS:133")), substitution);
 	}
+	
+//	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ExplicitInstanceConstraint constraint) {
+//		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ExplicitInstanceConstraint not implemented for «constraint»''')))
+//	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ImplicitInstanceConstraint constraint) {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ImplicitInstanceConstraint not implemented for «constraint»''')))
 	}
@@ -200,7 +207,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EqualityConstraint constraint, TypeScheme t1, AbstractType t2) {
 		val vars_instance = t1.instantiate
-		val newSystem = system.plus(new EqualityConstraint(vars_instance.value, t2));
+		val newSystem = system.plus(new EqualityConstraint(vars_instance.value, t2, "CSS:208"));
 		return SimplificationResult.success(newSystem, substitution);
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EqualityConstraint constraint, AbstractType t1, TypeScheme t2) {

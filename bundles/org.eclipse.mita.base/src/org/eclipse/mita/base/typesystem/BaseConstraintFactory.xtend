@@ -140,12 +140,17 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val refType = new FunctionType(null, functionName + "_call", fromTV, toTV);
 		// a
 		val argType = system.computeArgumentConstraints(functionName, argExprs);
-		// a <: A
-		system.addConstraint(new SubtypeConstraint(argType, fromTV));
+		// b
+		val resultType = new TypeVariable(null);
+		// a -> b
+		val referencedFunctionType = new FunctionType(null, functionName, argType, resultType);
+		// a -> B >: A -> B
+		system.addConstraint(new SubtypeConstraint(refType, referencedFunctionType));
 		
 		if(candidates.size > 1) {
 			val tcQN = QualifiedName.create(functionName);
-			val candidateTypes = candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject];
+			//val candidateTypes = candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject];
+			val candidateTypes = candidates.filter(Operation).map[TypeVariableAdapter.get(it) as AbstractType -> it as EObject];
 			// this would be nicer since we can spare some computation, but since right now the type variables are bound to EObjects this is not possible.
 			// we should probably replace this by some IdentityMap which keeps track of the types instead.
 			//val candidateTypes = candidates.filter(Operation).map[TypeVariableAdapter.get(it.parameters) as AbstractType -> it as EObject];
@@ -155,7 +160,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			candidateTypes.reject[typeClass.instances.containsKey(it)].force.forEach[
 				typeClass.instances.put(it.key, it.value);
 			]
-			system.addConstraint(new TypeClassConstraint(argType, tcQN, [s, sub, fun, typ |
+			system.addConstraint(new TypeClassConstraint(referencedFunctionType, tcQN, [s, sub, fun, typ |
 				if(functionReference !== null) {
 					functionCall.eSet(functionReference, fun);
 				}
@@ -174,7 +179,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.addConstraint(new SubtypeConstraint(TypeVariableAdapter.get(funRef), refType));
 		}
 		// B
-		toTV;
+		resultType;
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeCastExpression expr) {
@@ -299,7 +304,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val vars_typeScheme = system.translateTypeDeclaration(typeSpecifier.type).instantiate();
 			val vars = vars_typeScheme.key;
 			for(var i = 0; i < Integer.min(typeArguments.size, vars.size); i++) {
-				system.addConstraint(new EqualityConstraint(vars.get(i), system.computeConstraints(typeArguments.get(i))));
+				system.addConstraint(new EqualityConstraint(vars.get(i), system.computeConstraints(typeArguments.get(i)), "BCF:307"));
 			}
 			return system.associate(vars_typeScheme.value, typeSpecifier);
 		}
@@ -404,7 +409,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		val typeVar = TypeVariableAdapter.get(typeVarOrigin);
 		if(typeVar != t && t !== null) {
-			system.addConstraint(new EqualityConstraint(typeVar, t));
+			system.addConstraint(new EqualityConstraint(typeVar, t, "BCF:412"));
 		}
 		return typeVar;	
 	}

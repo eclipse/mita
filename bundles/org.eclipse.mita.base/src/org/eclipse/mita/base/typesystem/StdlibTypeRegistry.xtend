@@ -5,16 +5,19 @@ import com.google.inject.Inject
 import java.util.Set
 import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.CoSumType
+import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
@@ -28,8 +31,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.emf.ecore.EReference
-import org.eclipse.mita.base.typesystem.types.FloatingType
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
@@ -37,7 +38,6 @@ class StdlibTypeRegistry {
 	public static val floatTypeQID = QualifiedName.create(#["stdlib", "float"]);
 	public static val doubleTypeQID = QualifiedName.create(#["stdlib", "double"]);
 	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#["stdlib", it])];
-	public static val arithmeticFunctionQIDs = #['__plus__', '__minus__', '__times__', '__division__', '__modulo__'].map[QualifiedName.create(#["stdlib", it])];
 	public static val optionalTypeQID = QualifiedName.create(#["stdlib", "optional"]);
 	public static val sigInstTypeQID = QualifiedName.create(#["stdlib", "siginst"]);
 	public static val modalityTypeQID = QualifiedName.create(#["stdlib", "modality"]);
@@ -52,59 +52,58 @@ class StdlibTypeRegistry {
 		val obj = scope.getSingleElement(qn).EObjectOrProxy;
 		return obj;
 	}
+	def getTypeModelObjectProxy(EObject context, QualifiedName qn) {
+		return TypeVariableAdapter.get(getTypeModelObject(context, qn));
+	}
+	
 	def getModelObjects(EObject context, QualifiedName qn, EReference ref) {
 		val scope = scopeProvider.getScope(context, ref);
 		val obj = scope.getElements(qn).map[EObjectOrProxy].force;
 		return obj;
 	}
 			
-	def getVoidType(EObject context) {
+	protected def getVoidType(EObject context) {
 		val voidType = getTypeModelObject(context, StdlibTypeRegistry.voidTypeQID);
 		return new AtomicType(voidType, "void");
 	}
 	
-	def getStringType(EObject context) {
+	protected def getStringType(EObject context) {
 		val stringType = getTypeModelObject(context, StdlibTypeRegistry.stringTypeQID);
 		return new AtomicType(stringType, "string");
 	}
 	
-	def getFloatType(EObject context) {
+	protected def getFloatType(EObject context) {
 		val floatType = getTypeModelObject(context, StdlibTypeRegistry.floatTypeQID);
 		return translateNativeType(floatType as NativeType);
 	}
 	
-	def getDoubleType(EObject context) {
+	protected def getDoubleType(EObject context) {
 		val doubleType = getTypeModelObject(context, StdlibTypeRegistry.doubleTypeQID);
 		return translateNativeType(doubleType as NativeType);
 	}
 	
-	def getOptionalType(EObject context) {
+	protected def getOptionalType(EObject context) {
 		val optionalType = getTypeModelObject(context, StdlibTypeRegistry.optionalTypeQID) as GeneratedType;
 		val typeArgs = #[new TypeVariable(optionalType.typeParameters.head)]
 		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, "optional", typeArgs.map[it as AbstractType]));
 	}
 	
-	def getSigInstType(EObject context) {
+	protected def getSigInstType(EObject context) {
 		val sigInstType = getTypeModelObject(context, StdlibTypeRegistry.sigInstTypeQID) as GeneratedType;
 		val typeArgs = #[new TypeVariable(sigInstType.typeParameters.head)]
 		return new TypeScheme(sigInstType, typeArgs, new TypeConstructorType(sigInstType, "siginst", typeArgs.map[it as AbstractType]));
 	}
 
-	def getModalityType(EObject context) {
+	protected def getModalityType(EObject context) {
 		val modalityType = getTypeModelObject(context, StdlibTypeRegistry.modalityTypeQID) as GeneratedType;
 		val typeArgs = #[new TypeVariable(modalityType.typeParameters.head)]
 		return new TypeScheme(modalityType, typeArgs, new TypeConstructorType(modalityType, "modality", typeArgs.map[it as AbstractType]));
 	}
-	
-	def getArithmeticFunctions(EObject context, String name) {
-		val scope = scopeProvider.getScope(context, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
-		return arithmeticFunctionQIDs.filter[it.lastSegment.contains(name)].flatMap[scope.getElements(it)].map[EObjectOrProxy]
-	}
-	
-	def Iterable<AbstractType> getFloatingTypes(EObject context) {
+		
+	protected def Iterable<AbstractType> getFloatingTypes(EObject context) {
 		return #[getFloatType(context), getDoubleType(context)];
 	}
-	def Iterable<AbstractType> getIntegerTypes(EObject context) {
+	/*protected*/ def Iterable<AbstractType> getIntegerTypes(EObject context) {
 		val typesScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		return StdlibTypeRegistry.integerTypeQIDs
 			.map[typesScope.getSingleElement(it).EObjectOrProxy]

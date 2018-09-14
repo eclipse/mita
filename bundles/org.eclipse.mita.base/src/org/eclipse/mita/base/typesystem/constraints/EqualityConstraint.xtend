@@ -8,19 +8,25 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.mita.base.typesystem.solver.Substitution
 
-@FinalFieldsConstructor 
 @Accessors
 @EqualsHashCode
 class EqualityConstraint extends AbstractTypeConstraint {
 	protected final AbstractType left;
 	protected final AbstractType right;
+	protected val String source;
+
+	new(AbstractType left, AbstractType right, String source) {
+		this.left = left;
+		this.right = right;
+		this.source = source;
+	}
 
 	override toString() {
 		left + " ≡ " + right
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		return new EqualityConstraint(left.replace(from, with), right.replace(from, with));
+		return new EqualityConstraint(left.replace(from, with), right.replace(from, with), source);
 	}
 	
 	override getActiveVars() {
@@ -40,7 +46,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	}
 	
 	override replace(Substitution sub) {
-		return new EqualityConstraint(left.replace(sub), right.replace(sub));
+		return new EqualityConstraint(left.replace(sub), right.replace(sub), source);
 	}
 	
 }

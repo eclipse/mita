@@ -8,7 +8,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 /**
- * Corresponds to subtype relationship 𝜏 ⪯ σ as defined in
+ * Corresponds to instance relationship 𝜏 ⪯ σ as defined in
  * Generalizing Hindley-Milner Type Inference Algorithms
  * by Heeren et al., see https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
  */
@@ -16,34 +16,47 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 @FinalFieldsConstructor
 @EqualsHashCode
 class ExplicitInstanceConstraint extends AbstractTypeConstraint {
-	protected final AbstractType subType;
-	protected final AbstractType superType;
+	protected final AbstractType instance;
+	protected final AbstractType typeScheme;
 	
 	override toString() {
-		subType + " ⩽ " + superType
+		instance + " ⩽ " + typeScheme
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		return new ExplicitInstanceConstraint(subType.replace(from, with), superType.replace(from, with));
+		return new ExplicitInstanceConstraint(instance.replace(from, with), typeScheme.replace(from, with));
 	}
 	
 	override getActiveVars() {
-		return subType.freeVars + superType.freeVars;
+		return instance.freeVars + typeScheme.freeVars;
 	}
 	
 	override getOrigins() {
-		return #[subType, superType].map[ it.origin ];
+		return #[instance, typeScheme].map[ it.origin ];
 	}
 	
 	override getTypes() {
-		return #[subType, superType];
+		return #[instance, typeScheme];
 	}
 	
 	override toGraphviz() {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		return "";
 	}
 	
 	override replace(Substitution sub) {
-		return new ExplicitInstanceConstraint(subType.replace(sub), superType.replace(sub));
+		val inst = if(instance.freeVars.exists[sub.substitutions.containsKey(it)]) {
+			instance.replace(sub);
+		}
+		else {
+			instance;
+		}
+		val ts = if(typeScheme.freeVars.exists[sub.substitutions.containsKey(it)]) {
+			typeScheme.replace(sub);
+		}
+		else {
+			typeScheme;
+		}
+		
+		return new ExplicitInstanceConstraint(instance.replace(sub), typeScheme.replace(sub));
 	}
 }

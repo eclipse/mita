@@ -49,6 +49,9 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.platform.SystemSpecification
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemSpecification spec) {
@@ -65,7 +68,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
 		system.computeConstraints(eventHandler.block);
 		
-		val voidType = typeRegistry.getVoidType(eventHandler);
+		val voidType = typeRegistry.getTypeModelObjectProxy(eventHandler, StdlibTypeRegistry.voidTypeQID);
 		return system.associate(new FunctionType(eventHandler, eventHandler.event.toString, voidType, voidType));
 	}
 	
@@ -145,7 +148,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		} else {
 			system.translateTypeDeclaration(deconTypeCandidates.head);
 		}
-		system.addConstraint(new EqualityConstraint(deconType, combinedType));
+		system.addConstraint(new EqualityConstraint(deconType, combinedType, "PCF:150"));
 		system.computeConstraints(decon.body);
 		return system.associate(combinedType);
 	}
@@ -211,17 +214,18 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		// concreteType
 		val retTypeVar = new TypeVariable(null);
 		val supposedSignalType = new FunctionType(null, "", new TypeVariable(null), retTypeVar);
-		system.addConstraint(new EqualityConstraint(signalType, supposedSignalType));
+		system.addConstraint(new EqualityConstraint(signalType, supposedSignalType, "PCF:216"));
 		// \T. siginst<T>
-		val sigInstType = typeRegistry.getSigInstType(sigInst) as TypeScheme;
-		// siginst<T>
-		val instantiation = sigInstType.instantiate();
-		// T
-		val typeVar = instantiation.key.head;
+		val sigInstType = typeRegistry.getTypeModelObjectProxy(sigInst, StdlibTypeRegistry.sigInstTypeQID);
+		// sigInst<T>
+		val instantiation = new TypeVariable(null);
+		system.addConstraint(new ExplicitInstanceConstraint(instantiation, sigInstType));
 		// sigInst<concreteType>
-		val returnType = instantiation.value.replace(typeVar, retTypeVar);
+		val returnType = new TypeConstructorType(null, "siginst", #[retTypeVar]);
+		// sigInst<T> = sigInst<concreteType>
+		system.addConstraint(new EqualityConstraint(instantiation, returnType, "PCF:225"));
 		
-		val actualType = new FunctionType(sigInst, sigInst.name, new TypeVariable(null), returnType);
+		val actualType = new FunctionType(sigInst, sigInst.name, new ProdType(null, '''«signal»__args''', #[signalType], #[]), returnType);
 		system.associate(actualType, sigInst);
 	}
 	
@@ -289,12 +293,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		}
 		
 		val functionReturnVar = if(enclosingFunction === null) {
-			typeRegistry.getVoidType(statement);
+			 typeRegistry.getTypeModelObjectProxy(statement, StdlibTypeRegistry.voidTypeQID);
 		} else {
 			system.computeConstraints(enclosingFunction.typeSpecifier)
 		}
 		val returnValVar = if(statement.value === null) {
-			system.associate(typeRegistry.getVoidType(statement), statement);
+			system.associate(typeRegistry.getTypeModelObjectProxy(statement, StdlibTypeRegistry.voidTypeQID), statement);
 		} else {
 			system.associate(system.computeConstraints(statement.value), statement);
 		}

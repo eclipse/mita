@@ -9,12 +9,14 @@ import java.util.List
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
@@ -155,6 +157,12 @@ class ConstraintSystem {
 			(c instanceof TypeClassConstraint)
 			&& (
 				(!(c as TypeClassConstraint).types.flatMap[it.freeVars].empty)
+			)
+		)
+		|| (
+			(c instanceof ExplicitInstanceConstraint)
+			&& (
+				(c as ExplicitInstanceConstraint).typeScheme instanceof TypeVariable
 			)
 		)
 	}
