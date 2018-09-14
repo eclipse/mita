@@ -13,23 +13,40 @@
 
 package stdlib; 
 
-export native-type xint32 alias-of int32_t subtype-of integer header "stdint.h"
-export native-type xint16 alias-of int16_t subtype-of int32 header "stdint.h"
-export native-type xint8 alias-of int8_t subtype-of int16 header "stdint.h"
+export native-type xint32 alias-of int32_t header "stdint.h"
+export native-type xint16 alias-of int16_t header "stdint.h"
+export native-type xint8  alias-of int8_t  header "stdint.h"
 
-export native-type int32 alias-of int32_t subtype-of integer header "stdint.h"
-export native-type int16 alias-of int16_t subtype-of int32 header "stdint.h"
-export native-type int8 alias-of int8_t subtype-of int16 header "stdint.h"
+export native-type int32 alias-of int32_t header "stdint.h"
+export native-type int16 alias-of int16_t header "stdint.h"
+export native-type int8  alias-of int8_t  header "stdint.h"
 
-export native-type uint32 alias-of uint32_t subtype-of integer header "stdint.h"
-export native-type uint16 alias-of uint16_t subtype-of uint32, int32 header "stdint.h"
-export native-type uint8 alias-of uint8_t subtype-of uint16, int16 header "stdint.h"
+export native-type uint32 alias-of uint32_t header "stdint.h"
+export native-type uint16 alias-of uint16_t header "stdint.h"
+export native-type uint8  alias-of uint8_t  header "stdint.h"
 
-export native-type bool subtype-of boolean header "stdbool.h"
-export native-type double subtype-of real
-export native-type float subtype-of double
+export native-type bool header "stdbool.h"
+export native-type double
+export native-type float
 export native-type void
 
+export native unchecked function __PLUS__(x:  int32, y:  int32): int32  header "math.h";
+export native unchecked function __PLUS__(x:  int16, y:  int16): int16  header "math.h";
+export native unchecked function __PLUS__(x:  int8 , y:  int8 ): int8   header "math.h";
+export native unchecked function __PLUS__(x: uint32, y: uint32): uint32 header "math.h";
+export native unchecked function __PLUS__(x: uint16, y: uint16): uint16 header "math.h";
+export native unchecked function __PLUS__(x: uint8 , y: uint8 ): uint8  header "math.h";
+export native unchecked function __PLUS__(x: float , y: float ): float  header "math.h";
+export native unchecked function __PLUS__(x: double, y: double): double header "math.h";
+
+export native unchecked function __MINUS__(x:  int32, y:  int32): int32  header "math.h";
+export native unchecked function __MINUS__(x:  int16, y:  int16): int16  header "math.h";
+export native unchecked function __MINUS__(x:  int8 , y:  int8 ): int8   header "math.h";
+export native unchecked function __MINUS__(x: uint32, y: uint32): int32  header "math.h";
+export native unchecked function __MINUS__(x: uint16, y: uint16): int16  header "math.h";
+export native unchecked function __MINUS__(x: uint8 , y: uint8 ): int8   header "math.h";
+export native unchecked function __MINUS__(x: float , y: float ): float  header "math.h";
+export native unchecked function __MINUS__(x: double, y: double): double header "math.h";
 
 export generated type string
 	generator "org.eclipse.mita.library.stdlib.StringGenerator"

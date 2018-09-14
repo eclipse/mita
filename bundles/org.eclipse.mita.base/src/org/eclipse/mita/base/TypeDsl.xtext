@@ -30,7 +30,6 @@ NativeTypeDeclaration returns NativeType:
 	(exported?='export')? 
 	'native-type' name=ID
 	('alias-of' aliasOf=ID)?
-	('subtype-of' superTypes+=[PrimitiveType] (',' superTypes+=[PrimitiveType])* )?
 	('header' header=STRING)?
 ;
 

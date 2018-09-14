@@ -12,6 +12,7 @@ import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.CoSumType
 import org.eclipse.mita.base.typesystem.types.FunctionType
@@ -27,16 +28,22 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.typesystem.types.FloatingType
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
 	public static val stringTypeQID = QualifiedName.create(#["stdlib", "string"]);
+	public static val floatTypeQID = QualifiedName.create(#["stdlib", "float"]);
+	public static val doubleTypeQID = QualifiedName.create(#["stdlib", "double"]);
 	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#["stdlib", it])];
 	public static val arithmeticFunctionQIDs = #['__plus__', '__minus__', '__times__', '__division__', '__modulo__'].map[QualifiedName.create(#["stdlib", it])];
 	public static val optionalTypeQID = QualifiedName.create(#["stdlib", "optional"]);
 	public static val sigInstTypeQID = QualifiedName.create(#["stdlib", "siginst"]);
 	public static val modalityTypeQID = QualifiedName.create(#["stdlib", "modality"]);
 	public static val arrayTypeQID = QualifiedName.create(#["stdlib", "array"]);
+	public static val plusFunctionQID = QualifiedName.create(#["stdlib", "__PLUS__"]);
+	public static val minusFunctionQID = QualifiedName.create(#["stdlib", "__MINUS__"]);
 	
 	@Inject IScopeProvider scopeProvider;
 	
@@ -45,7 +52,12 @@ class StdlibTypeRegistry {
 		val obj = scope.getSingleElement(qn).EObjectOrProxy;
 		return obj;
 	}
-		
+	def getModelObjects(EObject context, QualifiedName qn, EReference ref) {
+		val scope = scopeProvider.getScope(context, ref);
+		val obj = scope.getElements(qn).map[EObjectOrProxy].force;
+		return obj;
+	}
+			
 	def getVoidType(EObject context) {
 		val voidType = getTypeModelObject(context, StdlibTypeRegistry.voidTypeQID);
 		return new AtomicType(voidType, "void");
@@ -54,6 +66,16 @@ class StdlibTypeRegistry {
 	def getStringType(EObject context) {
 		val stringType = getTypeModelObject(context, StdlibTypeRegistry.stringTypeQID);
 		return new AtomicType(stringType, "string");
+	}
+	
+	def getFloatType(EObject context) {
+		val floatType = getTypeModelObject(context, StdlibTypeRegistry.floatTypeQID);
+		return translateNativeType(floatType as NativeType);
+	}
+	
+	def getDoubleType(EObject context) {
+		val doubleType = getTypeModelObject(context, StdlibTypeRegistry.doubleTypeQID);
+		return translateNativeType(doubleType as NativeType);
 	}
 	
 	def getOptionalType(EObject context) {
@@ -79,7 +101,10 @@ class StdlibTypeRegistry {
 		return arithmeticFunctionQIDs.filter[it.lastSegment.contains(name)].flatMap[scope.getElements(it)].map[EObjectOrProxy]
 	}
 	
-	public def Iterable<AbstractType> getIntegerTypes(EObject context) {
+	def Iterable<AbstractType> getFloatingTypes(EObject context) {
+		return #[getFloatType(context), getDoubleType(context)];
+	}
+	def Iterable<AbstractType> getIntegerTypes(EObject context) {
 		val typesScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		return StdlibTypeRegistry.integerTypeQIDs
 			.map[typesScope.getSingleElement(it).EObjectOrProxy]
@@ -87,7 +112,7 @@ class StdlibTypeRegistry {
 			.map[translateNativeType(it)].force
 	}
 	
-	public def AbstractType translateNativeType(NativeType type) {
+	def AbstractType translateNativeType(NativeType type) {
 		val intPatternMatcher = Pattern.compile("(xint|int|uint)(\\d+)$").matcher(type?.name ?: "");
 		if(intPatternMatcher.matches) {
 			val signed = intPatternMatcher.group(1) == 'int';
@@ -95,6 +120,10 @@ class StdlibTypeRegistry {
 			val size = Integer.parseInt(intPatternMatcher.group(2)) / 8;
 			
 			new IntegerType(type, size, if(signed) Signedness.Signed else if(unsigned) Signedness.Unsigned else Signedness.DontCare);
+		} else if(type?.name == "float") {
+			new FloatingType(type, 4);
+		} else if(type?.name == "double") {
+			new FloatingType(type, 8);
 		} else {
 			new AtomicType(type, type.name);
 		}
@@ -121,11 +150,17 @@ class StdlibTypeRegistry {
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, CoSumType t) {
 		return #[t] + t.typeArguments.flatMap[s.getSuperTypes(it)].force;
 	}
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, FloatingType t) {
+		return getFloatingTypes(t.origin).filter[t.isSubType(it)].force
+	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Object t) {
 		return #[];
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(IntegerType t) {
 		return getIntegerTypes(t.origin).filter[it.isSubType(t)].force
+	}
+	dispatch def Iterable<AbstractType> getSubTypes(FloatingType t) {
+		return getFloatingTypes(t.origin).filter[it.isSubType(t)].force
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(SumType t) {
 		return #[t] + t.typeArguments.flatMap[getSubTypes].force;
@@ -152,6 +187,9 @@ class StdlibTypeRegistry {
 		return (bSub <= bTop).subtypeMsgFromBoolean('''STR: «top.name» is too small for «sub.name»''');
 	}
 	
+	public dispatch def Optional<String> isSubtypeOf(FloatingType sub, FloatingType top) {
+		return (sub.widthInBytes <= top.widthInBytes).subtypeMsgFromBoolean(sub, top);
+	}
 	public dispatch def Optional<String> isSubtypeOf(IntegerType sub, IntegerType top) {		
 		val bTop = top.widthInBytes;
 		val int bSub = switch(sub.signedness) {
@@ -209,7 +247,9 @@ class StdlibTypeRegistry {
 		}
 		return Optional.absent;
 	}
-		
+	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, BaseKind top) {
+		return subtypeMsgFromBoolean(sub.isSubType(top.kindOf), sub, top);
+	}
 	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, AbstractType top) {
 		return (top.subTypes.toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
 	}

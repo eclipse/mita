@@ -289,9 +289,6 @@ class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperat
 	
 	op String toString() {
 		val refText = NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
-		if(refText === null) {
-			return "null"
-		}
 		return refText + (if(!arguments.empty) "(" + arguments.join(", ") + ")" else "")
 	}
 }
@@ -301,6 +298,10 @@ class ParenthesizedExpression extends Expression {
 class TypeCastExpression extends Expression {
 	contains Expression operand
 	refers Type ^type
+	op String toString() {
+		val refText = NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.typeCastExpression_Type).head?.text ?: "<null>";
+		return operand + " as " + refText;
+	}
 }
 class Argument extends Expression {
 	refers Parameter parameter
