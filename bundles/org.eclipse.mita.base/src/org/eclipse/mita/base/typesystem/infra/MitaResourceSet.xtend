@@ -65,51 +65,51 @@ class MitaResourceSet extends XtextResourceSet {
 		}
 		if(result instanceof MitaBaseResource) {
 			val thisIsLoadingResources = !isLoadingResources;
-			if(!result.dependenciesLoaded) {
-				if(thisIsLoadingResources) {
-					isLoadingResources = true;
-					val projectFileURI = this.resources.filter(MitaBaseResource).map[it.URI].findFirst[it.scheme == "platform" && it.segment(0) == "resource"]
-					val projectConfigJson = uri.trimSegments(1).appendSegment("project.json");
-					val fsa = new URIBasedFileSystemAccess();
-					fsa.baseDir = projectFileURI.trimSegments(1);
-					// this is required, idk
-					fsa.converter = uriConverter;
-					val outputConfig = new OutputConfiguration("DEFAULT_OUTPUT");
-					// project name
-					outputConfig.outputDirectory = fsa.baseDir.lastSegment;
-					fsa.outputConfigurations.put(AbstractFileSystemAccess2.DEFAULT_OUTPUT, outputConfig);
-					val jsonTxtContents = fsa.readTextFile("project.json");
-					val gson = new Gson();
-					projectConfig = gson.fromJson(jsonTxtContents.toString, Map)
-					
-					//val projectConfig = super.getResource(projectConfigJson, true);
-					
-					val loadedLibraries = ensureLibrariesAreLoaded();
-					val loadedResources = loadRequiredResources(#[result] + loadedLibraries.filter(MitaBaseResource), new HashSet());
+			try {
+				if(!result.dependenciesLoaded) {
+					if(thisIsLoadingResources) {
+						isLoadingResources = true;
+						val projectFileURI = this.resources.filter(MitaBaseResource).map[it.URI].findFirst[it.scheme == "platform" && it.segment(0) == "resource"]
+						val projectConfigJson = uri.trimSegments(1).appendSegment("project.json");
+						val fsa = new URIBasedFileSystemAccess();
+						fsa.baseDir = projectFileURI.trimSegments(1);
+						// this is required, idk
+						fsa.converter = uriConverter;
+						val outputConfig = new OutputConfiguration("DEFAULT_OUTPUT");
+						// project name
+						outputConfig.outputDirectory = fsa.baseDir.lastSegment;
+						fsa.outputConfigurations.put(AbstractFileSystemAccess2.DEFAULT_OUTPUT, outputConfig);
+						val jsonTxtContents = fsa.readTextFile("project.json");
+						val gson = new Gson();
+						projectConfig = gson.fromJson(jsonTxtContents.toString, Map)
+						
+						//val projectConfig = super.getResource(projectConfigJson, true);
+						
+						val loadedLibraries = ensureLibrariesAreLoaded();
+						val loadedResources = loadRequiredResources(#[result] + loadedLibraries.filter(MitaBaseResource), new HashSet());
+					}
+					result.dependenciesLoaded = true;
 				}
-				result.dependenciesLoaded = true;
-			}
-			if(thisIsLoadingResources) {
-					//linkTypes(loadedResources.filter(MitaBaseResource));
-				val mitaResources = this.resources.filter(MitaBaseResource).force;
-				linkTypes(mitaResources);
-				linkOthers(mitaResources);
-			}
-			if(thisIsLoadingResources) {
-				//result.doLinking();
-				
-				try {
+				if(thisIsLoadingResources) {
+						//linkTypes(loadedResources.filter(MitaBaseResource));
+					val mitaResources = this.resources.filter(MitaBaseResource).force;
+					linkTypes(mitaResources);
+					linkOthers(mitaResources);
+				}
+				if(thisIsLoadingResources && result.errors.empty) {
+					//result.doLinking();
 					PreventRecursion.preventRecursion(result, [|
 						computeTypes();
 						//linkWithTypes(result);	
 						return null;
-					]);
+					]);					
 				}
-				finally {
+			}
+			finally {
+				if(thisIsLoadingResources) {					
 					isLoadingResources = false;
 				}
 			}
-			
 		}
 		return result;
 	}

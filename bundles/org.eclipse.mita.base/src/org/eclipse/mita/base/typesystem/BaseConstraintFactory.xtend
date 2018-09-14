@@ -43,6 +43,10 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.types.TypeKind
+import org.eclipse.mita.base.typesystem.types.BaseKind
+import org.eclipse.mita.base.expressions.AdditiveOperator
+import org.eclipse.mita.base.typesystem.types.FunctionType
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -156,6 +160,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return new AtomicType(genType, genType.name);
 	}
 	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, TypeKind context) {
+		return new BaseKind(context, context.kindOf.name, TypeVariableAdapter.get(context.kindOf));
+	}
+	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, EObject genType) {
 		println('''BCF: No doTranslateTypeDeclaration for «genType.eClass»''');
 		return new AtomicType(genType);
@@ -257,7 +265,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			}
 		return system.associate(new IntegerType(source, byteCount, sign));
 	}
-
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NullTypeSpecifier context) {
 		return TypeVariableAdapter.get(context);
 	}

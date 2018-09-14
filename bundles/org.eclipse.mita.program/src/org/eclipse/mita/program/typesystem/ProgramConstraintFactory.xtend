@@ -47,6 +47,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -107,7 +108,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, VariableDeclaration vardecl) {
-		val explicitType = if(vardecl.typeSpecifier !== null) system._computeConstraints(vardecl as TypedElement);
+		val explicitType = if(vardecl.typeSpecifier instanceof PresentTypeSpecifier) system._computeConstraints(vardecl as TypedElement);
 		val inferredType = if(vardecl.initialization !== null) system.computeConstraints(vardecl.initialization);
 		
 		var TypeVariable result;
@@ -284,9 +285,10 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val allCandidates = varOrFun.resolveReference(featureToResolve);
 		val candidates = allCandidates.map[getConstructorFromType(it)].filter[
 			// function call --> operation
-			// else --> not operation
-			// => isFunctionCall = it is Operation
-			isFunctionCall === (it instanceof Operation)
+			// else --> anything
+			// => isFunctionCall -> it is Operation
+			// = !isFunctionCall | it is Operation
+			!isFunctionCall || (it instanceof Operation)
 		].force;
 
 		val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
