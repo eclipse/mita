@@ -242,8 +242,9 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
+		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		if(isLinking) {
-			return TypeVariableAdapter.getProxy(varOrFun);
+			return TypeVariableAdapter.getProxy(varOrFun, featureToResolve);
 		}
 		
 		/*
@@ -258,7 +259,6 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		 * 
 		 * For function calls we delegate to computeConstraintsForFunctionCall to be able to reuse logic.
 		 */
-		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
 		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
 		val candidates = varOrFun.resolveReference(featureToResolve).map[getConstructorFromType(it)];

@@ -34,6 +34,7 @@ import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
@@ -201,7 +202,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalAddSubtractExpression expr) {
 		if(isLinking) {
-			return TypeVariableAdapter.getProxy(expr);
+			return TypeVariableAdapter.getProxy(expr, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		}
 		
 		val opQID = if(expr.operator === AdditiveOperator.PLUS) {
@@ -298,7 +299,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {
 		if(isLinking) {
-			return TypeVariableAdapter.getProxy(typeSpecifier);
+			return TypeVariableAdapter.getProxy(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		}
 		
 		val typeArguments = typeSpecifier.typeArguments;

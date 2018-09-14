@@ -26,6 +26,7 @@ import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.IConstraintFactory
+import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.INode
@@ -34,8 +35,6 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
-import com.google.gson.Gson
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -47,6 +46,9 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	
 	@Inject
 	protected IConstraintFactory constraintFactory;
+	
+	@Inject
+	protected SerializationAdapter serializationAdapter
 
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
 		if (eObject instanceof TypedElement) {
@@ -65,9 +67,8 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
 			constraintFactory.isLinking = true;
 			val constraints = constraintFactory.create(eObject);
-			val json = new Gson().toJson(constraints);
-			val loadedConstraints = new Gson().fromJson(json, ConstraintSystem);
-			println(json);
+			val json = serializationAdapter.toJSON(constraints);
+			userData.put(CONSTRAINTS, json);
 		}
 	}
 

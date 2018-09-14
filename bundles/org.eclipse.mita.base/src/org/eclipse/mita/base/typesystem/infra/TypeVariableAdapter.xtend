@@ -5,6 +5,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.emf.ecore.EReference
 
 @FinalFieldsConstructor
 @Accessors
@@ -15,8 +16,8 @@ class TypeVariableAdapter extends AdapterImpl {
 		getOrCreate(obj, [ new TypeVariable(it) ]);
 	}
 	
-	public static def TypeVariable getProxy(EObject obj) {
-		getOrCreate(obj, [ new TypeVariableProxy(it) ]);
+	public static def TypeVariable getProxy(EObject obj, EReference reference) {
+		getOrCreate(obj, [ new TypeVariableProxy(it, reference) ]);
 	}
 	
 	protected static def getOrCreate(EObject obj, (EObject) => TypeVariable factory) {
