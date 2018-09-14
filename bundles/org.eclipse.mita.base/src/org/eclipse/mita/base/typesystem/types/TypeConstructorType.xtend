@@ -27,7 +27,7 @@ class TypeConstructorType extends AbstractType {
 	}
 	
 	def AbstractTypeConstraint getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		return new EqualityConstraint(tau, sigma);
+		return new EqualityConstraint(tau, sigma, "TCT:30");
 	}
 	def void expand(Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ new TypeVariable(it.origin) as AbstractType ].force;
@@ -53,6 +53,11 @@ class TypeConstructorType extends AbstractType {
 	
 	override replace(Substitution sub) {
 		return new TypeConstructorType(origin, name, typeArguments.map[it.replace(sub)].force, superTypes);
+	}
+	
+	override instantiate() {
+		val ts = new TypeScheme(null, freeVars.toList, this);
+		return ts.instantiate;
 	}
 	
 }

@@ -47,8 +47,17 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.platform.SystemSpecification
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemSpecification spec) {
+		system.computeConstraintsForChildren(spec);
+		return null;
+	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
 		println('''Prog: «program.eResource»''');
@@ -59,7 +68,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
 		system.computeConstraints(eventHandler.block);
 		
-		val voidType = typeRegistry.getVoidType(eventHandler);
+		val voidType = typeRegistry.getTypeModelObjectProxy(eventHandler, StdlibTypeRegistry.voidTypeQID);
 		return system.associate(new FunctionType(eventHandler, eventHandler.event.toString, voidType, voidType));
 	}
 	
@@ -107,7 +116,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, VariableDeclaration vardecl) {
-		val explicitType = if(vardecl.typeSpecifier !== null) system._computeConstraints(vardecl as TypedElement);
+		val explicitType = if(vardecl.typeSpecifier instanceof PresentTypeSpecifier) system._computeConstraints(vardecl as TypedElement);
 		val inferredType = if(vardecl.initialization !== null) system.computeConstraints(vardecl.initialization);
 		
 		var TypeVariable result;
@@ -139,7 +148,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		} else {
 			system.translateTypeDeclaration(deconTypeCandidates.head);
 		}
-		system.addConstraint(new EqualityConstraint(deconType, combinedType));
+		system.addConstraint(new EqualityConstraint(deconType, combinedType, "PCF:150"));
 		system.computeConstraints(decon.body);
 		return system.associate(combinedType);
 	}
@@ -148,21 +157,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		system.computeConstraints(asign.body);
 		return system.computeConstraints(asign.assignmentVariable);
 	}
-	
-	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
-		val parmTypes = parms.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		return new ProdType(null, function.name + "_args", parmTypes, #[]);
-	}
-	
-	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject origin, String functionName, AbstractType function, Iterable<Expression> arguments) {
-		val argType = system.computeArgumentConstraints(functionName, arguments);
-		val ourTypeVar = TypeVariableAdapter.get(origin);
-		val supposedFunctionType = new FunctionType(origin, functionName, argType, ourTypeVar);
-		// the actual function should be a subtype of the expected function so it can be used here
-		system.addConstraint(new SubtypeConstraint(function, supposedFunctionType));
-		return ourTypeVar;		
-	}
-	
+			
 	protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
 		val scope = scopeProvider.getScope(origin, featureToResolve);
 		
@@ -219,17 +214,18 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		// concreteType
 		val retTypeVar = new TypeVariable(null);
 		val supposedSignalType = new FunctionType(null, "", new TypeVariable(null), retTypeVar);
-		system.addConstraint(new EqualityConstraint(signalType, supposedSignalType));
+		system.addConstraint(new EqualityConstraint(signalType, supposedSignalType, "PCF:216"));
 		// \T. siginst<T>
-		val sigInstType = typeRegistry.getSigInstType(sigInst) as TypeScheme;
-		// siginst<T>
-		val instantiation = sigInstType.instantiate();
-		// T
-		val typeVar = instantiation.key.head;
+		val sigInstType = typeRegistry.getTypeModelObjectProxy(sigInst, StdlibTypeRegistry.sigInstTypeQID);
+		// sigInst<T>
+		val instantiation = new TypeVariable(null);
+		system.addConstraint(new ExplicitInstanceConstraint(instantiation, sigInstType));
 		// sigInst<concreteType>
-		val returnType = instantiation.value.replace(typeVar, retTypeVar);
+		val returnType = new TypeConstructorType(null, "siginst", #[retTypeVar]);
+		// sigInst<T> = sigInst<concreteType>
+		system.addConstraint(new EqualityConstraint(instantiation, returnType, "PCF:225"));
 		
-		val actualType = new FunctionType(sigInst, sigInst.name, new TypeVariable(null), returnType);
+		val actualType = new FunctionType(sigInst, sigInst.name, new ProdType(null, '''«signal»__args''', #[signalType], #[]), returnType);
 		system.associate(actualType, sigInst);
 	}
 	
@@ -260,38 +256,14 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		 * If varOrFun is a function call, we want to do polymorphic dispatch, which means we need to create a typeClassConstraint.
 		 * Otherwise we resolve to the *last* candidate, which came into scope last and therefore is the nearest one. 
 		 * 
-		 * For function calls we do the following:
-		 * - compute x: a
-		 * - assert f: A -> B
-		 * - assert A >: a
-		 * - assert f(x): B
-		 * - if f ∈ {f_1, f_2, ...}:
-		 *   - compute {A_1, A_2 | f_i: A_i -> B_i}
-		 *   - create TypeClass T for {A_1, ...}
-		 *   - on resolve of T with function f_k: A_k -> B_k:
-		 *     - we already know that A = A_k
-		 *     - set the reference and assert B >: B_k 
-		 * - otherwise f = f_1: A_1 -> B_1
-		 * 	 - assert A -> B super type of A_1 -> B_1 (with indirection to prevent duplicate work)
-		 * - return B (the type of this expression)
-		 * 
-		 * Now we know that:
-		 * - f: A -> B
-		 * - f = f_k
-		 * - f_k: A_k -> B_k
-		 * - A = A_k
-		 * - B = B_k
+		 * For function calls we delegate to computeConstraintsForFunctionCall to be able to reuse logic.
 		 */
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
 		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
-		val allCandidates = varOrFun.resolveReference(featureToResolve);
-		val candidates = allCandidates.map[getConstructorFromType(it)].filter[
-			// function call --> operation
-			// else --> not operation
-			// => isFunctionCall = it is Operation
-			isFunctionCall === (it instanceof Operation)
-		].force;
+		val candidates = varOrFun.resolveReference(featureToResolve).map[getConstructorFromType(it)];
+
+		val argExprs = varOrFun.arguments.map[it.value].force;
 
 		val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
 
@@ -299,51 +271,9 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 		}
 				
-		// if isFunctionCall --> varOrFun must be operation. Allocate TypeVariables for this. 
+		// if isFunctionCall --> delegate. 
 		val refType = if(isFunctionCall) {
-			// A
-			val fromTV = new TypeVariable(null);
-			// B
-			val toTV = new TypeVariable(null);
-			// A -> B
-			val refType = new FunctionType(null, txt + "_call", fromTV, toTV);
-			
-			val argExprs = varOrFun.arguments.map[it.value].force;
-			// a
-			val argType = system.computeArgumentConstraints(txt, argExprs);
-			// a <: A
-			system.addConstraint(new SubtypeConstraint(argType, fromTV));
-			
-			if(candidates.size > 1) {
-				val tcQN = QualifiedName.create(txt);
-				val candidateTypes = candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject];
-				// this would be nicer since we can spare some computation, but since right now the type variables are bound to EObjects this is not possible.
-				// we should probably replace this by some IdentityMap which keeps track of the types instead.
-				//val candidateTypes = candidates.filter(Operation).map[TypeVariableAdapter.get(it.parameters) as AbstractType -> it as EObject];
-				// this function call has the side effect of creating the type class.
-				val typeClass = system.getTypeClass(QualifiedName.create(txt), candidateTypes);
-				// add all candidates this TC doesn't already contain
-				candidateTypes.reject[typeClass.instances.containsKey(it)].force.forEach[
-					typeClass.instances.put(it.key, it.value);
-				]
-				system.addConstraint(new TypeClassConstraint(argType, tcQN, [s, sub, fun, typ |
-					varOrFun.eSet(featureToResolve, fun);
-					val nc = constraintSystemProvider.get(); 
-					// the returned type should be smaller than the expected type so it can be assigned
-					nc.addConstraint(new SubtypeConstraint(TypeVariableAdapter.get(fun.typeSpecifier), toTV));
-					return SimplificationResult.success(ConstraintSystem.combine(#[nc, s]), sub)
-				]));
-			}
-			else {
-				val funRef = candidates.head;
-				if(varOrFun.eGet(featureToResolve) === null) {
-					varOrFun.eSet(featureToResolve, funRef);	
-				}
-				// the actual function should be a subtype of the expected function so it can be used here
-				system.addConstraint(new SubtypeConstraint(TypeVariableAdapter.get(funRef), refType));
-			}
-			// B
-			toTV;
+			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argExprs, candidates.filter(Operation).force);
 		}
 		// otherwise use the last candidate. We can check here for ambiguity, otherwise this is just the "closest" candidate.
 		else {
@@ -358,12 +288,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		// assert f/f(x): refType
 		return system.associate(refType, varOrFun);		
 	}
-	
-	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {
-		val argTypes = expression.map[system.computeConstraints(it) as AbstractType].force();
-		return new ProdType(null, functionName + "_args", argTypes, #[]);
-	}
-	
+			
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnStatement statement) {
 		val enclosingFunction = EcoreUtil2.getContainerOfType(statement, FunctionDefinition);
 		val enclosingEventHandler = EcoreUtil2.getContainerOfType(statement, EventHandlerDeclaration);
@@ -372,12 +297,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		}
 		
 		val functionReturnVar = if(enclosingFunction === null) {
-			typeRegistry.getVoidType(statement);
+			 typeRegistry.getTypeModelObjectProxy(statement, StdlibTypeRegistry.voidTypeQID);
 		} else {
 			system.computeConstraints(enclosingFunction.typeSpecifier)
 		}
 		val returnValVar = if(statement.value === null) {
-			system.associate(typeRegistry.getVoidType(statement), statement);
+			system.associate(typeRegistry.getTypeModelObjectProxy(statement, StdlibTypeRegistry.voidTypeQID), statement);
 		} else {
 			system.associate(system.computeConstraints(statement.value), statement);
 		}

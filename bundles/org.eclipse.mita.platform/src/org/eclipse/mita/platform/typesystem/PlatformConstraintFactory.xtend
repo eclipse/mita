@@ -8,6 +8,10 @@ import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class PlatformConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AbstractSystemResource res) {
@@ -15,16 +19,20 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		return null;
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Modality modality) {
-		// modalities are accessed like `accelerometer.x_axis.read()`. Therefore they need the type "? -> modality<concreteType>"
+		// modalities are accessed like `accelerometer.x_axis.read()`. 
+		// Therefore, accelerometer.x_axis needs the type "∗SystemResource -> modality<concreteType>"
 		val returnType = system.computeConstraints(modality.typeSpecifier);
 		// \T. modality<T>
-		val modalityType = typeRegistry.getModalityType(modality) as TypeScheme;
-		// (T, modality<T>)
-		val var_modalityFreeInstance = modalityType.instantiate;
+		val modalityType = typeRegistry.getTypeModelObjectProxy(modality, StdlibTypeRegistry.modalityTypeQID);
+		// modality<T>
+		val modalityInstance = new TypeVariable(null);
+		system.addConstraint(new ExplicitInstanceConstraint(modalityInstance, modalityType));
 		// modality<concreteType>
-		val modalityInstance = var_modalityFreeInstance.value.replace(var_modalityFreeInstance.key.head, returnType);
+		val modalityWithType = new TypeConstructorType(null, '''modality''', #[returnType]);
+		// modality<concreteType> =  modality<T>
+		system.addConstraint(new EqualityConstraint(modalityWithType, modalityInstance, "PCF:32"));
 		
-		val resultType = new FunctionType(modality, modality.name, new TypeVariable(null), modalityInstance);
+		val resultType = new FunctionType(modality, modality.name, TypeVariableAdapter.get(modality.eContainer), modalityWithType);
 		return system.associate(resultType);
 	}
 }

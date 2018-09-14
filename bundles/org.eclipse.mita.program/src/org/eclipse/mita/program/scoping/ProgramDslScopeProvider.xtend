@@ -461,8 +461,10 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	dispatch def IScope scopeInSetupBlock(SignalInstance context, EReference reference) {
 		if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 			val systemResource = (context.eContainer as SystemResourceSetup).type
-			val result = Scopes.scopeFor(systemResource.signals)
-			return result;
+			if(systemResource !== null) {
+				val result = Scopes.scopeFor(systemResource.signals)
+				return result;
+			}
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 			val globalScope = getDelegate().getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE);
 			val enumTypes = context.instanceOf.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
@@ -470,9 +472,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			val paramScope = Scopes.scopeFor(context.instanceOf.parameters)
 			val scope = new CombiningScope(paramScope, enumeratorScope)
 			return scope
-		} else {
-			return IScope.NULLSCOPE;
-		}
+		} 
+		return IScope.NULLSCOPE;
 	}
 
 	dispatch def IScope scopeInSetupBlock(ConfigurationItemValue context, EReference reference) {

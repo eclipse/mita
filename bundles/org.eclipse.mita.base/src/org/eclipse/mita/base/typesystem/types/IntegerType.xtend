@@ -7,13 +7,11 @@ import org.eclipse.mita.base.typesystem.solver.Substitution
 
 @Accessors
 @EqualsHashCode
-class IntegerType extends AbstractBaseType {
-	protected final int widthInBytes;
+class IntegerType extends NumericType {
 	protected final Signedness signedness;
 	
 	new(EObject origin, int widthInBytes, Signedness signedness) {
-		super(origin, '''«signedness.prefix»«widthInBytes * 8»''');
-		this.widthInBytes = widthInBytes;
+		super(origin, '''«signedness.prefix»«widthInBytes * 8»''', widthInBytes);
 		this.signedness = signedness;
 	}
 	
