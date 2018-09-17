@@ -1,4 +1,4 @@
-package org.eclipse.mita.program.typesystem.serialization
+package org.eclipse.mita.base.typesystem.serialization
 
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
@@ -68,6 +68,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.TypesPackage
 
 class SerializationAdapter {
 	
@@ -82,12 +83,12 @@ class SerializationAdapter {
     		.fromValueObject() as ConstraintSystem;
 	}
 	protected dispatch def EReference fromValueObject(SerializedEReference obj) {
-		val Class<EPackage> clazz = Class.forName(obj.javaClass) as Class<EPackage>;
-		val member = clazz.getField(obj.javaField).get(null);
-		val method = clazz.getDeclaredMethod(obj.javaMethod);
-		val result = method.invoke(member);
+		val registry = EPackage.Registry.INSTANCE;
+		val ePackage = registry.getEPackage(obj.ePackageName);
+		val eClass = ePackage.getEClassifier(obj.eClassName) as EClass;
+		val result = eClass.getEStructuralFeature(obj.eReferenceName);
 		return result as EReference;
-	}
+	}	
 	
 	protected dispatch def ConstraintSystem fromValueObject(SerializedConstraintSystem obj) {
 		val result = constraintSystemProvider.get();
@@ -194,11 +195,12 @@ class SerializationAdapter {
 		return gson.toJson(system.toValueObject());
 	}
 	
+	
 	protected dispatch def SerializedObject toValueObject(EReference reference) {
 		return new SerializedEReference => [
-			javaClass = (reference.eContainer as EClass).EPackage.nsURI + "." + (reference.eContainer as EClass).EPackage.name.toFirstUpper + "Package";
-			javaField = "eINSTANCE";
-			javaMethod = "get" + reference.containerClass.simpleName + "_" + reference.name.toFirstUpper;
+			ePackageName = (reference.eContainer as EClass).EPackage.nsURI;
+			eClassName = (reference.eContainer as EClass).name;
+			eReferenceName = reference.name;
 		]
 	}
 	
@@ -234,11 +236,6 @@ class SerializationAdapter {
 		]
 	}
 	
-	/*
-	 * val EObject functionCall;
-	val EReference functionReference;
-	val TypeVariable returnTypeTV;
-	 */
 	protected dispatch def SerializedObject toValueObject(FunctionTypeClassConstraint obj) {
 		new SerializedFunctionTypeClassConstraint => [
 			type = obj.typ.toValueObject as SerializedAbstractType

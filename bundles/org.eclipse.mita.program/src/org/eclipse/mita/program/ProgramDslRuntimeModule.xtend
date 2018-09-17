@@ -32,6 +32,7 @@ import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.infra.DefaultPackageResourceMapper
 import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
+import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
@@ -44,7 +45,6 @@ import org.eclipse.mita.program.inferrer.ProgramDslTypeParameterInferrer
 import org.eclipse.mita.program.linking.ProgramLinkingService
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
-import org.eclipse.mita.program.typesystem.MitaLinker
 import org.eclipse.mita.program.typesystem.ProgramConstraintFactory
 import org.eclipse.mita.program.typesystem.ProgramLinker
 import org.eclipse.mita.program.validation.NullProgramDslValidator

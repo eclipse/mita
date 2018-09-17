@@ -1,11 +1,11 @@
-package org.eclipse.mita.program.typesystem
+package org.eclipse.mita.base.typesystem.infra
 
 import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
+import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
-import org.eclipse.mita.program.typesystem.serialization.SerializationAdapter
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider

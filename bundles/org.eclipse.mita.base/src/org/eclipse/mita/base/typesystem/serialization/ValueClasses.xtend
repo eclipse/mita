@@ -192,6 +192,9 @@ class SerializedEReference extends SerializedObject {
 	public String javaClass;
 	public String javaField;
 	public String javaMethod;
+	public String ePackageName;
+	public String eClassName;
+	public String eReferenceName;
 }
  
 class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstraint {
