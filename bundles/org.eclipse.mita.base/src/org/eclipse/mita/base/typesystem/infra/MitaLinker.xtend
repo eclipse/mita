@@ -10,6 +10,7 @@ import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
+import org.eclipse.xtext.scoping.IScopeProvider
 
 class MitaLinker extends Linker {
 
@@ -24,6 +25,9 @@ class MitaLinker extends Linker {
 	
 	@Inject
 	protected SerializationAdapter constraintSerializationAdapter;
+	
+	@Inject
+	protected IScopeProvider scopeProvider;
 
 	override ensureLinked(EObject obj, IDiagnosticProducer producer) {
 		if(obj.eContainer === null) {
@@ -44,7 +48,7 @@ class MitaLinker extends Linker {
 			println(forDebuggingOnly);
 			
 			if(combinedSystem !== null) {
-				// TODO: replace typevar proxies
+				combinedSystem.replaceProxies(scopeProvider);
 				
 				val solution = constraintSolver.solve(combinedSystem);
 				println(solution);

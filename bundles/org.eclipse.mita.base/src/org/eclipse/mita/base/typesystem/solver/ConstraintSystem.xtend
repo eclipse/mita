@@ -216,7 +216,7 @@ class ConstraintSystem {
 	
 	def ConstraintSystem replaceProxies(IScopeProvider scopeProvider) {
 		val result = constraintSystemProvider.get();
-		result.constraints += constraints.map[it.replaceProxies(scopeProvider)];
+		result.constraints += constraints.map[it.replaceProxies(scopeProvider)].force;
 		result.typeClasses.putAll(typeClasses.mapValues[it.replaceProxies(scopeProvider)]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;
