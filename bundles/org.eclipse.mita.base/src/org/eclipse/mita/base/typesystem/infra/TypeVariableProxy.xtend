@@ -33,6 +33,14 @@ class TypeVariableProxy extends TypeVariable {
 	
 	override replaceProxies(IScopeProvider scopeProvider) {
 		val scope = scopeProvider.getScope(origin, reference);
-		TypeVariableAdapter.get(scope.getSingleElement(targetQID).EObjectOrProxy);
+		val scopeElement = scope.getSingleElement(targetQID);
+		val replacementObject = scopeElement?.EObjectOrProxy
+		
+		if(replacementObject === null) {
+			// TODO: better handling when replacementObject is null
+			throw new NullPointerException('''Scope is empty for «reference.EContainingClass.name».«reference.name» on «origin»''')
+		}
+		
+		return TypeVariableAdapter.get(replacementObject);
 	}
 }

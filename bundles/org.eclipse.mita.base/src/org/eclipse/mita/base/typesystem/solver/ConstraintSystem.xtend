@@ -7,6 +7,7 @@ import java.util.Collections
 import java.util.HashMap
 import java.util.List
 import java.util.Map
+import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
@@ -216,8 +217,8 @@ class ConstraintSystem {
 	
 	def ConstraintSystem replaceProxies(IScopeProvider scopeProvider) {
 		val result = constraintSystemProvider.get();
-		result.constraints += constraints.map[it.replaceProxies(scopeProvider)].force;
-		result.typeClasses.putAll(typeClasses.mapValues[it.replaceProxies(scopeProvider)]);
+		result.constraints += constraints.map[ it.replaceProxies(scopeProvider) ].force;
+		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies(scopeProvider) ]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;
 	}

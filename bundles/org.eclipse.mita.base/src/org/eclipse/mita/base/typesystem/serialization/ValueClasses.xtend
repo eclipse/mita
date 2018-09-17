@@ -146,7 +146,8 @@ class SerializedTypeVariableProxy extends SerializedTypeVariable {
     new() {
         _type = "SerializedTypeVariableProxy";
     }
-	public SerializedObject reference;
+    
+	public SerializedEReference reference;
 	public String targetQID;
 }
 

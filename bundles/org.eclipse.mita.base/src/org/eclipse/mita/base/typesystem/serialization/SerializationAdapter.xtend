@@ -13,6 +13,7 @@ import com.google.inject.Provider
 import java.lang.reflect.Type
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EClass
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EPackage
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.EcoreFactory
@@ -26,30 +27,6 @@ import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
-import org.eclipse.mita.base.typesystem.serialization.SerializedAbstractBaseType
-import org.eclipse.mita.base.typesystem.serialization.SerializedAbstractType
-import org.eclipse.mita.base.typesystem.serialization.SerializedAbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.serialization.SerializedAtomicType
-import org.eclipse.mita.base.typesystem.serialization.SerializedBaseKind
-import org.eclipse.mita.base.typesystem.serialization.SerializedBottomType
-import org.eclipse.mita.base.typesystem.serialization.SerializedCoSumType
-import org.eclipse.mita.base.typesystem.serialization.SerializedConstraintSystem
-import org.eclipse.mita.base.typesystem.serialization.SerializedEReference
-import org.eclipse.mita.base.typesystem.serialization.SerializedEqualityConstraint
-import org.eclipse.mita.base.typesystem.serialization.SerializedExplicitInstanceConstraint
-import org.eclipse.mita.base.typesystem.serialization.SerializedFloatingType
-import org.eclipse.mita.base.typesystem.serialization.SerializedFunctionType
-import org.eclipse.mita.base.typesystem.serialization.SerializedFunctionTypeClassConstraint
-import org.eclipse.mita.base.typesystem.serialization.SerializedIntegerType
-import org.eclipse.mita.base.typesystem.serialization.SerializedObject
-import org.eclipse.mita.base.typesystem.serialization.SerializedProductType
-import org.eclipse.mita.base.typesystem.serialization.SerializedSubtypeConstraint
-import org.eclipse.mita.base.typesystem.serialization.SerializedSumType
-import org.eclipse.mita.base.typesystem.serialization.SerializedTypeClass
-import org.eclipse.mita.base.typesystem.serialization.SerializedTypeConstructorType
-import org.eclipse.mita.base.typesystem.serialization.SerializedTypeScheme
-import org.eclipse.mita.base.typesystem.serialization.SerializedTypeVariable
-import org.eclipse.mita.base.typesystem.serialization.SerializedTypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -68,15 +45,17 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.TypesPackage
 
 class SerializationAdapter {
 	
 	@Inject 
 	protected Provider<ConstraintSystem> constraintSystemProvider; 
+	
+	protected (URI) => EObject objectResolver;
 		
-	def fromJSON(String json) {
-		 return new GsonBuilder()
+	def fromJSON(String json, (URI)=>EObject objectResolver) {
+		this.objectResolver = objectResolver ?: [URI uri| this.toEObjectProxy(uri) ];
+		return new GsonBuilder()
     		.registerTypeHierarchyAdapter(SerializedObject, new MitaJsonSerializer())
     		.create()
     		.fromJson(json, SerializedObject)
@@ -115,32 +94,32 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def TypeClassConstraint fromValueObject(SerializedFunctionTypeClassConstraint obj) {
-		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, obj.functionCall.toEObjectProxy, null, obj.returnTypeTV.fromValueObject as TypeVariable, null);
+		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, obj.functionCall.resolveEObject, null, obj.returnTypeTV.fromValueObject as TypeVariable, null);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {
-		return new AtomicType(obj.origin.toEObjectProxy(), obj.name);
+		return new AtomicType(obj.origin.resolveEObject(), obj.name);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedBaseKind obj) {
-		return new BaseKind(obj.origin.toEObjectProxy(), obj.name, obj.kindOf.fromValueObject() as AbstractType);
+		return new BaseKind(obj.origin.resolveEObject(), obj.name, obj.kindOf.fromValueObject() as AbstractType);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedBottomType obj) {
-		return new BottomType(obj.origin.toEObjectProxy(), obj.name, obj.message);
+		return new BottomType(obj.origin.resolveEObject(), obj.name, obj.message);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFloatingType obj) {
-		return new FloatingType(obj.origin.toEObjectProxy(), obj.widthInBytes);
+		return new FloatingType(obj.origin.resolveEObject(), obj.widthInBytes);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedIntegerType obj) {
-		return new IntegerType(obj.origin.toEObjectProxy(), obj.widthInBytes, obj.signedness);
+		return new IntegerType(obj.origin.resolveEObject(), obj.widthInBytes, obj.signedness);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFunctionType obj) {
 		return new FunctionType(
-			obj.origin.toEObjectProxy(),
+			obj.origin.resolveEObject(),
 			obj.name,
 			obj.typeArguments.fromSerializedTypes(),
 			obj.superTypes.fromSerializedTypes(),
@@ -150,39 +129,55 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
-		return new ProdType(obj.origin.toEObjectProxy(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
+		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedCoSumType obj) {
-		return new CoSumType(obj.origin.toEObjectProxy(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
+		return new CoSumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
-		return new SumType(obj.origin.toEObjectProxy(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
+		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeConstructorType obj) {
-		return new TypeConstructorType(obj.origin.toEObjectProxy(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
+		return new TypeConstructorType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeScheme obj) {
-		return new TypeScheme(obj.origin.toEObjectProxy(), obj.vars.map[ it.fromValueObject() as TypeVariable ].toList(), obj.on.fromValueObject() as AbstractType);
+		return new TypeScheme(obj.origin.resolveEObject(), obj.vars.map[ it.fromValueObject() as TypeVariable ].toList(), obj.on.fromValueObject() as AbstractType);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariable obj) {
-		return new TypeVariable(obj.origin.toEObjectProxy(), obj.name);
+		return new TypeVariable(obj.origin.resolveEObject(), obj.name);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
-		return new TypeVariableProxy(obj.origin.toEObjectProxy(), obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName);
+		// we resolve the origin of TypeVarProxies because we pass them to the scope later
+		return new TypeVariableProxy(obj.origin.resolveEObject(true), obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName);
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
 		return obj.map[ it.fromValueObject() as AbstractType ].toList();
 	}
 	
-	protected def toEObjectProxy(String uri) {
-		return if(uri !== null) EcoreFactory.eINSTANCE.createEObject() => [ (it as BasicEObjectImpl).eSetProxyURI(URI.createURI(uri)) ];
+	protected def resolveEObject(String uri) {
+		return resolveEObject(uri, false);
+	}
+	
+	protected def resolveEObject(String uri, boolean resolveExternally) {
+		return if(uri !== null) {
+			val realUri = URI.createURI(uri);
+			if(resolveExternally) {
+				this.objectResolver.apply(realUri);
+			} else {
+				this.toEObjectProxy(realUri);
+			}
+		}
+	}
+	
+	protected def toEObjectProxy(URI uri) {
+		return EcoreFactory.eINSTANCE.createEObject() => [ (it as BasicEObjectImpl).eSetProxyURI(uri) ];
 	}
 	
 	protected def toQualifiedName(String fqn) {
@@ -368,7 +363,7 @@ class SerializationAdapter {
 	protected dispatch def SerializedObject toValueObject(TypeVariableProxy obj) {
 		new SerializedTypeVariableProxy => [
 			fill(it, obj)
-			it.reference = obj.reference?.toValueObject;
+			it.reference = obj.reference?.toValueObject as SerializedEReference;
 			it.targetQID = obj.targetQID.toString;
 		]
 	}

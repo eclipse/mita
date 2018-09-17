@@ -21,8 +21,8 @@ class TypeVariableAdapter extends AdapterImpl {
 		getOrCreate(obj, [ new TypeVariableProxy(it, reference) ]);
 	}
 	
-	public static def TypeVariable getProxy(EObject context, EReference reference, QualifiedName objName) {
-		getOrCreate(context, [ new TypeVariableProxy(it, reference, objName) ]);
+	public static def TypeVariable getProxy(EObject obj, EReference reference, QualifiedName objName) {
+		getOrCreate(obj, [ new TypeVariableProxy(it, reference, objName) ]);
 	}
 	
 	protected static def getOrCreate(EObject obj, (EObject) => TypeVariable factory) {

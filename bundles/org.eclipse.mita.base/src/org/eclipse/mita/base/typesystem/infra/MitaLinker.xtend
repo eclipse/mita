@@ -11,6 +11,7 @@ import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 
 class MitaLinker extends Linker {
 
@@ -41,7 +42,7 @@ class MitaLinker extends Linker {
 				.flatMap[ it.exportedObjects ]
 				.map[ it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 				.filterNull
-				.map[ constraintSerializationAdapter.fromJSON(it) ];
+				.map[ constraintSerializationAdapter.fromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ];
 			val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 			
 			val forDebuggingOnly = resourceDescriptions.exportedObjects.toList();
@@ -54,6 +55,17 @@ class MitaLinker extends Linker {
 				println(solution);
 				
 				// TODO: attach solution to EObjects
+				solution.solution.substitutions.entrySet.forEach[
+					var origin = it.key.origin;
+					if(origin.eIsProxy) {
+						origin = resource.resourceSet.getEObject((origin as BasicEObjectImpl).eProxyURI, false);
+					}
+					
+					if(origin !== null) {
+						// we had the object loaded anyways, so we can set the type
+						TypeAdapter.set(origin, it.value);
+					}
+				]
 			}
 		}
 		

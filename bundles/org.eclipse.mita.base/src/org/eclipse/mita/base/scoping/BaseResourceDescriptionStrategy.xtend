@@ -62,6 +62,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		} else {
 			userData.put(EXPORTED, Boolean.toString(true));
 		}
+		
 		if (eObject.eContainer() === null) {
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
 			constraintFactory.setIsLinking(true)
@@ -69,7 +70,8 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			val constraints = constraintFactory.create(eObject)
 			val String json = serializationAdapter.toJSON(constraints)
 			userData.put(CONSTRAINTS, json)
-			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.fromJSON(json))
+			
+			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.fromJSON(json, null))
 			if (json != constraintsBackOut) {
 				throw new RuntimeException("Constraint serialization was not invariant")
 			}
