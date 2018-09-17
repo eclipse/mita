@@ -156,7 +156,7 @@ every 1 second {
 
 Instead of using an event queue, as the XDK 110 does, we have implemented a control with boolean flags. 
 Each event, such as timed events or the pressed and released event, are captured in their own ISR. 
-Within the context of the ISR single flags will be set for each occurred event. 
+Within the context of the ISR single flags will be set for each occurred event.
 The flags will be handled in an endless loop, after the initialization of the Arduino Uno.
 
 In the example a flag will be used for the event of 1 second and the pressed event of the button_one.
