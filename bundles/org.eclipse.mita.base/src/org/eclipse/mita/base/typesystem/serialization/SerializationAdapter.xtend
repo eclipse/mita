@@ -79,8 +79,8 @@ class SerializationAdapter {
 		return new SubtypeConstraint(obj.subType.fromValueObject() as AbstractType, obj.superType.fromValueObject() as AbstractType)
 	}
 	
-	protected dispatch def TypeClassConstraint fromValueObject(SerializedTypeclassConstraint obj) {
-		return new TypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, null);
+	protected dispatch def FunctionTypeClassConstraint fromValueObject(SerializedFunctionTypeclassConstraint obj) {
+		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, null);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {
@@ -139,7 +139,7 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
-		return new TypeVariableProxy(obj.origin.toEObjectProxy(), obj.name, obj.reference);
+		return new TypeVariableProxy(obj.origin.toEObjectProxy(), obj.name, QualifiedName.create(obj.reference.split("\\.")));
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
@@ -200,8 +200,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(TypeConstructorType obj) {
 		new SerializedTypeConstructorType => [
-			name = obj.name;
-			origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString();
+			fill(it, obj)
 			typeArguments = obj.typeArguments.map[it.toValueObject as SerializedAbstractType].force;
 			// TODO: get these translated superTypes = 
 		]
@@ -274,14 +273,6 @@ class SerializationAdapter {
 		return ctxt
 	}
 	
-	protected dispatch def Object fill(SerializedTypeScheme ctxt, TypeScheme obj) {
-		ctxt.name = obj.name;
-		ctxt.vars = obj.vars.map[ it.toValueObject as SerializedTypeVariable ].force;
-		ctxt.on = obj.on.toValueObject as SerializedAbstractType;
-		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
-		return ctxt;
-	}
-	
 	protected dispatch def SerializedObject toValueObject(FunctionType obj) {
 		new SerializedFunctionType => [
 			fill(it, obj)
@@ -302,12 +293,6 @@ class SerializationAdapter {
 		new SerializedSumType => [ fill(it, obj) ]
 	}
 	
-	protected dispatch def SerializedObject toValueObject(TypeConstructorType obj) {
-		new SerializedTypeConstructorType => [
-			fill(it, obj)
-		]
-	}
-	
 	protected dispatch def SerializedObject toValueObject(TypeScheme obj) {
 		new SerializedTypeScheme => [
 			fill(it, obj)
@@ -326,7 +311,7 @@ class SerializationAdapter {
 		new SerializedTypeVariableProxy => [
 			fill(it, obj)
 			it.reference = obj.reference;
-			it.qualifiedName = obj.qualifiedName;
+			it.targetQID = obj.targetQID.toString();
 		]
 	}
 	
