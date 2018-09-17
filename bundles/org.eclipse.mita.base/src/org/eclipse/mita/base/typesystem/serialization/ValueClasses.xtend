@@ -163,6 +163,7 @@ class SerializedEqualityConstraint extends SerializedAbstractTypeConstraint {
         _type = "SerializedEqualityConstraint";
     }
 
+	public String source;
 	public SerializedAbstractType left;
 	public SerializedAbstractType right;
 }

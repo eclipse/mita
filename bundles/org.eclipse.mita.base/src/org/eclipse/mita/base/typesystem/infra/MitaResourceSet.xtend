@@ -63,6 +63,7 @@ class MitaResourceSet extends XtextResourceSet {
 		if(!loadOnDemand) {
 			return result;
 		}
+
 		if(result instanceof MitaBaseResource) {
 			val thisIsLoadingResources = !isLoadingResources;
 			try {
@@ -85,24 +86,24 @@ class MitaResourceSet extends XtextResourceSet {
 						//val projectConfig = super.getResource(projectConfigJson, true);
 						
 						val loadedLibraries = ensureLibrariesAreLoaded();
-						val loadedResources = loadRequiredResources(#[result] + loadedLibraries.filter(MitaBaseResource), new HashSet());
+						loadRequiredResources(#[result] + loadedLibraries.filter(MitaBaseResource), new HashSet());
 					}
 					result.dependenciesLoaded = true;
 				}
-				if(thisIsLoadingResources) {
-						//linkTypes(loadedResources.filter(MitaBaseResource));
-//					val mitaResources = this.resources.filter(MitaBaseResource).force;
-//					linkTypes(mitaResources);
-//					linkOthers(mitaResources);
-				}
-				if(thisIsLoadingResources && result.errors.empty) {
-					//result.doLinking();
-					PreventRecursion.preventRecursion(result, [|
-						computeTypes();
-						//linkWithTypes(result);	
-						return null;
-					]);					
-				}
+//				if(thisIsLoadingResources) {
+//						//linkTypes(loadedResources.filter(MitaBaseResource));
+////					val mitaResources = this.resources.filter(MitaBaseResource).force;
+////					linkTypes(mitaResources);
+////					linkOthers(mitaResources);
+//				}
+//				if(thisIsLoadingResources && result.errors.empty) {
+//					//result.doLinking();
+//					PreventRecursion.preventRecursion(result, [|
+//						computeTypes();
+//						//linkWithTypes(result);	
+//						return null;
+//					]);					
+//				}
 			}
 			finally {
 				if(thisIsLoadingResources) {					
@@ -112,12 +113,8 @@ class MitaResourceSet extends XtextResourceSet {
 		}
 		return result;
 	}
-		
-	override getEObject(URI uri, boolean loadOnDemand) {
-		super.getEObject(uri, loadOnDemand)
-	}
-		
-	def linkWithTypes(MitaBaseResource resource) {
+
+	protected def linkWithTypes(MitaBaseResource resource) {
 		resource.doLinkReferences;
 	}
 	

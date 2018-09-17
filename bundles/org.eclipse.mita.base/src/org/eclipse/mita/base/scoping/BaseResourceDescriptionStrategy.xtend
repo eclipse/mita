@@ -70,6 +70,11 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			val constraints = constraintFactory.create(eObject);
 			val json = serializationAdapter.toJSON(constraints);
 			userData.put(CONSTRAINTS, json);
+			
+			val constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.fromJSON(json));
+			if(json != constraintsBackOut) {
+				throw new Exception("Constraint serialization was not invariant");
+			}
 		}
 	}
 
