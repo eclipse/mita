@@ -10,10 +10,9 @@ menu:
     identifier: arduinouno
     weight: 0
 ---
-
-The Arduino Uno is a popular platform and is often used for the very beginning of getting in touch with embedded systems. 
-Meanwhile there are a lot of projects, also in the context of IoT devices, where the Arduino Uno has been used to realize them.
-Currently the Arduino Uno is supported with its basic functionalities: two buttons and GPIOs
+The <a href="https://www.arduino.cc/en/Main/ArduinoBoardUno?setlang=en">Arduino Uno</a> is a popular platform for "physical computing" and first steps in embedded computing. 
+It is based on an 8-bit Atmega microcontroller and ships with a powerful hardware abstraction library.
+Currently, the Mita Arduino Uno platform supports basic functionality, namely working with buttons and GPIO pins.
 
 ## Sensor: button_one (Button)
 
@@ -155,7 +154,7 @@ every 1 second {
 
 ##Interrupt controlled event loop
 
-Instead of using an event queue, as the XDK 110 does, a control with boolean flags is implemented. 
+Instead of using an event queue, as the XDK 110 does, we have implemented a control with boolean flags. 
 Each event, such as timed events or the pressed and released event, are captured in their own ISR. 
 Within the context of the ISR single flags will be set for each occurred event. 
 The flags will be handled in an endless loop, after the initialization of the Arduino Uno.
@@ -194,9 +193,7 @@ ISR(INT1_vect){
 
 ##How to use the Arduino Uno platform
 
-For the very first beginning the C libraries are contained in the Mita project (/org.eclipse.mita.platform.arduino.uno/ArduinoMitaRuntime). 
-There is no toolchain integration. You can copy the Arduino runtime files into your runtime workspace and use them. 
-While developing the platform, the AVR Plugin (https://marketplace.eclipse.org/content/avr-eclipse-plugin) was used for compiling and flashing. 
+Mita-generated code for the Arduino platform requires a small runtime library which is located in the Arduino platform package /org.eclipse.mita.platform.arduino.uno/ArduinoMitaRuntime. To use this runtime, and to compile/flash the generated code, we have found the  <a href="https://marketplace.eclipse.org/content/avr-eclipse-plugin">AVR Plugin</a> handy. We have listed the steps we use below: 
 
 * Create a new C Project 
 * Choose an AVR project 
