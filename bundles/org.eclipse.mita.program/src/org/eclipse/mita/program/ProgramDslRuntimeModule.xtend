@@ -116,18 +116,18 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 	override bindILinker() {
 		return MitaLinker
 	}
-	
-	override bindXtextResource() {
-		return MitaBaseResource
-	}
-	
-	override bindResourceSet() {
-		return MitaResourceSet
-	}
-	
-	override bindXtextResourceSet() {
-		return MitaResourceSet
-	}
+//	
+//	override bindXtextResource() {
+//		return MitaBaseResource
+//	}
+//	
+//	override bindResourceSet() {
+//		return MitaResourceSet
+//	}
+//	
+//	override bindXtextResourceSet() {
+//		return MitaResourceSet
+//	}
   
 //
 //	override bindIQualifiedNameProvider() {
