@@ -26,7 +26,6 @@ import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.IConstraintFactory
-import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.INode
@@ -47,9 +46,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	@Inject
 	protected IConstraintFactory constraintFactory;
 	
-	@Inject
-	protected SerializationAdapter serializationAdapter
-
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
 		if (eObject instanceof TypedElement) {
 			userData.put(TYPE, getTypeSpecifierType(((eObject as TypedElement)).getTypeSpecifier()))
@@ -61,20 +57,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			userData.put(EXPORTED, Boolean.toString((eObject.eContainer as SumType).exported));
 		} else {
 			userData.put(EXPORTED, Boolean.toString(true));
-		}
-		
-		if(eObject.eContainer === null) {
-			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
-			constraintFactory.isLinking = true;
-			constraintFactory.typeRegistry.isLinking = true;
-			val constraints = constraintFactory.create(eObject);
-			val json = serializationAdapter.toJSON(constraints);
-			userData.put(CONSTRAINTS, json);
-			
-			val constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.fromJSON(json));
-			if(json != constraintsBackOut) {
-				throw new Exception("Constraint serialization was not invariant");
-			}
 		}
 	}
 

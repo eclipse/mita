@@ -1,16 +1,15 @@
-package org.eclipse.mita.base.typesystem.infra
+package org.eclipse.mita.program.typesystem
 
 import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
-import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.program.typesystem.serialization.SerializationAdapter
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
-import org.eclipse.xtext.scoping.impl.MultimapBasedSelectable
 
 class MitaLinker extends Linker {
 

@@ -26,7 +26,7 @@ class SerializedTypeClass extends SerializedObject {
 	public Map<SerializedAbstractType, Object> instances;
 }
 
-class SerializedAbstractType extends SerializedObject {
+abstract class SerializedAbstractType extends SerializedObject {
     new() {
         _type = "SerializedAbstractType";
     }
@@ -35,7 +35,7 @@ class SerializedAbstractType extends SerializedObject {
 	public String name;
 }
 
-class SerializedAbstractBaseType extends SerializedAbstractType {
+abstract class SerializedAbstractBaseType extends SerializedAbstractType {
     new() {
         _type = "SerializedAbstractBaseType";
     }
@@ -146,7 +146,7 @@ class SerializedTypeVariableProxy extends SerializedTypeVariable {
     new() {
         _type = "SerializedTypeVariableProxy";
     }
-	public String reference;
+	public SerializedObject reference;
 	public String targetQID;
 }
 
@@ -185,17 +185,24 @@ class SerializedSubtypeConstraint extends SerializedAbstractTypeConstraint {
 	public SerializedAbstractType superType;
 }
 
-abstract class SerializedTypeclassConstraint extends SerializedAbstractTypeConstraint {
+class SerializedEReference extends SerializedObject {
+	new() {
+		_type = "SerializedEReference";
+	}
+	public String javaClass;
+	public String javaField;
+	public String javaMethod;
+}
+ 
+class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstraint {
     new() {
         _type = "SerializedTypeclassConstraint";
     }
 
 	public SerializedAbstractType type;
+	public String functionCall;
+	public SerializedObject functionReference;
+	public SerializedTypeVariable returnTypeTV;
 	public String instanceOfQN;
-}
-abstract class SerializedFunctionTypeclassConstraint extends SerializedTypeclassConstraint {
-    new() {
-        _type = "SerializedFunctionTypeclassConstraint";
-    }    
 }
 

@@ -1,6 +1,5 @@
-package org.eclipse.mita.base.typesystem.serialization
+package org.eclipse.mita.program.typesystem.serialization
 
-import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
@@ -13,16 +12,44 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import java.lang.reflect.Type
 import org.eclipse.emf.common.util.URI
+import org.eclipse.emf.ecore.EClass
+import org.eclipse.emf.ecore.EPackage
+import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.EcoreFactory
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.serialization.SerializedAbstractBaseType
+import org.eclipse.mita.base.typesystem.serialization.SerializedAbstractType
+import org.eclipse.mita.base.typesystem.serialization.SerializedAbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.serialization.SerializedAtomicType
+import org.eclipse.mita.base.typesystem.serialization.SerializedBaseKind
+import org.eclipse.mita.base.typesystem.serialization.SerializedBottomType
+import org.eclipse.mita.base.typesystem.serialization.SerializedCoSumType
+import org.eclipse.mita.base.typesystem.serialization.SerializedConstraintSystem
+import org.eclipse.mita.base.typesystem.serialization.SerializedEReference
+import org.eclipse.mita.base.typesystem.serialization.SerializedEqualityConstraint
+import org.eclipse.mita.base.typesystem.serialization.SerializedExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.serialization.SerializedFloatingType
+import org.eclipse.mita.base.typesystem.serialization.SerializedFunctionType
+import org.eclipse.mita.base.typesystem.serialization.SerializedFunctionTypeClassConstraint
+import org.eclipse.mita.base.typesystem.serialization.SerializedIntegerType
+import org.eclipse.mita.base.typesystem.serialization.SerializedObject
+import org.eclipse.mita.base.typesystem.serialization.SerializedProductType
+import org.eclipse.mita.base.typesystem.serialization.SerializedSubtypeConstraint
+import org.eclipse.mita.base.typesystem.serialization.SerializedSumType
+import org.eclipse.mita.base.typesystem.serialization.SerializedTypeClass
+import org.eclipse.mita.base.typesystem.serialization.SerializedTypeConstructorType
+import org.eclipse.mita.base.typesystem.serialization.SerializedTypeScheme
+import org.eclipse.mita.base.typesystem.serialization.SerializedTypeVariable
+import org.eclipse.mita.base.typesystem.serialization.SerializedTypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -46,13 +73,20 @@ class SerializationAdapter {
 	
 	@Inject 
 	protected Provider<ConstraintSystem> constraintSystemProvider; 
-	
+		
 	def fromJSON(String json) {
 		 return new GsonBuilder()
     		.registerTypeHierarchyAdapter(SerializedObject, new MitaJsonSerializer())
     		.create()
     		.fromJson(json, SerializedObject)
     		.fromValueObject() as ConstraintSystem;
+	}
+	protected dispatch def EReference fromValueObject(SerializedEReference obj) {
+		val Class<EPackage> clazz = Class.forName(obj.javaClass) as Class<EPackage>;
+		val member = clazz.getField(obj.javaField).get(null);
+		val method = clazz.getDeclaredMethod(obj.javaMethod);
+		val result = method.invoke(member);
+		return result as EReference;
 	}
 	
 	protected dispatch def ConstraintSystem fromValueObject(SerializedConstraintSystem obj) {
@@ -79,8 +113,8 @@ class SerializationAdapter {
 		return new SubtypeConstraint(obj.subType.fromValueObject() as AbstractType, obj.superType.fromValueObject() as AbstractType)
 	}
 	
-	protected dispatch def FunctionTypeClassConstraint fromValueObject(SerializedFunctionTypeclassConstraint obj) {
-		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, null);
+	protected dispatch def TypeClassConstraint fromValueObject(SerializedFunctionTypeClassConstraint obj) {
+		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, obj.functionCall.toEObjectProxy, null, obj.returnTypeTV.fromValueObject as TypeVariable, null);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {
@@ -139,7 +173,7 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
-		return new TypeVariableProxy(obj.origin.toEObjectProxy(), obj.name, QualifiedName.create(obj.reference.split("\\.")));
+		return new TypeVariableProxy(obj.origin.toEObjectProxy(), obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName);
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
@@ -151,12 +185,21 @@ class SerializationAdapter {
 	}
 	
 	protected def toQualifiedName(String fqn) {
-		return QualifiedName.create(fqn.split('.'))
+		return QualifiedName.create(fqn.split('\\.'))
 	}
 	
 	def toJSON(ConstraintSystem system) {
-		val gson = new Gson();
+		val gson = new GsonBuilder()
+    		.create();
 		return gson.toJson(system.toValueObject());
+	}
+	
+	protected dispatch def SerializedObject toValueObject(EReference reference) {
+		return new SerializedEReference => [
+			javaClass = (reference.eContainer as EClass).EPackage.nsURI + "." + (reference.eContainer as EClass).EPackage.name.toFirstUpper + "Package";
+			javaField = "eINSTANCE";
+			javaMethod = "get" + reference.containerClass.simpleName + "_" + reference.name.toFirstUpper;
+		]
 	}
 	
 	protected dispatch def SerializedObject toValueObject(ConstraintSystem obj) {
@@ -191,20 +234,29 @@ class SerializationAdapter {
 		]
 	}
 	
-	protected dispatch def SerializedObject toValueObject(TypeClassConstraint obj) {
-		new SerializedTypeclassConstraint => [
+	/*
+	 * val EObject functionCall;
+	val EReference functionReference;
+	val TypeVariable returnTypeTV;
+	 */
+	protected dispatch def SerializedObject toValueObject(FunctionTypeClassConstraint obj) {
+		new SerializedFunctionTypeClassConstraint => [
 			type = obj.typ.toValueObject as SerializedAbstractType
+			functionCall = if(obj.functionCall === null) null else EcoreUtil.getURI(obj.functionCall).toString();
+			functionReference = obj.functionReference.toValueObject;
+			returnTypeTV = obj.returnTypeTV.toValueObject as SerializedTypeVariable;
 			instanceOfQN = obj.instanceOfQN.toString()
 		]
 	}
 	
-	protected dispatch def SerializedObject toValueObject(TypeConstructorType obj) {
-		new SerializedTypeConstructorType => [
-			fill(it, obj)
-			typeArguments = obj.typeArguments.map[it.toValueObject as SerializedAbstractType].force;
-			// TODO: get these translated superTypes = 
-		]
-	}
+//	protected dispatch def SerializedObject toValueObject(TypeConstructorType obj) {
+//		new SerializedTypeConstructorType => [
+//			name = obj.name;
+//			origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString();
+//			typeArguments = obj.typeArguments.map[it.toValueObject as SerializedAbstractType].force;
+//			// TODO: get these translated: superTypes = 
+//		]
+//	}
 	
 	protected dispatch def SerializedObject toValueObject(TypeClass obj) {
 		new SerializedTypeClass => [
@@ -213,11 +265,7 @@ class SerializationAdapter {
 				.toMap([ it.key ], [ it.value ])
 		]
 	}
-	
-	protected dispatch def SerializedObject toValueObject(AbstractBaseType obj) {
-		new SerializedAbstractBaseType => [ fill(it, obj) ]
-	}
-	
+		
 	protected dispatch def Object fill(SerializedAbstractBaseType ctxt, AbstractBaseType obj) {
 		ctxt.name = obj.name;
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
@@ -229,13 +277,7 @@ class SerializationAdapter {
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
 		return ctxt;
 	}
-	
-	protected dispatch def Object fill(SerializedTypeScheme ctxt, TypeScheme obj) {
-		ctxt.name = obj.name;
-		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString();
-		return ctxt;
-	}
-	
+		
 	protected dispatch def SerializedObject toValueObject(BaseKind obj) {
 		new SerializedBaseKind => [
 			fill(it, obj)
@@ -247,6 +289,11 @@ class SerializationAdapter {
 		new SerializedBottomType => [
 			fill(it, obj)
 			message = message
+		]
+	}
+	protected dispatch def SerializedObject toValueObject(AtomicType obj) {
+		new SerializedAtomicType => [
+			fill(it, obj)
 		]
 	}
 	
@@ -273,6 +320,14 @@ class SerializationAdapter {
 		return ctxt
 	}
 	
+	protected dispatch def Object fill(SerializedTypeScheme ctxt, TypeScheme obj) {
+		ctxt.name = obj.name;
+		ctxt.vars = obj.vars.map[ it.toValueObject as SerializedTypeVariable ].force;
+		ctxt.on = obj.on.toValueObject as SerializedAbstractType;
+		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
+		return ctxt;
+	}
+	
 	protected dispatch def SerializedObject toValueObject(FunctionType obj) {
 		new SerializedFunctionType => [
 			fill(it, obj)
@@ -293,6 +348,12 @@ class SerializationAdapter {
 		new SerializedSumType => [ fill(it, obj) ]
 	}
 	
+	protected dispatch def SerializedObject toValueObject(TypeConstructorType obj) {
+		new SerializedTypeConstructorType => [
+			fill(it, obj)
+		]
+	}
+	
 	protected dispatch def SerializedObject toValueObject(TypeScheme obj) {
 		new SerializedTypeScheme => [
 			fill(it, obj)
@@ -310,14 +371,14 @@ class SerializationAdapter {
 	protected dispatch def SerializedObject toValueObject(TypeVariableProxy obj) {
 		new SerializedTypeVariableProxy => [
 			fill(it, obj)
-			it.reference = obj.reference;
-			it.targetQID = obj.targetQID.toString();
+			it.reference = obj.reference?.toValueObject;
+			it.targetQID = obj.targetQID.toString;
 		]
 	}
 	
 
 	protected static class MitaJsonSerializer implements JsonSerializer<SerializedObject>, JsonDeserializer<SerializedObject> {
-		
+				
 		override serialize(SerializedObject src, Type typeOfSrc, JsonSerializationContext context) {
 			val result = context.serialize(src);
 			if(result instanceof JsonObject) {
@@ -330,7 +391,7 @@ class SerializationAdapter {
 			val jsonObject = json.getAsJsonObject();
         	val type = jsonObject.get("_type").asString;
         	
-			var clasz = Class.forName(this.class.package.name + '.' + type);
+			var clasz = Class.forName(/*this.class.package.name + */'org.eclipse.mita.base.typesystem.serialization.' + type);
 			val result = clasz.getConstructor().newInstance();
 			while(clasz !== null) {
 		        for (field : clasz.getFields()) {
