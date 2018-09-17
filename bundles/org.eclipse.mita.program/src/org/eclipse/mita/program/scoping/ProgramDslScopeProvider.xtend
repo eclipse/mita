@@ -400,15 +400,15 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
-			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
 			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
 
 		val exclusion = (PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass))
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
 
 		inclusion && !exclusion;
 	]

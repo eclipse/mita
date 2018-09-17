@@ -29,7 +29,7 @@ class PresentTypeSpecifier extends TypeSpecifier {
 //			NodeModelUtils.getTokenText(nameNode);
 //		};
 		val typeName = if(^type === null) {
-			val refText = NodeModelUtils.findNodesForFeature(this, TypesPackage.eINSTANCE.presentTypeSpecifier_Type).head?.text;
+			val refText = NodeModelUtils.findNodesForFeature(this, TypesPackage.eINSTANCE.presentTypeSpecifier_Type).head?.text ?: "";
 			refText.trim
 		} else {
 			^type.toString
@@ -397,7 +397,7 @@ class ImportStatement {
 class SumType extends ComplexType, Exportable {
 	// I would use features, but if I want to have SumAlternative as a ComplexType (which it is), then I can't make it a Declaration as well
 	contains SumAlternative[] alternatives opposite sumType
-	
+		
 	op String toString() {
 		return super.toString();
 	}

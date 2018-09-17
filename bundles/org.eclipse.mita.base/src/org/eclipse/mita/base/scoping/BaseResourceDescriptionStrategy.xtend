@@ -66,6 +66,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		if(eObject.eContainer === null) {
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
 			constraintFactory.isLinking = true;
+			constraintFactory.typeRegistry.isLinking = true;
 			val constraints = constraintFactory.create(eObject);
 			val json = serializationAdapter.toJSON(constraints);
 			userData.put(CONSTRAINTS, json);

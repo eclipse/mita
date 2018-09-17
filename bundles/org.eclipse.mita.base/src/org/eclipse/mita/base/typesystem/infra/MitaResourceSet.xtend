@@ -70,7 +70,6 @@ class MitaResourceSet extends XtextResourceSet {
 					if(thisIsLoadingResources) {
 						isLoadingResources = true;
 						val projectFileURI = this.resources.filter(MitaBaseResource).map[it.URI].findFirst[it.scheme == "platform" && it.segment(0) == "resource"]
-						val projectConfigJson = uri.trimSegments(1).appendSegment("project.json");
 						val fsa = new URIBasedFileSystemAccess();
 						fsa.baseDir = projectFileURI.trimSegments(1);
 						// this is required, idk

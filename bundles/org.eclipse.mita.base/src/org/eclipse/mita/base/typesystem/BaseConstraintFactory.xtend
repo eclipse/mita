@@ -60,6 +60,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -68,10 +69,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	@Inject
 	protected Provider<ConstraintSystem> constraintSystemProvider;
-	
-	@Inject
-	protected IScopeProvider scopeProvider;
-	
+		
 	@Inject 
 	protected StdlibTypeRegistry typeRegistry;
 	
@@ -85,6 +83,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	public override setIsLinking(boolean isLinking) {
 		this.isLinking = isLinking;
+	}
+	override getTypeRegistry() {
+		return typeRegistry;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
@@ -108,6 +109,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<Operation> candidates) {
+		if(candidates === null || candidates.empty) {
+			return null;
+		}
 		/* This function is pretty complicated. It handles function calls like `f(x)` or `x.f()`.
 		 * We get:
 		 * - an object holding the function call, "f(x)"
@@ -167,15 +171,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			candidateTypes.reject[typeClass.instances.containsKey(it)].force.forEach[
 				typeClass.instances.put(it.key, it.value);
 			]
-			system.addConstraint(new TypeClassConstraint(referencedFunctionType, tcQN, [s, sub, fun, typ |
-				if(functionReference !== null) {
-					functionCall.eSet(functionReference, fun);
-				}
-				val nc = constraintSystemProvider.get(); 
-				// the returned type should be smaller than the expected type so it can be assigned
-				nc.addConstraint(new SubtypeConstraint(TypeVariableAdapter.get(fun.typeSpecifier), toTV));
-				return SimplificationResult.success(ConstraintSystem.combine(#[nc, s]), sub)
-			]));
+			system.addConstraint(new FunctionTypeClassConstraint(referencedFunctionType, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
 		}
 		else {
 			val funRef = candidates.head;
@@ -188,7 +184,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// B
 		resultType;
 	}
-
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeCastExpression expr) {
 		val realType = system.computeConstraints(expr.operand);
 		val castType = system.computeConstraints(expr.type);
@@ -428,5 +424,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 		}
 		return typeVar;	
 	}
+	
 	
 }

@@ -47,16 +47,31 @@ class StdlibTypeRegistry {
 	
 	@Inject IScopeProvider scopeProvider;
 	
+	protected boolean isLinking = false;
+	
+	public def setIsLinking(boolean isLinking) {
+		this.isLinking = isLinking;
+	}
+	
 	def getTypeModelObject(EObject context, QualifiedName qn) {
+		if(isLinking) {
+			return null;
+		}
 		val scope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		val obj = scope.getSingleElement(qn).EObjectOrProxy;
 		return obj;
 	}
 	def getTypeModelObjectProxy(EObject context, QualifiedName qn) {
+		if(isLinking) {
+			return TypeVariableAdapter.getProxy(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type, qn);
+		}
 		return TypeVariableAdapter.get(getTypeModelObject(context, qn));
 	}
 	
 	def getModelObjects(EObject context, QualifiedName qn, EReference ref) {
+		if(isLinking) {
+			return #[];
+		}
 		val scope = scopeProvider.getScope(context, ref);
 		val obj = scope.getElements(qn).map[EObjectOrProxy].force;
 		return obj;

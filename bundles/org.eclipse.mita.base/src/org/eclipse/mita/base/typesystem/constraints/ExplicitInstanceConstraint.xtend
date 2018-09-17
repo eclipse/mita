@@ -6,6 +6,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtext.scoping.IScopeProvider
 
 /**
  * Corresponds to instance relationship 𝜏 ⪯ σ as defined in
@@ -59,4 +60,9 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		
 		return new ExplicitInstanceConstraint(instance.replace(sub), typeScheme.replace(sub));
 	}
+	
+	override replaceProxies(IScopeProvider scopeProvider) {
+		return new ExplicitInstanceConstraint(instance.replaceProxies(scopeProvider), typeScheme.replaceProxies(scopeProvider));
+	}
+	
 }

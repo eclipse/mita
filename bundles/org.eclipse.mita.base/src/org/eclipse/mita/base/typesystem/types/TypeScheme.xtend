@@ -6,6 +6,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.xtext.scoping.IScopeProvider
 
 @EqualsHashCode
 @Accessors
@@ -62,4 +63,7 @@ class TypeScheme extends AbstractType {
 		}
 	}
 	
+	override replaceProxies(IScopeProvider scopeProvider) {
+		return new TypeScheme(origin, vars, on.replaceProxies(scopeProvider));
+	}	
 }

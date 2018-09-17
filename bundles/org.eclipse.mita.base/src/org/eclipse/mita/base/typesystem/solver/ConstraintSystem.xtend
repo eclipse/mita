@@ -16,10 +16,10 @@ import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
@@ -80,6 +80,9 @@ class ConstraintSystem {
 		this.constraints.add(constraint);
 	}
 	
+	def TypeClass getTypeClassOrNull(QualifiedName qn) {
+		return typeClasses.get(qn);
+	}
 	def TypeClass getTypeClass(QualifiedName qn, Iterable<Pair<AbstractType, EObject>> candidates) {
 		if(!typeClasses.containsKey(qn)) {
 			val typeClass = new TypeClass(candidates);
@@ -211,4 +214,11 @@ class ConstraintSystem {
 		return this;
 	}
 	
+	def ConstraintSystem replaceProxies(IScopeProvider scopeProvider) {
+		val result = constraintSystemProvider.get();
+		result.constraints += constraints.map[it.replaceProxies(scopeProvider)];
+		result.typeClasses.putAll(typeClasses.mapValues[it.replaceProxies(scopeProvider)]);
+		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
+		return result;
+	}
 }

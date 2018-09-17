@@ -4,6 +4,7 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.xtext.naming.QualifiedName
 
 class SerializedObject {
     public String _type;
@@ -140,15 +141,14 @@ class SerializedTypeVariable extends SerializedAbstractType {
     new() {
         _type = "SerializedTypeVariable";
     }
-
 }
 
 class SerializedTypeVariableProxy extends SerializedTypeVariable {
     new() {
         _type = "SerializedTypeVariableProxy";
     }
-	
 	public String reference;
+	public QualifiedName qualifiedName;
 }
 
 class SerializedAbstractTypeConstraint extends SerializedObject {

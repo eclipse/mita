@@ -4,6 +4,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.xtext.scoping.IScopeProvider
 
 @FinalFieldsConstructor
 @EqualsHashCode
@@ -39,4 +40,8 @@ class TypeVariable extends AbstractType {
 		sub.substitutions.getOrDefault(this, this);
 	}
 	
+	override replaceProxies(IScopeProvider scopeProvider) {
+		return this;
+	}
+
 }

@@ -37,6 +37,7 @@ import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.TypeConstructor
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.program.model.ModelUtils 
 
@@ -70,8 +71,7 @@ class ConfigurationItemValue {
 	refers ConfigurationItem item
 	contains Expression value
 	op String toString() {
-		val itemRefText = NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.configurationItemValue_Item).head?.text;
-		return (item?.toString() ?: itemRefText.trim()) + " = " + value.toString();
+		return (item?.toString() ?: NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.configurationItemValue_Item).head?.text?.trim()) + " = " + value.toString();
 	}
 }
 
@@ -113,7 +113,7 @@ class SystemEventSource extends EventSource {
 	refers Event source
 	
 	op String toString() {
-		val refText = NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.systemEventSource_Source).head?.text;
+		val refText = (source?.toString()) ?: (NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.systemEventSource_Source).head?.text);
 		return refText ?: "null";
 	}
 }
@@ -272,7 +272,7 @@ class IsDeconstructionCase extends IsCase {
 		return deconstructors.map[it.productMember === null].contains(true);
 	}
 	op String toString() {
-		val refText = NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType).head?.text;
+		val refText = (productType?.name) ?: NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType).head?.text;
 		return "is(" + refText + " -> " + deconstructors.join(", ") + ") { ... }" 
 	}
 }

@@ -1,7 +1,6 @@
 package org.eclipse.mita.base.typesystem.solver
 
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 @Accessors
 class UnificationResult { 

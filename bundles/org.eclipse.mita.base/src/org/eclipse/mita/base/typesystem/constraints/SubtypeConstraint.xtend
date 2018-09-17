@@ -7,6 +7,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.xtext.scoping.IScopeProvider
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -59,6 +60,10 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	override replace(Substitution sub) {
 		return new SubtypeConstraint(subType.replace(sub), superType.replace(sub));
+	}
+	
+	override replaceProxies(IScopeProvider scopeProvider) {
+		return new SubtypeConstraint(subType.replaceProxies(scopeProvider), superType.replaceProxies(scopeProvider));
 	}
 	
 }

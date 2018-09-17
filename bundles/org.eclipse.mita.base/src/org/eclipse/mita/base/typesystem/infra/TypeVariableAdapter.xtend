@@ -2,10 +2,11 @@ package org.eclipse.mita.base.typesystem.infra
 
 import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.emf.ecore.EReference
+import org.eclipse.xtext.naming.QualifiedName
 
 @FinalFieldsConstructor
 @Accessors
@@ -18,6 +19,10 @@ class TypeVariableAdapter extends AdapterImpl {
 	
 	public static def TypeVariable getProxy(EObject obj, EReference reference) {
 		getOrCreate(obj, [ new TypeVariableProxy(it, reference) ]);
+	}
+	
+	public static def TypeVariable getProxy(EObject context, EReference reference, QualifiedName objName) {
+		getOrCreate(context, [ new TypeVariableProxy(it, reference, objName) ]);
 	}
 	
 	protected static def getOrCreate(EObject obj, (EObject) => TypeVariable factory) {

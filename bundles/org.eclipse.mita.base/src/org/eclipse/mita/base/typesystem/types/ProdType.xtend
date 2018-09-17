@@ -1,14 +1,13 @@
 package org.eclipse.mita.base.typesystem.types
 
-import java.util.List
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtext.scoping.IScopeProvider
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 @FinalFieldsConstructor
 @EqualsHashCode
@@ -41,4 +40,7 @@ class ProdType extends TypeConstructorType {
 		new ProdType(origin, name, typeArguments.map[ it.replace(sub) ].force, superTypes);
 	}
 	
+	override replaceProxies(IScopeProvider scopeProvider) {
+		return new ProdType(origin, name, typeArguments.map[ it.replaceProxies(scopeProvider) ].force, superTypes);
+	}	
 }

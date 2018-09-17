@@ -5,12 +5,9 @@ import com.google.inject.Provider
 import java.util.Collections
 import java.util.HashMap
 import java.util.Map
-import java.util.Map.Entry
+import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.mita.base.typesystem.infra.Graph
-
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;

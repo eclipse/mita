@@ -272,7 +272,7 @@ class ValueRange extends Expression {
 class FeatureCall extends ElementReferenceExpression {
 	
 	op String toString() {
-		val refText = NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
+		val refText = reference?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
 		arguments.head.value.toString + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "")
 	}
 }
@@ -288,7 +288,7 @@ class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperat
 	}
 	
 	op String toString() {
-		val refText = NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
+		val refText = reference?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
 		return refText + (if(!arguments.empty) "(" + arguments.join(", ") + ")" else "")
 	}
 }
@@ -299,7 +299,7 @@ class TypeCastExpression extends Expression {
 	contains Expression operand
 	refers Type ^type
 	op String toString() {
-		val refText = NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.typeCastExpression_Type).head?.text ?: "<null>";
+		val refText = ^type?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.typeCastExpression_Type).head?.text ?: "<null>";
 		return operand + " as " + refText;
 	}
 }
@@ -308,7 +308,7 @@ class Argument extends Expression {
 	contains Expression value
 	
 	op String toString() {
-		val refText = NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.argument_Parameter).head?.text;
+		val refText = parameter?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.argument_Parameter)?.head?.text;
 
 		return (if(refText !== null) refText + "=" else "") + value.toString();
 	}

@@ -1,32 +1,33 @@
 package org.eclipse.mita.program.typesystem
 
+import com.google.inject.Inject
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.types.ImportStatement
-import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructuralType
 import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.EventHandlerDeclaration
@@ -45,15 +46,14 @@ import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.platform.SystemSpecification
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
+	@Inject
+	IScopeProvider scopeProvider;
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemSpecification spec) {
 		system.computeConstraintsForChildren(spec);
 		return null;
@@ -138,16 +138,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase decon) {
+
 		val matchVariable = system.computeConstraints((decon.eContainer as WhereIsStatement).matchElement);
 		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType];
-		val combinedType = new ProdType(decon, decon.productType.toString, (vars).toList, #[]);
-		val deconTypeCandidates = resolveReference(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
-		val deconType = if(deconTypeCandidates.size != 1) {
-			//TODO: handle mutliple candidates
-			new BottomType(decon, 'PCF: TODO: handle mutliple candidates');
-		} else {
-			system.translateTypeDeclaration(deconTypeCandidates.head);
-		}
+		val combinedType = new ProdType(decon, decon.productType?.toString ?: "", (vars).toList, #[]);
+		val deconType = resolveReferenceToSingleAndGetType(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
+
 		system.addConstraint(new EqualityConstraint(deconType, combinedType, "PCF:150"));
 		system.computeConstraints(decon.body);
 		return system.associate(combinedType);
@@ -170,7 +166,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			return #[origin.eGet(featureToResolve, false) as EObject];	
 		}
 		
-		val candidates = scope.getElements(QualifiedName.create(name));
+		val candidates = scope.getElements(QualifiedName.create(name.split("\\.")));
 		
 		val List<EObject> resultObjects = candidates.map[it.EObjectOrProxy].force;
 		
@@ -183,6 +179,14 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		}
 		
 		return resultObjects;
+	}
+	
+	protected def AbstractType resolveReferenceToSingleAndGetType(EObject origin, EReference featureToResolve) {
+		if(isLinking) {
+			return TypeVariableAdapter.getProxy(origin, featureToResolve);
+		}
+		val obj = resolveReferenceToSingleAndLink(origin, featureToResolve);
+		return TypeVariableAdapter.get(obj);
 	}
 	
 	protected def EObject resolveReferenceToSingleAndLink(EObject origin, EReference featureToResolve) {
@@ -230,12 +234,8 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected def EObject getConstructorFromType(EObject rawReference) {
-		// if we reference a complex type we reference its constructor and not its type
-		val reference = if(rawReference instanceof StructuralType) {
-			rawReference.constructor;
-		} 
 		// referencing a structParameter references its accessor/"getter"
-		else if(rawReference instanceof StructuralParameter) {
+		val reference = if(rawReference instanceof StructuralParameter) {
 			rawReference.accessor;
 		}
 		return reference ?: rawReference;

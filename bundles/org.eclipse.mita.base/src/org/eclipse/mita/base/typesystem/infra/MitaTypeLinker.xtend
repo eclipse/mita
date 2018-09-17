@@ -4,15 +4,12 @@ import java.util.Set
 import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.xtext.CrossReference
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.nodemodel.INode
-import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.types.TypeConstructor
-import org.eclipse.mita.base.types.VirtualFunction
 
 class MitaTypeLinker extends Linker {
 	

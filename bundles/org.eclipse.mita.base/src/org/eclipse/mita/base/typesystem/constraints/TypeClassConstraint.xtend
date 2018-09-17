@@ -10,20 +10,16 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.scoping.IScopeProvider
 
 @FinalFieldsConstructor
 @EqualsHashCode
 @Accessors
-class TypeClassConstraint extends AbstractTypeConstraint {
+abstract class TypeClassConstraint extends AbstractTypeConstraint {
 	
 	protected val AbstractType typ;
 	protected val QualifiedName instanceOfQN;
-	protected val (ConstraintSystem, Substitution, Operation, AbstractType) => SimplificationResult onResolve;
-	
-	override replace(TypeVariable from, AbstractType with) {
-		val newType = typ.replace(from, with);
-		return new TypeClassConstraint(newType, instanceOfQN, onResolve);
-	}
+	public def SimplificationResult onResolve(ConstraintSystem cs, Substitution sub, Operation op, AbstractType at);
 	
 	override getActiveVars() {
 		return typ.freeVars;
@@ -43,11 +39,5 @@ class TypeClassConstraint extends AbstractTypeConstraint {
 	
 	override toString() {
 		return '''«typ» :: «instanceOfQN»'''
-	}
-	
-	override replace(Substitution sub) {
-		val newType = typ.replace(sub);
-		return new TypeClassConstraint(newType, instanceOfQN, onResolve);
-	}
-	
+	}	
 }

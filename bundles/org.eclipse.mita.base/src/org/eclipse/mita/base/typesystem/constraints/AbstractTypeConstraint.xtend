@@ -4,6 +4,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.xtext.scoping.IScopeProvider
 
 abstract class AbstractTypeConstraint {
 	
@@ -21,5 +22,7 @@ abstract class AbstractTypeConstraint {
 	abstract def Iterable<AbstractType> getTypes();
 	
 	abstract def String toGraphviz();
+	
+	abstract def AbstractTypeConstraint replaceProxies(IScopeProvider scopeProvider);
 	
 }

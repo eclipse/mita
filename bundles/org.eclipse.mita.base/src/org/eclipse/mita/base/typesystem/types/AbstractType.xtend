@@ -5,6 +5,7 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.xtext.scoping.IScopeProvider
 
 @Accessors
 @EqualsHashCode
@@ -35,4 +36,6 @@ abstract class AbstractType {
 	}
 	
 	abstract def String toGraphviz();
+	
+	def AbstractType replaceProxies(IScopeProvider scopeProvider);
 }

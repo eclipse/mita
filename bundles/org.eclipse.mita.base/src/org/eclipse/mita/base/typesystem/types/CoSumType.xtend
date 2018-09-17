@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.types
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
@@ -21,6 +22,9 @@ class CoSumType extends ProdType {
 	
 	override replace(Substitution sub) {
 		new CoSumType(origin, name, typeArguments.map[ it.replace(sub) ].force, superTypes);
+	}
+	override replaceProxies(IScopeProvider scopeProvider) {
+		return new CoSumType(origin, name, typeArguments.map[it.replaceProxies(scopeProvider) as AbstractType].force, superTypes);
 	}
 	
 }

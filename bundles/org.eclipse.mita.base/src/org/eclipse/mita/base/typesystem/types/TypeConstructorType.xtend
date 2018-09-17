@@ -11,6 +11,7 @@ import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import org.eclipse.xtext.scoping.IScopeProvider
 
 @FinalFieldsConstructor
 @EqualsHashCode
@@ -60,4 +61,7 @@ class TypeConstructorType extends AbstractType {
 		return ts.instantiate;
 	}
 	
+	override replaceProxies(IScopeProvider scopeProvider) {
+		return new TypeConstructorType(origin, name, typeArguments.map[it.replaceProxies(scopeProvider)], superTypes);
+	}	
 }

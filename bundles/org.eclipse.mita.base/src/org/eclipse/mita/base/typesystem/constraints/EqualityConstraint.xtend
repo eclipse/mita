@@ -5,6 +5,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.xtext.scoping.IScopeProvider
 
 @Accessors
 @EqualsHashCode
@@ -45,6 +46,10 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	
 	override replace(Substitution sub) {
 		return new EqualityConstraint(left.replace(sub), right.replace(sub), source);
+	}
+	
+	override replaceProxies(IScopeProvider scopeProvider) {
+		return new EqualityConstraint(left.replaceProxies(scopeProvider), right.replaceProxies(scopeProvider), source);
 	}
 	
 }

@@ -31,6 +31,8 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+
 class SerializationAdapter {
 	
 	def toJSON(ConstraintSystem system) {
@@ -80,6 +82,15 @@ class SerializationAdapter {
 		new SerializedTypeclassConstraint => [
 			type = obj.typ.toValueObject as SerializedAbstractType
 			instanceOfQN = obj.instanceOfQN.toString()
+		]
+	}
+	
+	protected dispatch def SerializedObject toValueObject(TypeConstructorType obj) {
+		new SerializedTypeConstructorType => [
+			name = obj.name;
+			origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString();
+			typeArguments = obj.typeArguments.map[it.toValueObject as SerializedAbstractType].force;
+			// TODO: get these translated superTypes = 
 		]
 	}
 	
@@ -144,6 +155,14 @@ class SerializationAdapter {
 		return ctxt
 	}
 	
+	protected dispatch def Object fill(SerializedTypeScheme ctxt, TypeScheme obj) {
+		ctxt.name = obj.name;
+		ctxt.vars = obj.vars.map[ it.toValueObject as SerializedTypeVariable ].force;
+		ctxt.on = obj.on.toValueObject as SerializedAbstractType;
+		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
+		return ctxt;
+	}
+	
 	protected dispatch def SerializedObject toValueObject(FunctionType obj) {
 		new SerializedFunctionType => [
 			fill(it, obj)
@@ -182,9 +201,11 @@ class SerializationAdapter {
 		new SerializedTypeVariableProxy => [
 			fill(it, obj)
 			it.reference = obj.reference.name;
+			it.qualifiedName = obj.qualifiedName;
 		]
 	}
 	
+
 	protected static class MitaJsonSerializer implements JsonSerializer<SerializedObject>, JsonDeserializer<SerializedObject> {
 		
 		override serialize(SerializedObject src, Type typeOfSrc, JsonSerializationContext context) {

@@ -4,8 +4,6 @@ import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-
 
 @Accessors
 class TypeTranslationAdapter extends AdapterImpl {

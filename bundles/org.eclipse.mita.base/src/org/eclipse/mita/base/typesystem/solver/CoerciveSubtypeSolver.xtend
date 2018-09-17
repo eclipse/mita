@@ -148,7 +148,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
 			val fun = typeClass.instances.get(refType);
 			if(fun instanceof Operation) {
-				return constraint.onResolve.apply(system, substitution, fun, refType);				
+				return constraint.onResolve(system, substitution, fun, refType);				
 			}
 			else {
 				return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «fun» not an Operation'''))
@@ -186,7 +186,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			]
 			if(result !== null) {
 				val sub = result.key.key.substitution;
-				return constraint.onResolve.apply(system, sub, result.value as Operation, result.key.value);
+				return constraint.onResolve(system, sub, result.value as Operation, result.key.value);
 			}
 		}
 		return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «refType» not instance of «typeClass»'''))
