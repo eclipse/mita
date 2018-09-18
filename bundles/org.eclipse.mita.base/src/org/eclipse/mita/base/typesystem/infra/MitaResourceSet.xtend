@@ -17,7 +17,6 @@ import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
-import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.generator.AbstractFileSystemAccess2
 import org.eclipse.xtext.generator.OutputConfiguration
@@ -67,29 +66,29 @@ class MitaResourceSet extends XtextResourceSet {
 		if(result instanceof MitaBaseResource) {
 			val thisIsLoadingResources = !isLoadingResources;
 			try {
-				if(!result.dependenciesLoaded) {
-					if(thisIsLoadingResources) {
-						isLoadingResources = true;
-						val projectFileURI = this.resources.filter(MitaBaseResource).map[it.URI].findFirst[it.scheme == "platform" && it.segment(0) == "resource"]
-						val fsa = new URIBasedFileSystemAccess();
-						fsa.baseDir = projectFileURI.trimSegments(1);
-						// this is required, idk
-						fsa.converter = uriConverter;
-						val outputConfig = new OutputConfiguration("DEFAULT_OUTPUT");
-						// project name
-						outputConfig.outputDirectory = fsa.baseDir.lastSegment;
-						fsa.outputConfigurations.put(AbstractFileSystemAccess2.DEFAULT_OUTPUT, outputConfig);
-						val jsonTxtContents = fsa.readTextFile("project.json");
-						val gson = new Gson();
-						projectConfig = gson.fromJson(jsonTxtContents.toString, Map)
-						
-						//val projectConfig = super.getResource(projectConfigJson, true);
-						
-						val loadedLibraries = ensureLibrariesAreLoaded();
-						loadRequiredResources(#[result] + loadedLibraries.filter(MitaBaseResource), new HashSet());
-					}
-					result.dependenciesLoaded = true;
-				}
+//				if(!result.dependenciesLoaded) {
+//					if(thisIsLoadingResources) {
+//						isLoadingResources = true;
+//						val projectFileURI = this.resources.filter(MitaBaseResource).map[it.URI].findFirst[it.scheme == "platform" && it.segment(0) == "resource"]
+//						val fsa = new URIBasedFileSystemAccess();
+//						fsa.baseDir = projectFileURI.trimSegments(1);
+//						// this is required, idk
+//						fsa.converter = uriConverter;
+//						val outputConfig = new OutputConfiguration("DEFAULT_OUTPUT");
+//						// project name
+//						outputConfig.outputDirectory = fsa.baseDir.lastSegment;
+//						fsa.outputConfigurations.put(AbstractFileSystemAccess2.DEFAULT_OUTPUT, outputConfig);
+//						val jsonTxtContents = fsa.readTextFile("project.json");
+//						val gson = new Gson();
+//						projectConfig = gson.fromJson(jsonTxtContents.toString, Map)
+//						
+//						//val projectConfig = super.getResource(projectConfigJson, true);
+//						
+//						val loadedLibraries = ensureLibrariesAreLoaded();
+//						loadRequiredResources(#[result] + loadedLibraries.filter(MitaBaseResource), new HashSet());
+//					}
+//					result.dependenciesLoaded = true;
+//				}
 //				if(thisIsLoadingResources) {
 //						//linkTypes(loadedResources.filter(MitaBaseResource));
 ////					val mitaResources = this.resources.filter(MitaBaseResource).force;
@@ -114,9 +113,9 @@ class MitaResourceSet extends XtextResourceSet {
 		return result;
 	}
 
-	protected def linkWithTypes(MitaBaseResource resource) {
-		resource.doLinkReferences;
-	}
+//	protected def linkWithTypes(MitaBaseResource resource) {
+//		resource.doLinkReferences;
+//	}
 	
 	protected def getConstraints(Resource res, IResourceScopeCache cache) {
 		cache.get(ConstraintSystem, res, [
@@ -166,24 +165,24 @@ class MitaResourceSet extends XtextResourceSet {
 			Iterables.concat(requiredResources.filter[!(it instanceof MitaBaseResource)], loadRequiredResources(requiredResources.filter(MitaBaseResource), loadedDependencies));			
 		].force
 	}
-	
-	protected def linkTypes(Iterable<MitaBaseResource> resources) {
-		if(isLinkingTypes) {
-			return;
-		}
-		isLinkingTypes = true;
-		resources.forEach[ it.doLinkTypes ];
-		isLinkingTypes = false;
-	}
-	
-	protected def linkOthers(Iterable<MitaBaseResource> resources) {
-		if(isLinkingTypeDependent) {
-			return;
-		}
-		isLinkingTypeDependent = true;
-		resources.forEach[ it.doLinkTypeDependent ];
-		isLinkingTypeDependent = false;
-	}
+//	
+//	protected def linkTypes(Iterable<MitaBaseResource> resources) {
+//		if(isLinkingTypes) {
+//			return;
+//		}
+//		isLinkingTypes = true;
+//		resources.forEach[ it.doLinkTypes ];
+//		isLinkingTypes = false;
+//	}
+//	
+//	protected def linkOthers(Iterable<MitaBaseResource> resources) {
+//		if(isLinkingTypeDependent) {
+//			return;
+//		}
+//		isLinkingTypeDependent = true;
+//		resources.forEach[ it.doLinkTypeDependent ];
+//		isLinkingTypeDependent = false;
+//	}
 	
 	public def getLatestSolution() {
 		return latestSolution;

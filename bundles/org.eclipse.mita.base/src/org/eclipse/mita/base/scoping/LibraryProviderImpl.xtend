@@ -17,11 +17,23 @@ import org.eclipse.mita.library.^extension.LibraryExtensions
  */
 class LibraryProviderImpl implements ILibraryProvider {
 	
-	override Iterable<URI> getLibraries() {
+	protected def getAllLibraries() {
 		/* until we have sorted out the package management, the default implementation resorts to the
 		 * extension point mechanism.
 		 */
-		LibraryExtensions::getDescriptors().flatMap[ it.resourceUris ];
+		LibraryExtensions::getDescriptors().flatMap[ it.resourceUris ];		
+	}
+	
+	override getLibraries() {
+		return allLibraries.reject[ isStdlib ]
+	}
+	
+	override getStandardLibraries() {
+		return allLibraries.filter[ isStdlib ]
+	}
+	
+	protected def isStdlib(URI uri) {
+		return uri.segments().contains("stdlib");
 	}
 	
 }

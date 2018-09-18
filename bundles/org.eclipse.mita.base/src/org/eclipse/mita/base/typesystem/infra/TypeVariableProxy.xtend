@@ -8,6 +8,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.base.typesystem.types.BottomType
 
 @EqualsHashCode
 @Accessors
@@ -32,13 +33,18 @@ class TypeVariableProxy extends TypeVariable {
 	}
 	
 	override replaceProxies(IScopeProvider scopeProvider) {
+		if(origin === null) {
+			return new BottomType(origin, '''Origin is empty for «name»''');
+		}
+		
 		val scope = scopeProvider.getScope(origin, reference);
 		val scopeElement = scope.getSingleElement(targetQID);
 		val replacementObject = scopeElement?.EObjectOrProxy
 		
 		if(replacementObject === null) {
 			// TODO: better handling when replacementObject is null
-			throw new NullPointerException('''Scope is empty for «reference.EContainingClass.name».«reference.name» on «origin»''')
+//			throw new NullPointerException('''Scope is empty for «reference.EContainingClass.name».«reference.name» on «origin»''')
+			return new BottomType(origin, '''Scope is empty for «reference.EContainingClass.name».«reference.name» on «origin»''');
 		}
 		
 		return TypeVariableAdapter.get(replacementObject);

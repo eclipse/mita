@@ -148,22 +148,22 @@ class MitaTypesDebugView extends ViewPart {
 					val offsetHelper = new EObjectAtOffsetHelper();
 					document.readOnly(new IUnitOfWork<Object, XtextResource>() {
 						override exec(XtextResource state) throws Exception {
-							val rs = state.resourceSet;
-							if(rs instanceof MitaResourceSet) {
-								updateViews(rs.latestSolution);
-							}
-							
-							val selectedObjects = new HashSet<EObject>();
-							for(var i = 0; i < selection.length; i++) {
-								val obj = offsetHelper.resolveContainedElementAt(state, selection.offset + i);
-								if(obj !== null) {
-									selectedObjects.add(obj);
-								}
-							}
-							selectConstraints(selectedObjects);
-							selectSolutions(selectedObjects);
-							
-							return null;
+//							val rs = state.resourceSet;
+//							if(rs instanceof MitaResourceSet) {
+//								updateViews(rs.latestSolution);
+//							}
+//							
+//							val selectedObjects = new HashSet<EObject>();
+//							for(var i = 0; i < selection.length; i++) {
+//								val obj = offsetHelper.resolveContainedElementAt(state, selection.offset + i);
+//								if(obj !== null) {
+//									selectedObjects.add(obj);
+//								}
+//							}
+//							selectConstraints(selectedObjects);
+//							selectSolutions(selectedObjects);
+//							
+//							return null;
 						}
 					});
 					

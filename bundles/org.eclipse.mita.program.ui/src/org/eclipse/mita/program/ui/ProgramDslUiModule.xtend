@@ -15,6 +15,7 @@ package org.eclipse.mita.program.ui
 
 import com.google.inject.Binder
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.base.ui.index.MitaWorkspaceProjectsState
 import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
 import org.eclipse.mita.program.generator.ProjectErrorShouldGenerate
 import org.eclipse.mita.program.ui.builder.ProgramDslBuilderParticipant
@@ -74,4 +75,9 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 	override bindIShouldGenerate() {
 		return ProjectErrorShouldGenerate
 	}
+	
+	override bindIAllContainersState$Provider() {
+		return MitaWorkspaceProjectsState.Provider;
+	}
+	
 }

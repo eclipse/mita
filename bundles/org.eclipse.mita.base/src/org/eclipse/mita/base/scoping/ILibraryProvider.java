@@ -21,7 +21,12 @@ import org.eclipse.emf.common.util.URI;
 public interface ILibraryProvider {
 
 	/**
-	 * @return a list of all libraries known to this system
+	 * @return a list of the standard libraries known to this system
+	 */
+	public Iterable<URI> getStandardLibraries();
+	
+	/**
+	 * @return a list of all libraries known to this system (without the standard libraries)
 	 */
 	public Iterable<URI> getLibraries();
 

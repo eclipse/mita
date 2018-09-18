@@ -38,7 +38,6 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
@@ -424,7 +423,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	]
 
 	def scope_TypeSpecifier_type(EObject context, EReference ref) {
-		return new TypeReferenceScope(new FilteringScope(delegate.getScope(context, ref), globalTypeFilter), context);
+		val parentScope = delegate.getScope(context, ref)
+		return new FilteringScope(parentScope, globalTypeFilter);
 	}
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {

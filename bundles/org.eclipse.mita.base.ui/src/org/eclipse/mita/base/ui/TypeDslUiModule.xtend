@@ -17,11 +17,10 @@
 package org.eclipse.mita.base.ui
 
 import com.google.inject.Binder
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.base.ui.index.MitaWorkspaceProjectsState
 import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
 import org.eclipse.ui.PlatformUI
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.ui.LanguageSpecific
 import org.eclipse.xtext.ui.editor.IURIEditorOpener
 
@@ -38,6 +37,10 @@ class TypeDslUiModule extends AbstractTypeDslUiModule {
 	
 	override configure(Binder binder) {
 		super.configure(binder)
-		binder.bind(XtextResourceSet).to(MitaResourceSet);
 	}
+	
+	override bindIAllContainersState$Provider() {
+		return MitaWorkspaceProjectsState.Provider;
+	}
+	
 }

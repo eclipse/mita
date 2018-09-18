@@ -9,6 +9,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.infra.TypeAdapter
 
 class BaseUtils {	
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
@@ -55,12 +56,7 @@ class BaseUtils {
 	}
 	
 	def static AbstractType getType(EObject obj) {
-		val rs = computeOrigin(obj).eResource?.resourceSet;
-		if(rs instanceof MitaResourceSet) {
-			val solution = rs.latestSolution?.solution;
-			return solution?.apply(TypeVariableAdapter.get(obj));	
-		}
-		return null;
+		return TypeAdapter.get(obj.computeOrigin);
 	}
 	
 	def static EObject computeOrigin(EObject obj) {

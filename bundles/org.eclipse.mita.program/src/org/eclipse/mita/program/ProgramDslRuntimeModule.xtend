@@ -22,6 +22,8 @@ import org.eclipse.mita.base.expressions.inferrer.TypeParameterInferrer
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
+import org.eclipse.mita.base.scoping.MitaContainerManager
+import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
@@ -114,22 +116,13 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 	override bindILinker() {
 		return MitaLinker
 	}
-//	
-//	override bindXtextResource() {
-//		return MitaBaseResource
-//	}
-//	
-//	override bindResourceSet() {
-//		return MitaResourceSet
-//	}
-//	
-//	override bindXtextResourceSet() {
-//		return MitaResourceSet
-//	}
-  
-//
-//	override bindIQualifiedNameProvider() {
-//		return BaseQualifiedNameProvider
-//	}
-//	
+	
+	override bindIContainer$Manager() {
+		return MitaContainerManager;
+	}
+	
+	override bindIAllContainersState$Provider() {
+		return MitaResourceSetBasedAllContainersState.Provider;
+	}
+		
 }

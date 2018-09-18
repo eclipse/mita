@@ -21,6 +21,7 @@ import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
+import org.eclipse.mita.base.scoping.MitaContainerManager
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
@@ -29,10 +30,10 @@ import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.xtext.conversion.IValueConverterService
+import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
+import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 
 class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 
@@ -59,15 +60,12 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 		return ExpressionsValueConverterService
 	}
 	
-	override bindXtextResource() {
-		return MitaBaseResource
+	override Class<? extends IContainer.Manager> bindIContainer$Manager() {
+		return MitaContainerManager;
 	}
 	
-	override bindXtextResourceSet() {
-		return MitaResourceSet
+	override bindIAllContainersState$Provider() {
+		return MitaResourceSetBasedAllContainersState$Provider;
 	}
 	
-//	override bindIQualifiedNameProvider() {
-//		return BaseQualifiedNameProvider
-//	}
 }

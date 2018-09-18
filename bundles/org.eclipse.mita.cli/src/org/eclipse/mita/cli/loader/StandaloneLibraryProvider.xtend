@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.cli.loader
 
+import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.cli.commands.CompileToCAdapter
@@ -37,7 +38,7 @@ class StandaloneLibraryProvider implements ILibraryProvider {
 		this.resourceSet = resourceSet;
 	}
 
-	override getLibraries() {
+	protected def getAllLibraries() {
 		if(resourceSet === null) {
 			return #[]
 		} else {
@@ -51,6 +52,18 @@ class StandaloneLibraryProvider implements ILibraryProvider {
 				.map[ it.URI ];			
 		}
 		
+	}
+	
+	override getLibraries() {
+		return allLibraries.reject[ isStdlib ]
+	}
+	
+	override getStandardLibraries() {
+		return allLibraries.filter[ isStdlib ]
+	}
+	
+	protected def isStdlib(URI uri) {
+		return uri.segments().contains("stdlib");
 	}
 	
 }
