@@ -26,6 +26,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 
 @Accessors
 class ConstraintSystem {
@@ -221,36 +222,38 @@ class ConstraintSystem {
 	
 	def ConstraintSystem replaceProxies(Resource resource, IScopeProvider scopeProvider) {
 		val result = constraintSystemProvider.get();
-		result.constraints += constraints.map[ it.replaceProxies([tvp | 
-			if(tvp.origin === null) {
-				return new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''');
-			}
-	
-			if(tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
-				return TypeVariableAdapter.get(tvp.origin.eGet(tvp.reference) as EObject);
-			}
-	
-			val scope = scopeProvider.getScope(tvp.origin, tvp.reference);
-			val scopeElement = scope.getSingleElement(tvp.targetQID);
-			val cachedTypeSerialization = scopeElement?.getUserData("TypeVariable");
-			if(cachedTypeSerialization !== null) {
-				val cachedType = serializationAdapter.deserializeTypeFromJSON(cachedTypeSerialization, [ resource.resourceSet.getEObject(it, false) ])
-				return cachedType;
-			}
-			
-			val replacementObject = scopeElement?.EObjectOrProxy
-			
-			if(replacementObject === null) {
-				return new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''');
-			}
-			if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference)) {
-				tvp.origin.eSet(tvp.reference, replacementObject);
-			}
-			
-			return TypeVariableAdapter.get(replacementObject);
-		]) ].force;
+		result.constraints += constraints.map[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider) ] ].force;
 		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies(scopeProvider) ]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;
 	}
+	
+	protected def AbstractType resolveProxy(TypeVariableProxy tvp, Resource resource, IScopeProvider scopeProvider) {
+		if(tvp.origin === null) {
+			return new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''');
+		}
+
+		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
+			return TypeVariableAdapter.get(tvp.origin.eGet(tvp.reference) as EObject);
+		}
+
+		val scope = scopeProvider.getScope(tvp.origin, tvp.reference);
+		val scopeElement = scope.getSingleElement(tvp.targetQID);
+		val cachedTypeSerialization = scopeElement?.getUserData("TypeVariable");
+		if(cachedTypeSerialization !== null) {
+			val cachedType = serializationAdapter.deserializeTypeFromJSON(cachedTypeSerialization, [ resource.resourceSet.getEObject(it, false) ])
+			return cachedType.replaceProxies[ this.resolveProxy(it, resource, scopeProvider) ];
+		}
+		
+		val replacementObject = scopeElement?.EObjectOrProxy;
+		if(replacementObject === null) {
+			return new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''');
+		}
+		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference)) {
+			tvp.origin.eSet(tvp.reference, replacementObject);
+		}
+		
+		return TypeVariableAdapter.get(replacementObject);
+	}
+	
 }

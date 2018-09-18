@@ -25,7 +25,9 @@ class LibraryProviderImpl implements ILibraryProvider {
 	}
 	
 	override getLibraries() {
-		return allLibraries.reject[ isStdlib ]
+		return #[];
+		// disable the line below to get platforms back
+//		return allLibraries.reject[ isStdlib ]
 	}
 	
 	override getStandardLibraries() {
@@ -33,7 +35,7 @@ class LibraryProviderImpl implements ILibraryProvider {
 	}
 	
 	protected def isStdlib(URI uri) {
-		return uri.segments().contains("stdlib");
+		return uri.segments().exists[it.contains('stdlib')];
 	}
 	
 }

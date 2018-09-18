@@ -57,9 +57,9 @@ class MitaLinker extends Linker {
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {
-			combinedSystem.replaceProxies(resource, scopeProvider);
+			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
 			
-			val solution = constraintSolver.solve(combinedSystem);
+			val solution = constraintSolver.solve(preparedSystem);
 			if(solution !== null && solution.solution !== null) {
 				
 				solution.solution.substitutions.entrySet.forEach[
@@ -73,9 +73,9 @@ class MitaLinker extends Linker {
 						// we had the object loaded anyways, so we can set the type
 						TypeAdapter.set(origin, type);
 						
-						if(type instanceof BottomType) {
-							producer.addDiagnostic(new DiagnosticMessage(type.message, Severity.ERROR, "bottomType"));
-						}
+//						if(type instanceof BottomType) {
+//							producer.addDiagnostic( new DiagnosticMessage(type.message, Severity.ERROR, "bottomType"));
+//						}
 					}
 				]				
 			}
