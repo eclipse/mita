@@ -197,15 +197,15 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalAddSubtractExpression expr) {
-		if(isLinking) {
-			return TypeVariableAdapter.getProxy(expr, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
-		}
-		
 		val opQID = if(expr.operator === AdditiveOperator.PLUS) {
 			StdlibTypeRegistry.plusFunctionQID;
 		} else {
 			StdlibTypeRegistry.minusFunctionQID;
 		}
+		if(isLinking) {
+			return TypeVariableAdapter.getProxy(expr, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, opQID);
+		}
+		
 		val plusOps = typeRegistry.getModelObjects(expr, opQID, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		val resultType = system.computeConstraintsForFunctionCall(expr, null, StdlibTypeRegistry.plusFunctionQID.lastSegment, #[expr.leftOperand, expr.rightOperand], plusOps.filter(Operation).force);
 		return system.associate(resultType, expr);
