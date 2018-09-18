@@ -61,6 +61,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -124,5 +125,5 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 	override bindIAllContainersState$Provider() {
 		return MitaResourceSetBasedAllContainersState.Provider;
 	}
-		
+
 }

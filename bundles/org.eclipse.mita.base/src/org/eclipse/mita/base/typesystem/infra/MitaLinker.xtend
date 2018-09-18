@@ -81,8 +81,8 @@ class MitaLinker extends Linker {
 		}
 	}
 
-//	override protected isClearAllReferencesRequired(Resource resource) {
-//		false
-//	}
+	override protected clearReferences(EObject obj) {
+		return;
+	}
 	
 }

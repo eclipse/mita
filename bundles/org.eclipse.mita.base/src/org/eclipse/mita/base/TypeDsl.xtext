@@ -112,14 +112,17 @@ SumSubTypeConstructor returns SumSubTypeConstructor:
 ;
 
 Singleton returns Singleton:
+	constructor=SumSubTypeConstructor
 	name=ID
 ;
 AnonymousProductType returns AnonymousProductType: 
 	{AnonymousProductType}
+	constructor=SumSubTypeConstructor
 	name=ID ':' typeSpecifiers+=TypeSpecifier (',' typeSpecifiers+=TypeSpecifier)*
 ;
 NamedProductType returns NamedProductType:
 	{NamedProductType}
+	constructor=SumSubTypeConstructor
 	name=ID ':' '{' parameters+=ProductMember (',' parameters+=ProductMember)* '}'
 ;
 
