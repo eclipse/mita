@@ -147,7 +147,7 @@ class StructuralParameter extends Parameter {
 class TypeConstructor extends VirtualFunction {
 	container transient StructuralType constructedType opposite constructor
 	op String getName() {
-		return constructedType.name + "_cons";
+		return constructedType.name;
 	}
 	op Parameter[] getParameters() {
 		return constructedType.parameters.map[it as Parameter];

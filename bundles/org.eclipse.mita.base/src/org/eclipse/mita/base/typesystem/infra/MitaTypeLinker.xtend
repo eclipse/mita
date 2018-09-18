@@ -11,7 +11,7 @@ import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.nodemodel.INode
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
-class MitaTypeLinker extends Linker {
+class MitaTypeLinker extends MitaLinker {
 	
 	def boolean shouldLink(EClass classifier) {
 		return TypesPackage.eINSTANCE.type.isSuperTypeOf(classifier);

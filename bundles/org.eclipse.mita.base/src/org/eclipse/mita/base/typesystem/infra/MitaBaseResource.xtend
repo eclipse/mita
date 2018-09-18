@@ -1,32 +1,40 @@
 package org.eclipse.mita.base.typesystem.infra
 
+import com.google.inject.Inject
+import com.google.inject.name.Named
+import java.io.IOException
+import java.util.List
+import java.util.Map
+import org.eclipse.emf.ecore.impl.EObjectImpl
+import org.eclipse.emf.ecore.impl.MinimalEObjectImpl
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.parser.IParseResult
 import org.eclipse.xtext.resource.XtextResource
-import com.google.inject.Inject
 import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
-import org.eclipse.xtext.diagnostics.Severity
-import java.util.Map
-import java.io.IOException
-import org.eclipse.emf.ecore.impl.EObjectImpl
-import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.emf.common.util.URI
-import org.eclipse.xtext.util.OnChangeEvictingCache
-import com.google.inject.name.Named
-import org.eclipse.emf.ecore.impl.BasicEObjectImpl
-import org.eclipse.emf.ecore.impl.MinimalEObjectImpl
 
-class MitaBaseResource extends XtextResource {
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import org.eclipse.xtext.linking.lazy.LazyLinkingResource
+
+//class MitaBaseResource extends XtextResource {
+class MitaBaseResource extends LazyLinkingResource {
 	
 	@Inject @Named("typeLinker")
 	protected MitaTypeLinker typeLinker;
 	@Inject @Named("typeDependentLinker")
 	protected MitaTypeLinker typeDependentLinker;
 	
+	@Inject
+	protected ILibraryProvider libraryProvider;
+	
 	@Accessors
 	protected boolean dependenciesLoaded = false;
 		
 	override load(Map<?, ?> options) throws IOException {
 		super.load(options)
+		ensureLibrariesAreLoaded();
 	}
 	
 	override updateInternalState(IParseResult newParseResult) {
@@ -42,12 +50,20 @@ class MitaBaseResource extends XtextResource {
 		addSyntaxErrors();
 		
 		// We trigger linking in the resource set once all required resources are loaded
-		// doLinking();
+		doLinking();
 		// mark everything as not-a-proxy
 	}
 	
 	override public doLinking() {
 		super.doLinking()
+	}
+	
+	protected def List<Resource> ensureLibrariesAreLoaded() {
+		return libraryProvider.libraries
+			.filter[ it.lastSegment.startsWith("stdlib_") ]
+			.filter[ uri | !this.resourceSet.resources.exists[ it.URI == uri ] ]
+			.map[uri | resourceSet.getResource(uri, true)]
+			.force
 	}
 	
 	def doLinkTypes() {

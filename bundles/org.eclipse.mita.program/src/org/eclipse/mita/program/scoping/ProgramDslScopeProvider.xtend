@@ -450,7 +450,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					
 					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref)?.head?.text ?: "";
 					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
-					addFeatureScope(owner, new ImportScope(Collections.singletonList(normalizer), s2, null, TypesPackage.Literals.COMPLEX_TYPE, false));
+					addFeatureScope(owner, new ImportScope(Collections.singletonList(normalizer), s2, null, null, false));
 					
 				}
 			}) ?: superScope;
@@ -645,7 +645,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	override IScope getScope(EObject context, EReference reference) {
 		// Performance improvement: hard-code well traveled routes
 		
-		val scope = cache.get(context -> reference, context.eResource, [if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
+		val scope = cache.get(context -> reference, context.eResource, [
+			if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE &&
 				context instanceof FeatureCall) {

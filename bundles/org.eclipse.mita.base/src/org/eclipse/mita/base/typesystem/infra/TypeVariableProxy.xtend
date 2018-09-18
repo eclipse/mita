@@ -2,6 +2,7 @@ package org.eclipse.mita.base.typesystem.infra
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
@@ -37,8 +38,7 @@ class TypeVariableProxy extends TypeVariable {
 		val replacementObject = scopeElement?.EObjectOrProxy
 		
 		if(replacementObject === null) {
-			// TODO: better handling when replacementObject is null
-			throw new NullPointerException('''Scope is empty for «reference.EContainingClass.name».«reference.name» on «origin»''')
+			return new BottomType(this.origin, '''Scope doesn't contain «targetQID» for «reference.EContainingClass.name».«reference.name» on «origin»''');
 		}
 		
 		return TypeVariableAdapter.get(replacementObject);

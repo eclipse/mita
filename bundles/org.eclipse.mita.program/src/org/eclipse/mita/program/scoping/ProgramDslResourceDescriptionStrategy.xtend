@@ -17,6 +17,9 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.program.ProgramPackage
+import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.Exportable
 
 class ProgramDslResourceDescriptionStrategy extends BaseResourceDescriptionStrategy {
 	public static final String OPERATION_PARAM_TYPES = "OPERATION_PARAM_TYPES"
@@ -29,6 +32,12 @@ class ProgramDslResourceDescriptionStrategy extends BaseResourceDescriptionStrat
 	override void defineUserData(EObject eObject, Map<String, String> userData) {
 		if (eObject instanceof Operation) {
 			userData.put(OPERATION_PARAM_TYPES, Arrays.toString(getOperationParameterTypes((eObject as Operation))))
+		}
+		if(eObject instanceof TypeConstructor) {
+			val exportableParent = EcoreUtil2.getContainerOfType(eObject, Exportable);
+			if(exportableParent !== null) {
+				userData.put(EXPORTED, Boolean.toString(exportableParent.exported));
+			}
 		}
 		super.defineUserData(eObject, userData)
 	}
