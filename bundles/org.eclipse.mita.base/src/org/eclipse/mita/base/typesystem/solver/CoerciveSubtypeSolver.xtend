@@ -13,7 +13,6 @@ import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.CoSumType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
@@ -235,9 +234,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, SumType sub, SumType top) {
 		return system._doSimplify(substitution, constraint, sub as TypeConstructorType, top as TypeConstructorType);
 	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, CoSumType sub, CoSumType top) {
-		return system._doSimplify(substitution, constraint, sub as TypeConstructorType, top as TypeConstructorType);
-	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, SumType top) {
 		val subTypes = typeRegistry.getSubTypes(top).toSet;
@@ -281,46 +277,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» is not a subtype of «top»'''))
 	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, CoSumType sub, TypeConstructorType top) {
-		val subTypes = typeRegistry.getSubTypes(top).toSet;
-		val similarSubTypes = subTypes.filter[sub.class == it.class];
-		val subTypesWithSameName = subTypes.filter[sub.name == it.name];
-		if(subTypes.contains(sub)) {
-			return SimplificationResult.success(system, substitution);
-		}
-		val topTypes = typeRegistry.getSuperTypes(system, sub);
-		val similarTopTypes = topTypes.filter[it.class == top.class];
-		val superTypesWithSameName = topTypes.filter[it.name == top.name];
-		if(topTypes.contains(top)) {
-			return SimplificationResult.success(system, substitution);
-		} 
-		
-		if(similarSubTypes.size == 1) {
-			return system.doSimplify(substitution, constraint, sub, similarSubTypes.head);
-		}
-		if(similarTopTypes.size == 1) {
-			return system.doSimplify(substitution, constraint, similarTopTypes.head, top);
-		}
-		
-		if(similarSubTypes.size > 1) {
-			return similarSubTypes.map[system.doSimplify(substitution, constraint, sub, it)].reduce[p1, p2| p1.or(p2)]
-		}
-		if(similarTopTypes.size > 1) {
-			return similarTopTypes.map[system.doSimplify(substitution, constraint, it, top)].reduce[p1, p2| p1.or(p2)]
-		}
-		
-		if(subTypesWithSameName.size == 1) {
-			return system.doSimplify(substitution, constraint, sub, subTypesWithSameName.head);
-		}
-		if(superTypesWithSameName.size == 1) {
-			return system._doSimplify(substitution, constraint, superTypesWithSameName.head, top);
-		}
-	
-	
-		//TODO: handle multiple super types with same name
-		//already handled: superTypesWithSameName.empty --> failure
-		return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» is not a subtype of «top»'''))
-	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
 		val typeArgs1 = sub.typeArguments.force;

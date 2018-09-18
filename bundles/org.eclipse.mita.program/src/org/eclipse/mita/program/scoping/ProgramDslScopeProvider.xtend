@@ -645,7 +645,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	override IScope getScope(EObject context, EReference reference) {
 		// Performance improvement: hard-code well traveled routes
 		
-		val scope = cache.get(context -> reference, context.eResource, [
+		val scope = //cache.get(context -> reference, context.eResource, [
 			if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE &&
@@ -662,7 +662,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 //				println(methodName + ' -> ' + context.eClass.name);
 				super.getScope(context, reference);
 			}
-		]);
+//		]);
 		return TypesGlobalScopeProvider.filterExportable(context.eResource, reference, scope);
 	}
 

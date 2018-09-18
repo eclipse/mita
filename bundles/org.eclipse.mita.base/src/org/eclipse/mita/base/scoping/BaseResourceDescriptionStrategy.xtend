@@ -35,6 +35,7 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -51,6 +52,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	protected SerializationAdapter serializationAdapter
 	
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
+		userData.put("TypeVariable", serializationAdapter.toJSON(TypeVariableAdapter.get(eObject)));
 		if (eObject instanceof TypedElement) {
 			userData.put(TYPE, getTypeSpecifierType(((eObject as TypedElement)).getTypeSpecifier()))
 		}
@@ -71,7 +73,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			val String json = serializationAdapter.toJSON(constraints)
 			userData.put(CONSTRAINTS, json)
 			
-			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.fromJSON(json, null))
+			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.deserializeConstraintSystemFromJSON(json, null))
 			if (json != constraintsBackOut) {
 				throw new RuntimeException("Constraint serialization was not invariant")
 			}

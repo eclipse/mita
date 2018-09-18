@@ -2,11 +2,11 @@ package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.xtext.scoping.IScopeProvider
 
 @EqualsHashCode
 @Accessors
@@ -62,8 +62,8 @@ class FunctionType extends TypeConstructorType {
 	override replace(Substitution sub) {
 		new FunctionType(origin, name, #[], superTypes, this.from.replace(sub), this.to.replace(sub));
 	}
-	override replaceProxies(IScopeProvider scopeProvider) {
-		return new FunctionType(origin, name, from.replaceProxies(scopeProvider), to.replaceProxies(scopeProvider));
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return new FunctionType(origin, name, from.replaceProxies(resolve), to.replaceProxies(resolve));
 	}
 	
 }

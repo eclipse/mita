@@ -1,11 +1,11 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.xtext.scoping.IScopeProvider
 
 @FinalFieldsConstructor 
 @EqualsHashCode
@@ -37,7 +37,7 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	

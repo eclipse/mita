@@ -3,15 +3,15 @@ package org.eclipse.mita.base.typesystem.types
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
-import org.eclipse.xtext.scoping.IScopeProvider
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 @FinalFieldsConstructor
 @EqualsHashCode
@@ -60,8 +60,8 @@ class TypeConstructorType extends AbstractType {
 		val ts = new TypeScheme(null, freeVars.toList, this);
 		return ts.instantiate;
 	}
-	
-	override replaceProxies(IScopeProvider scopeProvider) {
-		return new TypeConstructorType(origin, name, typeArguments.map[it.replaceProxies(scopeProvider)], superTypes);
+		
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return new TypeConstructorType(origin, name, typeArguments.map[it.replaceProxies(resolve)], superTypes);
 	}	
 }

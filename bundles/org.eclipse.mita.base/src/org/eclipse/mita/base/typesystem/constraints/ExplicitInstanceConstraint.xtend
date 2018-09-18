@@ -1,12 +1,12 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.xtext.scoping.IScopeProvider
 
 /**
  * Corresponds to instance relationship 𝜏 ⪯ σ as defined in
@@ -61,8 +61,8 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		return new ExplicitInstanceConstraint(instance.replace(sub), typeScheme.replace(sub));
 	}
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
-		return new ExplicitInstanceConstraint(instance.replaceProxies(scopeProvider), typeScheme.replaceProxies(scopeProvider));
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return new ExplicitInstanceConstraint(instance.replaceProxies(resolve), typeScheme.replaceProxies(resolve));
 	}
 	
 }

@@ -7,16 +7,19 @@ import java.util.Collections
 import java.util.HashMap
 import java.util.List
 import java.util.Map
-import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
+import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
@@ -27,6 +30,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 @Accessors
 class ConstraintSystem {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider; 
+	@Inject protected SerializationAdapter serializationAdapter;
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
 
@@ -215,9 +219,36 @@ class ConstraintSystem {
 		return this;
 	}
 	
-	def ConstraintSystem replaceProxies(IScopeProvider scopeProvider) {
+	def ConstraintSystem replaceProxies(Resource resource, IScopeProvider scopeProvider) {
 		val result = constraintSystemProvider.get();
-		result.constraints += constraints.map[ it.replaceProxies(scopeProvider) ].force;
+		result.constraints += constraints.map[ it.replaceProxies([tvp | 
+			if(tvp.origin === null) {
+				return new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''');
+			}
+	
+			if(tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
+				return TypeVariableAdapter.get(tvp.origin.eGet(tvp.reference) as EObject);
+			}
+	
+			val scope = scopeProvider.getScope(tvp.origin, tvp.reference);
+			val scopeElement = scope.getSingleElement(tvp.targetQID);
+			val cachedTypeSerialization = scopeElement?.getUserData("TypeVariable");
+			if(cachedTypeSerialization !== null) {
+				val cachedType = serializationAdapter.deserializeTypeFromJSON(cachedTypeSerialization, [ resource.resourceSet.getEObject(it, false) ])
+				return cachedType;
+			}
+			
+			val replacementObject = scopeElement?.EObjectOrProxy
+			
+			if(replacementObject === null) {
+				return new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''');
+			}
+			if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference)) {
+				tvp.origin.eSet(tvp.reference, replacementObject);
+			}
+			
+			return TypeVariableAdapter.get(replacementObject);
+		]) ].force;
 		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies(scopeProvider) ]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;

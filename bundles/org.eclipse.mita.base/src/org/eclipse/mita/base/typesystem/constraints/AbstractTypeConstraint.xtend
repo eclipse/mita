@@ -1,10 +1,10 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.xtext.scoping.IScopeProvider
 
 abstract class AbstractTypeConstraint {
 	
@@ -23,6 +23,6 @@ abstract class AbstractTypeConstraint {
 	
 	abstract def String toGraphviz();
 	
-	abstract def AbstractTypeConstraint replaceProxies(IScopeProvider scopeProvider);
+	abstract def AbstractTypeConstraint replaceProxies((TypeVariableProxy) => AbstractType resolve);
 	
 }

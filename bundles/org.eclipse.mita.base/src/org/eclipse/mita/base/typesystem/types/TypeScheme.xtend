@@ -3,10 +3,10 @@ package org.eclipse.mita.base.typesystem.types
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.xtext.scoping.IScopeProvider
 
 @EqualsHashCode
 @Accessors
@@ -63,7 +63,7 @@ class TypeScheme extends AbstractType {
 		}
 	}
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
-		return new TypeScheme(origin, vars, on.replaceProxies(scopeProvider));
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return new TypeScheme(origin, vars, on.replaceProxies(resolve));
 	}	
 }

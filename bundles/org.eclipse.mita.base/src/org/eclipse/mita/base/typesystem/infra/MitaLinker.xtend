@@ -53,14 +53,15 @@ class MitaLinker extends Linker {
 			.flatMap[ it.exportedObjects ]
 			.map[ it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filterNull
-			.map[ constraintSerializationAdapter.fromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]);
+			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]);
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {
-			combinedSystem.replaceProxies(scopeProvider);
+			combinedSystem.replaceProxies(resource, scopeProvider);
 			
 			val solution = constraintSolver.solve(combinedSystem);
 			if(solution !== null && solution.solution !== null) {
+				
 				solution.solution.substitutions.entrySet.forEach[
 					var origin = it.key.origin;
 					if(origin.eIsProxy) {

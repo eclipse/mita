@@ -16,7 +16,6 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.CoSumType
 import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
@@ -160,9 +159,6 @@ class StdlibTypeRegistry {
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, AbstractType t) {
 		return #[t];
-	}
-	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, CoSumType t) {
-		return #[t] + t.typeArguments.flatMap[s.getSuperTypes(it)].force;
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, FloatingType t) {
 		return getFloatingTypes(t.origin).filter[t.isSubType(it)].force

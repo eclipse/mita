@@ -2,13 +2,13 @@ package org.eclipse.mita.base.typesystem.infra
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.xtext.scoping.IScopeProvider
 
 @EqualsHashCode
 @Accessors
@@ -32,26 +32,7 @@ class TypeVariableProxy extends TypeVariable {
 		this.targetQID = qualifiedName;
 	}
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
-		if(origin === null) {
-			return new BottomType(origin, '''Origin is empty for «name»''');
-		}
-
-		if(origin.eClass.EReferences.contains(reference) && origin.eIsSet(reference)) {
-			return TypeVariableAdapter.get(origin.eGet(reference) as EObject);
-		}
-
-		val scope = scopeProvider.getScope(origin, reference);
-		val scopeElement = scope.getSingleElement(targetQID);
-		val replacementObject = scopeElement?.EObjectOrProxy
-		
-		if(replacementObject === null) {
-			return new BottomType(this.origin, '''Scope doesn't contain «targetQID» for «reference.EContainingClass.name».«reference.name» on «origin»''');
-		}
-		if(origin.eClass.EReferences.contains(reference) && !origin.eIsSet(reference)) {
-			origin.eSet(reference, replacementObject);
-		}
-		
-		return TypeVariableAdapter.get(replacementObject);
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return resolve.apply(this);
 	}
 }

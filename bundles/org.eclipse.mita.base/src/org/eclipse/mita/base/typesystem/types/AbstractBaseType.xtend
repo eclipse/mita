@@ -1,8 +1,7 @@
 package org.eclipse.mita.base.typesystem.types
 
-import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 
 /**
  * Base types are types without type variables (e.g. atomic types or integers)
@@ -16,7 +15,7 @@ abstract class AbstractBaseType extends AbstractType {
 		return "";
 	}
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
 		return this;
 	}	
 }

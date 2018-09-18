@@ -1,13 +1,12 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.mita.base.typesystem.types.AbstractBaseType
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.xtext.scoping.IScopeProvider
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -62,8 +61,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return new SubtypeConstraint(subType.replace(sub), superType.replace(sub));
 	}
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
-		return new SubtypeConstraint(subType.replaceProxies(scopeProvider), superType.replaceProxies(scopeProvider));
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return new SubtypeConstraint(subType.replaceProxies(resolve), superType.replaceProxies(resolve));
 	}
 	
 }

@@ -1,11 +1,11 @@
 package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
@@ -39,7 +39,7 @@ class SumType extends TypeConstructorType {
 		return new SumType(origin, name, this.typeArguments.map[ it.replace(sub) ].force, superTypes);
 	}
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
-		return new SumType(origin, name, typeArguments.map[ it.replaceProxies(scopeProvider) ].force, superTypes);
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return new SumType(origin, name, typeArguments.map[ it.replaceProxies(resolve) ].force, superTypes);
 	}
 }

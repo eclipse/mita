@@ -6,6 +6,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.solver.Substitution
@@ -15,7 +16,6 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.xtext.scoping.IScopeProvider
 
 @FinalFieldsConstructor
 @Accessors
@@ -43,13 +43,13 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		return new FunctionTypeClassConstraint(newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
 	}
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
-		return new FunctionTypeClassConstraint(typ.replaceProxies(scopeProvider), instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
+	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return new FunctionTypeClassConstraint(typ.replaceProxies(resolve), instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
 	}
 	
 	override onResolve(ConstraintSystem cs, Substitution sub, Operation op, AbstractType at) {
 		if(functionReference !== null) {
-			functionCall.eSet(functionReference, op);
+			//functionCall.eSet(functionReference, op);
 		}
 		val nc = constraintSystemProvider.get(); 
 		// the returned type should be smaller than the expected type so it can be assigned

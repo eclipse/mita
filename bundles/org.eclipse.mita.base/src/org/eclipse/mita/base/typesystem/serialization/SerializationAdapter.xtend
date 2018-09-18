@@ -33,7 +33,6 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.CoSumType
 import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
@@ -53,13 +52,21 @@ class SerializationAdapter {
 	
 	protected (URI) => EObject objectResolver;
 		
-	def fromJSON(String json, (URI)=>EObject objectResolver) {
+	def deserializeConstraintSystemFromJSON(String json, (URI)=>EObject objectResolver) {
 		this.objectResolver = objectResolver ?: [URI uri| this.toEObjectProxy(uri) ];
 		return new GsonBuilder()
     		.registerTypeHierarchyAdapter(SerializedObject, new MitaJsonSerializer())
     		.create()
     		.fromJson(json, SerializedObject)
     		.fromValueObject() as ConstraintSystem;
+	}
+	def deserializeTypeFromJSON(String json, (URI)=>EObject objectResolver) {
+		this.objectResolver = objectResolver ?: [URI uri| this.toEObjectProxy(uri) ];
+		return new GsonBuilder()
+    		.registerTypeHierarchyAdapter(SerializedObject, new MitaJsonSerializer())
+    		.create()
+    		.fromJson(json, SerializedObject)
+    		.fromValueObject() as AbstractType;
 	}
 	protected dispatch def EReference fromValueObject(SerializedEReference obj) {
 		val registry = EPackage.Registry.INSTANCE;
@@ -132,9 +139,6 @@ class SerializationAdapter {
 		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
 	}
 	
-	protected dispatch def AbstractType fromValueObject(SerializedCoSumType obj) {
-		return new CoSumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
-	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
 		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
@@ -188,6 +192,12 @@ class SerializationAdapter {
 		val gson = new GsonBuilder()
     		.create();
 		return gson.toJson(system.toValueObject());
+	}
+	
+	def toJSON(AbstractType type) {
+		val gson = new GsonBuilder()
+    		.create();
+		return gson.toJson(type.toValueObject());
 	}
 	
 	
@@ -332,10 +342,7 @@ class SerializationAdapter {
 		new SerializedProductType => [ fill(it, obj) ]
 	}
 	
-	protected dispatch def SerializedObject toValueObject(CoSumType obj) {
-		new SerializedCoSumType => [ fill(it, obj) ]
-	}
-	
+
 	protected dispatch def SerializedObject toValueObject(SumType obj) {
 		new SerializedSumType => [ fill(it, obj) ]
 	}
