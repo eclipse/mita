@@ -187,6 +187,9 @@ class SumSubTypeConstructor extends TypeConstructor {
 				kind.kindOf = this.eContainer.eContainer as SumType;
 			]
 		}
+		if(sumTypeKind.kindOf === null) {
+			sumTypeKind.kindOf = this.eContainer.eContainer as SumType;
+		}
 		if(sumTypeParameter === null) {
 			sumTypeParameter = TypesFactory.eINSTANCE.createParameter => [ p | 
 				p.name = "superType";
@@ -194,6 +197,9 @@ class SumSubTypeConstructor extends TypeConstructor {
 					ts.^type = sumTypeKind;
 				]
 			]
+		}
+		if((sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === null) {
+			(sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === sumTypeKind;
 		}
 		return (#[sumTypeParameter] + constructedType.parameters).toEList;
 	} 

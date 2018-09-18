@@ -72,8 +72,8 @@ class MitaLinker extends Linker {
 		super.ensureLinked(obj, producer)
 	}
 
-//	override protected isClearAllReferencesRequired(Resource resource) {
-//		false
-//	}
+	override protected clearReferences(EObject obj) {
+		return;
+	}
 	
 }

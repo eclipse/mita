@@ -33,12 +33,18 @@ class TypeVariableProxy extends TypeVariable {
 	}
 	
 	override replaceProxies(IScopeProvider scopeProvider) {
+		if(origin.eClass.EReferences.contains(reference) && origin.eIsSet(reference)) {
+			return TypeVariableAdapter.get(origin.eGet(reference) as EObject);
+		}
 		val scope = scopeProvider.getScope(origin, reference);
 		val scopeElement = scope.getSingleElement(targetQID);
 		val replacementObject = scopeElement?.EObjectOrProxy
 		
 		if(replacementObject === null) {
 			return new BottomType(this.origin, '''Scope doesn't contain «targetQID» for «reference.EContainingClass.name».«reference.name» on «origin»''');
+		}
+		if(origin.eClass.EReferences.contains(reference) && !origin.eIsSet(reference)) {
+			origin.eSet(reference, replacementObject);
 		}
 		
 		return TypeVariableAdapter.get(replacementObject);
