@@ -60,6 +60,8 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
+import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 
 class BaseConstraintFactory implements IConstraintFactory {
@@ -189,10 +191,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val realType = system.computeConstraints(expr.operand);
 		val castType = system.computeConstraints(expr.type);
 		// can only cast from and to numeric types
-		// TODO: check this with constraints, either one:
-		// - subtype of common numerical type, or make u64 <: f64
-		// - add constraint "instanceOf(t, NumericalType)" that checks if (in Java) `t instanceof NumericalType
-		//	-> will only be checked once t contains no more free vars, like subtype constraints 
+		system.addConstraint(new JavaClassInstanceConstraint(realType, NumericType));
+		system.addConstraint(new JavaClassInstanceConstraint(castType, NumericType));
 		return system.associate(castType, expr);
 	}
 
@@ -331,11 +331,17 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalUnaryExpression expr) {
 		val operand = expr.operand;
-		if(operand instanceof IntLiteral) {
-			if(expr.operator == UnaryOperator.NEGATIVE) {
-				return system.associate(computeConstraints(system, operand, -operand.value), expr);
+		if(operand instanceof PrimitiveValueExpression) {
+			val value = operand.value;
+			if(value instanceof IntLiteral) {
+				if(expr.operator == UnaryOperator.NEGATIVE) {
+					val type = computeConstraints(system, operand, -value.value);
+					system.associate(type, value);
+					system.associate(type, operand);
+					return system.associate(computeConstraints(system, operand, -value.value), expr);
+				}
+				println('''BCF: Unhandled operator: «expr.operator»''')	
 			}
-			println('''BCF: Unhandled operator: «expr.operator»''')
 		}
 		println('''BCF: Unhandled operand: «operand.eClass.name»''')
 		return system.associate(system.computeConstraints(operand), expr);

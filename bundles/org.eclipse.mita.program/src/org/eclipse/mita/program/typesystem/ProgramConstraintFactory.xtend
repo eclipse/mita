@@ -202,7 +202,6 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return null;
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConfigurationItemValue configItemValue) {
-		// assumption: Linking worked, so item is not null. Otherwise we need to do the song and dance of ERefExpr.
 		val leftSide = resolveReferenceToSingleAndGetType(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item);
 		val rightSide = system.computeConstraints(configItemValue.value);
 		system.addConstraint(new SubtypeConstraint(rightSide, leftSide));

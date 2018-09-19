@@ -7,6 +7,7 @@ import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
@@ -133,7 +134,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		println(constraint.instance);
 		return SimplificationResult.success(system.plus(new EqualityConstraint(constraint.instance, instance.value, "CSS:133")), substitution);
 	}
-	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, JavaClassInstanceConstraint constraint) {
+		if(constraint.javaClass.isInstance(constraint.what)) {
+			return SimplificationResult.success(system, substitution);
+		}
+		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''«constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
+	}
 //	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ExplicitInstanceConstraint constraint) {
 //		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ExplicitInstanceConstraint not implemented for «constraint»''')))
 //	}

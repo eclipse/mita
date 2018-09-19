@@ -168,6 +168,15 @@ class SerializedEqualityConstraint extends SerializedAbstractTypeConstraint {
 	public SerializedAbstractType right;
 }
 
+class SerializedJavaClassInstanceConstraint extends SerializedAbstractTypeConstraint {
+	new() {
+		_type = "SerializedJavaClassInstanceConstraint";
+	}
+	
+	public SerializedAbstractType what;
+	public String javaClass;
+}
+
 class SerializedExplicitInstanceConstraint extends SerializedAbstractTypeConstraint {
     new() {
         _type = "SerializedExplicitInstanceConstraint";

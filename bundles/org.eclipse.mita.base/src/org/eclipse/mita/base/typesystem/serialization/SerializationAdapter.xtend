@@ -44,6 +44,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 
 class SerializationAdapter {
 	
@@ -86,6 +87,10 @@ class SerializationAdapter {
 			.toMap([ it.key ], [ it.value ])
 		);
 		return result;
+	}
+	
+	protected dispatch def JavaClassInstanceConstraint fromValueObject(SerializedJavaClassInstanceConstraint obj) {
+		return new JavaClassInstanceConstraint(obj.what.fromValueObject() as AbstractType, Class.forName(obj.javaClass));
 	}
 	
 	protected dispatch def EqualityConstraint fromValueObject(SerializedEqualityConstraint obj) {
@@ -227,6 +232,13 @@ class SerializationAdapter {
 		]
 	}
 	
+	protected dispatch def SerializedObject toValueObject(JavaClassInstanceConstraint obj) {
+		new SerializedJavaClassInstanceConstraint => [
+			what = obj.what.toValueObject as SerializedAbstractType;
+			javaClass = obj.javaClass.name;
+		]
+	}
+	
 	protected dispatch def SerializedObject toValueObject(ExplicitInstanceConstraint obj) {
 		new SerializedExplicitInstanceConstraint => [
 			instance = obj.instance.toValueObject as SerializedAbstractType
@@ -250,16 +262,7 @@ class SerializationAdapter {
 			instanceOfQN = obj.instanceOfQN.toString()
 		]
 	}
-	
-//	protected dispatch def SerializedObject toValueObject(TypeConstructorType obj) {
-//		new SerializedTypeConstructorType => [
-//			name = obj.name;
-//			origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString();
-//			typeArguments = obj.typeArguments.map[it.toValueObject as SerializedAbstractType].force;
-//			// TODO: get these translated: superTypes = 
-//		]
-//	}
-	
+		
 	protected dispatch def SerializedObject toValueObject(TypeClass obj) {
 		new SerializedTypeClass => [
 			instances = obj.instances.entrySet

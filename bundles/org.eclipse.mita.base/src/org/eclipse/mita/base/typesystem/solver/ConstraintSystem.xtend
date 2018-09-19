@@ -26,6 +26,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 
 @Accessors
@@ -175,6 +176,12 @@ class ConstraintSystem {
 			(c instanceof ExplicitInstanceConstraint)
 			&& (
 				(c as ExplicitInstanceConstraint).typeScheme instanceof TypeVariable
+			)
+		)
+		|| (
+			(c instanceof JavaClassInstanceConstraint)
+			&& (
+				(c as JavaClassInstanceConstraint).what instanceof TypeVariable
 			)
 		)
 	}
