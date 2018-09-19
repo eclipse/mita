@@ -88,6 +88,7 @@ class SerializationAdapter {
 			.map[ it.key.toQualifiedName -> it.value.fromValueObject() as TypeClass ]
 			.toMap([ it.key ], [ it.value ])
 		);
+		result.constraintSystemProvider = constraintSystemProvider;
 		return result;
 	}
 	
@@ -118,7 +119,14 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def TypeClassConstraint fromValueObject(SerializedFunctionTypeClassConstraint obj) {
-		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, obj.functionCall.resolveEObject, obj.functionReference?.fromValueObject as EReference, obj.returnTypeTV.fromValueObject as TypeVariable, null);
+		return new FunctionTypeClassConstraint(
+			obj.type.fromValueObject() as AbstractType,
+			obj.instanceOfQN.toQualifiedName, 
+			obj.functionCall.resolveEObject, 
+			obj.functionReference?.fromValueObject as EReference, 
+			obj.returnTypeTV.fromValueObject as TypeVariable, 
+			constraintSystemProvider
+		);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {

@@ -143,49 +143,52 @@ class StdlibTypeRegistry {
 	}
 	
 	def Set<AbstractType> getSuperTypes(ConstraintSystem s, AbstractType t) {
+		return getSuperTypes(s, t, null);
+	}
+	def Set<AbstractType> getSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
 		val idxs = s.explicitSubtypeRelations.reverseMap.get(t) ?: #[];
 		val explicitSuperTypes = #[t] + idxs.flatMap[s.explicitSubtypeRelations.getSuccessors(it)];
-		val ta_t = getOptionalType(t.origin).instantiate();
+		val ta_t = getOptionalType(typeResolveOrigin ?: t.origin).instantiate();
 		val ta = ta_t.key.head;
 		val optionalType = ta_t.value
-		return explicitSuperTypes.flatMap[s.doGetSuperTypes(it)].flatMap[#[it, optionalType.replace(ta, it)]].toSet;
+		return explicitSuperTypes.flatMap[s.doGetSuperTypes(it, typeResolveOrigin ?: it.origin)].flatMap[#[it, optionalType.replace(ta, it)]].toSet;
 	}
 	
-	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, IntegerType t) {
-		return getIntegerTypes(t.origin).filter[t.isSubType(it)].force
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, IntegerType t, EObject typeResolveOrigin) {
+		return getIntegerTypes(typeResolveOrigin).filter[t.isSubType(it)].force
 	}
-	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, TypeConstructorType t) {
-		return  #[t] + t.superTypes.flatMap[s.getSuperTypes(it)].force;
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, TypeConstructorType t, EObject typeResolveOrigin) {
+		return  #[t] + t.superTypes.flatMap[s.getSuperTypes(it, typeResolveOrigin)].force;
 	}
-	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, AbstractType t) {
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
 		return #[t];
 	}
-	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, FloatingType t) {
-		return getFloatingTypes(t.origin).filter[t.isSubType(it)].force
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, FloatingType t, EObject typeResolveOrigin) {
+		return getFloatingTypes(typeResolveOrigin).filter[t.isSubType(it)].force
 	}
-	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Object t) {
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Object t, EObject typeResolveOrigin) {
 		return #[];
 	}
-	dispatch def Iterable<AbstractType> getSubTypes(IntegerType t) {
-		return getIntegerTypes(t.origin).filter[it.isSubType(t)].force
+	dispatch def Iterable<AbstractType> getSubTypes(IntegerType t, EObject typeResolveOrigin) {
+		return getIntegerTypes(typeResolveOrigin).filter[it.isSubType(t)].force
 	}
-	dispatch def Iterable<AbstractType> getSubTypes(FloatingType t) {
-		return getFloatingTypes(t.origin).filter[it.isSubType(t)].force
+	dispatch def Iterable<AbstractType> getSubTypes(FloatingType t, EObject typeResolveOrigin) {
+		return getFloatingTypes(typeResolveOrigin).filter[it.isSubType(t)].force
 	}
-	dispatch def Iterable<AbstractType> getSubTypes(SumType t) {
-		return #[t] + t.typeArguments.flatMap[getSubTypes].force;
+	dispatch def Iterable<AbstractType> getSubTypes(SumType t, EObject typeResolveOrigin) {
+		return #[t] + t.typeArguments.flatMap[getSubTypes(it, typeResolveOrigin)].force;
 	}
-	dispatch def Iterable<AbstractType> getSubTypes(TypeConstructorType t) {
+	dispatch def Iterable<AbstractType> getSubTypes(TypeConstructorType t, EObject typeResolveOrigin) {
 		return (#[t, new BottomType(null, "")] + if(t.name == "optional") {
-			t.typeArguments.head.subTypes;
+			getSubTypes(t.typeArguments.head, typeResolveOrigin);
 		} else {
 			#[];
 		}).force;
 	}
-	dispatch def Iterable<AbstractType> getSubTypes(AbstractType t) {
+	dispatch def Iterable<AbstractType> getSubTypes(AbstractType t, EObject typeResolveOrigin) {
 		return #[t, new BottomType(null, "")];
 	}
-	dispatch def getSubTypes(Object t) {
+	dispatch def getSubTypes(Object t, EObject typeResolveOrigin) {
 		return #[];
 	}
 	
@@ -261,7 +264,7 @@ class StdlibTypeRegistry {
 		return subtypeMsgFromBoolean(sub.isSubType(top.kindOf), sub, top);
 	}
 	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, AbstractType top) {
-		return (top.subTypes.toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
+		return (top.getSubTypes(top.origin).toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
 	}
 	
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {

@@ -2,6 +2,7 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
@@ -14,7 +15,6 @@ import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
@@ -45,7 +45,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	@Inject
 	protected StdlibTypeRegistry typeRegistry;
 	
-	override ConstraintSolution solve(ConstraintSystem system) {
+	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
 		var currentSystem = system;
 		var currentSubstitution = Substitution.EMPTY;
 		var ConstraintSolution result = null;
@@ -64,7 +64,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val simplifiedSubst = simplification.substitution;
 			println(simplification);
 			
-			val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst);
+			val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst, typeResolutionOrigin);
 			if(!solution.issues.empty) {
 				return new ConstraintSolution(system, solution.solution, solution.issues);
 			}
@@ -75,8 +75,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return result;
 	}
 	
-	protected def ConstraintSolution solveSubtypeConstraints(ConstraintSystem system, Substitution substitution) {
-		val constraintGraphAndSubst = system.buildConstraintGraph(substitution);
+	protected def ConstraintSolution solveSubtypeConstraints(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
+		val constraintGraphAndSubst = system.buildConstraintGraph(substitution, typeResolutionOrigin);
 		if(!constraintGraphAndSubst.value.valid) {
 			val failure = constraintGraphAndSubst.value;
 			return new ConstraintSolution(system, failure.substitution, #[failure.issue]);
@@ -248,7 +248,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, SubtypeConstraint constraint, TypeConstructorType sub, SumType top) {
-		val subTypes = typeRegistry.getSubTypes(top).toSet;
+		val subTypes = typeRegistry.getSubTypes(top, top.origin).toSet;
 		val similarSubTypes = subTypes.filter[sub.class == it.class];
 		val subTypesWithSameName = subTypes.filter[sub.name == it.name];
 		if(subTypes.contains(sub)) {
@@ -354,8 +354,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.SubtypeConstraint not implemented for «sub.class.simpleName» and «top.class.simpleName»''')))
 	}
 		
-	protected def Pair<ConstraintGraph, UnificationResult> buildConstraintGraph(ConstraintSystem system, Substitution substitution) {
-		val gWithCycles = constraintGraphProvider.get(system);
+	protected def Pair<ConstraintGraph, UnificationResult> buildConstraintGraph(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
+		val gWithCycles = constraintGraphProvider.get(system, typeResolutionOrigin);
 		println(gWithCycles.toGraphviz);
 		val finalState = new Object() {
 			var Substitution s = substitution;
@@ -459,11 +459,11 @@ class ConstraintGraphProvider implements Provider<ConstraintGraph> {
 	Provider<ConstraintSystem> constraintSystemProvider;
 	
 	override get() {
-		return new ConstraintGraph(constraintSystemProvider.get(), typeRegistry);
+		return new ConstraintGraph(constraintSystemProvider.get(), typeRegistry, null);
 	}
 	
-	def get(ConstraintSystem system) {
-		return new ConstraintGraph(system, typeRegistry);
+	def get(ConstraintSystem system, EObject typeResolutionOrigin) {
+		return new ConstraintGraph(system, typeRegistry, typeResolutionOrigin);
 	}
 }
 
@@ -471,10 +471,12 @@ class ConstraintGraph extends Graph<AbstractType> {
 	
 	protected val StdlibTypeRegistry typeRegistry;
 	protected val ConstraintSystem constraintSystem;
+	protected val EObject typeResolutionOrigin;
 	
-	new(ConstraintSystem system, StdlibTypeRegistry typeRegistry) {
+	new(ConstraintSystem system, StdlibTypeRegistry typeRegistry, EObject typeResolutionOrigin) {
 		this.typeRegistry = typeRegistry;
 		this.constraintSystem = system;
+		this.typeResolutionOrigin = typeResolutionOrigin;
 		system.constraints
 			.filter(SubtypeConstraint)
 			.forEach[ addEdge(it.subType, it.superType) ];
@@ -492,7 +494,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	
 	def <T extends AbstractType> getSupremum(Iterable<T> ts) {
 		val tsCut = ts.map[
-			typeRegistry.getSuperTypes(constraintSystem, it).toSet
+			typeRegistry.getSuperTypes(constraintSystem, it, typeResolutionOrigin).toSet
 		].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
 		return tsCut.findFirst[candidate | 
 			tsCut.forall[u | 
@@ -502,7 +504,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	}
 	
 	def <T extends AbstractType> getInfimum(Iterable<T> ts) {
-		val tsCut = ts.map[typeRegistry.getSubTypes(it).toSet].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet;
+		val tsCut = ts.map[typeRegistry.getSubTypes(it, typeResolutionOrigin).toSet].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet;
 		return tsCut.findFirst[candidate | tsCut.forall[l | typeRegistry.isSubType(l, candidate)]];
 	}
 	

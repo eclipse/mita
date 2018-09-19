@@ -136,7 +136,7 @@ class MitaResourceSet extends XtextResourceSet {
 		].force;
 		
 		val allConstraints = ConstraintSystem.combine(constraints);
-		latestSolution = constraintSolver.solve(allConstraints);
+		latestSolution = constraintSolver.solve(allConstraints, null);
 		isComputingTypes = false;
 	}
 	

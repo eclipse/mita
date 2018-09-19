@@ -21,10 +21,13 @@ class Substitution {
 		if(content.containsKey(variable)) {
 			println('''overriding «variable» ≔ «content.get(variable)» with «type»''')
 		}
-		if(type.freeVars.exists[content.containsKey(it)]) {
-			throw new Exception("did not replace correctly")
-		}
-		this.content.put(variable, type);
+		this.content.put(variable, type.replace(this));
+//		if(type.freeVars.exists[content.containsKey(it)]) {
+//			//throw new Exception("did not replace correctly")
+//		} 
+//		else {
+//			this.content.put(variable, type);	
+//		}
 	}
 	
 	public def void add(Map<TypeVariable, AbstractType> content) {
@@ -47,7 +50,7 @@ class Substitution {
 	public def Substitution apply(Substitution to) {
 		val result = new Substitution();
 		result.constraintSystemProvider = this.constraintSystemProvider ?: to.constraintSystemProvider;
-		result.content.putAll(content);
+		result.content.putAll(this.content.mapValues[it.replace(to)]);
 		val appliedSubstitution = new HashMap(to.content.mapValues[it.replace(result)]);
 		result.add(appliedSubstitution);
 		return result;
