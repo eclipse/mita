@@ -82,12 +82,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected boolean isLinking;
 	
-	public override ConstraintSystem create(EObject context) {
-		//first we need to make sure every GeneratedObject is ready, so the model doesn't change while we do things
-		context.eAllContents.filter(GeneratedObject).forEach[
-			it.generateMembers();
-		]
-		
+	public override ConstraintSystem create(EObject context) {		
 		val result = constraintSystemProvider.get();
 		result.computeConstraints(context);
 		return result;

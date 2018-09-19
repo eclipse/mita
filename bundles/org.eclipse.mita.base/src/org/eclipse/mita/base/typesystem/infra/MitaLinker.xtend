@@ -1,8 +1,11 @@
 package org.eclipse.mita.base.typesystem.infra
 
+import com.google.common.collect.Lists
 import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
+import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
@@ -11,11 +14,6 @@ import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.emf.ecore.impl.BasicEObjectImpl
-import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.xtext.diagnostics.DiagnosticMessage
-import org.eclipse.xtext.diagnostics.Severity
-import com.google.common.collect.Lists
 
 class MitaLinker extends Linker {
 
@@ -36,6 +34,7 @@ class MitaLinker extends Linker {
 
 	override ensureLinked(EObject obj, IDiagnosticProducer producer) {
 		if(obj.eContainer === null) {
+			obj.eAllContents.filter(GeneratedObject).forEach[it.generateMembers()]
 			collectAndSolveTypes(obj, producer);
 		}
 		
@@ -61,7 +60,9 @@ class MitaLinker extends Linker {
 			
 			val solution = constraintSolver.solve(preparedSystem);
 			if(solution !== null && solution.solution !== null) {
-				
+				if(resource instanceof MitaBaseResource) {
+					resource.latestSolution = solution;
+				}
 				solution.solution.substitutions.entrySet.forEach[
 					var origin = it.key.origin;
 					if(origin.eIsProxy) {

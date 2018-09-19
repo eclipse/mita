@@ -30,6 +30,7 @@ import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.xtext.util.concurrent.IUnitOfWork
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class MitaTypesDebugView extends ViewPart {
 	protected TableViewer constraintViewer;
@@ -148,22 +149,21 @@ class MitaTypesDebugView extends ViewPart {
 					val offsetHelper = new EObjectAtOffsetHelper();
 					document.readOnly(new IUnitOfWork<Object, XtextResource>() {
 						override exec(XtextResource state) throws Exception {
-//							val rs = state.resourceSet;
-//							if(rs instanceof MitaResourceSet) {
-//								updateViews(rs.latestSolution);
-//							}
-//							
-//							val selectedObjects = new HashSet<EObject>();
-//							for(var i = 0; i < selection.length; i++) {
-//								val obj = offsetHelper.resolveContainedElementAt(state, selection.offset + i);
-//								if(obj !== null) {
-//									selectedObjects.add(obj);
-//								}
-//							}
-//							selectConstraints(selectedObjects);
-//							selectSolutions(selectedObjects);
-//							
-//							return null;
+							if(state instanceof MitaBaseResource) {
+								updateViews(state.latestSolution);
+							}
+							
+							val selectedObjects = new HashSet<EObject>();
+							for(var i = 0; i < selection.length; i++) {
+								val obj = offsetHelper.resolveContainedElementAt(state, selection.offset + i);
+								if(obj !== null) {
+									selectedObjects.add(obj);
+								}
+							}
+							selectConstraints(selectedObjects);
+							selectSolutions(selectedObjects);
+							
+							return null;
 						}
 					});
 					

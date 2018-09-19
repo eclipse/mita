@@ -118,6 +118,10 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		return MitaLinker
 	}
 	
+	override bindXtextResource() {
+		return MitaBaseResource;
+	}
+	
 	override bindIContainer$Manager() {
 		return MitaContainerManager;
 	}

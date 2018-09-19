@@ -158,12 +158,17 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariable obj) {
-		return new TypeVariable(obj.origin.resolveEObject(), obj.name);
+		val origin = obj.origin.resolveEObject();
+		return new TypeVariable(origin, obj.name);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
 		// we resolve the origin of TypeVarProxies because we pass them to the scope later
-		return new TypeVariableProxy(obj.origin.resolveEObject(true), obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName);
+		val origin = obj.origin.resolveEObject(true);
+		if(origin === null) {
+			obj.origin.resolveEObject(true);
+		}
+		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName);
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {

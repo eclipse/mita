@@ -21,6 +21,9 @@ class Substitution {
 		if(content.containsKey(variable)) {
 			println('''overriding «variable» ≔ «content.get(variable)» with «type»''')
 		}
+		if(type.freeVars.exists[content.containsKey(it)]) {
+			throw new Exception("did not replace correctly")
+		}
 		this.content.put(variable, type);
 	}
 	

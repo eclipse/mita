@@ -138,6 +138,9 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	}
 	
 	override doGenerate(ResourceSet input, IFileSystemAccess2 fsa, Function1<Resource, Boolean> includeInBuildPredicate) {
+		if(true) {
+			return;
+		}
 		val resourcesToCompile = input
 			.resources
 			.filter(includeInBuildPredicate)
