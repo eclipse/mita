@@ -69,10 +69,10 @@ class StdlibTypeRegistry {
 	
 	def getModelObjects(EObject context, QualifiedName qn, EReference ref) {
 		if(isLinking) {
-			return #[];
+			return #[TypeVariableAdapter.getProxy(context, ref, qn)];
 		}
 		val scope = scopeProvider.getScope(context, ref);
-		val obj = scope.getElements(qn).map[EObjectOrProxy].force;
+		val obj = scope.getElements(qn).map[EObjectOrProxy].map[TypeVariableAdapter.get(it)].force;
 		return obj;
 	}
 			

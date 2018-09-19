@@ -65,6 +65,7 @@ import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.base.types.GeneratedObject
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -102,7 +103,17 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val obj = resolveReferenceToSingleAndLink(origin, featureToResolve);
 		return TypeVariableAdapter.get(obj);
 	}
-		protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
+	
+	protected def List<TypeVariable> resolveReferenceToTypes(EObject origin, EReference featureToResolve) {
+		if(isLinking) {
+			return #[TypeVariableAdapter.getProxy(origin, featureToResolve)];
+		}
+		else {
+			return resolveReference(origin, featureToResolve).map[TypeVariableAdapter.get(it)].force;
+		}
+	}
+	
+	protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
 		val scope = scopeProvider.getScope(origin, featureToResolve);
 		
 		val name = NodeModelUtils.findNodesForFeature(origin, featureToResolve).head?.text;
@@ -160,9 +171,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return new ProdType(null, functionName + "_args", argTypes, #[]);
 	}
 	
-	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<Operation> candidates) {
+	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<TypeVariable> candidates) {
 		if(candidates === null || candidates.empty) {
 			return null;
+		}
+		if(functionReference === null) {
+			throw new NullPointerException;
 		}
 		/* This function is pretty complicated. It handles function calls like `f(x)` or `x.f()`.
 		 * We get:
@@ -210,28 +224,33 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// a -> B >: A -> B
 		system.addConstraint(new SubtypeConstraint(refType, referencedFunctionType));
 		
-		if(candidates.size > 1) {
+		val useTypeClassProxy = !candidates.filter(TypeVariableProxy).empty
+		if(candidates.size > 1 || useTypeClassProxy) {
 			val tcQN = QualifiedName.create(functionName);
-			//val candidateTypes = candidates.filter(Operation).map[system.computeParameterType(it, it.parameters) as AbstractType -> it as EObject];
-			val candidateTypes = candidates.filter(Operation).map[TypeVariableAdapter.get(it) as AbstractType -> it as EObject];
-			// this would be nicer since we can spare some computation, but since right now the type variables are bound to EObjects this is not possible.
-			// we should probably replace this by some IdentityMap which keeps track of the types instead.
-			//val candidateTypes = candidates.filter(Operation).map[TypeVariableAdapter.get(it.parameters) as AbstractType -> it as EObject];
 			// this function call has the side effect of creating the type class.
-			val typeClass = system.getTypeClass(QualifiedName.create(functionName), candidateTypes);
-			// add all candidates this TC doesn't already contain
-			candidateTypes.reject[typeClass.instances.containsKey(it)].force.forEach[
-				typeClass.instances.put(it.key, it.value);
-			]
+			val typeClass = if(useTypeClassProxy) {
+				if(candidates.size != 1) {
+					throw new Exception("BCF: Somethings wrong!");
+				}
+				system.getTypeClassProxy(tcQN, candidates.head as TypeVariableProxy);
+			}
+			else {
+				system.getTypeClass(tcQN, candidates.map[it as AbstractType -> it.origin]) => [ typeClass |	
+				// add all candidates this TC doesn't already contain
+					candidates.reject[typeClass.instances.containsKey(it)].force.forEach[
+						typeClass.instances.put(it, it.origin);
+					]	
+				]
+			}
 			system.addConstraint(new FunctionTypeClassConstraint(referencedFunctionType, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
 		}
 		else {
 			val funRef = candidates.head;
 			if(functionReference !== null && functionCall.eGet(functionReference) === null) {
-				functionCall.eSet(functionReference, funRef);	
+				functionCall.eSet(functionReference, funRef.origin);	
 			}
 			// the actual function should be a subtype of the expected function so it can be used here
-			system.addConstraint(new SubtypeConstraint(TypeVariableAdapter.get(funRef), refType));
+			system.addConstraint(new SubtypeConstraint(funRef, refType));
 		}
 		// B
 		resultType;
@@ -252,12 +271,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 		} else {
 			StdlibTypeRegistry.minusFunctionQID;
 		}
-		if(isLinking) {
-			return TypeVariableAdapter.getProxy(expr, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, opQID);
-		}
+		val operations = typeRegistry.getModelObjects(expr, opQID, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		
-		val plusOps = typeRegistry.getModelObjects(expr, opQID, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
-		val resultType = system.computeConstraintsForFunctionCall(expr, null, StdlibTypeRegistry.plusFunctionQID.lastSegment, #[expr.leftOperand, expr.rightOperand], plusOps.filter(Operation).force);
+		val resultType = system.computeConstraintsForFunctionCall(expr, null, StdlibTypeRegistry.plusFunctionQID.lastSegment, #[expr.leftOperand, expr.rightOperand], operations);
 		return system.associate(resultType, expr);
 	}
 

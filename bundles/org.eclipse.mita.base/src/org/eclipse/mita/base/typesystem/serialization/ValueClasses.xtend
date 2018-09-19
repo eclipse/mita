@@ -23,7 +23,15 @@ class SerializedTypeClass extends SerializedObject {
         _type = "SerializedTypeClass";
     }
 
-	public Map<SerializedAbstractType, Object> instances;
+	public Map<SerializedAbstractType, String> instances;
+}
+
+class SerializedTypeClassProxy extends SerializedObject {
+    new() {
+        _type = "SerializedTypeClassProxy";
+    }
+
+	public SerializedTypeVariableProxy toResolve;
 }
 
 abstract class SerializedAbstractType extends SerializedObject {
@@ -209,7 +217,7 @@ class SerializedEReference extends SerializedObject {
  
 class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstraint {
     new() {
-        _type = "SerializedTypeclassConstraint";
+        _type = "SerializedFunctionTypeClassConstraint";
     }
 
 	public SerializedAbstractType type;

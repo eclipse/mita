@@ -42,7 +42,7 @@ class TypeClass {
 			it.key.replace(sub) -> it.value
 		])
 	}
-	def replaceProxies(IScopeProvider scopeProvider) {
+	def replaceProxies((TypeVariableProxy) => Iterable<AbstractType> resolve) {
 		return this;
 	}
 }
@@ -52,17 +52,9 @@ class TypeClass {
 class TypeClassProxy extends TypeClass {
 	val TypeVariableProxy toResolve;
 	
-	override replaceProxies(IScopeProvider scopeProvider) {
-		val origin = toResolve.origin;
-		val reference = toResolve.reference;
-		val ref = origin?.eClass.EAllReferences.findFirst[ it.name == reference ];
-		if(ref === null) {
-			throw new IllegalStateException('''Cannot find reference «reference» on «origin?.eClass»''');
-		}
-		
-		val scope = scopeProvider.getScope(origin, ref);
-		val elements = scope.getElements(toResolve.targetQID).map[it.EObjectOrProxy].filter(Operation);
-		return new TypeClass(elements.map[TypeVariableAdapter.get(it) as AbstractType -> it as EObject].force);
+	override replaceProxies((TypeVariableProxy) => Iterable<AbstractType> resolve) {
+		val elements = resolve.apply(toResolve);
+		return new TypeClass(elements.map[it -> it.origin].force);
 	}
 	
 }

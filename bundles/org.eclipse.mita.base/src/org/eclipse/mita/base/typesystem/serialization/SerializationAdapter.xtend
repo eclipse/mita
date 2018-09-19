@@ -23,9 +23,11 @@ import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeClass
+import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
@@ -44,7 +46,6 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 
 class SerializationAdapter {
 	
@@ -89,6 +90,14 @@ class SerializationAdapter {
 		return result;
 	}
 	
+	protected dispatch def TypeClass fromValueObject(SerializedTypeClass obj) {
+		new TypeClass(obj.instances.entrySet.map[it.key.fromValueObject as AbstractType -> it.value.resolveEObject])
+	}
+	
+	protected dispatch def TypeClassProxy fromValueObject(SerializedTypeClassProxy obj) {
+		new TypeClassProxy(obj.toResolve.fromValueObject as TypeVariableProxy);
+	}
+	
 	protected dispatch def JavaClassInstanceConstraint fromValueObject(SerializedJavaClassInstanceConstraint obj) {
 		return new JavaClassInstanceConstraint(obj.what.fromValueObject() as AbstractType, Class.forName(obj.javaClass));
 	}
@@ -106,7 +115,7 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def TypeClassConstraint fromValueObject(SerializedFunctionTypeClassConstraint obj) {
-		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, obj.functionCall.resolveEObject, null, obj.returnTypeTV.fromValueObject as TypeVariable, null);
+		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, obj.functionCall.resolveEObject, obj.functionReference.fromValueObject as EReference, obj.returnTypeTV.fromValueObject as TypeVariable, null);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {
@@ -210,6 +219,9 @@ class SerializationAdapter {
 		return gson.toJson(type.toValueObject());
 	}
 	
+	protected dispatch def SerializedObject toValueObject(Object nul) {
+		throw new NullPointerException;
+	}
 	protected dispatch def SerializedObject toValueObject(Void nul) {
 		throw new NullPointerException;
 	}
@@ -273,7 +285,7 @@ class SerializationAdapter {
 	protected dispatch def SerializedObject toValueObject(TypeClass obj) {
 		new SerializedTypeClass => [
 			instances = obj.instances.entrySet
-				.map[ it.key.toValueObject as SerializedAbstractType -> it.value.toValueObject ]
+				.map[ it.key.toValueObject as SerializedAbstractType ->  if(it.value === null) null else EcoreUtil.getURI(it.value).toString() ]
 				.toMap([ it.key ], [ it.value ])
 		]
 	}

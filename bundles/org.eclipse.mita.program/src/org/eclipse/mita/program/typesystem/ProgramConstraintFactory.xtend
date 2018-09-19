@@ -49,6 +49,7 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -197,9 +198,6 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
-		if(isLinking) {
-			return TypeVariableAdapter.getProxy(varOrFun, featureToResolve);
-		}
 		
 		/*
 		 * This function is pretty complicated. It handles both function calls and normal references to for example `f`, i.e.
@@ -215,27 +213,26 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		 */
 		
 		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
-		val candidates = varOrFun.resolveReference(featureToResolve).map[getConstructorFromType(it)];
-
-		val argExprs = varOrFun.arguments.map[it.value].force;
-
-		val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
-
-		if(candidates.empty) {
-			return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
-		}
-				
+						
 		// if isFunctionCall --> delegate. 
 		val refType = if(isFunctionCall) {
-			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argExprs, candidates.filter(Operation).force);
+			val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
+			val candidates = varOrFun.resolveReferenceToTypes(featureToResolve);	
+			if(candidates.empty) {
+				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
+			}
+
+			val argExprs = varOrFun.arguments.map[it.value].force;
+			
+			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argExprs, candidates);
 		}
 		// otherwise use the last candidate. We can check here for ambiguity, otherwise this is just the "closest" candidate.
 		else {
-			val ref = candidates.last;
-			if(varOrFun.eGet(featureToResolve) === null) {
-				varOrFun.eSet(featureToResolve, ref);	
+			val ref = varOrFun.resolveReferenceToSingleAndGetType(featureToResolve);
+			if(varOrFun.eGet(featureToResolve) === null && !(ref instanceof TypeVariableProxy)) {
+				varOrFun.eSet(featureToResolve, ref.origin);
 			}
-			TypeVariableAdapter.get(ref)
+			ref;
 		}
 		
 		// refType is the type of the referenced thing (or the function application)

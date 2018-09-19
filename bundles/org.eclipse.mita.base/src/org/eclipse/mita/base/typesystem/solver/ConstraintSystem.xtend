@@ -11,11 +11,13 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -24,11 +26,10 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
-import org.eclipse.xtext.util.OnChangeEvictingCache
+import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
 
 @Accessors
 class ConstraintSystem {
@@ -94,6 +95,13 @@ class ConstraintSystem {
 	def TypeClass getTypeClass(QualifiedName qn, Iterable<Pair<AbstractType, EObject>> candidates) {
 		if(!typeClasses.containsKey(qn)) {
 			val typeClass = new TypeClass(candidates);
+			typeClasses.put(qn, typeClass);
+		}
+		return typeClasses.get(qn);
+	}
+	def TypeClass getTypeClassProxy(QualifiedName qn, TypeVariableProxy tvProxy) {
+		if(!typeClasses.containsKey(qn)) {
+			val typeClass = new TypeClassProxy(tvProxy);
 			typeClasses.put(qn, typeClass);
 		}
 		return typeClasses.get(qn);
@@ -230,46 +238,47 @@ class ConstraintSystem {
 	
 	def ConstraintSystem replaceProxies(Resource resource, IScopeProvider scopeProvider) {
 		val result = constraintSystemProvider.get();
-		result.constraints += constraints.map[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider) ] ].force;
-		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies(scopeProvider) ]);
+		result.constraints += constraints.map[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider).head ] ].force;
+		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider) ] ]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;
 	}
 	
-	protected def AbstractType resolveProxy(TypeVariableProxy tvp, Resource resource, IScopeProvider scopeProvider) {
+	protected def Iterable<AbstractType> resolveProxy(TypeVariableProxy tvp, Resource resource, IScopeProvider scopeProvider) {
 		if(tvp.origin === null) {
-			return new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''');
+			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
 
 		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
-			return TypeVariableAdapter.get(tvp.origin.eGet(tvp.reference) as EObject);
+			return #[TypeVariableAdapter.get(tvp.origin.eGet(tvp.reference) as EObject)];
 		}
 
 		val scope = scopeProvider.getScope(tvp.origin, tvp.reference);
-		val scopeElement = scope.getSingleElement(tvp.targetQID);
-		val cachedTypeSerialization = scopeElement?.getUserData("TypeVariable");
-		if(cachedTypeSerialization !== null) {
-			val cachedType = serializationAdapter.deserializeTypeFromJSON(cachedTypeSerialization, [ resource.resourceSet.getEObject(it, false) ])
-			return cachedType.replaceProxies[ this.resolveProxy(it, resource, scopeProvider) ];
+		val scopeElements = scope.getElements(tvp.targetQID);
+		val cachedTypeSerializations = scopeElements.map[getUserData("TypeVariable")];
+		if(!cachedTypeSerializations.empty && cachedTypeSerializations.forall[it !== null]) {
+			val cachedTypes = cachedTypeSerializations.map[serializationAdapter.deserializeTypeFromJSON(it, [ resource.resourceSet.getEObject(it, false) ])]
+			// these proxies should not be ambiguous, otherwise we should have created a type class!
+			return cachedTypes.map[typ | typ.replaceProxies[ this.resolveProxy(it, resource, scopeProvider).head ]];
 		}
 		
-		val replacementObject = scopeElement?.EObjectOrProxy;
-		if(replacementObject === null) {
+		val replacementObjects = scopeElements.map[EObjectOrProxy];
+		if(replacementObjects.empty) {
 			scopeProvider.getScope(tvp.origin, tvp.reference);
-			return new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''');
+			return #[new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
 		}
-		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference)) {
-			val cacheAdapters = resource.eAdapters.filter(OnChangeEvictingCache$CacheAdapter).force;
+		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference) && replacementObjects.size == 1) {
+			val cacheAdapters = resource.eAdapters.filter(OnChangeEvictingCache.CacheAdapter).force;
 			cacheAdapters.forEach[
 				it.ignoreNotifications();
 			]
-			tvp.origin.eSet(tvp.reference, replacementObject);
+			tvp.origin.eSet(tvp.reference, replacementObjects.head);
 			cacheAdapters.forEach[
 				it.listenToNotifications();
 			]
 		}
 		
-		return TypeVariableAdapter.get(replacementObject);
+		return replacementObjects.map[TypeVariableAdapter.get(it)];
 	}
 	
 }
