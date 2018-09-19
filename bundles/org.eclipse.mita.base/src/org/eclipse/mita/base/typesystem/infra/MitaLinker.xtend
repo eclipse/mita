@@ -39,7 +39,7 @@ class MitaLinker extends Linker {
 			collectAndSolveTypes(obj, producer);
 		}
 		
-		super.ensureLinked(obj, producer)
+		//super.ensureLinked(obj, producer)
 	}
 	
 	def collectAndSolveTypes(EObject obj, IDiagnosticProducer producer) {

@@ -64,6 +64,7 @@ import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.types.GeneratedObject
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -82,6 +83,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected boolean isLinking;
 	
 	public override ConstraintSystem create(EObject context) {
+		//first we need to make sure every GeneratedObject is ready, so the model doesn't change while we do things
+		context.eAllContents.filter(GeneratedObject).forEach[
+			it.generateMembers();
+		]
+		
 		val result = constraintSystemProvider.get();
 		result.computeConstraints(context);
 		return result;

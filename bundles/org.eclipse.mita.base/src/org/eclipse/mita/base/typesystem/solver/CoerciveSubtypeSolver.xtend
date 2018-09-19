@@ -14,6 +14,7 @@ import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
@@ -122,6 +123,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			
 			resultSub = simplification.substitution;
 			resultSystem = resultSub.apply(simplification.system);
+			if(resultSub.content.entrySet.exists[tv_t | tv_t.value.freeVars.exists[it == tv_t.key]]) {
+				return SimplificationResult.failure(new UnificationIssue(null, "System is not weakly unifyable"))
+			}
 		}
 		
 		return SimplificationResult.success(resultSystem, resultSub);

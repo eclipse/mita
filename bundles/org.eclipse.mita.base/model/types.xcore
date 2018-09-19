@@ -89,9 +89,29 @@ class PrimitiveType extends Type, Exportable {
 	}
 }
 
-class VirtualFunction extends Operation { /* stub for now */ }
+interface GeneratedObject {
+	op void generateMembers()
+}
+class VirtualFunction extends Operation, GeneratedObject { /* stub for now */
+	op void generateMembers() {
+		/* stub */
+	}
+}
 
 class TypeAccessor extends VirtualFunction {
+	op void generateMembers() {
+		super.generateMembers();
+		if(generatedParameter === null) {
+			generatedParameter = TypesFactory.eINSTANCE.createParameter => [
+				it.typeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier;
+				it.name = "self";
+			]
+		}
+		if((generatedParameter.typeSpecifier as PresentTypeSpecifier).^type === null) {
+			(generatedParameter.typeSpecifier as PresentTypeSpecifier).^type = accessedFeature.structuralType;
+		} 
+	}
+	
 	op StructuralParameter getAccessedFeature() {
 		val f = eContainer;
 		if(f instanceof StructuralParameter) {
@@ -105,37 +125,11 @@ class TypeAccessor extends VirtualFunction {
 	
 	contains transient Parameter generatedParameter
 	op Parameter[] getParameters() {
-		if(generatedParameter === null) {
-			generatedParameter = TypesFactory.eINSTANCE.createParameter;
-			generatedParameter.typeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier;
-			generatedParameter.name = "self";
-		}
-		if((generatedParameter.typeSpecifier as PresentTypeSpecifier).^type === null) {
-			(generatedParameter.typeSpecifier as PresentTypeSpecifier).^type = accessedFeature.structuralType;
-		} 
+		generateMembers();
 		return #[generatedParameter].asEList;
 	}
 	contains transient PresentTypeSpecifier generatedTypeSpecifier
 	op TypeSpecifier getTypeSpecifier() {
-//		if(generatedTypeSpecifier === null) {
-//			generatedTypeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
-//				ts.^type = accessedFeature.structuralType;
-//				ts.typeArguments += BaseUtils.force(accessedFeature.structuralType.typeParameters.map[ tp |
-//					TypesFactory.eINSTANCE.createPresentTypeSpecifier => [
-//						it.^type = tp
-//					]
-//				])
-//			]
-//		}
-//		if(generatedTypeSpecifier.^type === null) {
-//			generatedTypeSpecifier.^type = accessedFeature.structuralType;
-//		}
-//		if(generatedTypeSpecifier.typeArguments.exists[it.^type === null]) {
-//			BaseUtils.zip(generatedTypeSpecifier.typeArguments, accessedFeature.structuralType.typeParameters).forEach[ ta_tp |
-//				ta_tp.key.^type = ta_tp.value
-//			]	
-//		}
-//		return generatedTypeSpecifier;
 		return accessedFeature.typeSpecifier;
 	}
 	op TypeParameter[] getTypeParameters() {
@@ -154,14 +148,9 @@ class StructuralParameter extends Parameter {
 
 class TypeConstructor extends VirtualFunction {
 	container transient StructuralType constructedType opposite constructor
-	op String getName() {
-		return constructedType.name;
-	}
-	op Parameter[] getParameters() {
-		return constructedType.parameters.map[it as Parameter];
-	} 
-	contains transient PresentTypeSpecifier generatedTypeSpecifier
-	op TypeSpecifier getTypeSpecifier() {
+	
+	op void generateMembers() {
+		super.generateMembers();
 		if(generatedTypeSpecifier === null) {
 			generatedTypeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
 				ts.^type = constructedType;
@@ -180,6 +169,16 @@ class TypeConstructor extends VirtualFunction {
 				ta_tp.key.^type = ta_tp.value
 			]	
 		}
+	}
+	op String getName() {
+		return constructedType.name;
+	}
+	op Parameter[] getParameters() {
+		return constructedType.parameters.map[it as Parameter];
+	} 
+	contains transient PresentTypeSpecifier generatedTypeSpecifier
+	op TypeSpecifier getTypeSpecifier() {
+		generateMembers();
 		return generatedTypeSpecifier;
 	}
 	op TypeParameter[] getTypeParameters() {
@@ -189,7 +188,8 @@ class TypeConstructor extends VirtualFunction {
 class SumSubTypeConstructor extends TypeConstructor {
 	contains transient Parameter sumTypeParameter
 	contains transient TypeKind sumTypeKind
-	op Parameter[] getParameters() {
+	
+	op void generateMembers() {
 		if(sumTypeKind === null) {
 			sumTypeKind = TypesFactory.eINSTANCE.createTypeKind => [ kind |
 				kind.kindOf = this.eContainer.eContainer as SumType;
@@ -209,6 +209,10 @@ class SumSubTypeConstructor extends TypeConstructor {
 		if((sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === null) {
 			(sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === sumTypeKind;
 		}
+		super.generateMembers();
+	}
+	op Parameter[] getParameters() {
+		generateMembers();
 		return (#[sumTypeParameter] + constructedType.parameters).toEList;
 	} 
 }
@@ -368,9 +372,10 @@ class GeneratedType extends ComplexType, GeneratedElement, Exportable {
 	contains Operation constructor
 }
 
-class GeneratedTypeConstructor extends Operation {
+class GeneratedTypeConstructor extends Operation, GeneratedObject {
 	contains transient PresentTypeSpecifier generatedTypeSpecifier
-	op TypeSpecifier getTypeSpecifier() {
+	
+	op void generateMembers() {
 		val generatedType = if(eContainer instanceof GeneratedType) {
 			eContainer as GeneratedType;
 		} 
@@ -395,6 +400,9 @@ class GeneratedTypeConstructor extends Operation {
 				ta_tp.key.^type = ta_tp.value
 			]	
 		}
+	}
+	op TypeSpecifier getTypeSpecifier() {
+		generateMembers();
 		return generatedTypeSpecifier;
 	}
 }
@@ -443,29 +451,10 @@ class AnonymousStructuralParameter extends StructuralParameter {
 		return memberTypeSpecifier;
 	}
 }
-class AnonymousProductType extends SumAlternative {
+class AnonymousProductType extends SumAlternative, GeneratedObject {
 	contains PresentTypeSpecifier[] typeSpecifiers 
-	op Type realType() {
-		if(typeSpecifiers.length == 1) {
-			val actualType = typeSpecifiers.get(0);
-			return actualType.^type;
-		}
-		return this;	
-	}
-	op PresentTypeSpecifier[] accessorsTypes() {
-		// need to duplicate functionality, since calling realType and deferring to that ones accessor types would create infinite recursion if it returns this
-		// could check with == this, but that would be more confusing I think
-		if(typeSpecifiers.length == 1) {
-			val actualTypeSpec = typeSpecifiers.get(0)
-				val actualType = actualTypeSpec.^type;
-				if(actualType instanceof HasAccessors) {
-					return actualType.accessorsTypes;
-				}				
-		}
-		return typeSpecifiers;
-	}
-	contains transient StructuralParameter[] generatedParameters
-	op StructuralParameter[] getParameters() {
+	
+	op void generateMembers() {
 		if(generatedParameters.empty) {
 			generatedParameters.clear;
 			generatedParameters += BaseUtils.force(typeSpecifiers.indexed.map[ i_ts |
@@ -478,7 +467,29 @@ class AnonymousProductType extends SumAlternative {
 				];
 			])
 		}
-		
+	}
+	op Type realType() {
+		if(typeSpecifiers.length == 1) {
+			val actualType = typeSpecifiers.get(0);
+			return actualType.^type;
+		}
+		return this;	
+	}
+	op PresentTypeSpecifier[] accessorsTypes() {
+		// need to duplicate functionality, since calling realType and deferring to that ones accessor types would create infinite recursion if it returns this
+		// could check with == this, but that would be more confusing I think
+		if(typeSpecifiers.length == 1) {
+			val actualTypeSpec = typeSpecifiers.get(0)
+			val actualType = actualTypeSpec.^type;
+			if(actualType instanceof HasAccessors) {
+				return actualType.accessorsTypes;
+			}				
+		}
+		return typeSpecifiers;
+	}
+	contains transient StructuralParameter[] generatedParameters
+	op StructuralParameter[] getParameters() {
+		generateMembers();
 		return generatedParameters;
 	}
 }

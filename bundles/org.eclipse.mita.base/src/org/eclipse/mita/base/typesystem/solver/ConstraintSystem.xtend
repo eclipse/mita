@@ -28,6 +28,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.xtext.util.OnChangeEvictingCache
 
 @Accessors
 class ConstraintSystem {
@@ -258,7 +259,14 @@ class ConstraintSystem {
 			return new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''');
 		}
 		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference)) {
+			val cacheAdapters = resource.eAdapters.filter(OnChangeEvictingCache$CacheAdapter).force;
+			cacheAdapters.forEach[
+				it.ignoreNotifications();
+			]
 			tvp.origin.eSet(tvp.reference, replacementObject);
+			cacheAdapters.forEach[
+				it.listenToNotifications();
+			]
 		}
 		
 		return TypeVariableAdapter.get(replacementObject);
