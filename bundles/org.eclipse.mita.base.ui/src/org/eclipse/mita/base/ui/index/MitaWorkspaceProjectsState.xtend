@@ -15,6 +15,7 @@ class MitaWorkspaceProjectsState extends WorkspaceProjectsState {
 	@Inject
 	protected ILibraryProvider libraryProvider;
 	
+	protected Set<URI> typeUris;
 	protected Set<URI> stdlibUris;
 	protected Set<URI> dependencyUris;
 	
@@ -28,7 +29,9 @@ class MitaWorkspaceProjectsState extends WorkspaceProjectsState {
 	}
 	
 	override protected doInitHandle(URI uri) {
-		if(getStdlibUris().contains(uri)) {
+		if(getTypeUris().contains(uri)) {
+			return MitaContainerManager.TYPES_CONTAINER_HANDLE;
+		} else if(getStdlibUris().contains(uri)) {
 			return MitaContainerManager.STDLIB_CONTAINER_HANDLE;
 		} else if(getDependencyUris().contains(uri)) {
 			return MitaContainerManager.DEPENDENCIES_CONTAINER_HANDLE;
@@ -38,6 +41,9 @@ class MitaWorkspaceProjectsState extends WorkspaceProjectsState {
 	}
 	
 	override protected doInitContainedURIs(String containerHandle) {
+		if(containerHandle == MitaContainerManager.TYPES_CONTAINER_HANDLE) {
+			return getTypeUris();
+		}
 		if(containerHandle == MitaContainerManager.STDLIB_CONTAINER_HANDLE) {
 			return getStdlibUris();
 		} else if(containerHandle == MitaContainerManager.DEPENDENCIES_CONTAINER_HANDLE) {
@@ -50,17 +56,30 @@ class MitaWorkspaceProjectsState extends WorkspaceProjectsState {
 	override protected doInitVisibleHandles(String handle) {
 		val result = newArrayList;
 		
-		// stdlib depends on <nothing>
+		// stdlib depends on stdlib_base_types
 		// dependencies depend on stdlib
 		// everything else depends on stdlib and dependencies
-		if(handle != MitaContainerManager.STDLIB_CONTAINER_HANDLE) {
-			result += MitaContainerManager.STDLIB_CONTAINER_HANDLE;
-						
-			if(handle != MitaContainerManager.DEPENDENCIES_CONTAINER_HANDLE) {
-				result += MitaContainerManager.DEPENDENCIES_CONTAINER_HANDLE;			
+		if(handle != MitaContainerManager.TYPES_CONTAINER_HANDLE) {
+			result += MitaContainerManager.TYPES_CONTAINER_HANDLE;
+			
+			if(handle != MitaContainerManager.STDLIB_CONTAINER_HANDLE) {
+				result += MitaContainerManager.STDLIB_CONTAINER_HANDLE;
+							
+				if(handle != MitaContainerManager.DEPENDENCIES_CONTAINER_HANDLE) {
+					result += MitaContainerManager.DEPENDENCIES_CONTAINER_HANDLE;			
+				}
 			}
 		}
 		return result;
+	}
+	
+	protected def getTypeUris() {
+		// at minimum we need to load stdlib_types
+		if(typeUris === null) {
+			typeUris = new HashSet();
+			typeUris.addAll(getStdlibUris().filter[it.lastSegment == "stdlib_types.mita"]);
+		}
+		return typeUris;
 	}
 	
 	protected def getStdlibUris() {

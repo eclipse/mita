@@ -63,6 +63,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -74,6 +75,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 	@Inject 
 	protected StdlibTypeRegistry typeRegistry;
+	
+	@Inject
+	protected IScopeProvider scopeProvider;
 	
 	protected boolean isLinking;
 	
@@ -88,6 +92,51 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	override getTypeRegistry() {
 		return typeRegistry;
+	}
+	
+	protected def TypeVariable resolveReferenceToSingleAndGetType(EObject origin, EReference featureToResolve) {
+		if(isLinking) {
+			return TypeVariableAdapter.getProxy(origin, featureToResolve);
+		}
+		val obj = resolveReferenceToSingleAndLink(origin, featureToResolve);
+		return TypeVariableAdapter.get(obj);
+	}
+		protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
+		val scope = scopeProvider.getScope(origin, featureToResolve);
+		
+		val name = NodeModelUtils.findNodesForFeature(origin, featureToResolve).head?.text;
+		if(name === null) {
+			return #[];//system.associate(new BottomType(origin, "Reference text is null"));
+		}
+		
+		if(origin.eIsSet(featureToResolve)) {
+			return #[origin.eGet(featureToResolve, false) as EObject];	
+		}
+		
+		val candidates = scope.getElements(QualifiedName.create(name.split("\\.")));
+		
+		val List<EObject> resultObjects = candidates.map[it.EObjectOrProxy].force;
+		
+		if(resultObjects.size === 1) {
+			val candidate = resultObjects.head;
+			if(candidate.eIsProxy) {
+				println("!PROXY!")
+			}
+			origin.eSet(featureToResolve, candidate);
+		}
+		
+		return resultObjects;
+	}
+	
+	
+	
+	protected def EObject resolveReferenceToSingleAndLink(EObject origin, EReference featureToResolve) {
+		val candidates = resolveReference(origin, featureToResolve);
+		val result = candidates.last;
+		if(result !== null && origin.eGet(featureToResolve) === null) {
+			origin.eSet(featureToResolve, result);
+		}
+		return result;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
@@ -189,7 +238,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeCastExpression expr) {
 		val realType = system.computeConstraints(expr.operand);
-		val castType = system.computeConstraints(expr.type);
+		val castType = resolveReferenceToSingleAndGetType(expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type);
 		// can only cast from and to numeric types
 		system.addConstraint(new JavaClassInstanceConstraint(realType, NumericType));
 		system.addConstraint(new JavaClassInstanceConstraint(castType, NumericType));
@@ -351,13 +400,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.associate(system.computeConstraints(lit, lit.value), lit);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FloatLiteral lit) {
-		return system.associate(typeRegistry.getFloatType(lit), lit);
+		return system.associate(typeRegistry.getTypeModelObjectProxy(lit, StdlibTypeRegistry.floatTypeQID), lit);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, DoubleLiteral lit) {
-		return system.associate(typeRegistry.getDoubleType(lit), lit);
+		return system.associate(typeRegistry.getTypeModelObjectProxy(lit, StdlibTypeRegistry.doubleTypeQID), lit);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StringLiteral lit) {
-		return system.associate(typeRegistry.getStringType(lit), lit);
+		return system.associate(typeRegistry.getTypeModelObjectProxy(lit, StdlibTypeRegistry.stringTypeQID), lit);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructuralParameter sParam) {
 		system.computeConstraints(sParam.accessor);

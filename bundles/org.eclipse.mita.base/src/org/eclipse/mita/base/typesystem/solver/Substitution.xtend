@@ -9,6 +9,7 @@ import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 
+
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
 	protected Map<TypeVariable, AbstractType> content = new HashMap();
@@ -44,7 +45,8 @@ class Substitution {
 		val result = new Substitution();
 		result.constraintSystemProvider = this.constraintSystemProvider ?: to.constraintSystemProvider;
 		result.content.putAll(content);
-		result.add(to.content);
+		val appliedSubstitution = new HashMap(to.content.mapValues[it.replace(result)]);
+		result.add(appliedSubstitution);
 		return result;
 	}
 	

@@ -424,7 +424,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def scope_TypeSpecifier_type(EObject context, EReference ref) {
 		val parentScope = delegate.getScope(context, ref)
-		return new FilteringScope(parentScope, globalTypeFilter);
+		return new TypeReferenceScope(new FilteringScope(parentScope, globalTypeFilter), context);
 	}
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {

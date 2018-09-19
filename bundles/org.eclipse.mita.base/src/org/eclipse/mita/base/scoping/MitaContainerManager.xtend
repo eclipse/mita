@@ -11,6 +11,7 @@ import com.google.common.collect.Lists
 
 class MitaContainerManager extends StateBasedContainerManager {
 	
+	public static final String TYPES_CONTAINER_HANDLE = "Mita_Types";
 	public static final String STDLIB_CONTAINER_HANDLE = "Mita_Stdlib";
 	public static final String DEPENDENCIES_CONTAINER_HANDLE = "Mita_Dependencies";
 	

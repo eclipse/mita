@@ -21,6 +21,8 @@ import org.eclipse.xtext.scoping.impl.AbstractScope
 import org.eclipse.mita.base.types.GenericElement
 
 import static extension org.eclipse.xtext.EcoreUtil2.*
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.program.Program
 
 class TypeReferenceScope extends AbstractScope {
 	
@@ -34,10 +36,16 @@ class TypeReferenceScope extends AbstractScope {
 	override protected getAllLocalElements() {
 		var result = newArrayList()
 		result.addTypeParameter(context)
+		result.addLocalTypes()
 		Scopes.scopedElementsFor(result)
 	}
 	
-	def addTypeParameter(ArrayList<EObject> result, EObject object) {
+	def void addLocalTypes(ArrayList<EObject> result) {
+		val program = EcoreUtil2.getContainerOfType(context, Program);
+		result += program.types; 
+	}
+	
+	def void addTypeParameter(ArrayList<EObject> result, EObject object) {
 		val container = object.getContainerOfType(GenericElement)
 		if (container !== null) {
 			result.addTypeParameter(if(object === container) container.eContainer else container);

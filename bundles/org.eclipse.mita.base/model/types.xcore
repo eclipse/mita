@@ -37,6 +37,14 @@ class PresentTypeSpecifier extends TypeSpecifier {
 		return typeName + args;
 	}
 }
+//class VirtualTypeSpecifier extends PresentTypeSpecifier {
+//	op String toString() {
+//		return super.toString();
+//	}
+//	op Type getType() {
+//		
+//	}
+//}
 
 class NullTypeSpecifier extends TypeSpecifier {
 	op String toString() {
@@ -427,6 +435,14 @@ class Singleton extends SumAlternative {
 		return #[].asEList;
 	}
 }
+
+class AnonymousStructuralParameter extends StructuralParameter {
+	refers transient TypeSpecifier memberTypeSpecifier
+	
+	op TypeSpecifier getTypeSpecifier() {
+		return memberTypeSpecifier;
+	}
+}
 class AnonymousProductType extends SumAlternative {
 	contains PresentTypeSpecifier[] typeSpecifiers 
 	op Type realType() {
@@ -455,22 +471,14 @@ class AnonymousProductType extends SumAlternative {
 			generatedParameters += BaseUtils.force(typeSpecifiers.indexed.map[ i_ts |
 				val name = "_" + i_ts.key;
 				val ts = i_ts.value;
-				return TypesFactory.eINSTANCE.createStructuralParameter() => [ p |
+				return TypesFactory.eINSTANCE.createAnonymousStructuralParameter() => [ p |
 					p.name = name;
-					p.typeSpecifier = ts.copy;
+					p.memberTypeSpecifier = ts;
 					p.accessor = TypesFactory.eINSTANCE.createTypeAccessor();
 				];
 			])
 		}
-		if(generatedParameters.exists[(it.typeSpecifier as PresentTypeSpecifier).^type === null]) {
-			BaseUtils.zip(generatedParameters, typeSpecifiers).indexed.forEach[i__p_ts |
-				val name = "_" + i__p_ts.key;
-				val p = i__p_ts.value.key;
-				val psTs = p.typeSpecifier as PresentTypeSpecifier;
-				val ts = i__p_ts.value.value;
-				psTs.^type = ts.^type;
-			]
-		}
+		
 		return generatedParameters;
 	}
 }

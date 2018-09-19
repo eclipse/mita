@@ -205,7 +205,9 @@ class SerializationAdapter {
 		return gson.toJson(type.toValueObject());
 	}
 	
-	
+	protected dispatch def SerializedObject toValueObject(Void nul) {
+		throw new NullPointerException;
+	}
 	protected dispatch def SerializedObject toValueObject(EReference reference) {
 		return new SerializedEReference => [
 			ePackageName = (reference.eContainer as EClass).EPackage.nsURI;

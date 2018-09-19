@@ -254,6 +254,7 @@ class ConstraintSystem {
 		
 		val replacementObject = scopeElement?.EObjectOrProxy;
 		if(replacementObject === null) {
+			scopeProvider.getScope(tvp.origin, tvp.reference);
 			return new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''');
 		}
 		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference)) {

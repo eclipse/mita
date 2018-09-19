@@ -51,8 +51,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
-	@Inject
-	IScopeProvider scopeProvider;
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemSpecification spec) {
 		system.computeConstraintsForChildren(spec);
@@ -154,49 +152,6 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return system.computeConstraints(asign.assignmentVariable);
 	}
 			
-	protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
-		val scope = scopeProvider.getScope(origin, featureToResolve);
-		
-		val name = NodeModelUtils.findNodesForFeature(origin, featureToResolve).head?.text;
-		if(name === null) {
-			return #[];//system.associate(new BottomType(origin, "Reference text is null"));
-		}
-		
-		if(origin.eIsSet(featureToResolve)) {
-			return #[origin.eGet(featureToResolve, false) as EObject];	
-		}
-		
-		val candidates = scope.getElements(QualifiedName.create(name.split("\\.")));
-		
-		val List<EObject> resultObjects = candidates.map[it.EObjectOrProxy].force;
-		
-		if(resultObjects.size === 1) {
-			val candidate = resultObjects.head;
-			if(candidate.eIsProxy) {
-				println("!PROXY!")
-			}
-			origin.eSet(featureToResolve, candidate);
-		}
-		
-		return resultObjects;
-	}
-	
-	protected def TypeVariable resolveReferenceToSingleAndGetType(EObject origin, EReference featureToResolve) {
-		if(isLinking) {
-			return TypeVariableAdapter.getProxy(origin, featureToResolve);
-		}
-		val obj = resolveReferenceToSingleAndLink(origin, featureToResolve);
-		return TypeVariableAdapter.get(obj);
-	}
-	
-	protected def EObject resolveReferenceToSingleAndLink(EObject origin, EReference featureToResolve) {
-		val candidates = resolveReference(origin, featureToResolve);
-		val result = candidates.last;
-		if(result !== null && origin.eGet(featureToResolve) === null) {
-			origin.eSet(featureToResolve, result);
-		}
-		return result;
-	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemResourceSetup setup) {
 		system.computeConstraintsForChildren(setup);
 		return null;
