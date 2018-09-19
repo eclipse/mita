@@ -75,7 +75,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			
 			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.deserializeConstraintSystemFromJSON(json, null))
 			if (json != constraintsBackOut) {
-				throw new RuntimeException("Constraint serialization was not invariant")
+				throw new Exception("Constraint serialization was not invariant")
 			}
 		}
 	}

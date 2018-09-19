@@ -239,7 +239,7 @@ class ConstraintSystem {
 	def ConstraintSystem replaceProxies(Resource resource, IScopeProvider scopeProvider) {
 		val result = constraintSystemProvider.get();
 		result.constraints += constraints.map[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider).head ] ].force;
-		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider) ] ]);
+		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies([ this.resolveProxy(it, resource, scopeProvider) ], [resource.resourceSet.getEObject(it, false)]) ]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;
 	}
@@ -262,7 +262,7 @@ class ConstraintSystem {
 			return cachedTypes.map[typ | typ.replaceProxies[ this.resolveProxy(it, resource, scopeProvider).head ]];
 		}
 		
-		val replacementObjects = scopeElements.map[EObjectOrProxy];
+		val replacementObjects = scopeElements.map[EObjectOrProxy].force;
 		if(replacementObjects.empty) {
 			scopeProvider.getScope(tvp.origin, tvp.reference);
 			return #[new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
@@ -278,7 +278,7 @@ class ConstraintSystem {
 			]
 		}
 		
-		return replacementObjects.map[TypeVariableAdapter.get(it)];
+		return replacementObjects.map[TypeVariableAdapter.get(it) as AbstractType].force;
 	}
 	
 }

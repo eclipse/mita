@@ -59,10 +59,12 @@ class MitaLinker extends Linker {
 			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
 			
 			val solution = constraintSolver.solve(preparedSystem);
-			if(solution !== null && solution.solution !== null) {
+			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {
 					resource.latestSolution = solution;
 				}
+			}
+			if(solution !== null && solution.solution !== null) {
 				solution.solution.substitutions.entrySet.forEach[
 					var origin = it.key.origin;
 					if(origin.eIsProxy) {

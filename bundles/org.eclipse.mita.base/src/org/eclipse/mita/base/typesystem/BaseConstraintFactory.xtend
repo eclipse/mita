@@ -175,9 +175,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(candidates === null || candidates.empty) {
 			return null;
 		}
-		if(functionReference === null) {
-			throw new NullPointerException;
-		}
 		/* This function is pretty complicated. It handles function calls like `f(x)` or `x.f()`.
 		 * We get:
 		 * - an object holding the function call, "f(x)"

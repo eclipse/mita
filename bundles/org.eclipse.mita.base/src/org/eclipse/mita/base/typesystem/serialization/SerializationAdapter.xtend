@@ -46,6 +46,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import java.util.Comparator
 
 class SerializationAdapter {
 	
@@ -91,7 +92,9 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def TypeClass fromValueObject(SerializedTypeClass obj) {
-		new TypeClass(obj.instances.entrySet.map[it.key.fromValueObject as AbstractType -> it.value.resolveEObject])
+		new TypeClass(obj.instances.entrySet.map[
+			it.key.fromValueObject as AbstractType -> it.value.resolveEObject(true)
+		])
 	}
 	
 	protected dispatch def TypeClassProxy fromValueObject(SerializedTypeClassProxy obj) {
@@ -115,7 +118,7 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def TypeClassConstraint fromValueObject(SerializedFunctionTypeClassConstraint obj) {
-		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, obj.functionCall.resolveEObject, obj.functionReference.fromValueObject as EReference, obj.returnTypeTV.fromValueObject as TypeVariable, null);
+		return new FunctionTypeClassConstraint(obj.type.fromValueObject() as AbstractType, obj.instanceOfQN.toQualifiedName, obj.functionCall.resolveEObject, obj.functionReference?.fromValueObject as EReference, obj.returnTypeTV.fromValueObject as TypeVariable, null);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {
@@ -237,7 +240,7 @@ class SerializationAdapter {
 		new SerializedConstraintSystem => [
 			constraints = obj.constraints.map[ it.toValueObject() as SerializedAbstractTypeConstraint ]
 			typeClasses = obj.typeClasses
-				.entrySet
+				.entrySet.sortBy[it.key]
 				.map[ it.key.toString() -> it.value.toValueObject as SerializedTypeClass ]
 				.toMap([ it.key ], [ it.value ]);
 		]
@@ -276,7 +279,7 @@ class SerializationAdapter {
 		new SerializedFunctionTypeClassConstraint => [
 			type = obj.typ.toValueObject as SerializedAbstractType
 			functionCall = if(obj.functionCall === null) null else EcoreUtil.getURI(obj.functionCall).toString();
-			functionReference = obj.functionReference.toValueObject;
+			functionReference = obj.functionReference?.toValueObject;
 			returnTypeTV = obj.returnTypeTV.toValueObject as SerializedTypeVariable;
 			instanceOfQN = obj.instanceOfQN.toString()
 		]
@@ -289,7 +292,13 @@ class SerializationAdapter {
 				.toMap([ it.key ], [ it.value ])
 		]
 	}
-		
+	
+	protected dispatch def SerializedTypeClassProxy toValueObject(TypeClassProxy obj) {
+		new SerializedTypeClassProxy => [
+			toResolve = obj.toResolve.toValueObject as SerializedTypeVariableProxy
+		]
+	}
+	
 	protected dispatch def Object fill(SerializedAbstractBaseType ctxt, AbstractBaseType obj) {
 		ctxt.name = obj.name;
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()

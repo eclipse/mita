@@ -26,7 +26,7 @@ class SerializedTypeClass extends SerializedObject {
 	public Map<SerializedAbstractType, String> instances;
 }
 
-class SerializedTypeClassProxy extends SerializedObject {
+class SerializedTypeClassProxy extends SerializedTypeClass {
     new() {
         _type = "SerializedTypeClassProxy";
     }

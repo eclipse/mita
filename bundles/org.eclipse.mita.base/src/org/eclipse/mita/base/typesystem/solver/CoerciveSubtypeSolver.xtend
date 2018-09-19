@@ -142,7 +142,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(constraint.javaClass.isInstance(constraint.what)) {
 			return SimplificationResult.success(system, substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''«constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
+		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''CSS: «constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
 	}
 //	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ExplicitInstanceConstraint constraint) {
 //		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ExplicitInstanceConstraint not implemented for «constraint»''')))
@@ -164,7 +164,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 		}
 		if(typeClass !== null) {
-			val result = typeClass.instances.entrySet.map[k_v | 
+			val unificationResults = typeClass.instances.entrySet.map[k_v | 
 				val typ = k_v.key;
 				val fun = k_v.value;
 				// two possible ways to be part of this type class:
@@ -184,13 +184,15 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					}
 				}
 				unification -> typ -> fun;
-			].map[
+			]
+			val processedResults = unificationResults.map[
 				if(!it.key.key.valid) {
 					return it;
 				}
 				val sub = substitution.apply(it.key.key.substitution);
 				UnificationResult.success(sub) -> sub.applyToType(it.key.value) -> it.value
-			].findFirst[
+			]
+			val result = processedResults.findFirst[
 				it.key.key.valid && it.value instanceof Operation
 			]
 			if(result !== null) {
