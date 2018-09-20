@@ -66,6 +66,7 @@ import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -321,7 +322,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	 
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
-		println(sumAlt);
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		val prodType = new ProdType(sumAlt, sumAlt.name, types, #[system.translateTypeDeclaration(sumAlt.eContainer)]);
 		return TypeTranslationAdapter.set(sumAlt, prodType) => [
@@ -356,31 +356,25 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return new AtomicType(genType);
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {
-		if(isLinking) {
-			return TypeVariableAdapter.getProxy(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		}
-		
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {	
 		val typeArguments = typeSpecifier.typeArguments;
-		if(typeSpecifier.type === null) {
-			return system.associate(new BottomType(typeSpecifier, "BCF: Unresolved type"));
+		val type = if(typeSpecifier.type !== null) {
+			system.translateTypeDeclaration(typeSpecifier.type)
+		} 
+		else {
+			resolveReferenceToSingleAndGetType(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		}
 		if(typeArguments.empty) {
-			return system.associate(system.translateTypeDeclaration(typeSpecifier.type), typeSpecifier);
+			return system.associate(type, typeSpecifier);
 		}
 		else {
-			if(!(typeSpecifier.type instanceof ComplexType)) {
-				return system.associate(new BottomType(typeSpecifier, "BCF: Specified type doesn't have type arguments"))
-			}
-			if(typeArguments.size !== (typeSpecifier.type as ComplexType).typeParameters.size) {
-				return system.associate(new BottomType(typeSpecifier, "BCF: Specified and the type's type arguments differ in length"))
-			}
-			val vars_typeScheme = system.translateTypeDeclaration(typeSpecifier.type).instantiate();
-			val vars = vars_typeScheme.key;
-			for(var i = 0; i < Integer.min(typeArguments.size, vars.size); i++) {
-				system.addConstraint(new EqualityConstraint(vars.get(i), system.computeConstraints(typeArguments.get(i)), "BCF:307"));
-			}
-			return system.associate(vars_typeScheme.value, typeSpecifier);
+			// this type specifier is an instance of type
+			val typeArgs = typeArguments.map[system.computeConstraints(it) as AbstractType].force;
+			val typeName = typeSpecifier.type?.name ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)?.head?.text?.trim;
+			val typeInstance = new TypeConstructorType(null, typeName, typeArgs);
+			system.addConstraint(new ExplicitInstanceConstraint(typeInstance, type));
+			return system.associate(typeInstance, typeSpecifier);
+			
 		}
 	}
 	

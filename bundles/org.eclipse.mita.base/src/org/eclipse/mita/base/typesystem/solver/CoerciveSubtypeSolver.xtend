@@ -110,7 +110,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected def SimplificationResult simplify(ConstraintSystem system, Substitution subtitution) {
 		var resultSystem = system;
 		var resultSub = subtitution;
-		
 		while(resultSystem.hasNonAtomicConstraints()) {
 			val constraintAndSystem = resultSystem.takeOneNonAtomic();
 			val constraint = constraintAndSystem.key;
@@ -123,6 +122,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			
 			resultSub = simplification.substitution;
 			resultSystem = resultSub.apply(simplification.system);
+
 			if(resultSub.content.entrySet.exists[tv_t | tv_t.value.freeVars.exists[it == tv_t.key]]) {
 				return SimplificationResult.failure(new UnificationIssue(null, "System is not weakly unifyable"))
 			}
@@ -144,9 +144,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''CSS: «constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
 	}
-//	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ExplicitInstanceConstraint constraint) {
-//		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ExplicitInstanceConstraint not implemented for «constraint»''')))
-//	}
+
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ImplicitInstanceConstraint constraint) {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ImplicitInstanceConstraint not implemented for «constraint»''')))
 	}

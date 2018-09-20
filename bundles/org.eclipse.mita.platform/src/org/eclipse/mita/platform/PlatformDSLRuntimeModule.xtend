@@ -22,25 +22,24 @@ import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
-import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.mita.base.typesystem.infra.DefaultPackageResourceMapper
 import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.platform.infra.PlatformLinker
 import org.eclipse.mita.platform.scoping.PlatformDslImportScopeProvider
 import org.eclipse.mita.platform.scoping.PlatformDslResourceDescriptionStrategy
+import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
-import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 
@@ -75,8 +74,11 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		return MitaBaseResource
 	}
 	
-	override bindXtextResourceSet() {
-		return MitaResourceSet
+	override bindILinker() {
+		return MitaLinker
 	}
+//	override bindXtextResourceSet() {
+//		return MitaResourceSet
+//	}
 
 }
