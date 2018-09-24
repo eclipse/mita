@@ -98,7 +98,7 @@ class DefaultValueProvider {
 		if (!itemType.alternatives.isEmpty) {
 			val alt = itemType.alternatives.head;
 			val args = alt.accessorsTypes.map[tp | ExpressionsFactory.eINSTANCE.createArgument => [
-				 value = tp.dummyExpression(context)
+				 value = tp.type.dummyExpression(context)
 			]];
 			if(EcoreUtil2.getContainerOfType(context, SystemResourceSetup) === null) {
 				return ExpressionsFactory.eINSTANCE.createFeatureCall => [
@@ -148,7 +148,7 @@ class DefaultValueProvider {
 			return proposalString;
 		}
 		if(typ instanceof AnonymousProductType) {
-			val proposalString = '''«base»«typ.name»(«FOR conType : typ.accessorsTypes SEPARATOR(", ")»«getDummyString(conType)»«ENDFOR»)'''
+			val proposalString = '''«base»«typ.name»(«FOR conType : typ.accessorsTypes SEPARATOR(", ")»«getDummyString(conType.type)»«ENDFOR»)'''
 			return proposalString;
 		}
 		if(typ instanceof Singleton) {

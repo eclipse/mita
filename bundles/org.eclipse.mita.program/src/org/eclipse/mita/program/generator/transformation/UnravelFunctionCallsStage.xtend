@@ -24,7 +24,9 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.GeneratedFunctionDefinition
+import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
+import org.eclipse.xtext.EcoreUtil2
 
 class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	
@@ -32,6 +34,12 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	protected GeneratorRegistry generatorRegistry
 	
 	override protected needsUnraveling(Expression expression) {
+		// unraveling fails right now if expression is part of a global initialization. 
+		// The statement generator can recover for direct initialization (x = foo()), so we don't unravel here.
+		// this might lead to invalid code, since unraveling fixes nested expressions like foo() && bar(), however unraveling leads to just as invalid code.
+		if(EcoreUtil2.getContainerOfType(expression, ProgramBlock) === null) {
+			return false;
+		}
 		if(expression instanceof ElementReferenceExpression) {
 			val ref = expression.reference;
 			

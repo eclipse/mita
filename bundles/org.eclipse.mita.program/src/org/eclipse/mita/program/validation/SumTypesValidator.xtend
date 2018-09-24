@@ -25,8 +25,10 @@ import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 import org.eclipse.mita.base.types.validation.TypeValidator
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.validation.PlatformDSLValidator
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
@@ -115,7 +117,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 				realType.accessorsTypes;
 			}
 			else {
-				#[realType];
+				#[TypesFactory.eINSTANCE.createTypeSpecifier => [it.type = realType]];
 			}
 			
 			if(realArgs.length != arguments.length) {
@@ -126,7 +128,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 			if(ref instanceof NamedProductType) {
 				var argsSorted = ModelUtils.getSortedArguments(ref.parameters, arguments);
 
-				for(arg_type: ModelUtils.zip(argsSorted, realArgs)) {
+				for(arg_type: BaseUtils.zip(argsSorted, realArgs)) {
 					val sArg = arg_type.key.value;
 					val sField = arg_type.value;
 					val t1 = inferrer.infer(sField, this);
@@ -148,7 +150,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 				}
 				if(realType instanceof StructureType) {
 					var argsSorted = ModelUtils.getSortedArguments(realType.parameters, arguments);
-					for(arg_type: ModelUtils.zip(argsSorted, realArgs)) {
+					for(arg_type: BaseUtils.zip(argsSorted, realArgs)) {
 						val sArg = arg_type.key.value;
 						val sField = arg_type.value;
 						val t1 = inferrer.infer(sField, this);

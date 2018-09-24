@@ -154,7 +154,7 @@ interface HasAccessors {
 	/**
 	 * caution: this is only the type from the parsed model, not neccessarily the inferred type. Use with caution for type inferrence.
 	 */
-	op Type[] accessorsTypes()
+	op TypeSpecifier[] accessorsTypes()
 }
 
 class Exportable {
@@ -183,8 +183,8 @@ class NativeType extends PrimitiveType, Exportable {
 
 class StructureType extends ComplexType, HasAccessors, Exportable {
 	contains Parameter[] parameters
-	op Type[] accessorsTypes() {
-		return parameters.map[it.typeSpecifier.^type];
+	op TypeSpecifier[] accessorsTypes() {
+		return parameters.map[it.typeSpecifier];
 	}
 	
 	op String toString() {
@@ -223,7 +223,7 @@ interface SumAlternative extends ComplexType, HasAccessors {
 	}
 }
 class Singleton extends SumAlternative {
-	op Type[] accessorsTypes() {
+	op TypeSpecifier[] accessorsTypes() {
 		return #[].asEList;
 	}
 }
@@ -231,13 +231,14 @@ class AnonymousProductType extends SumAlternative {
 	contains TypeSpecifier[] typeSpecifiers 
 	op Type realType() {
 		if(typeSpecifiers.length == 1) {
-			return typeSpecifiers.get(0).^type;
+			val mbRealType = typeSpecifiers.get(0).^type;
+			if(mbRealType instanceof HasAccessors) {
+				return mbRealType;
+			}
 		}
-		else {
-			return this;
-		}
+		return this;	
 	}
-	op Type[] accessorsTypes() {
+	op TypeSpecifier[] accessorsTypes() {
 		// need to duplicate functionality, since calling realType and deferring to that ones accessor types would create infinite recursion if it returns this
 		// could check with == this, but that would be more confusing I think
 		if(typeSpecifiers.length == 1) {
@@ -246,14 +247,14 @@ class AnonymousProductType extends SumAlternative {
 				return realType.accessorsTypes;
 			}
 		}
-		return typeSpecifiers.map[it.^type];
+		return typeSpecifiers;
 	}
 }
 class NamedProductType extends SumAlternative, HasAccessors {
 	contains Parameter[] parameters
 	// always return parameter types, since we never embed
-	op Type[] accessorsTypes() {
-		return parameters.map[it.typeSpecifier.^type];
+	op TypeSpecifier[] accessorsTypes() {
+		return parameters.map[it.typeSpecifier];
 	}
 }
 class ProductMember extends Parameter { }

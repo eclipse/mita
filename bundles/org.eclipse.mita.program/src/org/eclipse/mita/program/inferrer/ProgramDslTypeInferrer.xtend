@@ -151,8 +151,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 			return refType.bindings.head;
 		} else {
 			this.acceptor.accept(
-				new ValidationIssue(Severity.ERROR, DEREFERENCE_OF_NON_REFERENCE_MSG, e,
-					DEREFERENCE_OF_NON_REFERENCE_CODE));
+				new ValidationIssue(Severity.ERROR, DEREFERENCE_OF_NON_REFERENCE_MSG, e, null, DEREFERENCE_OF_NON_REFERENCE_CODE));
 			return null;
 		}
 	}
@@ -365,7 +364,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 				val argType = this.inferTypeDispatch(varArgs);
 				val parameterValue = args.get(parameter);
 				
-				assertWithinRange(argType, parameterValue, varArgs);
+				assertWithinRange(argType, parameterValue, parameterValue);
 			}
 		}
 		
@@ -392,7 +391,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 		if(range !== null) {
 			if(staticIntValue < range.get(0) || staticIntValue > range.get(1)) {
 				val errorMessage = String.format(INTEGER_VALUE_OUT_OF_RANGE_MSG, range.get(0), range.get(1));
-				acceptor.accept(new ValidationIssue(Severity.ERROR, errorMessage, target, INTEGER_VALUE_OUT_OF_RANGE_CODE));
+				acceptor.accept(new ValidationIssue(Severity.ERROR, errorMessage, target, null, INTEGER_VALUE_OUT_OF_RANGE_CODE));
 			}
 		}
 	}

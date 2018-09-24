@@ -13,11 +13,12 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
-import org.eclipse.mita.program.generator.AbstractFunctionGenerator
-import org.eclipse.mita.program.generator.StatementGenerator
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.StatementGenerator
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class ModalityReadGenerator extends AbstractFunctionGenerator {
 	
@@ -28,8 +29,8 @@ class ModalityReadGenerator extends AbstractFunctionGenerator {
 		return false;
 	}
 	
-	override generate(ElementReferenceExpression functionCall, String resultVariableName) {
-		if(resultVariableName === null || resultVariableName.empty) {
+	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
+		if(resultVariableName === null) {
 			CodeFragment.EMPTY
 		} else {
 			codeFragmentProvider.create('''«resultVariableName» = «statementGenerator.code(functionCall.arguments.get(0).value)»;''');			

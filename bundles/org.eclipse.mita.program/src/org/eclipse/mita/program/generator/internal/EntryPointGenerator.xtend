@@ -108,10 +108,6 @@ class EntryPointGenerator {
 				
 				«ENDFOR»
 				«ENDIF»
-				«IF context.hasGlobalVariables»
-				exception = initGlobalVariables();
-				«"InitGlobalVars".generateLoggingExceptionHandler("setup")»
-				«ENDIF»
 				return exception;
 			}
 			
@@ -129,7 +125,11 @@ class EntryPointGenerator {
 				exception = «resource.enableName»();
 				«resource.baseName.generateLoggingExceptionHandler("enable")»
 				«ENDFOR»
-
+				«IF context.hasGlobalVariables»
+				exception = initGlobalVariables();
+				«"InitGlobalVars".generateLoggingExceptionHandler("do")»
+				
+				«ENDIF»
 				return NO_EXCEPTION;
 			}
 		''')

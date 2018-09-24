@@ -75,7 +75,8 @@ class GeneratorUtils {
 		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
 			?:EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration) as EObject
 			?:EcoreUtil2.getContainerOfType(obj, Program) as EObject;
-		funDef.eAllContents.filter(obj.class).indexed.findFirst[it.value.equals(obj)]?.key?:(-1);
+		val result = funDef?.eAllContents?.filter(obj.class)?.indexed?.findFirst[it.value.equals(obj)]?.key?:(-1);
+		return result + 1;
 	}
 	
 	public def String getUniqueIdentifier(EObject obj) {
@@ -119,7 +120,7 @@ class GeneratorUtils {
 	}
 	
 	private def dispatch String getUniqueIdentifierInternal(EObject obj) {
-		return obj.baseName?:"";
+		return obj.baseName ?: obj.eClass.name;
 	}
 
 	def dispatch String getHandlerName(EventHandlerDeclaration event) {
@@ -346,6 +347,9 @@ class GeneratorUtils {
 	def dispatch String getBaseName(ModalityAccessPreparation modality) {
 		return '''«modality.systemResource.baseName»ModalityPreparation'''
 	}
+	def dispatch String getBaseName(Object p) {
+		return null;	
+	}
 	
 	def generateHeaderComment(CompilationContext context)'''
 	/**
@@ -355,9 +359,12 @@ class GeneratorUtils {
 
 	'''
 	
-	def generateExceptionHandler(EObject context, String variableName)'''
-	«IF variableName != 'exception'»exception = «variableName»;«ENDIF»
-	if(exception != NO_EXCEPTION) «IF ModelUtils.isInTryCatchFinally(context)»break«ELSE»return «variableName»«ENDIF»;'''
+	def generateExceptionHandler(EObject context, String variableName) {
+		'''
+			«IF variableName != 'exception'»exception = «variableName»;«ENDIF»
+			if(exception != NO_EXCEPTION) «IF ModelUtils.isInTryCatchFinally(context)»break«ELSE»return «variableName»«ENDIF»;
+		''' 
+	}
 	
 	def IGeneratorNode trim(IGeneratorNode stmt, boolean lastOccurance, Function<CharSequence, CharSequence> trimmer) {
 		if (stmt instanceof TextNode) {
@@ -390,10 +397,10 @@ class GeneratorUtils {
 		if(stmt instanceof CompositeGeneratorNode) {
 			val newChildren = stmt.children
 				.toList
-				.dropWhile[it instanceof NewLineNode]
+				.dropWhile[it instanceof NewLineNode || (it instanceof TextNode && (it as TextNode).text == "")]
 				.toList
 				.reverse
-				.dropWhile[it instanceof NewLineNode]
+				.dropWhile[it instanceof NewLineNode || (it instanceof TextNode && (it as TextNode).text == "")]
 				.toList
 				.reverse
 				.map[ it.noNewline ]

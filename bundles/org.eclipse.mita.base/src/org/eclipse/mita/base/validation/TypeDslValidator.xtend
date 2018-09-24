@@ -115,10 +115,20 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 	override accept(ValidationIssue issue) {
 		switch (issue.getSeverity()) {
 		case ERROR: {
-			error(issue.getMessage(), null, issue.getIssueCode());			
+			if(issue.target !== null) {
+				error(issue.getMessage(), issue.target, issue.feature, issue.issueCode);
+			}
+			else {
+				error(issue.getMessage(), issue.feature, issue.getIssueCode());			
+			}
 		}
 		case WARNING: {
-			warning(issue.getMessage(), null, issue.getIssueCode());			
+			if(issue.target !== null) {
+				warning(issue.getMessage(), issue.target, issue.feature, issue.issueCode);
+			}
+			else {
+				warning(issue.getMessage(), issue.feature, issue.getIssueCode());			
+			}
 		}
 		case INFO: { }
 		}

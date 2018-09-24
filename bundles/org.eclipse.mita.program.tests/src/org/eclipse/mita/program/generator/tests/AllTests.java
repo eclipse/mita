@@ -26,7 +26,8 @@ import org.junit.runners.Suite.SuiteClasses;
 	TryCatchGeneratorTest.class,
 	UnravelFunctionCallsTest.class,
 	SumTypesTest.class,
-	SetupTest.class
+	SetupTest.class,
+	GlobalAndLocalVariables.class
 })
 @RunWith(Suite.class)
 public class AllTests {
