@@ -11,7 +11,7 @@ import org.eclipse.jface.viewers.TableViewerColumn
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.UnificationIssue
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -29,8 +29,6 @@ import org.eclipse.xtext.resource.EObjectAtOffsetHelper
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.xtext.util.concurrent.IUnitOfWork
-import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class MitaTypesDebugView extends ViewPart {
 	protected TableViewer constraintViewer;
@@ -203,10 +201,11 @@ class MitaTypesDebugView extends ViewPart {
     	
     	val substitution = constraintSolution.solution;
     	val input = constraintSolution.solution?.substitutions?.keySet;
+    	val system = constraintSolution.constraints;
     	if(input === null) {
     		return;
     	}
-    	val origins = objects.map[TypeVariableAdapter.get(it)];
+    	val origins = objects.map[system.getTypeVariable(it)];
 
     	val result = origins.map[tv | tv -> substitution.apply(tv)];
     	

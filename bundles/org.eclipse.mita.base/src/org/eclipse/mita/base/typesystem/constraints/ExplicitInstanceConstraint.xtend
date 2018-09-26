@@ -1,12 +1,8 @@
 package org.eclipse.mita.base.typesystem.constraints
 
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
-import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 /**
  * Corresponds to instance relationship 𝜏 ⪯ σ as defined in
@@ -14,7 +10,6 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
  * by Heeren et al., see https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
  */
 @Accessors
-@FinalFieldsConstructor
 @EqualsHashCode
 class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 	protected final AbstractType instance;
@@ -24,10 +19,11 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		instance + " ⩽ " + typeScheme
 	}
 	
-	override replace(TypeVariable from, AbstractType with) {
-		return new ExplicitInstanceConstraint(instance.replace(from, with), typeScheme.replace(from, with));
+	new(AbstractType instance, AbstractType typeScheme) {
+		this.instance = instance;
+		this.typeScheme = typeScheme;
 	}
-	
+		
 	override getActiveVars() {
 		return instance.freeVars + typeScheme.freeVars;
 	}
@@ -44,25 +40,10 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		return "";
 	}
 	
-	override replace(Substitution sub) {
-		val inst = if(instance.freeVars.exists[sub.substitutions.containsKey(it)]) {
-			instance.replace(sub);
-		}
-		else {
-			instance;
-		}
-		val ts = if(typeScheme.freeVars.exists[sub.substitutions.containsKey(it)]) {
-			typeScheme.replace(sub);
-		}
-		else {
-			typeScheme;
-		}
-		
-		return new ExplicitInstanceConstraint(instance.replace(sub), typeScheme.replace(sub));
-	}
 	
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return new ExplicitInstanceConstraint(instance.replaceProxies(resolve), typeScheme.replaceProxies(resolve));
+	
+	override map((AbstractType)=>AbstractType f) {
+		return new ExplicitInstanceConstraint(instance.map(f), typeScheme.map(f));
 	}
 	
 }

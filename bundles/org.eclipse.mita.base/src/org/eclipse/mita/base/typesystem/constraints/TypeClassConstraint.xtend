@@ -5,12 +5,10 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.xtext.scoping.IScopeProvider
 
 @FinalFieldsConstructor
 @EqualsHashCode

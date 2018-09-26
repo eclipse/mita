@@ -3,7 +3,7 @@ package org.eclipse.mita.base.typesystem.types
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
@@ -37,10 +37,10 @@ class TypeScheme extends AbstractType {
 		return on.freeVars.filter(TypeVariable).reject[vars.contains(it)];
 	}
 	
-	override instantiate() {
+	override instantiate(ConstraintSystem system) {
 		val newVars = new ArrayList<TypeVariable>();
 		val newOn = vars.fold(on, [term, boundVar | 
-			val freeVar = new TypeVariable(null);
+			val freeVar = system.newTypeVariable(null);
 			newVars.add(freeVar);
 			term.replace(boundVar, freeVar);
 		]);
@@ -62,8 +62,9 @@ class TypeScheme extends AbstractType {
 			return new TypeScheme(origin, this.vars, this.on.replace(sub));			
 		}
 	}
+		
+	override map((AbstractType)=>AbstractType f) {
+		return new TypeScheme(origin, vars, on.map(f));
+	}
 	
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return new TypeScheme(origin, vars, on.replaceProxies(resolve));
-	}	
 }

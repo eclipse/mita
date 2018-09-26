@@ -52,7 +52,8 @@ class MitaLinker extends Linker {
 			.flatMap[ it.exportedObjects ]
 			.map[ it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filterNull
-			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]);
+			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]
+			.indexed.map[it.value.modifyNames('''.«it.key»''')]);
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {

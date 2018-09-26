@@ -6,12 +6,7 @@ import org.eclipse.mita.base.typesystem.solver.Substitution
 
 @EqualsHashCode
 class AtomicType extends AbstractBaseType {
-	protected static Integer instanceCount = 0;
-	
-	new(EObject origin) {
-		this(origin,  '''atom_«instanceCount++»''');
-	}
-	
+		
 	new(EObject origin, String name) {
 		super(origin, name)
 	}
@@ -25,6 +20,10 @@ class AtomicType extends AbstractBaseType {
 	}
 	
 	override replace(Substitution sub) {
+		return this;
+	}
+	
+	override map((AbstractType)=>AbstractType f) {
 		return this;
 	}
 		

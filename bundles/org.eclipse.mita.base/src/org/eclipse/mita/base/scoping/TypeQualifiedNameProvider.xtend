@@ -6,7 +6,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.types.SumAlternative
 
-class TypeQualifiedNameProvider extends DefaultDeclarativeQualifiedNameProvider {
+class TypeQualifiedNameProvider extends BaseQualifiedNameProvider {
 	
 	override getFullyQualifiedName(EObject obj) {
 		return doGetFullyQualifiedName(obj)

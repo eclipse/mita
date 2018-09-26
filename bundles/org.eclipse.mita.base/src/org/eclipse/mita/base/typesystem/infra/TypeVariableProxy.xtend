@@ -13,17 +13,13 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 @EqualsHashCode
 @Accessors
 class TypeVariableProxy extends TypeVariable {
-	static Integer instanceCount = 0;
 	// name of the origin member we want to resolve
 	protected final QualifiedName targetQID;	
 	protected final EReference reference;
 	
-	new(EObject origin, EReference reference) {
-		this(origin, '''p_«instanceCount++»''', reference, QualifiedName.create(NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim?.split("\\.")));
-	}
 	
-	new(EObject origin, EReference reference, QualifiedName qualifiedName) {
-		this(origin, '''p_«instanceCount++»''', reference, qualifiedName);
+	new(EObject origin, String name, EReference reference) {
+		this(origin, name, reference, QualifiedName.create(NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim?.split("\\.")));
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName qualifiedName) {
@@ -35,4 +31,13 @@ class TypeVariableProxy extends TypeVariable {
 	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
 		return resolve.apply(this);
 	}
+	
+	override map((AbstractType)=>AbstractType f) {
+		return f.apply(this);
+	}
+	
+	override modifyNames(String suffix) {
+		return new TypeVariableProxy(origin, name + suffix, reference, targetQID);
+	}
+	
 }

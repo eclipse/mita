@@ -1,7 +1,5 @@
 package org.eclipse.mita.base.typesystem.constraints
 
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
-import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -30,11 +28,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	override toString() {
 		subType + " ⩽ " + superType
 	}
-	
-	override replace(TypeVariable from, AbstractType with) {
-		return new SubtypeConstraint(subType.replace(from, with), superType.replace(from, with));
-	}
-	
+		
 	override getActiveVars() {
 		return subType.freeVars + superType.freeVars;
 	}
@@ -56,13 +50,9 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	override toGraphviz() {
 		return '''"«subType»" -> "«superType»"; «subType.toGraphviz» «superType.toGraphviz»'''
 	}
-	
-	override replace(Substitution sub) {
-		return new SubtypeConstraint(subType.replace(sub), superType.replace(sub));
-	}
-	
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return new SubtypeConstraint(subType.replaceProxies(resolve), superType.replaceProxies(resolve));
+		
+	override map((AbstractType)=>AbstractType f) {
+		return new SubtypeConstraint(subType.map(f), superType.map(f));
 	}
 	
 }

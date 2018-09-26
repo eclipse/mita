@@ -22,6 +22,7 @@ class Substitution {
 			println('''overriding «variable» ≔ «content.get(variable)» with «type»''')
 		}
 		this.content.put(variable, type.replace(this));
+
 //		if(type.freeVars.exists[content.containsKey(it)]) {
 //			//throw new Exception("did not replace correctly")
 //		} 
@@ -35,6 +36,12 @@ class Substitution {
 	}
 	public def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
 		content.forEach[add(it.key, it.value)];
+	}
+	
+	public def Substitution replace(TypeVariable from, AbstractType with) {
+		val result = new Substitution();
+		result.content = new HashMap(content.mapValues[it.replace(from, with)])
+		return result;
 	}
 	
 	public def apply(TypeVariable typeVar) {
@@ -92,11 +99,7 @@ class Substitution {
 	}
 	
 	override toString() {
-		val sep = if(content.keySet.length < 3) {
-			' '
-		} else {
-			'\n'
-		};
+		val sep = '\n'
 		return content.entrySet.map[ '''«it.key» ≔ «it.value»''' ].join(sep);
 	}
 	

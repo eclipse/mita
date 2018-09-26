@@ -35,7 +35,6 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
-import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -52,7 +51,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	protected SerializationAdapter serializationAdapter
 	
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
-		userData.put("TypeVariable", serializationAdapter.toJSON(TypeVariableAdapter.get(eObject)));
 		if (eObject instanceof TypedElement) {
 			userData.put(TYPE, getTypeSpecifierType(((eObject as TypedElement)).getTypeSpecifier()))
 		}
@@ -102,24 +100,26 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	}
 
 	def boolean createEObjectDescriptions(EObject eObject, IAcceptor<IEObjectDescription> acceptor, IQualifiedNameProvider nameProvider) {
+		val Map<String, String> userData = Maps.newHashMap()		
 		if(getQualifiedNameProvider() === null) return false
-		if(!shouldCreateDescription(eObject)) return false
-		
+		if(!shouldCreateDescription(eObject)) {
+			return false;
+		}
+		val QualifiedName qualifiedName = nameProvider.getFullyQualifiedName(eObject)
+		if (qualifiedName === null) {
+			nameProvider.getFullyQualifiedName(eObject)
+			return false;
+		}
 		try {
-			var QualifiedName qualifiedName = nameProvider.getFullyQualifiedName(eObject)
-			if (qualifiedName !== null) {
-				var Map<String, String> userData = Maps.newHashMap()
-				defineUserData(eObject, userData)
-				acceptor.accept(EObjectDescription.create(qualifiedName, eObject, userData))
-				val secondQN = typeQualifiedNameProvider.getFullyQualifiedName(eObject);
-				if(secondQN !== null && secondQN != qualifiedName) {
-					acceptor.accept(EObjectDescription.create(secondQN, eObject, userData))
-				}
+			defineUserData(eObject, userData)
+			acceptor.accept(EObjectDescription.create(qualifiedName, eObject, userData))
+			val secondQN = typeQualifiedNameProvider.getFullyQualifiedName(eObject);
+			if(secondQN !== null && secondQN != qualifiedName) {
+				acceptor.accept(EObjectDescription.create(secondQN, eObject, userData))
 			}
 		} catch (Exception exc) {
 			exc.printStackTrace()
 		}
-
 		return true
 	}
 

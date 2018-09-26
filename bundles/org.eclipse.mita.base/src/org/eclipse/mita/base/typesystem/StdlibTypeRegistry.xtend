@@ -6,11 +6,9 @@ import java.util.Set
 import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
-import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -24,7 +22,6 @@ import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
-import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
@@ -60,19 +57,19 @@ class StdlibTypeRegistry {
 		val obj = scope.getSingleElement(qn).EObjectOrProxy;
 		return obj;
 	}
-	def getTypeModelObjectProxy(EObject context, QualifiedName qn) {
+	def getTypeModelObjectProxy(ConstraintSystem system, EObject context, QualifiedName qn) {
 		if(isLinking) {
-			return TypeVariableAdapter.getProxy(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type, qn);
+			return system.getTypeVariableProxy(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type, qn);
 		}
-		return TypeVariableAdapter.get(getTypeModelObject(context, qn));
+		return system.getTypeVariable(getTypeModelObject(context, qn));
 	}
 	
-	def getModelObjects(EObject context, QualifiedName qn, EReference ref) {
+	def getModelObjects(ConstraintSystem system, EObject context, QualifiedName qn, EReference ref) {
 		if(isLinking) {
-			return #[TypeVariableAdapter.getProxy(context, ref, qn)];
+			return #[system.getTypeVariableProxy(context, ref, qn)];
 		}
 		val scope = scopeProvider.getScope(context, ref);
-		val obj = scope.getElements(qn).map[EObjectOrProxy].map[TypeVariableAdapter.get(it)].force;
+		val obj = scope.getElements(qn).map[EObjectOrProxy].map[system.getTypeVariable(it)].force;
 		return obj;
 	}
 			
@@ -96,21 +93,21 @@ class StdlibTypeRegistry {
 		return translateNativeType(doubleType as NativeType);
 	}
 	
-	protected def getOptionalType(EObject context) {
+	protected def getOptionalType(ConstraintSystem system, EObject context) {
 		val optionalType = getTypeModelObject(context, StdlibTypeRegistry.optionalTypeQID) as GeneratedType;
-		val typeArgs = #[new TypeVariable(optionalType.typeParameters.head)]
+		val typeArgs = #[system.newTypeVariable(optionalType.typeParameters.head)]
 		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, "optional", typeArgs.map[it as AbstractType]));
 	}
 	
-	protected def getSigInstType(EObject context) {
+	protected def getSigInstType(ConstraintSystem system, EObject context) {
 		val sigInstType = getTypeModelObject(context, StdlibTypeRegistry.sigInstTypeQID) as GeneratedType;
-		val typeArgs = #[new TypeVariable(sigInstType.typeParameters.head)]
+		val typeArgs = #[system.newTypeVariable(sigInstType.typeParameters.head)]
 		return new TypeScheme(sigInstType, typeArgs, new TypeConstructorType(sigInstType, "siginst", typeArgs.map[it as AbstractType]));
 	}
 
-	protected def getModalityType(EObject context) {
+	protected def getModalityType(ConstraintSystem system, EObject context) {
 		val modalityType = getTypeModelObject(context, StdlibTypeRegistry.modalityTypeQID) as GeneratedType;
-		val typeArgs = #[new TypeVariable(modalityType.typeParameters.head)]
+		val typeArgs = #[system.newTypeVariable(modalityType.typeParameters.head)]
 		return new TypeScheme(modalityType, typeArgs, new TypeConstructorType(modalityType, "modality", typeArgs.map[it as AbstractType]));
 	}
 		
@@ -148,7 +145,7 @@ class StdlibTypeRegistry {
 	def Set<AbstractType> getSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
 		val idxs = s.explicitSubtypeRelations.reverseMap.get(t) ?: #[];
 		val explicitSuperTypes = #[t] + idxs.flatMap[s.explicitSubtypeRelations.getSuccessors(it)];
-		val ta_t = getOptionalType(typeResolveOrigin ?: t.origin).instantiate();
+		val ta_t = s.getOptionalType(typeResolveOrigin ?: t.origin).instantiate(s);
 		val ta = ta_t.key.head;
 		val optionalType = ta_t.value
 		return explicitSuperTypes.flatMap[s.doGetSuperTypes(it, typeResolveOrigin ?: it.origin)].flatMap[#[it, optionalType.replace(ta, it)]].toSet;

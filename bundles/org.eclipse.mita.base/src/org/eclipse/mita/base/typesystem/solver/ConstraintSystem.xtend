@@ -7,16 +7,21 @@ import java.util.Collections
 import java.util.HashMap
 import java.util.List
 import java.util.Map
+import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
+import org.eclipse.emf.ecore.InternalEObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
-import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
@@ -29,17 +34,91 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
+import org.eclipse.mita.base.types.PackageAssociation
 
 @Accessors
 class ConstraintSystem {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider; 
 	@Inject protected SerializationAdapter serializationAdapter;
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
+	protected Map<URI, TypeVariable> symbolTable = new HashMap();
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
 
 	// not use atm - is not passed through/serialized in the index
 	protected Graph<AbstractType> explicitSubtypeRelations;
+	
+	var int instanceCount = 0;
+	
+	def TypeVariable newTypeVariable(EObject obj) {
+		new TypeVariable(obj, '''f_«instanceCount++»''')
+	}
+	
+	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference) {
+		return new TypeVariableProxy(origin, '''p_«instanceCount++»''', reference);
+	}
+	
+	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference, QualifiedName qualifiedName) {
+		return new TypeVariableProxy(origin, '''p_«instanceCount++»''', reference, qualifiedName);
+	}
+	
+	
+	def TypeVariable getTypeVariable(EObject obj) {
+//		val ieobject = obj as InternalEObject;
+//		val container = ieobject.eInternalContainer();
+		val baseURI = EcoreUtil.getURI(obj);
+//		val uriFragment = container.eURIFragmentSegment(null, ieobject);
+
+		val container = obj.eContainer;
+		val uri = if(container instanceof PackageAssociation) {
+			baseURI.appendSegment((container.eContents.indexOf(obj) + 2).toString);
+		}
+		else {
+			baseURI;
+		}
+		getOrCreate(obj, uri, [ 
+			newTypeVariable(it)
+		]);
+	}
+	
+	def TypeVariable getTypeVariableProxy(EObject obj, EReference reference) {
+		val ieobject = obj as InternalEObject;
+		val container = ieobject.eInternalContainer();
+		val baseUri = EcoreUtil.getURI(obj);
+		val uriFragment = container.eURIFragmentSegment(reference, ieobject);
+		val uri = obj.eResource.getURI().appendFragment( baseUri + "/" + uriFragment);
+		getOrCreate(obj, uri, [ 
+			new TypeVariableProxy(it, '''p_«instanceCount++»''', reference)
+		]);
+	}
+	
+	def TypeVariable getTypeVariableProxy(EObject obj, EReference reference, QualifiedName objName) {
+		val ieobject = obj as InternalEObject;
+		val container = ieobject.eInternalContainer();
+		val baseUri = EcoreUtil.getURI(obj);
+		val uriFragment = container.eURIFragmentSegment(reference, ieobject);
+		val uri = obj.eResource.getURI().appendFragment( baseUri + "/" + uriFragment).appendQuery(objName.toString);
+		getOrCreate(obj, uri, [ 
+			new TypeVariableProxy(it, '''p_«instanceCount++»''', reference, objName)
+		]);
+	}
+	
+	def ConstraintSystem modifyNames(String suffix) {
+		val result = constraintSystemProvider.get();
+		result.constraintSystemProvider = result.constraintSystemProvider ?: constraintSystemProvider;
+		result.instanceCount = instanceCount;
+		result.constraints += constraints.map[it.modifyNames(suffix)]
+		result.symbolTable.putAll(symbolTable.mapValues[it.modifyNames(suffix) as TypeVariable])
+		result.typeClasses.putAll(typeClasses.mapValues[it.modifyNames(suffix)]);
+		return result;
+	}
+	
+	protected def getOrCreate(EObject obj, URI uri, (EObject) => TypeVariable factory) {
+		
+		val candidate = symbolTable.computeIfAbsent(uri, [ __ |
+			factory.apply(obj);
+		])
+		return candidate;
+	}
 	
 	new() {
 		
@@ -112,16 +191,18 @@ class ConstraintSystem {
 	}
 	
 	override toString() {
-		val res = new StringBuilder()
 		
-		res.append("Constraints:\n")
-		constraints.forEach[
-			res.append("\t")
-			res.append(it)
-			res.append("\n")
-		]
-		
-		return res.toString
+		return '''
+		Type Classes:
+			«FOR tc: typeClasses.entrySet»
+			«tc»
+			«ENDFOR»
+			
+		Constraints:
+			«FOR c: constraints»
+			«c»
+			«ENDFOR»
+		'''
 	}
 	
 	def toGraphviz() {
@@ -140,6 +221,8 @@ class ConstraintSystem {
 			return (null -> result);
 		}
 		
+		result.instanceCount = instanceCount;
+		result.symbolTable.putAll(symbolTable)
 		result.constraints = constraints.tail.toList;
 		result.explicitSubtypeRelations = explicitSubtypeRelations;
 		result.typeClasses = typeClasses;
@@ -148,6 +231,7 @@ class ConstraintSystem {
 	
 	def takeOneNonAtomic() {
 		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
+		result.symbolTable.putAll(symbolTable)
 		result.constraintSystemProvider = constraintSystemProvider;
 		val atomics = constraints.filter[constraintIsAtomic];
 		val nonAtomics = constraints.filter[!constraintIsAtomic];
@@ -188,6 +272,14 @@ class ConstraintSystem {
 			)
 		)
 		|| (
+			(c instanceof ImplicitInstanceConstraint)
+			&& (
+				(c as ImplicitInstanceConstraint).isInstance instanceof TypeVariable
+			 || (c as ImplicitInstanceConstraint).ofType instanceof TypeVariable
+			)
+			&& ((c as ImplicitInstanceConstraint).isInstance != (c as ImplicitInstanceConstraint).ofType)
+		)
+		|| (
 			(c instanceof JavaClassInstanceConstraint)
 			&& (
 				(c as JavaClassInstanceConstraint).what instanceof TypeVariable
@@ -209,6 +301,8 @@ class ConstraintSystem {
 		
 		val csp = systems.map[it.constraintSystemProvider].filterNull.head;
 		val result = systems.fold(csp?.get() ?: new ConstraintSystem(), [r, t|
+			r.instanceCount += t.instanceCount;
+			r.symbolTable.putAll(t.symbolTable);
 			r.constraints.addAll(t.constraints);
 			r.typeClasses.putAll(t.typeClasses);
 			t.explicitSubtypeRelations => [g | g.nodes.forEach[typeNode | 
@@ -217,15 +311,15 @@ class ConstraintSystem {
 					g.getSuccessors(typeIdx).forEach[r.explicitSubtypeRelations.addEdge(typeNode, it)]
 				]
 			]]
-			//r.symbolTable.content.putAll(t.symbolTable.content);
 			return r;
 		]);
 		return csp.get() => [
+			it.instanceCount = result.instanceCount;
+			it.symbolTable.putAll(result.symbolTable);
 			it.constraintSystemProvider = csp;
 			it.constraints.addAll(result.constraints.toSet);
 			it.typeClasses = result.typeClasses
 			it.explicitSubtypeRelations = result.explicitSubtypeRelations
-			//it.symbolTable.content.putAll(result.symbolTable.content);
 		]
 	}
 	
@@ -238,6 +332,8 @@ class ConstraintSystem {
 	
 	def ConstraintSystem replaceProxies(Resource resource, IScopeProvider scopeProvider) {
 		val result = constraintSystemProvider.get();
+		result.instanceCount = instanceCount;
+		result.symbolTable.putAll(symbolTable);
 		result.constraints += constraints.map[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider).head ] ].force;
 		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies([ this.resolveProxy(it, resource, scopeProvider) ], [resource.resourceSet.getEObject(it, false)]) ]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
@@ -250,12 +346,12 @@ class ConstraintSystem {
 		}
 
 		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
-			return #[TypeVariableAdapter.get(tvp.origin.eGet(tvp.reference) as EObject)];
+			return #[getTypeVariable(tvp.origin.eGet(tvp.reference) as EObject)];
 		}
 
 		val scope = scopeProvider.getScope(tvp.origin, tvp.reference);
-		val scopeElements = scope.getElements(tvp.targetQID);
-		val cachedTypeSerializations = scopeElements.map[getUserData("TypeVariable")];
+		val scopeElements = scope.getElements(tvp.targetQID).toList;
+		val cachedTypeSerializations = scopeElements.map[getUserData("TypeVariable")].toList;
 		if(!cachedTypeSerializations.empty && cachedTypeSerializations.forall[it !== null]) {
 			val cachedTypes = cachedTypeSerializations.map[serializationAdapter.deserializeTypeFromJSON(it, [ resource.resourceSet.getEObject(it, false) ])]
 			// these proxies should not be ambiguous, otherwise we should have created a type class!
@@ -278,7 +374,9 @@ class ConstraintSystem {
 			]
 		}
 		
-		return replacementObjects.map[TypeVariableAdapter.get(it) as AbstractType].force;
+		return replacementObjects.map[
+			this.getTypeVariable(it) as AbstractType
+		].force;
 	}
 	
 }

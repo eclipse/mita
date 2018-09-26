@@ -19,17 +19,17 @@ package stdlib;
  * Iterables are the base-type of all types which can be iterated using a for-each loop.
  * They offer some generic functionality on a "bunch of items" level. 
  */
-export generated type iterable<T>
+/*export generated type iterable<T>
 	generator ""
 	size-inferrer ""
 	constructor con();
-
+*/
 /*
  * # Lists
  * 
  * A list is an ordered collection of elements which offers random read/write access.
  */
-export generated type array<T> subtype-of iterable
+export generated type array<T>
 	generator "org.eclipse.mita.library.stdlib.ArrayGenerator"
 	size-inferrer "org.eclipse.mita.library.stdlib.ArraySizeInferrer"
 	
