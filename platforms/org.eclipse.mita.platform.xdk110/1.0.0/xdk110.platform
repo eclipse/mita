@@ -367,6 +367,30 @@ sensor BME280 {
 	
 }
 
+enum BMM150_Preset {                            
+/**< ID to represent bmm150 Presetmode to lowpower  */        
+	LowPower,    
+	/**< ID to represent bmm150 Presetmode to regular  */         
+    Regular,     
+    /**< ID to represent bmm150 Presetmode to highaccuracy  */    
+    HighAccuracy,
+    /**< ID to represent bmm150 Presetmode to enhanced  */        
+    Enhanced    
+}
+/**
+ * The XDK's magnetometer
+ */
+sensor BMM150 {
+	generator "org.eclipse.mita.platform.xdk110.sensors.Bmm150Generator"
+	
+	configuration-item mode: BMM150_Preset = BMM150_Preset.Regular
+	
+	modality x_axis: int32
+    modality y_axis: int32
+    modality z_axis: int32
+    modality resistance: uint16
+}
+
 enum MAX44009_IntegrationTime {
 	/**
 	 * Integration time of 800 milliseconds. This is a preferred mode for boosting low-light sensitivity.
@@ -408,7 +432,6 @@ enum MAX44009_IntegrationTime {
 	 */
 	MS_6_25
 }
-
 
 /**
  * The XDK light sensor.
@@ -822,6 +845,7 @@ alias gyroscope for GyroscopeSensorFusion
 alias light for MAX44009
 alias button_one for Button
 alias button_two for Button
+alias magnetometer for BMM150
 
 platform XDK110 {
 	module "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGeneratorModule"
@@ -830,6 +854,7 @@ platform XDK110 {
 	has environment
 	has accelerometer
 	has gyroscope
+	has magnetometer
 	has light
 	has button_one
 	has button_two
