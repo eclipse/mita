@@ -29,6 +29,7 @@ import org.eclipse.xtext.resource.EObjectAtOffsetHelper
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.xtext.util.concurrent.IUnitOfWork
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class MitaTypesDebugView extends ViewPart {
 	protected TableViewer constraintViewer;
@@ -205,9 +206,9 @@ class MitaTypesDebugView extends ViewPart {
     	if(input === null) {
     		return;
     	}
-    	val origins = objects.map[system.getTypeVariable(it)];
+    	val origins = objects.map[system.getTypeVariable(it)].force;
 
-    	val result = origins.map[tv | tv -> substitution.apply(tv)];
+    	val result = origins.map[tv | tv -> substitution.apply(tv)].force;
     	
 		this.solutionViewer.input = result.toSet;
     }

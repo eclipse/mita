@@ -49,7 +49,7 @@ class TypeConstructorType extends AbstractType {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		return new TypeConstructorType(origin, name, typeArguments.map[it.map(f)].force, superTypes);
+		return new TypeConstructorType(origin, name, typeArguments.map[f.apply(it)].force, superTypes);
 	}
 	
 }

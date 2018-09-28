@@ -62,7 +62,8 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import org.eclipse.mita.base.util.BaseUtils
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -279,7 +280,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// some types may have circular dependencies. 
 		// To make it easy to solve this we cache type translations, reducing the required number of translations to O(1).
 		// So if some translation needs to recurse it can safely do so, as long as at least one member in the recursive circle sets its type translation before recursing.
-		val typeTrans = TypeTranslationAdapter.get(obj, [|system.doTranslateTypeDeclaration(obj)])
+		val typeTrans = TypeTranslationAdapter.get(obj, [|
+			system.doTranslateTypeDeclaration(obj)
+		])
 		// if we compile more than once without changes we need to associate again. Hence we always associate here to be safe.
 		system.associate(typeTrans, obj);
 		// for the same reason we need to iterate over all children of these types.
@@ -471,17 +474,24 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected def associate(ConstraintSystem system, AbstractType t) {
-		return associate(system, t, t.origin);
+		val ln = BaseUtils.lineNumberOf(1);
+		val cn = BaseUtils.classNameOf(1);
+		return associate(system, t, t.origin, '''«cn»:«ln»''');
 	}
 	
 	protected def associate(ConstraintSystem system, AbstractType t, EObject typeVarOrigin) {
+		val ln = BaseUtils.lineNumberOf(1);
+		val cn = BaseUtils.classNameOf(1);
+		return associate(system, t, typeVarOrigin, '''«cn»:«ln»''')
+	}
+	protected def associate(ConstraintSystem system, AbstractType t, EObject typeVarOrigin, String lineNumberOfOrigin) {
 		if(typeVarOrigin === null) {
 			throw new UnsupportedOperationException("BCF: Associating a type variable without origin is not supported (on purpose)!");
 		}
 		
 		val typeVar = system.getTypeVariable(typeVarOrigin);
-		if(typeVar != t && t !== null) {
-			system.addConstraint(new EqualityConstraint(typeVar, t, "BCF:412"));
+		if(typeVar != t && t !== null) { 
+			system.addConstraint(new EqualityConstraint(typeVar, t, '''BCF:«BaseUtils.lineNumber» -> «lineNumberOfOrigin»'''));
 		}
 		return typeVar;	
 	}

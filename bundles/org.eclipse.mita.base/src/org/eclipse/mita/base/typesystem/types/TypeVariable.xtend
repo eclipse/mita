@@ -19,7 +19,7 @@ class TypeVariable extends AbstractType {
 			else {
 				origin.toString
 			}
-			return '''«originText» («name»)''';
+			return '''«name» («originText»)''';
 		}
 		return name
 	}

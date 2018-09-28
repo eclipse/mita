@@ -37,7 +37,7 @@ class ProdType extends TypeConstructorType {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new ProdType(origin, name, typeArguments.map[ it.map(f) ].force, superTypes);
+		return new ProdType(origin, name, typeArguments.map[ f.apply(it) ].force, superTypes);
 	}
 	
 }

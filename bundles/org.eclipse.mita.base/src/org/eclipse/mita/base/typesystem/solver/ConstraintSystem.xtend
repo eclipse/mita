@@ -63,18 +63,8 @@ class ConstraintSystem {
 	
 	
 	def TypeVariable getTypeVariable(EObject obj) {
-//		val ieobject = obj as InternalEObject;
-//		val container = ieobject.eInternalContainer();
-		val baseURI = EcoreUtil.getURI(obj);
-//		val uriFragment = container.eURIFragmentSegment(null, ieobject);
+		val uri = EcoreUtil.getURI(obj);
 
-		val container = obj.eContainer;
-		val uri = if(container instanceof PackageAssociation) {
-			baseURI.appendSegment((container.eContents.indexOf(obj) + 2).toString);
-		}
-		else {
-			baseURI;
-		}
 		getOrCreate(obj, uri, [ 
 			newTypeVariable(it)
 		]);

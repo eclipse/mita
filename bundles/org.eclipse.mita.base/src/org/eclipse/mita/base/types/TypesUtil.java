@@ -30,6 +30,13 @@ public class TypesUtil {
 		StringBuilder id = new StringBuilder();
 		id.append(element.getName());
 		EObject container = element.eContainer();
+		if(container != null) {
+			int idx = container.eContents().indexOf(element);
+			if(idx > 0) {
+				id.append("_");
+				id.append(idx);
+			}
+		}
 		while (container != null) {
 
 			if (container.eClass().getEAllStructuralFeatures().contains(TypesPackage.Literals.NAMED_ELEMENT__NAME)) {

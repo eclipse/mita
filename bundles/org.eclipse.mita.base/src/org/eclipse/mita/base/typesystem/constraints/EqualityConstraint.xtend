@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.constraints
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.util.BaseUtils
 
 @Accessors
 @EqualsHashCode
@@ -38,7 +39,14 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	}
 			
 	override map((AbstractType)=>AbstractType f) {
-		return new EqualityConstraint(left.map(f), right.map(f), source);
+		val newL = f.apply(left);
+		val newR = f.apply(right);
+		if(left != newL && right != newR) {
+			return new EqualityConstraint(newL, newR, '''EC:«BaseUtils.lineNumber» -> «source»''');
+		}
+		else {
+			return this;
+		}
 	}
 	
 

@@ -123,7 +123,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			resultSub = simplification.substitution;
 			resultSystem = resultSub.apply(simplification.system);
 
-			if(resultSub.content.entrySet.exists[tv_t | tv_t.value.freeVars.exists[it == tv_t.key]]) {
+			val wittnessNotWeaklyUnifyable = resultSub.content.entrySet.findFirst[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]];
+			if(wittnessNotWeaklyUnifyable !== null) {
 				return SimplificationResult.failure(new UnificationIssue(null, "System is not weakly unifyable"))
 			}
 		}

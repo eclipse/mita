@@ -5,6 +5,7 @@ import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
@@ -64,7 +65,11 @@ class TypeScheme extends AbstractType {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		return new TypeScheme(origin, vars, on.map(f));
+		return new TypeScheme(origin, vars, f.apply(on));
+	}
+	
+	override modifyNames(String suffix) {
+		return new TypeScheme(origin, BaseUtils.force(vars.map[modifyNames(suffix) as TypeVariable]), on.modifyNames(suffix))
 	}
 	
 }

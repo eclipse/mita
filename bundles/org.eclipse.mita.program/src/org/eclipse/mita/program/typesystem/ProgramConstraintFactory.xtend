@@ -43,6 +43,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.lineNumber
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
