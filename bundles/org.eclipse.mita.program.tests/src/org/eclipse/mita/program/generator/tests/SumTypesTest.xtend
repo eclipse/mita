@@ -244,7 +244,7 @@ class SumTypesTest extends AbstractGeneratorTest {
 	}
 	
 	@Test
-	def testSumTypeAnonymus() {
+	def testSumTypesAnonymus() {
 		val ast = generateAndParseApplication(
 			'''
 				package test;
