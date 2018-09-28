@@ -25,6 +25,10 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 		return #[what];
 	}
 	
+	override getMembers() {
+		#[what, javaClass.simpleName]
+	}
+	
 	override toGraphviz() {
 		return what.toGraphviz;
 	}
@@ -36,5 +40,7 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	override map((AbstractType)=>AbstractType f) {
 		return new JavaClassInstanceConstraint(what.map(f), javaClass);
 	}
-	
+	override getOperator() {
+		return "java instanceof"
+	}
 }

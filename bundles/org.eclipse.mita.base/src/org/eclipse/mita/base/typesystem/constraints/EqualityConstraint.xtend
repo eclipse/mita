@@ -49,6 +49,8 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		}
 	}
 	
-
+	override getOperator() {
+		return "≡"
+	}
 	
 }

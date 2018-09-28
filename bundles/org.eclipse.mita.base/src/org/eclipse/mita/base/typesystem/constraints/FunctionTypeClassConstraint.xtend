@@ -45,4 +45,5 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		val newType = typ.map(f);
 		return new FunctionTypeClassConstraint(newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
 	}
+		
 }

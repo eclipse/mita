@@ -82,11 +82,16 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                if(element instanceof EqualityConstraint) {
-                	return element.left?.origin?.toString() ?: "null";
-                } else if(element instanceof SubtypeConstraint) {
-                	return element.subType?.origin?.toString() ?: "null";
+                if(element instanceof AbstractTypeConstraint) {
+                	val objects = element.members.toList;
+                	if(objects.size > 0) {
+                		val type = objects.get(0);
+                		if(type instanceof AbstractType) {
+                			return type.origin?.toString ?: "null"
+                		}
+                	}
                 }
+                return "";
             }
             
         });
@@ -94,11 +99,13 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                if(element instanceof EqualityConstraint) {
-                	return element.left?.toString() ?: "null";
-                } else if(element instanceof SubtypeConstraint) {
-                	return element.subType?.toString() ?: "null";
+                if(element instanceof AbstractTypeConstraint) {
+                	val objects = element.members.toList;
+                	if(objects.size > 0) {
+                		return objects.get(0).toString();
+                	}
                 }
+                return "";
             }
             
         });
@@ -106,11 +113,10 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                if(element instanceof EqualityConstraint) {
-                	return '≡';
-                } else if(element instanceof SubtypeConstraint) {
-                	return '⩽';
+                 if(element instanceof AbstractTypeConstraint) {
+                	return element.operator;
                 }
+                return "";
             }
             
         });
@@ -118,11 +124,13 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                if(element instanceof EqualityConstraint) {
-                	return element.right?.toString() ?: "null";
-                } else if(element instanceof SubtypeConstraint) {
-                	return element.superType?.toString() ?: "null";
+                if(element instanceof AbstractTypeConstraint) {
+                	val objects = element.members.toList;
+                	if(objects.size > 1) {
+                		return objects.get(1).toString();
+                	}
                 }
+                return "";
             }
             
         });
@@ -130,11 +138,16 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                if(element instanceof EqualityConstraint) {
-                	return element.right?.origin?.toString() ?: "null";
-                } else if(element instanceof SubtypeConstraint) {
-                	return element.superType?.origin?.toString() ?: "null";
+                if(element instanceof AbstractTypeConstraint) {
+                	val objects = element.members.toList;
+                	if(objects.size > 1) {
+                		val type = objects.get(1);
+                		if(type instanceof AbstractType) {
+                			return type.origin?.toString ?: "null"
+                		}
+                	}
                 }
+                return "";
             }
             
         });
@@ -192,8 +205,8 @@ class MitaTypesDebugView extends ViewPart {
     	val origins = input
     		.map[ it as AbstractTypeConstraint ]
     	val result = origins
-    		.filter[c| c.origins.exists[origin| objects.exists[obj| origin == obj ] ] ]
-    		.toSet();
+//    		.filter[c| c.origins.exists[origin| objects.exists[obj| origin == obj ] ] ]
+//    		.toSet();
 		this.constraintViewer.input = result;
     }
     

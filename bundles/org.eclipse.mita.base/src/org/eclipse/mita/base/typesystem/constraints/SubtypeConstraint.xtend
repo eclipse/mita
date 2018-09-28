@@ -55,4 +55,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return new SubtypeConstraint(subType.map(f), superType.map(f));
 	}
 	
+	override getOperator() {
+		return "⩽"
+	}
+	
 }

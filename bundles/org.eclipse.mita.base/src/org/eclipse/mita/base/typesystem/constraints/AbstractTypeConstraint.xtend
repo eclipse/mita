@@ -27,6 +27,12 @@ abstract class AbstractTypeConstraint {
 	 */
 	abstract def Iterable<AbstractType> getTypes();
 	
+	def String getOperator();
+	
+	def Iterable<Object> getMembers() {
+		return getTypes().map[it];
+	}
+	
 	abstract def String toGraphviz();
 	
 	

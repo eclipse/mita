@@ -36,5 +36,9 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 		return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f));
 	}
 	
+	override getOperator() {
+		return "implicit instanceof"
+	}
+	
 	
 }

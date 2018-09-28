@@ -38,4 +38,13 @@ abstract class TypeClassConstraint extends AbstractTypeConstraint {
 	override toString() {
 		return '''«typ» :: «instanceOfQN»'''
 	}	
+	
+	override getOperator() {
+		return "::"
+	}
+	
+	override getMembers() {
+		#[typ, instanceOfQN]
+	}
+	
 }

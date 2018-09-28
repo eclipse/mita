@@ -46,4 +46,8 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		return new ExplicitInstanceConstraint(instance.map(f), typeScheme.map(f));
 	}
 	
+	override getOperator() {
+		return "explicit instanceof"
+	}
+	
 }
