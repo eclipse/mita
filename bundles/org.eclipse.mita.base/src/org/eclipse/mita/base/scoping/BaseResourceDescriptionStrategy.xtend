@@ -81,7 +81,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	static def String getTypeSpecifierType(TypeSpecifier specifier) {
 		if(specifier instanceof PresentTypeSpecifier){
 			if(specifier.optional){
-				return MitaTypeSystem.OPTINAL_TYPE
+				return MitaTypeSystem.OPTIONAL_TYPE
 			}else if (!specifier.referenceModifiers.isEmpty){
 				return MitaTypeSystem.REFERENCE_TYPE
 			}
