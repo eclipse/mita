@@ -48,7 +48,7 @@ class ConstraintSystem {
 	protected Graph<AbstractType> explicitSubtypeRelations;
 	
 	var int instanceCount = 0;
-	
+		
 	def TypeVariable newTypeVariable(EObject obj) {
 		new TypeVariable(obj, '''f_«instanceCount++»''')
 	}
@@ -207,32 +207,38 @@ class ConstraintSystem {
 	
 	def takeOne() {
 		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
-		if(constraints.empty) {
-			return (null -> result);
-		}
 		
 		result.instanceCount = instanceCount;
 		result.symbolTable.putAll(symbolTable)
-		result.constraints = constraints.tail.toList;
+		result.constraintSystemProvider = constraintSystemProvider;
 		result.explicitSubtypeRelations = explicitSubtypeRelations;
 		result.typeClasses = typeClasses;
+	
+		if(constraints.empty) {
+			return (null -> result);
+		}
+	
+		result.constraints = constraints.tail.toList;
 		return constraints.head -> result;
 	}
 	
 	def takeOneNonAtomic() {
 		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
+		result.instanceCount = instanceCount;
 		result.symbolTable.putAll(symbolTable)
 		result.constraintSystemProvider = constraintSystemProvider;
+		result.explicitSubtypeRelations = explicitSubtypeRelations;
+		result.typeClasses = typeClasses;
+
 		val atomics = constraints.filter[constraintIsAtomic];
 		val nonAtomics = constraints.filter[!constraintIsAtomic];
+
 		if(nonAtomics.empty) {
 			result.constraints = atomics.force;
 			return (null -> result);
 		}
 		
 		result.constraints = (nonAtomics.tail + atomics).force;
-		result.explicitSubtypeRelations = explicitSubtypeRelations;
-		result.typeClasses = typeClasses;
 		return nonAtomics.head -> result;
 	}
 	
@@ -303,14 +309,8 @@ class ConstraintSystem {
 			]]
 			return r;
 		]);
-		return csp.get() => [
-			it.instanceCount = result.instanceCount;
-			it.symbolTable.putAll(result.symbolTable);
-			it.constraintSystemProvider = csp;
-			it.constraints.addAll(result.constraints.toSet);
-			it.typeClasses = result.typeClasses
-			it.explicitSubtypeRelations = result.explicitSubtypeRelations
-		]
+		result.constraintSystemProvider = csp;
+		return result;
 	}
 	
 	def replace(Substitution substitution) {

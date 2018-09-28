@@ -41,7 +41,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	override map((AbstractType)=>AbstractType f) {
 		val newL = f.apply(left);
 		val newR = f.apply(right);
-		if(left != newL && right != newR) {
+		if(left != newL || right != newR) {
 			return new EqualityConstraint(newL, newR, '''EC:«BaseUtils.lineNumber» -> «source»''');
 		}
 		else {

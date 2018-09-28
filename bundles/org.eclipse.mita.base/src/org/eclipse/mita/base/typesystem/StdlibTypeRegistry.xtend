@@ -27,6 +27,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.util.BaseUtils
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
@@ -194,7 +195,7 @@ class StdlibTypeRegistry {
 	}
 	
 	protected def Optional<String> checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
-		return (bSub <= bTop).subtypeMsgFromBoolean('''STR: «top.name» is too small for «sub.name»''');
+		return (bSub <= bTop).subtypeMsgFromBoolean('''STR:«BaseUtils.lineNumber»: «top.name» is too small for «sub.name»''');
 	}
 	
 	public dispatch def Optional<String> isSubtypeOf(FloatingType sub, FloatingType top) {
@@ -205,7 +206,7 @@ class StdlibTypeRegistry {
 		val int bSub = switch(sub.signedness) {
 			case Signed: {
 				if(top.signedness != Signedness.Signed) {
-					return Optional.of('''STR: Incompatible signedness between «top.name» and «sub.name»''');
+					return Optional.of('''STR:«BaseUtils.lineNumber»: Incompatible signedness between «top.name» and «sub.name»''');
 				}
 				sub.widthInBytes;
 			}
@@ -247,12 +248,12 @@ class StdlibTypeRegistry {
 	
 	public dispatch def Optional<String> isSubtypeOf(ProdType sub, ProdType top) {
 		if(sub.typeArguments.length != top.typeArguments.length) {
-			return Optional.of('''STR: «sub.name» and «top.name» differ in the number of type arguments''')
+			return Optional.of('''STR:«BaseUtils.lineNumber»: «sub.name» and «top.name» differ in the number of type arguments''')
 		}
 		val msg = sub.typeArguments.zip(top.typeArguments).map[it.key.isSubtypeOf(it.value).orNull].filterNull.join("\n")
 		if(msg != "") {
 			return Optional.of('''
-			STR: «sub.name» isn't structurally a subtype of «top.name»:
+			STR:«BaseUtils.lineNumber»: «sub.name» isn't structurally a subtype of «top.name»:
 				«msg»''');
 		}
 		return Optional.absent;
@@ -265,7 +266,11 @@ class StdlibTypeRegistry {
 	}
 	
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {
-		return isSuperType.subtypeMsgFromBoolean('''STR: «sub» is not a subtype of «top»''')
+		val ln = BaseUtils.lineNumberOf(1);
+		return isSuperType.subtypeMsgFromBoolean(sub, top, ln);
+	}
+	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top, int ln) {
+		return isSuperType.subtypeMsgFromBoolean('''STR:«BaseUtils.lineNumber»->«ln»: «sub» is not a subtype of «top»''')
 	}
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, String msg) {
 		if(!isSuperType) {
