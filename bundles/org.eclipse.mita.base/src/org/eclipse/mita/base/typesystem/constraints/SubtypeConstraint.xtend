@@ -1,7 +1,7 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
@@ -23,6 +23,9 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		}
 		subType = sub;
 		superType = top;
+		if(this.toString == "vec1d_args(anyVec(), x8) ⩽ vec1d_args(f_0 (), anyVec())") {
+			println("!")
+		}
 	}
 	
 	override toString() {
@@ -41,10 +44,10 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return #[subType, superType];
 	}
 	
-	def isAtomic() {
-		return (subType instanceof TypeVariable && superType instanceof TypeVariable)
-			|| (subType instanceof TypeVariable && superType instanceof AtomicType)
-			|| (subType instanceof AtomicType && superType instanceof TypeVariable);
+	override isAtomic() {
+		return  (subType instanceof TypeVariable && superType instanceof TypeVariable)
+			 || (subType instanceof TypeVariable && superType instanceof AbstractBaseType)
+			 || (subType instanceof AbstractBaseType && superType instanceof TypeVariable)
 	}
 	
 	override toGraphviz() {

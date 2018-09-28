@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
@@ -48,6 +49,10 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 	
 	override getOperator() {
 		return "explicit instanceof"
+	}
+	
+	override isAtomic() {
+		return typeScheme instanceof TypeVariable
 	}
 	
 }

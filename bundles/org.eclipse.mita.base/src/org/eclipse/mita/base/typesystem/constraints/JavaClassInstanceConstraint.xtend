@@ -4,6 +4,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import java.lang.reflect.TypeVariable
 
 @FinalFieldsConstructor
 @Accessors
@@ -43,4 +44,9 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	override getOperator() {
 		return "java instanceof"
 	}
+	
+	override isAtomic() {
+		return what instanceof TypeVariable
+	}
+	
 }

@@ -53,4 +53,8 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		return "≡"
 	}
 	
+	override isAtomic() {
+		return false;
+	}
+	
 }

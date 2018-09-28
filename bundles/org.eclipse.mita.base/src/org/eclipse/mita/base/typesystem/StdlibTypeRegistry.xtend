@@ -153,7 +153,7 @@ class StdlibTypeRegistry {
 	}
 	
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, IntegerType t, EObject typeResolveOrigin) {
-		return getIntegerTypes(typeResolveOrigin).filter[t.isSubType(it)].force
+		return getIntegerTypes(typeResolveOrigin).filter[typeResolveOrigin.isSubType(t, it)].force
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, TypeConstructorType t, EObject typeResolveOrigin) {
 		return  #[t] + t.superTypes.flatMap[s.getSuperTypes(it, typeResolveOrigin)].force;
@@ -162,16 +162,16 @@ class StdlibTypeRegistry {
 		return #[t];
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, FloatingType t, EObject typeResolveOrigin) {
-		return getFloatingTypes(typeResolveOrigin).filter[t.isSubType(it)].force
+		return getFloatingTypes(typeResolveOrigin).filter[typeResolveOrigin.isSubType(t, it)].force
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Object t, EObject typeResolveOrigin) {
 		return #[];
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(IntegerType t, EObject typeResolveOrigin) {
-		return getIntegerTypes(typeResolveOrigin).filter[it.isSubType(t)].force
+		return getIntegerTypes(typeResolveOrigin).filter[typeResolveOrigin.isSubType(it, t)].force
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(FloatingType t, EObject typeResolveOrigin) {
-		return getFloatingTypes(typeResolveOrigin).filter[it.isSubType(t)].force
+		return getFloatingTypes(typeResolveOrigin).filter[typeResolveOrigin.isSubType(it, t)].force
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(SumType t, EObject typeResolveOrigin) {
 		return #[t] + t.typeArguments.flatMap[getSubTypes(it, typeResolveOrigin)].force;
@@ -190,18 +190,18 @@ class StdlibTypeRegistry {
 		return #[];
 	}
 	
-	public def boolean isSubType(AbstractType sub, AbstractType top) {
-		return !isSubtypeOf(sub, top).present;
+	public def boolean isSubType(EObject context, AbstractType sub, AbstractType top) {
+		return !context.isSubtypeOf(sub, top).present;
 	}
 	
 	protected def Optional<String> checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
 		return (bSub <= bTop).subtypeMsgFromBoolean('''STR:«BaseUtils.lineNumber»: «top.name» is too small for «sub.name»''');
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(FloatingType sub, FloatingType top) {
+	public dispatch def Optional<String> isSubtypeOf(EObject context, FloatingType sub, FloatingType top) {
 		return (sub.widthInBytes <= top.widthInBytes).subtypeMsgFromBoolean(sub, top);
 	}
-	public dispatch def Optional<String> isSubtypeOf(IntegerType sub, IntegerType top) {		
+	public dispatch def Optional<String> isSubtypeOf(EObject context, IntegerType sub, IntegerType top) {		
 		val bTop = top.widthInBytes;
 		val int bSub = switch(sub.signedness) {
 			case Signed: {
@@ -226,31 +226,31 @@ class StdlibTypeRegistry {
 		return checkByteWidth(sub, top, bSub, bTop);
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(FunctionType sub, FunctionType top) {
+	public dispatch def Optional<String> isSubtypeOf(EObject context, FunctionType sub, FunctionType top) {
 		//    fa :: a -> b   <:   fb :: c -> d 
 		// ⟺ every fa can be used as fb 
 		// ⟺ b >: d ∧    a <: c
-		return top.from.isSubtypeOf(sub.from).or(sub.to.isSubtypeOf(top.to));
+		return context.isSubtypeOf(top.from, sub.from).or(context.isSubtypeOf(sub.to, top.to));
 	}
 			
-	public dispatch def Optional<String> isSubtypeOf(BottomType sub, AbstractType sup) {
+	public dispatch def Optional<String> isSubtypeOf(EObject context, BottomType sub, AbstractType sup) {
 		// ⊥ is subtype of everything
 		return Optional.absent;
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(SumType sub, SumType top) {
-		top.typeArguments.forall[topAlt | sub.typeArguments.exists[subAlt | subAlt.isSubType(topAlt)]].subtypeMsgFromBoolean(sub, top)
+	public dispatch def Optional<String> isSubtypeOf(EObject context, SumType sub, SumType top) {
+		top.typeArguments.forall[topAlt | sub.typeArguments.exists[subAlt | context.isSubType(subAlt, topAlt)]].subtypeMsgFromBoolean(sub, top)
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(ProdType sub, SumType top) {
-		top.typeArguments.exists[sub.isSubType(it)].subtypeMsgFromBoolean(sub, top)
+	public dispatch def Optional<String> isSubtypeOf(EObject context, ProdType sub, SumType top) {
+		top.typeArguments.exists[context.isSubType(sub, it)].subtypeMsgFromBoolean(sub, top)
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(ProdType sub, ProdType top) {
+	public dispatch def Optional<String> isSubtypeOf(EObject context, ProdType sub, ProdType top) {
 		if(sub.typeArguments.length != top.typeArguments.length) {
 			return Optional.of('''STR:«BaseUtils.lineNumber»: «sub.name» and «top.name» differ in the number of type arguments''')
 		}
-		val msg = sub.typeArguments.zip(top.typeArguments).map[it.key.isSubtypeOf(it.value).orNull].filterNull.join("\n")
+		val msg = sub.typeArguments.zip(top.typeArguments).map[context.isSubtypeOf(it.key, it.value).orNull].filterNull.join("\n")
 		if(msg != "") {
 			return Optional.of('''
 			STR:«BaseUtils.lineNumber»: «sub.name» isn't structurally a subtype of «top.name»:
@@ -258,11 +258,11 @@ class StdlibTypeRegistry {
 		}
 		return Optional.absent;
 	}
-	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, BaseKind top) {
-		return subtypeMsgFromBoolean(sub.isSubType(top.kindOf), sub, top);
+	public dispatch def Optional<String> isSubtypeOf(EObject context, AbstractType sub, BaseKind top) {
+		return subtypeMsgFromBoolean(context.isSubType(sub, top.kindOf), sub, top);
 	}
-	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, AbstractType top) {
-		return (top.getSubTypes(top.origin).toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
+	public dispatch def Optional<String> isSubtypeOf(EObject context, AbstractType sub, AbstractType top) {
+		return (top.getSubTypes(context).toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
 	}
 	
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {

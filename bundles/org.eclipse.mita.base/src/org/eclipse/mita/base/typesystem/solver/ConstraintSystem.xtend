@@ -247,40 +247,7 @@ class ConstraintSystem {
 	}
 	
 	def constraintIsAtomic(AbstractTypeConstraint c) {
-		(
-			(c instanceof SubtypeConstraint)
-			&& (
-				(((c as SubtypeConstraint).subType instanceof TypeVariable) && (c as SubtypeConstraint).superType instanceof TypeVariable)
-			 || (((c as SubtypeConstraint).subType instanceof TypeVariable) && (c as SubtypeConstraint).superType instanceof AbstractBaseType)
-			 || (((c as SubtypeConstraint).subType instanceof AbstractBaseType) && (c as SubtypeConstraint).superType instanceof TypeVariable)
-			)	
-		)
-		|| (
-			(c instanceof TypeClassConstraint)
-			&& (
-				(!(c as TypeClassConstraint).types.flatMap[it.freeVars].empty)
-			)
-		)
-		|| (
-			(c instanceof ExplicitInstanceConstraint)
-			&& (
-				(c as ExplicitInstanceConstraint).typeScheme instanceof TypeVariable
-			)
-		)
-		|| (
-			(c instanceof ImplicitInstanceConstraint)
-			&& (
-				(c as ImplicitInstanceConstraint).isInstance instanceof TypeVariable
-			 || (c as ImplicitInstanceConstraint).ofType instanceof TypeVariable
-			)
-			&& ((c as ImplicitInstanceConstraint).isInstance != (c as ImplicitInstanceConstraint).ofType)
-		)
-		|| (
-			(c instanceof JavaClassInstanceConstraint)
-			&& (
-				(c as JavaClassInstanceConstraint).what instanceof TypeVariable
-			)
-		)
+		return c.isAtomic;
 	}
 	
 	def plus(AbstractTypeConstraint constraint) {

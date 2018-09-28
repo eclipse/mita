@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
@@ -38,6 +39,16 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	
 	override getOperator() {
 		return "implicit instanceof"
+	}
+	
+	override isAtomic() {
+		val r1 = isInstance instanceof TypeVariable;
+		val r2 = ofType instanceof TypeVariable;
+		val r3 = r1 || r2;
+		val r4 = isInstance != ofType;
+		val r5 = r3 && r4;
+		return (isInstance instanceof TypeVariable || ofType instanceof TypeVariable) 
+			&& (isInstance != ofType)
 	}
 	
 	

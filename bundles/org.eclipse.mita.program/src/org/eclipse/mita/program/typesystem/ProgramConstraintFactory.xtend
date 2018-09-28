@@ -9,6 +9,7 @@ import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructuralParameter
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
@@ -43,7 +44,6 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import static extension org.eclipse.mita.base.util.BaseUtils.lineNumber
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -79,6 +79,11 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			}
 		)
 		return result;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumSubTypeConstructor function) {
+		system.computeConstraints(function.sumTypeKind)
+		return system._computeConstraints(function as Operation);
 	}
 	
 	

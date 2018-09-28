@@ -14,6 +14,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.mita.base.typesystem.types.FunctionType
 
 @FinalFieldsConstructor
 @Accessors
@@ -45,5 +46,13 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		val newType = typ.map(f);
 		return new FunctionTypeClassConstraint(newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
 	}
+	
+	override isAtomic() {
+		if(typ instanceof FunctionType) {
+			return !typ.from.freeVars.empty
+		}
+		return true;
+	}
+	
 		
 }
