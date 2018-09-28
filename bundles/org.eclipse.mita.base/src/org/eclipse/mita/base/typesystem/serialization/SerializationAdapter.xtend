@@ -224,6 +224,7 @@ class SerializationAdapter {
 	
 	def toJSON(ConstraintSystem system) {
 		val gson = new GsonBuilder()
+			.setPrettyPrinting
     		.create();
 		return gson.toJson(system.toValueObject());
 	}
@@ -254,7 +255,7 @@ class SerializationAdapter {
 				.entrySet.sortBy[it.key.toString]
 				.map[it.key.toString() -> it.value.toValueObject as SerializedTypeVariable ]
 				.toMap([it.key], [it.value])
-			constraints = obj.constraints.map[ it.toValueObject() as SerializedAbstractTypeConstraint ]
+			constraints = obj.constraints.toSet.map[ it.toValueObject() as SerializedAbstractTypeConstraint ].toList
 			typeClasses = obj.typeClasses
 				.entrySet.sortBy[it.key]
 				.map[ it.key.toString() -> it.value.toValueObject as SerializedTypeClass ]

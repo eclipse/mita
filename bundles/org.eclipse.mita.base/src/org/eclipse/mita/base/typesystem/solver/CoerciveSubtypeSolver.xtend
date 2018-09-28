@@ -60,7 +60,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			println(currentSystem.toGraphviz);
 			val simplification = currentSystem.simplify(currentSubstitution);
 			if(!simplification.valid) {
-				return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), simplification.substitution, #[simplification.issue]);
+				return new ConstraintSolution(ConstraintSystem.combine(#[currentSystem, simplification.system].filterNull), simplification.substitution, #[simplification.issue]);
 			}
 			val simplifiedSystem = simplification.system;
 			val simplifiedSubst = simplification.substitution;

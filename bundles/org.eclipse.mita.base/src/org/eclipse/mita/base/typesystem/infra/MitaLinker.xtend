@@ -51,7 +51,7 @@ class MitaLinker extends Linker {
 		val thisExportedObjects = thisResourceDescription.exportedObjects;
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		
-		val exportedObjects = (visibleContainers
+		val exportedObjects = thisExportedObjects + (visibleContainers
 			.flatMap[ it.exportedObjects ].force);
 		val allConstraintSystems = exportedObjects
 			.map[ it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]

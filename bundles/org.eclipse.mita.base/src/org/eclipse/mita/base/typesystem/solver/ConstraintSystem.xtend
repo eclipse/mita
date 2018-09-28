@@ -5,6 +5,7 @@ import com.google.inject.Provider
 import java.util.ArrayList
 import java.util.Collections
 import java.util.HashMap
+import java.util.HashSet
 import java.util.List
 import java.util.Map
 import org.eclipse.emf.common.util.URI
@@ -14,17 +15,11 @@ import org.eclipse.emf.ecore.InternalEObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
-import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
-import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
-import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -34,7 +29,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.PackageAssociation
 
 @Accessors
 class ConstraintSystem {
@@ -218,7 +212,7 @@ class ConstraintSystem {
 			return (null -> result);
 		}
 	
-		result.constraints = constraints.tail.toList;
+		result.constraints = constraints.tail.force;
 		return constraints.head -> result;
 	}
 	
@@ -291,7 +285,9 @@ class ConstraintSystem {
 		val result = constraintSystemProvider.get();
 		result.instanceCount = instanceCount;
 		result.symbolTable.putAll(symbolTable);
-		result.constraints += constraints.map[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider).head ] ].force;
+		result.constraints += constraints.map[ it.replaceProxies[ 
+			this.resolveProxy(it, resource, scopeProvider).head
+		] ].force;
 		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies([ this.resolveProxy(it, resource, scopeProvider) ], [resource.resourceSet.getEObject(it, false)]) ]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;
