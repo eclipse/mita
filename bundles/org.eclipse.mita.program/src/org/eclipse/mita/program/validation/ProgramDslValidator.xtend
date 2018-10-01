@@ -394,6 +394,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		assertIsBoolean(condition)
 	}
 	
+	@Check(CheckType.NORMAL)
+	def checkVariableDeclaration(VariableDeclaration it){
+		if (it.getType() === null || it.getType().eIsProxy())
+            return;
+        inferrer.infer(it, this);
+	}
+	
 	def protected assertIsBoolean(Expression exp) {
 		var result1 = inferrer.infer(exp)
 		var result2 = inferrer.infer(typeSystem.getType(ProgramDslTypeInferrer.BOOL_LITERAL_TYPE))

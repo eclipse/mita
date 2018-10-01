@@ -51,6 +51,11 @@ function typesAvailableInVarDec() : void {
 	var withTypeParameter : array.T;
 }
 
+function voidIsInvalidForVariableDeclarations() : void {
+	// XPECT errors --> "'void' is an invalid type for variables" at "var i : void;"
+	var i : void;
+}
+
 function withParams(param : bool) {}
 
 function parameterScoping() {
