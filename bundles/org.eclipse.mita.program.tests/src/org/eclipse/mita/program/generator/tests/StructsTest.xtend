@@ -71,4 +71,27 @@ class StructsTest extends AbstractGeneratorTest {
 		''');
 		ast.assertNoCompileErrors();
 	}
+	
+		
+	@Test
+	def testStructCall(){
+		val ast = generateAndParseApplication(
+		'''
+		package main;
+		import platforms.unittest; 
+		
+		
+		struct S {
+			var x : int32; 
+			var y : int32;
+		}
+		
+		function foo(s:S){ }    
+		
+		function bar() {
+			foo(S(3,4));  
+		}  
+		''');
+		ast.assertNoCompileErrors();
+	}
 }

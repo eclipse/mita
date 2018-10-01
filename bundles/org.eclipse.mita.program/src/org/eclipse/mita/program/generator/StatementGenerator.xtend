@@ -353,7 +353,7 @@ class StatementGenerator {
 				}
 			} else if (ref instanceof StructureType) {
 				'''
-				{
+				«IF id !== null»(«id») «ENDIF» {
 					«FOR i_arg : stmt.arguments.indexed SEPARATOR (',\n')»
 					.«IF i_arg.value.parameter !== null»«i_arg.value.parameter.name»«ELSE»«ref.parameters.get(i_arg.key).name»«ENDIF» = «i_arg.value.value.code»
 					«ENDFOR»
