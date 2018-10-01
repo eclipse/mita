@@ -396,7 +396,8 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	
 	@Check(CheckType.NORMAL)
 	def checkVariableDeclaration(VariableDeclaration it){
-		if (it.getType() === null || it.getType().eIsProxy())
+		
+		if (it.getType() === null || it.getType().eIsProxy() || (!VOID.equals(it.typeSpecifier.type.toString)))
             return;
         inferrer.infer(it, this);
 	}
