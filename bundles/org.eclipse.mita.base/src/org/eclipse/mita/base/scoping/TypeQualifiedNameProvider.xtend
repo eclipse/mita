@@ -1,10 +1,11 @@
 package org.eclipse.mita.base.scoping
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.TypeKind
+import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.xtext.naming.DefaultDeclarativeQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.mita.base.types.VirtualFunction
-import org.eclipse.mita.base.types.SumAlternative
 
 class TypeQualifiedNameProvider extends DefaultDeclarativeQualifiedNameProvider {
 	
@@ -23,6 +24,10 @@ class TypeQualifiedNameProvider extends DefaultDeclarativeQualifiedNameProvider 
 	
 	protected dispatch def QualifiedName doGetFullyQualifiedName(VirtualFunction f) {
 		return getFullyQualifiedName(f.eContainer);
+	}
+	
+	protected dispatch def QualifiedName doGetFullyQualifiedName(TypeKind t) {
+		return getFullyQualifiedName(t.eContainer);
 	}
 	
 	protected dispatch def QualifiedName doGetFullyQualifiedName(EObject obj) {

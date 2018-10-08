@@ -7,10 +7,10 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -23,6 +23,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
+import org.eclipse.mita.base.typesystem.types.FunctionType
 
 /**
  * Solves coercive subtyping as described in 
@@ -151,7 +152,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify.ImplicitInstanceConstraint not implemented for «constraint»''')))
 	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, TypeClassConstraint constraint) {
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, FunctionTypeClassConstraint constraint) {
 		val refType = constraint.typ;
 		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
 		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
@@ -167,23 +168,26 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val unificationResults = typeClass.instances.entrySet.map[k_v | 
 				val typ = k_v.key;
 				val fun = k_v.value;
-				// two possible ways to be part of this type class:
-				// - via subtype (uint8 < uint32)
-				val optMsg = typeRegistry.isSubtypeOf(refType, typ);
-				// - via unification (i.e. siginst<T> ? siginst<uint32>
-				val mbUnification = mguComputer.compute(refType, typ);
-				val unification = if(optMsg.present && !mbUnification.valid) {
-					UnificationResult.failure(refType, optMsg.get);
-				} else {
-					// TODO insert coercion
-					if(!optMsg.present) {
-						UnificationResult.success(Substitution.EMPTY);
+				if(typ instanceof FunctionType) {
+					// two possible ways to be part of this type class:
+					// - via subtype (uint8 < uint32)
+					val optMsg = typeRegistry.isSubtypeOf(refType, typ.from);
+					// - via unification (i.e. siginst<T> ? siginst<uint32>
+					val mbUnification = mguComputer.compute(refType, typ.from);
+					val unification = if(optMsg.present && !mbUnification.valid) {
+						UnificationResult.failure(refType, optMsg.get);
+					} else {
+						// TODO insert coercion
+						if(!optMsg.present) {
+							UnificationResult.success(Substitution.EMPTY);
+						}
+						else {
+							mbUnification;
+						}
 					}
-					else {
-						mbUnification;
-					}
+					return unification -> typ -> fun;	
 				}
-				unification -> typ -> fun;
+				return UnificationResult.failure(refType, '''«typ» is not a function type''') -> typ -> fun;
 			]
 			val processedResults = unificationResults.map[
 				if(!it.key.key.valid) {

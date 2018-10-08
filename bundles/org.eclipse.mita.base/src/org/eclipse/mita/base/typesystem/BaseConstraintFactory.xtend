@@ -239,7 +239,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 					]	
 				]
 			}
-			system.addConstraint(new FunctionTypeClassConstraint(referencedFunctionType, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
+			system.addConstraint(new FunctionTypeClassConstraint(fromTV, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
 		}
 		else {
 			val funRef = candidates.head;

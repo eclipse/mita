@@ -263,6 +263,9 @@ class StdlibTypeRegistry {
 	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, BaseKind top) {
 		return subtypeMsgFromBoolean(sub.isSubType(top.kindOf), sub, top);
 	}
+	public dispatch def Optional<String> isSubtypeOf(BaseKind sub, BaseKind top) {
+		return subtypeMsgFromBoolean(sub.kindOf.isSubType(top.kindOf), sub, top);
+	}
 	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, AbstractType top) {
 		return (top.getSubTypes(top.origin).toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
 	}

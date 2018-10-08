@@ -138,7 +138,8 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase decon) {
 
-		val matchVariable = system.computeConstraints((decon.eContainer as WhereIsStatement).matchElement);
+		//TODO: add subtype constraint between prod type and matchVariable
+		//val matchVariable = TypeVariableAdapter.get((decon.eContainer as WhereIsStatement).matchElement);
 		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType];
 		val combinedType = new ProdType(decon, decon.productType?.toString ?: "", (vars).toList, #[]);
 		val deconType = resolveReferenceToSingleAndGetType(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
