@@ -55,7 +55,7 @@ class StdlibTypeRegistry {
 			return null;
 		}
 		val scope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		val obj = scope.getSingleElement(qn).EObjectOrProxy;
+		val obj = scope.getSingleElement(qn)?.EObjectOrProxy;
 		return obj;
 	}
 	def getTypeModelObjectProxy(ConstraintSystem system, EObject context, QualifiedName qn) {
@@ -261,11 +261,11 @@ class StdlibTypeRegistry {
 	public dispatch def Optional<String> isSubtypeOf(EObject context, AbstractType sub, BaseKind top) {
 		return subtypeMsgFromBoolean(context.isSubType(sub, top.kindOf), sub, top);
 	}
-	public dispatch def Optional<String> isSubtypeOf(BaseKind sub, BaseKind top) {
-		return subtypeMsgFromBoolean(sub.kindOf.isSubType(top.kindOf), sub, top);
+	public dispatch def Optional<String> isSubtypeOf(EObject context, BaseKind sub, BaseKind top) {
+		return subtypeMsgFromBoolean(context.isSubType(sub.kindOf, top.kindOf), sub, top);
 	}
-	public dispatch def Optional<String> isSubtypeOf(AbstractType sub, AbstractType top) {
-		return (top.getSubTypes(top.origin).toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
+	public dispatch def Optional<String> isSubtypeOf(EObject context, AbstractType sub, AbstractType top) {
+		return (top.getSubTypes(context).toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
 	}
 	
 	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {

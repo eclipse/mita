@@ -82,7 +82,6 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumSubTypeConstructor function) {
-		system.computeConstraints(function.sumTypeKind)
 		return system._computeConstraints(function as Operation);
 	}
 	

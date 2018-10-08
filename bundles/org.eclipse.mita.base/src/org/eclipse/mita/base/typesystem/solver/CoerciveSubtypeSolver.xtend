@@ -183,13 +183,19 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		if(typeClass !== null) {
 			val unificationResults = typeClass.instances.entrySet.map[k_v | 
-				val typ = k_v.key;
+				val typRaw = k_v.key;
 				val fun = k_v.value;
+				// typRaw might be a typeScheme (int32 -> b :: id: \T.T -> T)
+				val typ = if(typRaw instanceof TypeScheme) {
+					typRaw.instantiate(system).value
+				} else {
+					typRaw
+				}				
+				// two possible ways to be part of this type class:
+				// - via subtype (uint8 < uint32)
+				// - via instantiation/unification 
 				if(typ instanceof FunctionType) {
-					// two possible ways to be part of this type class:
-					// - via subtype (uint8 < uint32)
 					val optMsg = typeRegistry.isSubtypeOf(fun, refType, typ.from);
-					// - via unification (i.e. siginst<T> ? siginst<uint32>
 					val mbUnification = mguComputer.compute(refType, typ.from);
 					val unification = if(optMsg.present && !mbUnification.valid) {
 						UnificationResult.failure(refType, optMsg.get);
@@ -204,6 +210,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					}
 					return unification -> typ -> fun;	
 				}
+
 				return UnificationResult.failure(refType, '''«typ» is not a function type''') -> typ -> fun;
 			]
 			val processedResults = unificationResults.map[

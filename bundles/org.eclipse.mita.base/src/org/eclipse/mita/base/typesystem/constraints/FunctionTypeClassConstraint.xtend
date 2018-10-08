@@ -45,7 +45,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 			return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)
 		}
 		else {
-			return SimplificationResult.failure(new UnificationIssue(at, '''«at» not a function type'''))
+			return SimplificationResult.failure(new UnificationIssue(at, '''Â«atÂ» not a function type'''))
 		}
 	}
 	
@@ -54,11 +54,12 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		return new FunctionTypeClassConstraint(newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
 	}
 	
+	override modifyNames(String suffix) {
+		return new FunctionTypeClassConstraint(typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, constraintSystemProvider);
+	}
+	
 	override isAtomic() {
-		if(typ instanceof FunctionType) {
-			return !typ.from.freeVars.empty
-		}
-		return true;
+		return !typ.freeVars.empty
 	}
 	
 		

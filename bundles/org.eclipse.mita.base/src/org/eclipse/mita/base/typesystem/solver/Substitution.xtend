@@ -71,7 +71,7 @@ class Substitution {
 	}
 	
 	public def apply(ConstraintSystem system) {
-		val result = constraintSystemProvider.get();
+		val result = (constraintSystemProvider ?: system.constraintSystemProvider).get();
 		result.instanceCount = system.instanceCount;
 		result.symbolTable.putAll(system.symbolTable);
 		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>

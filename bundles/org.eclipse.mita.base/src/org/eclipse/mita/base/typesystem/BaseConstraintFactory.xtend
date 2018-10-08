@@ -188,7 +188,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		 * - assert f(x): B
 		 * - if f ∈ {f_1, f_2, ...}:
 		 *   - compute {A_1, A_2 | f_i: A_i -> B_i}
-		 *   - create TypeClass T for {A_1, ...}
+		 *   - create TypeClass T for {A_1 -> B_1, ...}
 		 *   - on resolve of T with function f_k: A_k -> B_k:
 		 *     - we already know that A = A_k
 		 *     - set the reference and assert B >: B_k 
