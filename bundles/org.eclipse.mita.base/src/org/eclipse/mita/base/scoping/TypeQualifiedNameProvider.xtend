@@ -7,7 +7,7 @@ import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.xtext.naming.DefaultDeclarativeQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 
-class TypeQualifiedNameProvider extends DefaultDeclarativeQualifiedNameProvider {
+class TypeQualifiedNameProvider extends BaseQualifiedNameProvider {
 	
 	override getFullyQualifiedName(EObject obj) {
 		return doGetFullyQualifiedName(obj)

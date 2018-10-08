@@ -32,7 +32,7 @@ class MitaTypeSystem extends GenericTypeSystem {
 
 	public static val ITERABLE_TYPE = "iterable"
 	public static val REFERENCE_TYPE = "reference";
-	public static val OPTINAL_TYPE = "optional";
+	public static val OPTIONAL_TYPE = "optional";
 	public static val SIGINST_TYPE = "siginst";
 	public static val MODALITY_TYPE = "modality";
 	public static val ARRAY_TYPE = "array";

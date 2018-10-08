@@ -17,5 +17,14 @@ abstract class AbstractBaseType extends AbstractType {
 	
 	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
 		return this;
-	}	
+	}
+	
+	override map((AbstractType)=>AbstractType f) {
+		return f.apply(this);
+	}
+	
+	override modifyNames(String suffix) {
+		return this;
+	}
+	
 }

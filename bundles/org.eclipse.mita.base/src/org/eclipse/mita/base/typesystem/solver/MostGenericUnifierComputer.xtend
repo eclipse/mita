@@ -116,7 +116,7 @@ class MostGenericUnifierComputer {
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, IntegerType t1, IntegerType t2) {
-		return typeRegistry.isSubtypeOf(t1, t2).or(typeRegistry.isSubtypeOf(t2, t1)).transform[
+		return typeRegistry.isSubtypeOf(t1.origin, t1, t2).or(typeRegistry.isSubtypeOf(t1.origin, t2, t1)).transform[
 			new UnificationIssue(#[t1, t2], it)
 		].orNull;
 	}
@@ -124,14 +124,14 @@ class MostGenericUnifierComputer {
 	protected dispatch def UnificationIssue unify(Substitution substitution, ProdType t1, ProdType t2) {
 		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
-		]
+		].force
 		return ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, SumType t1, SumType t2) {
 		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
-		]
+		].force
 		ComposedUnificationIssue.fromMultiple(issues);
 	}
 	

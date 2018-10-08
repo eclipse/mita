@@ -5,7 +5,7 @@ import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
@@ -30,18 +30,14 @@ class TypeConstructorType extends AbstractType {
 	def AbstractTypeConstraint getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
 		return new EqualityConstraint(tau, sigma, "TCT:30");
 	}
-	def void expand(Substitution s, TypeVariable tv) {
-		val newTypeVars = typeArguments.map[ new TypeVariable(it.origin) as AbstractType ].force;
+	def void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
+		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
 		val newCType = new TypeConstructorType(origin, name, newTypeVars, superTypes);
 		s.add(tv, newCType);
 	}
 		
 	override toString() {
 		return '''«super.toString»«IF !typeArguments.empty»<«typeArguments.join(", ")»>«ENDIF»«IF !superTypes.empty» ⩽ «superTypes.map[it.name]»«ENDIF»'''
-	}
-	
-	override replace(TypeVariable from, AbstractType with) {
-		return new TypeConstructorType(origin, name, typeArguments.map[it.replace(from, with)].force, superTypes);
 	}
 	
 	override getFreeVars() {
@@ -51,17 +47,9 @@ class TypeConstructorType extends AbstractType {
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; "«this»" -> "«t»" «t.toGraphviz»«ENDFOR»''';
 	}
-	
-	override replace(Substitution sub) {
-		return new TypeConstructorType(origin, name, typeArguments.map[it.replace(sub)].force, superTypes);
-	}
-	
-	override instantiate() {
-		val ts = new TypeScheme(null, freeVars.toList, this);
-		return ts.instantiate;
-	}
 		
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return new TypeConstructorType(origin, name, typeArguments.map[it.replaceProxies(resolve)], superTypes);
-	}	
+	override map((AbstractType)=>AbstractType f) {
+		return new TypeConstructorType(origin, name, typeArguments.map[f.apply(it)].force, superTypes);
+	}
+	
 }

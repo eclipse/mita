@@ -1,9 +1,6 @@
 package org.eclipse.mita.program.typesystem
 
-import com.google.inject.Inject
-import java.util.List
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -12,13 +9,13 @@ import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructuralParameter
-import org.eclipse.mita.base.types.StructuralType
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
@@ -44,12 +41,9 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -67,7 +61,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
 		system.computeConstraints(eventHandler.block);
 		
-		val voidType = typeRegistry.getTypeModelObjectProxy(eventHandler, StdlibTypeRegistry.voidTypeQID);
+		val voidType = typeRegistry.getTypeModelObjectProxy(system, eventHandler, StdlibTypeRegistry.voidTypeQID);
 		return system.associate(new FunctionType(eventHandler, eventHandler.event.toString, voidType, voidType));
 	}
 	
@@ -85,6 +79,11 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			}
 		)
 		return result;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumSubTypeConstructor function) {
+		system.computeConstraints(function.sumTypeKind)
+		return system._computeConstraints(function as Operation);
 	}
 	
 	
@@ -126,7 +125,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			result = explicitType ?: inferredType;
 		} else {
 			// the associate below will filter the X=X constraint we'd produce otherwise
-			result = TypeVariableAdapter.get(vardecl);
+			result = system.getTypeVariable(vardecl);
 		}
 		return system.associate(result, vardecl);
 	}
@@ -142,7 +141,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		//val matchVariable = TypeVariableAdapter.get((decon.eContainer as WhereIsStatement).matchElement);
 		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType];
 		val combinedType = new ProdType(decon, decon.productType?.toString ?: "", (vars).toList, #[]);
-		val deconType = resolveReferenceToSingleAndGetType(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
+		val deconType = system.resolveReferenceToSingleAndGetType(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
 
 		system.addConstraint(new EqualityConstraint(deconType, combinedType, "PCF:150"));
 		system.computeConstraints(decon.body);
@@ -159,7 +158,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return null;
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConfigurationItemValue configItemValue) {
-		val leftSide = resolveReferenceToSingleAndGetType(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item);
+		val leftSide = system.resolveReferenceToSingleAndGetType(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item);
 		val rightSide = system.computeConstraints(configItemValue.value);
 		system.addConstraint(new SubtypeConstraint(rightSide, leftSide));
 		return leftSide;
@@ -170,15 +169,15 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		val signal = resolveReferenceToSingleAndLink(init, featureToResolve);
 		// args -> concreteType
-		val signalType = TypeVariableAdapter.get(signal);
+		val signalType = system.getTypeVariable(signal);
 		// concreteType
-		val retTypeVar = new TypeVariable(null);
-		val supposedSignalType = new FunctionType(null, "", new TypeVariable(null), retTypeVar);
+		val retTypeVar = system.newTypeVariable(null);
+		val supposedSignalType = new FunctionType(null, "", system.newTypeVariable(null), retTypeVar);
 		system.addConstraint(new EqualityConstraint(signalType, supposedSignalType, "PCF:216"));
 		// \T. siginst<T>
-		val sigInstType = typeRegistry.getTypeModelObjectProxy(sigInst, StdlibTypeRegistry.sigInstTypeQID);
+		val sigInstType = typeRegistry.getTypeModelObjectProxy(system, sigInst, StdlibTypeRegistry.sigInstTypeQID);
 		// sigInst<T>
-		val instantiation = new TypeVariable(null);
+		val instantiation = system.newTypeVariable(null);
 		system.addConstraint(new ExplicitInstanceConstraint(instantiation, sigInstType));
 		// sigInst<concreteType>
 		val returnType = new TypeConstructorType(null, "siginst", #[retTypeVar]);
@@ -218,7 +217,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		// if isFunctionCall --> delegate. 
 		val refType = if(isFunctionCall) {
 			val txt = NodeModelUtils.findNodesForFeature(varOrFun, featureToResolve).head?.text ?: "null"
-			val candidates = varOrFun.resolveReferenceToTypes(featureToResolve);	
+			val candidates = system.resolveReferenceToTypes(varOrFun, featureToResolve);	
 			if(candidates.empty) {
 				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 			}
@@ -229,7 +228,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		}
 		// otherwise use the last candidate. We can check here for ambiguity, otherwise this is just the "closest" candidate.
 		else {
-			val ref = varOrFun.resolveReferenceToSingleAndGetType(featureToResolve);
+			val ref = system.resolveReferenceToSingleAndGetType(varOrFun, featureToResolve);
 			if(varOrFun.eGet(featureToResolve) === null && !(ref instanceof TypeVariableProxy)) {
 				varOrFun.eSet(featureToResolve, ref.origin);
 			}
@@ -249,12 +248,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		}
 		
 		val functionReturnVar = if(enclosingFunction === null) {
-			 typeRegistry.getTypeModelObjectProxy(statement, StdlibTypeRegistry.voidTypeQID);
+			 typeRegistry.getTypeModelObjectProxy(system, statement, StdlibTypeRegistry.voidTypeQID);
 		} else {
 			system.computeConstraints(enclosingFunction.typeSpecifier)
 		}
 		val returnValVar = if(statement.value === null) {
-			system.associate(typeRegistry.getTypeModelObjectProxy(statement, StdlibTypeRegistry.voidTypeQID), statement);
+			system.associate(typeRegistry.getTypeModelObjectProxy(system, statement, StdlibTypeRegistry.voidTypeQID), statement);
 		} else {
 			system.associate(system.computeConstraints(statement.value), statement);
 		}

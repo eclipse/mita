@@ -1,7 +1,7 @@
 package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
@@ -26,20 +26,17 @@ class SumType extends TypeConstructorType {
 		return new SubtypeConstraint(tau, sigma);
 	}
 	
-	override expand(Substitution s, TypeVariable tv) {
-		val newTypeVars = typeArguments.map[ new TypeVariable(it.origin) as AbstractType ].force;
+	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
+		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
 		val newSType = new SumType(origin, name, newTypeVars, superTypes);
 		s.add(tv, newSType);
 	}
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
 	}
-	
-	override replace(Substitution sub) {
-		return new SumType(origin, name, this.typeArguments.map[ it.replace(sub) ].force, superTypes);
+		
+	override map((AbstractType)=>AbstractType f) {
+		return new SumType(origin, name, typeArguments.map[ f.apply(it) ].force, superTypes);
 	}
 	
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return new SumType(origin, name, typeArguments.map[ it.replaceProxies(resolve) ].force, superTypes);
-	}
 }

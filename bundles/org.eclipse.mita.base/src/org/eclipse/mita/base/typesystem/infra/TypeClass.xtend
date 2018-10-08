@@ -30,7 +30,12 @@ class TypeClass {
 	}
 	
 	override toString() {
-		return instances.values.filter(NamedElement).head?.name; 
+		return '''
+		«instances.values.filter(NamedElement).head?.name»
+			«FOR t_o: instances.entrySet»
+			«t_o.key» = «t_o.value»
+			«ENDFOR»
+		'''; 
 	}
 	
 	def replace(TypeVariable from, AbstractType with) {
@@ -47,6 +52,12 @@ class TypeClass {
 	def replaceProxies((TypeVariableProxy) => Iterable<AbstractType> typeVariableResolver, (URI) => EObject objectResolver) {
 		return this;
 	}
+	
+	def TypeClass modifyNames(String suffix) {
+		return new TypeClass(instances
+			.entrySet.map[k_v | k_v.key.modifyNames(suffix) -> k_v.value]
+		)
+	}
 }
 
 @Accessors
@@ -54,8 +65,12 @@ class TypeClass {
 class TypeClassProxy extends TypeClass {
 	val TypeVariableProxy toResolve;
 	
+	override TypeClass modifyNames(String suffix) {
+		return new TypeClassProxy(toResolve.modifyNames(suffix) as TypeVariableProxy);
+	}
+	
 	override replaceProxies((TypeVariableProxy) => Iterable<AbstractType> typeVariableResolver, (URI) => EObject objectResolver) {
-		val elements = typeVariableResolver.apply(toResolve);
+		val elements = typeVariableResolver.apply(toResolve).toList;
 		return new TypeClass(elements.map[tv |
 			val origin = tv.origin; 
 			tv -> if(origin.eIsProxy) { 
@@ -66,4 +81,7 @@ class TypeClassProxy extends TypeClass {
 		].force);
 	}
 	
+	override String toString() {
+		return '''TCP: «toResolve»'''
+	}
 }

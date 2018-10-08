@@ -15,6 +15,8 @@ import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IScopeProvider
 
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+
 class MitaLinker extends Linker {
 
 	@Inject
@@ -46,13 +48,16 @@ class MitaLinker extends Linker {
 		val resource = obj.eResource;
 		val resourceDescriptions = resourceDescriptionsProvider.get(resource.resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
+		val thisExportedObjects = thisResourceDescription.exportedObjects;
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		
-		val allConstraintSystems = Lists.newArrayList(visibleContainers
-			.flatMap[ it.exportedObjects ]
+		val exportedObjects = (visibleContainers
+			.flatMap[ it.exportedObjects ].force);
+		val allConstraintSystems = exportedObjects
 			.map[ it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filterNull
-			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]);
+			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]
+			.indexed.map[it.value.modifyNames('''.«it.key»''')].force;
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {

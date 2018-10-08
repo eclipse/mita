@@ -8,9 +8,15 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 abstract class AbstractTypeConstraint {
 	
-	abstract def AbstractTypeConstraint replace(TypeVariable from, AbstractType with);
+	abstract def AbstractTypeConstraint map((AbstractType) => AbstractType f);
 
-	abstract def AbstractTypeConstraint replace(Substitution sub);
+	def AbstractTypeConstraint replace(TypeVariable from, AbstractType with) {
+		return map[it.replace(from, with)];
+	}
+
+	def AbstractTypeConstraint replace(Substitution sub) {
+		return map[it.replace(sub)];
+	}
 	
 	abstract def Iterable<TypeVariable> getActiveVars();
 	
@@ -21,8 +27,21 @@ abstract class AbstractTypeConstraint {
 	 */
 	abstract def Iterable<AbstractType> getTypes();
 	
+	def String getOperator();
+	
+	def Iterable<Object> getMembers() {
+		return getTypes().map[it];
+	}
+	
 	abstract def String toGraphviz();
 	
-	abstract def AbstractTypeConstraint replaceProxies((TypeVariableProxy) => AbstractType resolve);
+	abstract def boolean isAtomic();
 	
+	def AbstractTypeConstraint replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		return map[it.replaceProxies(resolve)]
+	}
+	
+	def AbstractTypeConstraint modifyNames(String suffix) {
+		return map[it.modifyNames(suffix)]
+	}
 }

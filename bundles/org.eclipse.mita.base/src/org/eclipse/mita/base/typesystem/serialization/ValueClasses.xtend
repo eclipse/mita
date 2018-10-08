@@ -15,6 +15,7 @@ class SerializedConstraintSystem extends SerializedObject {
     }
 
 	public List<SerializedAbstractTypeConstraint> constraints = new ArrayList;
+	public Map<String, SerializedTypeVariable> symbolTable;
 	public Map<String, SerializedTypeClass> typeClasses;
 }
 
@@ -109,9 +110,6 @@ class SerializedFunctionType extends SerializedTypeConstructorType {
     new() {
         _type = "SerializedFunctionType";
     }
-
-	public SerializedAbstractType from;
-	public SerializedAbstractType to;
 }
 
 class SerializedProductType extends SerializedTypeConstructorType {
@@ -183,6 +181,15 @@ class SerializedJavaClassInstanceConstraint extends SerializedAbstractTypeConstr
 	
 	public SerializedAbstractType what;
 	public String javaClass;
+}
+
+class SerializedImplicitInstanceConstraint extends SerializedAbstractTypeConstraint {
+	new() {
+		_type = "SerializedImplicitInstanceConstraint";
+	}
+	
+	public SerializedAbstractType isInstance;
+	public SerializedAbstractType ofType;
 }
 
 class SerializedExplicitInstanceConstraint extends SerializedAbstractTypeConstraint {

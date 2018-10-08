@@ -28,9 +28,11 @@ class TypesUtil {
 		id.append(element.getName())
 		var EObject container = element.eContainer()
 		// -1 -> 0, 0 -> 1, ...
-		val idx = container.eContents.indexOf(element) + 1;
-		id.append("_");
-		id.append(idx);
+		if(container !== null) {
+			val idx = container.eContents.indexOf(element) + 1;
+			id.append("_");
+			id.append(idx);
+		}
 		while (container !== null) {
 			if (container.eClass().getEAllStructuralFeatures().contains(TypesPackage.Literals.NAMED_ELEMENT__NAME)) {
 				prependNamedElementName(id, container)

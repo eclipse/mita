@@ -1,9 +1,7 @@
 package org.eclipse.mita.base.typesystem.constraints
 
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
-import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
@@ -25,16 +23,15 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		}
 		subType = sub;
 		superType = top;
+		if(this.toString == "vec1d_args(anyVec(), x8) ⩽ vec1d_args(f_0 (), anyVec())") {
+			println("!")
+		}
 	}
 	
 	override toString() {
 		subType + " ⩽ " + superType
 	}
-	
-	override replace(TypeVariable from, AbstractType with) {
-		return new SubtypeConstraint(subType.replace(from, with), superType.replace(from, with));
-	}
-	
+		
 	override getActiveVars() {
 		return subType.freeVars + superType.freeVars;
 	}
@@ -47,22 +44,22 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return #[subType, superType];
 	}
 	
-	def isAtomic() {
-		return (subType instanceof TypeVariable && superType instanceof TypeVariable)
-			|| (subType instanceof TypeVariable && superType instanceof AtomicType)
-			|| (subType instanceof AtomicType && superType instanceof TypeVariable);
+	override isAtomic() {
+		return  (subType instanceof TypeVariable && superType instanceof TypeVariable)
+			 || (subType instanceof TypeVariable && superType instanceof AbstractBaseType)
+			 || (subType instanceof AbstractBaseType && superType instanceof TypeVariable)
 	}
 	
 	override toGraphviz() {
 		return '''"«subType»" -> "«superType»"; «subType.toGraphviz» «superType.toGraphviz»'''
 	}
-	
-	override replace(Substitution sub) {
-		return new SubtypeConstraint(subType.replace(sub), superType.replace(sub));
+		
+	override map((AbstractType)=>AbstractType f) {
+		return new SubtypeConstraint(subType.map(f), superType.map(f));
 	}
 	
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return new SubtypeConstraint(subType.replaceProxies(resolve), superType.replaceProxies(resolve));
+	override getOperator() {
+		return "⩽"
 	}
 	
 }

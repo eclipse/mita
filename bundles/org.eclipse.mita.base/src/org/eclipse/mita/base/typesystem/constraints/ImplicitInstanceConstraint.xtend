@@ -1,44 +1,54 @@
 package org.eclipse.mita.base.typesystem.constraints
 
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
-import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 @FinalFieldsConstructor 
 @EqualsHashCode
+@Accessors
 class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	protected final AbstractType isInstance;
-	protected final AbstractType typeScheme;
-	
-	override replace(TypeVariable from, AbstractType with) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
+	protected final AbstractType ofType;
 	
 	override getActiveVars() {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		return types.flatMap[freeVars];
 	}
 	
 	override getOrigins() {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		return types.map[origin];
 	}
 	
 	override getTypes() {
-		return #[isInstance, typeScheme];
+		return #[isInstance, ofType];
 	}
 	
 	override toGraphviz() {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		return "";
 	}
 	
-	override replace(Substitution sub) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	override toString() {
+		return '''«isInstance» instanceof «ofType»'''
 	}
 	
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	override map((AbstractType)=>AbstractType f) {
+		return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f));
+	}
+	
+	override getOperator() {
+		return "implicit instanceof"
+	}
+	
+	override isAtomic() {
+		val r1 = isInstance instanceof TypeVariable;
+		val r2 = ofType instanceof TypeVariable;
+		val r3 = r1 || r2;
+		val r4 = isInstance != ofType;
+		val r5 = r3 && r4;
+		return (isInstance instanceof TypeVariable || ofType instanceof TypeVariable) 
+			&& (isInstance != ofType)
 	}
 	
 	

@@ -6,10 +6,8 @@ import java.util.Iterator
 import java.util.List
 import java.util.NoSuchElementException
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
-import org.eclipse.mita.base.typesystem.infra.TypeVariableAdapter
-import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter
+import org.eclipse.mita.base.typesystem.types.AbstractType
 
 class BaseUtils {	
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
@@ -66,6 +64,17 @@ class BaseUtils {
 		} else {
 			computeOrigin(adapter.getOrigin());
 		}
+	} 
+	def static String classNameOf(int framesAbove) {
+		val fullClassName = Thread.currentThread().getStackTrace().get(2 + framesAbove).className;
+		val lastSegmentStartIdx = fullClassName.lastIndexOf(".") + 1;
+		return fullClassName.substring(lastSegmentStartIdx).replaceAll("[a-z]", "");
+	}
+	def static int lineNumber() {
+		return lineNumberOf(1);
+	}
+	def static int lineNumberOf(int framesAbove) {
+		return Thread.currentThread().getStackTrace().get(2 + framesAbove).getLineNumber();
 	}
 }
 

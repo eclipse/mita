@@ -8,10 +8,12 @@ import org.eclipse.mita.base.typesystem.types.BottomType
 class TypeProviderImpl implements ITypeProvider {
 	
 	override getType(EObject obj) {
-		val typeVar = TypeVariableAdapter.get(obj);
 		val resourceSet = obj.eResource.resourceSet;
 		if(resourceSet instanceof MitaResourceSet) {
-			val result = resourceSet.latestSolution?.solution?.apply(typeVar);
+			val solution = resourceSet.latestSolution;
+			val system = solution?.constraints;
+			val typeVar = system?.getTypeVariable(obj);
+			val result = solution?.solution?.apply(typeVar);
 			if(!(result instanceof TypeVariable)) {
 				return result;
 			}

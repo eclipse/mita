@@ -23,6 +23,7 @@ import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
+import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
@@ -46,7 +47,6 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import java.util.Comparator
 
 class SerializationAdapter {
 	
@@ -81,6 +81,9 @@ class SerializationAdapter {
 	
 	protected dispatch def ConstraintSystem fromValueObject(SerializedConstraintSystem obj) {
 		val result = constraintSystemProvider.get();
+		obj.symbolTable.entrySet.forEach[u_tv | 
+			result.symbolTable.put(URI.createURI(u_tv.key), fromValueObject(u_tv.value) as TypeVariable);
+		];
 		obj.constraints.map[ it.fromValueObject() as AbstractTypeConstraint ].forEach[ result.addConstraint(it) ];
 		result.typeClasses.putAll(obj
 			.typeClasses
@@ -112,6 +115,9 @@ class SerializationAdapter {
 	
 	protected dispatch def ExplicitInstanceConstraint fromValueObject(SerializedExplicitInstanceConstraint obj) {
 		return new ExplicitInstanceConstraint(obj.instance.fromValueObject() as AbstractType, obj.typeScheme.fromValueObject() as AbstractType)
+	}
+	protected dispatch def ImplicitInstanceConstraint fromValueObject(SerializedImplicitInstanceConstraint obj) {
+		return new ImplicitInstanceConstraint(obj.isInstance.fromValueObject() as AbstractType, obj.ofType.fromValueObject() as AbstractType)
 	}
 	
 	protected dispatch def SubtypeConstraint fromValueObject(SerializedSubtypeConstraint obj) {
@@ -154,9 +160,7 @@ class SerializationAdapter {
 			obj.origin.resolveEObject(),
 			obj.name,
 			obj.typeArguments.fromSerializedTypes(),
-			obj.superTypes.fromSerializedTypes(),
-			obj.from.fromValueObject() as AbstractType,
-			obj.to.fromValueObject() as AbstractType
+			obj.superTypes.fromSerializedTypes()
 		);
 	}
 	
@@ -246,6 +250,10 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(ConstraintSystem obj) {
 		new SerializedConstraintSystem => [
+			symbolTable = obj.symbolTable
+				.entrySet.sortBy[it.key.toString]
+				.map[it.key.toString() -> it.value.toValueObject as SerializedTypeVariable ]
+				.toMap([it.key], [it.value])
 			constraints = obj.constraints.map[ it.toValueObject() as SerializedAbstractTypeConstraint ]
 			typeClasses = obj.typeClasses
 				.entrySet.sortBy[it.key]
@@ -273,6 +281,13 @@ class SerializationAdapter {
 		new SerializedExplicitInstanceConstraint => [
 			instance = obj.instance.toValueObject as SerializedAbstractType
 			typeScheme = obj.typeScheme.toValueObject as SerializedAbstractType
+		]
+	}
+	
+	protected dispatch def SerializedObject toValueObject(ImplicitInstanceConstraint obj) {
+		new SerializedImplicitInstanceConstraint => [
+			isInstance = obj.isInstance.toValueObject as SerializedAbstractType
+			ofType = obj.ofType.toValueObject as SerializedAbstractType
 		]
 	}
 	
@@ -372,8 +387,6 @@ class SerializationAdapter {
 	protected dispatch def SerializedObject toValueObject(FunctionType obj) {
 		new SerializedFunctionType => [
 			fill(it, obj)
-			from = obj.from.toValueObject as SerializedAbstractType
-			to = obj.to.toValueObject as SerializedAbstractType
 		]
 	}
 	

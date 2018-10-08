@@ -7,31 +7,31 @@ import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 @EqualsHashCode
 @Accessors
 @FinalFieldsConstructor
-class FunctionType extends TypeConstructorType {	
-	protected final AbstractType from;
-	protected final AbstractType to;
-	
+class FunctionType extends TypeConstructorType {		
 	new(EObject origin, String cons, AbstractType from, AbstractType to) {
 		super(origin, cons, #[from, to]);
-		this.from = from;
-		this.to = to;
 		if(from === null || to === null) {
 			throw new NullPointerException;
 		}
 	}
 	
+	def AbstractType getFrom() {
+		return typeArguments.get(0);
+	}
+	def AbstractType getTo() {
+		return typeArguments.get(1);
+	}
+	
 	override toString() {
 		from + " → " + to
 	}
-	
-	override replace(TypeVariable from, AbstractType with) {
-		new FunctionType(origin, name, #[], superTypes, this.from.replace(from, with), this.to.replace(from, with));
-	}
-	
+		
 	override getFreeVars() {
 		return #[from, to].filter(TypeVariable);
 	}
@@ -50,8 +50,8 @@ class FunctionType extends TypeConstructorType {
 		}
 	}
 	
-	override expand(Substitution s, TypeVariable tv) {
-		val newFType = new FunctionType(origin, name, new TypeVariable(from.origin), new TypeVariable(to.origin));
+	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
+		val newFType = new FunctionType(origin, name, system.newTypeVariable(from.origin), system.newTypeVariable(to.origin));
 		s.add(tv, newFType);
 	}
 	
@@ -59,11 +59,11 @@ class FunctionType extends TypeConstructorType {
 		'''"«to»" -> "«this»"; "«this»" -> "«from»"; «to.toGraphviz» «from.toGraphviz»''';
 	}
 	
-	override replace(Substitution sub) {
-		new FunctionType(origin, name, #[], superTypes, this.from.replace(sub), this.to.replace(sub));
-	}
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return new FunctionType(origin, name, from.replaceProxies(resolve), to.replaceProxies(resolve));
+
+
+	
+	override map((AbstractType)=>AbstractType f) {
+		return new FunctionType(origin, name, typeArguments.map[it.map(f)].force, superTypes);
 	}
 	
 }
