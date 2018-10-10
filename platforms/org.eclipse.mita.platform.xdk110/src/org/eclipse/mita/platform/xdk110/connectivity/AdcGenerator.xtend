@@ -112,7 +112,7 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		return -1;
 	}
 	
-	def int getMilliVolt(SignalInstance instance) {
+	def int getReferenceVoltageInMilliVolt(SignalInstance instance) {
 		switch(instance.getArgumentEnum("referenceVoltage")?.name) {
 			case "Ref_1V25": return 1250
 			case "Ref_2V5":  return 2500
@@ -159,7 +159,7 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		}
 		else
 		{
-			*«resultName» = AdcResultBuffer * «signalInstance.milliVolt» / «1 << signalInstance.resolutionBits»;
+			*«resultName» = AdcResultBuffer * «signalInstance.referenceVoltageInMilliVolt» / «1 << signalInstance.resolutionBits»;
 		}
 		''')
 	}	

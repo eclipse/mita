@@ -15,43 +15,51 @@ package org.eclipse.mita.platform.xdk110.connectivity
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
-import org.eclipse.mita.program.ProgramPackage
-import org.eclipse.mita.program.SystemResourceSetup
 
 class AdcValidator implements IResourceValidator {
 	
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		if(context instanceof SystemResourceSetup) {
 			if(context.type?.name == "ADC") {
-				context.signalInstances.forEach[validateSigInst(it, acceptor)]
+				val refVoltageConfig = getReferenceVoltageConfig(context);
+				val usesExternalVoltage = context.signalInstances.fold(false, [uev, sigInst | validateSigInst(sigInst, refVoltageConfig, acceptor) || uev])
+				if(!usesExternalVoltage && refVoltageConfig !== null) {
+					acceptor.acceptWarning(
+					'''Setting the external reference voltage has no effect unless you configure a signal with referenceVoltage set to an external reference voltage''',
+					refVoltageConfig, null, 0, "");
+				}
 			}
 		}
 	}
 	
-	def validateSigInst(SignalInstance context, ValidationMessageAcceptor acceptor) {
+	def validateSigInst(SignalInstance context, ConfigurationItemValue refVoltageConfig, ValidationMessageAcceptor acceptor) {
 
 		val arg = ModelUtils.getArgumentValue(context, "referenceVoltage");
 		val refVoltageEnum = StaticValueInferrer.infer(arg, []);
 		if(refVoltageEnum instanceof Enumerator) {
 			val refVoltage = refVoltageEnum.name;
-			if(refVoltage.contains("Ext") && !referenceVoltageSet(context.eContainer as SystemResourceSetup)) {
+			if(refVoltage.contains("Ext") && refVoltageConfig === null) {
 				acceptor.acceptError(
 				'''You need to set externalReferenceVoltage if you use referenceVoltage=«refVoltage»''',
 				arg.eContainer, 
 				null, 0, "");
 			}
-		}		
+			return refVoltage.contains("Ext")
+		}
+		return false;
 		
 	}
 	
-	def boolean referenceVoltageSet(SystemResourceSetup setup) {
-		return setup.configurationItemValues.exists[ configItem |
+	def ConfigurationItemValue getReferenceVoltageConfig(SystemResourceSetup setup) {
+		return setup.configurationItemValues.findFirst[ configItem |
 			configItem.item.name == "externalReferenceVoltage"
 		];
 	}
