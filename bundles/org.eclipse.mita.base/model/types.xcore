@@ -72,6 +72,7 @@ abstract class Type extends PackageMember {
 	
 	refers Type[] superTypes
 	contains TypeConstraint[] constraint
+	contains TypeKind typeKind opposite kindOf
 	
 	op String toString() {
 		return name;
@@ -81,7 +82,10 @@ class TypeConstraint {
 	Object value
 }
 class TypeKind extends Type {
-	refers transient Type kindOf
+	op String getName() {
+		return kindOf.name
+	}
+	container Type kindOf opposite typeKind
 }
 class PrimitiveType extends Type, Exportable {
 	op String toString() {
@@ -187,27 +191,18 @@ class TypeConstructor extends VirtualFunction {
 }
 class SumSubTypeConstructor extends TypeConstructor {
 	contains transient Parameter sumTypeParameter
-	contains transient TypeKind sumTypeKind
 	
 	op void generateMembers() {
-		if(sumTypeKind === null) {
-			sumTypeKind = TypesFactory.eINSTANCE.createTypeKind => [ kind |
-				kind.kindOf = this.eContainer.eContainer as SumType;
-			]
-		}
-		if(sumTypeKind.kindOf === null) {
-			sumTypeKind.kindOf = this.eContainer.eContainer as SumType;
-		}
 		if(sumTypeParameter === null) {
 			sumTypeParameter = TypesFactory.eINSTANCE.createParameter => [ p | 
 				p.name = "superType";
 				p.typeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
-					ts.^type = sumTypeKind;
+					ts.^type = (this.eContainer.eContainer as SumType).typeKind;
 				]
 			]
 		}
 		if((sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === null) {
-			(sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === sumTypeKind;
+			(sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === (this.eContainer.eContainer as SumType).typeKind;
 		}
 		super.generateMembers();
 	}
@@ -422,7 +417,7 @@ class ImportStatement {
 class SumType extends ComplexType, Exportable {
 	// I would use features, but if I want to have SumAlternative as a ComplexType (which it is), then I can't make it a Declaration as well
 	contains SumAlternative[] alternatives opposite sumType
-		
+			
 	op String toString() {
 		return super.toString();
 	}

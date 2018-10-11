@@ -94,8 +94,13 @@ TypeParameter returns TypeParameter:
 	name=ID ('extends' bound=[Type])?;
 
 
+TypeKind returns TypeKind:
+	{TypeKind}
+;
+
 SumType returns SumType:
 	{SumType}
+	typeKind=TypeKind
 	(exported?='export')?
 	('alt' | 'alternative') name = ID '{' alternatives += SumAlternative ('|' alternatives += SumAlternative)* '}'
 ;	

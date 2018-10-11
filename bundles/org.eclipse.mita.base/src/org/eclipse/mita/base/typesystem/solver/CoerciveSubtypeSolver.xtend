@@ -170,8 +170,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, FunctionTypeClassConstraint constraint) {
-		// FunctionTypeClassConstraints are only non-atomic if their type is a FunctionType
-		val refType = constraint.typ as FunctionType;
+		val refType = constraint.typ;
 		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
 		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
 			val fun = typeClass.instances.get(refType);
@@ -184,14 +183,20 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		if(typeClass !== null) {
 			val unificationResults = typeClass.instances.entrySet.map[k_v | 
-				val typ = k_v.key;
+				val typRaw = k_v.key;
 				val fun = k_v.value;
+				// typRaw might be a typeScheme (int32 -> b :: id: \T.T -> T)
+				val typ = if(typRaw instanceof TypeScheme) {
+					typRaw.instantiate(system).value
+				} else {
+					typRaw
+				}				
+				// two possible ways to be part of this type class:
+				// - via subtype (uint8 < uint32)
+				// - via instantiation/unification 
 				if(typ instanceof FunctionType) {
-					// two possible ways to be part of this type class:
-					// - via subtype (expectedFunTypeArgs < thisFunTypeArgs)
-					val optMsg = typeRegistry.isSubtypeOf(fun, refType.from, typ.from);
-					// - via unification (i.e. siginst<T> ? siginst<uint32>
-					val mbUnification = mguComputer.compute(refType, typ);
+					val optMsg = typeRegistry.isSubtypeOf(fun, refType, typ.from);
+					val mbUnification = mguComputer.compute(refType, typ.from);
 					val unification = if(optMsg.present && !mbUnification.valid) {
 						UnificationResult.failure(refType, optMsg.get);
 					} else {
@@ -203,11 +208,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 							mbUnification;
 						}
 					}
-					return unification -> typ -> fun;					
+					return unification -> typ -> fun;	
 				}
-				else {
-					return UnificationResult.failure(typ, '''«typ» not resolved to a function type''') -> typ -> fun;
-				}
+
+				return UnificationResult.failure(refType, '''«typ» is not a function type''') -> typ -> fun;
 			]
 			val processedResults = unificationResults.map[
 				if(!it.key.key.valid) {

@@ -9,12 +9,14 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.solver.UnificationIssue
 
 @FinalFieldsConstructor
 @Accessors
@@ -37,9 +39,14 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 			//functionCall.eSet(functionReference, op);
 		}
 		val nc = constraintSystemProvider.get(); 
-		// the returned type should be smaller than the expected type so it can be assigned
-		nc.addConstraint(new SubtypeConstraint(cs.getTypeVariable(op.typeSpecifier), returnTypeTV));
-		return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)
+		if(at instanceof FunctionType) {
+			// the returned type should be smaller than the expected type so it can be assigned
+			nc.addConstraint(new SubtypeConstraint(at.to, returnTypeTV));
+			return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)
+		}
+		else {
+			return SimplificationResult.failure(new UnificationIssue(at, '''«at» not a function type'''))
+		}
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
@@ -47,11 +54,12 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		return new FunctionTypeClassConstraint(newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
 	}
 	
+	override modifyNames(String suffix) {
+		return new FunctionTypeClassConstraint(typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, constraintSystemProvider);
+	}
+	
 	override isAtomic() {
-		if(typ instanceof FunctionType) {
-			return !typ.from.freeVars.empty
-		}
-		return true;
+		return !typ.freeVars.empty
 	}
 	
 		

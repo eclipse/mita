@@ -7,10 +7,13 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.emf.ecore.impl.EObjectImpl
 
-@FinalFieldsConstructor
 @EqualsHashCode
 class TypeVariable extends AbstractType {
-		
+	
+	new(EObject origin, String name) {
+		super(origin, name)
+	}
+	
 	override toString() {
 		if(origin !== null) {
 			val originText = if(origin.eIsProxy) {
