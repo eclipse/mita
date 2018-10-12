@@ -10,8 +10,9 @@ import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.nodemodel.INode
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.util.BaseUtils
 
-class MitaTypeLinker extends MitaLinker {
+class MitaTypeLinker extends Linker {
 	
 	def boolean shouldLink(EClass classifier) {
 		return TypesPackage.eINSTANCE.type.isSuperTypeOf(classifier);
@@ -21,13 +22,16 @@ class MitaTypeLinker extends MitaLinker {
 		val classifier = ref.type?.classifier;
 		if(classifier instanceof EClass) {
 			if(shouldLink(classifier)) {
-				super.ensureIsLinked(obj, node, ref, handledReferences, producer);
-				val txt = NodeModelUtils.getTokenText(node);
+				BaseUtils.ignoreChange(obj, [
+					super.ensureIsLinked(obj, node, ref, handledReferences, producer);	
+				]);
+				//val txt = NodeModelUtils.getTokenText(node);
 //				println(txt);
 				//println('''Linking types: «obj.eResource?.URI.lastSegment»: «NodeModelUtils.getTokenText(node)» on («obj.eClass?.name»)«obj»''');
 			}
 		}
 	}
+	
 	
 	override protected clearReference(EObject obj, EReference ref) {
 		return;

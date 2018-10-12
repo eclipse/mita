@@ -54,10 +54,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(!system.isWeaklyUnifiable()) {
 			return new ConstraintSolution(system, null, #[ new UnificationIssue(system, 'Subtype solving cannot terminate') ]);
 		}
-		for(var i = 0; i < 4; i++) {
+		for(var i = 0; i < 5; i++) {
 			println("------------------")
 			println(currentSystem);
-			println(currentSystem.toGraphviz);
 			val simplification = currentSystem.simplify(currentSubstitution);
 			if(!simplification.valid) {
 				return new ConstraintSolution(ConstraintSystem.combine(#[system, simplification.system].filterNull), simplification.substitution, #[simplification.issue]);
@@ -144,7 +143,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			]
 			return SimplificationResult.success(ConstraintSystem.combine(#[system, newSystem]), substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS:«BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
+		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS: «BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ImplicitInstanceConstraint constraint, TypeVariable t1, TypeVariable t2) {
 		return SimplificationResult.success(system, substitution);
@@ -153,7 +152,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(t1 == t2) {
 			return SimplificationResult.success(system, substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS:«BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
+		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS: «BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ExplicitInstanceConstraint constraint) {
@@ -166,7 +165,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(constraint.javaClass.isInstance(constraint.what)) {
 			return SimplificationResult.success(system, substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''CSS:«BaseUtils.lineNumber»: «constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
+		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''CSS: «BaseUtils.lineNumber»: «constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, FunctionTypeClassConstraint constraint) {
@@ -208,7 +207,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 							mbUnification;
 						}
 					}
-					return unification -> typ -> fun;	
+					return unification -> typ -> fun;
 				}
 
 				return UnificationResult.failure(refType, '''«typ» is not a function type''') -> typ -> fun;

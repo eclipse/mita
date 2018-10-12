@@ -398,7 +398,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass)) ||
 			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
@@ -408,6 +407,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
 			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
 
 		inclusion && !exclusion;

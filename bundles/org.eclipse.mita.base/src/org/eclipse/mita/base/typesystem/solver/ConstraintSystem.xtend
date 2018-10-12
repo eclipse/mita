@@ -14,27 +14,21 @@ import org.eclipse.emf.ecore.InternalEObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
-import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
-import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
-import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.PackageAssociation
 
 @Accessors
 class ConstraintSystem {
@@ -292,7 +286,13 @@ class ConstraintSystem {
 		result.instanceCount = instanceCount;
 		result.symbolTable.putAll(symbolTable);
 		result.constraints += constraints.map[ it.replaceProxies[ this.resolveProxy(it, resource, scopeProvider).head ] ].force;
-		result.typeClasses.putAll(typeClasses.mapValues[ it.replaceProxies([ this.resolveProxy(it, resource, scopeProvider) ], [resource.resourceSet.getEObject(it, false)]) ]);
+		result.typeClasses.putAll(typeClasses.mapValues[ 
+			it.replaceProxies([ 
+				this.resolveProxy(it, resource, scopeProvider)
+			], [
+				resource.resourceSet.getEObject(it, false)
+			])
+		]);
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;
 	}
@@ -321,14 +321,9 @@ class ConstraintSystem {
 			return #[new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
 		}
 		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference) && replacementObjects.size == 1) {
-			val cacheAdapters = resource.eAdapters.filter(OnChangeEvictingCache.CacheAdapter).force;
-			cacheAdapters.forEach[
-				it.ignoreNotifications();
-			]
-			tvp.origin.eSet(tvp.reference, replacementObjects.head);
-			cacheAdapters.forEach[
-				it.listenToNotifications();
-			]
+			BaseUtils.ignoreChange(resource, [ 
+				tvp.origin.eSet(tvp.reference, replacementObjects.head);
+			]);
 		}
 		
 		return replacementObjects.map[
