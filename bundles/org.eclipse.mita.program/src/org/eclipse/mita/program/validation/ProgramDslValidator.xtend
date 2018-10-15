@@ -94,22 +94,22 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	public static val MISSING_CONNECTIVITY_CODE = 'missing_connectivity'
 
-	public static val String VOID_OP_CANNOT_RETURN_VALUE_MSG = "Void operations cannot return a value";
+	public static val String VOID_OP_CANNOT_RETURN_VALUE_MSG = "Void operations cannot return a value.";
 	public static val String VOID_OP_CANNOT_RETURN_VALUE_CODE = "void_op_cannot_return_value";
 
-	public static val String MISSING_RETURN_VALUE_MSG = "The operation must return a value of type %s";
+	public static val String MISSING_RETURN_VALUE_MSG = "The operation must return a value of type %s.";
 	public static val String MISSING_RETURN_VALUE_CODE = "missing_return_value";
 
-	public static val String INCOMPATIBLE_RETURN_TYPE_MSG = "The return type '%s' is not compatible with the operation's type '%s'";
+	public static val String INCOMPATIBLE_RETURN_TYPE_MSG = "The return type '%s' is not compatible with the operation's type '%s'.";
 	public static val String INCOMPATIBLE_RETURN_TYPE_CODE = "incompatible_return_type";
 	
-	public static val String FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG = "Returning non-primitive values from functions is experimental and might result in invalid C code";
+	public static val String FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG = "Returning non-primitive values from functions is experimental and might result in invalid C code.";
 	public static val String FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_CODE = "function_return_type_not_primitive"
 
-	public static val String EVENT_RETURNS_VALUE_MSG = "Events may not return values";
+	public static val String EVENT_RETURNS_VALUE_MSG = "Events may not return values.";
 	public static val String EVENT_RETURNS_VALUE_CODE = "event_return_value_not_nothing";
 
-	public static val String VARIABLE_NOT_UNIQUE_MSG = "Cannot redeclare variable '%s'";
+	public static val String VARIABLE_NOT_UNIQUE_MSG = "Cannot redeclare variable '%s'.";
 	public static val String VARIABLE_NOT_UNIQUE_CODE = "variable_not_unique";
 
 	public static val String NO_PLATFORM_SELECTED_MSG = "No platform selected. Please import one of the available platforms: \"%s.\"";
@@ -121,23 +121,23 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	public static val String OPTIONAL_PARAMETERS_NOT_IMPLEMENTED_MSG = "Default values for function parameters are not allowed.";
 	public static val String OPTIONAL_PARAMETERS_NOT_IMPLEMENTED_CODE = "optional_parameters_not_implemented";
 	
-	public static val String INCOMPATIBLE_TYPES_MSG = "Incompatible types: '%s' can't be converted to '%s'"
+	public static val String INCOMPATIBLE_TYPES_MSG = "Incompatible types: '%s' can't be converted to '%s'."
 	
-	public static val String ARRAY_LITERALS_CANT_BE_EMPTY = "Array literals can not be empty";
+	public static val String ARRAY_LITERALS_CANT_BE_EMPTY = "Array literals can not be empty.";
 	
-	public static val String ARRAY_LITERAL_IS_NOT_HOMOGENOUS = "Array literal is not homogenous";
+	public static val String ARRAY_LITERAL_IS_NOT_HOMOGENOUS = "Array literal is not homogenous.";
 	
 	public static val String ARRAY_RANGE_INVALID = "Array range is invalid: %s";
-	public static val String ARRAY_RANGE_ONLY_ON_ARRAY = "Array ranges are only supported on array types";
+	public static val String ARRAY_RANGE_ONLY_ON_ARRAY = "Array ranges are only supported on array types.";
 	
-	public static val String NESTED_ARRAY_LITERALS_NOT_SUPPORTED = "Nested array literals are not supported yet";
-	public static val String ARRAY_SLICES_ARE_NOT_SUPPORTED_TOP_LEVEL = "Array slices are not supported in global scope";
+	public static val String NESTED_ARRAY_LITERALS_NOT_SUPPORTED = "Nested array literals are not supported yet.";
+	public static val String ARRAY_SLICES_ARE_NOT_SUPPORTED_TOP_LEVEL = "Array slices are not supported in global scope.";
 	
 	public static val String ARRAY_INDEX_OUT_OF_BOUNDS = "Array index out of bounds: length = %d";
 	
-	public static val String ARRAY_INDEX_MUST_BE_INTEGER = "Array index must be integer";
+	public static val String ARRAY_INDEX_MUST_BE_INTEGER = "Array index must be integer.";
 	
-	public static val String NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED = "Nested generated types are not supported yet";
+	public static val String NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED = "Nested generated types are not supported yet.";
 	
 	public static val String IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED = "Implicit construction of optionals in %s is not yet supported. Please use 'optional.some' instead.";
 	
@@ -146,7 +146,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	public static val String MUST_BE_USED_IMMEDIATELY_MSG = "%s must be used immediately. %s";
 	public static val String MUST_BE_USED_IMMEDIATELY_CODE = "must_be_used_immediately";
 	
-	public static val String SIGINST_MODALITY_CANT_BE_FUNC_PARAM_MSG = "Signal instances and modalities cannot be passed as parameters";
+	public static val String SIGINST_MODALITY_CANT_BE_FUNC_PARAM_MSG = "Signal instances and modalities cannot be passed as parameters.";
 	
 	@Inject extension ExtensionMethodHelper
 
