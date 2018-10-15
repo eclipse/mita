@@ -301,7 +301,7 @@ class StatementGenerator {
 
 					.data.«altAccessor» = («dataType») {
 						«FOR i_arg: stmt.arguments.indexed SEPARATOR(',\n')»
-						«IF i_arg.value.parameter !== null»«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»
+						«IF !(feature.realType instanceof PrimitiveType)»«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»
 						«ENDFOR»	
 					}
 					«ELSE»
