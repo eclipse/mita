@@ -169,7 +169,6 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 		val originalItemType = e.instanceOf.inferTypeDispatch;
 
 		val typeSpec = if (explicitType !== null) {
-			assertNotType(explicitType, VARIABLE_VOID_TYPE, getResultFor(VOID));
 			assertAssignable(explicitType, originalItemType,
 				String.format(VARIABLE_DECLARATION, explicitType, originalItemType));
 				
@@ -222,7 +221,6 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 
 	def doInfer(VariableDeclaration e) {
 		var explicitType = e.typeSpecifier.inferTypeDispatch;
-		assertNotType(explicitType, VARIABLE_VOID_TYPE, getResultFor(VOID));
 		if (e.initialization === null)
 			return explicitType;
 
