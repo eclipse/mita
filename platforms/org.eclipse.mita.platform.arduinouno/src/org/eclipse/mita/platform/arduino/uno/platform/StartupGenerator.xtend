@@ -32,19 +32,19 @@ class StartupGenerator implements IPlatformStartupGenerator {
 			Mita_initialize();
 			Mita_goLive();
 			while(1) {
-				«FOR handler : context.allEventHandlers»
-					if (get«handler.handlerName»_flag() == true){
-						set«handler.handlerName»_flag(false);
-						«handler.handlerName»();
+				Â«FOR handler : context.allEventHandlersÂ»
+					if (getÂ«handler.handlerNameÂ»_flag() == true){
+						setÂ«handler.handlerNameÂ»_flag(false);
+						Â«handler.handlerNameÂ»();
 					}
-				«ENDFOR»
+				Â«ENDFORÂ»
 			}
 			return 0;
 		''').setPreamble(
 			'''
-			«FOR handler : context.allEventHandlers»
-			extern void set«handler.handlerName»_flag();
-			«ENDFOR»
+			Â«FOR handler : context.allEventHandlersÂ»
+			extern void setÂ«handler.handlerNameÂ»_flag();
+			Â«ENDFORÂ»
 			'''
 		)
 	}

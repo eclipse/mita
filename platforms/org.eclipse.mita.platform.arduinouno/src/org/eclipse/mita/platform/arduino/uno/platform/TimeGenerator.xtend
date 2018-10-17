@@ -56,31 +56,31 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		''')
 
 		return codeFragmentProvider.create(body).setPreamble('''
-			«FOR handler : context.allTimeEvents»
-				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
-				static uint32_t count_«period» = 0;
-				bool get«handler.handlerName»_flag(){
-					return «handler.handlerName»_flag;
+			Â«FOR handler : context.allTimeEventsÂ»
+				Â«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)Â»
+				static uint32_t count_Â«periodÂ» = 0;
+				bool getÂ«handler.handlerNameÂ»_flag(){
+					return Â«handler.handlerNameÂ»_flag;
 				}
 				
-				void set«handler.handlerName»_flag(bool val){
-					«handler.handlerName»_flag = val;
+				void setÂ«handler.handlerNameÂ»_flag(bool val){
+					Â«handler.handlerNameÂ»_flag = val;
 				}
-			«ENDFOR»
+			Â«ENDFORÂ»
 			
 			
 			Exception_T Tick_Timer(void)
 			{
-			«FOR handler : context.allTimeEvents»
-				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
-					count_«period»++;
-					if(count_«period» % «period» == 0)
+			Â«FOR handler : context.allTimeEventsÂ»
+				Â«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)Â»
+					count_Â«periodÂ»++;
+					if(count_Â«periodÂ» % Â«periodÂ» == 0)
 					{
-						count_«period» = 0;
-						«handler.handlerName»_flag = true;
+						count_Â«periodÂ» = 0;
+						Â«handler.handlerNameÂ»_flag = true;
 					}
 				
-			«ENDFOR»			
+			Â«ENDFORÂ»			
 				return STATUS_OK;
 			}
 		''')
