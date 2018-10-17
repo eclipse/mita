@@ -42,7 +42,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 			
 	override generateEnable() {
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
-		val auth = StaticValueInferrer.infer(configuration.getExpression("authentification"), []);
+		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
 		val result = codeFragmentProvider.create('''
 		
 		Retcode_T retcode = RETCODE_OK;
@@ -67,10 +67,10 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 			«ELSEIF ipConfigExpr.name == "Static"»
 				NetworkConfig_IpSettings_T staticIpSettings;
 				staticIpSettings.isDHCP = false;
-				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("ip").code», &staticIpSettings.ipV4) != RC_OK) return EXCEPTION_EXCEPTION;
-				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("subnetMask").code», &staticIpSettings.ipV4Mask) != RC_OK) return EXCEPTION_EXCEPTION;
-				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("gateway").code», &staticIpSettings.ipV4Gateway) != RC_OK) return EXCEPTION_EXCEPTION;
-				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("dns").code», &staticIpSettings.ipV4DnsServer) != RC_OK) return EXCEPTION_EXCEPTION;
+				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("ip")?.code», &staticIpSettings.ipV4) != RC_OK) return EXCEPTION_EXCEPTION;
+				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("subnetMask")?.code», &staticIpSettings.ipV4Mask) != RC_OK) return EXCEPTION_EXCEPTION;
+				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("gateway")?.code», &staticIpSettings.ipV4Gateway) != RC_OK) return EXCEPTION_EXCEPTION;
+				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("dns")?.code», &staticIpSettings.ipV4DnsServer) != RC_OK) return EXCEPTION_EXCEPTION;
 				
 				retcode = NetworkConfig_SetIpStatic(staticIpSettings);
 				if (RETCODE_OK != retcode)
@@ -139,7 +139,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 				}
 			«ENDIF»
 		«ELSE»
-			ERROR: INVALID CONFIGURATION: authentification
+			ERROR: INVALID CONFIGURATION: authentication
 		«ENDIF»
 		
 		
@@ -178,7 +178,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 				#define NETWORK_PASSWORD «auth.properties.get("password").code»
 			«ENDIF»
 		«ELSE»
-			ERROR: INVALID CONFIGURATION: authentification
+			ERROR: INVALID CONFIGURATION: authentication
 		«ENDIF»
 		''')
 		.addHeader('XdkCommonInfo.h', true, IncludePath.HIGH_PRIORITY)

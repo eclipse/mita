@@ -21,7 +21,9 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
+import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
@@ -31,6 +33,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	@Inject
 	protected ServalPALGenerator servalpalGenerator
+	
+	@Inject
+	protected extension StatementGenerator statementGenerator
 
 	override generateSetup() {
 		val brokerUri = new URI(configuration.getString("url"));
@@ -97,29 +102,6 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		/**<  Macro for the non secure serval stack expected MQTT URL format */
 		#define MQTT_URL_FORMAT_NON_SECURE          "mqtt://%s:%d"
 		
-		/**
-		 * @brief   Structure to represent the MQTT connect features.
-		 */
-		typedef struct
-		{
-			const char * ClientId; /**< The client identifier which is a identifier of each MQTT client connecting to a MQTT broker. It needs to be unique for the broker to know the state of the client. */
-			const char * BrokerURL; /**< The URL pointing to the MQTT broker */
-			uint16_t BrokerPort; /**< The port number of the MQTT broker */
-			bool CleanSession; /**< The clean session flag indicates to the broker whether the client wants to establish a clean session or a persistent session where all subscriptions and messages (QoS 1 & 2) are stored for the client. */
-			uint32_t KeepAliveInterval; /**< The keep alive interval (in seconds) is the time the client commits to for when sending regular pings to the broker. The broker responds to the pings enabling both sides to determine if the other one is still alive and reachable */
-		} ConnectivityMQTT_Connect_T;
-				
-		/**
-		 * @brief   Structure to represent the MQTT publish features.
-		 */
-		typedef struct
-		{
-			const char * Topic; /**< The MQTT topic to which the messages are to be published */
-			uint32_t QoS; /**< The MQTT Quality of Service level. If 0, the message is send in a fire and forget way and it will arrive at most once. If 1 Message reception is acknowledged by the other side, retransmission could occur. */
-			const char * Payload; /**< Pointer to the payload to be published */
-			uint32_t PayloadLength; /**< Length of the payload to be published */
-		} ConnectivityMQTT_Publish_T;
-				
 		/**< Handle for MQTT subscribe operation  */
 		static SemaphoreHandle_t mqttSubscribeHandle;
 		/**< Handle for MQTT publish operation  */
@@ -144,7 +126,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	override generateEnable() {
-		codeFragmentProvider.create('''
+		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
+		val result = codeFragmentProvider.create('''
 		Retcode_T retcode = RETCODE_OK;
 
 		Ip_Address_T brokerIpAddress = 0UL;
@@ -194,6 +177,12 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			mqttSession.cleanSession = false;
 			mqttSession.will.haveWill = false;
 			mqttSession.onMqttEvent = MqttEventHandler;
+			«IF auth instanceof SumTypeRepr»
+				«IF auth.name == "Login"»
+					mqttSession.username = username;
+					mqttSession.password = password;
+				«ENDIF»
+			«ENDIF»
 
 			StringDescr_wrap(&clientID, MQTT_CLIENT_ID);
 			mqttSession.clientID = clientID;
@@ -242,7 +231,27 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			}
 		}
 		return retcode;
-		''')
+		''');
+		if(auth instanceof SumTypeRepr) {
+			if(auth.name == "Login") {
+				val username = auth.properties.get("username")?.code;
+				val password = auth.properties.get("password")?.code;
+				result.setPreamble('''
+				const char usernameBuf[] = «username»;
+				StringDescr_T username = {
+					.start = usernameBuf,
+					.length = sizeof(usernameBuf)
+				};
+				const char passwordBuf[] = «password»;
+				StringDescr_T password = {
+					.start = passwordBuf,
+					.length = sizeof(passwordBuf)
+				};
+				''').addHeader("Serval_StringDescr.h", true);
+			}
+		}
+		
+		return result;
 
 	}
 	
@@ -326,7 +335,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				}
 				break;
 			default:
-				printf("MqttEventHandler : Unhandled MQTT Event: %x\r\n", event);
+				«loggingGenerator.generateLogStatement(LogLevel.Info, "MqttEventHandler : Unhandled MQTT Event: %x", codeFragmentProvider.create('''event'''))»
 				break;
 			}
 		
