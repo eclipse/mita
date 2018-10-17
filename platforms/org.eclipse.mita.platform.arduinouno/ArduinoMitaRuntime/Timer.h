@@ -15,6 +15,7 @@
 #define SRC_GEN_BASE_TIMER_H_
 
 #include "Retcode.h"
+#include "MitaEvents.h"
 #ifdef TIMED_APPLICATION
 #include "MitaTime.h"
 #endif
