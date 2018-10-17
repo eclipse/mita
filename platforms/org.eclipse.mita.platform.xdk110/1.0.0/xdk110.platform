@@ -643,7 +643,7 @@ connectivity named-singleton ADC {
 	): uint16
 }
 
-alt WLAN_Authentication {
+alt WlanAuthentication {
 	None 
 	/**
      * WPA(2) with PSK (pre-shared key) 
@@ -695,7 +695,7 @@ connectivity named-singleton WLAN {
     /**
      * Choose personal WPA connection or Enterprise WPA connection
      */    
-    required configuration-item authentication : WLAN_Authentication
+    required configuration-item authentication : WlanAuthentication
 
     /**
      * The SSID of the WLAN network we want to connect to
@@ -717,7 +717,7 @@ connectivity named-singleton WLAN {
 
 exception MqttException;
 
-alt MQTT_Authentication {
+alt MqttAuthentication {
 	None | Login: {username: string, password: string}
 }
 
@@ -747,7 +747,7 @@ connectivity many MQTT {
 	 */
 	required configuration-item clientId : string
 	
-	configuration-item authentication: MQTT_Authentication = MQTT_Authentication.None()
+	configuration-item authentication: MqttAuthentication = None()
 	
 	/**
 	 * The clean session flag indicates to the broker whether the client wants
