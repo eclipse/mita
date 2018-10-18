@@ -10,7 +10,7 @@ import platforms.unittest;
 
 var x : int32;
 /* XPECT errors ---
-"Duplicate element 'x'" at "var x : int32;"
+"Duplicate element 'x'" at "x"
 --- */
 var x : int32;
   
@@ -21,7 +21,7 @@ fn fnX(xy : double){}
 fn fnY(){} 
 
 /* XPECT errors ---
-"Duplicate function 'fnY'" at "fn fnY(){}"
+"Duplicate function 'fnY'" at "fnY"
 --- */
 fn fnY(){}
 
