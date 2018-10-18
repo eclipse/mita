@@ -427,7 +427,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					validator.assertAssignable(t1, t2,
 						
 					// message says t2 can't be assigned to t1, --> invert in format
-					String.format(INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])					
+					String.format(INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
 				]
 			}
 		}
