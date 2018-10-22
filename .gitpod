@@ -1,0 +1,5 @@
+image:
+  file: .Dockerfile.gitpod
+ports:
+- port: 6080
+  protocol: http
