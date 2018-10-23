@@ -104,6 +104,7 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.scoping.MitaTypeSystem
 
 class StatementGenerator {
 
@@ -234,7 +235,7 @@ class StatementGenerator {
 			maybeErefExpr.uniqueIdentifier;
 		}
 		
-		'''«id».data[«stmt.arraySelector.code.noTerminator»];'''
+		'''«id».data[«stmt.arraySelector.code.noTerminator»]'''
 	}
 	
 	@Traced dispatch def IGeneratorNode code(ArrayRuntimeCheckStatement stmt) {
@@ -495,10 +496,12 @@ class StatementGenerator {
 				return generator.generateExpression(typeOf, target, op, initialization);
 			} else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
 				return generateFunCallStmt(varName, typeOf, initialization as ElementReferenceExpression);
+			} else if(initialization instanceof PrimitiveValueExpression) {
+				if(initialization.value instanceof ArrayLiteral) {
+					return CodeFragment.EMPTY;
+				}
 			}
-			else {
-				return generator.generateExpression(typeOf, target, op, initialization);
-			}
+			return generator.generateExpression(typeOf, target, op, initialization);
 		} else if (initialization instanceof ElementReferenceExpression) {
 			if(initialization.isOperationCall) {
 				return generateFunCallStmt(varName, typeOf, initialization);	
@@ -529,7 +532,9 @@ class StatementGenerator {
 		if (type instanceof GeneratedType) {
 			val generator = registry.getGenerator(type);
 			result.children += generator.generateVariableDeclaration(inferenceResult, stmt);
-			
+			if(type.name == MitaTypeSystem.ARRAY_TYPE && initialization instanceof ArrayLiteral) {
+				initializationDone = true;
+			}
 		// Exception base variable
 		} else if (stmt instanceof ExceptionBaseVariableDeclaration) {
 			result.children += codeFragmentProvider.create('''
