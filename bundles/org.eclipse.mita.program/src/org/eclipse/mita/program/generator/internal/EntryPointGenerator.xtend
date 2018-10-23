@@ -125,11 +125,12 @@ class EntryPointGenerator {
 				exception = «resource.enableName»();
 				«resource.baseName.generateLoggingExceptionHandler("enable")»
 				«ENDFOR»
-				«IF context.hasGlobalVariables»
-				exception = initGlobalVariables();
-				«"InitGlobalVars".generateLoggingExceptionHandler("do")»
-				
+				«FOR program: context.allUnits»
+				«IF !program.globalVariables.empty»
+				exception = «program.globalInitName»();
+				«program.globalInitName.generateLoggingExceptionHandler("do")»
 				«ENDIF»
+				«ENDFOR»
 				return NO_EXCEPTION;
 			}
 		''')

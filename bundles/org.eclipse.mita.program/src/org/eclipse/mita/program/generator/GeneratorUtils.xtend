@@ -70,6 +70,9 @@ class GeneratorUtils {
 	@Inject
 	protected IScopeProvider scopeProvider;
 
+	def getGlobalInitName(Program program) {
+		return '''initGlobalVariables_«program.eResource.URI.lastSegment.replace(".mita", "")»'''
+	}
 	
 	def getOccurrence(EObject obj) {
 		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
