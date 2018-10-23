@@ -42,7 +42,7 @@ class StandaloneTypesGlobalScopeProvider extends TypesGlobalScopeProvider {
 			result.add(uri);
 		}
 		
-		val objDescriptions = (libraryProvider.getDefaultLibraries() + libraryProvider.getImportedLibraries(context)).flatMap[
+		val objDescriptions = (libraryProvider.getDefaultLibraries() + libraryProvider.getImportedLibraries(context)).toSet.flatMap[
 			val resource = context.resourceSet.getResource(it, true);
 			val resourceServiceProvider = serviceProviderRegistry.getResourceServiceProvider(it);
 			

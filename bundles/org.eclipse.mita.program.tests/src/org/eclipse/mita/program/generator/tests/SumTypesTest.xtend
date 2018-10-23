@@ -241,4 +241,17 @@ class SumTypesTest extends AbstractGeneratorTest {
 		);
 		ast.assertNoCompileErrors();
 	}
+	
+	@Test
+	def testSumTypesAnonymus() {
+		val ast = generateAndParseApplication(
+			'''
+				package test;
+				import platforms.unittest;
+				alt foo { bar: int32 }
+				let foobar = foo.bar(1);
+			'''
+		);
+		ast.assertNoCompileErrors();
+	}
 }

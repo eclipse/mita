@@ -303,7 +303,7 @@ class StatementGenerator {
 
 					.data.«altAccessor» = «IF needCast»(«dataType») «ENDIF»{
 						«FOR i_arg: stmt.arguments.indexed»
-						«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«i_arg.value.value.code.noTerminator»«IF i_arg.key < stmt.arguments.length - 1»,«ENDIF»
+						«IF !(feature.realType instanceof PrimitiveType)»«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < stmt.arguments.length - 1»,«ENDIF»
 						«ENDFOR»
 					}
 					«ELSE»

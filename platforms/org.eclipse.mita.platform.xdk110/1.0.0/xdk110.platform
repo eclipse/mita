@@ -367,6 +367,30 @@ sensor BME280 {
 	
 }
 
+enum BMM150_Preset {                            
+/**< ID to represent bmm150 Presetmode to lowpower  */        
+	LowPower,    
+	/**< ID to represent bmm150 Presetmode to regular  */         
+    Regular,     
+    /**< ID to represent bmm150 Presetmode to highaccuracy  */    
+    HighAccuracy,
+    /**< ID to represent bmm150 Presetmode to enhanced  */        
+    Enhanced    
+}
+/**
+ * The XDK's magnetometer
+ */
+sensor BMM150 {
+	generator "org.eclipse.mita.platform.xdk110.sensors.Bmm150Generator"
+	
+	configuration-item mode: BMM150_Preset = BMM150_Preset.Regular
+	
+	modality x_axis: int32
+    modality y_axis: int32
+    modality z_axis: int32
+    modality resistance: uint16
+}
+
 enum MAX44009_IntegrationTime {
 	/**
 	 * Integration time of 800 milliseconds. This is a preferred mode for boosting low-light sensitivity.
@@ -408,7 +432,6 @@ enum MAX44009_IntegrationTime {
 	 */
 	MS_6_25
 }
-
 
 /**
  * The XDK light sensor.
@@ -537,7 +560,90 @@ sensor Button {
 	event released
 }
 
-alt Authentification {
+enum ADC_Channel {
+	CH4,
+    CH5,
+    CH6,
+    CH7,
+    TEMP,
+    VDDDIV3,
+    VDD,
+    VSS,
+    VREFDIV2
+}
+
+enum ADC_Reference_Voltage {    
+	/**< Internal 1.25V reference. */                     
+	Ref_1V25,     
+	/** Internal 2.5V reference. */                       
+    Ref_2V5,         
+    /** Buffered VDD. */                                  
+    Ref_VDD,        
+	/** Internal differential 5V reference. */            
+    Ref_5VDIFF,    
+    /** Single ended ext. ref. from pin 6. */             
+    Ref_ExtSingle, 
+    /** Differential ext. ref. from pin 6 and 7. */       
+    Ref_ExtDiff, 
+    /** Unbuffered 2xVDD. */                              
+    Ref_2xVDD 
+}
+
+enum ADC_Resolution {  
+	/**< 12 bit sampling. */
+	Resolution_12Bit, 
+	/**< 8 bit sampling. */  
+    Resolution_8Bit,   
+    /**< 6 bit sampling. */ 
+    Resolution_6Bit,  
+    /**< Oversampling. */    
+    Resolution_OVS
+}
+
+enum ADC_SampleTime {  
+	/**< 1 clock cycle. */  
+	Time_1,            
+	/**< 2 clock cycle. */  
+    Time_2,            
+    /**< 4 clock cycle. */  
+    Time_4,            
+    /**< 8 clock cycle. */  
+    Time_8,            
+    /**< 16 clock cycle. */ 
+    Time_16,           
+    /**< 32 clock cycle. */ 
+    Time_32,           
+    /**< 64 clock cycle. */ 
+    Time_64,           
+    /**< 128 clock cycle. */
+    Time_128,          
+    /**< 256 Clock cycle. */
+    Time_256
+}
+
+/**
+ * The XDK's ADC (Analog Digital Converter)
+ */
+connectivity named-singleton ADC {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.AdcGenerator"
+	validator "org.eclipse.mita.platform.xdk110.connectivity.AdcValidator"
+	
+	/**
+	 * The reference voltage to measure against with referenceVoltage one of Ref_ExtSingle or Ref_ExtDiff in [mV].
+	 */
+	configuration-item externalReferenceVoltage: uint16
+	
+	/**
+	 * an ADC channel. Read only. [mV]
+	 */
+	signal channel(channel: ADC_Channel, 
+		referenceVoltage: ADC_Reference_Voltage = ADC_Reference_Voltage.Ref_2V5, 
+		resolution: ADC_Resolution = ADC_Resolution.Resolution_12Bit, 
+		sampleTime: ADC_SampleTime = ADC_SampleTime.Time_16
+	): uint16
+}
+
+alt WlanAuthentication {
 	None 
 	/**
      * WPA(2) with PSK (pre-shared key) 
@@ -589,7 +695,7 @@ connectivity named-singleton WLAN {
     /**
      * Choose personal WPA connection or Enterprise WPA connection
      */    
-    required configuration-item authentification : Authentification
+    required configuration-item authentication : WlanAuthentication
 
     /**
      * The SSID of the WLAN network we want to connect to
@@ -610,6 +716,10 @@ connectivity named-singleton WLAN {
 }
 
 exception MqttException;
+
+alt MqttAuthentication {
+	None | Login: {username: string, password: string}
+}
 
 /**
  * MQTT (Message Queuing Telemetry Transport) is an ISO standard (ISO/IEC PRF 20922) publish-subscribe-based messaging protocol.
@@ -636,6 +746,8 @@ connectivity many MQTT {
      * know the state of the client. 
 	 */
 	required configuration-item clientId : string
+	
+	configuration-item authentication: MqttAuthentication = None()
 	
 	/**
 	 * The clean session flag indicates to the broker whether the client wants
@@ -822,6 +934,7 @@ alias gyroscope for GyroscopeSensorFusion
 alias light for MAX44009
 alias button_one for Button
 alias button_two for Button
+alias magnetometer for BMM150
 
 platform XDK110 {
 	module "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGeneratorModule"
@@ -830,6 +943,7 @@ platform XDK110 {
 	has environment
 	has accelerometer
 	has gyroscope
+	has magnetometer
 	has light
 	has button_one
 	has button_two
@@ -839,6 +953,7 @@ platform XDK110 {
 	
 	has I2C
 	has GPIO
+	has ADC
 	has BLE
 	has LED
 	has WLAN

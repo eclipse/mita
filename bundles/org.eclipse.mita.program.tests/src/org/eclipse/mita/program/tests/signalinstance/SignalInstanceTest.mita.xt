@@ -23,7 +23,7 @@ fn accessWithoutReadOrWrite() {
 	var x1 = connectivity.signal_instance00;
 }
 
-// XPECT errors ---> "Signal instances and modalities cannot be passed as parameters" at "siginst<uint32>"
+// XPECT errors ---> "Signal instances and modalities cannot be passed as parameters." at "siginst<uint32>"
 fn functionWithSiginstParameter(p : siginst<uint32>) { 
 }
 

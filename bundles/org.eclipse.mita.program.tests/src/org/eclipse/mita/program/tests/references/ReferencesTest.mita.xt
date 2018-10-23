@@ -223,7 +223,7 @@ fn foo(x: &&int32, y: &int32) {
 // you mustn't return references
 // right now, this includes all things other than ints.
 // XPECT errors --> "Functions may not return references" at "forbiddenReturn"
-// XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "forbiddenReturn"
+// XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "forbiddenReturn"
 fn forbiddenReturn(): &int32 {
 	var a = 0;
 	// XPECT errors --> "Functions may not return references" at "return &a;"

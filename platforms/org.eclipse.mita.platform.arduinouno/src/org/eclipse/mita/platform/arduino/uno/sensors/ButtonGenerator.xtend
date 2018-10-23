@@ -33,15 +33,15 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 			return Button_Connect();
 		''').setPreamble('''
-			«FOR handler : eventHandler»
-				bool get«handler.handlerName»_flag(){
-					return «handler.handlerName»_flag;
+			Â«FOR handler : eventHandlerÂ»
+				bool getÂ«handler.handlerNameÂ»_flag(){
+					return Â«handler.handlerNameÂ»_flag;
 				}
 				
-				void set«handler.handlerName»_flag(bool val){
-					«handler.handlerName»_flag = val;
+				void setÂ«handler.handlerNameÂ»_flag(bool val){
+					Â«handler.handlerNameÂ»_flag = val;
 				}
-			«ENDFOR»
+			Â«ENDFORÂ»
 		''')
 		.addHeader("Button.h", false)
 		.addHeader("MitaEvents.h", false)
@@ -51,11 +51,11 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 			Exception_T exception = STATUS_OK;
 			
-			«FOR handler : eventHandler»
-				exception = Button_Enable((uint32_t) BUTTON_«handler.sensorInstance.buttonNumber», set«handler.handlerName»_flag, «IF handler.baseName.contains("Pressed")»true«ELSE»false«ENDIF»);
+			Â«FOR handler : eventHandlerÂ»
+				exception = Button_Enable((uint32_t) BUTTON_Â«handler.sensorInstance.buttonNumberÂ», setÂ«handler.handlerNameÂ»_flag, Â«IF handler.baseName.contains("Pressed")Â»trueÂ«ELSEÂ»falseÂ«ENDIFÂ»);
 				if(exception != STATUS_OK) return exception;
 				
-			«ENDFOR»
+			Â«ENDFORÂ»
 		''')
 	}
 

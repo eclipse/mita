@@ -39,7 +39,7 @@ fn callFoo12() {
 	var j : int32 = foo12();
 }
 
-// XPECT errors --> "The operation must return a value of type bool" at "noRet"
+// XPECT errors --> "The operation must return a value of type bool." at "noRet"
 fn noRet() : bool {}
 
 fn incompatibleReturnTypes() : int32 {
@@ -68,14 +68,14 @@ fn returnInVoid() : void {
 	if(true) {
 		return;
 	} else {
-		// XPECT errors --> "Void operations cannot return a value" at "return 1;"
+		// XPECT errors --> "Void operations cannot return a value." at "return 1;"
 		return 1;
 	}
 }
 
 fn returnWithoutValudInNoVoidFunction() : uint32 {
 	if(true) {
-		// XPECT errors --> "The return type 'void' is not compatible with the operation's type 'uint32'" at "return;"
+		// XPECT errors --> "The return type 'void' is not compatible with the operation's type 'uint32'." at "return;"
 		return;
 	}
 }
@@ -93,71 +93,71 @@ alt anyVec {
 	| vec4d: int32, int32, int32, int32
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnStruct1"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnStruct1"
 fn returnStruct1(): vec2d_t {
 	var res: vec2d_t = vec2d_t(1,2);
 	return res;
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnStruct2"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnStruct2"
 fn returnStruct2(): vec2d_t {
 	return vec2d_t(4,2);
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType0"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType0"
 fn returnSumType0(): anyVec {
 	var res: anyVec = anyVec.vec0d();
 	return res;
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType1"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType1"
 fn returnSumType1(): anyVec {
 	var res: anyVec = anyVec.vec1d(1);
 	return res;
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType2"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType2"
 fn returnSumType2(): anyVec {
 	var res: anyVec = anyVec.vec2d(1,2);
 	return res;
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType3"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType3"
 fn returnSumType3(): anyVec {
 	var res: anyVec = anyVec.vec3d(1,2,3);
 	return res;
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType4"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType4"
 fn returnSumType4(): anyVec {
 	var res: anyVec = anyVec.vec4d(1,2,3,4);
 	return res;
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType5"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType5"
 fn returnSumType5(): anyVec {
 	return anyVec.vec0d();
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType6"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType6"
 fn returnSumType6(): anyVec {
 	return anyVec.vec1d(1);
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType7"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType7"
 fn returnSumType7(): anyVec {
 	return anyVec.vec2d(1,2);
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType8"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType8"
 fn returnSumType8(): anyVec {
 	return anyVec.vec3d(1,2,3);
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnSumType9"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType9"
 fn returnSumType9(): anyVec {
 	return anyVec.vec4d(1,2,3,4);
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnArray1"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray1"
 fn returnArray1(): array<int32> {
 	var res: array<int32> = [1,2,3,4];
 	return res;
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnArray2"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray2"
 fn returnArray2(): array<int32> {
 	return [1,2,3,4];
 }
@@ -167,12 +167,12 @@ fn returnArrayBad(s: int32): array<int32> {
 	return new array<int32>(size = s);
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnString1"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString1"
 fn returnString1(): string {
 	var res: string = "abc";
 	return res;
 }
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnString2"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString2"
 fn returnString2(): string {
 	return "abc";
 }
