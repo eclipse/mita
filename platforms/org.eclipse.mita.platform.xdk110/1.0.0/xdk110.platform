@@ -286,6 +286,24 @@ sensor Gyroscope_BMG160 {
 //	generator ""
 //}
 
+sensor noise_sensor {
+	generator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorGenerator"
+	
+	/**
+	 * The sampling frequency in Hertz.
+	 */
+	configuration-item samplingFrequency: uint32 = 100
+	/**
+	 * The timeout to wait for when getting noise in milliseconds.
+	 */
+	configuration-item timeout: uint32 = 100
+	
+	/**
+	 * The noise the microphone of the XDK measures. This is unitless and needs to be calibrated in code yourself if you want absolute values. 
+	 */
+	modality noise: float
+}
+
 enum BME280_PowerMode {
 	/**
 	 * Normal mode comprises an automated perpetual cycling between an (active) measurement period and an (inactive) standby period.
@@ -947,6 +965,7 @@ platform XDK110 {
 	has light
 	has button_one
 	has button_two
+	has noise_sensor
 	
 	has Gyroscope_BMI160
 	has Gyroscope_BMG160
