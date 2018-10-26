@@ -27,6 +27,39 @@ fn fnY(){}
 
 var myVar : int32 = 5; 
 
+struct type0 {
+	var x: int32;
+}
+// XPECT errors --> "Duplicate type 'type0'" at "type0"
+struct type0 {
+	var x: int32;
+}
+
+struct type1 {
+	var x: int32;
+}
+// XPECT errors --> "Duplicate type 'type1'" at "type1"
+struct type1 {
+	var x: int32;
+	var y: int32;
+}
+
+struct type2 {
+	var x: int32;
+}
+// XPECT errors --> "Duplicate type 'type2'" at "type2"
+alt type2 {
+	type2_1: int32	
+}
+
+// this is ok
+struct type3_1 {
+	var x: int32;
+}
+alt type3_2 {
+	type3_1: int32	
+}
+
 fn shadowingSuccess(){
 	var myVar : bool = true;
 	myVar = true;
