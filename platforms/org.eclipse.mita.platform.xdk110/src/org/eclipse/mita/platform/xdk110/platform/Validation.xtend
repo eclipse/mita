@@ -34,52 +34,22 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
 import java.util.Set
-import org.eclipse.mita.platform.xdk110.platform.Validation.MethodCall
 import java.util.HashSet
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.mita.program.validation.MethodCall
+import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
+import org.eclipse.mita.program.validation.MethodCall.MethodCallModality
+import org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator
+import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.TimeIntervalEvent
+import org.eclipse.mita.program.ProgramBlock
 
 class Validation implements IResourceValidator {
 
 	@Inject ElementSizeInferrer sizeInferrer
-	
-	private static class MethodCall {
-		final ArgumentExpression source
-		final SignalInstance sigInst
-		final EStructuralFeature structFeature
-		final Operation method
 		
-		private new(ArgumentExpression ae, Operation op, SignalInstance si, EStructuralFeature sf) {
-			source = ae;
-			sigInst = si;
-			structFeature = sf;
-			method = op;
-		}
-		static dispatch def cons(ArgumentExpression ae, Operation op, SignalInstance si, EStructuralFeature sf) {
-			new MethodCall(ae,op,si,sf);
-		}
-		static dispatch def cons(Object _1, Object _2, Object _3, Object _4) {
-			null;
-		}	
-		
-		override toString() {
-			val setup = EcoreUtil2.getContainerOfType(sigInst, SystemResourceSetup)
-			return '''«setup?.name».«sigInst.name».«method.name»(«FOR arg : source.arguments SEPARATOR(", ")»«StaticValueInferrer.infer(arg.value, [])?.toString?:"null"»«ENDFOR»)'''
-		}
-		
-		override hashCode() {
-			toString.hashCode()
-		}
-		
-		override equals(Object arg0) {
-			if(arg0 instanceof MethodCall) {
-				return toString == arg0.toString;
-			}
-			return super.equals(arg0)
-		}
-	}
-	
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		val functionCalls1 = program.eAllContents.filter(FeatureCall).filter[it.operationCall].toList;
 		val functionCalls2 = program.eAllContents.filter(ElementReferenceExpression).filter[it.operationCall].toList;
@@ -87,7 +57,7 @@ class Validation implements IResourceValidator {
 		// the following is extension method hell
 		// EObject source = it, SignalInstance sigInst, int structFeature
 		// ArgumentExpression source = it, Operation writeMethod, SignalInstance sigInst
-		val sigInstAccesses = (
+		val sigInstOrModalityAccesses = (
 			functionCalls1.map[
 				val ArgumentExpression source = it;
 				val method = it.feature;
@@ -113,6 +83,9 @@ class Validation implements IResourceValidator {
 				return null;
 			]).filterNull
 		
+		val sigInstAccesses = sigInstOrModalityAccesses.filter(MethodCallSigInst);
+		val modalityAccesses = sigInstOrModalityAccesses.filter(MethodCallModality);
+		
 		val filterSigInstName = [String name | 
 			return sigInstAccesses.filter[
 				val init = it.sigInst.initialization;
@@ -129,10 +102,21 @@ class Validation implements IResourceValidator {
 			]
 		]
 		
+		val filterModalityName = [String name | 
+			return modalityAccesses.filter[
+				val modality = it.modality;
+				val res = modality.eContainer;
+				if(res instanceof AbstractSystemResource) {
+					return res.name == name
+				}
+				return false;
+			]
+		]
+		
 		val i2cs = filterSigInstName.apply("I2C").toSet
 		val gpios = filterSigInstName.apply("GPIO").toSet
 		
-		
+		val noises = filterModalityName.apply("noise_sensor").toSet;
 		
 		val reads = sigInstAccesses.filter[
 			if(it.method instanceof GeneratedFunctionDefinition) {
@@ -149,11 +133,11 @@ class Validation implements IResourceValidator {
 			}
 		].toSet
 		
-		val i2cReads   = new HashSet(i2cs ) => [retainAll(reads)]
-		val i2cWrites  = new HashSet(i2cs ) => [retainAll(writes)]
-		val gpioReads  = new HashSet(gpios) => [retainAll(reads)]
-		val gpioWrites = new HashSet(gpios) => [retainAll(writes)]
-		
+		val i2cReads   = new HashSet(i2cs  ) => [retainAll(reads)]
+		val i2cWrites  = new HashSet(i2cs  ) => [retainAll(writes)]
+		val gpioReads  = new HashSet(gpios ) => [retainAll(reads)]
+		val gpioWrites = new HashSet(gpios ) => [retainAll(writes)]
+				
 		i2cReads.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Read", "read from", acceptor)]
 		i2cWrites.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Write", "write to", acceptor)]
 		
@@ -161,16 +145,60 @@ class Validation implements IResourceValidator {
 		
 		gpioReads.forEach[validateGpioRead(it, acceptor)]
 		gpioWrites.forEach[validateGpioWrite(it, acceptor)]
+		
+		noises.forEach[validateNoiseRead(noises, it, acceptor)]
 	}
 	
-	def validateGpioRead(MethodCall call, ValidationMessageAcceptor acceptor) {
+	/*
+	 * We validate if in timed events the noise sensor is only sampled as fast as it has samples here. 
+	 * Since this is equivalent to the halting problem we only emit warnings, not errors (for example in conflicting control flow) <-> we assume some kind of worst case: every read happens at least once.
+	 * Right now this is a bad estimate for if/else, where it is too pessimistic, and for loops, where it might be too optimistic.
+	 * I've also decided to not do this kind of validation in non-time event handlers like every button_one.pressed
+	 * since there the real constraints are timeout (which is handled by org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator) 
+	 * and the real world (which we don't know anything about). 
+	 */
+	def validateNoiseRead(Set<MethodCallModality> noiseReads, MethodCallModality mcm, ValidationMessageAcceptor acceptor) {
+		val setups = mcm.source.eResource.resourceSet.allContents.filter(Program).flatMap[it.setup.iterator].filter[it.type?.name == NoiseSensorValidator.NOISE_SENSOR_TYPE_NAME];
+		val sampleTime_expr = NoiseSensorValidator.getTimePerSampleInMs(setups.head);
+		
+		var outerProgramBlock = EcoreUtil2.getContainerOfType(mcm.source, ProgramBlock);
+		var outerMost = false;
+		while(!outerMost) {
+			val next = EcoreUtil2.getContainerOfType(outerProgramBlock.eContainer, ProgramBlock);
+			if(next === null) {
+				outerMost = true;
+			}
+			else {
+				outerProgramBlock = next;
+			}
+		}
+		
+		val nearbyReads = outerProgramBlock.eAllContents.filter[obj | noiseReads.findFirst[it.source == obj] !== null].toList;
+		val previousNoiseReads = nearbyReads.takeWhile[it !== mcm.source].toList;
+		
+		val eventHandler = EcoreUtil2.getContainerOfType(mcm.source, EventHandlerDeclaration);
+		val event = eventHandler.event;
+		val numberOfPreviousReadsInThisEventHandler = previousNoiseReads.length + 1;
+		val actualSampleTime = sampleTime_expr.key * numberOfPreviousReadsInThisEventHandler;
+		if(event instanceof TimeIntervalEvent) {
+			val eventSampleTime = ModelUtils.getIntervalInMilliseconds(event);
+			if(eventSampleTime < actualSampleTime && !ModelUtils.isInTryCatchFinally(mcm.source)) {
+				val fmtString = "Noise samples won't be calculated fast enough for how often you are sampling. Consider increasing sampling frequency to %d or increasing your event handler interval to %dms.";
+				val msg = String.format(fmtString, Math.ceil(256.0 * 1000.0/(eventSampleTime/numberOfPreviousReadsInThisEventHandler)) as int, actualSampleTime as int);
+				acceptor.acceptWarning(msg, mcm.source, null, 0, "");
+				acceptor.acceptWarning(msg, event.interval, null, 0, "");
+			}
+		}
+	}
+	
+	def validateGpioRead(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
 		val init = call.sigInst.initialization as ElementReferenceExpression;
 		val signal = init.reference as Signal;
 		if(signal.name.contains("Out")) {
 			acceptor.acceptError("Can not read from " + signal.name, call.source, call.structFeature, 0, "CANT_READ_FROM_" + signal.name.toUpperCase)
 		}
 	}
-	def validateGpioWrite(MethodCall call, ValidationMessageAcceptor acceptor) {
+	def validateGpioWrite(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
 		val init = call.sigInst.initialization as ElementReferenceExpression;
 		val signal = init.reference as Signal;
 		if(signal.name.contains("In")) {

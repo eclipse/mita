@@ -288,11 +288,12 @@ sensor Gyroscope_BMG160 {
 
 sensor noise_sensor {
 	generator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorGenerator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator"
 	
 	/**
 	 * The sampling frequency in Hertz.
 	 */
-	configuration-item samplingFrequency: uint32 = 100
+	configuration-item samplingFrequency: uint32 = 2560
 	/**
 	 * The timeout to wait for when getting noise in milliseconds.
 	 */
