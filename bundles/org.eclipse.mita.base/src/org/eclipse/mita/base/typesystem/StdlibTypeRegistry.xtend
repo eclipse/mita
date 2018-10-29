@@ -39,8 +39,8 @@ class StdlibTypeRegistry {
 	public static val sigInstTypeQID = QualifiedName.create(#[/*"stdlib",*/ "siginst"]);
 	public static val modalityTypeQID = QualifiedName.create(#[/*"stdlib",*/ "modality"]);
 	public static val arrayTypeQID = QualifiedName.create(#[/*"stdlib",*/ "array"]);
-	public static val plusFunctionQID = QualifiedName.create(#[/*"stdlib",*/ "__PLUS__"]);
-	public static val minusFunctionQID = QualifiedName.create(#[/*"stdlib",*/ "__MINUS__"]);
+	public static val plusFunctionQID = QualifiedName.create(#["stdlib", "__PLUS__"]);
+	public static val minusFunctionQID = QualifiedName.create(#["stdlib", "__MINUS__"]);
 	
 	@Inject IScopeProvider scopeProvider;
 	
