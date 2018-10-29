@@ -27,13 +27,13 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
-	
+
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
 
 	@Inject
 	protected ServalPALGenerator servalpalGenerator
-	
+
 	@Inject
 	protected extension StatementGenerator statementGenerator
 
@@ -91,17 +91,17 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		 * know the state of the client.
 		 *
 		 * We define this client ID globally to ensure it's available in memory even
-		 * after it was passed to the Serval stack in the setup method. 
+		 * after it was passed to the Serval stack in the setup method.
 		 */
 		static const char* MQTT_CLIENT_ID = "«configuration.getString("clientId")»";
-		
+
 		static const char* MQTT_BROKER_HOST = "«brokerUri.host»";
-		
+
 		static const uint16_t MQTT_BROKER_PORT = «brokerPort»;
-		
+
 		/**<  Macro for the non secure serval stack expected MQTT URL format */
 		#define MQTT_URL_FORMAT_NON_SECURE          "mqtt://%s:%d"
-		
+
 		/**< Handle for MQTT subscribe operation  */
 		static SemaphoreHandle_t mqttSubscribeHandle;
 		/**< Handle for MQTT publish operation  */
@@ -124,7 +124,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("XdkCommonInfo.h", true)
 		.addHeader("BCDS_NetworkConfig.h", true)
 	}
-	
+
 	override generateEnable() {
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
 		val result = codeFragmentProvider.create('''
@@ -178,7 +178,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			mqttSession.will.haveWill = false;
 			mqttSession.onMqttEvent = MqttEventHandler;
 			«IF auth instanceof SumTypeRepr»
-				«IF auth.name == "Login"»
+				«IF auth.isLogin()»
 					mqttSession.username = username;
 					mqttSession.password = password;
 				«ENDIF»
@@ -233,28 +233,30 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		return retcode;
 		''');
 		if(auth instanceof SumTypeRepr) {
-			if(auth.name == "Login") {
+			if(auth.isLogin()) {
 				val username = auth.properties.get("username")?.code;
 				val password = auth.properties.get("password")?.code;
 				result.setPreamble('''
-				const char usernameBuf[] = «username»;
-				StringDescr_T username = {
-					.start = usernameBuf,
-					.length = sizeof(usernameBuf)
-				};
-				const char passwordBuf[] = «password»;
-				StringDescr_T password = {
-					.start = passwordBuf,
-					.length = sizeof(passwordBuf)
-				};
+
+                StringDescr_T username;
+                const char* usernameBuf = «username»;
+                StringDescr_wrap(&username, usernameBuf);
+
+                StringDescr_T password;
+                const char* passwordBuf = «password»;
+				StringDescr_wrap(&password, passwordBuf);
 				''').addHeader("Serval_StringDescr.h", true);
 			}
 		}
-		
+
 		return result;
 
 	}
-	
+
+	protected def isLogin(SumTypeRepr repr) {
+		return repr.name == "Login"
+	}
+
 	override generateAdditionalImplementation() {
 		codeFragmentProvider.create('''
 		/**
@@ -292,7 +294,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				{
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
-		
+
 				break;
 			case MQTT_CONNECTION_CLOSED:
 				mqttIsConnected = false;
@@ -338,12 +340,12 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				«loggingGenerator.generateLogStatement(LogLevel.Info, "MqttEventHandler : Unhandled MQTT Event: %x", codeFragmentProvider.create('''event'''))»
 				break;
 			}
-		
+
 			if (RETCODE_OK != retcode)
 			{
 				Retcode_RaiseError(retcode);
 			}
-		
+
 			return RC_OK;
 		}
 		''')
@@ -351,29 +353,28 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		static retcode_t MqttEventHandler(MqttSession_T* session, MqttEvent_t event, const MqttEventData_t* eventData);
 		''')
 	}
-	
+
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
 		CodeFragment.EMPTY
 	}
-	
+
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
 		val qosLevel = #[ "MQTT_QOS_AT_MOST_ONE", "MQTT_QOS_AT_LEAST_ONCE", "MQTT_QOS_EXACTLY_ONCE"	];
-		val qosRaw = ModelUtils.getArgumentValue(signalInstance, 'qos');
-		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]);
-		val qos = qosLevel.get((qosRawValue ?: 0) as Integer);
-		
-		return codeFragmentProvider.create('''			
+		val qosRaw = getQosLevel(signalInstance);
+		val qos = qosLevel.get(qosRaw);
+
+		return codeFragmentProvider.create('''
 			Retcode_T retcode = RETCODE_OK;
-			
+
 			static StringDescr_T publishTopicDescription;
-			static char *topic = "«StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, 'name'), [ ])»";
+			static char *topic = "«getTopicName(signalInstance)»";
 			StringDescr_wrap(&publishTopicDescription, topic);
-			
+
 			mqttWasPublished = false;
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttPublishHandle, 0UL);
-			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, *value, strlen(*value), (uint8_t) MQTT_QOS_AT_MOST_ONE, false))
+			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, *value, strlen(*value), (uint8_t) «qos», false))
 			{
 			    retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 			}
@@ -394,5 +395,15 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			return retcode;
 		''')
 	}
-	
+
+	protected def int getQosLevel(SignalInstance instance) {
+		val qosRaw = ModelUtils.getArgumentValue(instance, 'qos');
+		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]) as Integer;
+		return Math.min(Math.max(qosRawValue ?: 0, 0), 3);
+	}
+
+	protected def String getTopicName(SignalInstance instance) {
+		return StaticValueInferrer.infer(ModelUtils.getArgumentValue(instance, 'name'), [ ]) as String;
+	}
+
 }

@@ -771,6 +771,46 @@ connectivity many MQTT {
 	
 }
 
+alt HonoAuthentication {
+	Authenticated: { username: string, password: string }
+	| Unauthenticated: { tenant: string, deviceId: string }
+}
+
+connectivity many HonoMqtt {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.HonoGenerator"
+    validator "org.eclipse.mita.platform.xdk110.connectivity.MqttValidator"
+	
+	/**
+	 * The underlying transport connectivity we use to send the data out. In the future we might also
+	 * support LoRa here.
+	 */
+	required configuration-item transport : WLAN
+	
+	/**
+	 * The URL pointing to the MQTT broker, for example: mqtt://does-not.exist:8000
+	 */
+	required configuration-item url : string
+	
+	/**
+	 * The client identifier (here: clientID) is a identifier of each MQTT client
+     * connecting to a MQTT broker. It needs to be unique for the broker to
+     * know the state of the client. 
+	 */
+	required configuration-item clientId : string
+	
+	required configuration-item authentication: HonoAuthentication
+	
+	/**
+	 * Publishes a Hono telemetry message 
+	 */
+	signal telemetry(qos: uint32 = 0) : string
+	
+	/**
+	 * Publishes a Hono event. 
+	 */
+	signal ^event() : string
+}
+
 /**
  * Exception thrown when we can't setup the WLAN network
  */
@@ -958,6 +998,7 @@ platform XDK110 {
 	has LED
 	has WLAN
 	has MQTT
+	has HonoMqtt
 	has HttpRestClient
 	
 	configuration-item applicationName : string = "EclipseMitaApplication"
