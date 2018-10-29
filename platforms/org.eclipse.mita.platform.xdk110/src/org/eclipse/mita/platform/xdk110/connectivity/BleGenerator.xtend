@@ -108,6 +108,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
 		.addHeader('BCDS_Retcode.h', true, IncludePath.VERY_HIGH_PRIORITY)
 		.addHeader("BCDS_BlePeripheral.h", true, IncludePath.HIGH_PRIORITY)
+		.addHeader("BCDS_Ble.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("BleTypes.h", true)
 		.addHeader("attserver.h", true)
 		.addHeader("FreeRTOS.h", true, IncludePath.HIGH_PRIORITY)
@@ -189,7 +190,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 					 	{
 					 		if (BLESTATUS_SUCCESS != status)
 					 		{
-					 			retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_WRITE_ATT_VALUE_FAILED);
+					 			retcode = RETCODE(RETCODE_SEVERITY_ERROR, (Retcode_T ) RETCODE_REWRITE_OF_ATT_FAILED);
 					 		}
 					 	}
 					 	ATT_SERVER_ReleaseDatabaseAccess();
