@@ -13,20 +13,20 @@
 
 package org.eclipse.mita.program.generator.tests;
 
-import org.eclipse.mita.platform.unittest.UnitTestPlatformGeneratorModule.ExceptionGenerator
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.cdt.core.dom.ast.IASTBinaryExpression
 import org.eclipse.cdt.core.dom.ast.IASTBreakStatement
 import org.eclipse.cdt.core.dom.ast.IASTCompoundStatement
 import org.eclipse.cdt.core.dom.ast.IASTDeclarationStatement
+import org.eclipse.cdt.core.dom.ast.IASTDoStatement
 import org.eclipse.cdt.core.dom.ast.IASTExpressionStatement
-import org.eclipse.cdt.core.dom.ast.IASTForStatement
 import org.eclipse.cdt.core.dom.ast.IASTIdExpression
 import org.eclipse.cdt.core.dom.ast.IASTIfStatement
 import org.eclipse.cdt.core.dom.ast.IASTReturnStatement
 import org.eclipse.cdt.core.dom.ast.IASTSimpleDeclaration
 import org.eclipse.cdt.core.dom.ast.c.ICASTTypedefNameSpecifier
+import org.eclipse.mita.platform.unittest.UnitTestPlatformGeneratorModule.ExceptionGenerator
 import org.junit.Test
 
 import static org.junit.Assert.*
@@ -58,7 +58,7 @@ class TryCatchGeneratorTest extends AbstractGeneratorTest {
 		val body = eventHandler.body as IASTCompoundStatement;
 		
 		val tryBlock = body.statements.get(3);
-		assertTrue("Try block resulted in something else than a for loop", tryBlock instanceof IASTForStatement);
+		assertTrue("Try block resulted in something else than a for loop", tryBlock instanceof IASTDoStatement);
 		
 		val firstCatchStatement = body.children.filter(IASTIfStatement).head;
 		var List<IASTIfStatement> catchStatements = new ArrayList<IASTIfStatement>();
@@ -165,10 +165,10 @@ class TryCatchGeneratorTest extends AbstractGeneratorTest {
 		
 		// Try statement should translate to for loop
 		val tryBlock = body.statements.get(4);
-		assertTrue("Try block resulted in something else than a for loop", tryBlock instanceof IASTForStatement);
+		assertTrue("Try block resulted in something else than a for loop", tryBlock instanceof IASTDoStatement);
 	
 		// Throw inside try should become an assignment and break
-		val tryBlockContent = ((tryBlock as IASTForStatement).body as IASTCompoundStatement).statements;
+		val tryBlockContent = ((tryBlock as IASTDoStatement).body as IASTCompoundStatement).statements;
 		val tbcFirst = (tryBlockContent.get(0) as IASTExpressionStatement).expression as IASTBinaryExpression;
 		assertTrue(tbcFirst.operand1 instanceof IASTIdExpression);
 		assertEquals("Throw inside try did not store exception", "exception", (tbcFirst.operand1 as IASTIdExpression).name.toString);

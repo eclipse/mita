@@ -31,7 +31,7 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	
 	public def generateEventloopInject(String functionName, String userParam1, String userParam2) {
 		return codeFragmentProvider.create('''
-			«functionName»();
+			Â«functionNameÂ»();
 		''')
 	}
 	
@@ -49,15 +49,15 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	
 	override generateEventHeaderPreamble(CompilationContext context) {
 		return codeFragmentProvider.create('''
-			«IF context.allTimeEvents.length !== 0» 
+			Â«IF context.allTimeEvents.length !== 0Â» 
 			#define TIMED_APPLICATION
-			«ENDIF»
-			«FOR handler : context.allEventHandlers»
+			Â«ENDIFÂ»
+			Â«FOR handler : context.allEventHandlersÂ»
 			
-			volatile bool «handler.handlerName»_flag;
-			bool get«handler.handlerName»_flag();
-			void set«handler.handlerName»(bool val);
-			«ENDFOR»
+			volatile bool Â«handler.handlerNameÂ»_flag;
+			bool getÂ«handler.handlerNameÂ»_flag();
+			void setÂ«handler.handlerNameÂ»(bool val);
+			Â«ENDFORÂ»
 		''');
 	}
 	

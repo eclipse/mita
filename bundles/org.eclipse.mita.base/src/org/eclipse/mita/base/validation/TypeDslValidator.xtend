@@ -25,18 +25,18 @@ import static org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.NOT_TYPE_
 class TypeDslValidator extends ExpressionsValidator implements IValidationIssueAcceptor {
 	
 	public static final String ERROR_WRONG_NUMBER_OF_ARGUMENTS_CODE = "WrongNrOfArgs";
-	public static final String ERROR_WRONG_NUMBER_OF_ARGUMENTS_MSG = "Wrong number of arguments, expected %s .";
+	public static final String ERROR_WRONG_NUMBER_OF_ARGUMENTS_MSG = "Wrong number of arguments, expected %s.";
 	
 	@Inject
 	protected ITypeSystem registry;
 
 	public def assertNotType(InferenceResult currentResult, String msg, IValidationIssueAcceptor acceptor,
 			InferenceResult... candidates) {
-		if (currentResult == null)
+		if (currentResult === null)
 			return;
 		for (InferenceResult type : candidates) {
 			if (registry.isSame(currentResult.getType(), type.getType())) {
-				val result = if(msg != null)  { msg } else { String.format(ASSERT_NOT_TYPE, currentResult) };
+				val result = if(msg !== null)  { msg } else { String.format(ASSERT_NOT_TYPE, currentResult) };
 				acceptor.accept(new ValidationIssue(Severity.ERROR, result, NOT_TYPE_CODE));
 			}
 		}
@@ -44,10 +44,10 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 
 	public def void assertSame(InferenceResult result1, InferenceResult result2, String msg,
 			IValidationIssueAcceptor acceptor) {
-		if (result1 == null || result2 == null)
+		if (result1 === null || result2 === null)
 			return;
 		if (!registry.isSame(result1.getType(), result2.getType())) {
-			val result = if(msg != null)  { msg } else { String.format(ASSERT_SAME, result1, result2) };
+			val result = if(msg !== null)  { msg } else { String.format(ASSERT_SAME, result1, result2) };
 			acceptor.accept(new ValidationIssue(Severity.ERROR, result, NOT_SAME_CODE));
 			return;
 		}
@@ -57,12 +57,12 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 
 	public def assertCompatible(InferenceResult result1, InferenceResult result2, String msg,
 			IValidationIssueAcceptor acceptor) {
-		if (result1 == null || result2 == null || isNullOnComplexType(result1, result2)
+		if (result1 === null || result2 === null || isNullOnComplexType(result1, result2)
 				|| isNullOnComplexType(result2, result1)) {
 			return;
 		}
 		if (!registry.haveCommonType(result1.getType(), result2.getType())) {
-			val result = if(msg != null)  { msg } else { String.format(ASSERT_COMPATIBLE, result1, result2) };
+			val result = if(msg !== null)  { msg } else { String.format(ASSERT_COMPATIBLE, result1, result2) };
 			acceptor.accept(new ValidationIssue(Severity.ERROR, result, NOT_COMPATIBLE_CODE));
 			return;
 		}
@@ -72,11 +72,11 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 
 	public def assertAssignable(InferenceResult varResult, InferenceResult valueResult, String msg,
 			IValidationIssueAcceptor acceptor) {
-		if (varResult == null || valueResult == null || isNullOnComplexType(varResult, valueResult)) {
+		if (varResult === null || valueResult === null || isNullOnComplexType(varResult, valueResult)) {
 			return;
 		}
 		if (!registry.isSuperType(valueResult.getType(), varResult.getType())) {
-			val result = if(msg != null)  { msg } else { String.format(ASSERT_COMPATIBLE, varResult, valueResult) };
+			val result = if(msg !== null)  { msg } else { String.format(ASSERT_COMPATIBLE, varResult, valueResult) };
 			acceptor.accept(new ValidationIssue(Severity.ERROR, result, NOT_COMPATIBLE_CODE));
 			return;
 		}
@@ -87,7 +87,7 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 			IValidationIssueAcceptor acceptor) {
 		val bindings1 = result1.getBindings();
 		val bindings2 = result2.getBindings();
-		val result = if(msg != null)  { msg } else { String.format(ASSERT_COMPATIBLE, result1, result2); }
+		val result = if(msg !== null)  { msg } else { String.format(ASSERT_COMPATIBLE, result1, result2); }
 		if (bindings1.size() != bindings2.size()) {
 			acceptor.accept(new ValidationIssue(Severity.ERROR, result, NOT_COMPATIBLE_CODE));
 			return;
@@ -99,11 +99,11 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 
 	public def assertIsSubType(InferenceResult subResult, InferenceResult superResult, String msg,
 			IValidationIssueAcceptor acceptor) {
-		if (subResult == null || superResult == null)
+		if (subResult === null || superResult === null)
 			return;
 		if (!registry.isSuperType(subResult.getType(), superResult.getType())) {
-			val result = if(msg != null)  { msg } else { String.format(ASSERT_COMPATIBLE, subResult, superResult); }
-			acceptor.accept(new ValidationIssue(Severity.ERROR, msg, NOT_COMPATIBLE_CODE));
+			val result = if(msg !== null)  { msg } else { String.format(ASSERT_COMPATIBLE, subResult, superResult); }
+			acceptor.accept(new ValidationIssue(Severity.ERROR, result, NOT_COMPATIBLE_CODE));
 		}
 	}
 

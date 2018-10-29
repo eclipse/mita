@@ -21,9 +21,9 @@ class GPIOGenerator extends AbstractSystemResourceGenerator {
 
 	override generateEnable() {
 		codeFragmentProvider.create('''
-		«FOR signaleInstace : setup.signalInstances»
-		GPIO_Connect(«signaleInstace.pinName», «signaleInstace.pinMode»);
-		«ENDFOR»
+		Â«FOR signaleInstace : setup.signalInstancesÂ»
+		GPIO_Connect(Â«signaleInstace.pinNameÂ», Â«signaleInstace.pinModeÂ»);
+		Â«ENDFORÂ»
 		''').addHeader("GPIO.h", false)
 	}
 	
@@ -42,23 +42,23 @@ class GPIOGenerator extends AbstractSystemResourceGenerator {
 	def CodeFragment getPinName(SignalInstance sigInst) {
 		val enumValue = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "pin"), []);
 		if (enumValue instanceof Enumerator) {
-			return codeFragmentProvider.create('''«enumValue.name»''');
+			return codeFragmentProvider.create('''Â«enumValue.nameÂ»''');
 		}
 		return CodeFragment.EMPTY;
 	}
 
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String valueVariableName) {
 		codeFragmentProvider.create('''
-			if(*«valueVariableName») {
-				return setGPIO(«signalInstance.pinName»);
+			if(*Â«valueVariableNameÂ») {
+				return setGPIO(Â«signalInstance.pinNameÂ»);
 			} else {
-				return unsetGPIO(«signalInstance.pinName»);
+				return unsetGPIO(Â«signalInstance.pinNameÂ»);
 			}
 		''')
 	}
 
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
-		codeFragmentProvider.create('''return readGPIO(«signalInstance.pinName», «resultName»);''')
+		codeFragmentProvider.create('''return readGPIO(Â«signalInstance.pinNameÂ», Â«resultNameÂ»);''')
 	}
 
 }

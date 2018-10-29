@@ -43,7 +43,7 @@ class Validation implements IResourceValidator {
 		
 		override toString() {
 			val setup = EcoreUtil2.getContainerOfType(sigInst, SystemResourceSetup)
-			return '''«setup?.name».«sigInst.name».«method.name»(«FOR arg : source.arguments SEPARATOR(", ")»«StaticValueInferrer.infer(arg.value, [])?.toString?:"null"»«ENDFOR»)'''
+			return '''Â«setup?.nameÂ».Â«sigInst.nameÂ».Â«method.nameÂ»(Â«FOR arg : source.arguments SEPARATOR(", ")Â»Â«StaticValueInferrer.infer(arg.value, [])?.toString?:"null"Â»Â«ENDFORÂ»)'''
 		}
 		
 		override hashCode() {

@@ -20,7 +20,7 @@ setup smartphone : BLE {
     var shockDetected = bool_characteristic(UUID=0xCAFE);
 }
 
-every accelerometer.activity {
+every accelerometer.any_motion {
     if(accelerometer.magnitude.read() > 5000) {
         smartphone.shockDetected.write(true);
     }

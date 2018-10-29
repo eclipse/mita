@@ -160,7 +160,7 @@ fn errors() {
 	--- */
 	b = a[-2:-1];
 	var str = "asdf";
-	// XPECT errors --> "Array index must be integer" at "str"
+	// XPECT errors --> "Array index must be integer." at "str"
 	var c = a[str];
 	// XPECT errors --> "Array range is invalid: Incompatible types string and integer." at "str"
 	b = a[str:];
@@ -174,13 +174,13 @@ fn errors() {
 }
 
 // XPECT noCompileErrors
-// XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnArrayLiteral"
+// XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayLiteral"
 fn returnArrayLiteral() : array<uint8> {
 	return [1,2,3,4];
 }
 
 // XPECT noCompileErrors
-// XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "returnArrayLiteralAgain"
+// XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayLiteralAgain"
 fn returnArrayLiteralAgain() {
 	return [1,2,3,4];
 }
