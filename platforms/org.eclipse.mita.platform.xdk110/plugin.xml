@@ -12,6 +12,9 @@
          <ResourceURI
                uri="platform:/plugin/org.eclipse.mita.platform.xdk110/1.0.0/xdk110.platform">
          </ResourceURI>
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.platform.xdk110/1.0.0/xdk110.mita">
+         </ResourceURI>
       </Library>
    </extension>
 </plugin>
