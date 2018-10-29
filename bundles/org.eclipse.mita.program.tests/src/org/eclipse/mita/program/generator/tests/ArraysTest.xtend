@@ -13,23 +13,29 @@
 
 package org.eclipse.mita.program.generator.tests;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import org.junit.Test
 
-@SuiteClasses({ 
-	BasicControlStructuresTest.class,
-	EnumsTest.class,
-	FunctionOverloadingTest.class,
-	SensorAccessTest.class,
-	StructsTest.class,
-	TryCatchGeneratorTest.class,
-	UnravelFunctionCallsTest.class,
-	SumTypesTest.class,
-	ArraysTest.class,
-	SetupTest.class
-})
-@RunWith(Suite.class)
-public class AllTests {
+class ArraysTest extends AbstractGeneratorTest {
+	
+	@Test
+	def testArrays(){
+		val ast = generateAndParseApplication(
+		'''
+		package main;
+		import platforms.unittest;
 
+		every 100 milliseconds {
+			let a = [1,2,3,4];
+			var b = a;
+			b = [1,2,3,4,5];
+			if(true) {
+				b = [1,2,3,4,5,6];
+				b = [1,2,3,4,5,6,7];
+			}
+		}
+		''');
+		ast.assertNoCompileErrors();
+	}
+	
+	
 }
