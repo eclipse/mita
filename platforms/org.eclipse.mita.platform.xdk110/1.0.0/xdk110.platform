@@ -361,7 +361,6 @@ sensor BME280 {
 	
 	/**
 	 * The relative humidity as percentage in Q22.10 integer format.
-	 * Divide this value by 1024 to get the percentage.
 	 */
 	modality humidity_fixed_point : uint32
 	
