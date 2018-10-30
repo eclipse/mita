@@ -961,6 +961,15 @@ platform XDK110 {
 	has HttpRestClient
 	
 	configuration-item applicationName : string = "EclipseMitaApplication"
+	/**
+	 * Enabling this powers the 2.5V and 3.3V external power on the extension bus. 
+	 */
+	configuration-item powerExternalDevices: bool = false
+	/**
+	 * Configure the XDK to wait some time in milliseconds before setting up and enabling resources.
+	 * This is especially useful to view debug output.
+	 */
+	configuration-item startupDelay: uint32 = 0
 	
 	event startup
 }

@@ -69,7 +69,26 @@ class GeneratorUtils {
 	
 	@Inject
 	protected IScopeProvider scopeProvider;
+	
+	@Inject 
+	protected CodeFragmentProvider codeFragmentProvider;
+	
+	@Inject(optional = true)
+	protected IPlatformLoggingGenerator loggingGenerator;
 
+	def generateLoggingExceptionHandler(String resourceName, String action) {
+		codeFragmentProvider.create('''
+		if(exception == NO_EXCEPTION)
+		{
+			«loggingGenerator.generateLogStatement(IPlatformLoggingGenerator.LogLevel.Info, action + " " + resourceName + " succeeded")»
+		}
+		else
+		{
+			«loggingGenerator.generateLogStatement(IPlatformLoggingGenerator.LogLevel.Error, "failed to " + action + " " + resourceName)»
+			return exception;
+		}
+		''')
+	}
 	
 	def getOccurrence(EObject obj) {
 		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject

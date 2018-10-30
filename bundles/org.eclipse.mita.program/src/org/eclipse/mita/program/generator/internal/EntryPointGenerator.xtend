@@ -89,9 +89,12 @@ class EntryPointGenerator {
 				«startupGenerator.generateMain(context)»
 			}
 			
-			«exceptionType» Mita_initialize(void)
+			«exceptionType» Mita_initialize(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
 			{
+				«eventLoopGenerator.generateEventLoopHandlerPreamble(context, null)»
 				«exceptionType» exception = NO_EXCEPTION;
+				
+				«eventLoopGenerator.generateSetupPreamble(context)»
 
 				«IF context.hasTimeEvents»
 
@@ -119,6 +122,8 @@ class EntryPointGenerator {
 			{
 				«eventLoopGenerator.generateEventLoopHandlerPreamble(context, null)»
 				«exceptionType» exception = NO_EXCEPTION;
+				
+				«eventLoopGenerator.generateEnablePreamble(context)»
 
 				«IF context.hasTimeEvents»
 				exception = EnableTime();
@@ -134,7 +139,7 @@ class EntryPointGenerator {
 			}
 		''')
 		.setPreamble('''
-			static «exceptionType» Mita_initialize(void);
+			static «exceptionType» Mita_initialize(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»);
 			static «exceptionType» Mita_goLive(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»);
 		''')
 		.addHeader(baseIncludes)
@@ -158,18 +163,6 @@ class EntryPointGenerator {
 		.toHeader(context, 'Mita_EVENTS_H');
 	}
 	
-	protected def generateLoggingExceptionHandler(String resourceName, String action) {
-		codeFragmentProvider.create('''
-		if(exception == NO_EXCEPTION)
-		{
-			«loggingGenerator.generateLogStatement(IPlatformLoggingGenerator.LogLevel.Info, action + " " + resourceName + " succeeded")»
-		}
-		else
-		{
-			«loggingGenerator.generateLogStatement(IPlatformLoggingGenerator.LogLevel.Error, "failed to " + action + " " + resourceName)»
-			return exception;
-		}
-		''')
-	}
+	
 	
 }

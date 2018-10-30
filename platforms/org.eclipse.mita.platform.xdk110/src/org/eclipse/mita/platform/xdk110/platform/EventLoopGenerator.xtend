@@ -13,29 +13,36 @@
 
 package org.eclipse.mita.platform.xdk110.platform
 
+import com.google.inject.Inject
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
-import com.google.inject.Inject
+import org.eclipse.mita.program.generator.StatementGenerator
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.program.generator.GeneratorUtils
 
 class EventLoopGenerator implements IPlatformEventLoopGenerator {
 
 	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
+	protected CodeFragmentProvider codeFragmentProvider;
+	@Inject
+	protected StatementGenerator statementGenerator;
+	@Inject
+	protected extension GeneratorUtils generatorUtils;
 	
-	public def generateEventloopInject(String functionName, String userParam1, String userParam2) {
+	def generateEventloopInject(String functionName, String userParam1, String userParam2) {
 		return codeFragmentProvider.create('''CmdProcessor_Enqueue(&Mita_EventQueue, «functionName», «userParam1», «userParam2»);''')
 			.addHeader('BCDS_CmdProcessor.h', true);
 	}
 	
-	public def generateEventloopInjectFromIsr(String functionName, String userParam1, String userParam2) {
+	def generateEventloopInjectFromIsr(String functionName, String userParam1, String userParam2) {
 		return codeFragmentProvider.create('''CmdProcessor_EnqueueFromIsr(&Mita_EventQueue, «functionName», «userParam1», «userParam2»);''')
 			.addHeader('BCDS_CmdProcessor.h', true);
 	}
 	
-	public def generateEventloopInject(String functionName) {
+	def generateEventloopInject(String functionName) {
 		return generateEventloopInject(functionName, '''NULL''', '''0''');
 	}
 	
@@ -44,10 +51,7 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	}
 	
 	override generateEventLoopStart(CompilationContext context) {
-		return CodeFragment.EMPTY;
-//		return CodeFragment.withoutTrace("vTaskStartScheduler();")
-//			.addHeader('FreeRTOS.h', true, IncludePath.VERY_HIGH_PRIORITY)
-//			.addHeader('task.h', true);
+		return codeFragmentProvider.create('''BSP_BoardDelay(0);''')
 	}
 	
 	override generateEventHeaderPreamble(CompilationContext context) {
@@ -63,6 +67,31 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 		BCDS_UNUSED(userParameter1);
 		BCDS_UNUSED(userParameter2);
 		''').addHeader('BCDS_Basics.h', true);
+	}
+	
+	override generateSetupPreamble(CompilationContext context) {
+		val platformSetup = context.allUnits.flatMap[it.setup.toList].findFirst[it.type?.name == "XDK110"];
+		if(platformSetup === null) {
+			return CodeFragment.EMPTY;	
+		}
+		val startupDelay = platformSetup.getConfigurationItemValue("startupDelay");
+		val powerExternalDevices = StaticValueInferrer.infer(platformSetup.getConfigurationItemValueOrDefault("powerExternalDevices"), []);
+		return codeFragmentProvider.create('''
+		«IF startupDelay !== null»
+		BSP_Board_Delay(«statementGenerator.code(startupDelay)»);
+		«ENDIF»
+		«IF powerExternalDevices instanceof Boolean»
+		«IF powerExternalDevices»
+		exception = BSP_ExtensionPort_Connect();
+		«"ExtensionPortPower".generateLoggingExceptionHandler("enable")»
+		«ENDIF»
+		«ENDIF»
+		''')
+		.addHeader("BCDS_BSP_Board.h", true)
+		.addHeader("BSP_ExtensionPort.h", true)
+	}	
+	override generateEnablePreamble(CompilationContext context) {
+		return CodeFragment.EMPTY;
 	}
 	
 }

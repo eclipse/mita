@@ -14,6 +14,7 @@
 package org.eclipse.mita.program.generator;
 
 import org.eclipse.mita.program.EventHandlerDeclaration;
+import org.eclipse.mita.program.generator.CompilationContext;
 
 public interface IPlatformEventLoopGenerator {
 
@@ -21,8 +22,8 @@ public interface IPlatformEventLoopGenerator {
 	 * Generates the code which starts the event loop and thus transfers the system
 	 * to an operating state.
 	 * 
-	 * @param program
-	 *            the program for which to start the event loop
+	 * @param context
+	 *            the context for which to start the event loop
 	 * @return the generated code
 	 */
 	public CodeFragment generateEventLoopStart(CompilationContext context);
@@ -30,7 +31,7 @@ public interface IPlatformEventLoopGenerator {
 	/**
 	 * Generates code which injects a pointer to a function into the event loop.
 	 * 
-	 * @param program
+	 * @param context
 	 *            The context in which we're working
 	 * @param functionName
 	 *            the name of the function to enque
@@ -54,8 +55,8 @@ public interface IPlatformEventLoopGenerator {
 	 * 
 	 * depending on the need of the underlying event queue implementation.
 	 * 
-	 * @param program
-	 *            the program we're working with
+	 * @param context
+	 *            the context we're working with
 	 * @return the function signature
 	 */
 	public CodeFragment generateEventLoopHandlerSignature(CompilationContext context);
@@ -64,11 +65,11 @@ public interface IPlatformEventLoopGenerator {
 	 * Optionally generates a preamble for a handler function which is executed in
 	 * the event loop context.
 	 * 
-	 * @param program
-	 *            the program we're generating this for
+	 * @param context
+	 *            the context we're generating this for
 	 * @param handler
 	 *            the handler we're about to execute
-	 * @return the generated code or null if no preamble is needed
+	 * @return the generated code
 	 */
 	public CodeFragment generateEventLoopHandlerPreamble(CompilationContext context, EventHandlerDeclaration handler);
 
@@ -77,11 +78,26 @@ public interface IPlatformEventLoopGenerator {
 	 * could use this to maintain a global reference to an event loop handle, or to
 	 * register a prototype for the event loop enqueue function.
 	 * 
-	 * @param program
-	 *            the program we're generating code for
-	 * @return the generated preamble. Can be null if none is needed.
+	 * @param context
+	 *            the context we're generating code for
+	 * @return the generated preamble.
 	 */
 	public CodeFragment generateEventHeaderPreamble(CompilationContext context);
+	
+	/**
+	 * Generates code which is prepended to the Mita_initialize function. This is prepended after generateEventLoopHandlerPreamble and exception variable declaration.
+	 * @param context
+	 *            the context we're generating code for
+	 * @return the generated preamble.
+	 */
+	public CodeFragment generateSetupPreamble(CompilationContext context);
+	/**
+	 * Generates code which is prepended to the Mita_goLive function. This is prepended after generateEventLoopHandlerPreamble and exception variable declaration.
+	 * @param context
+	 *            the context we're generating code for
+	 * @return the generated preamble.
+	 */
+	public CodeFragment generateEnablePreamble(CompilationContext context);
 
 	public class NullImpl implements IPlatformEventLoopGenerator {
 
@@ -108,6 +124,16 @@ public interface IPlatformEventLoopGenerator {
 
 		@Override
 		public CodeFragment generateEventHeaderPreamble(CompilationContext context) {
+			return CodeFragment.EMPTY;
+		}
+
+		@Override
+		public CodeFragment generateSetupPreamble(CompilationContext context) {
+			return CodeFragment.EMPTY;
+		}
+
+		@Override
+		public CodeFragment generateEnablePreamble(CompilationContext context) {
 			return CodeFragment.EMPTY;
 		}
 
