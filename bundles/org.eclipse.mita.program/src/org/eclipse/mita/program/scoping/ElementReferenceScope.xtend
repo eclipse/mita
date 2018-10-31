@@ -60,7 +60,7 @@ class ElementReferenceScope extends AbstractScope {
 		result.addForEachLoopIterator(context)
 		result.addGlobalVariables(context)
 		result.addDeconstructorVariables(context)
-		result.addStructureTypes(context)
+		//result.addStructureTypes(context)
 		result.addStructureAccessors(context)
 		//result.addSumTypes(context)
 		Scopes.scopedElementsFor(result)

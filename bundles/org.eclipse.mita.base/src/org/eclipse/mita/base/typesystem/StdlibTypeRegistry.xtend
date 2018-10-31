@@ -30,15 +30,15 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.util.BaseUtils
 
 class StdlibTypeRegistry {
-	public static val voidTypeQID = QualifiedName.create(#["stdlib", "void"]);
-	public static val stringTypeQID = QualifiedName.create(#["stdlib", "string"]);
-	public static val floatTypeQID = QualifiedName.create(#["stdlib", "float"]);
-	public static val doubleTypeQID = QualifiedName.create(#["stdlib", "double"]);
-	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#["stdlib", it])];
-	public static val optionalTypeQID = QualifiedName.create(#["stdlib", "optional"]);
-	public static val sigInstTypeQID = QualifiedName.create(#["stdlib", "siginst"]);
-	public static val modalityTypeQID = QualifiedName.create(#["stdlib", "modality"]);
-	public static val arrayTypeQID = QualifiedName.create(#["stdlib", "array"]);
+	public static val voidTypeQID = QualifiedName.create(#[/*"stdlib",*/ "void"]);
+	public static val stringTypeQID = QualifiedName.create(#[/*"stdlib",*/ "string"]);
+	public static val floatTypeQID = QualifiedName.create(#[/*"stdlib",*/ "float"]);
+	public static val doubleTypeQID = QualifiedName.create(#[/*"stdlib",*/ "double"]);
+	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#[/*"stdlib",*/ it])];
+	public static val optionalTypeQID = QualifiedName.create(#[/*"stdlib",*/ "optional"]);
+	public static val sigInstTypeQID = QualifiedName.create(#[/*"stdlib",*/ "siginst"]);
+	public static val modalityTypeQID = QualifiedName.create(#[/*"stdlib",*/ "modality"]);
+	public static val arrayTypeQID = QualifiedName.create(#[/*"stdlib",*/ "array"]);
 	public static val plusFunctionQID = QualifiedName.create(#["stdlib", "__PLUS__"]);
 	public static val minusFunctionQID = QualifiedName.create(#["stdlib", "__MINUS__"]);
 	
@@ -46,10 +46,10 @@ class StdlibTypeRegistry {
 	
 	protected boolean isLinking = false;
 	
-	public def setIsLinking(boolean isLinking) {
+	def setIsLinking(boolean isLinking) {
 		this.isLinking = isLinking;
 	}
-	
+	 
 	def getTypeModelObject(EObject context, QualifiedName qn) {
 		if(isLinking) {
 			return null;
@@ -86,6 +86,9 @@ class StdlibTypeRegistry {
 	
 	protected def getFloatType(EObject context) {
 		val floatType = getTypeModelObject(context, StdlibTypeRegistry.floatTypeQID);
+		if(floatType === null) {
+			getTypeModelObject(context, StdlibTypeRegistry.floatTypeQID);
+		}
 		return translateNativeType(floatType as NativeType);
 	}
 	
@@ -115,10 +118,17 @@ class StdlibTypeRegistry {
 	protected def Iterable<AbstractType> getFloatingTypes(EObject context) {
 		return #[getFloatType(context), getDoubleType(context)];
 	}
-	/*protected*/ def Iterable<AbstractType> getIntegerTypes(EObject context) {
+	def Iterable<AbstractType> getIntegerTypes(EObject context) {
 		val typesScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		return StdlibTypeRegistry.integerTypeQIDs
-			.map[typesScope.getSingleElement(it).EObjectOrProxy]
+			.map[
+				val obj = typesScope.getSingleElement(it)
+				if(obj === null) {
+					scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+					typesScope.getSingleElement(it);
+				}
+				obj.EObjectOrProxy
+			]
 			.filter(NativeType)
 			.map[translateNativeType(it)].force
 	}

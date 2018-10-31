@@ -4,7 +4,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import java.lang.reflect.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 @FinalFieldsConstructor
 @Accessors

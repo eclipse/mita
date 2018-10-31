@@ -25,6 +25,10 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
 import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.IntegerType
+import org.eclipse.xtext.util.formallang.StringProduction.ProdElement
 
 /**
  * Solves coercive subtyping as described in 
@@ -54,10 +58,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(!system.isWeaklyUnifiable()) {
 			return new ConstraintSolution(system, null, #[ new UnificationIssue(system, 'Subtype solving cannot terminate') ]);
 		}
-		for(var i = 0; i < 4; i++) {
+		for(var i = 0; i < 5; i++) {
 			println("------------------")
 			println(currentSystem);
-			println(currentSystem.toGraphviz);
 			val simplification = currentSystem.simplify(currentSubstitution);
 			if(!simplification.valid) {
 				return new ConstraintSolution(ConstraintSystem.combine(#[currentSystem, simplification.system].filterNull), simplification.substitution, #[simplification.issue]);
@@ -68,7 +71,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			
 			val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst, typeResolutionOrigin);
 			if(!solution.issues.empty) {
-				return new ConstraintSolution(system, solution.solution, solution.issues);
+				return new ConstraintSolution(simplifiedSystem, solution.solution, solution.issues);
 			}
 			result = solution;
 			currentSubstitution = result.solution;
@@ -144,7 +147,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			]
 			return SimplificationResult.success(ConstraintSystem.combine(#[system, newSystem]), substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS:«BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
+		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS: «BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ImplicitInstanceConstraint constraint, TypeVariable t1, TypeVariable t2) {
 		return SimplificationResult.success(system, substitution);
@@ -153,7 +156,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(t1 == t2) {
 			return SimplificationResult.success(system, substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS:«BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
+		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS: «BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, ExplicitInstanceConstraint constraint) {
@@ -166,7 +169,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(constraint.javaClass.isInstance(constraint.what)) {
 			return SimplificationResult.success(system, substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''CSS:«BaseUtils.lineNumber»: «constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
+		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''CSS: «BaseUtils.lineNumber»: «constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
+	}
+	
+	@FinalFieldsConstructor
+	@Accessors
+	@EqualsHashCode
+	private static class TypeClassConstraintResolutionResult {
+		val UnificationResult unificationResult;
+		val AbstractType functionType;
+		val EObject function;
+		val double distanceToTargetType;
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, FunctionTypeClassConstraint constraint) {
@@ -186,11 +199,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				val typRaw = k_v.key;
 				val fun = k_v.value;
 				// typRaw might be a typeScheme (int32 -> b :: id: \T.T -> T)
-				val typ = if(typRaw instanceof TypeScheme) {
-					typRaw.instantiate(system).value
+				val typ_distance = if(typRaw instanceof TypeScheme) {
+					typRaw.instantiate(system).value -> Double.POSITIVE_INFINITY
 				} else {
-					typRaw
-				}				
+					typRaw -> 0.0;
+				}
+				val typ = typ_distance.key;
+				val distance = typ_distance.value;			
 				// two possible ways to be part of this type class:
 				// - via subtype (uint8 < uint32)
 				// - via instantiation/unification 
@@ -208,28 +223,53 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 							mbUnification;
 						}
 					}
-					return unification -> typ -> fun;	
+					return new TypeClassConstraintResolutionResult(unification, typ, fun, distance);
 				}
 
-				return UnificationResult.failure(refType, '''«typ» is not a function type''') -> typ -> fun;
-			]
-			val processedResults = unificationResults.map[
-				if(!it.key.key.valid) {
+				return new TypeClassConstraintResolutionResult(UnificationResult.failure(refType, '''«typ» is not a function type'''), typ, fun, distance);
+			].toList
+			val processedResultsUnsorted = unificationResults.map[
+				if(!it.unificationResult.valid) {
 					return it;
 				}
-				val sub = substitution.apply(it.key.key.substitution);
-				UnificationResult.success(sub) -> sub.applyToType(it.key.value) -> it.value
-			]
+				val sub = substitution.apply(it.unificationResult.substitution);
+				val resultType = sub.applyToType(it.functionType);
+				new TypeClassConstraintResolutionResult(UnificationResult.success(sub), resultType, it.function, it.distanceToTargetType + computeDistance(refType, resultType))
+			].toList
+			val processedResults = processedResultsUnsorted
+				.sortBy[it.distanceToTargetType].toList;
 			val result = processedResults.findFirst[
-				it.key.key.valid && it.value instanceof Operation
+				it.unificationResult.valid && it.function instanceof Operation
 			]
 			if(result !== null) {
-				val sub = result.key.key.substitution;
-				return constraint.onResolve(system, sub, result.value as Operation, result.key.value);
+				val sub = result.unificationResult.substitution;
+				return constraint.onResolve(system, sub, result.function as Operation, result.functionType);
 			}
 		}
 		return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «refType» not instance of «typeClass»'''))
 	}
+		
+	dispatch def double computeDistance(AbstractType type, FunctionType type2) {
+		return doComputeDistance(type, type2.from);
+	}
+	dispatch def double computeDistance(AbstractType type, AbstractType type2) {
+		return Double.POSITIVE_INFINITY;
+	}
+	
+	dispatch def double doComputeDistance(TypeConstructorType type, TypeConstructorType type2) {
+		return type.typeArguments.zip(type2.typeArguments).fold(0.0, [sum, t1_t2 | sum + t1_t2.key.doComputeDistance(t1_t2.value)])
+	}		
+	dispatch def double doComputeDistance(AbstractType type, AbstractType type2) {
+		if(type == type2) {
+			return 0;
+		}
+		return Double.POSITIVE_INFINITY;
+	}
+	dispatch def double doComputeDistance(IntegerType type, IntegerType type2) {
+		return Math.abs(type.widthInBytes - type2.widthInBytes);
+	}
+	
+		
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, Object constraint) {
 		SimplificationResult.failure(new UnificationIssue(substitution, println('''CSS: doSimplify not implemented for «constraint»''')))
 	}

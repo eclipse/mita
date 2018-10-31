@@ -1,6 +1,5 @@
 package org.eclipse.mita.base.typesystem.infra
 
-import com.google.common.collect.Lists
 import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
@@ -9,6 +8,8 @@ import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.xtext.diagnostics.IDiagnosticConsumer
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
@@ -33,10 +34,20 @@ class MitaLinker extends Linker {
 	
 	@Inject
 	protected IScopeProvider scopeProvider;
+	
+	@Inject 
+	protected MitaTypeLinker typeLinker;
+
+	override linkModel(EObject model, IDiagnosticConsumer diagnosticsConsumer) {
+		typeLinker.linkModel(model, diagnosticsConsumer)
+		super.linkModel(model, diagnosticsConsumer)
+	}
 
 	override ensureLinked(EObject obj, IDiagnosticProducer producer) {
 		if(obj.eContainer === null) {
-			obj.eAllContents.filter(GeneratedObject).forEach[it.generateMembers()]
+			BaseUtils.ignoreChange(obj,  [
+				obj.eAllContents.filter(GeneratedObject).forEach[it.generateMembers()]
+			]);
 			collectAndSolveTypes(obj, producer);
 		}
 		

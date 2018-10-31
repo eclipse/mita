@@ -24,6 +24,8 @@ import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
 import org.eclipse.xtext.scoping.impl.MultimapBasedSelectable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import org.eclipse.xtext.scoping.impl.ImportNormalizer
+import org.eclipse.xtext.naming.QualifiedName
 
 class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProvider {
 
@@ -41,7 +43,7 @@ class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProv
 	}
 
 	override protected getImplicitImports(boolean ignoreCase) {
-		#[createImportedNamespaceResolver("stdlib.*", ignoreCase)]
+		#[createImportedNamespaceResolver("stdlib.*", ignoreCase), new ImportNormalizer(QualifiedName.create(""), true, ignoreCase)]
 	}
 
 	// Adds the ownPackage as import

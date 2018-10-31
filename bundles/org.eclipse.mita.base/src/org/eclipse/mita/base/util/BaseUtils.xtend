@@ -6,8 +6,10 @@ import java.util.Iterator
 import java.util.List
 import java.util.NoSuchElementException
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class BaseUtils {	
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
@@ -45,6 +47,28 @@ class BaseUtils {
 			return Iterables.concat(chooseAny(xs.tail).map[Iterables.concat(#[x], it)], chooseAny(xs.tail));
 		}
 	}
+	
+	def static void ignoreChange(EObject obj, () => void action) {
+		ignoreChange(obj.eResource, action);
+	}
+	def static void ignoreChange(Resource resource, () => void action) {
+		val cacheAdapters = getCacheAdapters(resource);
+		cacheAdapters.forEach[
+			it.ignoreNotifications();
+		]
+		action.apply()
+		cacheAdapters.forEach[
+			it.listenToNotifications();
+		]
+	}
+	private def static getCacheAdapters(Resource resource) {
+		val cacheAdapters = resource.eAdapters.filter(OnChangeEvictingCache.CacheAdapter).force;
+		if(cacheAdapters.empty) {
+			val adapter = new OnChangeEvictingCache().getOrCreate(resource);
+			return #[adapter];
+		}
+		return cacheAdapters;
+	} 
 			
 	def static void main(String[] args) {
 
