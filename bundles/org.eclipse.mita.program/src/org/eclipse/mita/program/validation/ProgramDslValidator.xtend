@@ -398,7 +398,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	
 	@Check(CheckType.NORMAL)
 	def checkVariableDeclaration(VariableDeclaration it){
-		var result1 = inferrer.infer(it, this)
+		var result1 = inferrer.infer(it)
 		var result2 = inferrer.infer(typeSystem.getType(ITypeSystem.VOID))
 		if(result1.type.equals(result2.type)) {
 			error(VOID_VARIABLE_TYPE, it, null);
