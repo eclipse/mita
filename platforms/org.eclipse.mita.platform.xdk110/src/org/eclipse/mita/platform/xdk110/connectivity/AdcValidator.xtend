@@ -46,13 +46,14 @@ class AdcValidator implements IResourceValidator {
 		val refVoltageEnum = StaticValueInferrer.infer(arg, []);
 		if(refVoltageEnum instanceof Enumerator) {
 			val refVoltage = refVoltageEnum.name;
-			if(refVoltage.contains("Ext") && refVoltageConfig === null) {
+			val isExternal = refVoltage.contains("Ext");
+			if(isExternal && refVoltageConfig === null) {
 				acceptor.acceptError(
 				'''You need to set externalReferenceVoltage if you use referenceVoltage=«refVoltage»''',
 				arg.eContainer, 
 				null, 0, "");
 			}
-			return refVoltage.contains("Ext")
+			return isExternal;
 		}
 		return false;
 		
