@@ -97,6 +97,8 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	public static val String VOID_OP_CANNOT_RETURN_VALUE_MSG = "Void operations cannot return a value.";
 	public static val String VOID_OP_CANNOT_RETURN_VALUE_CODE = "void_op_cannot_return_value";
+	
+	public static final String VOID_VARIABLE_TYPE = "Void is an invalid type for variables";
 
 	public static val String MISSING_RETURN_VALUE_MSG = "The operation must return a value of type %s.";
 	public static val String MISSING_RETURN_VALUE_CODE = "missing_return_value";
@@ -395,6 +397,15 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.NORMAL)
 	def checkDoWhileCondition(DoWhileStatement it) {
 		assertIsBoolean(condition)
+	}
+	
+	@Check(CheckType.NORMAL)
+	def checkVariableDeclaration(VariableDeclaration it){
+		var result1 = inferrer.infer(it)
+		var result2 = inferrer.infer(typeSystem.getType(ITypeSystem.VOID))
+		if(result1.type.equals(result2.type)) {
+			error(VOID_VARIABLE_TYPE, it, null);
+		}
 	}
 	
 	def protected assertIsBoolean(Expression exp) {

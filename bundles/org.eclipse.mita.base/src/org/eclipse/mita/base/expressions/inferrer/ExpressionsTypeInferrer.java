@@ -376,7 +376,6 @@ public class ExpressionsTypeInferrer extends AbstractTypeSystemInferrer implemen
 
 	public InferenceResult doInfer(Property p) {
 		InferenceResult type = inferTypeDispatch(p.getTypeSpecifier());
-		assertNotType(type, VARIABLE_VOID_TYPE, getResultFor(VOID));
 		return type;
 	}
 

@@ -116,11 +116,11 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		switch(instance.getArgumentEnum("referenceVoltage")?.name) {
 			case "Ref_1V25": return 1250
 			case "Ref_2V5":  return 2500
-			case "Ref_VDD": return getExternalReferenceVoltage() 
+			case "Ref_VDD": return  2500
 			case "Ref_5VDiff": return 5000
 			case "Ref_ExtSingle": return getExternalReferenceVoltage() 
 			case "Ref_ExtDiff": return getExternalReferenceVoltage() 
-			case "Ref_2xVDD": return getExternalReferenceVoltage() 
+			case "Ref_2xVDD": return 5000
 			default: return -1
 		}
 	}

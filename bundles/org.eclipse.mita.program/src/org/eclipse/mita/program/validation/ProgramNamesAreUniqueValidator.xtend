@@ -20,18 +20,20 @@ import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypesPackage
 
 class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 
 	val DUPLICATE_ELEMENT = "Duplicate element '%s'"
 	val DUPLICATE_FUNCTION = "Duplicate function '%s'"
+	val DUPLICATE_TYPE = "Duplicate type '%s'"
 
 	@Check(CheckType.FAST)
 	def checkGlobalVariableNamesAreUnique(Program program) {
 		val names = newArrayList
 		program.globalVariables.forEach [
 			if (names.contains(name)) {
-				error(String.format(DUPLICATE_ELEMENT, name), it, null);
+				error(String.format(DUPLICATE_ELEMENT, name), it, TypesPackage.eINSTANCE.namedElement_Name);
 			}
 			names.add(name)
 		]
@@ -42,7 +44,7 @@ class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 		val names = newArrayList
 		program.functionDefinitions.forEach [
 			if (names.contains(overridingName)) {
-				error(String.format(DUPLICATE_FUNCTION, name), it, null);
+				error(String.format(DUPLICATE_FUNCTION, name), it, TypesPackage.eINSTANCE.namedElement_Name);
 			}
 			names.add(overridingName)
 		]
@@ -50,6 +52,17 @@ class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 
 	def protected overridingName(Operation op) {
 		'''«op.name»_«FOR param : op.parameters.filter[!optional] SEPARATOR '_'»«param.typeSpecifier?.toString»«ENDFOR»'''.toString
+	}
+
+	@Check(CheckType.FAST)
+	def checkTypesAreUnique(Program program) {
+		val names = newArrayList
+		program.types.forEach[
+			if (names.contains(it.name)) {
+				error(String.format(DUPLICATE_TYPE, it.name), it, TypesPackage.eINSTANCE.namedElement_Name);
+			}
+			names.add(it.name)
+		]
 	}
 
 	@Inject
