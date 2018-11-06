@@ -133,7 +133,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 			if(candidate.eIsProxy) {
 				println("!PROXY!")
 			}
-			origin.eSet(featureToResolve, candidate);
+			BaseUtils.ignoreChange(origin, [
+				origin.eSet(featureToResolve, candidate);	
+			]);
 		}
 		
 		return resultObjects;
@@ -287,11 +289,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val typeTrans = TypeTranslationAdapter.get(obj, [|
 			system.doTranslateTypeDeclaration(obj)
 		])
-		// if we compile more than once without changes we need to associate again. Hence we always associate here to be safe.
-		system.associate(typeTrans, obj);
 		// for the same reason we need to iterate over all children of these types.
 		// since some of these types might call computeConstrains on their eContainer we need to get out the big guns or have a translateForChildren dispatch method.
 		PreventRecursion.preventRecursion(obj, [|system.computeConstraintsForChildren(obj); return null;]);
+		// if we compile more than once without changes we need to associate again. Hence we always associate here to be safe.
+		system.associate(typeTrans, obj);
 		return typeTrans;
 	}
 
@@ -326,15 +328,22 @@ class BaseConstraintFactory implements IConstraintFactory {
 	 
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		val prodType = new ProdType(sumAlt, sumAlt.name, types, #[system.translateTypeDeclaration(sumAlt.eContainer)]);
+		val prodType = new ProdType(sumAlt, sumAlt.name, types, #[
+			system.translateTypeDeclaration(sumAlt.eContainer)
+		]);
 		return TypeTranslationAdapter.set(sumAlt, prodType) => [
 			system.computeConstraints(sumAlt.constructor);
 		];
 	}
 		
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
+		if(genType.name == "modality") {
+			print("");
+		}
 		val typeParameters = genType.typeParameters;
-		val typeArgs = typeParameters.map[ system.computeConstraints(it) ].force();
+		val typeArgs = typeParameters.map[ 
+			system.computeConstraints(it)
+		].force();
 
 		return TypeTranslationAdapter.set(genType, if(typeParameters.empty) {
 			new AtomicType(genType, genType.name);

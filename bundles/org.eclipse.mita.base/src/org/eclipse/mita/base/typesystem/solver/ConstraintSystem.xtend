@@ -321,12 +321,12 @@ class ConstraintSystem {
 		}
 		
 		val replacementObjects = scopeElements.map[EObjectOrProxy].force;
-		if(replacementObjects.empty) {
+		if(replacementObjects.empty) { 
 			scopeProvider.getScope(tvp.origin, tvp.reference);
 			return #[new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
 		}
 		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference) && replacementObjects.size == 1) {
-			BaseUtils.ignoreChange(resource, [ 
+			BaseUtils.ignoreChange(tvp.origin.eResource, [ 
 				tvp.origin.eSet(tvp.reference, replacementObjects.head);
 			]);
 		}

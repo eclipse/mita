@@ -65,6 +65,11 @@ class SystemResourceSetup {
 	op Expression getConfigurationItemValueOrDefault(String name) {
 		getConfigurationItemValue(name)?:(^type?.configurationItems?.findFirst[it.name == name]?.defaultValue)
 	}
+	
+	op String toString() {
+		val typeName = NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.systemResourceSetup_Type).head?.text?.trim()
+		return 'setup ' + name + ': ' + typeName + ' {...}';
+	}
 }
 
 class ConfigurationItemValue {

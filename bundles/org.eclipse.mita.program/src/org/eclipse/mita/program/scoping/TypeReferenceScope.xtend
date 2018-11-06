@@ -42,7 +42,9 @@ class TypeReferenceScope extends AbstractScope {
 	
 	def void addLocalTypes(ArrayList<EObject> result) {
 		val program = EcoreUtil2.getContainerOfType(context, Program);
-		result += program.types; 
+		if(program !== null) {
+			result += program.types; 
+		}
 	}
 	
 	def void addTypeParameter(ArrayList<EObject> result, EObject object) {
