@@ -16,19 +16,18 @@ package org.eclipse.mita.library.stdlib
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ArraySizeInferrer extends ElementSizeInferrer {
 	
@@ -39,7 +38,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 	override protected dispatch doInfer(NewInstanceExpression obj) {
 		val parentType = BaseUtils.getType(obj.eContainer);
 		
-		val rawSizeValue = ModelUtils.getArgumentValue(obj.reference as Operation, obj, 'size');
+		val rawSizeValue = ExpressionUtils.getArgumentValue(obj.reference as Operation, obj, 'size');
 		if(rawSizeValue === null) {
 			return new InvalidElementSizeInferenceResult(obj, parentType, "size missing");
 		} else if(parentType === null) {

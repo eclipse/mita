@@ -19,6 +19,7 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 
 class Validation implements IResourceValidator {
 
@@ -79,7 +80,7 @@ class Validation implements IResourceValidator {
 				val ArgumentExpression source = it;
 				val method = it.reference;
 				if(method instanceof Operation) {
-					val sigInst = ModelUtils.getArgumentValue(method, it, "self");
+					val sigInst = ExpressionUtils.getArgumentValue(method, it, "self");
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}

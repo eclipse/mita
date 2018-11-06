@@ -21,6 +21,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.AbstractLoopStatement
@@ -33,7 +34,6 @@ import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 
 class StringSizeInferrer extends ElementSizeInferrer {
@@ -234,7 +234,7 @@ class StringSizeInferrer extends ElementSizeInferrer {
 	}
 	
 	protected def inferFixedSize(NewInstanceExpression initialization) {
-		val rawSizeValue = ModelUtils.getArgumentValue(initialization.reference as Operation, initialization, 'size');
+		val rawSizeValue = ExpressionUtils.getArgumentValue(initialization.reference as Operation, initialization, 'size');
 		val staticSizeValue = StaticValueInferrer.infer(rawSizeValue, [x |]);
 		return if(staticSizeValue instanceof Integer) {
 			newValidResult(initialization, staticSizeValue);

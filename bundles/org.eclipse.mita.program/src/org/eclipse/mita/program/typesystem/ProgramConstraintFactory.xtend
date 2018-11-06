@@ -44,6 +44,8 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -220,10 +222,24 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			if(candidates.empty) {
 				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 			}
-
-			val argExprs = varOrFun.arguments.map[it.value].force;
 			
-			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argExprs, candidates);
+			val argumentParamsAndValues = varOrFun.arguments.map[NodeModelUtils.findNodesForFeature(it, ExpressionsPackage.eINSTANCE.argument_Parameter).head?.text -> (it -> it.value)]
+			
+			val argType = if(argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
+				val argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
+					val arg = it.value.key;
+					val aValue = it.value.value;
+					it.key -> (system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType -> system.computeConstraints(aValue) as AbstractType);
+				].force
+				argumentParamTypesAndValueTypes.forEach[
+					system.addConstraint(new SubtypeConstraint(it.value.value, it.value.key));
+				]
+				new UnorderedArguments(null, txt + "_args", argumentParamTypesAndValueTypes.map[it.key -> it.value.value]);
+			} else {
+				system.computeArgumentConstraints(txt, varOrFun.arguments.map[it.value].force);
+			}
+			
+			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argType, candidates);
 		}
 		// otherwise use the last candidate. We can check here for ambiguity, otherwise this is just the "closest" candidate.
 		else {

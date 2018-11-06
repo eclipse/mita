@@ -51,6 +51,14 @@ abstract class SerializedAbstractBaseType extends SerializedAbstractType {
 
 }
 
+class SerializedUnorderedArguments extends SerializedAbstractType {
+	new() {
+        _type = "SerializedUnorderedArguments";
+    }
+    public List<String> parameterNames = new ArrayList;
+    public List<SerializedAbstractType> valueTypes = new ArrayList;
+}
+
 class SerializedAtomicType extends SerializedAbstractBaseType {
     new() {
         _type = "SerializedAtomicType";

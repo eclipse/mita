@@ -39,6 +39,7 @@ import java.util.HashSet
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 
 class Validation implements IResourceValidator {
 
@@ -104,7 +105,7 @@ class Validation implements IResourceValidator {
 				val ArgumentExpression source = it;
 				val method = it.reference;
 				if(method instanceof Operation) {
-					val sigInst = ModelUtils.getArgumentValue(method, it, "self");
+					val sigInst = ExpressionUtils.getArgumentValue(method, it, "self");
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}
@@ -202,7 +203,7 @@ class Validation implements IResourceValidator {
 		}
 		val specifiedLength = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "length"), []);
 		if(specifiedLength instanceof Integer) {
-			val argumentArray = ModelUtils.getArgumentValue(writeMethod, source, "value");
+			val argumentArray = ExpressionUtils.getArgumentValue(writeMethod, source, "value");
 			val arraySize = sizeInferrer.infer(argumentArray);
 			if(arraySize instanceof ValidElementSizeInferenceResult) {
 				val actualLength = arraySize.elementCount;

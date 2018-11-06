@@ -19,6 +19,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.HasAccessors
 import org.eclipse.mita.base.types.NamedProductType
@@ -35,7 +36,6 @@ import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsOtherCase
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
@@ -126,7 +126,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 			}
 			
 			if(ref instanceof NamedProductType) {
-				var argsSorted = ModelUtils.getSortedArguments(ref.parameters, arguments);
+				var argsSorted = ExpressionUtils.getSortedArguments(ref.parameters, arguments);
 
 				for(arg_type: BaseUtils.zip(argsSorted, realArgs)) {
 					val sArg = arg_type.key.value;
@@ -149,7 +149,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 					return;
 				}
 				if(realType instanceof StructureType) {
-					var argsSorted = ModelUtils.getSortedArguments(realType.parameters, arguments);
+					var argsSorted = ExpressionUtils.getSortedArguments(realType.parameters, arguments);
 					for(arg_type: BaseUtils.zip(argsSorted, realArgs)) {
 						val sArg = arg_type.key.value;
 						val sField = arg_type.value;

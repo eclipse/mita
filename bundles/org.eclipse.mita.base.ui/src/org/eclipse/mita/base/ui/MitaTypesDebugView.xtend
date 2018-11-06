@@ -30,6 +30,7 @@ import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.xtext.util.concurrent.IUnitOfWork
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.emf.ecore.impl.EObjectImpl
 
 class MitaTypesDebugView extends ViewPart {
 	protected TableViewer constraintViewer;
@@ -77,6 +78,17 @@ class MitaTypesDebugView extends ViewPart {
         getSite().getPage().addSelectionListener(listener);
 	}
 	
+	protected def String originString(EObject origin) {
+		if(origin !== null) {
+			if(origin.eIsProxy) {
+				if(origin instanceof EObjectImpl) {
+					return origin.eProxyURI.fragment;
+				}
+			}
+		}
+		return origin?.toString() ?: "null"
+	}
+	
 	protected def addConstraintsColumn(TableViewer viewer) {
 		viewer.createTableViewerColumn("Left Origin", 100, 0)
 			.setLabelProvider(new ColumnLabelProvider() {
@@ -87,7 +99,7 @@ class MitaTypesDebugView extends ViewPart {
                 	if(objects.size > 0) {
                 		val type = objects.get(0);
                 		if(type instanceof AbstractType) {
-                			return type.origin?.toString ?: "null"
+                			return originString(type.origin)
                 		}
                 	}
                 }
@@ -143,7 +155,7 @@ class MitaTypesDebugView extends ViewPart {
                 	if(objects.size > 1) {
                 		val type = objects.get(1);
                 		if(type instanceof AbstractType) {
-                			return type.origin?.toString ?: "null"
+                			return originString(type.origin)
                 		}
                 	}
                 }
@@ -250,7 +262,7 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return (element as Pair<TypeVariable, AbstractType>).key?.origin?.toString() ?: "null";
+                return originString((element as Pair<TypeVariable, AbstractType>).key?.origin);
             }
             
         });

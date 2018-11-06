@@ -28,6 +28,7 @@ import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrerMessages
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.GeneratedType
@@ -662,7 +663,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	
 	@Check(CheckType.NORMAL)
 	def noUpcastingToOptionalsInFunctionArguments(ElementReferenceExpression eref) {
-		val typesAndArgs = ModelUtils.getFunctionCallArguments(eref);
+		val typesAndArgs = ExpressionUtils.getFunctionCallArguments(eref);
 		if(typesAndArgs === null) return;
 		
 		typesAndArgs.forEach[ts_arg | 

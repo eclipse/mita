@@ -3,7 +3,10 @@ package org.eclipse.mita.base.typesystem.solver
 import com.google.inject.Inject
 import com.google.inject.Provider
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
@@ -15,20 +18,25 @@ import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.IntegerType
+import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
-import static extension org.eclipse.mita.base.util.BaseUtils.*
-import org.eclipse.mita.base.typesystem.types.FunctionType
-import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.mita.base.typesystem.types.ProdType
-import org.eclipse.mita.base.typesystem.types.IntegerType
-import org.eclipse.xtext.util.formallang.StringProduction.ProdElement
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.init
+import static extension org.eclipse.mita.base.util.BaseUtils.unzip
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.base.expressions.ExpressionsPackage
 
 /**
  * Solves coercive subtyping as described in 
@@ -197,7 +205,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(typeClass !== null) {
 			val unificationResults = typeClass.instances.entrySet.map[k_v | 
 				val typRaw = k_v.key;
-				val fun = k_v.value;
+				val EObject fun = k_v.value;
 				// typRaw might be a typeScheme (int32 -> b :: id: \T.T -> T)
 				val typ_distance = if(typRaw instanceof TypeScheme) {
 					typRaw.instantiate(system).value -> Double.POSITIVE_INFINITY
@@ -205,13 +213,21 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					typRaw -> 0.0;
 				}
 				val typ = typ_distance.key;
-				val distance = typ_distance.value;			
+				val distance = typ_distance.value;
+				// handle named parameters: if _refType is unorderedArgs, sort them
+				val prodType = if(refType instanceof UnorderedArguments) {
+					val sortedArgs = ExpressionUtils.getSortedArguments((fun as Operation).parameters, refType.argParamNamesAndValueTypes, [it], [it.key]);
+					new ProdType(refType.origin, refType.name, sortedArgs.map[it.value], refType.superTypes);
+				} else {
+					refType;
+				}
+					
 				// two possible ways to be part of this type class:
 				// - via subtype (uint8 < uint32)
 				// - via instantiation/unification 
 				if(typ instanceof FunctionType) {
-					val optMsg = typeRegistry.isSubtypeOf(fun, refType, typ.from);
-					val mbUnification = mguComputer.compute(refType, typ.from);
+					val optMsg = typeRegistry.isSubtypeOf(fun, prodType, typ.from);
+					val mbUnification = mguComputer.compute(prodType, typ.from);
 					val unification = if(optMsg.present && !mbUnification.valid) {
 						UnificationResult.failure(refType, optMsg.get);
 					} else {

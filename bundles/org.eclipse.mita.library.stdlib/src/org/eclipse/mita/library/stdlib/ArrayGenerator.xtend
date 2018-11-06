@@ -20,9 +20,11 @@ import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
@@ -39,11 +41,7 @@ import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.types.TypeConstructor
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -308,7 +306,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		protected ElementSizeInferrer sizeInferrer
 	
 		override generate(ElementReferenceExpression ref, String resultVariableName) {
-			val variable = ModelUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;
 				if(varref instanceof NamedElement) {

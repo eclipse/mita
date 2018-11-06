@@ -15,15 +15,14 @@ class TypeVariable extends AbstractType {
 	}
 	
 	override toString() {
-		if(origin !== null) {
-			val originText = if(origin.eIsProxy) {
-				(origin as EObjectImpl).eProxyURI.fragment;
-			}
-			else {
-				origin.toString
-			}
-			return '''«name» («originText»)''';
-		}
+//		if(origin !== null) {
+//			val originText = if(origin.eIsProxy) {
+//				if(origin instanceof EObjectImpl) {
+//					origin.eProxyURI.fragment;
+//				}
+//			} ?: origin.toString
+//			return '''«name» («originText»)''';
+//		}
 		return name
 	}
 	

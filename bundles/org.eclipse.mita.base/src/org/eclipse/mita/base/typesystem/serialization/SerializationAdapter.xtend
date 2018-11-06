@@ -47,6 +47,8 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 
 class SerializationAdapter {
 	
@@ -162,6 +164,10 @@ class SerializationAdapter {
 			obj.typeArguments.fromSerializedTypes(),
 			obj.superTypes.fromSerializedTypes()
 		);
+	}
+	
+	protected dispatch def AbstractType fromValueObject(SerializedUnorderedArguments obj) {
+		return new UnorderedArguments(obj.origin.resolveEObject(), obj.name, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
@@ -323,6 +329,12 @@ class SerializationAdapter {
 		]
 	}
 	
+	protected dispatch def Object fill(SerializedAbstractType ctxt, AbstractType obj) {
+		ctxt.name = obj.name;
+		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
+		return ctxt;
+	}
+	
 	protected dispatch def Object fill(SerializedAbstractBaseType ctxt, AbstractBaseType obj) {
 		ctxt.name = obj.name;
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
@@ -411,6 +423,14 @@ class SerializationAdapter {
 			fill(it, obj)
 			on = obj.on.toValueObject as SerializedAbstractType
 			vars = obj.vars.map[ it.toValueObject as SerializedTypeVariable ].toList
+		]
+	}
+	
+	protected dispatch def SerializedObject toValueObject(UnorderedArguments obj) {
+		new SerializedUnorderedArguments => [
+			fill(it, obj)
+			it.parameterNames += obj.argParamNamesAndValueTypes.map[it.key];
+			it.valueTypes += obj.argParamNamesAndValueTypes.map[it.value.toValueObject as SerializedAbstractType];
 		]
 	}
 	

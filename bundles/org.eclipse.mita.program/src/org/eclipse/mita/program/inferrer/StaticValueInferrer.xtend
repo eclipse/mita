@@ -26,6 +26,7 @@ import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.NamedProductType
@@ -35,9 +36,9 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.model.ModelUtils
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+
 /**
  * Infers the value of an expression at compile time.
  */
@@ -69,13 +70,13 @@ class StaticValueInferrer {
 		return new SumTypeRepr(props, constr, expression);	
 	}
 	static dispatch def Object infer(NamedProductType constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {
-		val propsRaw = ModelUtils.getSortedArgumentsAsMap(constr.parameters.map[it as Parameter].asEList, expression.arguments);
+		val propsRaw = ExpressionUtils.getSortedArgumentsAsMap(constr.parameters.map[it as Parameter].asEList, expression.arguments);
 		val props = new HashMap<String, Expression>(propsRaw.size);
 		propsRaw.forEach[p, a | props.put(p.name, a.value)]
 		return new SumTypeRepr(props, constr, expression);
 	}
 	static dispatch def Object infer(AnonymousProductType constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {
-		val propsRaw = ModelUtils.getFunctionCallArguments(expression);
+		val propsRaw = ExpressionUtils.getFunctionCallArguments(expression);
 		val argc = propsRaw.size;
 		val props = new HashMap<String, Expression>(argc);
 		val idxs = 1..argc;

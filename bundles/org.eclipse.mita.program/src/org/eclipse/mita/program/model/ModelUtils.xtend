@@ -56,6 +56,7 @@ import static org.eclipse.mita.base.util.BaseUtils.*
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 
 class ModelUtils {
 
@@ -215,53 +216,7 @@ class ModelUtils {
 		return program.setup.findFirst[it.type?.name == name]
 	}
 	
-	def static getSortedArgumentsAsMap(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
-		val args = getSortedArguments(parameters, arguments);
-		val map = new TreeMap<Parameter, Argument>([p1, p2 | p1.name.compareTo(p2.name)]);
-		parameters.zip(args).forEach[map.put(it.key, it.value)];
-		return map;
-	}
 	
-	def static <T extends Parameter> getSortedArguments(Iterable<T> parameters, Iterable<Argument> arguments) {
-		if(arguments.empty || arguments.head.parameter === null) {
-			arguments;
-		}
-		else {
-			/* Important: we must not filterNull this list as that destroys the order of arguments. It is possible
-			 * that we do not find an argument matching a parameter.
-			 */
-			parameters.map[parm | arguments.findFirst[it.parameter?.name == parm.name]]
-		}
-	}
-	
-	def static getFunctionCallArguments(ElementReferenceExpression functionCall) {
-		if(functionCall === null || !functionCall.operationCall || functionCall.arguments.empty){
-			return null;
-		}
-		
-		val funRef = functionCall.reference;
-		val arguments = functionCall.arguments;
-		val typesAndArgsInOrder = if(funRef instanceof FunctionDefinition) {
-			zip(
-				funRef.parameters.map[typeSpecifier],
-				ModelUtils.getSortedArguments(funRef.parameters, arguments));
-		} else if(funRef instanceof StructureType) {
-			zip(
-				funRef.parameters.map[typeSpecifier],
-				ModelUtils.getSortedArguments(funRef.parameters, arguments));
-		} else if(funRef instanceof NamedProductType) {
-			zip(
-				funRef.parameters.map[typeSpecifier],
-				ModelUtils.getSortedArguments(funRef.parameters, arguments));
-		} else if(funRef instanceof AnonymousProductType) {
-			zip(
-				funRef.typeSpecifiers,
-				functionCall.arguments);
-		} else {
-			return null;
-		}
-		return typesAndArgsInOrder;
-	}	
 	
 	def static boolean typeSpecifierEqualsByName(PresentTypeSpecifier ts, Object o) {
 		return typeSpecifierEqualsWith([t1, t2 | t1.name == t2.name], ts, o)
@@ -289,61 +244,14 @@ class ModelUtils {
 		zip(ir1.bindings, ir2.bindings).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
 	}
 	
-	/**
-	 * Finds the value of an argument based on the name of its parameter.
-	 */
-	def static Expression getArgumentValue(Operation op, ArgumentExpression expr, String name) {
-		// first check if we find a named argument
-		val namedArg = expr.arguments.findFirst[x|x.parameter?.name == name];
-		if(namedArg !== null) return namedArg.value;
-
-		// we did not find a named arg. Let's look it up based on the index
-		val sortedArgs = getSortedArguments(op.parameters, expr.arguments);
-		
-		var argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
-		// for extension methods the first arg is on the left side
-		if(expr instanceof FeatureCall) {
-			if(expr.operationCall) {
-				if(argIndex == 0) {
-					return expr.arguments.head.value;
-				}
-				argIndex--;	
-			}
-		}
-		if(argIndex === null || argIndex >= sortedArgs.length) return null;
-
-		return sortedArgs.get(argIndex)?.value;
-	}
 	
-	def static Expression getArgumentValue(NamedProductType op, ArgumentExpression expr, String name) {
-		// first check if we find a named argument
-		val namedArg = expr.arguments.findFirst[x|x.parameter?.name == name];
-		if(namedArg !== null) return namedArg.value;
-
-		// we did not find a named arg. Let's look it up based on the index
-		val sortedArgs = getSortedArguments(op.parameters, expr.arguments);
-		
-		var argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
-		// for extension methods the first arg is on the left side
-		if(expr instanceof FeatureCall) {
-			if(expr.operationCall) {
-				if(argIndex == 0) {
-					return expr.arguments.head.value;
-				}
-				argIndex--;	
-			}
-		}
-		if(argIndex === null || argIndex >= sortedArgs.length) return null;
-
-		return sortedArgs.get(argIndex)?.value;
-	}
 
 	def static Expression getArgumentValue(SignalInstance signalInstance, String name) {
 		val init = signalInstance.initialization;
 		val configuredValue = if (init instanceof ElementReferenceExpression) {
 				val ref = init.reference;
 				if (ref instanceof Operation) {
-					ModelUtils.getArgumentValue(ref, init, name);
+					ExpressionUtils.getArgumentValue(ref, init, name);
 				} else {
 					null;
 				}

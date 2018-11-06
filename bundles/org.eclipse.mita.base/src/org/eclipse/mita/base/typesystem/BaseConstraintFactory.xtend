@@ -64,6 +64,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.expressions.Argument
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -170,6 +171,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<TypeVariable> candidates) {
+		return computeConstraintsForFunctionCall(system, functionCall, functionReference, functionName, system.computeArgumentConstraints(functionName, argExprs), candidates);
+	}
+	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, AbstractType argumentType, List<TypeVariable> candidates) {
 		if(candidates === null || candidates.empty) {
 			return null;
 		}
@@ -211,7 +215,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// A -> B
 		val refType = new FunctionType(null, functionName + "_call", fromTV, toTV);
 		// a
-		val argType = system.computeArgumentConstraints(functionName, argExprs);
+		val argType = argumentType
 		// b
 		val resultType = system.newTypeVariable(null);
 		// a -> b
