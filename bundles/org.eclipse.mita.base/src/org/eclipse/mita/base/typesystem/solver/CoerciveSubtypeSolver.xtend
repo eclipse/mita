@@ -188,6 +188,16 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val AbstractType functionType;
 		val EObject function;
 		val double distanceToTargetType;
+		
+		override toString() {
+			if(unificationResult?.valid) {
+				return '''«functionType» (dist: «distanceToTargetType»)'''				
+			}
+			else {
+				return '''INVALID: «unificationResult.issue»'''
+			}
+		}
+		
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, FunctionTypeClassConstraint constraint) {

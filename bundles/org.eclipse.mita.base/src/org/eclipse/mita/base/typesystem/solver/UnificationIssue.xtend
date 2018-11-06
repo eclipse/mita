@@ -40,7 +40,7 @@ class ComposedUnificationIssue extends UnificationIssue {
 			}
 		].toList;
 		if(_issues.size === 1) {
-			return issues.head;	
+			return _issues.head;	
 		}
 		else if(!_issues.empty) {
 			return new ComposedUnificationIssue(_issues);
