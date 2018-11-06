@@ -76,6 +76,7 @@ import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.program.generator.GeneratorUtils
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -428,16 +429,17 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					return;
 				}
 				
-				for(var i = 0; i < ref.parameters.length; i++) {
-					val sField = ref.parameters.get(i);
-					val sArg = exp.arguments.get(i).value;
+				val parmsToArgs = ModelUtils.getSortedArgumentsAsMap(ref.parameters, exp.arguments);				
+				parmsToArgs.entrySet.forEach[parm_arg | 
+					val sField = parm_arg.key;
+					val sArg = parm_arg.value.value;
 					val t1 = inferrer.infer(sField, this);
 					val t2 = inferrer.infer(sArg, this);
 					validator.assertAssignable(t1, t2,
 						
 					// message says t2 can't be assigned to t1, --> invert in format
 					String.format(INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
-				}
+				]
 			}
 		}
 	}
