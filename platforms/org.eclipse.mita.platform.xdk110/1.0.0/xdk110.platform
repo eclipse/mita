@@ -374,14 +374,9 @@ sensor BME280 {
 	modality pressure : uint32
 	
 	/**
-	 * The relative humidity as percentage
-	 */
-	modality humidity : float
-	
-	/**
 	 * The relative humidity as percentage in Q22.10 integer format.
 	 */
-	modality humidity_fixed_point : uint32
+	modality humidity : uint32
 	
 }
 
