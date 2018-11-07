@@ -31,7 +31,7 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 	@Inject ResolveEnumValuesStage resolveEnumValuesStage
 	@Inject PrepareLoopForFunctionUnvravelingStage prepareLoopForFunctionUnvravelingStage
 	@Inject PrepareArrayRuntimeChecksStage prepareArrayRuntimeChecksStage
-	@Inject UnravelLiteralArrayReturnStage unravelLiteralArrayReturnStage
+	@Inject UnravelLiteralArraysStage unravelLiteralArrayReturnStage
 	@Inject EnforceOperatorPrecedenceStage enforceOperatorPrecedenceStage
 
 	public def transform(Program program) {

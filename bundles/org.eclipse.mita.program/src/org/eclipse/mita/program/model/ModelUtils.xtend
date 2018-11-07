@@ -15,8 +15,7 @@ package org.eclipse.mita.program.model
 
 import com.google.common.base.Optional
 import com.google.inject.Inject
-import java.util.Iterator
-import java.util.NoSuchElementException
+import java.util.TreeMap
 import java.util.function.Predicate
 import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.common.util.EList
@@ -26,6 +25,7 @@ import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
@@ -33,10 +33,13 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
@@ -49,12 +52,9 @@ import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.ProgramCopier
-import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.mita.base.types.SumAlternative
-import java.util.TreeMap
-import java.util.HashMap
+import org.eclipse.mita.base.expressions.ExpressionsFactory
 
 class ModelUtils {
 
@@ -248,7 +248,7 @@ class ModelUtils {
 	def static getSortedArgumentsAsMap(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
 		val args = getSortedArguments(parameters, arguments);
 		val map = new TreeMap<Parameter, Argument>([p1, p2 | p1.name.compareTo(p2.name)]);
-		parameters.zip(args).forEach[map.put(it.key, it.value)];
+		BaseUtils.zip(parameters,args).forEach[map.put(it.key, it.value)];
 		return map;
 	}
 	
@@ -263,53 +263,45 @@ class ModelUtils {
 			parameters.map[parm | arguments.findFirst[it.parameter?.name == parm.name]]
 		}
 	}
-	
-	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
-		new Iterator<Pair<X, Y>>() {
-			override hasNext() {
-				xs.hasNext() && ys.hasNext();
-			}
-			
-			override next() {
-				if(!hasNext()) {
-					throw new NoSuchElementException();
-				}
-				return (xs.next() -> ys.next());
-			}
-			
+		
+	dispatch def static getFunctionCallArguments(FeatureCall functionCall) {
+		val fun = functionCall.feature;
+		if(fun instanceof SumAlternative) {
+			// function.owner is a sumType
+			getFunctionCallArguments(fun, functionCall.arguments);
 		}
-	}
-	def static <X, Y> Iterable<Pair<X, Y>> zip(Iterable<X> xs, Iterable<Y> ys) {
-		new Iterable<Pair<X, Y>>() {
-			override iterator() {
-				return zip(xs.iterator, ys.iterator);
-			}			
+		else {
+			if(fun instanceof TypedElement) {
+				return #[fun.typeSpecifier -> (ExpressionsFactory.eINSTANCE.createArgument => [it.value = functionCall.owner])] + getFunctionCallArguments(fun, functionCall.arguments);
+			}	
 		}
 	}
 	
-	def static getFunctionCallArguments(ElementReferenceExpression functionCall) {
+	dispatch def static getFunctionCallArguments(ElementReferenceExpression functionCall) {
 		if(functionCall === null || !functionCall.operationCall || functionCall.arguments.empty){
 			return null;
 		}
-		
 		val funRef = functionCall.reference;
 		val arguments = functionCall.arguments;
+		getFunctionCallArguments(funRef, arguments);
+	}
+	def static getFunctionCallArguments(EObject funRef, Iterable<Argument> arguments) {	
 		val typesAndArgsInOrder = if(funRef instanceof FunctionDefinition) {
-			ModelUtils.zip(
+			BaseUtils.zip(
 				funRef.parameters.map[typeSpecifier],
 				ModelUtils.getSortedArguments(funRef.parameters, arguments));
 		} else if(funRef instanceof StructureType) {
-			ModelUtils.zip(
+			BaseUtils.zip(
 				funRef.parameters.map[typeSpecifier],
 				ModelUtils.getSortedArguments(funRef.parameters, arguments));
 		} else if(funRef instanceof NamedProductType) {
-			ModelUtils.zip(
+			BaseUtils.zip(
 				funRef.parameters.map[typeSpecifier],
 				ModelUtils.getSortedArguments(funRef.parameters, arguments));
 		} else if(funRef instanceof AnonymousProductType) {
-			ModelUtils.zip(
-				funRef.typeSpecifiers,
-				functionCall.arguments);
+			BaseUtils.zip(
+				funRef.accessorsTypes,
+				arguments);
 		} else {
 			return null;
 		}
@@ -328,7 +320,7 @@ class ModelUtils {
 		if(!equalityCheck.apply(ts1.type, ts2.type) || ts1.typeArguments.length != ts2.typeArguments.length) {
 			return false;
 		}
-		zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(equalityCheck, tss.key, tss.value)])
+		BaseUtils.zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(equalityCheck, tss.key, tss.value)])
 	}
 	
 	def static boolean typeInferenceResultEqualsWith((Type, Type) => Boolean equalityCheck, InferenceResult ir1, Object o) {
@@ -339,7 +331,7 @@ class ModelUtils {
 		if(!equalityCheck.apply(ir1.type, ir2.type) || ir1.bindings.length != ir2.bindings.length) {
 			return false;
 		}
-		zip(ir1.bindings, ir2.bindings).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
+		BaseUtils.zip(ir1.bindings, ir2.bindings).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
 	}
 	
 	/**

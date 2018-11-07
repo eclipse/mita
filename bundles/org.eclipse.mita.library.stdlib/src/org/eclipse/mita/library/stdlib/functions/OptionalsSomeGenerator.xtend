@@ -25,6 +25,7 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	
@@ -37,7 +38,7 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected GeneratorRegistry registry
 	
-	override generate(ElementReferenceExpression functionCall, String resultVariableName) {
+	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
 		val args = functionCall.arguments;
 		val valueVarOrExpr = args.head.value;
 		// need the optionalGenerator
@@ -49,7 +50,7 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 		val optGen = registry.getGenerator(funType as GeneratedType);
 				
 		codeFragmentProvider.create('''
-			«IF resultVariableName === null || resultVariableName.empty»
+			«IF resultVariableName === null»
 			(«optGen?.generateTypeSpecifier(ModelUtils.toSpecifier(funTypeIR), functionCall)») {
 				.«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»,
 				.«OptionalGenerator.OPTIONAL_DATA_MEMBER» = «valueVarOrExpr.code»

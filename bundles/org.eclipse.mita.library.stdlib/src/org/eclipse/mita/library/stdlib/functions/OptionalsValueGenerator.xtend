@@ -13,19 +13,20 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.library.stdlib.OptionalGenerator
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
-import com.google.inject.Inject
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class OptionalsValueGenerator extends AbstractFunctionGenerator {
 	
 	@Inject 
 	protected extension StatementGenerator statementGenerator
 	
-	override generate(ElementReferenceExpression functionCall, String resultVariableName) {
+	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
 		val args = functionCall.arguments;
 		val optVarOrExpr = args.head.value;
 				
@@ -38,7 +39,7 @@ class OptionalsValueGenerator extends AbstractFunctionGenerator {
 				return EXCEPTION_NOVALUEEXCEPTION;
 				«ENDIF»
 			}
-			«IF resultVariableName !== null && !resultVariableName.empty»«resultVariableName» = «ENDIF»«optVarOrExpr.code».«OptionalGenerator.OPTIONAL_DATA_MEMBER»;
+			«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«optVarOrExpr.code».«OptionalGenerator.OPTIONAL_DATA_MEMBER»;
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	

@@ -36,7 +36,7 @@ class PrepareArrayRuntimeChecksStage extends AbstractTransformationStage {
 	protected ElementSizeInferrer sizeInferrer;
 	
 	@Inject
-	protected UnravelLiteralArrayReturnStage unravelExpression;
+	protected UnravelLiteralArraysStage unravelExpression;
 	
 	override getOrder() {
 		return ORDER_LATE;
