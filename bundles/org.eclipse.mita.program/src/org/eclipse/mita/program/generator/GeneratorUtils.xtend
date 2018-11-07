@@ -373,9 +373,6 @@ class GeneratorUtils {
 	def dispatch String getBaseName(ModalityAccessPreparation modality) {
 		return '''«modality.systemResource.baseName»ModalityPreparation'''
 	}
-	def dispatch String getBaseName(Object p) {
-		return null;	
-	}
 	
 	def generateHeaderComment(CompilationContext context) {
 		val bundle = org.eclipse.core.runtime.Platform.getBundle("org.eclipse.mita.program");
