@@ -117,7 +117,7 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
         return switch(modalityName) {
             case 'temperature': codeFragmentProvider.create('''«dataVariable».temperature''')
             case 'pressure': codeFragmentProvider.create('''«dataVariable».pressure''')
-            case 'humidity': codeFragmentProvider.create('''((float)«dataVariable».humidity)''')
+            case 'humidity': codeFragmentProvider.create('''«dataVariable».humidity''')
         }
     }
     
