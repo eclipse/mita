@@ -286,6 +286,25 @@ sensor Gyroscope_BMG160 {
 //	generator ""
 //}
 
+sensor noise_sensor {
+	generator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorGenerator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator"
+	
+	/**
+	 * The sampling frequency in Hertz.
+	 */
+	configuration-item samplingFrequency: uint32 = 2560
+	/**
+	 * The timeout to wait for when getting noise in milliseconds.
+	 */
+	configuration-item timeout: uint32 = 100
+	
+	/**
+	 * The noise the microphone of the XDK measures. This is unitless and needs to be calibrated in code yourself if you want absolute values. 
+	 */
+	modality noise: float
+}
+
 enum BME280_PowerMode {
 	/**
 	 * Normal mode comprises an automated perpetual cycling between an (active) measurement period and an (inactive) standby period.
@@ -771,6 +790,46 @@ connectivity many MQTT {
 	
 }
 
+alt HonoAuthentication {
+	Authenticated: { username: string, password: string }
+	| Unauthenticated: { tenant: string, deviceId: string }
+}
+
+connectivity many HonoMqtt {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.HonoGenerator"
+    validator "org.eclipse.mita.platform.xdk110.connectivity.MqttValidator"
+	
+	/**
+	 * The underlying transport connectivity we use to send the data out. In the future we might also
+	 * support LoRa here.
+	 */
+	required configuration-item transport : WLAN
+	
+	/**
+	 * The URL pointing to the MQTT broker, for example: mqtt://does-not.exist:8000
+	 */
+	required configuration-item url : string
+	
+	/**
+	 * The client identifier (here: clientID) is a identifier of each MQTT client
+     * connecting to a MQTT broker. It needs to be unique for the broker to
+     * know the state of the client. 
+	 */
+	required configuration-item clientId : string
+	
+	required configuration-item authentication: HonoAuthentication
+	
+	/**
+	 * Publishes a Hono telemetry message 
+	 */
+	signal telemetry(qos: uint32 = 0) : string
+	
+	/**
+	 * Publishes a Hono event. 
+	 */
+	signal ^event() : string
+}
+
 /**
  * Exception thrown when we can't setup the WLAN network
  */
@@ -947,6 +1006,7 @@ platform XDK110 {
 	has light
 	has button_one
 	has button_two
+	has noise_sensor
 	
 	has Gyroscope_BMI160
 	has Gyroscope_BMG160
@@ -958,9 +1018,19 @@ platform XDK110 {
 	has LED
 	has WLAN
 	has MQTT
+	has HonoMqtt
 	has HttpRestClient
 	
 	configuration-item applicationName : string = "EclipseMitaApplication"
+	/**
+	 * Enabling this powers the 2.5V and 3.3V external power on the extension bus. 
+	 */
+	configuration-item powerExternalDevices: bool = false
+	/**
+	 * Configure the XDK to wait some time in milliseconds before setting up and enabling resources.
+	 * This is especially useful to view debug output.
+	 */
+	configuration-item startupDelay: uint32 = 0
 	
 	event startup
 }

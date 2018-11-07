@@ -68,4 +68,13 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	override generateEventLoopHandlerPreamble(CompilationContext context, EventHandlerDeclaration handler) {
 		return CodeFragment.EMPTY
 	}
+	
+	override generateSetupPreamble(CompilationContext context) {
+		return CodeFragment.EMPTY;
+	}
+	
+	override generateEnablePreamble(CompilationContext context) {
+		return CodeFragment.EMPTY;
+	}
+	
 }

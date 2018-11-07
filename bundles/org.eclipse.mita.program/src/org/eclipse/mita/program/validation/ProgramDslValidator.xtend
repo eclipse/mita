@@ -76,6 +76,7 @@ import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.program.generator.GeneratorUtils
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -96,6 +97,8 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	public static val String VOID_OP_CANNOT_RETURN_VALUE_MSG = "Void operations cannot return a value.";
 	public static val String VOID_OP_CANNOT_RETURN_VALUE_CODE = "void_op_cannot_return_value";
+	
+	public static final String VOID_VARIABLE_TYPE = "Void is an invalid type for variables";
 
 	public static val String MISSING_RETURN_VALUE_MSG = "The operation must return a value of type %s.";
 	public static val String MISSING_RETURN_VALUE_CODE = "missing_return_value";
@@ -394,6 +397,15 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		assertIsBoolean(condition)
 	}
 	
+	@Check(CheckType.NORMAL)
+	def checkVariableDeclaration(VariableDeclaration it){
+		var result1 = inferrer.infer(it)
+		var result2 = inferrer.infer(typeSystem.getType(ITypeSystem.VOID))
+		if(result1.type.equals(result2.type)) {
+			error(VOID_VARIABLE_TYPE, it, null);
+		}
+	}
+	
 	def protected assertIsBoolean(Expression exp) {
 		var result1 = inferrer.infer(exp)
 		var result2 = inferrer.infer(typeSystem.getType(ProgramDslTypeInferrer.BOOL_LITERAL_TYPE))
@@ -417,16 +429,17 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					return;
 				}
 				
-				for(var i = 0; i < ref.parameters.length; i++) {
-					val sField = ref.parameters.get(i);
-					val sArg = exp.arguments.get(i).value;
+				val parmsToArgs = ModelUtils.getSortedArgumentsAsMap(ref.parameters, exp.arguments);				
+				parmsToArgs.entrySet.forEach[parm_arg | 
+					val sField = parm_arg.key;
+					val sArg = parm_arg.value.value;
 					val t1 = inferrer.infer(sField, this);
 					val t2 = inferrer.infer(sArg, this);
 					validator.assertAssignable(t1, t2,
 						
 					// message says t2 can't be assigned to t1, --> invert in format
 					String.format(INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
-				}
+				]
 			}
 		}
 	}
