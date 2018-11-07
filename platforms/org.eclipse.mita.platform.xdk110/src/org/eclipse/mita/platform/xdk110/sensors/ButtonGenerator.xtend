@@ -13,19 +13,18 @@
 
 package org.eclipse.mita.platform.xdk110.sensors
 
+import com.google.inject.Inject
 import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.Modality
+import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.ModalityAccess
+import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
-import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.program.ModalityAccessPreparation
-import org.eclipse.mita.program.ModalityAccess
 
 class ButtonGenerator extends AbstractSystemResourceGenerator {
 
@@ -45,36 +44,44 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
             .addHeader('BCDS_BSP_Button.h', true)
             .addHeader('MitaEvents.h', true)
             .setPreamble('''
-            «FOR handler : eventHandler»
-            void «handler.internalHandlerName»(uint32_t data)
-            {
-            	if(data == BSP_XDK_BUTTON_PRESS) {
-            		Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «handler.handlerName», NULL, data);
-                    if(retcode != RETCODE_OK)
-                    {
-                        Retcode_raiseErrorFromIsr(retcode);
-                    }
-            	}
-            }
-            
-            «ENDFOR»
+			«FOR handlergrp : eventHandler.groupBy[it.sensorInstance.buttonNumber].values»
+			void «handlergrp.head.internalHandlerName»(uint32_t data)
+			{
+				«FOR idx_handler: handlergrp.indexed»
+				«IF idx_handler.key > 0»else «ENDIF»if(data == «getButtonStatusEnumName(idx_handler.value)») {
+					Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «idx_handler.value.handlerName», NULL, data);
+					if(retcode != RETCODE_OK)
+					{
+						Retcode_RaiseErrorFromIsr(retcode);
+					}
+				}
+            	«ENDFOR»
+			}
+			
+			«ENDFOR»
             ''')
     }
     
     override generateEnable() {
         codeFragmentProvider.create('''
         Retcode_T retcode = NO_EXCEPTION;
-        
-        «FOR handler : eventHandler»
-        retcode = BSP_Button_Enable((uint32_t) BSP_XDK_BUTTON_«handler.sensorInstance.buttonNumber», «handler.internalHandlerName»);
-        if(retcode != NO_EXCEPTION) return retcode;
 
-        «ENDFOR»
+        retcode = BSP_Button_Enable((uint32_t) BSP_XDK_BUTTON_«eventHandler.head.sensorInstance.buttonNumber», «eventHandler.head.internalHandlerName»);
+        if(retcode != NO_EXCEPTION) return retcode;
         ''')
     }
     
     private def getInternalHandlerName(EventHandlerDeclaration handler) {
         '''Button«handler.sensorInstance.buttonName.toFirstUpper»_OnEvent'''
+    }
+    
+    private def String getButtonStatusEnumName(EventHandlerDeclaration handler) {
+    	return "BSP_XDK_BUTTON_" + if((handler.event as SystemEventSource)?.source?.name == "released") {
+    		"RELEASE"
+    	}
+    	else {
+    		"PRESS"
+    	}
     }
     
     private def getSensorInstance(EventHandlerDeclaration declaration) {
