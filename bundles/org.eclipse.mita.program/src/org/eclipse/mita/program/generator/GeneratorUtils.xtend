@@ -323,6 +323,10 @@ class GeneratorUtils {
 		return fd.name;
 	}
 	
+	def dispatch String getBaseName(Object ob) {
+		return null
+	}
+	
 	dispatch def String getEnumName(SumType sumType) {
 		return '''«sumType.name»_enum''';
 	}

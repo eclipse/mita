@@ -59,12 +59,16 @@ abstract class AbstractTransformationStage {
 		pipelineInfoProvider = pipeline;
 		
 		program.doTransform();
-		postTransformations.forEach[x | x.apply(program) ]
+		doPostTransformations(program);
 		
 		return program;
 	}
 	
-	public def getOrder() {
+	protected def doPostTransformations(Program program) {
+		postTransformations.forEach[x | x.apply(program) ]
+	}
+	
+	def getOrder() {
 		return ORDER_CUSTOM_STUFF;
 	}
 	

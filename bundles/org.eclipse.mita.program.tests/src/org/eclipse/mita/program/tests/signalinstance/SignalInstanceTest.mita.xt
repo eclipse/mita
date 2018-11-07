@@ -48,6 +48,11 @@ fn useSiginstCorrectly() {
 	// XPECT inferredSize ---> array<int32>::6
 	let x4 = connectivity.signal_instance04.read();
 	
+	// this should work
+	if(true) {
+		let x5 = connectivity.signal_instance04.read();
+	}
+	
 	connectivity.signal_instance00.write(true);
 	connectivity.signal_instance01.write(20);
 	
@@ -58,7 +63,7 @@ fn useSiginstCorrectly() {
 	// use as non-extension method call
 	
 	// XPECT inferredType ---> bool
-	var x5 = read(connectivity.signal_instance00);
+	var x6 = read(connectivity.signal_instance00);
 	
 	write(connectivity.signal_instance00, true);
 }
