@@ -36,8 +36,8 @@ class MethodCall<T extends NamedElement> {
 		}
 		
 		override toString() {
-			val setup = EcoreUtil2.getContainerOfType(t, SystemResourceSetup) as NamedElement ?: EcoreUtil2.getContainerOfType(t, AbstractSystemResource);
-			return '''«source.hashCode»_«setup?.name».«t.name».«method.name»(«FOR arg : source.arguments SEPARATOR(", ")»«StaticValueInferrer.infer(arg.value, [])?.toString?:"null"»«ENDFOR»)'''
+			val setupName = EcoreUtil2.getContainerOfType(t, SystemResourceSetup)?.name ?: EcoreUtil2.getContainerOfType(t, AbstractSystemResource)?.name;
+			return '''«source.hashCode»_«setupName».«t.name».«method.name»(«FOR arg : source.arguments SEPARATOR(", ")»«StaticValueInferrer.infer(arg.value, [])?.toString?:"null"»«ENDFOR»)'''
 		}	
 		override hashCode() {
 			toString.hashCode()

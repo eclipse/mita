@@ -18,15 +18,16 @@ import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.FeatureCall
 
-class UnravelLiteralArrayReturnStage extends AbstractUnravelingStage {
+class UnravelLiteralArraysStage extends AbstractUnravelingStage {
 	
 	override protected needsUnraveling(Expression expression) {
-		if(expression.eContainer instanceof ReturnStatement) {
-			if(expression instanceof PrimitiveValueExpression) {
-				if(expression.value instanceof ArrayLiteral) {
-					return true;
-				}
+		if(expression instanceof PrimitiveValueExpression) {
+			if(expression.value instanceof ArrayLiteral) {
+				val container = expression.eContainer;
+				return container instanceof ReturnStatement || container instanceof Argument || container instanceof FeatureCall
 			}
 		}
 		return false;
