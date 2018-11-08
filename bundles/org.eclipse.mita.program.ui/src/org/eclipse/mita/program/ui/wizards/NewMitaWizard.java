@@ -55,10 +55,11 @@ public class NewMitaWizard extends Wizard implements INewWizard {
 	public boolean performFinish() {
 		final String containerName = page.getContainerName();
 		final String fileName = page.getFileName();
+		final String platformId = page.getPlatformId();
 		IRunnableWithProgress op = new IRunnableWithProgress() {
 			public void run(IProgressMonitor monitor) throws InvocationTargetException {
 				try {
-					doFinish(containerName, fileName, monitor);
+					doFinish(containerName, fileName, platformId, monitor);
 				} catch (CoreException e) {
 					throw new InvocationTargetException(e);
 				} finally {
@@ -86,6 +87,7 @@ public class NewMitaWizard extends Wizard implements INewWizard {
 	private void doFinish(
 		String containerName,
 		String fileName,
+		String platformId,
 		IProgressMonitor monitor)
 		throws CoreException {
 		// create a sample file
@@ -98,7 +100,7 @@ public class NewMitaWizard extends Wizard implements INewWizard {
 		IContainer container = (IContainer) resource;
 		final IFile file = container.getFile(new Path(fileName));
 		try {
-			InputStream stream = openContentStream();
+			InputStream stream = openContentStream(platformId);
 			if (file.exists()) {
 				file.setContents(stream, true, true, monitor);
 			} else {
@@ -125,9 +127,11 @@ public class NewMitaWizard extends Wizard implements INewWizard {
 	/**
 	 * We will initialize file contents with a sample text.
 	 */
-	private InputStream openContentStream() {
-		String contents =
-			"package my.pkg;";
+	private InputStream openContentStream(String platformId) {
+		String contents = "package my.pkg;";
+		if (platformId != null && !platformId.isEmpty()) {
+			contents += "\n\nimport " + platformId + ";";
+		}
 		return new ByteArrayInputStream(contents.getBytes());
 	}
 

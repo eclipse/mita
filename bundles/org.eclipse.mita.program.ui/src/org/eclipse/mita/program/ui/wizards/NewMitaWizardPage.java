@@ -1,12 +1,17 @@
 package org.eclipse.mita.program.ui.wizards;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.Path;
+import org.eclipse.jface.layout.GridDataFactory;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.WizardPage;
+import org.eclipse.mita.library.extension.LibraryExtensions;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -15,6 +20,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
@@ -32,6 +38,8 @@ public class NewMitaWizardPage extends WizardPage {
 	private Text fileText;
 
 	private ISelection selection;
+
+	private Combo platformCombo;
 
 	/**
 	 * Constructor for SampleNewWizardPage.
@@ -76,13 +84,22 @@ public class NewMitaWizardPage extends WizardPage {
 		label.setText("&File name:");
 
 		fileText = new Text(container, SWT.BORDER | SWT.SINGLE);
-		gd = new GridData(GridData.FILL_HORIZONTAL);
-		fileText.setLayoutData(gd);
+		GridDataFactory.fillDefaults().grab(true, false).span(2, 1).applyTo(fileText);
 		fileText.addModifyListener(new ModifyListener() {
 			public void modifyText(ModifyEvent e) {
 				dialogChanged();
 			}
 		});
+		
+		label = new Label(container, SWT.NULL);
+		label.setText("&Platform:");
+		
+		platformCombo = new Combo(container, SWT.NONE);
+		List<String> platformIds = LibraryExtensions.getAvailablePlatforms().stream().map((p)->p.getId()).collect(Collectors.toList());
+		platformCombo.setItems(platformIds.toArray(new String[platformIds.size()]));
+		platformCombo.select(0);
+		GridDataFactory.fillDefaults().grab(true, false).span(2, 1).applyTo(platformCombo);
+		
 		initialize();
 		dialogChanged();
 		setControl(container);
@@ -180,5 +197,9 @@ public class NewMitaWizardPage extends WizardPage {
 
 	public String getFileName() {
 		return fileText.getText();
+	}
+	
+	public String getPlatformId() {
+		return platformCombo.getText();
 	}
 }
