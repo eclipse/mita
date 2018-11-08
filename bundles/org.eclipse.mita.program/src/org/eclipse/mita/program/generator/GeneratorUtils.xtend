@@ -32,6 +32,7 @@ import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.Connectivity
+import org.eclipse.mita.platform.InputOutput
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.Sensor

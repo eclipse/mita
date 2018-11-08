@@ -10,7 +10,11 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class GenericPlatformSizeInferrer extends ElementSizeInferrer {
-	 
+
+	def String getLengthParameterName(SignalInstance sigInst) {
+		return 'length';
+	}
+
 	override infer(EObject obj) {
 		val instance = if(obj instanceof ElementReferenceExpression) {
 			if(obj.isOperationCall && obj.arguments.size > 0) {
@@ -36,7 +40,7 @@ class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 				if(instance instanceof FeatureCall) {
 					val signal = instance.feature;
 					if(signal instanceof SignalInstance) {
-						val lengthArg = ModelUtils.getArgumentValue(signal, 'length');
+						val lengthArg = ModelUtils.getArgumentValue(signal, signal.lengthParameterName);
 						if(lengthArg !== null) {
 							val maxLength = StaticValueInferrer.infer(lengthArg, [ ]);
 							return newValidResult(obj, maxLength as Integer);	
