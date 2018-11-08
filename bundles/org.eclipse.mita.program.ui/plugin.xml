@@ -408,4 +408,18 @@
 			type="text">
 		</fileTypes>
 	</extension>
+ <extension
+       point="org.eclipse.ui.newWizards">
+    <category
+          id="org.eclipse.mita.program.ui"
+          name="Mita">
+    </category>
+    <wizard
+          category="org.eclipse.mita.program.ui"
+          class="org.eclipse.mita.program.ui.wizards.NewMitaWizard"
+          icon="icons/mita_16_purple.png"
+          id="org.eclipse.mita.program.ui.wizards.NewMitaWizard"
+          name="Mita Application File">
+    </wizard>
+ </extension>
 </plugin>
