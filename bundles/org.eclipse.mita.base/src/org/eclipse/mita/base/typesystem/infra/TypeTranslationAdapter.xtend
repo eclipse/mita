@@ -4,6 +4,7 @@ import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 @Accessors
 class TypeTranslationAdapter extends AdapterImpl {
@@ -12,34 +13,24 @@ class TypeTranslationAdapter extends AdapterImpl {
 		this.typeTranslation = translation;
 	}
 	
-	static def AbstractType get(EObject obj, (EObject) => AbstractType calculateType) {
-		return get(obj, [|calculateType.apply(obj)]);
+	static def AbstractType get(ConstraintSystem s, EObject obj, (EObject) => AbstractType calculateType) {
+		return get(s, obj, [|calculateType.apply(obj)]);
 	}
-	static def AbstractType get(EObject obj, () => AbstractType calculateType) {
-		var candidate = obj.eAdapters.filter(TypeTranslationAdapter).map[ it.typeTranslation ].head;
+	static def AbstractType get(ConstraintSystem s, EObject obj, () => AbstractType calculateType) {
+		var candidate = s.typeTranslations.get(obj);
 		if(candidate === null) {
 			candidate = calculateType.apply;
-			val alreadySet = obj.eAdapters.filter(TypeTranslationAdapter).map[ it.typeTranslation ].head;
+			val alreadySet = s.typeTranslations.get(obj);
 			if(alreadySet !== null) {
 				println("Overwriting: " + alreadySet + " | with: " + candidate);
-				obj.eAdapters.filter(TypeTranslationAdapter).head.typeTranslation = candidate;
 			}
-			else {
-				obj.eAdapters.add(new TypeTranslationAdapter(candidate));
-			}
+			s.typeTranslations.put(obj, candidate);
 		}
 		return candidate;
 	}
 	
-	static def AbstractType set(EObject obj, AbstractType translation) {
-		var candidate = obj.eAdapters.filter(TypeTranslationAdapter).head;
-		if(candidate === null) {
-			candidate = new TypeTranslationAdapter(translation)
-			obj.eAdapters.add(candidate);
-		}
-		else {
-			candidate.typeTranslation = translation;
-		}
+	static def AbstractType set(ConstraintSystem s, EObject obj, AbstractType translation) {
+		s.typeTranslations.put(obj, translation);
 		return translation;
 	}
 	

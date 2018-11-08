@@ -71,7 +71,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			println(currentSystem);
 			val simplification = currentSystem.simplify(currentSubstitution);
 			if(!simplification.valid) {
-				return new ConstraintSolution(ConstraintSystem.combine(#[currentSystem, simplification.system].filterNull), simplification.substitution, #[simplification.issue]);
+				if(simplification?.system?.constraints.nullOrEmpty || simplification?.substitution?.content?.entrySet.nullOrEmpty) {
+					return new ConstraintSolution(currentSystem, simplification.substitution, #[simplification.issue]);
+				}
+				else {
+					return new ConstraintSolution(simplification.system, simplification.substitution, #[simplification.issue])
+				}
 			}
 			val simplifiedSystem = simplification.system;
 			val simplifiedSubst = simplification.substitution;
@@ -79,7 +84,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			
 			val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst, typeResolutionOrigin);
 			if(!solution.issues.empty) {
-				return new ConstraintSolution(simplifiedSystem, solution.solution, solution.issues);
+				if(solution?.constraints?.constraints.nullOrEmpty || solution?.solution?.content?.entrySet.nullOrEmpty) {
+					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, solution.issues);
+				}
+				else {
+					return new ConstraintSolution(solution.constraints, solution.solution, solution.issues);
+				}
 			}
 			result = solution;
 			currentSubstitution = result.solution;
@@ -130,15 +140,15 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 
 			val simplification = doSimplify(constraintSystem, resultSub, constraint);
 			if(!simplification.valid) {
-				return simplification;
+				return new SimplificationResult(resultSub, simplification.issue, resultSystem);
 			}
 			
+			val witnessNotWeaklyUnifyable = simplification.substitution.content.entrySet.findFirst[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]];
+			if(witnessNotWeaklyUnifyable !== null) {
+				return new SimplificationResult(resultSub, new UnificationIssue(witnessNotWeaklyUnifyable, "System is not weakly unifyable"), resultSystem);
+			}
 			resultSub = simplification.substitution;
 			resultSystem = resultSub.apply(simplification.system);
-			val witnessNotWeaklyUnifyable = resultSub.content.entrySet.findFirst[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]];
-			if(witnessNotWeaklyUnifyable !== null) {
-				return SimplificationResult.failure(new UnificationIssue(witnessNotWeaklyUnifyable, "System is not weakly unifyable"))
-			}
 		}
 		
 		return SimplificationResult.success(resultSystem, resultSub);
@@ -151,7 +161,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(t1.name == t2.name && t1.typeArguments.length == t2.typeArguments.length) {
 			val newSystem = constraintSystemProvider.get();
 			t1.typeArguments.zip(t2.typeArguments).forEach[
-				newSystem.addConstraint(new ImplicitInstanceConstraint(it.key, it.value));
+//				val leftType = it.key;
+//				if(leftType instanceof TypeVariable) {
+//					substitution.add(leftType, it.value);
+//				}
+				newSystem.addConstraint(new ImplicitInstanceConstraint(it.key, it.value));	
 			]
 			return SimplificationResult.success(ConstraintSystem.combine(#[system, newSystem]), substitution);
 		}
@@ -171,7 +185,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val instance = constraint.typeScheme.instantiate(system);
 		println(instance);
 		println(constraint.instance);
-		return SimplificationResult.success(system.plus(new EqualityConstraint(constraint.instance, instance.value, "CSS:133")), substitution);
+		val instanceType = instance.value
+		val resultSystem = system.plus(
+			new EqualityConstraint(constraint.instance, instanceType, "CSS:133")
+		)
+		return SimplificationResult.success(resultSystem, substitution);
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, JavaClassInstanceConstraint constraint) {
 		if(constraint.javaClass.isInstance(constraint.what)) {

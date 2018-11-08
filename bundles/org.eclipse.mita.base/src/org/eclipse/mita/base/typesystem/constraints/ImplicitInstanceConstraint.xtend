@@ -5,13 +5,17 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-
-@FinalFieldsConstructor 
+ 
 @EqualsHashCode
 @Accessors
 class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	protected final AbstractType isInstance;
 	protected final AbstractType ofType;
+	
+	new(AbstractType isInstance, AbstractType ofType) {
+		this.isInstance = isInstance;
+		this.ofType = ofType;
+	}
 	
 	override getActiveVars() {
 		return types.flatMap[freeVars];
@@ -36,7 +40,7 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	override map((AbstractType)=>AbstractType f) {
 		return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f));
 	}
-	
+		
 	override getOperator() {
 		return "implicit instanceof"
 	}

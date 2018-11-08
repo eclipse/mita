@@ -38,6 +38,7 @@ class ConstraintSystem {
 	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected Map<URI, TypeVariable> symbolTable = new HashMap();
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
+	protected Map<EObject, AbstractType> typeTranslations = new HashMap();
 
 	// not use atm - is not passed through/serialized in the index
 	protected Graph<AbstractType> explicitSubtypeRelations;
@@ -247,7 +248,7 @@ class ConstraintSystem {
 	
 	def plus(AbstractTypeConstraint constraint) {
 		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
-		result.constraintSystemProvider = constraintSystemProvider;
+		result.constraintSystemProvider = result.constraintSystemProvider ?: constraintSystemProvider;
 		result.constraints.add(constraint);
 		return ConstraintSystem.combine(#[this, result]);
 	}
@@ -263,6 +264,7 @@ class ConstraintSystem {
 			r.symbolTable.putAll(t.symbolTable);
 			r.constraints.addAll(t.constraints);
 			r.typeClasses.putAll(t.typeClasses);
+			r.typeTranslations.putAll(t.typeTranslations)
 			t.explicitSubtypeRelations => [g | g.nodes.forEach[typeNode | 
 				g.reverseMap.get(typeNode).forEach[typeIdx |
 					g.getPredecessors(typeIdx).forEach[r.explicitSubtypeRelations.addEdge(it, typeNode)]
@@ -297,6 +299,8 @@ class ConstraintSystem {
 				resource.resourceSet.getEObject(it, false)
 			])
 		]);
+		
+		result.typeTranslations.putAll(typeTranslations);
 		
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;

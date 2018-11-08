@@ -28,6 +28,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#[/*"stdlib",*/ "void"]);
@@ -36,6 +37,7 @@ class StdlibTypeRegistry {
 	public static val doubleTypeQID = QualifiedName.create(#[/*"stdlib",*/ "double"]);
 	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#[/*"stdlib",*/ it])];
 	public static val optionalTypeQID = QualifiedName.create(#[/*"stdlib",*/ "optional"]);
+	public static val referenceTypeQID = QualifiedName.create(#[/*"stdlib",*/ "reference"]);
 	public static val sigInstTypeQID = QualifiedName.create(#[/*"stdlib",*/ "siginst"]);
 	public static val modalityTypeQID = QualifiedName.create(#[/*"stdlib",*/ "modality"]);
 	public static val arrayTypeQID = QualifiedName.create(#[/*"stdlib",*/ "array"]);
@@ -101,6 +103,12 @@ class StdlibTypeRegistry {
 		val optionalType = getTypeModelObject(context, StdlibTypeRegistry.optionalTypeQID) as GeneratedType;
 		val typeArgs = #[system.newTypeVariable(optionalType.typeParameters.head)]
 		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, "optional", typeArgs.map[it as AbstractType]));
+	}
+	
+	protected def getReferenceType(ConstraintSystem system, EObject context) {
+		val optionalType = getTypeModelObject(context, StdlibTypeRegistry.referenceTypeQID) as GeneratedType;
+		val typeArgs = #[system.newTypeVariable(optionalType.typeParameters.head)]
+		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, "reference", typeArgs.map[it as AbstractType]));
 	}
 	
 	protected def getSigInstType(ConstraintSystem system, EObject context) {
@@ -291,5 +299,6 @@ class StdlibTypeRegistry {
 		}
 		return Optional.absent;
 	}
+	
 	
 }

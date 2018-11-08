@@ -63,12 +63,12 @@ public class ProgramLinkingService extends DefaultLinkingService {
 	public List<EObject> getLinkedObjects(EObject context, EReference ref, INode node) throws IllegalNodeException {
 		if (context instanceof PresentTypeSpecifier && ref == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 			PresentTypeSpecifier _context = (PresentTypeSpecifier) context;
-			if (_context.isOptional()) {
-				return getOptionalLinkedObjects((PresentTypeSpecifier) context, ref, node);
-			}
-			if (_context.getReferenceModifiers().size() > 0) {
-				return getReferenceLinkedObjects((PresentTypeSpecifier) context, ref, node);
-			}
+//			if (_context.isOptional()) {
+//				return getOptionalLinkedObjects((PresentTypeSpecifier) context, ref, node);
+//			}
+//			if (_context.getReferenceModifiers().size() > 0) {
+//				return getReferenceLinkedObjects((PresentTypeSpecifier) context, ref, node);
+//			}
 		}
 		if (context instanceof ArgumentExpression && isOperationCall(context)) {
 			return getLinkedFunctions((ArgumentExpression) context, ref, node);

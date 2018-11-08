@@ -65,6 +65,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.types.TypeConstructor
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -286,7 +287,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// some types may have circular dependencies. 
 		// To make it easy to solve this we cache type translations, reducing the required number of translations to O(1).
 		// So if some translation needs to recurse it can safely do so, as long as at least one member in the recursive circle sets its type translation before recursing.
-		val typeTrans = TypeTranslationAdapter.get(obj, [|
+		val typeTrans = TypeTranslationAdapter.get(system, obj, [|
 			system.doTranslateTypeDeclaration(obj)
 		])
 		// for the same reason we need to iterate over all children of these types.
@@ -312,14 +313,14 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		return TypeTranslationAdapter.set(structType, new ProdType(structType, structType.name, types, #[])) => [
+		return TypeTranslationAdapter.set(system, structType, new ProdType(structType, structType.name, types, #[])) => [
 			system.computeConstraints(structType.constructor);	
 		];
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
 		val subTypes = new ArrayList();
-		return TypeTranslationAdapter.set(sumType, new SumType(sumType, sumType.name, subTypes, #[])) => [
+		return TypeTranslationAdapter.set(system, sumType, new SumType(sumType, sumType.name, subTypes, #[])) => [
 			sumType.alternatives.forEach[ sumAlt |
 				subTypes.add(system.translateTypeDeclaration(sumAlt));
 			];
@@ -331,7 +332,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val prodType = new ProdType(sumAlt, sumAlt.name, types, #[
 			system.translateTypeDeclaration(sumAlt.eContainer)
 		]);
-		return TypeTranslationAdapter.set(sumAlt, prodType) => [
+		return TypeTranslationAdapter.set(system, sumAlt, prodType) => [
 			system.computeConstraints(sumAlt.constructor);
 		];
 	}
@@ -345,7 +346,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.computeConstraints(it)
 		].force();
 
-		return TypeTranslationAdapter.set(genType, if(typeParameters.empty) {
+		return TypeTranslationAdapter.set(system, genType, if(typeParameters.empty) {
 			new AtomicType(genType, genType.name);
 		}
 		else {
@@ -376,8 +377,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 //		else {
 //		}
 		val type = system.resolveReferenceToSingleAndGetType(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		if(typeArguments.empty) {
-			return system.associate(type, typeSpecifier);
+		val typeWithoutModifiers = if(typeArguments.empty) {
+			type;
 		}
 		else {
 			// this type specifier is an instance of type
@@ -387,9 +388,34 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val typeInstanceVar = system.newTypeVariable(null);
 			system.addConstraint(new ExplicitInstanceConstraint(typeInstanceVar, type));
 			system.addConstraint(new ImplicitInstanceConstraint(typeInstance, typeInstanceVar));
-			return system.associate(typeInstance, typeSpecifier);
-			
+			typeInstance;
 		}
+		
+		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, typeSpecifier, StdlibTypeRegistry.referenceTypeQID);
+		
+		//val optionalType = typeRegistry.getOptionalType(system, typeSpecifier);
+		val typeWithReferenceModifiers = typeSpecifier.referenceModifiers.flatMap[it.split("").toList].fold(typeWithoutModifiers, [t, __ | 
+			val referenceInstance = system.newTypeVariable(null);
+			val nestedType = new TypeConstructorType(null, "reference", #[t]);
+			system.addConstraint(new ExplicitInstanceConstraint(referenceInstance, referenceTypeVarOrigin));
+			system.addConstraint(new ImplicitInstanceConstraint(nestedType, referenceInstance));
+			nestedType;
+		])
+		
+		val optionalTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, typeSpecifier, StdlibTypeRegistry.optionalTypeQID);
+
+		val typeWithOptionalModifier = if(typeSpecifier.optional) {
+			val optionalInstance = system.newTypeVariable(null);
+			val nestedType = new TypeConstructorType(null, "optional", #[typeWithReferenceModifiers]);
+			system.addConstraint(new ExplicitInstanceConstraint(optionalInstance, optionalTypeVarOrigin));
+			system.addConstraint(new ImplicitInstanceConstraint(nestedType, optionalInstance));
+			nestedType;
+		}
+		else {
+			typeWithReferenceModifiers;
+		}
+		
+		return system.associate(typeWithOptionalModifier, typeSpecifier);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypedElement element) {
