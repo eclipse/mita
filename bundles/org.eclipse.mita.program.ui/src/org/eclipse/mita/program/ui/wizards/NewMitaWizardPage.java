@@ -183,6 +183,12 @@ public class NewMitaWizardPage extends WizardPage {
 				return;
 			}
 		}
+		IResource file = ResourcesPlugin.getWorkspace().getRoot()
+				.findMember(new Path(getContainerName()).append(fileName));
+		if (file != null && file.exists()) {
+			updateStatus("File '" + fileName + "' already exists.");
+			return;
+		}
 		updateStatus(null);
 	}
 
