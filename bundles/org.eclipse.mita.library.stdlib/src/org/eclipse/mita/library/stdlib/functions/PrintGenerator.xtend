@@ -13,19 +13,20 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
-import org.eclipse.mita.library.stdlib.StringGenerator
-import org.eclipse.mita.program.InterpolatedStringExpression
-import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.library.stdlib.StringGenerator
+import org.eclipse.mita.program.InterpolatedStringExpression
+import org.eclipse.mita.program.generator.AbstractFunctionGenerator
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class PrintGenerator extends AbstractFunctionGenerator {
 	
 	@Inject
 	protected StringGenerator stringGenerator
 	
-	override generate(ElementReferenceExpression function, String resultVariableName) {
+	override generate(ElementReferenceExpression function, IGeneratorNode resultVariableName) {
 		val functionName = (function.reference as NamedElement).name;
 		val addBreaklinePostfix = functionName == 'println';
 		

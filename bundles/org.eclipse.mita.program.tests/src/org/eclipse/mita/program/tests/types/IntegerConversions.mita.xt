@@ -41,7 +41,7 @@ fn takesUint8(x : uint8) {
 }
 
 fn intRangeChecks() {
-	// XPECT errors ---> "Value is out of range. Must be 0 <= x <= 255." at "takesUint8(-1)"
+	// XPECT errors ---> "Value is out of range. Must be 0 <= x <= 255." at "-1"
 	takesUint8(-1);
 	
 	// here we would like to see an error, but a bug in the type inferrer validation acceptance prevents that.

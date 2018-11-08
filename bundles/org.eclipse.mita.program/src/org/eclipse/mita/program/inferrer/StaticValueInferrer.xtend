@@ -31,6 +31,7 @@ import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
@@ -76,7 +77,7 @@ class StaticValueInferrer {
 		val argc = propsRaw.size;
 		val props = new HashMap<String, Expression>(argc);
 		val idxs = 1..argc;
-		ModelUtils.zip(idxs, propsRaw).forEach[idx__t_p | 
+		BaseUtils.zip(idxs, propsRaw).forEach[idx__t_p | 
 			val t_p = idx__t_p.value;
 			props.put("_" + idx__t_p.key, t_p.value.value);
 		]

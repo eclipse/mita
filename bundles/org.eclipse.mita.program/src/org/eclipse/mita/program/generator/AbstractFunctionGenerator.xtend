@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 /**
  * Generates code implementing a function call. 
@@ -37,7 +38,7 @@ abstract class AbstractFunctionGenerator implements IGenerator {
 	 * If resultVariableName is null the generator is expected to produce a valid C expression. If the generator
 	 * cannot produce such an expression it should mark an error.
 	 */
-	abstract def CodeFragment generate(ElementReferenceExpression functionCall, String resultVariableName)
+	abstract def CodeFragment generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName)
 	
 	/**
 	 * This function allows generators to opt out of the regular function unraveling. This enables function generators

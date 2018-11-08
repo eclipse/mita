@@ -44,12 +44,12 @@ fn noRet() : bool {}
 
 fn incompatibleReturnTypes() : int32 {
 	if (true) {
-		// XPECT errors --> "The return type 'string' is not compatible with the operation's type 'int32'." at "return "";"
+		// XPECT errors --> "The return type 'string' is not compatible with the operation's type 'int32'." at """"
 		return "";
 	} else {
 		return 18;
 	}
-	// XPECT errors --> "The return type 'bool' is not compatible with the operation's type 'int32'." at "return true;"
+	// XPECT errors --> "The return type 'bool' is not compatible with the operation's type 'int32'." at "true"
 	return true;
 }
 
