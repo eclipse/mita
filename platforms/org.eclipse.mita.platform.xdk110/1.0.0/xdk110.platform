@@ -980,19 +980,19 @@ bus named-singleton GPIO {
 	signal digitalOut(pin : GPIOPin, initialValue : bool = false) : bool
 }
 
-exception EndOfFileException
+export exception EndOfFileException
 
 io named-singleton SDCard {
 	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
 	sizeInferrer "org.eclipse.mita.platform.xdk110.io.SDCardSizeInferrer"
 
-	signal appendingFile_Text_Read(filePath: string, blockSize: uint32) : string
+	signal resumingFile_Text_Read(filePath: string, blockSize: uint32) : string
 	signal appendingFile_Text_Write(filePath: string) : string
 
 	signal rewindingFile_Text_Read(filePath: string, fileSize: uint32) : string
 	signal rewindingFile_Text_Write(filePath: string) : string
 
-	signal appendingFile_Binary_Read(filePath: string, blockSize: uint32) : array<uint8>
+	signal resumingFile_Binary_Read(filePath: string, blockSize: uint32) : array<uint8>
 	signal appendingFile_Binary_Write(filePath: string) : array<uint8>
 
 	signal rewindingFile_Binary_Read(filePath: string, fileSize: uint32) : array<uint8>
