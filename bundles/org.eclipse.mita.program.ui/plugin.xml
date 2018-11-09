@@ -4,12 +4,13 @@
 	<extension
 		point="org.eclipse.ui.editors">
 		<editor
-			class="org.eclipse.mita.program.ui.ProgramDslExecutableExtensionFactory:org.eclipse.xtext.ui.editor.XtextEditor"
-			contributorClass="org.eclipse.ui.editors.text.TextEditorActionContributor"
-			default="true"
-			extensions="mita"
-			id="org.eclipse.mita.program.ProgramDsl"
-			name="Mita Editor">
+        class="org.eclipse.mita.program.ui.ProgramDslExecutableExtensionFactory:org.eclipse.xtext.ui.editor.XtextEditor"
+        contributorClass="org.eclipse.ui.editors.text.TextEditorActionContributor"
+        default="true"
+        extensions="mita"
+        icon="icons/mita_16_purple.png"
+        id="org.eclipse.mita.program.ProgramDsl"
+        name="Mita Editor">
 		</editor>
 	</extension>
 	<extension
@@ -407,4 +408,18 @@
 			type="text">
 		</fileTypes>
 	</extension>
+ <extension
+       point="org.eclipse.ui.newWizards">
+    <category
+          id="org.eclipse.mita.program.ui"
+          name="Mita">
+    </category>
+    <wizard
+          category="org.eclipse.mita.program.ui"
+          class="org.eclipse.mita.program.ui.wizards.NewMitaWizard"
+          icon="icons/mita_16_purple.png"
+          id="org.eclipse.mita.program.ui.wizards.NewMitaWizard"
+          name="Mita Application File">
+    </wizard>
+ </extension>
 </plugin>
