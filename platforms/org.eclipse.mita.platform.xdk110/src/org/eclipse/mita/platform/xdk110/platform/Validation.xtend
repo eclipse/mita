@@ -212,14 +212,14 @@ class Validation implements IResourceValidator {
 	def validateSdCardRead(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
 		val init = call.sigInst.initialization as ElementReferenceExpression;
 		val signal = init.reference as Signal;
-		if(signal.name.contains("_Write")) {
+		if(signal.name.contains("Write")) {
 			acceptor.acceptError("Can not read from " + signal.name, call.source, call.structFeature, 0, "CANT_READ_FROM_" + signal.name.toUpperCase)
 		}
 	}
 	def validateSdCardWrite(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
 		val init = call.sigInst.initialization as ElementReferenceExpression;
 		val signal = init.reference as Signal;
-		if(signal.name.contains("_Read")) {
+		if(signal.name.contains("Read")) {
 			acceptor.acceptError("Can not write to " + signal.name, call.source, call.structFeature, 0, "CANT_WRITE_TO_" + signal.name.toUpperCase)
 		}
 	}

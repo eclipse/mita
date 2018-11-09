@@ -46,7 +46,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			#define STORAGE_SDCARD_DRIVE_NUMBER             UINT8_C(0)
 			
 			«FOR sigInst : setup.signalInstances»
-				«IF sigInst.instanceOf.name.startsWith("resumingFile")»
+				«IF sigInst.instanceOf.name.startsWith("resuming")»
 					static uint16_t «sigInst.name»FilePosition = 0UL;
 				«ENDIF»
 			«ENDFOR»
@@ -66,7 +66,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	static def String getSizeName(SignalInstance instance) {
-		if (instance.instanceOf.name.startsWith("rewindingFile")) {
+		if (instance.instanceOf.name.startsWith("rewinding")) {
 			return "fileSize";
 		} else {
 			return "blockSize";
@@ -105,13 +105,14 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 		val signalName = sigInst.instanceOf.name;
 		if(signalName.endsWith("Write")) {
 			return codeFragmentProvider.create('''
+				BCDS_UNUSED(«valueVariableName»);
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
 			''')
 		} 
 		val data = sigInst.dataAccessor(valueVariableName);
 		val len = sigInst.getSize;
 		val filename = sigInst.filenameAccessor(valueVariableName);
-		val fileSeekIndex = if (signalName.startsWith("resumingFile")) {
+		val fileSeekIndex = if (signalName.startsWith("resuming")) {
 				codeFragmentProvider.create('''«sigInst.name»FilePosition''');
 			} else {
 				codeFragmentProvider.create('''0''');
@@ -148,7 +149,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			}
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
-				«IF signalName.startsWith("resumingFile")»
+				«IF signalName.startsWith("resuming")»
 					«sigInst.name»FilePosition += bytesRead;
 				«ENDIF»
 			}
@@ -167,9 +168,10 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 
 	override generateSignalInstanceSetter(SignalInstance sigInst, String valueVariableName) {
 		val signalName = sigInst.instanceOf.name;
-		val isAppending = signalName.startsWith("appendingFile");
+		val isAppending = signalName.startsWith("appending");
 		if(signalName.endsWith("Read")) {
 			return codeFragmentProvider.create('''
+				BCDS_UNUSED(«valueVariableName»);
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
 			''')
 		} 
