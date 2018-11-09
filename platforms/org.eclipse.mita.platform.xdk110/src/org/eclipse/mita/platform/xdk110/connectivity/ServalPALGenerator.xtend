@@ -37,26 +37,26 @@ class ServalPALGenerator extends AbstractSystemResourceGenerator {
 		
 			codeFragmentProvider.create('''
 			
-			 /**< Handle for Serval PAL thread command processor */
-			 static CmdProcessor_T ServalPALCmdProcessorHandle;
+			/**< Handle for Serval PAL thread command processor */
+			static CmdProcessor_T ServalPALCmdProcessorHandle;
 
-			 retcode = CmdProcessor_Initialize(&ServalPALCmdProcessorHandle, "Serval PAL", TASK_PRIORITY_SERVALPAL_CMD_PROC, TASK_STACK_SIZE_SERVALPAL_CMD_PROC, TASK_QUEUE_LEN_SERVALPAL_CMD_PROC);
+			exception = CmdProcessor_Initialize(&ServalPALCmdProcessorHandle, "Serval PAL", TASK_PRIORITY_SERVALPAL_CMD_PROC, TASK_STACK_SIZE_SERVALPAL_CMD_PROC, TASK_QUEUE_LEN_SERVALPAL_CMD_PROC);
 			
-			if (RETCODE_OK == retcode)
+			if (RETCODE_OK == exception)
 			{
-				retcode = ServalPal_Initialize(&ServalPALCmdProcessorHandle	);
+				exception = ServalPal_Initialize(&ServalPALCmdProcessorHandle	);
 			}
 			
-			if (RETCODE_OK == retcode)
+			if (RETCODE_OK == exception)
 			{
-				retcode = ServalPalWiFi_Init();
+				exception = ServalPalWiFi_Init();
 			}
 
 		''')
 		.setPreamble('''
-				#define TASK_PRIORITY_SERVALPAL_CMD_PROC            UINT32_C(3)
-				#define TASK_STACK_SIZE_SERVALPAL_CMD_PROC          UINT32_C(600)
-				#define TASK_QUEUE_LEN_SERVALPAL_CMD_PROC           UINT32_C(10)
+			#define TASK_PRIORITY_SERVALPAL_CMD_PROC            UINT32_C(3)
+			#define TASK_STACK_SIZE_SERVALPAL_CMD_PROC          UINT32_C(600)
+			#define TASK_QUEUE_LEN_SERVALPAL_CMD_PROC           UINT32_C(10)
 		''')
 		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
@@ -66,21 +66,20 @@ class ServalPALGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateEnable() {
 			 codeFragmentProvider.create('''
-					
-					if(RETCODE_OK == retcode)
-					{
-						ServalPalWiFi_StateChangeInfo_T stateChangeInfo = { SERVALPALWIFI_OPEN, NULL };
-						retcode = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_STATE_CHANGE, &stateChangeInfo);
-					}
 
-					if(RETCODE_OK != retcode)
-					{
-						return retcode;
-					}
-							
-					''')
-					
-					.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
-					.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
+				if(RETCODE_OK == exception)
+				{
+					ServalPalWiFi_StateChangeInfo_T stateChangeInfo = { SERVALPALWIFI_OPEN, NULL };
+					exception = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_STATE_CHANGE, &stateChangeInfo);
+				}
+
+				if(RETCODE_OK != exception)
+				{
+					return exception;
+				}
+				
+			''')
+			.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
+			.addHeader("BCDS_ServalPal.h", true, IncludePath.HIGH_PRIORITY)
 		}
 }
