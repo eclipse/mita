@@ -40,9 +40,5 @@
 <unit id="org.eclipse.launchbar.feature.group" version="2.2.0.201711162100"/>
 <repository location="http://download.eclipse.org/releases/oxygen"/>
 </location>
-<location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="false" type="InstallableUnit">
-<unit id="org.eclipse.license.feature.group" version="1.0.1.v20140414-1359"/>
-<repository location="http://download.eclipse.org/cbi/updates/license/"/>
-</location>
 </locations>
 </target>
