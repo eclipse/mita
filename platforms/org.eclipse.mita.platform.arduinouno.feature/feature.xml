@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feature
-      id="org.eclipse.mita.platform.xdk110.feature"
-      label="Mita XDK110 Platform Feature"
+      id="org.eclipse.mita.platform.arduino.uno.feature"
+      label="Mita Arduino Uno Platform Feature"
       version="0.1.0.qualifier"
       provider-name="Eclipse.org/Mita">
   <description>
-      Contains the Mita Platform XDK110
+      Contains the Mita Platform Arduino Uno
    </description>
 
    <copyright url="">
@@ -23,7 +23,7 @@
       <import feature="org.eclipse.mita.feature"/>
   </requires>
 <plugin
-         id="org.eclipse.mita.platform.xdk110"
+         id="org.eclipse.mita.platform.arduino.uno"
          download-size="0"
          install-size="0"
          version="0.0.0"
