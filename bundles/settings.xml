@@ -29,7 +29,6 @@
     <id>default</id>
     <pluginRepositories>
       <pluginRepository>
-        <id>signing-repo</id>
         <name>Eclipse JarSigner Repo</name>
         <url>https://repo.eclipse.org/content/repositories/cbi-releases/</url>
       </pluginRepository>

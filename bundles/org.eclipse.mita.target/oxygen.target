@@ -40,5 +40,8 @@
 <unit id="org.eclipse.launchbar.feature.group" version="2.2.0.201711162100"/>
 <repository location="http://download.eclipse.org/releases/oxygen"/>
 </location>
+<location>
+  <repository location="https://repo.eclipse.org/content/repositories/cbi-releases/"/>
+</location>
 </locations>
 </target>
