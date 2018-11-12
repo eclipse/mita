@@ -23,14 +23,14 @@ pipeline {
         stage("build") {
             steps {
                 checkout scm;
-                sh "mvn -s bundles/settings.xml -Pplugins -Pplatforms -P!tests -P!deployment -f bundles/pom.xml clean install"
+                sh "mvn -Dmaven.repo.local=${workspace}/.repository -Pplugins -Pplatforms -P!tests -P!deployment -f bundles/pom.xml clean install"
             }
         }
 
         stage('base tests') {
             steps {
                 wrap([$class:'Xvnc', useXauthority: true]) {
-                    sh "mvn -s bundles/settings.xml -P!plugins -P!platforms -Ptests -P!deployment -f bundles/pom.xml install"
+                    sh "mvn -Dmaven.repo.local=${workspace}/.repository -P!plugins -P!platforms -Ptests -P!deployment -f bundles/pom.xml install"
                 }
             }
             post {
@@ -42,7 +42,7 @@ pipeline {
 
         stage("deploy") {
             steps {
-                sh "mvn -s bundles/settings.xml -P!plugins -P!platforms -P!tests -Pdeployment -f bundles/pom.xml install"
+                sh "mvn -Dmaven.repo.local=${workspace}/.repository -P!plugins -P!platforms -P!tests -Pdeployment -f bundles/pom.xml install"
             }
             post {
                 always {
