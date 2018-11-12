@@ -26,20 +26,20 @@ pipeline {
                 sh "mvn -Pplugins -Pplatforms -P!tests -P!deployment -P!sign -f bundles/pom.xml clean install"
             }
         }
-/*
-        stage('base tests') {
-            steps {
-                wrap([$class:'Xvnc', useXauthority: true]) {
-                    sh "mvn -P!plugins -P!platforms -Ptests -P!deployment -P!sign -f bundles/pom.xml install"
-                }
-            }
-            post {
-				success {
-					junit 'bundles/**/target/surefire-reports/TEST-*.xml' 
-				}
-			}
-        }
-*/
+
+//        stage('base tests') {
+//            steps {
+//                wrap([$class:'Xvnc', useXauthority: true]) {
+//                    sh "mvn -P!plugins -P!platforms -Ptests -P!deployment -P!sign -f bundles/pom.xml install"
+//                }
+//            }
+//            post {
+//				success {
+//					junit 'bundles/**/target/surefire-reports/TEST-*.xml' 
+//				}
+//			}
+//        }
+
         stage("deploy") {
             steps {
                 sh "mvn -P!plugins -P!platforms -P!tests -Pdeployment -Psign -f bundles/pom.xml install"
