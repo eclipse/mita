@@ -98,7 +98,7 @@
             <id>deployment</id>
             <modules>
                 <module>org.eclipse.mita.feature</module>
-                <module>org.eclipse.mita.platform.xdk110.feature</module>
+                <module>../platforms/org.eclipse.mita.platform.xdk110.feature</module>
                 <module>org.eclipse.mita.repository</module>
             </modules>
         </profile>
