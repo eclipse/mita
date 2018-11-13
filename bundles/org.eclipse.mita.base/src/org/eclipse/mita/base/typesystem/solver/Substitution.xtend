@@ -15,9 +15,6 @@ class Substitution {
 	protected Map<TypeVariable, AbstractType> content = new HashMap();
 	
 	public def void add(TypeVariable variable, AbstractType type) {
-		if(variable.toString == "f_300.2") {
-			print("")
-		}
 		if(variable === null || type === null) {
 			throw new NullPointerException;
 		}
