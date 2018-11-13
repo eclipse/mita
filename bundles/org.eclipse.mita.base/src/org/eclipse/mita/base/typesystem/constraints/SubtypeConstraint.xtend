@@ -23,8 +23,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		}
 		subType = sub;
 		superType = top;
-		if(this.toString == "vec1d_args(anyVec(), x8) ⩽ vec1d_args(f_0 (), anyVec())") {
-			println("!")
+		if(this.toString == "f_116.0 ⩽ f_300.2") {
+			print("")
 		}
 	}
 	

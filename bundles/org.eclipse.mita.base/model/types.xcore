@@ -83,7 +83,7 @@ class TypeConstraint {
 }
 class TypeKind extends Type {
 	op String getName() {
-		return kindOf.name
+		return "∗" + kindOf.name
 	}
 	container Type kindOf opposite typeKind
 }
@@ -422,7 +422,7 @@ class SumType extends ComplexType, Exportable {
 		return super.toString();
 	}
 }
-interface SumAlternative extends StructuralType, HasAccessors {
+class SumAlternative extends StructuralType, GeneratedObject, HasAccessors {
 	container SumType sumType opposite alternatives
 	
 	op Type realType() {
@@ -430,10 +430,14 @@ interface SumAlternative extends StructuralType, HasAccessors {
 	}
 	
 	op Type[] getSuperTypes() {
+		generateMembers();
+		return super.superTypes
+	}
+	
+	op void generateMembers() {
 		if (!super.superTypes.contains(sumType)) {
 			super.superTypes.add(sumType);
 		}
-		return super.superTypes
 	}
 }
 class Singleton extends SumAlternative {
@@ -449,10 +453,11 @@ class AnonymousStructuralParameter extends StructuralParameter {
 		return memberTypeSpecifier;
 	}
 }
-class AnonymousProductType extends SumAlternative, GeneratedObject {
+class AnonymousProductType extends SumAlternative {
 	contains PresentTypeSpecifier[] typeSpecifiers 
 	
 	op void generateMembers() {
+		super.generateMembers();
 		if(generatedParameters.empty) {
 			generatedParameters.clear;
 			generatedParameters += BaseUtils.force(typeSpecifiers.indexed.map[ i_ts |

@@ -77,7 +77,7 @@ class MitaWorkspaceProjectsState extends WorkspaceProjectsState {
 		// at minimum we need to load stdlib_types
 		if(typeUris === null) {
 			typeUris = new HashSet();
-			typeUris.addAll(getStdlibUris().filter[it.lastSegment == "stdlib_types.mita"]);
+			typeUris.addAll(libraryProvider.standardLibraries.filter[it.lastSegment == "stdlib_types.mita"]);
 		}
 		return typeUris;
 	}
@@ -85,7 +85,7 @@ class MitaWorkspaceProjectsState extends WorkspaceProjectsState {
 	protected def getStdlibUris() {
 		if(stdlibUris === null) {
 			stdlibUris = new HashSet();
-			stdlibUris.addAll(libraryProvider.standardLibraries);
+			stdlibUris.addAll(libraryProvider.standardLibraries.filter[it.lastSegment != "stdlib_types.mita"]);
 		}
 		return stdlibUris;
 	}

@@ -22,7 +22,9 @@ class Substitution {
 			println('''overriding «variable» ≔ «content.get(variable)» with «type»''')
 		}
 		this.content.put(variable, type.replace(this));
-
+		if(variable.toString == "f_300.2" && type.toString == "i32") {
+			print("")
+		}
 //		if(type.freeVars.exists[content.containsKey(it)]) {
 //			//throw new Exception("did not replace correctly")
 //		} 

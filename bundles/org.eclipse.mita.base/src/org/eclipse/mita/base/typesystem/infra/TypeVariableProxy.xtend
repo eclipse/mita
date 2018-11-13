@@ -9,23 +9,35 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 @EqualsHashCode
 @Accessors
+@FinalFieldsConstructor
 class TypeVariableProxy extends TypeVariable {
+	protected final EReference reference;
 	// name of the origin member we want to resolve
 	protected final QualifiedName targetQID;	
-	protected final EReference reference;
-	
+	protected final boolean isLinkingProxy;
 	
 	new(EObject origin, String name, EReference reference) {
-		this(origin, name, reference, QualifiedName.create(NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim?.split("\\.")));
+		this(origin, name, reference, QualifiedName.create((
+				(if(origin.eGet(reference) !== null) {
+					val obj = origin.eGet(reference);
+					if(obj instanceof NamedElement) {
+						obj.name;
+					}
+				}) ?: NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim
+			)?.split("\\.")), true);
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName qualifiedName) {
-		super(origin, name);
-		this.reference = reference;
-		this.targetQID = qualifiedName;
+		this(origin, name, reference, qualifiedName, false);
+		if(qualifiedName.toString.trim.empty) {
+			print("");
+		}
 	}
 	
 	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {

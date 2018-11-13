@@ -24,15 +24,35 @@ class MitaContainerManager extends StateBasedContainerManager {
 	@Inject
 	protected Provider<XtextResourceSet> resourceSetProvider;
 	
+	protected Iterable<IResourceDescription> typesDescriptions;
 	protected Iterable<IResourceDescription> stdlibDescriptions;
 	protected Iterable<IResourceDescription> dependencyDescriptions;
 	
+	protected XtextResourceSet resourceSet;
+	
+	protected def getResourceSet() {
+		resourceSet ?: (resourceSetProvider.get() => [this.resourceSet = it]);
+	}
+	
+	protected def getTypeDescriptions() {
+		if(this.typesDescriptions === null) {
+			val resourceSet = getResourceSet;
+			this.typesDescriptions = Lists.newArrayList(libraryProvider
+				.standardLibraries
+				.filter[it.lastSegment == "stdlib_types.mita"]
+				.map[ resourceSet.getResource(it, true) ]
+				.map[ resourceDescriptionManager.getResourceDescription(it) ]
+			);
+		}		
+		return this.typesDescriptions;		
+	}
 	
 	protected def getStdlibDescriptions() {
 		if(this.stdlibDescriptions === null) {
-			val resourceSet = resourceSetProvider.get();
+			val resourceSet = getResourceSet;
 			this.stdlibDescriptions = Lists.newArrayList(libraryProvider
 				.standardLibraries
+				.filter[it.lastSegment != "stdlib_types.mita"]
 				.map[ resourceSet.getResource(it, true) ]
 				.map[ resourceDescriptionManager.getResourceDescription(it) ]
 			);
@@ -42,7 +62,7 @@ class MitaContainerManager extends StateBasedContainerManager {
 	
 	protected def getDependencyDescriptions() {
 		if(this.dependencyDescriptions === null) {
-			val resourceSet = resourceSetProvider.get();
+			val resourceSet = getResourceSet;
 			this.dependencyDescriptions = Lists.newArrayList(libraryProvider
 				.libraries
 				.map[ resourceSet.getResource(it, true) ]
@@ -53,7 +73,15 @@ class MitaContainerManager extends StateBasedContainerManager {
 	}
 	
 	override protected createContainer(String handle, IResourceDescriptions resourceDescriptions) {
-		if(handle == STDLIB_CONTAINER_HANDLE) {
+		if(handle == TYPES_CONTAINER_HANDLE) {
+			return new AbstractContainer() {
+				
+				override getResourceDescriptions() {
+					return getTypeDescriptions();
+				}
+				
+			}
+		} else if(handle == STDLIB_CONTAINER_HANDLE) {
 			return new AbstractContainer() {
 				
 				override getResourceDescriptions() {

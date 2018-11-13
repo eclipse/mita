@@ -24,9 +24,11 @@ import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.mita.program.ConfigurationItemValue
+import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.FunctionDefinition
@@ -35,6 +37,7 @@ import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
+import org.eclipse.mita.program.ReferenceExpression
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
@@ -44,8 +47,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.typesystem.types.UnorderedArguments
+import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -152,6 +154,21 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsAssignmentCase asign) {
 		system.computeConstraints(asign.body);
 		return system.computeConstraints(asign.assignmentVariable);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReferenceExpression expr) {
+		val innerType = system.computeConstraints(expr.variable);
+		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.referenceTypeQID);
+		return system.associate(nestInType(system, expr, innerType, referenceTypeVarOrigin, "reference"), expr);
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, DereferenceExpression expr) {
+		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.referenceTypeQID);
+		val resultType = system.newTypeVariable(expr);
+		val outerTypeInstance = system.computeConstraints(expr.expression);
+		val nestedType = new TypeConstructorType(null, "reference", #[resultType]);
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, referenceTypeVarOrigin));
+		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, "PCF:170"));
+		return system.associate(resultType, expr);
 	}
 			
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemResourceSetup setup) {

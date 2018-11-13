@@ -30,6 +30,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 
 @Accessors
 class ConstraintSystem {
@@ -261,6 +262,10 @@ class ConstraintSystem {
 		val csp = systems.map[it.constraintSystemProvider].filterNull.head;
 		val result = systems.fold(csp?.get() ?: new ConstraintSystem(), [r, t|
 			r.instanceCount += t.instanceCount;
+			r.symbolTable.entrySet.filter[t.symbolTable.containsKey(it.key)].forEach[
+				println('''duplicate entry: «it.key» -> «it.value»  ||  «t.symbolTable.get(it.key)»''')
+//				r.constraints.add(new EqualityConstraint(it.value, t.symbolTable.get(it.key), "CS:267 (merge)"))
+			]
 			r.symbolTable.putAll(t.symbolTable);
 			r.constraints.addAll(t.constraints);
 			r.typeClasses.putAll(t.typeClasses);
@@ -289,9 +294,10 @@ class ConstraintSystem {
 		result.instanceCount = instanceCount;
 		result.symbolTable.putAll(symbolTable);
 
-		result.constraints += constraints.map[ it.replaceProxies[ 
-			this.resolveProxy(it, resource, scopeProvider).head
-		] ].force;
+		result.constraints += constraints.map[ 
+			it.replaceProxies[ 
+				this.resolveProxy(it, resource, scopeProvider).head
+			] ].force;
 		result.typeClasses.putAll(typeClasses.mapValues[ 
 			it.replaceProxies([ 
 				this.resolveProxy(it, resource, scopeProvider)
@@ -310,8 +316,10 @@ class ConstraintSystem {
 		if(tvp.origin === null) {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
-
-		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
+		if(tvp.name.startsWith("p_231")) {
+			print("")
+		}
+		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
 			return #[getTypeVariable(tvp.origin.eGet(tvp.reference) as EObject)];
 		}
 
@@ -329,7 +337,7 @@ class ConstraintSystem {
 			scopeProvider.getScope(tvp.origin, tvp.reference);
 			return #[new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
 		}
-		if(tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference) && replacementObjects.size == 1) {
+		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference) && replacementObjects.size == 1) {
 			BaseUtils.ignoreChange(tvp.origin.eResource, [ 
 				tvp.origin.eSet(tvp.reference, replacementObjects.head);
 			]);

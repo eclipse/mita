@@ -69,7 +69,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(!system.isWeaklyUnifiable()) {
 			return new ConstraintSolution(system, null, #[ new UnificationIssue(system, 'Subtype solving cannot terminate') ]);
 		}
-		for(var i = 0; i < 5; i++) {
+		for(var i = 0; i < 10; i++) {
 			println("------------------")
 			println(currentSystem);
 			val simplification = currentSystem.simplify(currentSubstitution, typeResolutionOrigin);

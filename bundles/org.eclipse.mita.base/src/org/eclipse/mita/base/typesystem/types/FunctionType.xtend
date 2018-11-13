@@ -12,12 +12,19 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 @EqualsHashCode
 @Accessors
-@FinalFieldsConstructor
 class FunctionType extends TypeConstructorType {		
 	new(EObject origin, String cons, AbstractType from, AbstractType to) {
-		super(origin, cons, #[from, to]);
-		if(from === null || to === null) {
-			throw new NullPointerException;
+		this(origin, cons, #[from, to], #[]);
+		
+//		if(from === null || to === null) {
+//			throw new NullPointerException;
+//		}
+	}
+	
+	new(EObject origin, String cons, Iterable<AbstractType> typeArgs, Iterable<AbstractType> superTypes) {
+		super(origin, cons, typeArgs, superTypes);
+		if(this.toString == "vec1d_args(anyVec(), f_300.1) → f_249.0") {
+			print("");
 		}
 	}
 	

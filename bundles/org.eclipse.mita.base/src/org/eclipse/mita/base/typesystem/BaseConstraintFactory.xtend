@@ -338,9 +338,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 		
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
-		if(genType.name == "modality") {
-			print("");
-		}
 		val typeParameters = genType.typeParameters;
 		val typeArgs = typeParameters.map[ 
 			system.computeConstraints(it)
@@ -369,6 +366,14 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return new AtomicType(genType, genType.toString);
 	}
 	
+	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, AbstractType inner, AbstractType outerTypeScheme, String outerName) {
+		val outerTypeInstance = system.newTypeVariable(null);
+		val nestedType = new TypeConstructorType(origin, outerName, #[inner]);
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme));
+		system.addConstraint(new ImplicitInstanceConstraint(nestedType, outerTypeInstance));
+		nestedType;
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {	
 		val typeArguments = typeSpecifier.typeArguments;
 //		val type = if(typeSpecifier.type !== null) {
@@ -395,21 +400,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		//val optionalType = typeRegistry.getOptionalType(system, typeSpecifier);
 		val typeWithReferenceModifiers = typeSpecifier.referenceModifiers.flatMap[it.split("").toList].fold(typeWithoutModifiers, [t, __ | 
-			val referenceInstance = system.newTypeVariable(null);
-			val nestedType = new TypeConstructorType(null, "reference", #[t]);
-			system.addConstraint(new ExplicitInstanceConstraint(referenceInstance, referenceTypeVarOrigin));
-			system.addConstraint(new ImplicitInstanceConstraint(nestedType, referenceInstance));
-			nestedType;
+			nestInType(system, null, t, referenceTypeVarOrigin, "reference");
 		])
 		
 		val optionalTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, typeSpecifier, StdlibTypeRegistry.optionalTypeQID);
 
 		val typeWithOptionalModifier = if(typeSpecifier.optional) {
-			val optionalInstance = system.newTypeVariable(null);
-			val nestedType = new TypeConstructorType(null, "optional", #[typeWithReferenceModifiers]);
-			system.addConstraint(new ExplicitInstanceConstraint(optionalInstance, optionalTypeVarOrigin));
-			system.addConstraint(new ImplicitInstanceConstraint(nestedType, optionalInstance));
-			nestedType;
+			nestInType(system, null, typeWithReferenceModifiers, optionalTypeVarOrigin, "optional");
 		}
 		else {
 			typeWithReferenceModifiers;

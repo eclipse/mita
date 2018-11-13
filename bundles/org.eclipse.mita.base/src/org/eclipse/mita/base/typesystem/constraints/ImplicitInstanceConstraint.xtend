@@ -15,6 +15,9 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	new(AbstractType isInstance, AbstractType ofType) {
 		this.isInstance = isInstance;
 		this.ofType = ofType;
+		if(this.toString == "reference<i32> instanceof i32") {
+			print("");
+		}
 	}
 	
 	override getActiveVars() {
