@@ -10,12 +10,19 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
+import org.eclipse.mita.platform.SystemResourceAlias
+import org.eclipse.mita.platform.PlatformPackage
 
 class PlatformConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AbstractSystemResource res) {
 		system.computeConstraintsForChildren(res);
 		return null;
 	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemResourceAlias alias) {
+		return system.associate(system.computeConstraints(alias.delegate), alias);
+		//return system.associate(system.resolveReferenceToSingleAndGetType(alias, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate), alias);
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Modality modality) {
 		// modalities are accessed like `accelerometer.x_axis.read()`. 
 		// Therefore, accelerometer.x_axis needs the type "∗SystemResource -> modality<concreteType>"

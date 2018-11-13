@@ -25,9 +25,9 @@ class LibraryProviderImpl implements ILibraryProvider {
 	}
 	
 	override getLibraries() {
-		return #[];
+//		return #[];
 		// disable the line below to get platforms back
-//		return allLibraries.reject[ isStdlib ]
+		return allLibraries.reject[ isStdlib ]
 	}
 	
 	override getStandardLibraries() {

@@ -8,7 +8,9 @@ import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.resource.containers.StateBasedContainerManager
 import org.eclipse.xtext.resource.impl.AbstractContainer
 import com.google.common.collect.Lists
+import com.google.inject.Singleton
 
+@Singleton
 class MitaContainerManager extends StateBasedContainerManager {
 	
 	public static final String TYPES_CONTAINER_HANDLE = "Mita_Types";
@@ -29,6 +31,10 @@ class MitaContainerManager extends StateBasedContainerManager {
 	protected Iterable<IResourceDescription> dependencyDescriptions;
 	
 	protected XtextResourceSet resourceSet;
+	
+	new() {
+		print("");
+	}
 	
 	protected def getResourceSet() {
 		resourceSet ?: (resourceSetProvider.get() => [this.resourceSet = it]);

@@ -17,6 +17,7 @@ import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import com.google.inject.name.Named
 
 class MitaLinker extends Linker {
 
@@ -35,12 +36,16 @@ class MitaLinker extends Linker {
 	@Inject
 	protected IScopeProvider scopeProvider;
 	
-	@Inject 
+	@Inject @Named("typeLinker")
 	protected MitaTypeLinker typeLinker;
+	
+	@Inject @Named("typeDependentLinker")
+	protected MitaTypeLinker typeDependentLinker;
 
 	override linkModel(EObject model, IDiagnosticConsumer diagnosticsConsumer) {
-		typeLinker.linkModel(model, diagnosticsConsumer)
-		super.linkModel(model, diagnosticsConsumer)
+		typeLinker.linkModel(model, diagnosticsConsumer);
+		typeDependentLinker.linkModel(model, diagnosticsConsumer);
+		super.linkModel(model, diagnosticsConsumer);
 	}
 
 	override ensureLinked(EObject obj, IDiagnosticProducer producer) {
@@ -78,6 +83,9 @@ class MitaLinker extends Linker {
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {
+			if(obj.eResource.URI.lastSegment == "application.mita") {
+				print("")
+			}
 			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
 			
 			val solution = constraintSolver.solve(preparedSystem, obj);
