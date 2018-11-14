@@ -33,13 +33,15 @@ NativeTypeDeclaration returns NativeType:
 	('header' header=STRING)?
 ;
 
-EnumerationDeclaration returns EnumerationType:
+EnumerationDeclaration returns SumType:
+	{SumType}
+	typeKind=TypeKind
 	(exported?='export')?
-	'enum' name=ID '{' enumerator+=Enumerator (','enumerator+=Enumerator)*
+	'enum' name=ID '{' alternatives += Enumerator (',' alternatives += Enumerator)*
 	'}';
 
-Enumerator returns Enumerator:
-	name=ID typeSpecifier=NullTypeSpecifier;
+Enumerator returns Singleton:
+	name=ID constructor=SumSubTypeConstructor;
 
 NullTypeSpecifier returns NullTypeSpecifier:
 	{NullTypeSpecifier}

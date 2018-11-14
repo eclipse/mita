@@ -571,7 +571,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					val confItem = container.item;
 					val typ = confItem.type;
 					if(typ instanceof SumType) {
-						return Scopes.scopeFor(typ.alternatives);
+						return Scopes.scopeFor(typ.alternatives.map[it.constructor]);
 					} else if(typ instanceof StructureType) {
 						return Scopes.scopeFor(#[typ]);
 					}

@@ -18,9 +18,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	protected final AbstractType superType;
 	
 	new(AbstractType sub, AbstractType top) {
-		if(sub === null || top === null) {
-			throw new NullPointerException;
-		}
+		
 		subType = sub;
 		superType = top;
 		if(this.toString == "string ⩽ f_0") {

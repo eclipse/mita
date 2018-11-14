@@ -158,9 +158,6 @@ class StdlibTypeRegistry {
 		}
 	}
 	
-	def Set<AbstractType> getSuperTypes(ConstraintSystem s, AbstractType t) {
-		return getSuperTypes(s, t, null);
-	}
 	def Set<AbstractType> getSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
 		val idxs = s.explicitSubtypeRelations.reverseMap.get(t) ?: #[];
 		val explicitSuperTypes = #[t] + idxs.flatMap[s.explicitSubtypeRelations.getSuccessors(it)];

@@ -55,6 +55,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		system.computeConstraintsForChildren(spec);
 		return null;
 	}
+
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
 		println('''Prog: «program.eResource»''');
@@ -179,7 +180,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val leftSide = system.resolveReferenceToSingleAndGetType(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item);
 		val rightSide = system.computeConstraints(configItemValue.value);
 		system.addConstraint(new SubtypeConstraint(rightSide, leftSide));
-		return leftSide;
+		return system.associate(leftSide, configItemValue);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SignalInstance sigInst) {

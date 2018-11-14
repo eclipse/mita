@@ -380,7 +380,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(subTypes.contains(sub)) {
 			return SimplificationResult.success(system, substitution);
 		}
-		val topTypes = typeRegistry.getSuperTypes(system, sub);
+		val topTypes = typeRegistry.getSuperTypes(system, sub, typeResolutionOrigin);
 		val similarTopTypes = topTypes.filter[it.class == top.class];
 		val superTypesWithSameName = topTypes.filter[it.name == top.name];
 		if(topTypes.contains(top)) {
