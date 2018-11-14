@@ -13,6 +13,7 @@ import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
+import org.eclipse.mita.base.expressions.NumericalMultiplyDivideExpression
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
@@ -56,16 +57,16 @@ import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.expressions.Argument
-import org.eclipse.mita.base.types.TypeConstructor
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.expressions.MultiplicativeOperator
+import org.eclipse.mita.base.expressions.LogicalRelationExpression
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -268,14 +269,33 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalAddSubtractExpression expr) {
-		val opQID = if(expr.operator === AdditiveOperator.PLUS) {
-			StdlibTypeRegistry.plusFunctionQID;
-		} else {
-			StdlibTypeRegistry.minusFunctionQID;
+		val opQID = switch(expr.operator) {
+			case(AdditiveOperator.PLUS): StdlibTypeRegistry.plusFunctionQID
+			case(AdditiveOperator.MINUS): StdlibTypeRegistry.minusFunctionQID
 		}
+		return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalMultiplyDivideExpression expr) {
+		val opQID = switch(expr.operator) {
+			case(MultiplicativeOperator.MUL): StdlibTypeRegistry.timesFunctionQID
+			case(MultiplicativeOperator.DIV): StdlibTypeRegistry.divisionFunctionQID
+			case(MultiplicativeOperator.MOD): StdlibTypeRegistry.moduloFunctionQID
+		}
+		return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, LogicalRelationExpression expr) {
+		val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
+		system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.leftOperand), "BCF:290"))
+		system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.rightOperand), "BCF:291"))
+		return system.associate(boolType, expr);
+	}
+	
+	protected def TypeVariable computeConstraintsForBuiltinOperation(ConstraintSystem system, EObject expr, QualifiedName opQID, List<Expression> operands) {
 		val operations = typeRegistry.getModelObjects(system, expr, opQID, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		
-		val resultType = system.computeConstraintsForFunctionCall(expr, null, StdlibTypeRegistry.plusFunctionQID.lastSegment, #[expr.leftOperand, expr.rightOperand], operations);
+		val resultType = system.computeConstraintsForFunctionCall(expr, null, opQID.lastSegment, operands, operations);
 		return system.associate(resultType, expr);
 	}
 
