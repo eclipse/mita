@@ -46,8 +46,6 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
 class PlatformDSLScopeProvider extends AbstractPlatformDSLScopeProvider {
 
 	@Inject
-	private ITypeSystemInferrer typeInferrer;
-	@Inject
 	IQualifiedNameProvider qualifiedNameProvider;
 
 	def IScope scope_ElementReferenceExpression_reference(EObject context, EReference ref) {

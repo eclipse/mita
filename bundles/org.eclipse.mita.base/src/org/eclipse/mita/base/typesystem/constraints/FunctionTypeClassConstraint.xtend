@@ -34,7 +34,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		this(typ, qn, functionCall, functionReference, returnTypeTV, null);
 	}
 		
-	override onResolve(ConstraintSystem cs, Substitution sub, Operation op, AbstractType at) {
+	override onResolve(ConstraintSystem cs, Substitution sub, EObject op, AbstractType at) {
 		if(functionReference !== null) {
 			//functionCall.eSet(functionReference, op);
 		}

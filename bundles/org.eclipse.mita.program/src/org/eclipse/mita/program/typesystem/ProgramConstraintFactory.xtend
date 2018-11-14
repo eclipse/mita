@@ -183,27 +183,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SignalInstance sigInst) {
-		val init = sigInst.initialization;
-		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
-		val signal = resolveReferenceToSingleAndLink(init, featureToResolve);
-		// args -> concreteType
-		val signalType = system.getTypeVariable(signal);
-		// concreteType
-		val retTypeVar = system.newTypeVariable(null);
-		val supposedSignalType = new FunctionType(null, "", system.newTypeVariable(null), retTypeVar);
-		system.addConstraint(new EqualityConstraint(signalType, supposedSignalType, "PCF:216"));
-		// \T. siginst<T>
-		val sigInstType = typeRegistry.getTypeModelObjectProxy(system, sigInst, StdlibTypeRegistry.sigInstTypeQID);
-		// sigInst<T>
-		val instantiation = system.newTypeVariable(null);
-		system.addConstraint(new ExplicitInstanceConstraint(instantiation, sigInstType));
-		// sigInst<concreteType>
-		val returnType = new TypeConstructorType(null, "siginst", #[retTypeVar]);
-		// sigInst<T> = sigInst<concreteType>
-		system.addConstraint(new EqualityConstraint(instantiation, returnType, "PCF:225"));
-		
-		val actualType = new FunctionType(sigInst, sigInst.name, new ProdType(null, '''«signal»__args''', #[signalType], #[]), returnType);
-		system.associate(actualType, sigInst);
+		system.associate(system.computeConstraints(sigInst.initialization), sigInst);
 	}
 	
 	protected def EObject getConstructorFromType(EObject rawReference) {

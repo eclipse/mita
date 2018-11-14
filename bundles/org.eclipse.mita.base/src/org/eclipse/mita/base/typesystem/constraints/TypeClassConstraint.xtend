@@ -1,6 +1,6 @@
 package org.eclipse.mita.base.typesystem.constraints
 
-import org.eclipse.mita.base.types.Operation
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.solver.Substitution
@@ -17,7 +17,7 @@ abstract class TypeClassConstraint extends AbstractTypeConstraint {
 	
 	protected val AbstractType typ;
 	protected val QualifiedName instanceOfQN;
-	public def SimplificationResult onResolve(ConstraintSystem cs, Substitution sub, Operation op, AbstractType at);
+	public def SimplificationResult onResolve(ConstraintSystem cs, Substitution sub, EObject op, AbstractType at);
 	
 	override getActiveVars() {
 		return typ.freeVars;

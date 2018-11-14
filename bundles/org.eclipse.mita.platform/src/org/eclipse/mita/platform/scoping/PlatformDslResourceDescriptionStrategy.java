@@ -39,12 +39,12 @@ import com.google.common.collect.ImmutableList;
 public class PlatformDslResourceDescriptionStrategy extends BaseResourceDescriptionStrategy {
 
 	private ImmutableList<EClass> SUPPRESSED_OBJECTS = ImmutableList.of(
-			PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE, // we expose resources bound to the platform
-			PlatformPackage.Literals.BUS, // we expose resources bound to the platform
-			PlatformPackage.Literals.CONNECTIVITY, // we expose resources bound to the platform
-			PlatformPackage.Literals.INPUT_OUTPUT, // we expose resources bound to the platform
-			PlatformPackage.Literals.SENSOR, // we expose resources bound to the platform
-			PlatformPackage.Literals.SYSTEM_RESOURCE_ALIAS // we expose resources bound to the platform
+//			PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE, // we expose resources bound to the platform
+//			PlatformPackage.Literals.BUS, // we expose resources bound to the platform
+//			PlatformPackage.Literals.CONNECTIVITY, // we expose resources bound to the platform
+//			PlatformPackage.Literals.INPUT_OUTPUT, // we expose resources bound to the platform
+//			PlatformPackage.Literals.SENSOR, // we expose resources bound to the platform
+//			PlatformPackage.Literals.SYSTEM_RESOURCE_ALIAS // we expose resources bound to the platform
 			);
 	
 	void export(EObject obj, IAcceptor<IEObjectDescription> acceptor) {

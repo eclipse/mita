@@ -30,6 +30,7 @@ SystemSpecification returns platform::SystemSpecification:
 
 PlatformSpecification returns platform::Platform: 
 	'platform' name=ID '{' 
+		typeKind=TypeKind
 		'module' module=STRING
 		('validator' validator=STRING)?
 	(
@@ -60,6 +61,7 @@ AbstractSystemResource returns platform::AbstractSystemResource:
 	| 'io' {platform::InputOutput}
 	| 'bus' {platform::Bus}	
 	)
+	typeKind=TypeKind
 	(instantiable=Instantiability)?
 	name=ID  '{'
 		'generator' generator=STRING

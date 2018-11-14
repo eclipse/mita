@@ -59,8 +59,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	@Inject
 	protected StdlibTypeRegistry typeRegistry;
 	
+	val enableDebug = true;
+	
 	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
-		val debugOutput = typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
+		val debugOutput = enableDebug && typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
 		
 		var currentSystem = system;
 		var currentSubstitution = Substitution.EMPTY;
@@ -107,7 +109,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected def ConstraintSolution solveSubtypeConstraints(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
-		val debugOutput = typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
+		val debugOutput = enableDebug && typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
 		
 		val constraintGraphAndSubst = system.buildConstraintGraph(substitution, typeResolutionOrigin);
 		if(!constraintGraphAndSubst.value.valid) {
@@ -195,8 +197,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ExplicitInstanceConstraint constraint) {
 		val instance = constraint.typeScheme.instantiate(system);
-		println(instance);
-		println(constraint.instance);
 		val instanceType = instance.value
 		val resultSystem = system.plus(
 			new EqualityConstraint(constraint.instance, instanceType, "CSS:133")
@@ -295,11 +295,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val processedResults = processedResultsUnsorted
 				.sortBy[it.distanceToTargetType].toList;
 			val result = processedResults.findFirst[
-				it.unificationResult.valid && it.function instanceof Operation
+				it.unificationResult.valid //&& it.function instanceof Operation
 			]
 			if(result !== null) {
 				val sub = result.unificationResult.substitution;
-				return constraint.onResolve(system, sub, result.function as Operation, result.functionType);
+				return constraint.onResolve(system, sub, result.function, result.functionType);
 			}
 		}
 		return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «refType» not instance of «typeClass»'''))
@@ -482,7 +482,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 	protected def Pair<ConstraintGraph, UnificationResult> buildConstraintGraph(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
 		val gWithCycles = constraintGraphProvider.get(system, typeResolutionOrigin);
-		println(gWithCycles.toGraphviz);
+		if(enableDebug) {
+			println(gWithCycles.toGraphviz);
+		}
 		val finalState = new Object() {
 			var Substitution s = substitution;
 			var Boolean success = true;
@@ -547,7 +549,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					return null -> UnificationResult.failure(v, "CSS: Unable to find valid supertype for " + v.name);
 				}
 			}
-			println(graph.toGraphviz);
+			if(enableDebug) {
+				println(graph.toGraphviz);
+			}
 		}
 		return graph -> UnificationResult.success(resultSub);
 	}

@@ -25,7 +25,7 @@ class BaseKind extends AbstractBaseType {
 	}
 	
 	override toString() {
-		return '''∗«name»'''
+		return '''∗«IF kindOf instanceof TypeVariable»«name»«ELSE»«kindOf»«ENDIF»'''
 	}
 	
 	override toGraphviz() {
