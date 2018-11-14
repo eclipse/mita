@@ -45,7 +45,7 @@ SystemResourceEvent returns platform::SystemResourceEvent:
 ;
 
 SystemResourceAlias returns platform::SystemResourceAlias: 
-	'alias' name=ID 'for' delegate=[platform::AbstractSystemResource]
+	'alias' name=ID typeKind=TypeKind 'for' delegate=[platform::AbstractSystemResource]
 ;
 
 enum Instantiability returns platform::Instantiability: 

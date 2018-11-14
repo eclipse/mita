@@ -23,7 +23,7 @@ class FunctionType extends TypeConstructorType {
 	
 	new(EObject origin, String cons, Iterable<AbstractType> typeArgs, Iterable<AbstractType> superTypes) {
 		super(origin, cons, typeArgs, superTypes);
-		if(this.toString == "vec1d_args(anyVec(), f_300.1) → f_249.0") {
+		if(this.toString == "x_axis_args(∗string) → modality<i32>") {
 			print("");
 		}
 	}

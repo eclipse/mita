@@ -59,6 +59,14 @@ class ConstraintSystem {
 	}
 	
 	
+	def TypeVariable getTypeVariable(EObject obj, String subfeature) {
+		val baseUri = EcoreUtil.getURI(obj);
+		val subUri = baseUri.appendFragment(baseUri.fragment + "." + subfeature)
+		return getOrCreate(obj, subUri, [
+			newTypeVariable(it)
+		])
+	}
+	
 	def TypeVariable getTypeVariable(EObject obj) {
 		val uri = EcoreUtil.getURI(obj);
 
@@ -316,7 +324,7 @@ class ConstraintSystem {
 		if(tvp.origin === null) {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
-		if(tvp.name.startsWith("p_534")) {
+		if(tvp.name.startsWith("p_21.0")) {
 			print("")
 		}
 		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
@@ -344,7 +352,11 @@ class ConstraintSystem {
 		}
 		
 		return replacementObjects.map[
-			this.getTypeVariable(it) as AbstractType
+			val uri = EcoreUtil.getURI(it);
+			if(!symbolTable.containsKey(uri)) {
+				println('''introducing «uri»!''');
+			}
+			this.getTypeVariable(it) as AbstractType;
 		].force;
 	}
 	

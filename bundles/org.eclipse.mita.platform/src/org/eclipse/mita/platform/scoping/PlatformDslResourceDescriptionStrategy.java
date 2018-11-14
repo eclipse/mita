@@ -76,7 +76,7 @@ public class PlatformDslResourceDescriptionStrategy extends BaseResourceDescript
 			export(eObject, acceptor);
 			return true;
 		} else {
-			return super.createEObjectDescriptions(eObject, acceptor);			
+			return super.createEObjectDescriptions(eObject, acceptor);
 		}
 	}
 

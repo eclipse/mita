@@ -23,7 +23,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		}
 		subType = sub;
 		superType = top;
-		if(this.toString == "f_116.0 ⩽ f_300.2") {
+		if(this.toString == "string ⩽ f_0") {
 			print("")
 		}
 	}

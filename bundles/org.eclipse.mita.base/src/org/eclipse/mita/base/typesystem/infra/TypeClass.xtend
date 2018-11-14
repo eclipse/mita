@@ -73,7 +73,7 @@ class TypeClassProxy extends TypeClass {
 		val elements = typeVariableResolver.apply(toResolve).toList;
 		return new TypeClass(elements.map[tv |
 			val origin = tv.origin; 
-			tv -> if(origin.eIsProxy) { 
+			tv -> if(origin?.eIsProxy) { 
 				objectResolver.apply((origin as EObjectImpl).eProxyURI);
 			} else {
 				origin
