@@ -546,9 +546,15 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			}
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 			// unqualified resolving of parameter names
-			val container = (context.eContainer as ElementReferenceExpression).reference;
-			
-			return ModelUtils.getAccessorParameters(container)
+			val container = EcoreUtil2.getContainerOfType(context.eContainer, ElementReferenceExpression);
+			if(container.reference === null) {
+				val erefTxt = NodeModelUtils.findNodesForFeature(container, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text?.trim;
+				val systemResourceSetup = EcoreUtil2.getContainerOfType(container.eContainer, SystemResourceSetup);
+				val systemResourceTxt = NodeModelUtils.findNodesForFeature(systemResourceSetup, ProgramPackage.eINSTANCE.systemResourceSetup_Type).head?.text?.trim;
+				val normalizer = #[new ImportNormalizer(QualifiedName.create(systemResourceTxt, erefTxt), true, false)]
+				return new ImportScope(normalizer, originalScope, null, TypesPackage.eINSTANCE.parameter, false);
+			}
+			return ModelUtils.getAccessorParameters(container.reference)
 				.transform[parameters | Scopes.scopeFor(parameters)]
 				.or(originalScope)		
 		}
