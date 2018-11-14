@@ -39,7 +39,7 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new JavaClassInstanceConstraint(what.map(f), javaClass);
+		return new JavaClassInstanceConstraint(errorMessage, what.map(f), javaClass);
 	}
 	override getOperator() {
 		return "java instanceof"

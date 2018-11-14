@@ -12,7 +12,8 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	protected final AbstractType isInstance;
 	protected final AbstractType ofType;
 	
-	new(AbstractType isInstance, AbstractType ofType) {
+	new(AbstractType isInstance, AbstractType ofType, String errorMessage) {
+		super(errorMessage);
 		this.isInstance = isInstance;
 		this.ofType = ofType;
 		if(this.toString == "reference<i32> instanceof i32") {
@@ -41,7 +42,7 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f));
+		return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f), errorMessage);
 	}
 		
 	override getOperator() {

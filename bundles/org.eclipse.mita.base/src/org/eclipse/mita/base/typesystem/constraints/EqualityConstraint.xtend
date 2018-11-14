@@ -10,12 +10,11 @@ import org.eclipse.mita.base.util.BaseUtils
 class EqualityConstraint extends AbstractTypeConstraint {
 	protected final AbstractType left;
 	protected final AbstractType right;
-	protected val String source;
 
 	new(AbstractType left, AbstractType right, String source) {
+		super(source);
 		this.left = left;
 		this.right = right;
-		this.source = source;
 		if(this.toString == "f_247.0 ≡ vec1d_args(anyVec(), f_242.0) → f_246.0") {
 			print("");
 		}
@@ -45,8 +44,8 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		val newL = f.apply(left);
 		val newR = f.apply(right);
 		if(left != newL || right != newR) {
-			return new EqualityConstraint(newL, newR, '''EC:«BaseUtils.lineNumber» -> «source»''');
-		}
+			return new EqualityConstraint(newL, newR, '''EC:«BaseUtils.lineNumber» -> «errorMessage»''');
+		} 
 		else {
 			return this;
 		}

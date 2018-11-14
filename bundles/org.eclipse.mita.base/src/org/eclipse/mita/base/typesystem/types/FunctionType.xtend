@@ -49,11 +49,11 @@ class FunctionType extends TypeConstructorType {
 	
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
 		if(typeArgumentIdx == 1) {
-			return new SubtypeConstraint(tau, sigma);
+			return new SubtypeConstraint(tau, sigma, '''«tau» is not subtype of «sigma»''');
 		}
 		else {
 			// function arguments are contravariant
-			return new SubtypeConstraint(sigma, tau);
+			return new SubtypeConstraint(sigma, tau, '''«tau» is not subtype of «sigma»''');
 		}
 	}
 	

@@ -17,7 +17,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	protected final AbstractType subType;
 	protected final AbstractType superType;
 	
-	new(AbstractType sub, AbstractType top) {
+	new(AbstractType sub, AbstractType top, String errorMessage) {
+		super(errorMessage);
 		
 		subType = sub;
 		superType = top;
@@ -53,7 +54,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		return new SubtypeConstraint(subType.map(f), superType.map(f));
+		return new SubtypeConstraint(subType.map(f), superType.map(f), errorMessage);
 	}
 	
 	override getOperator() {

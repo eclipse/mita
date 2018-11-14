@@ -163,6 +163,17 @@ class MitaTypesDebugView extends ViewPart {
             }
             
         });
+        viewer.createTableViewerColumn("Error Message", 100, 0)
+			.setLabelProvider(new ColumnLabelProvider() {
+            
+            override String getText(Object element) {
+                if(element instanceof AbstractTypeConstraint) {
+                	return element.errorMessage
+                }
+                return "";
+            }
+            
+        });
 	}
 	
 	protected val listener = new ISelectionListener() {

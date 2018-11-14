@@ -18,6 +18,8 @@ import com.google.inject.name.Names
 import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
+import org.eclipse.mita.base.scoping.MitaContainerManager
+import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
@@ -80,5 +82,12 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 //	override bindXtextResourceSet() {
 //		return MitaResourceSet
 //	}
+	override bindIContainer$Manager() {
+		return MitaContainerManager;
+	}
+
+	override bindIAllContainersState$Provider() {
+		return MitaResourceSetBasedAllContainersState.Provider;
+	}
 
 }

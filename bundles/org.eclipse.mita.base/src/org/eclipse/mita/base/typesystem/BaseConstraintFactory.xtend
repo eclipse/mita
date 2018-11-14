@@ -171,6 +171,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {
 		val argTypes = expression.map[system.computeConstraints(it) as AbstractType].force();
+		return system.computeArgumentConstraintsWithTypes(functionName, argTypes);
+	}
+	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, String functionName, Iterable<AbstractType> argTypes) {
 		return new ProdType(null, functionName + "_args", argTypes, #[]);
 	}
 	
@@ -225,7 +228,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// a -> b
 		val referencedFunctionType = new FunctionType(null, functionName, argType, resultType);
 		// a -> B >: A -> B
-		system.addConstraint(new SubtypeConstraint(refType, referencedFunctionType));
+		system.addConstraint(new SubtypeConstraint(refType, referencedFunctionType, '''Function «functionName» cannot be used here'''));
 		
 		val useTypeClassProxy = !candidates.filter(TypeVariableProxy).empty
 		if(candidates.size > 1 || useTypeClassProxy) {
@@ -245,7 +248,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 					]	
 				]
 			}
-			system.addConstraint(new FunctionTypeClassConstraint(fromTV, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
+			system.addConstraint(new FunctionTypeClassConstraint('''Function «functionName» cannot be used here''', fromTV, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
 		}
 		else {
 			val funRef = candidates.head;
@@ -253,7 +256,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				functionCall.eSet(functionReference, funRef.origin);	
 			}
 			// the actual function should be a subtype of the expected function so it can be used here
-			system.addConstraint(new SubtypeConstraint(funRef, refType));
+			system.addConstraint(new SubtypeConstraint(funRef, refType, '''Function «functionName» cannot be used here'''));
 		}
 		// B
 		resultType;
@@ -263,8 +266,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val realType = system.computeConstraints(expr.operand);
 		val castType = system.resolveReferenceToSingleAndGetType(expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type);
 		// can only cast from and to numeric types
-		system.addConstraint(new JavaClassInstanceConstraint(realType, NumericType));
-		system.addConstraint(new JavaClassInstanceConstraint(castType, NumericType));
+		system.addConstraint(new JavaClassInstanceConstraint('''«expr.operand» may not be casted''', realType, NumericType));
+		system.addConstraint(new JavaClassInstanceConstraint('''May not cast to «castType»''', castType, NumericType));
 		return system.associate(castType, expr);
 	}
 
@@ -389,8 +392,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, AbstractType inner, AbstractType outerTypeScheme, String outerName) {
 		val outerTypeInstance = system.newTypeVariable(null);
 		val nestedType = new TypeConstructorType(origin, outerName, #[inner]);
-		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme));
-		system.addConstraint(new ImplicitInstanceConstraint(nestedType, outerTypeInstance));
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, '''«origin» is not instance of «outerName»'''));
+		system.addConstraint(new ImplicitInstanceConstraint(nestedType, outerTypeInstance, '''«origin» is not instance of «outerName»'''));
 		nestedType;
 	}
 	
@@ -411,8 +414,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val typeName = typeSpecifier.type?.name ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)?.head?.text?.trim;
 			val typeInstance = new TypeConstructorType(null, typeName, typeArgs);
 			val typeInstanceVar = system.newTypeVariable(null);
-			system.addConstraint(new ExplicitInstanceConstraint(typeInstanceVar, type));
-			system.addConstraint(new ImplicitInstanceConstraint(typeInstance, typeInstanceVar));
+			system.addConstraint(new ExplicitInstanceConstraint(typeInstanceVar, type, '''«typeSpecifier» is not instance of «typeName»'''));
+			system.addConstraint(new ImplicitInstanceConstraint(typeInstance, typeInstanceVar, '''«typeSpecifier» is not instance of «typeName»'''));
 			typeInstance;
 		}
 		
@@ -457,7 +460,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				println('''BCF: Unhandled operator: «expr.operator»''')	
 			}
 		}
-		println('''BCF: Unhandled operand: «operand.eClass.name»''')
+		println('''BCF: Unhandled operand: «operand?.eClass.name»''')
 		return system.associate(system.computeConstraints(operand), expr);
 	}
 	

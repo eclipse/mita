@@ -195,7 +195,7 @@ class SumSubTypeConstructor extends TypeConstructor {
 	op void generateMembers() {
 		if(sumTypeParameter === null) {
 			sumTypeParameter = TypesFactory.eINSTANCE.createParameter => [ p | 
-				p.name = "superType";
+				p.name = "self";
 				p.typeSpecifier = TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ ts |
 					ts.^type = (this.eContainer.eContainer as SumType).typeKind;
 				]

@@ -64,7 +64,6 @@ class MitaLinker extends Linker {
 		val resource = obj.eResource;
 		val resourceDescriptions = resourceDescriptionsProvider.get(resource.resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
-		val thisExportedObjects = thisResourceDescription.exportedObjects;
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		
 		

@@ -23,7 +23,7 @@ class SumType extends TypeConstructorType {
 	}
 			
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		return new SubtypeConstraint(tau, sigma);
+		return new SubtypeConstraint(tau, sigma, '''«tau» is not subtype of «sigma»''');
 	}
 	
 	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {

@@ -30,8 +30,8 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	@Inject
 	val Provider<ConstraintSystem> constraintSystemProvider;
 	
-	new(AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV) {
-		this(typ, qn, functionCall, functionReference, returnTypeTV, null);
+	new(AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV, String errorMessage) {
+		this(errorMessage, typ, qn, functionCall, functionReference, returnTypeTV, null);
 	}
 		
 	override onResolve(ConstraintSystem cs, Substitution sub, EObject op, AbstractType at) {
@@ -41,21 +41,21 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		val nc = constraintSystemProvider.get(); 
 		if(at instanceof FunctionType) {
 			// the returned type should be smaller than the expected type so it can be assigned
-			nc.addConstraint(new SubtypeConstraint(at.to, returnTypeTV));
+			nc.addConstraint(new SubtypeConstraint(at.to, returnTypeTV, errorMessage));
 			return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)
 		}
 		else {
-			return SimplificationResult.failure(new UnificationIssue(at, '''«at» not a function type'''))
+			return SimplificationResult.failure(new UnificationIssue(at, '''«this.errorMessage» -> «at» not a function type'''))
 		}
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newType = typ.map(f);
-		return new FunctionTypeClassConstraint(newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
+		return new FunctionTypeClassConstraint(errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
 	}
 	
 	override modifyNames(String suffix) {
-		return new FunctionTypeClassConstraint(typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, constraintSystemProvider);
+		return new FunctionTypeClassConstraint(errorMessage, typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, constraintSystemProvider);
 	}
 	
 	override isAtomic() {

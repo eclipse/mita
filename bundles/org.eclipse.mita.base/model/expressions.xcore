@@ -276,6 +276,13 @@ class FeatureCall extends ElementReferenceExpression {
 		arguments.head.value.toString + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "")
 	}
 }
+
+class FeatureCallWithoutFeature extends FeatureCall {
+	op String toString() {
+		return "<auto>." + super.toString
+	}
+}
+
 class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperationCallExpression {
 	refers EObject reference
 	

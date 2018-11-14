@@ -1,10 +1,15 @@
 package org.eclipse.mita.program.typesystem
 
+import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
@@ -47,7 +52,6 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -100,7 +104,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae) {
 		if(ae.operator == AssignmentOperator.ASSIGN) {
-			system.addConstraint(new SubtypeConstraint(system.computeConstraints(ae.expression), system.computeConstraints(ae.varRef)));
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(ae.expression), system.computeConstraints(ae.varRef), '''«ae.expression» cannot be assigned to «ae.varRef»'''));
 		}
 		else {
 			println('''PCF: computeConstraints.AssignmentExpression not implemented for «ae.operator»''');
@@ -123,7 +127,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		
 		var TypeVariable result;
 		if(explicitType !== null && inferredType !== null) {
-			system.addConstraint(new SubtypeConstraint(inferredType, explicitType));
+			system.addConstraint(new SubtypeConstraint(inferredType, explicitType, '''«vardecl.initialization» cannot be assigned to variables of type «vardecl.typeSpecifier»'''));
 			result = explicitType;
 		} else if(explicitType !== null || inferredType !== null) {
 			result = explicitType ?: inferredType;
@@ -167,7 +171,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val resultType = system.newTypeVariable(expr);
 		val outerTypeInstance = system.computeConstraints(expr.expression);
 		val nestedType = new TypeConstructorType(null, "reference", #[resultType]);
-		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, referenceTypeVarOrigin));
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, referenceTypeVarOrigin, '''Internal error: failed to instantiate reference<T>'''));
 		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, "PCF:170"));
 		return system.associate(resultType, expr);
 	}
@@ -179,7 +183,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConfigurationItemValue configItemValue) {
 		val leftSide = system.resolveReferenceToSingleAndGetType(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item);
 		val rightSide = system.computeConstraints(configItemValue.value);
-		system.addConstraint(new SubtypeConstraint(rightSide, leftSide));
+		system.addConstraint(new SubtypeConstraint(rightSide, leftSide, '''«configItemValue.value» not valid for «NodeModelUtils.findNodesForFeature(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item).head?.text?.trim»'''));
 		return system.associate(leftSide, configItemValue);
 	}
 	
@@ -220,21 +224,41 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			if(candidates.empty) {
 				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 			}
+						
+			val argumentParamsAndValues = varOrFun.arguments.indexed.map[
+				if(it.key == 0 && varOrFun instanceof FeatureCall) {
+					"self" -> (it.value -> it.value.value)
+				}
+				else {
+					NodeModelUtils.findNodesForFeature(it.value, ExpressionsPackage.eINSTANCE.argument_Parameter).head?.text -> (it.value -> it.value.value)
+				}
+			]
 			
-			val argumentParamsAndValues = varOrFun.arguments.map[NodeModelUtils.findNodesForFeature(it, ExpressionsPackage.eINSTANCE.argument_Parameter).head?.text -> (it -> it.value)]
-			
-			val argType = if(argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
-				val argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
+			val argType = if(argumentParamsAndValues.forall[!it.key.nullOrEmpty] && argumentParamsAndValues.size > 1) {
+				val List<Pair<Pair<String, Pair<Argument, Expression>>, Pair<AbstractType, AbstractType>>> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
 					val arg = it.value.key;
 					val aValue = it.value.value;
-					it.key -> (system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType -> system.computeConstraints(aValue) as AbstractType);
+					it -> (system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType -> system.computeConstraints(aValue) as AbstractType);
 				].force
 				argumentParamTypesAndValueTypes.forEach[
-					system.addConstraint(new SubtypeConstraint(it.value.value, it.value.key));
+					system.addConstraint(new SubtypeConstraint(it.value.value, it.value.key, '''«it.key.value» not compatible with «it.key.key»'''));
 				]
-				new UnorderedArguments(null, txt + "_args", argumentParamTypesAndValueTypes.map[it.key -> it.value.value]);
+				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
+					val tv = system.newTypeVariable(null) as AbstractType;
+					(#[("self" -> (null as Argument -> null as Expression)) -> (tv -> tv) ] + argumentParamTypesAndValueTypes).force;
+				}
+				else {
+					argumentParamTypesAndValueTypes
+				}
+				new UnorderedArguments(null, txt + "_args", withAutoFirstArg.map[it.key.key -> it.value.value]);
 			} else {
-				system.computeArgumentConstraints(txt, varOrFun.arguments.map[it.value].force);
+				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {
+					#[system.newTypeVariable(null) as AbstractType] + varOrFun.arguments.map[system.computeConstraints(it.value) as AbstractType]
+				}
+				else {
+					varOrFun.arguments.map[system.computeConstraints(it.value) as AbstractType];
+				}
+				system.computeArgumentConstraintsWithTypes(txt, args.force);
 			}
 			
 			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argType, candidates);
@@ -271,7 +295,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			system.associate(system.computeConstraints(statement.value), statement);
 		}
 
-		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar));
+		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar, '''Can't return «statement.value»'''));
 		return returnValVar;	
 	}
 }

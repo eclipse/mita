@@ -108,26 +108,27 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def JavaClassInstanceConstraint fromValueObject(SerializedJavaClassInstanceConstraint obj) {
-		return new JavaClassInstanceConstraint(obj.what.fromValueObject() as AbstractType, Class.forName(obj.javaClass));
+		return new JavaClassInstanceConstraint(obj.errorMessage, obj.what.fromValueObject() as AbstractType, Class.forName(obj.javaClass));
 	}
 	
 	protected dispatch def EqualityConstraint fromValueObject(SerializedEqualityConstraint obj) {
-		return new EqualityConstraint(obj.left.fromValueObject() as AbstractType, obj.right.fromValueObject() as AbstractType, obj.source);
+		return new EqualityConstraint(obj.left.fromValueObject() as AbstractType, obj.right.fromValueObject() as AbstractType, obj.errorMessage);
 	}
 	
 	protected dispatch def ExplicitInstanceConstraint fromValueObject(SerializedExplicitInstanceConstraint obj) {
-		return new ExplicitInstanceConstraint(obj.instance.fromValueObject() as AbstractType, obj.typeScheme.fromValueObject() as AbstractType)
+		return new ExplicitInstanceConstraint(obj.instance.fromValueObject() as AbstractType, obj.typeScheme.fromValueObject() as AbstractType, obj.errorMessage);
 	}
 	protected dispatch def ImplicitInstanceConstraint fromValueObject(SerializedImplicitInstanceConstraint obj) {
-		return new ImplicitInstanceConstraint(obj.isInstance.fromValueObject() as AbstractType, obj.ofType.fromValueObject() as AbstractType)
+		return new ImplicitInstanceConstraint(obj.isInstance.fromValueObject() as AbstractType, obj.ofType.fromValueObject() as AbstractType, obj.errorMessage)
 	}
 	
 	protected dispatch def SubtypeConstraint fromValueObject(SerializedSubtypeConstraint obj) {
-		return new SubtypeConstraint(obj.subType.fromValueObject() as AbstractType, obj.superType.fromValueObject() as AbstractType)
+		return new SubtypeConstraint(obj.subType.fromValueObject() as AbstractType, obj.superType.fromValueObject() as AbstractType, obj.errorMessage)
 	}
 	
 	protected dispatch def TypeClassConstraint fromValueObject(SerializedFunctionTypeClassConstraint obj) {
 		return new FunctionTypeClassConstraint(
+			obj.errorMessage,
 			obj.type.fromValueObject() as AbstractType,
 			obj.instanceOfQN.toQualifiedName, 
 			obj.functionCall.resolveEObject, 
@@ -245,7 +246,7 @@ class SerializationAdapter {
 		throw new NullPointerException;
 	}
 	protected dispatch def SerializedObject toValueObject(Void nul) {
-		throw new NullPointerException;
+		return null;
 	}
 	protected dispatch def SerializedObject toValueObject(EReference reference) {
 		return new SerializedEReference => [
@@ -271,7 +272,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(EqualityConstraint obj) {
 		new SerializedEqualityConstraint => [
-			source = obj.source
+			errorMessage = obj.errorMessage
 			left = obj.left.toValueObject as SerializedAbstractType
 			right = obj.right.toValueObject as SerializedAbstractType
 		]
@@ -279,6 +280,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(JavaClassInstanceConstraint obj) {
 		new SerializedJavaClassInstanceConstraint => [
+			errorMessage = obj.errorMessage
 			what = obj.what.toValueObject as SerializedAbstractType;
 			javaClass = obj.javaClass.name;
 		]
@@ -286,6 +288,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(ExplicitInstanceConstraint obj) {
 		new SerializedExplicitInstanceConstraint => [
+			errorMessage = obj.errorMessage
 			instance = obj.instance.toValueObject as SerializedAbstractType
 			typeScheme = obj.typeScheme.toValueObject as SerializedAbstractType
 		]
@@ -293,6 +296,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(ImplicitInstanceConstraint obj) {
 		new SerializedImplicitInstanceConstraint => [
+			errorMessage = obj.errorMessage
 			isInstance = obj.isInstance.toValueObject as SerializedAbstractType
 			ofType = obj.ofType.toValueObject as SerializedAbstractType
 		]
@@ -300,6 +304,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(SubtypeConstraint obj) {
 		new SerializedSubtypeConstraint => [
+			errorMessage = obj.errorMessage
 			subType = obj.subType.toValueObject as SerializedAbstractType
 			superType = obj.superType.toValueObject as SerializedAbstractType
 		]
@@ -307,6 +312,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(FunctionTypeClassConstraint obj) {
 		new SerializedFunctionTypeClassConstraint => [
+			errorMessage = obj.errorMessage
 			type = obj.typ.toValueObject as SerializedAbstractType
 			functionCall = if(obj.functionCall === null) null else EcoreUtil.getURI(obj.functionCall).toString();
 			functionReference = obj.functionReference?.toValueObject;

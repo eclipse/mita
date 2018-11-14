@@ -230,7 +230,12 @@ arraySelector returns Expression:
 	| ({ValueRange} ':' (upperBound=Expression)?)
 ;
 
+FeatureCallWithoutFeature returns Expression:
+	  ({FeatureCallWithoutFeature} operationCall?='.' reference=[ecore::EObject] (=> '('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
+;
+
 FeatureCall returns Expression:
+	FeatureCallWithoutFeature |
     (ElementReferenceExpression | ParenthesizedExpression) (
 	      ({Argument.value=current} {FeatureCall.arguments+=current} operationCall?='.' reference=[ecore::EObject] (=> '('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
 		| ({ArrayAccessExpression.owner=current} '[' (arraySelector=arraySelector) ']')

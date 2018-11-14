@@ -73,6 +73,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(!system.isWeaklyUnifiable()) {
 			return new ConstraintSolution(system, null, #[ new UnificationIssue(system, 'Subtype solving cannot terminate') ]);
 		}
+		var issues = newArrayList;
 		for(var i = 0; i < 10; i++) {
 			if(debugOutput) {
 				println("------------------")
@@ -81,10 +82,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val simplification = currentSystem.simplify(currentSubstitution, typeResolutionOrigin);
 			if(!simplification.valid) {
 				if(simplification?.system?.constraints.nullOrEmpty || simplification?.substitution?.content?.entrySet.nullOrEmpty) {
-					return new ConstraintSolution(currentSystem, simplification.substitution, #[simplification.issue]);
+					return new ConstraintSolution(currentSystem, simplification.substitution, simplification.issues);
 				}
 				else {
-					return new ConstraintSolution(simplification.system, simplification.substitution, #[simplification.issue])
+					issues += simplification.issues;
+//					return new ConstraintSolution(simplification.system, simplification.substitution, #[simplification.issue])
 				}
 			}
 			val simplifiedSystem = simplification.system;
@@ -98,14 +100,15 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, solution.issues);
 				}
 				else {
-					return new ConstraintSolution(solution.constraints, solution.solution, solution.issues);
+					issues += solution.issues;
+					//return new ConstraintSolution(solution.constraints, solution.solution, solution.issues);
 				}
 			}
 			result = solution;
 			currentSubstitution = result.solution;
 			currentSystem = currentSubstitution.apply(result.constraints);
 		}
-		return result;
+		return new ConstraintSolution(currentSystem, currentSubstitution, issues);
 	}
 	
 	protected def ConstraintSolution solveSubtypeConstraints(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
@@ -114,7 +117,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val constraintGraphAndSubst = system.buildConstraintGraph(substitution, typeResolutionOrigin);
 		if(!constraintGraphAndSubst.value.valid) {
 			val failure = constraintGraphAndSubst.value;
-			return new ConstraintSolution(system, failure.substitution, #[failure.issue]);
+			return new ConstraintSolution(system, failure.substitution, failure.issues);
 		}
 		val constraintGraph = constraintGraphAndSubst.key;
 		val constraintGraphSubstitution = constraintGraphAndSubst.value.substitution;
@@ -126,7 +129,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val resolvedGraphAndSubst = constraintGraph.resolve(constraintGraphSubstitution, typeResolutionOrigin);
 		if(!resolvedGraphAndSubst.value.valid) {
 			val failure = resolvedGraphAndSubst.value;
-			return new ConstraintSolution(system, failure.substitution, #[failure.issue]);
+			return new ConstraintSolution(system, failure.substitution, failure.issues);
 		}
 		val resolvedGraph = resolvedGraphAndSubst.key;
 		val resolvedGraphSubstitution = resolvedGraphAndSubst.value.substitution;
@@ -136,7 +139,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}		
 		val solution = resolvedGraph.unify(resolvedGraphSubstitution);
 		
-		return new ConstraintSolution(system, solution.substitution, #[solution.issue].filterNull.toList);
+		return new ConstraintSolution(system, solution.substitution, solution.issues.filterNull.toList);
 	}
 	
 	protected def boolean isWeaklyUnifiable(ConstraintSystem system) {
@@ -147,6 +150,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected def SimplificationResult simplify(ConstraintSystem system, Substitution subtitution, EObject typeResolutionOrigin) {
 		var resultSystem = system;
 		var resultSub = subtitution;
+		var issues = newArrayList;
 		while(resultSystem.hasNonAtomicConstraints()) {
 			val constraintAndSystem = resultSystem.takeOneNonAtomic();
 			val constraint = constraintAndSystem.key;
@@ -154,18 +158,22 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 
 			val simplification = doSimplify(constraintSystem, resultSub, typeResolutionOrigin, constraint);
 			if(!simplification.valid) {
-				return new SimplificationResult(resultSub, simplification.issue, resultSystem);
+				issues += simplification.issues;
+				// just throw out the constraint for now
+				resultSystem = constraintSystem;
+				//return SimplificationResult.failure(simplification.issue);
 			}
-			
-			val witnessNotWeaklyUnifyable = simplification.substitution.content.entrySet.findFirst[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]];
-			if(witnessNotWeaklyUnifyable !== null) {
-				return new SimplificationResult(resultSub, new UnificationIssue(witnessNotWeaklyUnifyable, "System is not weakly unifyable"), resultSystem);
+			else {
+				val witnessNotWeaklyUnifyable = simplification.substitution.content.entrySet.findFirst[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]];
+				if(witnessNotWeaklyUnifyable !== null) {
+					return new SimplificationResult(resultSub, #[new UnificationIssue(witnessNotWeaklyUnifyable, "System is not weakly unifyable")], resultSystem);
+				}	
+				resultSub = simplification.substitution;
+				resultSystem = resultSub.apply(simplification.system);
 			}
-			resultSub = simplification.substitution;
-			resultSystem = resultSub.apply(simplification.system);
 		}
 		
-		return SimplificationResult.success(resultSystem, resultSub);
+		return new SimplificationResult(resultSub, issues, resultSystem);
 	}
 		
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ImplicitInstanceConstraint constraint) {
@@ -179,11 +187,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 //				if(leftType instanceof TypeVariable) {
 //					substitution.add(leftType, it.value);
 //				}
-				newSystem.addConstraint(new ImplicitInstanceConstraint(it.key, it.value));	
+				newSystem.addConstraint(new ImplicitInstanceConstraint(it.key, it.value, constraint.errorMessage));	
 			]
 			return SimplificationResult.success(ConstraintSystem.combine(#[system, newSystem]), substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS: «BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
+		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS: «BaseUtils.lineNumber»: «constraint.errorMessage» -> «t1» not instance of «t2»'''));
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ImplicitInstanceConstraint constraint, TypeVariable t1, TypeVariable t2) {
 		return SimplificationResult.success(system, substitution);
@@ -192,7 +200,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(t1 == t2) {
 			return SimplificationResult.success(system, substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS: «BaseUtils.lineNumber»: «t1» not instance of «t2»'''));
+		return SimplificationResult.failure(new UnificationIssue(#[t1, t2], '''CSS: «BaseUtils.lineNumber»: «constraint.errorMessage» -> «t1» not instance of «t2»'''));
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ExplicitInstanceConstraint constraint) {
@@ -207,7 +215,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(constraint.javaClass.isInstance(constraint.what)) {
 			return SimplificationResult.success(system, substitution);
 		}
-		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''CSS: «BaseUtils.lineNumber»: «constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
+		return SimplificationResult.failure(new UnificationIssue(constraint.what.origin, '''CSS: «BaseUtils.lineNumber»: «constraint.errorMessage» -> «constraint.what» is not instance of «constraint.javaClass.simpleName»'''));
 	}
 	
 	@FinalFieldsConstructor
@@ -224,7 +232,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return '''«functionType» (dist: «distanceToTargetType»)'''				
 			}
 			else {
-				return '''INVALID: «unificationResult.issue»'''
+				return '''INVALID: «unificationResult.issues»'''
 			}
 		}
 		
@@ -239,7 +247,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return constraint.onResolve(system, substitution, fun, refType);				
 			}
 			else {
-				return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «fun» not an Operation'''))
+				return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «constraint.errorMessage» -> «fun» not an Operation'''))
 			}
 		}
 		if(typeClass !== null) {
@@ -282,7 +290,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					return new TypeClassConstraintResolutionResult(unification, typ, fun, distance);
 				}
 
-				return new TypeClassConstraintResolutionResult(UnificationResult.failure(refType, '''«typ» is not a function type'''), typ, fun, distance);
+				return new TypeClassConstraintResolutionResult(UnificationResult.failure(refType, '''«constraint.errorMessage» -> «typ» is not a function type'''), typ, fun, distance);
 			].toList
 			val processedResultsUnsorted = unificationResults.map[
 				if(!it.unificationResult.valid) {
@@ -302,7 +310,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return constraint.onResolve(system, sub, result.function, result.functionType);
 			}
 		}
-		return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «refType» not instance of «typeClass»'''))
+		return SimplificationResult.failure(new UnificationIssue(constraint, '''CSS: «constraint.errorMessage» -> «refType» not instance of «typeClass»'''))
 	}
 		
 	dispatch def double computeDistance(AbstractType type, FunctionType type2) {
@@ -345,7 +353,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(unification.valid) {
 			return SimplificationResult.success(system, substitution.apply(unification.substitution));
 		}
-		return SimplificationResult.failure(unification.issue);
+		return SimplificationResult.failure(unification.issues);
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, AbstractType t1, TypeScheme t2) {
 		return system.doSimplify(substitution, typeResolutionOrigin, constraint, t2, t1);
@@ -355,7 +363,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		// unify
 		val mgu = mguComputer.compute(t1, t2);
 		if(!mgu.valid) {
-			return SimplificationResult.failure(mgu.issue);
+			return SimplificationResult.failure(mgu.issues);
 		}
 		
 		return SimplificationResult.success(mgu.substitution.apply(system), mgu.substitution.apply(substitution));
@@ -412,7 +420,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 		//TODO: handle multiple super types with same name
 		//already handled: superTypesWithSameName.empty --> failure
-		return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» is not a subtype of «top»'''))
+		return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «constraint.errorMessage» -> «sub» is not a subtype of «top»'''))
 	}
 	
 	
@@ -420,10 +428,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val typeArgs1 = sub.typeArguments.force;
 		val typeArgs2 = top.typeArguments.force;
 		if(typeArgs1.length !== typeArgs2.length) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» and «top» differ in their type arguments'''));
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «constraint.errorMessage» -> «sub» and «top» differ in their type arguments'''));
 		}
 		if(sub.class != top.class) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «sub» and «top» are not constructed the same'''));
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], '''CSS: «constraint.errorMessage» -> «sub» and «top» are not constructed the same'''));
 		}
 		
 		val typeArgs = sub.typeArguments.zip(top.typeArguments).indexed;
@@ -441,14 +449,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeVariable sub, TypeConstructorType top) {
 		// expand-l:   a <: Ct1...tn
 		val expansion = substitutionProvider.get() => [top.expand(system, it, sub)];
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
+		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage)));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	} 
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeVariable top) {
 		// expand-r:   Ct1...tn <: a
 		val expansion = substitutionProvider.get() => [sub.expand(system, it, top)];
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top)));
+		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage)));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	}
@@ -456,7 +464,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		// eliminate:  U <: T
 		val issue = typeRegistry.isSubtypeOf(typeResolutionOrigin, sub, top);
 		if(issue.present) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], issue.get()));
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], constraint.errorMessage + " -> " + issue.get()));
 		} else {
 			return SimplificationResult.success(system, substitution);
 		}
@@ -465,14 +473,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		// eliminate:  U <: T
 		val issue = typeRegistry.isSubtypeOf(typeResolutionOrigin, sub, top);
 		if(issue.present) {
-			return SimplificationResult.failure(new UnificationIssue(#[sub, top], issue.get()));
+			return SimplificationResult.failure(new UnificationIssue(#[sub, top], constraint.errorMessage + " -> " + issue.get()));
 		} else {
 			return SimplificationResult.success(system, substitution);
 		}
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeScheme sub, AbstractType top) {
 		val vars_instance = sub.instantiate(system)
-		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top));
+		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top, constraint.errorMessage));
 		return SimplificationResult.success(newSystem, substitution);
 	} 
 	
@@ -675,11 +683,14 @@ class SimplificationResult extends UnificationResult {
 	protected final ConstraintSystem system;
 	
 	static def success(ConstraintSystem s, Substitution sigma) {
-		return new SimplificationResult(sigma, null, s);
+		return new SimplificationResult(sigma, #[], s);
 	}
 	
+	static def SimplificationResult failure(Iterable<? extends UnificationIssue> issues) {
+		return new SimplificationResult(null, issues, null);
+	}
 	static def SimplificationResult failure(UnificationIssue issue) {
-		return new SimplificationResult(null, issue, null);
+		return new SimplificationResult(null, #[issue], null);
 	}
 	
 	override toString() {
@@ -705,7 +716,7 @@ class SimplificationResult extends UnificationResult {
 				return other;
 			}
 			else {
-				return new SimplificationResult(null, ComposedUnificationIssue.fromMultiple(#[this.issue, other.issue]), null);
+				return new SimplificationResult(null, this.issues + other.issues, null);
 			}
 		}
 		

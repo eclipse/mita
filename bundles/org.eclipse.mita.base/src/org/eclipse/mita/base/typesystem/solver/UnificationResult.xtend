@@ -1,15 +1,20 @@
 package org.eclipse.mita.base.typesystem.solver
 
 import org.eclipse.xtend.lib.annotations.Accessors
+import java.util.List
 
 @Accessors
 class UnificationResult { 
 	protected final Substitution substitution;
-	protected final UnificationIssue issue;
+	protected final List<UnificationIssue> issues = newArrayList;
 	
+	new(Substitution sub, Iterable<? extends UnificationIssue> issues) {
+		this.substitution = sub;
+		this.issues += issues;
+	}
 	new(Substitution sub, UnificationIssue issue) {
 		this.substitution = sub;
-		this.issue = issue;
+		this.issues.add(issue);
 		if(substitution === null && issue === null) {
 			throw new NullPointerException();
 		}
@@ -19,16 +24,16 @@ class UnificationResult {
 		if(isValid) {
 			substitution.toString();
 		} else {
-			issue.toString();
+			issues.join("\n");
 		}
 	}
 	
 	def isValid() {
-		return substitution !== null && issue === null;
+		return substitution !== null && issues.nullOrEmpty;
 	}
 	
 	static def UnificationResult success(Substitution substitution) {
-		return new UnificationResult(substitution ?: Substitution.EMPTY, null);
+		return new UnificationResult(substitution ?: Substitution.EMPTY, #[]);
 	}
 	
 	static def UnificationResult failure(UnificationIssue issue) {

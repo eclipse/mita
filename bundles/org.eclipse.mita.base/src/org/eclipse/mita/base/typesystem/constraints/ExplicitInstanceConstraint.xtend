@@ -20,7 +20,8 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		instance + " ⩽ " + typeScheme
 	}
 	
-	new(AbstractType instance, AbstractType typeScheme) {
+	new(AbstractType instance, AbstractType typeScheme, String errorMessage) {
+		super(errorMessage);
 		this.instance = instance;
 		this.typeScheme = typeScheme;
 		if(this.toString == "f_116.0 ⩽ i32") {
@@ -47,7 +48,7 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 	
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new ExplicitInstanceConstraint(instance.map(f), typeScheme.map(f));
+		return new ExplicitInstanceConstraint(instance.map(f), typeScheme.map(f), errorMessage);
 	}
 	
 	override getOperator() {
