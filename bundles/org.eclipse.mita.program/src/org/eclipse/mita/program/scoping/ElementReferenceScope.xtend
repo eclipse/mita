@@ -34,6 +34,9 @@ import org.eclipse.xtext.scoping.impl.AbstractScope
 import static extension org.eclipse.xtext.EcoreUtil2.*
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.TypeAccessor
+import org.eclipse.xtext.util.SimpleAttributeResolver
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.mita.base.types.TypeKind
 
 class ElementReferenceScope extends AbstractScope {
 
@@ -62,12 +65,17 @@ class ElementReferenceScope extends AbstractScope {
 		result.addDeconstructorVariables(context)
 		//result.addStructureTypes(context)
 		result.addStructureAccessors(context)
-		//result.addSumTypes(context)
-		Scopes.scopedElementsFor(result)
+		result.addSumTypes(context)
+		Scopes.scopedElementsFor(result, [obj | 
+			if(obj instanceof TypeKind) {
+				return QualifiedName.create(obj.name.substring(1));
+			}
+			return QualifiedName.wrapper(SimpleAttributeResolver.NAME_RESOLVER).apply(obj)
+		])
 	}
 	
 	def addSumTypes(ArrayList<EObject> result, EObject context) {
-		result += context.getContainerOfType(Program).types.filter(SumType).flatMap[st | st.alternatives]
+		result += context.getContainerOfType(Program).types.filter(SumType).map[it.typeKind]
 	}
 	
 	def addDeconstructorVariables(ArrayList<EObject> result, EObject context) {
