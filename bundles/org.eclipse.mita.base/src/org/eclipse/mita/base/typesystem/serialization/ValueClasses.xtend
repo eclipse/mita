@@ -50,7 +50,7 @@ abstract class SerializedAbstractBaseType extends SerializedAbstractType {
     }
 }
 
-class SerializedTypeHole extends SerializedAbstractType {
+class SerializedTypeHole extends SerializedTypeVariable {
 	new() {
 		_type = "SerializedTypeHole";
 	}
