@@ -48,7 +48,12 @@ abstract class SerializedAbstractBaseType extends SerializedAbstractType {
     new() {
         _type = "SerializedAbstractBaseType";
     }
+}
 
+class SerializedTypeHole extends SerializedTypeVariable {
+	new() {
+		_type = "SerializedTypeHole";
+	}
 }
 
 class SerializedUnorderedArguments extends SerializedAbstractType {

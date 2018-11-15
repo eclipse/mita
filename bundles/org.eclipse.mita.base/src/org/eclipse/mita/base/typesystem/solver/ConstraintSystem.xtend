@@ -50,6 +50,10 @@ class ConstraintSystem {
 		new TypeVariable(obj, '''f_«instanceCount++»''')
 	}
 	
+	def TypeVariable newTypeHole(EObject obj) {
+		new TypeVariable(obj, '''h_«instanceCount++»''')
+	}
+	
 	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference) {
 		return new TypeVariableProxy(origin, '''p_«instanceCount++»''', reference);
 	}

@@ -49,6 +49,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
+import org.eclipse.mita.base.typesystem.types.TypeHole
 
 class SerializationAdapter {
 	
@@ -156,6 +157,10 @@ class SerializationAdapter {
 	
 	protected dispatch def AbstractType fromValueObject(SerializedIntegerType obj) {
 		return new IntegerType(obj.origin.resolveEObject(), obj.widthInBytes, obj.signedness);
+	}
+	
+	protected dispatch def AbstractType fromValueObject(SerializedTypeHole obj) {
+		return new TypeHole(obj.origin.resolveEObject(), obj.name);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFunctionType obj) {
@@ -384,6 +389,12 @@ class SerializationAdapter {
 			fill(it, obj)
 			widthInBytes = obj.widthInBytes
 			signedness = obj.signedness
+		]
+	}
+	
+	protected dispatch def SerializedObject toValueObject(TypeHole obj) {
+		new SerializedTypeHole => [
+			fill(it, obj);
 		]
 	}
 	
