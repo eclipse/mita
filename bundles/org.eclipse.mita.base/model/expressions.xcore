@@ -273,13 +273,14 @@ class FeatureCall extends ElementReferenceExpression {
 	
 	op String toString() {
 		val refText = reference?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
-		arguments.head.value.toString + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "")
+		arguments.head?.value?.toString + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "")
 	}
 }
 
 class FeatureCallWithoutFeature extends FeatureCall {
 	op String toString() {
-		return "<auto>." + super.toString
+		val refText = reference?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
+		"<auto>." + refText + (if(operationCall) "(" + arguments.join(", ") + ")" else "")
 	}
 }
 

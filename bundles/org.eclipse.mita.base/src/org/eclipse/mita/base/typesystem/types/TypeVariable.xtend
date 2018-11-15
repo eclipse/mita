@@ -12,7 +12,7 @@ class TypeVariable extends AbstractType {
 	
 	new(EObject origin, String name) {
 		super(origin, name)
-		if(name == "f_526") {
+		if(name == "p_49") {
 			print("")
 		}
 	}

@@ -21,6 +21,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy;
 import org.eclipse.mita.base.types.StructureType;
 import org.eclipse.mita.base.types.SumAlternative;
+import org.eclipse.mita.base.types.SumType;
 import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.base.types.VirtualFunction;
 import org.eclipse.mita.base.util.BaseUtils;
@@ -71,6 +72,7 @@ public class PlatformDslResourceDescriptionStrategy extends BaseResourceDescript
 			return createPlatformDescription((Platform) eObject, acceptor);
 		} else if( (eObject instanceof StructureType) 
 				|| (eObject instanceof SumAlternative) 
+				|| (eObject instanceof SumType) 
 				|| (eObject.eContainer() instanceof SumAlternative && !(eObject instanceof TypeSpecifier))
 				|| (eObject instanceof VirtualFunction)) {
 			export(eObject, acceptor);

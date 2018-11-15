@@ -2,6 +2,7 @@ package org.eclipse.mita.base.typesystem
 
 import com.google.common.base.Optional
 import com.google.inject.Inject
+import java.util.List
 import java.util.Set
 import java.util.regex.Pattern
 import org.eclipse.emf.ecore.EObject
@@ -9,6 +10,7 @@ import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -22,13 +24,16 @@ import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.types.TypeHole
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#[/*"stdlib",*/ "void"]);
@@ -209,23 +214,23 @@ class StdlibTypeRegistry {
 		return #[];
 	}
 	
-	public def boolean isSubType(EObject context, AbstractType sub, AbstractType top) {
-		return !context.isSubtypeOf(sub, top).present;
+	def boolean isSubType(EObject context, AbstractType sub, AbstractType top) {
+		return context.isSubtypeOf(sub, top).valid;
 	}
 	
-	protected def Optional<String> checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
+	protected def SubtypeCheckResult checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
 		return (bSub <= bTop).subtypeMsgFromBoolean('''STR:«BaseUtils.lineNumber»: «top.name» is too small for «sub.name»''');
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(EObject context, FloatingType sub, FloatingType top) {
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, FloatingType sub, FloatingType top) {
 		return (sub.widthInBytes <= top.widthInBytes).subtypeMsgFromBoolean(sub, top);
 	}
-	public dispatch def Optional<String> isSubtypeOf(EObject context, IntegerType sub, IntegerType top) {		
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, IntegerType sub, IntegerType top) {		
 		val bTop = top.widthInBytes;
 		val int bSub = switch(sub.signedness) {
 			case Signed: {
 				if(top.signedness != Signedness.Signed) {
-					return Optional.of('''STR:«BaseUtils.lineNumber»: Incompatible signedness between «top.name» and «sub.name»''');
+					return SubtypeCheckResult.invalid('''STR:«BaseUtils.lineNumber»: Incompatible signedness between «top.name» and «sub.name»''');
 				}
 				sub.widthInBytes;
 			}
@@ -245,61 +250,94 @@ class StdlibTypeRegistry {
 		return checkByteWidth(sub, top, bSub, bTop);
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(EObject context, FunctionType sub, FunctionType top) {
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, FunctionType sub, FunctionType top) {
 		//    fa :: a -> b   <:   fb :: c -> d 
 		// ⟺ every fa can be used as fb 
 		// ⟺ b >: d ∧    a <: c
-		return context.isSubtypeOf(top.from, sub.from).or(context.isSubtypeOf(sub.to, top.to));
+		return context.isSubtypeOf(top.from, sub.from).orElse(context.isSubtypeOf(sub.to, top.to));
 	}
 			
-	public dispatch def Optional<String> isSubtypeOf(EObject context, BottomType sub, AbstractType sup) {
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, BottomType sub, AbstractType sup) {
 		// ⊥ is subtype of everything
-		return Optional.absent;
+		return SubtypeCheckResult.valid;
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(EObject context, SumType sub, SumType top) {
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, SumType sub, SumType top) {
 		top.typeArguments.forall[topAlt | sub.typeArguments.exists[subAlt | context.isSubType(subAlt, topAlt)]].subtypeMsgFromBoolean(sub, top)
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(EObject context, ProdType sub, SumType top) {
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, ProdType sub, SumType top) {
 		top.typeArguments.exists[context.isSubType(sub, it)].subtypeMsgFromBoolean(sub, top)
 	}
 	
-	public dispatch def Optional<String> isSubtypeOf(EObject context, ProdType sub, ProdType top) {
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, ProdType sub, ProdType top) {
 		if(sub.typeArguments.length != top.typeArguments.length) {
-			return Optional.of('''STR:«BaseUtils.lineNumber»: «sub.name» and «top.name» differ in the number of type arguments''')
+			return SubtypeCheckResult.invalid('''STR:«BaseUtils.lineNumber»: «sub.name» and «top.name» differ in the number of type arguments''')
 		}
-		val msg = sub.typeArguments.zip(top.typeArguments).map[context.isSubtypeOf(it.key, it.value).orNull].filterNull.join("\n")
-		if(msg != "") {
-			return Optional.of('''
-			STR:«BaseUtils.lineNumber»: «sub.name» isn't structurally a subtype of «top.name»:
-				«msg»''');
+		val result = sub.typeArguments.zip(top.typeArguments).map[context.isSubtypeOf(it.key, it.value)].fold(SubtypeCheckResult.valid, [scr1, scr2 | scr1.orElse(scr2)])
+		if(result.invalid) {
+			return SubtypeCheckResult.invalid(#['''STR:«BaseUtils.lineNumber»: «sub.name» isn't structurally a subtype of «top.name»'''] + result.messages);
 		}
-		return Optional.absent;
+		return result;
 	}
-	public dispatch def Optional<String> isSubtypeOf(EObject context, AbstractType sub, BaseKind top) {
-		return subtypeMsgFromBoolean(context.isSubType(sub, top.kindOf), sub, top);
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, BaseKind sub, BaseKind top) {
+		return context.isSubtypeOf(sub.kindOf, top.kindOf);
 	}
-	public dispatch def Optional<String> isSubtypeOf(EObject context, BaseKind sub, BaseKind top) {
-		return subtypeMsgFromBoolean(context.isSubType(sub.kindOf, top.kindOf), sub, top);
-	}
-	public dispatch def Optional<String> isSubtypeOf(EObject context, AbstractType sub, AbstractType top) {
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, AbstractType sub, AbstractType top) {
 		return (top.getSubTypes(context).toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
 	}
 	
-	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, TypeHole sub, AbstractType top) {
+		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, "")]);
+	}
+	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, AbstractType sub, TypeHole top) {
+		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, "")]);
+	}
+	
+	protected def SubtypeCheckResult subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {
 		val ln = BaseUtils.lineNumberOf(1);
 		return isSuperType.subtypeMsgFromBoolean(sub, top, ln);
 	}
-	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top, int ln) {
+	protected def SubtypeCheckResult subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top, int ln) {
 		return isSuperType.subtypeMsgFromBoolean('''STR:«BaseUtils.lineNumber»->«ln»: «sub» is not a subtype of «top»''')
 	}
-	protected def Optional<String> subtypeMsgFromBoolean(boolean isSuperType, String msg) {
+	protected def SubtypeCheckResult subtypeMsgFromBoolean(boolean isSuperType, String msg) {
 		if(!isSuperType) {
-			return Optional.of(msg);
+			return SubtypeCheckResult.invalid(msg);
 		}
-		return Optional.absent;
+		return SubtypeCheckResult.valid;
 	}
 	
 	
+}
+
+@Accessors
+class SubtypeCheckResult {
+	val List<AbstractTypeConstraint> constraints = newArrayList;
+	val List<String> messages = newArrayList;
+	
+	new(Iterable<String> msgs, Iterable<AbstractTypeConstraint> tcs) {
+		messages += msgs;
+		constraints += tcs;
+	}
+	
+	def boolean isValid() {
+		return messages.empty;
+	}
+	def boolean isInvalid() {
+		return !messages.empty;
+	}
+	
+	static def SubtypeCheckResult valid() {
+		return new SubtypeCheckResult(#[], #[]);
+	}
+	static def SubtypeCheckResult invalid(String msg) {
+		return new SubtypeCheckResult(#[msg], #[]);
+	}
+	static def SubtypeCheckResult invalid(Iterable<String> msgs) {
+		return new SubtypeCheckResult(msgs, #[]);
+	}
+	def SubtypeCheckResult orElse(SubtypeCheckResult other) {
+		return new SubtypeCheckResult(messages + other.messages, constraints + other.constraints);	
+	}
 }

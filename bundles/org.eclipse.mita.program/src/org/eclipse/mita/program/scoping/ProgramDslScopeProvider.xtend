@@ -67,6 +67,7 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
+import org.eclipse.emf.ecore.EcorePackage
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -392,9 +393,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	val Predicate<IEObjectDescription> globalElementFilter = [ x |
-		if(x.name.toString.contains("accelerometer")) {
-			print("")
-		}
 		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x.EClass)) ||
 			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
@@ -404,8 +402,30 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
 
-		val exclusion = (PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
+		val exclusion = 
+			(PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
 			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
+
+		inclusion && !exclusion;
+	]
+	
+		val Predicate<IEObjectDescription> globalElementFilterInSetup = [ x |
+		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x.EClass)) ||
+			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass)) ||
+			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
+
+		val exclusion = 
 			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
 			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
@@ -419,8 +439,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	val Predicate<IEObjectDescription> globalTypeFilter = [ x |
 		val inclusion = TypesPackage.Literals.TYPE.isSuperTypeOf(x.EClass);
 
-		val exclusion = PlatformPackage.Literals.SENSOR.isSuperTypeOf(x.EClass) ||
-			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x.EClass) ||
+		val exclusion = 
+//			PlatformPackage.Literals.SENSOR.isSuperTypeOf(x.EClass) ||
+//			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x.EClass) ||
 			TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x.EClass) ||
 			TypesPackage.Literals.TYPE_PARAMETER.isSuperTypeOf(x.EClass); // exclude gloabal type parameters, local ones are added in TypeReferenceScope
 		inclusion && !exclusion;
@@ -435,7 +456,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
 		return if (setup !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
-			scopeInSetupBlock(context, ref);
+			val scope = scopeInSetupBlock(context, ref);
+			return new FilteringScope(scope, globalElementFilterInSetup);
 		} else {
 			val superScope = new FilteringScope(delegate.getScope(context, ref), globalElementFilter);
 			val scope = (if(context instanceof ElementReferenceExpression) {
@@ -658,12 +680,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		val scope = //cache.get(context -> reference, context.eResource, [
 			if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
-			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE &&
-				context instanceof FeatureCall) {
-				//scope_FeatureCall_feature(context as FeatureCall, reference);
-				scope_ElementReferenceExpression_reference(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
-				scope_ElementReferenceExpression_reference(context, reference);
+				val scope = scope_ElementReferenceExpression_reference(context, reference);
+				val normalizers = #[new ImportNormalizer(QualifiedName.create("_kinds"), true, false)];
+				//return new ImportScope(normalizers, scope, null, EcorePackage.eINSTANCE.EObject, false);
+				return scope;
 			} else if (reference == ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__ITEM &&
 				context instanceof SystemResourceSetup) {
 				scope_ConfigurationItemValue_item(context as SystemResourceSetup, reference);

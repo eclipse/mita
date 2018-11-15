@@ -35,7 +35,7 @@ class TypeVariableProxy extends TypeVariable {
 	
 	new(EObject origin, String name, EReference reference, QualifiedName qualifiedName) {
 		this(origin, name, reference, qualifiedName, false);
-		if(qualifiedName.toString.trim.empty) {
+		if(qualifiedName.toString.trim == "∗foo") {
 			print("");
 		}
 	}

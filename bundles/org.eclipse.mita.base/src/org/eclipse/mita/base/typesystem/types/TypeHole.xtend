@@ -12,4 +12,8 @@ class TypeHole extends TypeVariable {
 	override getFreeVars() {
 		return #[];
 	}
+	
+	override modifyNames(String suffix) {
+		return new TypeHole(origin, name + suffix)
+	}
 }

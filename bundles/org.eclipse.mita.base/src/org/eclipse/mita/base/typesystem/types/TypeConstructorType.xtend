@@ -25,6 +25,9 @@ class TypeConstructorType extends AbstractType {
 	new(EObject origin, String name, Iterable<AbstractType> typeArguments, Iterable<AbstractType> superTypes) {
 		this(origin, name, typeArguments.force);
 		this.superTypes += superTypes;
+		if(this.toString == "bar_args(foo(), f_60.0, f_67.0)") {
+			print("")
+		}
 	}
 	
 	def AbstractTypeConstraint getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {

@@ -13,6 +13,7 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
+import org.eclipse.mita.base.typesystem.SubtypeCheckResult
 
 /* Interesting papers:
  *  Generalizing Hindley-Milner Type Inference Algorithms: https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
@@ -47,7 +48,7 @@ class MostGenericUnifierComputer {
 	
 	protected def UnificationResult combine(UnificationResult u1, UnificationResult u2) {
 		if(!u1.valid && !u2.valid) {
-			return UnificationResult.failure(ComposedUnificationIssue.fromMultiple(#[u1.issue, u2.issue]));
+			return UnificationResult.failure(ComposedUnificationIssue.fromMultiple(u1.issues + u2.issues));
 		}
 		else if(!u1.valid) {
 			return u1;
@@ -116,12 +117,16 @@ class MostGenericUnifierComputer {
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, IntegerType t1, IntegerType t2) {
-		return typeRegistry.isSubtypeOf(t1.origin, t1, t2).or(typeRegistry.isSubtypeOf(t1.origin, t2, t1)).transform[
-			new UnificationIssue(#[t1, t2], it)
-		].orNull;
+		if(t1 != t2) {
+			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
+		}
+		return null;
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, ProdType t1, ProdType t2) {
+		if(t1.typeArguments.length != t2.typeArguments.length) {
+			return new UnificationIssue(#[t1, t2], '''«t1» and «t2» differ in their number of arguments''');
+		}
 		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
 		].force
@@ -129,6 +134,9 @@ class MostGenericUnifierComputer {
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, SumType t1, SumType t2) {
+		if(t1.typeArguments.length != t2.typeArguments.length) {
+			return new UnificationIssue(#[t1, t2], '''«t1» and «t2» differ in their number of arguments''');
+		}
 		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
 		].force

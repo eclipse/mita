@@ -85,6 +85,9 @@ class TypeKind extends Type {
 	op String getName() {
 		return "∗" + kindOf.name
 	}
+	op String toString() {
+		return "∗" + kindOf.name
+	}
 	container Type kindOf opposite typeKind
 }
 class PrimitiveType extends Type, Exportable {

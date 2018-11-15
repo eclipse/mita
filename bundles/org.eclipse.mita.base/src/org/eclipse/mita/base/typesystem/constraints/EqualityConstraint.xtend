@@ -15,7 +15,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		super(source);
 		this.left = left;
 		this.right = right;
-		if(this.toString == "f_247.0 ≡ vec1d_args(anyVec(), f_242.0) → f_246.0") {
+		if(this.toString == "f_52.0 ≡ f_47.0") {
 			print("");
 		}
 	}

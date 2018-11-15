@@ -27,7 +27,8 @@ class TypeQualifiedNameProvider extends BaseQualifiedNameProvider {
 	}
 	
 	protected dispatch def QualifiedName doGetFullyQualifiedName(TypeKind t) {
-		return getFullyQualifiedName(t.eContainer);
+		//return getFullyQualifiedName(t.eContainer.eContainer).append(QualifiedName.create(#["_kinds", t.name]));
+		return getFullyQualifiedName(t.eContainer.eContainer).append(t.name);
 	}
 	
 	protected dispatch def QualifiedName doGetFullyQualifiedName(EObject obj) {

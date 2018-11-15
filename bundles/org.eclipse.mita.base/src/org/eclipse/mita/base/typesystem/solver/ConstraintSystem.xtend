@@ -31,6 +31,7 @@ import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.types.TypeHole
 
 @Accessors
 class ConstraintSystem {
@@ -51,7 +52,7 @@ class ConstraintSystem {
 	}
 	
 	def TypeVariable newTypeHole(EObject obj) {
-		new TypeVariable(obj, '''h_«instanceCount++»''')
+		new TypeHole(obj, '''h_«instanceCount++»''')
 	}
 	
 	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference) {

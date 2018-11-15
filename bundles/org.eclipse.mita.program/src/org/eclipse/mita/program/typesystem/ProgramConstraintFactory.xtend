@@ -244,7 +244,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 					system.addConstraint(new SubtypeConstraint(it.value.value, it.value.key, '''«it.key.value» not compatible with «it.key.key»'''));
 				]
 				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
-					val tv = system.newTypeVariable(null) as AbstractType;
+					val tv = system.newTypeHole(varOrFun) as AbstractType;
 					(#[("self" -> (null as Argument -> null as Expression)) -> (tv -> tv) ] + argumentParamTypesAndValueTypes).force;
 				}
 				else {
@@ -253,7 +253,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 				new UnorderedArguments(null, txt + "_args", withAutoFirstArg.map[it.key.key -> it.value.value]);
 			} else {
 				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {
-					#[system.newTypeVariable(null) as AbstractType] + varOrFun.arguments.map[system.computeConstraints(it.value) as AbstractType]
+					#[system.newTypeHole(varOrFun) as AbstractType] + varOrFun.arguments.map[system.computeConstraints(it.value) as AbstractType]
 				}
 				else {
 					varOrFun.arguments.map[system.computeConstraints(it.value) as AbstractType];
