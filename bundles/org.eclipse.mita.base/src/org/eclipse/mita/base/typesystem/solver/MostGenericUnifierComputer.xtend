@@ -48,7 +48,7 @@ class MostGenericUnifierComputer {
 	
 	protected def UnificationResult combine(UnificationResult u1, UnificationResult u2) {
 		if(!u1.valid && !u2.valid) {
-			return UnificationResult.failure(ComposedUnificationIssue.fromMultiple(u1.issues + u2.issues));
+			return UnificationResult.failure(u1.issues + u2.issues);
 		}
 		else if(!u1.valid) {
 			return u1;
@@ -88,7 +88,7 @@ class MostGenericUnifierComputer {
 			}
 		])
 		if(!unificationResult.valid) {
-			return UnificationResult.failure(new UnificationIssue(#[unificationResult], '''MGU: substitutions don't agree'''))
+			return unificationResult
 		}
 		return UnificationResult.success(s1.apply(s2).apply(unificationResult.substitution));
 	}
@@ -106,10 +106,10 @@ class MostGenericUnifierComputer {
 			val error = result.unify(t1, t2);
 			if(error !== null) {
 				// mark substition as errornous
-				return UnificationResult.failure(error);
+				return UnificationResult.failure(null, error.message);
 			}
 		} else {
-			return UnificationResult.failure(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
+			return UnificationResult.failure(null, '''MGU: Cannot unify «t1» and «t2»''');
 		}
 		
 		// none is free - ask the defined types

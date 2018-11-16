@@ -1,5 +1,7 @@
 package org.eclipse.mita.base.typesystem.types
 
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
@@ -23,7 +25,7 @@ class ProdType extends TypeConstructorType {
 	}
 	
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		return new SubtypeConstraint(tau, sigma, '''«tau» is not subtype of «sigma»''');
+		return new SubtypeConstraint(tau, sigma, new ValidationIssue(Severity.ERROR, '''«tau» is not subtype of «sigma»''', ""));
 	}
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {

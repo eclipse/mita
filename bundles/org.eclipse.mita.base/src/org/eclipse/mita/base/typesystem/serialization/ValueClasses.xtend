@@ -4,6 +4,7 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 
 class SerializedObject {
     public String _type;
@@ -17,6 +18,18 @@ class SerializedConstraintSystem extends SerializedObject {
 	public List<SerializedAbstractTypeConstraint> constraints = new ArrayList;
 	public Map<String, SerializedTypeVariable> symbolTable;
 	public Map<String, SerializedTypeClass> typeClasses;
+}
+
+class SerializedValidationIssue extends SerializedObject {
+	new() {
+		_type = "SerializedValidationIssue";
+	}
+	
+	public Severity severity;
+	public String message;
+	public String issueCode;
+	public String target;
+	public SerializedEStructuralFeature feature;
 }
 
 class SerializedTypeClass extends SerializedObject {
@@ -174,7 +187,7 @@ class SerializedAbstractTypeConstraint extends SerializedObject {
     new() {
         _type = "SerializedAbstractTypeConstraint";
     }
-	public String errorMessage;
+	public SerializedValidationIssue errorMessage;
 }
 
 class SerializedEqualityConstraint extends SerializedAbstractTypeConstraint {
@@ -222,16 +235,22 @@ class SerializedSubtypeConstraint extends SerializedAbstractTypeConstraint {
 	public SerializedAbstractType superType;
 }
 
-class SerializedEReference extends SerializedObject {
+class SerializedEStructuralFeature extends SerializedObject {
 	new() {
-		_type = "SerializedEReference";
+		_type = "SerializedEStructuralFeature";
 	}
 	public String javaClass;
 	public String javaField;
 	public String javaMethod;
 	public String ePackageName;
 	public String eClassName;
-	public String eReferenceName;
+	public String eReferenceName;	
+}
+
+class SerializedEReference extends SerializedEStructuralFeature {
+	new() {
+		_type = "SerializedEReference";
+	}
 }
  
 class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstraint {

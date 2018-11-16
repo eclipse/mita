@@ -3,6 +3,8 @@ package org.eclipse.mita.base.typesystem.types
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
@@ -31,7 +33,7 @@ class TypeConstructorType extends AbstractType {
 	}
 	
 	def AbstractTypeConstraint getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		return new EqualityConstraint(tau, sigma, "TCT:30");
+		return new EqualityConstraint(tau, sigma, new ValidationIssue(Severity.ERROR, '''«tau» is not equal to «sigma»''', ""));
 	}
 	def void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;

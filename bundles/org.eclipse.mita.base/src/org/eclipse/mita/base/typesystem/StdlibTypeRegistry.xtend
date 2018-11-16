@@ -1,6 +1,5 @@
 package org.eclipse.mita.base.typesystem
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.List
 import java.util.Set
@@ -10,7 +9,10 @@ import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -23,6 +25,7 @@ import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -31,9 +34,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.mita.base.typesystem.types.TypeHole
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#[/*"stdlib",*/ "void"]);
@@ -289,10 +289,10 @@ class StdlibTypeRegistry {
 	}
 	
 	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, TypeHole sub, AbstractType top) {
-		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, "")]);
+		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, new ValidationIssue(Severity.ERROR, '''Couldn't infer type/arg here''', top.origin, null, ""))]);
 	}
 	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, AbstractType sub, TypeHole top) {
-		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, "")]);
+		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, new ValidationIssue(Severity.ERROR, '''Couldn't infer type/arg here''', top.origin, null, ""))]);
 	}
 	
 	protected def SubtypeCheckResult subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {

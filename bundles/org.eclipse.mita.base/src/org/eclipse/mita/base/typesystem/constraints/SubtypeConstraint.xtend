@@ -1,5 +1,6 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -17,7 +18,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	protected final AbstractType subType;
 	protected final AbstractType superType;
 	
-	new(AbstractType sub, AbstractType top, String errorMessage) {
+	new(AbstractType sub, AbstractType top, ValidationIssue errorMessage) {
 		super(errorMessage);
 		
 		subType = sub;

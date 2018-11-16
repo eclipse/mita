@@ -1,14 +1,15 @@
 package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 
 @EqualsHashCode
 @Accessors
@@ -49,11 +50,11 @@ class FunctionType extends TypeConstructorType {
 	
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
 		if(typeArgumentIdx == 1) {
-			return new SubtypeConstraint(tau, sigma, '''«tau» is not subtype of «sigma»''');
+			return new SubtypeConstraint(tau, sigma, new ValidationIssue(Severity.ERROR, '''«tau» is not subtype of «sigma»''', ""));
 		}
 		else {
 			// function arguments are contravariant
-			return new SubtypeConstraint(sigma, tau, '''«tau» is not subtype of «sigma»''');
+			return new SubtypeConstraint(sigma, tau, new ValidationIssue(Severity.ERROR, '''«sigma» is not subtype of «tau»''', ""));
 		}
 	}
 	

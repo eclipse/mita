@@ -1,9 +1,10 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.mita.base.util.BaseUtils
 
 @Accessors
 @EqualsHashCode
@@ -11,7 +12,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	protected final AbstractType left;
 	protected final AbstractType right;
 
-	new(AbstractType left, AbstractType right, String source) {
+	new(AbstractType left, AbstractType right, ValidationIssue source) {
 		super(source);
 		this.left = left;
 		this.right = right;
@@ -44,7 +45,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		val newL = f.apply(left);
 		val newR = f.apply(right);
 		if(left != newL || right != newR) {
-			return new EqualityConstraint(newL, newR, '''EC:«BaseUtils.lineNumber» -> «errorMessage»''');
+			return new EqualityConstraint(newL, newR, errorMessage);
 		} 
 		else {
 			return this;

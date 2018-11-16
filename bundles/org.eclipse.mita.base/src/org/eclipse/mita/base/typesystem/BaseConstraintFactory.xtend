@@ -71,6 +71,8 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.expressions.ConditionalExpression
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -188,6 +190,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(candidates === null || candidates.empty) {
 			return null;
 		}
+		val issue = new ValidationIssue(Severity.ERROR, '''Function «functionName» cannot be used here''', functionCall, functionReference, "");
 		/* This function is pretty complicated. It handles function calls like `f(x)` or `x.f()`.
 		 * We get:
 		 * - an object holding the function call, "f(x)"
@@ -232,7 +235,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// a -> b
 		val referencedFunctionType = new FunctionType(null, functionName, argType, resultType);
 		// a -> B >: A -> B
-		system.addConstraint(new SubtypeConstraint(refType, referencedFunctionType, '''Function «functionName» cannot be used here'''));
+		system.addConstraint(new SubtypeConstraint(refType, referencedFunctionType, issue));
 		
 		val useTypeClassProxy = !candidates.filter(TypeVariableProxy).empty
 		if(candidates.size > 1 || useTypeClassProxy) {
@@ -252,7 +255,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 					]	
 				]
 			}
-			system.addConstraint(new FunctionTypeClassConstraint('''Function «functionName» cannot be used here''', fromTV, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
+			system.addConstraint(new FunctionTypeClassConstraint(issue, fromTV, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
 		}
 		else {
 			val funRef = candidates.head;
@@ -260,7 +263,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				functionCall.eSet(functionReference, funRef.origin);	
 			}
 			// the actual function should be a subtype of the expected function so it can be used here
-			system.addConstraint(new SubtypeConstraint(funRef, refType, '''Function «functionName» cannot be used here'''));
+			system.addConstraint(new SubtypeConstraint(funRef, refType, issue));
 		}
 		// B
 		resultType;
@@ -270,8 +273,14 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val realType = system.computeConstraints(expr.operand);
 		val castType = system.resolveReferenceToSingleAndGetType(expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type);
 		// can only cast from and to numeric types
-		system.addConstraint(new JavaClassInstanceConstraint('''«expr.operand» may not be casted''', realType, NumericType));
-		system.addConstraint(new JavaClassInstanceConstraint('''May not cast to «castType»''', castType, NumericType));
+		system.addConstraint(new JavaClassInstanceConstraint(
+			new ValidationIssue(Severity.ERROR, '''«expr.operand» may not be casted''', expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Operand, ""), 
+			realType, NumericType
+		));
+		system.addConstraint(new JavaClassInstanceConstraint(
+			new ValidationIssue(Severity.ERROR, '''May not cast to «castType»''', expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type, ""), 
+			castType, NumericType
+		));
 		return system.associate(castType, expr);
 	}
 
@@ -299,20 +308,22 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConditionalExpression expr) {
 		val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
-		system.addConstraint(new EqualityConstraint(system.computeConstraints(expr.condition), boolType, '''«expr.condition» must be a boolean expression'''));
+		system.addConstraint(new EqualityConstraint(system.computeConstraints(expr.condition), boolType, 
+			new ValidationIssue(Severity.ERROR, '''«expr.condition» must be a boolean expression''', expr.condition, null, "")));
 		// true and false case must be subtype of some common type
 		val commonTV = system.getTypeVariable(expr);
-		val msg = '''«expr.trueCase» and «expr.falseCase» don't share a common type''';
-		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.trueCase), commonTV, msg));
-		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.falseCase), commonTV, msg));		
+		val mkIssue = [new ValidationIssue(Severity.ERROR, '''«expr.trueCase» and «expr.falseCase» don't share a common type''', it, null, "")];
+		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.trueCase), commonTV, mkIssue.apply(expr.trueCase)));
+		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.falseCase), commonTV, mkIssue.apply(expr.falseCase)));		
 		return system.associate(commonTV);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BinaryExpression expr) {
 		if(expr.operator instanceof LogicalOperator) {
 			val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
-			system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.leftOperand), "BCF:290"))
-			system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.rightOperand), "BCF:291"))
+			val mkIssue = [new ValidationIssue(Severity.ERROR, '''«it» must be of type bool''', it, null, "")];
+			system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.leftOperand), mkIssue.apply(expr.leftOperand)))
+			system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.rightOperand), mkIssue.apply(expr.leftOperand)))
 			return system.associate(boolType, expr);
 		}
 		else if(expr.operator instanceof RelationalOperator) {
@@ -320,14 +331,15 @@ class BaseConstraintFactory implements IConstraintFactory {
 			if(expr.operator == RelationalOperator.EQUALS || expr.operator == RelationalOperator.EQUALS) {
 				// left and right must be subtype of some common type
 				val commonTV = system.newTypeVariable(null);
-				val msg = '''«expr.leftOperand» and «expr.rightOperand» don't share a common type''';
-				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), commonTV, msg));
-				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), commonTV, msg));		
+				val mkIssue = [new ValidationIssue(Severity.ERROR, '''«expr.leftOperand» and «expr.rightOperand» don't share a common type''', it, null, "")];
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), commonTV, mkIssue.apply(expr.leftOperand)));
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), commonTV, mkIssue.apply(expr.rightOperand)));		
 			}
 			else {
 				val x8type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.x8TypeQID);
-				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), x8type, "BCF:313"))
-				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), x8type, "BCF:314"))
+				val mkIssue = [new ValidationIssue(Severity.ERROR, '''«it» must be an integer type''', it, null, "")];
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), x8type, mkIssue.apply(expr.leftOperand)))
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), x8type, mkIssue.apply(expr.rightOperand)))
 			}
 			return system.associate(boolType, expr);
 		}
@@ -434,8 +446,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, AbstractType inner, AbstractType outerTypeScheme, String outerName) {
 		val outerTypeInstance = system.newTypeVariable(null);
 		val nestedType = new TypeConstructorType(origin, outerName, #[inner]);
-		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, '''«origin» is not instance of «outerName»'''));
-		system.addConstraint(new ImplicitInstanceConstraint(nestedType, outerTypeInstance, '''«origin» is not instance of «outerName»'''));
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin» is not instance of «outerName»''', origin, null, "")));
+		system.addConstraint(new ImplicitInstanceConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin» is not instance of «outerName»''', origin, null, "")));
 		nestedType;
 	}
 	
@@ -456,8 +468,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val typeName = typeSpecifier.type?.name ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)?.head?.text?.trim;
 			val typeInstance = new TypeConstructorType(null, typeName, typeArgs);
 			val typeInstanceVar = system.newTypeVariable(null);
-			system.addConstraint(new ExplicitInstanceConstraint(typeInstanceVar, type, '''«typeSpecifier» is not instance of «typeName»'''));
-			system.addConstraint(new ImplicitInstanceConstraint(typeInstance, typeInstanceVar, '''«typeSpecifier» is not instance of «typeName»'''));
+			system.addConstraint(new ExplicitInstanceConstraint(typeInstanceVar, type, new ValidationIssue(Severity.ERROR, '''«typeSpecifier» is not instance of «typeName»''', typeSpecifier, null, "")));
+			system.addConstraint(new ImplicitInstanceConstraint(typeInstance, typeInstanceVar, new ValidationIssue(Severity.ERROR, '''«typeSpecifier» is not instance of «typeName»''', typeSpecifier, null, "")));
 			typeInstance;
 		}
 		
@@ -575,24 +587,17 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected def associate(ConstraintSystem system, AbstractType t) {
-		val ln = BaseUtils.lineNumberOf(1);
-		val cn = BaseUtils.classNameOf(1);
-		return associate(system, t, t.origin, '''«cn»:«ln»''');
+		return associate(system, t, t.origin);
 	}
 	
 	protected def associate(ConstraintSystem system, AbstractType t, EObject typeVarOrigin) {
-		val ln = BaseUtils.lineNumberOf(1);
-		val cn = BaseUtils.classNameOf(1);
-		return associate(system, t, typeVarOrigin, '''«cn»:«ln»''')
-	}
-	protected def associate(ConstraintSystem system, AbstractType t, EObject typeVarOrigin, String lineNumberOfOrigin) {
 		if(typeVarOrigin === null) {
 			throw new UnsupportedOperationException("BCF: Associating a type variable without origin is not supported (on purpose)!");
 		}
 		
 		val typeVar = system.getTypeVariable(typeVarOrigin);
 		if(typeVar != t && t !== null) { 
-			system.addConstraint(new EqualityConstraint(typeVar, t, '''BCF:«BaseUtils.lineNumber» -> «lineNumberOfOrigin»'''));
+			system.addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» must be of type «t»''', typeVarOrigin, null, "")));
 		}
 		return typeVar;	
 	}

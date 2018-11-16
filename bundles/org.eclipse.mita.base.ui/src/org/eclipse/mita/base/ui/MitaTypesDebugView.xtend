@@ -2,15 +2,15 @@ package org.eclipse.mita.base.ui
 
 import java.util.HashSet
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.impl.EObjectImpl
 import org.eclipse.jface.text.ITextSelection
 import org.eclipse.jface.viewers.ArrayContentProvider
 import org.eclipse.jface.viewers.ColumnLabelProvider
 import org.eclipse.jface.viewers.ISelection
 import org.eclipse.jface.viewers.TableViewer
 import org.eclipse.jface.viewers.TableViewerColumn
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.UnificationIssue
@@ -29,8 +29,8 @@ import org.eclipse.xtext.resource.EObjectAtOffsetHelper
 import org.eclipse.xtext.resource.XtextResource
 import org.eclipse.xtext.ui.editor.XtextEditor
 import org.eclipse.xtext.util.concurrent.IUnitOfWork
+
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.emf.ecore.impl.EObjectImpl
 
 class MitaTypesDebugView extends ViewPart {
 	protected TableViewer constraintViewer;
@@ -168,7 +168,7 @@ class MitaTypesDebugView extends ViewPart {
             
             override String getText(Object element) {
                 if(element instanceof AbstractTypeConstraint) {
-                	return element.errorMessage
+                	return element.errorMessage.message
                 }
                 return "";
             }
@@ -250,19 +250,26 @@ class MitaTypesDebugView extends ViewPart {
     }
     
 	protected def addIssueColumns(TableViewer viewer) {
-		viewer.createTableViewerColumn("Origin", 100, 0)
-			.setLabelProvider(new ColumnLabelProvider() {
+		viewer.createTableViewerColumn("Severity", 100, 0).setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return (element as UnificationIssue).origin?.toString() ?: "null";
+                return (element as ValidationIssue).severity?.toString() ?: "null";
             }
             
         });
-        viewer.createTableViewerColumn("Message", 100, 1)
+		viewer.createTableViewerColumn("Origin", 100, 1)
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return (element as UnificationIssue).message ?: "null";
+                return (element as ValidationIssue).target?.toString() ?: "null";
+            }
+            
+        });
+        viewer.createTableViewerColumn("Message", 100, 2)
+			.setLabelProvider(new ColumnLabelProvider() {
+            
+            override String getText(Object element) {
+                return (element as ValidationIssue).message ?: "null";
             }
             
         });

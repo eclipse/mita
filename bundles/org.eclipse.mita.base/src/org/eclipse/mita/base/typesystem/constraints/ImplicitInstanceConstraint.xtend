@@ -1,18 +1,18 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
- 
+
 @EqualsHashCode
 @Accessors
 class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	protected final AbstractType isInstance;
 	protected final AbstractType ofType;
 	
-	new(AbstractType isInstance, AbstractType ofType, String errorMessage) {
+	new(AbstractType isInstance, AbstractType ofType, ValidationIssue errorMessage) {
 		super(errorMessage);
 		this.isInstance = isInstance;
 		this.ofType = ofType;

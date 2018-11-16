@@ -41,7 +41,15 @@ public interface IValidationIssueAcceptor {
 		public ValidationIssue(Severity severity, String message, String issueCode) {
 			this(severity, message, null, null, issueCode);
 		}
-
+		
+		public ValidationIssue(ValidationIssue self, String newMessage) {
+			this.message = newMessage;
+			this.severity = self.severity;
+			this.issueCode = self.issueCode;
+			this.target = self.target;
+			this.feature = self.feature;
+		}
+		
 		public ValidationIssue(Severity severity, String message, EObject target, EStructuralFeature feature, String issueCode) {
 			Assert.isNotNull(message);
 			Assert.isNotNull(issueCode);

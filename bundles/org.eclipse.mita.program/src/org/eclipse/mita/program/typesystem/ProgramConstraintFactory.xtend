@@ -16,6 +16,8 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
@@ -104,7 +106,11 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae) {
 		if(ae.operator == AssignmentOperator.ASSIGN) {
-			system.addConstraint(new SubtypeConstraint(system.computeConstraints(ae.expression), system.computeConstraints(ae.varRef), '''«ae.expression» cannot be assigned to «ae.varRef»'''));
+			system.addConstraint(new SubtypeConstraint(
+				system.computeConstraints(ae.expression), 
+				system.computeConstraints(ae.varRef), 
+				new ValidationIssue(Severity.ERROR, '''«ae.expression» cannot be assigned to «ae.varRef»''', ae, null, "")
+			));
 		}
 		else {
 			println('''PCF: computeConstraints.AssignmentExpression not implemented for «ae.operator»''');
@@ -127,7 +133,10 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		
 		var TypeVariable result;
 		if(explicitType !== null && inferredType !== null) {
-			system.addConstraint(new SubtypeConstraint(inferredType, explicitType, '''«vardecl.initialization» cannot be assigned to variables of type «vardecl.typeSpecifier»'''));
+			system.addConstraint(new SubtypeConstraint(
+				inferredType, explicitType, 
+				new ValidationIssue(Severity.ERROR, '''«vardecl.initialization» cannot be assigned to variables of type «vardecl.typeSpecifier»''', vardecl, null, "")
+			));
 			result = explicitType;
 		} else if(explicitType !== null || inferredType !== null) {
 			result = explicitType ?: inferredType;
@@ -151,7 +160,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val combinedType = new ProdType(decon, decon.productType?.toString ?: "", vars, #[]);
 		val deconType = system.resolveReferenceToSingleAndGetType(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
 
-		system.addConstraint(new EqualityConstraint(deconType, combinedType, "PCF:150"));
+		system.addConstraint(new EqualityConstraint(deconType, combinedType, new ValidationIssue(Severity.ERROR, '''Couldn't resolve types''', decon, null, "")));
 		system.computeConstraints(decon.body);
 		return system.associate(combinedType);
 	}
@@ -171,8 +180,8 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val resultType = system.newTypeVariable(expr);
 		val outerTypeInstance = system.computeConstraints(expr.expression);
 		val nestedType = new TypeConstructorType(null, "reference", #[resultType]);
-		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, referenceTypeVarOrigin, '''Internal error: failed to instantiate reference<T>'''));
-		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, "PCF:170"));
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, referenceTypeVarOrigin, new ValidationIssue(Severity.ERROR, '''INTERNAL ERROR: failed to instantiate reference<T>''', expr, null, "")));
+		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''INTERNAL ERROR: failed to instantiate reference<T>''', expr, null, "")));
 		return system.associate(resultType, expr);
 	}
 			
@@ -183,7 +192,9 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConfigurationItemValue configItemValue) {
 		val leftSide = system.resolveReferenceToSingleAndGetType(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item);
 		val rightSide = system.computeConstraints(configItemValue.value);
-		system.addConstraint(new SubtypeConstraint(rightSide, leftSide, '''«configItemValue.value» not valid for «NodeModelUtils.findNodesForFeature(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item).head?.text?.trim»'''));
+		val txt = NodeModelUtils.findNodesForFeature(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item).head?.text?.trim;
+		system.addConstraint(new SubtypeConstraint(rightSide, leftSide, 
+			new ValidationIssue(Severity.ERROR, '''«configItemValue.value» not valid for «txt»''', configItemValue, null, "")));
 		return system.associate(leftSide, configItemValue);
 	}
 	
@@ -241,7 +252,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 					it -> (system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType -> system.computeConstraints(aValue) as AbstractType);
 				].force
 				argumentParamTypesAndValueTypes.forEach[
-					system.addConstraint(new SubtypeConstraint(it.value.value, it.value.key, '''«it.key.value» not compatible with «it.key.key»'''));
+					system.addConstraint(new SubtypeConstraint(it.value.value, it.value.key, new ValidationIssue(Severity.ERROR, '''«it.key.value» not compatible with «it.key.key»''', it.key.value.key, null, "")));
 				]
 				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
 					val tv = system.newTypeHole(varOrFun) as AbstractType;
@@ -295,7 +306,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			system.associate(system.computeConstraints(statement.value), statement);
 		}
 
-		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar, '''Can't return «statement.value»'''));
+		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar, new ValidationIssue(Severity.ERROR, '''Can't return «statement.value»''', statement, null, "")));
 		return returnValVar;	
 	}
 }
