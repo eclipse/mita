@@ -53,8 +53,8 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(DefaultRuntimeModule).annotatedWith(Names.named("injectingModule")).toInstance(this)
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
 	
-		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(IConstraintFactory).to(PlatformConstraintFactory);
+		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);

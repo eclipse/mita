@@ -31,7 +31,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Modality modality) {
 		// modalities are accessed like `accelerometer.x_axis.read()`. 
-		// Therefore, accelerometer.x_axis needs the type "∗SystemResource -> modality<concreteType>"
+		// Therefore, accelerometer.x_axis needs the type "SystemResource -> modality<concreteType>"
 		val returnType = system.computeConstraints(modality.typeSpecifier);
 		// \T. modality<T>
 		val modalityType = typeRegistry.getTypeModelObjectProxy(system, modality, StdlibTypeRegistry.modalityTypeQID);
@@ -40,14 +40,14 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		
 		val systemResource = modality.eContainer as AbstractSystemResource;
 		
-		val resultType = new FunctionType(modality, modality.name, new ProdType(null, modality.name + "_args", #[system.getTypeVariable(systemResource.typeKind)], #[]), modalityWithType);
+		val resultType = new FunctionType(modality, modality.name, new ProdType(null, modality.name + "_args", #[system.getTypeVariable(systemResource)], #[]), modalityWithType);
 		return system.associate(resultType);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Signal sig) {
 		// signals are accessed like `mqtt.t.write("foo")`. 
 		// Therefore, mqtt.t needs the type "(SystemResource, arg1, ...) -> siginst<concreteType>"
-		// and topic needs to be of type (String, u32) -> ((∗SystemResource, arg1, ...) -> siginst<concreteType>)
+		// and topic needs to be of type (String, u32) -> ((SystemResource, arg1, ...) -> siginst<concreteType>)
 		val returnType = system.computeConstraints(sig.typeSpecifier);
 		// \T. sigInst<T>
 		val sigInstType = typeRegistry.getTypeModelObjectProxy(system, sig, StdlibTypeRegistry.sigInstTypeQID);

@@ -55,10 +55,10 @@ class SystemSpecification extends PackageAssociation {
 abstract class AbstractSystemResource extends Type, GeneratedElement {
 	Instantiability instantiable
 	
-	contains resolving ConfigurationItem[] configurationItems
-	contains resolving Signal[] signals
-	contains resolving SystemResourceEvent[] events
-	contains resolving Modality[] modalities
+	contains ConfigurationItem[] configurationItems
+	contains Signal[] signals
+	contains SystemResourceEvent[] events
+	contains Modality[] modalities
 	
 	op String toString() {
 		return super.toString();
@@ -74,7 +74,7 @@ class ConfigurationItem extends Property {
 }
 
 class Signal extends Operation {
-	contains resolving SignalEvent[] events opposite signal
+	contains SignalEvent[] events opposite signal
 }
 class SignalParameter extends Parameter {
 	contains Expression defaultValue

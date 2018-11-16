@@ -394,6 +394,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	val Predicate<IEObjectDescription> globalElementFilter = [ x |
 		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x.EClass)) ||
+			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass)) ||
 			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
@@ -404,7 +405,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 		val exclusion = 
 			(PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
 			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
