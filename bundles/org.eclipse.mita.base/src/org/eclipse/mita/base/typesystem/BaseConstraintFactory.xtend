@@ -7,15 +7,20 @@ import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.AdditiveOperator
+import org.eclipse.mita.base.expressions.BinaryExpression
+import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.DoubleLiteral
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.LogicalOperator
+import org.eclipse.mita.base.expressions.MultiplicativeOperator
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
 import org.eclipse.mita.base.expressions.NumericalMultiplyDivideExpression
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.RelationalOperator
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
@@ -65,8 +70,7 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.expressions.MultiplicativeOperator
-import org.eclipse.mita.base.expressions.LogicalRelationExpression
+import org.eclipse.mita.base.expressions.ConditionalExpression
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -288,11 +292,49 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, LogicalRelationExpression expr) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BoolLiteral bl) {
+		val boolType = typeRegistry.getTypeModelObjectProxy(system, bl, StdlibTypeRegistry.boolTypeQID);
+		return system.associate(boolType, bl);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConditionalExpression expr) {
 		val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
-		system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.leftOperand), "BCF:290"))
-		system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.rightOperand), "BCF:291"))
-		return system.associate(boolType, expr);
+		system.addConstraint(new EqualityConstraint(system.computeConstraints(expr.condition), boolType, '''«expr.condition» must be a boolean expression'''));
+		// true and false case must be subtype of some common type
+		val commonTV = system.getTypeVariable(expr);
+		val msg = '''«expr.trueCase» and «expr.falseCase» don't share a common type''';
+		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.trueCase), commonTV, msg));
+		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.falseCase), commonTV, msg));		
+		return system.associate(commonTV);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BinaryExpression expr) {
+		if(expr.operator instanceof LogicalOperator) {
+			val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
+			system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.leftOperand), "BCF:290"))
+			system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.rightOperand), "BCF:291"))
+			return system.associate(boolType, expr);
+		}
+		else if(expr.operator instanceof RelationalOperator) {
+			val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
+			if(expr.operator == RelationalOperator.EQUALS || expr.operator == RelationalOperator.EQUALS) {
+				// left and right must be subtype of some common type
+				val commonTV = system.newTypeVariable(null);
+				val msg = '''«expr.leftOperand» and «expr.rightOperand» don't share a common type''';
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), commonTV, msg));
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), commonTV, msg));		
+			}
+			else {
+				val x8type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.x8TypeQID);
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), x8type, "BCF:313"))
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), x8type, "BCF:314"))
+			}
+			return system.associate(boolType, expr);
+		}
+		else {
+			return system.associate(new BottomType(expr, println("BinaryExpression not implemented for " + expr.operator)));
+			
+		}
 	}
 	
 	protected def TypeVariable computeConstraintsForBuiltinOperation(ConstraintSystem system, EObject expr, QualifiedName opQID, List<Expression> operands) {

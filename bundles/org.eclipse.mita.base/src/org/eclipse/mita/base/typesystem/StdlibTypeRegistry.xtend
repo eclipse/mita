@@ -41,6 +41,7 @@ class StdlibTypeRegistry {
 	public static val floatTypeQID = QualifiedName.create(#[/*"stdlib",*/ "float"]);
 	public static val doubleTypeQID = QualifiedName.create(#[/*"stdlib",*/ "double"]);
 	public static val boolTypeQID = QualifiedName.create(#[/*"stdlib",*/ "bool"]);
+	public static val x8TypeQID = QualifiedName.create(#[/*"stdlib",*/ 'xint8']);
 	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#[/*"stdlib",*/ it])];
 	public static val optionalTypeQID = QualifiedName.create(#[/*"stdlib",*/ "optional"]);
 	public static val referenceTypeQID = QualifiedName.create(#[/*"stdlib",*/ "reference"]);

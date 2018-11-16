@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.solver
 import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.List
+import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
@@ -138,19 +139,19 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			println(constraintGraphSubstitution);
 		}		
 		val resolvedGraphAndSubst = constraintGraph.resolve(constraintGraphSubstitution, typeResolutionOrigin);
-		if(!resolvedGraphAndSubst.value.valid) {
-			val failure = resolvedGraphAndSubst.value;
-			return new ConstraintSolution(system, failure.substitution, failure.issues);
+		val resolvedGraph = resolvedGraphAndSubst.key.key;
+		val resolvedGraphSubstitution = resolvedGraphAndSubst.key.value;
+		if(resolvedGraphSubstitution === null) {
+			
+			return new ConstraintSolution(system, resolvedGraphSubstitution, resolvedGraphAndSubst.value);
 		}
-		val resolvedGraph = resolvedGraphAndSubst.key;
-		val resolvedGraphSubstitution = resolvedGraphAndSubst.value.substitution;
 		if(debugOutput) {
 			println("------------------")
 			println(resolvedGraphSubstitution);
 		}		
 		val solution = resolvedGraph.unify(resolvedGraphSubstitution);
 		
-		return new ConstraintSolution(system, solution.substitution, solution.issues.filterNull.toList);
+		return new ConstraintSolution(system, solution.substitution, (resolvedGraphAndSubst.value + solution.issues).filterNull.toList);
 	}
 	
 	protected def boolean isWeaklyUnifiable(ConstraintSystem system) {
@@ -560,9 +561,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 	}
 	
-	protected def Pair<ConstraintGraph, UnificationResult> resolve(ConstraintGraph graph, Substitution _subtitution, EObject typeResolutionOrigin) {
+	protected def Pair<Pair<ConstraintGraph, Substitution>, List<UnificationIssue>> resolve(ConstraintGraph graph, Substitution _subtitution, EObject typeResolutionOrigin) {
 		val varIdxs = graph.typeVariables;
 		var resultSub = _subtitution;
+		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
@@ -584,7 +586,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					supremum !== null && successors.forall[ t | 
 						typeRegistry.isSubType(typeResolutionOrigin, supremum, t)
 					];
-					return null -> UnificationResult.failure(v, "CSS: Unable to find valid subtype for " + v.name);					
+					issues += (graph.errorMessages.getOrDefault(v, #[]) + #["CSS: Unable to find valid subtype for " + v.name]).map[new UnificationIssue(v, it)];
 				}
 			}
 			else if(!successors.empty) {
@@ -593,14 +595,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					graph.replace(v, infimum);
 					resultSub = resultSub.replace(v, infimum) => [add(v, infimum)];
 				} else {
-					return null -> UnificationResult.failure(v, "CSS: Unable to find valid supertype for " + v.name);
+					issues += (graph.errorMessages.getOrDefault(v, #[]) + #["CSS: Unable to find valid subtype for " + v.name]).map[new UnificationIssue(v, it)];
 				}
 			}
 			if(enableDebug) {
 				println(graph.toGraphviz);
 			}
 		}
-		return graph -> UnificationResult.success(resultSub);
+		return (graph -> resultSub) -> issues;
 	}
 	
 	protected def UnificationResult unify(ConstraintGraph graph, Substitution substitution) {
@@ -650,6 +652,8 @@ class ConstraintGraph extends Graph<AbstractType> {
 	protected val StdlibTypeRegistry typeRegistry;
 	protected val ConstraintSystem constraintSystem;
 	protected val EObject typeResolutionOrigin;
+	@Accessors
+	protected val Map<AbstractType, Iterable<String>> errorMessages;
 	
 	new(ConstraintSystem system, StdlibTypeRegistry typeRegistry, EObject typeResolutionOrigin) {
 		this.typeRegistry = typeRegistry;
@@ -658,6 +662,10 @@ class ConstraintGraph extends Graph<AbstractType> {
 		system.constraints
 			.filter(SubtypeConstraint)
 			.forEach[ addEdge(it.subType, it.superType) ];
+		errorMessages = system.constraints
+			.filter(SubtypeConstraint)
+			.flatMap[#[it.subType -> it.errorMessage, it.superType -> it.errorMessage]]
+			.toSet.groupBy[it.key].mapValues[it.map[it.value]]
 	}
 	def getTypeVariables() {
 		return nodeIndex.filter[k, v| v instanceof TypeVariable].keySet;

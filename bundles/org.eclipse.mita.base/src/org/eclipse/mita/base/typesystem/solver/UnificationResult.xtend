@@ -43,5 +43,8 @@ class UnificationResult {
 	static def UnificationResult failure(Object origin, String issue) {
 		return new UnificationResult(null, new UnificationIssue(origin, issue));
 	}
+	static def UnificationResult failure(Object origin, Iterable<String> issues) {
+		return new UnificationResult(null, issues.map[new UnificationIssue(origin, it)]);
+	}
 	
 }
