@@ -286,6 +286,25 @@ sensor Gyroscope_BMG160 {
 //	generator ""
 //}
 
+sensor noise_sensor {
+	generator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorGenerator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator"
+	
+	/**
+	 * The sampling frequency in Hertz.
+	 */
+	configuration-item samplingFrequency: uint32 = 2560
+	/**
+	 * The timeout to wait for when getting noise in milliseconds.
+	 */
+	configuration-item timeout: uint32 = 100
+	
+	/**
+	 * The noise the microphone of the XDK measures. This is unitless and needs to be calibrated in code yourself if you want absolute values. 
+	 */
+	modality noise: float
+}
+
 enum BME280_PowerMode {
 	/**
 	 * Normal mode comprises an automated perpetual cycling between an (active) measurement period and an (inactive) standby period.
@@ -357,14 +376,32 @@ sensor BME280 {
 	/**
 	 * The relative humidity as percentage
 	 */
-	modality humidity : float
+	modality humidity : uint32
 	
-	/**
-	 * The relative humidity as percentage in Q22.10 integer format.
-	 * Divide this value by 1024 to get the percentage.
-	 */
-	modality humidity_fixed_point : uint32
+}
+
+enum BMM150_Preset {                            
+/**< ID to represent bmm150 Presetmode to lowpower  */        
+	LowPower,    
+	/**< ID to represent bmm150 Presetmode to regular  */         
+    Regular,     
+    /**< ID to represent bmm150 Presetmode to highaccuracy  */    
+    HighAccuracy,
+    /**< ID to represent bmm150 Presetmode to enhanced  */        
+    Enhanced    
+}
+/**
+ * The XDK's magnetometer
+ */
+sensor BMM150 {
+	generator "org.eclipse.mita.platform.xdk110.sensors.Bmm150Generator"
 	
+	configuration-item mode: BMM150_Preset = BMM150_Preset.Regular
+	
+	modality x_axis: int32
+    modality y_axis: int32
+    modality z_axis: int32
+    modality resistance: uint16
 }
 
 enum MAX44009_IntegrationTime {
@@ -408,7 +445,6 @@ enum MAX44009_IntegrationTime {
 	 */
 	MS_6_25
 }
-
 
 /**
  * The XDK light sensor.
@@ -465,6 +501,8 @@ sensor MAX44009 {
  * BLE is Bluetooth Low Energy using GATT profiles. 
  * At the moment we only support slave mode where the XDK becomes a device that can be connected to (as compared to connecting to some other device).
  */
+
+export exception NoDeviceConnectedException;
 
 connectivity named-singleton BLE {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.BleGenerator"
@@ -535,7 +573,90 @@ sensor Button {
 	event released
 }
 
-alt Authentification {
+enum ADC_Channel {
+	CH4,
+    CH5,
+    CH6,
+    CH7,
+    TEMP,
+    VDDDIV3,
+    VDD,
+    VSS,
+    VREFDIV2
+}
+
+enum ADC_Reference_Voltage {    
+	/**< Internal 1.25V reference. */                     
+	Ref_1V25,     
+	/** Internal 2.5V reference. */                       
+    Ref_2V5,         
+    /** Buffered VDD. */                                  
+    Ref_VDD,        
+	/** Internal differential 5V reference. */            
+    Ref_5VDIFF,    
+    /** Single ended ext. ref. from pin 6. */             
+    Ref_ExtSingle, 
+    /** Differential ext. ref. from pin 6 and 7. */       
+    Ref_ExtDiff, 
+    /** Unbuffered 2xVDD. */                              
+    Ref_2xVDD 
+}
+
+enum ADC_Resolution {  
+	/**< 12 bit sampling. */
+	Resolution_12Bit, 
+	/**< 8 bit sampling. */  
+    Resolution_8Bit,   
+    /**< 6 bit sampling. */ 
+    Resolution_6Bit,  
+    /**< Oversampling. */    
+    Resolution_OVS
+}
+
+enum ADC_SampleTime {  
+	/**< 1 clock cycle. */  
+	Time_1,            
+	/**< 2 clock cycle. */  
+    Time_2,            
+    /**< 4 clock cycle. */  
+    Time_4,            
+    /**< 8 clock cycle. */  
+    Time_8,            
+    /**< 16 clock cycle. */ 
+    Time_16,           
+    /**< 32 clock cycle. */ 
+    Time_32,           
+    /**< 64 clock cycle. */ 
+    Time_64,           
+    /**< 128 clock cycle. */
+    Time_128,          
+    /**< 256 Clock cycle. */
+    Time_256
+}
+
+/**
+ * The XDK's ADC (Analog Digital Converter)
+ */
+connectivity named-singleton ADC {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.AdcGenerator"
+	validator "org.eclipse.mita.platform.xdk110.connectivity.AdcValidator"
+	
+	/**
+	 * The reference voltage to measure against with referenceVoltage one of Ref_ExtSingle or Ref_ExtDiff in [mV].
+	 */
+	configuration-item externalReferenceVoltage: uint16
+	
+	/**
+	 * an ADC channel. Read only. [mV]
+	 */
+	signal channel(channel: ADC_Channel, 
+		referenceVoltage: ADC_Reference_Voltage = ADC_Reference_Voltage.Ref_2V5, 
+		resolution: ADC_Resolution = ADC_Resolution.Resolution_12Bit, 
+		sampleTime: ADC_SampleTime = ADC_SampleTime.Time_16
+	): uint16
+}
+
+alt WlanAuthentication {
 	None 
 	/**
      * WPA(2) with PSK (pre-shared key) 
@@ -587,7 +708,7 @@ connectivity named-singleton WLAN {
     /**
      * Choose personal WPA connection or Enterprise WPA connection
      */    
-    required configuration-item authentification : Authentification
+    required configuration-item authentication : WlanAuthentication
 
     /**
      * The SSID of the WLAN network we want to connect to
@@ -608,6 +729,10 @@ connectivity named-singleton WLAN {
 }
 
 exception MqttException;
+
+alt MqttAuthentication {
+	None | Login: {username: string, password: string}
+}
 
 /**
  * MQTT (Message Queuing Telemetry Transport) is an ISO standard (ISO/IEC PRF 20922) publish-subscribe-based messaging protocol.
@@ -635,6 +760,8 @@ connectivity many MQTT {
 	 */
 	required configuration-item clientId : string
 	
+	configuration-item authentication: MqttAuthentication = None()
+	
 	/**
 	 * The clean session flag indicates to the broker whether the client wants
      * to establish a clean session or a persistent session where all
@@ -655,6 +782,46 @@ connectivity many MQTT {
 	 */
 	signal topic(name : string, qos : uint32 = 0) : string
 	
+}
+
+alt HonoAuthentication {
+	Authenticated: { username: string, password: string }
+	| Unauthenticated: { tenant: string, deviceId: string }
+}
+
+connectivity many HonoMqtt {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.HonoGenerator"
+    validator "org.eclipse.mita.platform.xdk110.connectivity.MqttValidator"
+	
+	/**
+	 * The underlying transport connectivity we use to send the data out. In the future we might also
+	 * support LoRa here.
+	 */
+	required configuration-item transport : WLAN
+	
+	/**
+	 * The URL pointing to the MQTT broker, for example: mqtt://does-not.exist:8000
+	 */
+	required configuration-item url : string
+	
+	/**
+	 * The client identifier (here: clientID) is a identifier of each MQTT client
+     * connecting to a MQTT broker. It needs to be unique for the broker to
+     * know the state of the client. 
+	 */
+	required configuration-item clientId : string
+	
+	required configuration-item authentication: HonoAuthentication
+	
+	/**
+	 * Publishes a Hono telemetry message 
+	 */
+	signal telemetry(qos: uint32 = 0) : string
+	
+	/**
+	 * Publishes a Hono event. 
+	 */
+	signal ^event() : string
 }
 
 /**
@@ -813,6 +980,25 @@ bus named-singleton GPIO {
 	signal digitalOut(pin : GPIOPin, initialValue : bool = false) : bool
 }
 
+export exception EndOfFileException
+
+io named-singleton SDCard {
+	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
+	sizeInferrer "org.eclipse.mita.platform.xdk110.io.SDCardSizeInferrer"
+
+	signal resumingBinaryRead(filePath: string, blockSize: uint32) : array<uint8>
+	signal appendingBinaryWrite(filePath: string) : array<uint8>
+
+	signal resumingTextRead(filePath: string, blockSize: uint32) : string
+	signal appendingTextWrite(filePath: string) : string
+
+	signal rewindingBinaryRead(filePath: string, fileSize: uint32) : array<uint8>
+	signal rewindingBinaryWrite(filePath: string) : array<uint8>
+
+	signal rewindingTextRead(filePath: string, fileSize: uint32) : string
+	signal rewindingTextWrite(filePath: string) : string
+}
+
 
 alias environment for BME280
 alias accelerometer for BMA280
@@ -820,6 +1006,7 @@ alias gyroscope for GyroscopeSensorFusion
 alias light for MAX44009
 alias button_one for Button
 alias button_two for Button
+alias magnetometer for BMM150
 
 platform XDK110 {
 	module "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGeneratorModule"
@@ -828,22 +1015,37 @@ platform XDK110 {
 	has environment
 	has accelerometer
 	has gyroscope
+	has magnetometer
 	has light
 	has button_one
 	has button_two
+	has noise_sensor
 	
 	has Gyroscope_BMI160
 	has Gyroscope_BMG160
 	
 	has I2C
 	has GPIO
+	has ADC
 	has BLE
 	has LED
 	has WLAN
 	has MQTT
+	has HonoMqtt
 	has HttpRestClient
 	
+	has SDCard
+
 	configuration-item applicationName : string = "EclipseMitaApplication"
+	/**
+	 * Enabling this powers the 2.5V and 3.3V external power on the extension bus. 
+	 */
+	configuration-item powerExternalDevices: bool = false
+	/**
+	 * Configure the XDK to wait some time in milliseconds before setting up and enabling resources.
+	 * This is especially useful to view debug output.
+	 */
+	configuration-item startupDelay: uint32 = 0
 	
 	event startup
 }

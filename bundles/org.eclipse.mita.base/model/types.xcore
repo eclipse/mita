@@ -420,11 +420,12 @@ class ImportStatement {
 class SumType extends ComplexType, Exportable {
 	// I would use features, but if I want to have SumAlternative as a ComplexType (which it is), then I can't make it a Declaration as well
 	contains SumAlternative[] alternatives opposite sumType
-			
+
 	op String toString() {
 		return super.toString();
 	}
 }
+
 class SumAlternative extends StructuralType, GeneratedObject, HasAccessors {
 	container SumType sumType opposite alternatives
 	
@@ -476,8 +477,10 @@ class AnonymousProductType extends SumAlternative {
 	}
 	op Type realType() {
 		if(typeSpecifiers.length == 1) {
-			val actualType = typeSpecifiers.get(0);
-			return actualType.^type;
+			val mbRealType = typeSpecifiers.get(0).^type;
+			if(mbRealType instanceof HasAccessors) {
+				return mbRealType;
+			}
 		}
 		return this;	
 	}
@@ -489,7 +492,7 @@ class AnonymousProductType extends SumAlternative {
 			val actualType = actualTypeSpec.^type;
 			if(actualType instanceof HasAccessors) {
 				return actualType.accessorsTypes;
-			}				
+			}
 		}
 		return typeSpecifiers;
 	}

@@ -42,6 +42,7 @@ import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -159,7 +160,12 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
+
 	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
+		if(right === null) {
+			return codeFragmentProvider.create('''''');
+		}
+
 		val isReturnStmt = left instanceof ReturnStatement;
 		
 		val varNameLeft = if(left instanceof VariableDeclaration) {
@@ -305,7 +311,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	
-		override generate(ElementReferenceExpression ref, String resultVariableName) {
+
+		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;

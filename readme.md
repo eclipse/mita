@@ -44,7 +44,7 @@ Fixing a bug or introducing a new feature usually comes with writing a unit test
 Both test suites can be run from within your Eclipse workspace via `right-click -> Run As -> JUnit Plugin Tests`
 
 ### Create pull request
-In order to create a pull request you need a GitHug account as well as an Eclipse account.
+In order to create a pull request you need a GitHub account as well as an Eclipse account.
 1. Create your own fork of this repository.
 2. Switch your git remote origin to reference your fork. You can do this in Eclipse: In the properties of the git repository just change the value of remote origin url.
 3. [Sign off](https://git-scm.com/docs/git-commit#git-commit--s) your commits using the same email address you are using for your Eclipse account.
@@ -53,4 +53,4 @@ In order to create a pull request you need a GitHug account as well as an Eclips
 
 ## Get in Touch
 Come and find us in our [Mattermost channel at eclipse.org](https://mattermost.eclipse.org/eclipse/channels/mita) or
-check out the [Eclipse Mita project home page](https://www.eclipse.org/mita) for details regarding our mailing list.
+check out the [Eclipse Mita project home page](https://www.eclipse.org/mita) for details regarding our mailing list. We also hold bi-weekly meetings at 2:00 PM GMT+1 [here](https://eclipse.zoom.us/j/575700843) starting from Nov 13, 2018.

@@ -19,9 +19,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.emf.common.util.EList
 import org.eclipse.mita.base.expressions.util.ArgumentSorter
-import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 

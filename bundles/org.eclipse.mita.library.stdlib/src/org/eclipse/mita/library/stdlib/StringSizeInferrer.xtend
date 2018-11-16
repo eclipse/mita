@@ -63,9 +63,21 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		/*
 		 * Find initial size
 		 */
+		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
+		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
+		val initialization = variable.initialization ?: (
+			referencesToVariable
+				.map[it.eContainer]
+				.filter(AssignmentExpression)
+				.filter[ae |
+					val left = ae.varRef; 
+					left instanceof ElementReferenceExpression && (left as ElementReferenceExpression).reference === variable 
+				]
+				.map[it.expression]
+				.head
+		)
 		var stringHasFixedSize = false;
-		val initialLength = if(variable.initialization !== null) {
-			val initialization = variable.initialization;
+		val initialLength = if(initialization !== null) {
 			if(initialization instanceof NewInstanceExpression) {
 				stringHasFixedSize = true;
 				initialization.inferFixedSize();
@@ -83,8 +95,6 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		/*
 		 * Strategy is to find all places where this variable is modified and try to infer the length there.
 		 */		
-		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
-		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
 		val modifyingExpressions = referencesToVariable.map[ref | 
 			val refContainer = ref.eContainer;
 			

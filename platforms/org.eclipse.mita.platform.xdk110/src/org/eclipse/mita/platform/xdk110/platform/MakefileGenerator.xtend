@@ -58,7 +58,8 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 			-I$(BCDS_APP_SOURCE_DIR)/base \
 			-I$(BCDS_BASE_DIR)/xdk110/Common/include \
 			-I$(BCDS_BASE_DIR)/xdk110/Common/certs/XDKDummy \
-			-I$(BCDS_BASE_DIR)/xdk110/Common/source
+			-I$(BCDS_BASE_DIR)/xdk110/Common/source \
+			-I$(BCDS_BASE_DIR)/xdk110/Common/source/Connectivity
 			
 		#List all the application source file under variable BCDS_XDK_APP_SOURCE_FILES in a similar pattern as below
 		export BCDS_XDK_APP_SOURCE_FILES = \

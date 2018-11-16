@@ -29,7 +29,7 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 	@Inject UnravelInterpolatedStringsStage unravelInterpolatedStringsStage
 	@Inject PrepareLoopForFunctionUnvravelingStage prepareLoopForFunctionUnvravelingStage
 	@Inject PrepareArrayRuntimeChecksStage prepareArrayRuntimeChecksStage
-	@Inject UnravelLiteralArrayReturnStage unravelLiteralArrayReturnStage
+	@Inject UnravelLiteralArraysStage unravelLiteralArrayReturnStage
 	@Inject EnforceOperatorPrecedenceStage enforceOperatorPrecedenceStage
 
 	public def transform(Program program) {

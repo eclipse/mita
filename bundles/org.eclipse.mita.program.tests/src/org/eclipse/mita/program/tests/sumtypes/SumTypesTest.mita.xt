@@ -27,7 +27,7 @@ alt anyVec {
 	| vec4d: int32, int32, int32, int32
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code" at "incVecs"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "incVecs"
 fn incVecs(a: anyVec) {
 	// 4*int32 + 1 = 4*4 + 1 = 17
 	// XPECT inferredSize --> 17
@@ -88,23 +88,23 @@ fn incVecs(a: anyVec) {
         	b = vec3d(x + 1, y + 1, z + 1);
         }
         is(anyVec.vec0d) {
-        	// XPECT errors --> "Wrong number of arguments, expected [] ." at "anyVec.vec0d(1)"
+        	// XPECT errors --> "Wrong number of arguments, expected []." at "anyVec.vec0d(1)"
     		b = anyVec.vec0d(1);
     	}
         is(anyVec.vec1d -> x) {
-        	// XPECT errors --> "Wrong number of arguments, expected [int32] ." at "anyVec.vec1d(x + 1, x + 2)"
+        	// XPECT errors --> "Wrong number of arguments, expected [int32]." at "anyVec.vec1d(x + 1, x + 2)"
         	b = anyVec.vec1d(x + 1, x + 2);
 		}
         is(anyVec.vec2d -> x, y) {
-        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32] ." at "anyVec.vec2d(x + 1, y + 1, x + 2)"
+        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32]." at "anyVec.vec2d(x + 1, y + 1, x + 2)"
         	b = anyVec.vec2d(x + 1, y + 1, x + 2);
         }
         is(anyVec.vec3d -> x, y, z) {
-        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32] ." at "anyVec.vec3d(x + 1, y + 1, z + 1, x + 2)"
+        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32]." at "anyVec.vec3d(x + 1, y + 1, z + 1, x + 2)"
         	b = anyVec.vec3d(x + 1, y + 1, z + 1, x + 2);
         }
         is(anyVec.vec4d -> x, y, z, w) {
-        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32, int32] ." at "anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2)"
+        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32, int32]." at "anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2)"
         	b = anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2);
         }
         // XPECT errors --> "Wrong number of deconstructors, expected 1." at "is(anyVec.vec1d -> x, y) {        }"
@@ -143,13 +143,13 @@ fn incVecs(a: anyVec) {
         	b = badVec2d(1, true);
         	var bVec: badVec2d;
         	/* XPECT errors ---
-        	    "Incompatible types: 'int32' can't be converted to 'bool'" at "y"
-        		"Incompatible types: 'int32' can't be converted to 'int16'" at "x"
+        	    "Incompatible types: 'int32' can't be converted to 'bool'." at "y"
+        		"Incompatible types: 'int32' can't be converted to 'int16'." at "x"
         	--- */
         	bVec = badVec2d(x, y);
         	/* XPECT errors ---
-        	    "Incompatible types: 'int32' can't be converted to 'bool'" at "y"
-        		"Incompatible types: 'int32' can't be converted to 'int16'" at "x"
+        	    "Incompatible types: 'int32' can't be converted to 'bool'." at "y"
+        		"Incompatible types: 'int32' can't be converted to 'int16'." at "x"
         	--- */
         	bVec = badVec2d(x = x, y = y);
         }
@@ -157,11 +157,4 @@ fn incVecs(a: anyVec) {
         }
     }
 	return b;
-}
-
-fn testAssignments() {
-    var v3 : anyVec.vec3d = anyVec.vec3d(10, 10, 10);
-    var av : anyVec = anyVec.vec3d(10, 10, 10);
-    // XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on vec3d and vec1d." at "v3 = anyVec.vec1d(10)"
-    v3 = anyVec.vec1d(10);
 }

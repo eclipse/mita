@@ -25,6 +25,7 @@ import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
@@ -33,10 +34,15 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.types.TypesFactory
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
@@ -48,6 +54,7 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
@@ -57,6 +64,7 @@ import static org.eclipse.mita.base.util.BaseUtils.*
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.base.expressions.ExpressionsFactory
 
 class ModelUtils {
 
@@ -217,6 +225,18 @@ class ModelUtils {
 	}
 	
 	
+	def static getSortedArguments(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
+		if(arguments.empty || arguments.head.parameter === null) {
+			arguments;
+		}
+		else {
+			/* Important: we must not filterNull this list as that destroys the order of arguments. It is possible
+			 * that we do not find an argument matching a parameter.
+			 */
+			parameters.map[parm | arguments.findFirst[it.parameter?.name == parm.name]]
+		}
+	}	
+	
 	
 	def static boolean typeSpecifierEqualsByName(PresentTypeSpecifier ts, Object o) {
 		return typeSpecifierEqualsWith([t1, t2 | t1.name == t2.name], ts, o)
@@ -230,7 +250,7 @@ class ModelUtils {
 		if(!equalityCheck.apply(ts1.type, ts2.type) || ts1.typeArguments.length != ts2.typeArguments.length) {
 			return false;
 		}
-		zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(equalityCheck, tss.key, tss.value)])
+		BaseUtils.zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(equalityCheck, tss.key, tss.value)])
 	}
 	
 	def static boolean typeInferenceResultEqualsWith((Type, Type) => Boolean equalityCheck, InferenceResult ir1, Object o) {
@@ -241,7 +261,7 @@ class ModelUtils {
 		if(!equalityCheck.apply(ir1.type, ir2.type) || ir1.bindings.length != ir2.bindings.length) {
 			return false;
 		}
-		zip(ir1.bindings, ir2.bindings).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
+		BaseUtils.zip(ir1.bindings, ir2.bindings).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
 	}
 	
 	

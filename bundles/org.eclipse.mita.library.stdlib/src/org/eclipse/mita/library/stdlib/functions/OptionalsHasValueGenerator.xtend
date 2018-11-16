@@ -13,11 +13,12 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.library.stdlib.OptionalGenerator.enumOptional
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
-import com.google.inject.Inject
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class OptionalsHasValueGenerator extends AbstractFunctionGenerator {
 	
@@ -25,11 +26,11 @@ class OptionalsHasValueGenerator extends AbstractFunctionGenerator {
 	@Inject 
 	protected extension StatementGenerator statementGenerator
 	
-	override generate(ElementReferenceExpression functionCall, String resultVariableName) {
+	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
 		val args = functionCall.arguments;
 		val optVarOrExpr = args.head.value;
 				
-		codeFragmentProvider.create('''«IF resultVariableName !== null && !resultVariableName.empty»«resultVariableName» = «ENDIF»«optVarOrExpr.code».flag == «enumOptional.Some.name»;''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«optVarOrExpr.code».flag == «enumOptional.Some.name»;''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
 	

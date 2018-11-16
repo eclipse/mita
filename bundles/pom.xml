@@ -1,50 +1,50 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<!-- Tycho requires Maven 3 -->
-	<prerequisites>
-		<maven>3.0</maven>
-	</prerequisites>
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <!-- Tycho requires Maven 3 -->
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
 
-	<name>Eclipse Mita</name>
+  <name>Eclipse Mita</name>
 
-	<groupId>org.eclipse.mita</groupId>
-	<artifactId>org.eclipse.mita.releng</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
+  <groupId>org.eclipse.mita</groupId>
+  <artifactId>org.eclipse.mita.releng</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
 
-	<properties>
-		<tycho-version>1.0.0</tycho-version>
-		<tycho-extras-version>1.0.0</tycho-extras-version>
-		<junit-version>4.11</junit-version>
-		<xtextVersion>2.13.0</xtextVersion>
-		<xcoreVersion>[1.3.1-SNAPSHOT,)</xcoreVersion>
-		<xcoreLibVersion>1.1.100</xcoreLibVersion>
-		<mweVersion>2.9.1.201705291010</mweVersion>
-		<target.id>oxygen</target.id>
+  <properties>
+    <tycho-version>1.0.0</tycho-version>
+    <tycho-extras-version>1.0.0</tycho-extras-version>
+    <junit-version>4.11</junit-version>
+    <xtextVersion>2.13.0</xtextVersion>
+    <xcoreVersion>[1.3.1-SNAPSHOT,)</xcoreVersion>
+    <xcoreLibVersion>1.1.100</xcoreLibVersion>
+    <mweVersion>2.9.1.201705291010</mweVersion>
+    <target.id>oxygen</target.id>
 
-		<BUILD_NUMBER>Local build by ${user.name}</BUILD_NUMBER>
-		<repository.name>Eclipse Mita repository</repository.name>
+    <BUILD_NUMBER>Local build by ${user.name}</BUILD_NUMBER>
+    <repository.name>Eclipse Mita repository</repository.name>
 
-		<!-- Jar Signer configuration -->
-		<signer.url>wse8rt@fe0vmc0705.de.bosch.com</signer.url>
-		<signer.command>/home/wse8rt/signing/bin/sign</signer.command>
-		<signer.opts>--retry -digestalg SHA1</signer.opts>
-		<skip.signing>true</skip.signing> <!-- Default: skip signing -->
+    <!-- Jar Signer configuration -->
+    <signer.url>wse8rt@fe0vmc0705.de.bosch.com</signer.url>
+    <signer.command>/home/wse8rt/signing/bin/sign</signer.command>
+    <signer.opts>--retry -digestalg SHA1</signer.opts>
+    <skip.signing>true</skip.signing> <!-- Default: skip signing -->
 
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<ignore-test-failures>true</ignore-test-failures>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <ignore-test-failures>true</ignore-test-failures>
 
-		<dirtyWorkingDirectoryTimestampBehavior>warning</dirtyWorkingDirectoryTimestampBehavior>
+    <dirtyWorkingDirectoryTimestampBehavior>warning</dirtyWorkingDirectoryTimestampBehavior>
 
-		<testFailureIgnore>false</testFailureIgnore>
-		<test.vmargs>-Xmx1024m</test.vmargs>
-	</properties>
+    <testFailureIgnore>false</testFailureIgnore>
+    <test.vmargs>-Xmx1024m</test.vmargs>
+  </properties>
 
-	<modules>
-		<module>org.eclipse.mita.target</module>
-	</modules>
+  <modules>
+    <module>org.eclipse.mita.target</module>
+  </modules>
 
     <profiles>
         <profile>
@@ -67,8 +67,8 @@
                 
                 <module>org.eclipse.mita.library.extension</module>
                 <module>org.eclipse.mita.library.stdlib</module>
-				
-				<module>org.eclipse.mita.cli</module>
+        
+        <module>org.eclipse.mita.cli</module>
             </modules>
         </profile>
         
@@ -80,7 +80,7 @@
             <modules>
                 <module>../platforms/org.eclipse.mita.platform.xdk110</module>
                 <module>../platforms/org.eclipse.mita.platform.unittest</module>
-				<module>../platforms/org.eclipse.mita.platform.arduinouno</module>
+                <module>../platforms/org.eclipse.mita.platform.arduinouno</module>
             </modules>
         </profile>
         
@@ -93,340 +93,378 @@
                 <module>org.eclipse.mita.program.tests</module>
             </modules>
         </profile>
+        
         <profile>
             <id>deployment</id>
             <modules>
                 <module>org.eclipse.mita.feature</module>
+                <module>../platforms/org.eclipse.mita.platform.xdk110.feature</module>
+                <module>../platforms/org.eclipse.mita.platform.arduinouno.feature</module>
                 <module>org.eclipse.mita.repository</module>
             </modules>
         </profile>
 
 
-		<profile>
-			<id>macosx-jvm-flags</id>
-			<activation>
-				<os><family>mac</family></os>
-			</activation>
-			<properties>
-				<test.vmargs>-Xmx512m -XstartOnFirstThread</test.vmargs>
-			</properties>
-		</profile>
+    <profile>
+      <id>macosx-jvm-flags</id>
+      <activation>
+        <os><family>mac</family></os>
+      </activation>
+      <properties>
+        <test.vmargs>-Xmx512m -XstartOnFirstThread</test.vmargs>
+      </properties>
+    </profile>
 
-    </profiles>
+    <profile>
+      <id>sign</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eclipse.cbi.maven.plugins</groupId>
+            <artifactId>eclipse-jarsigner-plugin</artifactId>
+            <version>1.1.5</version>
+            <executions>
+              <execution>
+                <id>sign</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<version>2.5</version>
-				<configuration>
-					<encoding>UTF-8</encoding>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-maven-plugin</artifactId>
-				<version>${tycho-version}</version>
-				<extensions>true</extensions>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>target-platform-configuration</artifactId>
-				<version>${tycho-version}</version>
-				<configuration>
-					<resolver>p2</resolver>
-					<pomDependencies>consider</pomDependencies>
-					<!-- Necessary for pack200 files -->
-					<!-- but disabled because of problems with java 1.6 and java 1.7 -->
-					<includePackedArtifacts>false</includePackedArtifacts>
-					<target>
-						<artifact>
-							<groupId>org.eclipse.mita</groupId>
-							<artifactId>org.eclipse.mita.target</artifactId>
-							<version>0.1.0-SNAPSHOT</version>
-							<classifier>${target.id}</classifier>
-						</artifact>
-					</target>
-					<environments>
-						<environment>
-							<os>win32</os>
-							<ws>win32</ws>
-							<arch>x86</arch>
-						</environment>
-						<environment>
-							<os>win32</os>
-							<ws>win32</ws>
-							<arch>x86_64</arch>
-						</environment>
-						<environment>
-							<os>macosx</os>
-							<ws>cocoa</ws>
-							<arch>x86_64</arch>
-						</environment>
-						<environment>
-							<os>linux</os>
-							<ws>gtk</ws>
-							<arch>x86_64</arch>
-						</environment>
-						<environment>
-							<os>linux</os>
-							<ws>gtk</ws>
-							<arch>x86</arch>
-						</environment>
-					</environments>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.eclipse.tycho</groupId>
-				<artifactId>tycho-source-plugin</artifactId>
-				<version>${tycho-version}</version>
-				<configuration>
-					<archive>
-						<addMavenDescriptor>false</addMavenDescriptor>
-					</archive>
-				</configuration>
-				<executions>
-					<execution>
-						<id>attach-source</id>
-						<goals>
-							<goal>plugin-source</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-		<pluginManagement>
-			<plugins>
-				<!-- TYCHO -->
-				<plugin>
-					<groupId>org.eclipse.tycho</groupId>
-					<artifactId>tycho-compiler-plugin</artifactId>
-					<version>${tycho-version}</version>
-					<configuration>
-						<encoding>UTF-8</encoding>
-						<source>8.0</source>
-						<target>8.0</target>
-					</configuration>
-				</plugin>
-				<!-- Avoid the generation of maven archive information in the META-INF 
-					folder -->
-				<plugin>
-					<groupId>org.eclipse.tycho</groupId>
-					<artifactId>tycho-packaging-plugin</artifactId>
-					<version>${tycho-version}</version>
-					<configuration>
-						<jgit.dirtyWorkingTree>${dirtyWorkingDirectoryTimestampBehavior}</jgit.dirtyWorkingTree>
-						<archive>
-							<addMavenDescriptor>false</addMavenDescriptor>
-						</archive>
-					</configuration>
-					<dependencies>
-						<dependency>
-							<groupId>org.eclipse.tycho.extras</groupId>
-							<artifactId>tycho-sourceref-jgit</artifactId>
-							<version>${tycho-extras-version}</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.tycho.extras</groupId>
-							<artifactId>tycho-buildtimestamp-jgit</artifactId>
-							<version>${tycho-extras-version}</version>
-						</dependency>
-					</dependencies>
-				</plugin>
-				<!-- enable source bundle generation -->
-				<plugin>
-					<groupId>org.eclipse.tycho</groupId>
-					<artifactId>tycho-surefire-plugin</artifactId>
-					<version>${tycho-version}</version>
-					<configuration>
-						<failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-						<failIfNoTests>false</failIfNoTests>
-						<testFailureIgnore>${testFailureIgnore}</testFailureIgnore>
-						<argLine>${test.vmargs}</argLine>
-						<testClassesDirectory>${project.build.directory}/classes</testClassesDirectory>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.eclipse.tycho</groupId>
-					<artifactId>tycho-p2-repository-plugin</artifactId>
-					<version>${tycho-version}</version>
-					<configuration>
-						<repositoryName>${repository.name}</repositoryName>
-						<finalName>${project.artifactId}-${unqualifiedVersion}.${buildQualifier}</finalName>
-						<profileProperties>
-							<macosx-bundled>true</macosx-bundled>
-						</profileProperties>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.eclipse.tycho</groupId>
-					<artifactId>tycho-p2-director-plugin</artifactId>
-					<version>${tycho-version}</version>
-				</plugin>
-				<!-- APACHE MAVEN PLUGINS -->
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-clean-plugin</artifactId>
-					<version>2.4.1</version>
-					<configuration>
-						<filesets>
-							<fileset>
-								<directory>${basedir}/xtend-gen</directory>
-								<includes>
-									<include>**/*</include>
-								</includes>
-								<directory>${basedir}/xtend-gen</directory>
-								<includes>
-									<include>**/*</include>
-								</includes>
-							</fileset>
-						</filesets>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-assembly-plugin</artifactId>
-					<version>2.2-beta-4</version>
-				</plugin>
-				<plugin>
-					<artifactId>maven-release-plugin</artifactId>
-					<configuration>
-						<preparationGoals>clean -DnewVersion=${releaseVersion}
-							-Dprudent=true
-							org.eclipse.tycho:tycho-versions-plugin:set-version
-							verify
-							scm:checkin</preparationGoals>
-						<arguments>-Prelease</arguments>
-					</configuration>
-				</plugin>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>build-helper-maven-plugin</artifactId>
-					<version>1.3</version>
-					<executions>
-						<execution>
-							<id>add-source</id>
-							<phase>generate-sources</phase>
-							<goals>
-								<goal>add-source</goal>
-							</goals>
-							<configuration>
-								<sources>
-									<source>src-gen</source>
-								</sources>
-								<sources>
-									<source>${project.build.directory}/xtend-gen</source>
-								</sources>
-							</configuration>
-						</execution>
-					</executions>
-				</plugin>
-				<!-- Xtend -->
-				<plugin>
-					<groupId>org.eclipse.xtend</groupId>
-					<artifactId>xtend-maven-plugin</artifactId>
-					<version>${xtextVersion}</version>
-					<executions>
-						<execution>
-							<goals>
-								<goal>compile</goal>
-								<goal>testCompile</goal>
-							</goals>
-						</execution>
-					</executions>
-					<configuration>
-						<outputDirectory>${basedir}/xtend-gen</outputDirectory>
-						<testOutputDirectory>${basedir}/xtend-gen</testOutputDirectory>
-					</configuration>
-					<!-- Workaround for https://github.com/eclipse/xtext/issues/1231 -->
-					<dependencies>
-						<dependency>
-							<groupId>org.eclipse.jdt</groupId>
-							<artifactId>org.eclipse.jdt.core</artifactId>
-							<version>3.13.102</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.jdt</groupId>
-							<artifactId>org.eclipse.jdt.compiler.apt</artifactId>
-							<version>1.3.110</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.jdt</groupId>
-							<artifactId>org.eclipse.jdt.compiler.tool</artifactId>
-							<version>1.2.101</version>
-						</dependency>
-					</dependencies>
-				</plugin>
-				<plugin>
-					<groupId>org.eclipse.xtext</groupId>
-					<artifactId>xtext-maven-plugin</artifactId>
-					<version>${xtext-version}</version>
-					<!-- Workaround for https://github.com/eclipse/xtext/issues/1231 -->
-					<dependencies>
-						<dependency>
-							<groupId>org.eclipse.jdt</groupId>
-							<artifactId>org.eclipse.jdt.core</artifactId>
-							<version>3.13.102</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.jdt</groupId>
-							<artifactId>org.eclipse.jdt.compiler.apt</artifactId>
-							<version>1.3.110</version>
-						</dependency>
-						<dependency>
-							<groupId>org.eclipse.jdt</groupId>
-							<artifactId>org.eclipse.jdt.compiler.tool</artifactId>
-							<version>1.2.101</version>
-						</dependency>
-					</dependencies>
-				</plugin>
+  <pluginRepositories>
+		<pluginRepository>
+			<id>eclipse-jarsigner-repo</id>
+			<name>Eclipse Jarsigner Repository</name>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<url>https://repo.eclipse.org/content/repositories/cbi-releases/</url>
+		</pluginRepository>
+	</pluginRepositories>
 
-				<!--This plugin's configuration is used to store Eclipse m2e settings 
-					only. It has no influence on the Maven build itself. -->
-				<plugin>
-					<groupId>org.eclipse.m2e</groupId>
-					<artifactId>lifecycle-mapping</artifactId>
-					<version>1.0.0</version>
-					<configuration>
-						<lifecycleMappingMetadata>
-							<pluginExecutions>
-								<pluginExecution>
-									<pluginExecutionFilter>
-										<groupId>
-											org.eclipse.tycho
-										</groupId>
-										<artifactId>
-											tycho-compiler-plugin
-										</artifactId>
-										<versionRange>
-											[0.14.1,)
-										</versionRange>
-										<goals>
-											<goal>compile</goal>
-										</goals>
-									</pluginExecutionFilter>
-									<action>
-										<ignore></ignore>
-									</action>
-								</pluginExecution>
-							</pluginExecutions>
-						</lifecycleMappingMetadata>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-	</build>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.5</version>
+        <configuration>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-maven-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <extensions>true</extensions>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>target-platform-configuration</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <resolver>p2</resolver>
+          <pomDependencies>consider</pomDependencies>
+          <!-- Necessary for pack200 files -->
+          <!-- but disabled because of problems with java 1.6 and java 1.7 -->
+          <includePackedArtifacts>false</includePackedArtifacts>
+          <target>
+            <artifact>
+              <groupId>org.eclipse.mita</groupId>
+              <artifactId>org.eclipse.mita.target</artifactId>
+              <version>0.1.0-SNAPSHOT</version>
+              <classifier>${target.id}</classifier>
+            </artifact>
+          </target>
+          <environments>
+            <environment>
+              <os>win32</os>
+              <ws>win32</ws>
+              <arch>x86</arch>
+            </environment>
+            <environment>
+              <os>win32</os>
+              <ws>win32</ws>
+              <arch>x86_64</arch>
+            </environment>
+            <environment>
+              <os>macosx</os>
+              <ws>cocoa</ws>
+              <arch>x86_64</arch>
+            </environment>
+            <environment>
+              <os>linux</os>
+              <ws>gtk</ws>
+              <arch>x86_64</arch>
+            </environment>
+            <environment>
+              <os>linux</os>
+              <ws>gtk</ws>
+              <arch>x86</arch>
+            </environment>
+          </environments>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.eclipse.tycho</groupId>
+        <artifactId>tycho-source-plugin</artifactId>
+        <version>${tycho-version}</version>
+        <configuration>
+          <archive>
+            <addMavenDescriptor>false</addMavenDescriptor>
+          </archive>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-source</id>
+            <goals>
+              <goal>plugin-source</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+    <pluginManagement>
+      <plugins>
+        <!-- TYCHO -->
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-compiler-plugin</artifactId>
+          <version>${tycho-version}</version>
+          <configuration>
+            <encoding>UTF-8</encoding>
+            <source>8.0</source>
+            <target>8.0</target>
+          </configuration>
+        </plugin>
+        <!-- Avoid the generation of maven archive information in the META-INF 
+          folder -->
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-packaging-plugin</artifactId>
+          <version>${tycho-version}</version>
+          <configuration>
+            <jgit.dirtyWorkingTree>${dirtyWorkingDirectoryTimestampBehavior}</jgit.dirtyWorkingTree>
+            <archive>
+              <addMavenDescriptor>false</addMavenDescriptor>
+            </archive>
+          </configuration>
+          <dependencies>
+            <dependency>
+              <groupId>org.eclipse.tycho.extras</groupId>
+              <artifactId>tycho-sourceref-jgit</artifactId>
+              <version>${tycho-extras-version}</version>
+            </dependency>
+            <dependency>
+              <groupId>org.eclipse.tycho.extras</groupId>
+              <artifactId>tycho-buildtimestamp-jgit</artifactId>
+              <version>${tycho-extras-version}</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <!-- enable source bundle generation -->
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-surefire-plugin</artifactId>
+          <version>${tycho-version}</version>
+          <configuration>
+            <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
+            <failIfNoTests>false</failIfNoTests>
+            <testFailureIgnore>${testFailureIgnore}</testFailureIgnore>
+            <argLine>${test.vmargs}</argLine>
+            <testClassesDirectory>${project.build.directory}/classes</testClassesDirectory>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-p2-repository-plugin</artifactId>
+          <version>${tycho-version}</version>
+          <configuration>
+            <repositoryName>${repository.name}</repositoryName>
+            <finalName>${project.artifactId}-${unqualifiedVersion}.${buildQualifier}</finalName>
+            <profileProperties>
+              <macosx-bundled>true</macosx-bundled>
+            </profileProperties>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-p2-director-plugin</artifactId>
+          <version>${tycho-version}</version>
+        </plugin>
+        <!-- APACHE MAVEN PLUGINS -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>2.4.1</version>
+          <configuration>
+            <filesets>
+              <fileset>
+                <directory>${basedir}/xtend-gen</directory>
+                <includes>
+                  <include>**/*</include>
+                </includes>
+                <directory>${basedir}/xtend-gen</directory>
+                <includes>
+                  <include>**/*</include>
+                </includes>
+              </fileset>
+            </filesets>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>2.2-beta-4</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <configuration>
+            <preparationGoals>clean -DnewVersion=${releaseVersion}
+              -Dprudent=true
+              org.eclipse.tycho:tycho-versions-plugin:set-version
+              verify
+              scm:checkin</preparationGoals>
+            <arguments>-Prelease</arguments>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>1.3</version>
+          <executions>
+            <execution>
+              <id>add-source</id>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>add-source</goal>
+              </goals>
+              <configuration>
+                <sources>
+                  <source>src-gen</source>
+                </sources>
+                <sources>
+                  <source>${project.build.directory}/xtend-gen</source>
+                </sources>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <!-- Xtend -->
+        <plugin>
+          <groupId>org.eclipse.xtend</groupId>
+          <artifactId>xtend-maven-plugin</artifactId>
+          <version>${xtextVersion}</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>compile</goal>
+                <goal>testCompile</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <outputDirectory>${basedir}/xtend-gen</outputDirectory>
+            <testOutputDirectory>${basedir}/xtend-gen</testOutputDirectory>
+          </configuration>
+          <!-- Workaround for https://github.com/eclipse/xtext/issues/1231 -->
+          <dependencies>
+            <dependency>
+              <groupId>org.eclipse.jdt</groupId>
+              <artifactId>org.eclipse.jdt.core</artifactId>
+              <version>3.13.102</version>
+            </dependency>
+            <dependency>
+              <groupId>org.eclipse.jdt</groupId>
+              <artifactId>org.eclipse.jdt.compiler.apt</artifactId>
+              <version>1.3.110</version>
+            </dependency>
+            <dependency>
+              <groupId>org.eclipse.jdt</groupId>
+              <artifactId>org.eclipse.jdt.compiler.tool</artifactId>
+              <version>1.2.101</version>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
+          <groupId>org.eclipse.xtext</groupId>
+          <artifactId>xtext-maven-plugin</artifactId>
+          <version>${xtext-version}</version>
+          <!-- Workaround for https://github.com/eclipse/xtext/issues/1231 -->
+          <dependencies>
+            <dependency>
+              <groupId>org.eclipse.jdt</groupId>
+              <artifactId>org.eclipse.jdt.core</artifactId>
+              <version>3.13.102</version>
+            </dependency>
+            <dependency>
+              <groupId>org.eclipse.jdt</groupId>
+              <artifactId>org.eclipse.jdt.compiler.apt</artifactId>
+              <version>1.3.110</version>
+            </dependency>
+            <dependency>
+              <groupId>org.eclipse.jdt</groupId>
+              <artifactId>org.eclipse.jdt.compiler.tool</artifactId>
+              <version>1.2.101</version>
+            </dependency>
+          </dependencies>
+        </plugin>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>${junit-version}</version>
-				<scope>test</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
+        <!--This plugin's configuration is used to store Eclipse m2e settings 
+          only. It has no influence on the Maven build itself. -->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>
+                      org.eclipse.tycho
+                    </groupId>
+                    <artifactId>
+                      tycho-compiler-plugin
+                    </artifactId>
+                    <versionRange>
+                      [0.14.1,)
+                    </versionRange>
+                    <goals>
+                      <goal>compile</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit-version}</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
 </project>

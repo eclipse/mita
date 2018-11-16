@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
- *
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
- *
+ * 
  * Contributors:
  *    Bosch Connected Devices and Solutions GmbH - initial contribution
- *
+ * 
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
@@ -19,20 +19,33 @@ package org.eclipse.mita.program.ui.labeling
 import com.google.inject.Inject
 import java.net.URL
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
 import org.eclipse.jface.resource.ImageDescriptor
+import org.eclipse.jface.viewers.StyledString
+import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.SystemResourceEvent
+import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.VariableDeclaration
@@ -49,17 +62,9 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	new(AdapterFactoryLabelProvider delegate) {
 		super(delegate);
 	}
-	
+
 	def dispatch Object image(EObject ele) {
 		return super.image(ele);
-	}
-	
-	def dispatch image(Connectivity ele) {
-		loadImage('connectivity.png');
-	}
-
-	def dispatch image(Sensor ele) {
-		loadImage('sensor.png');
 	}
 
 	def dispatch Object image(SystemResourceAlias ele) {
@@ -69,25 +74,53 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	def dispatch Object image(SystemResourceSetup ele) {
 		return ele.type?.image;
 	}
-	
+
+	def dispatch image(Connectivity ele) {
+		loadImage('connectivity.png');
+	}
+
+	def dispatch image(Sensor ele) {
+		loadImage('sensor.png');
+	}
+
 	def dispatch image(VariableDeclaration ele) {
 		loadImage('variable.png')
 	}
-	
+
 	def dispatch image(FunctionDefinition ele) {
 		loadImage('function.png')
 	}
-	
+
 	def dispatch image(Operation ele) {
 		loadImage('function.png')
 	}
-	
+
 	def dispatch image(Enumerator ele) {
 		loadImage('enumerator.png')
 	}
-	
+
+	def dispatch image(EnumerationType ele) {
+		loadImage('enumerator.png')
+	}
+
 	def dispatch image(Event ele) {
 		loadImage('event.png')
+	}
+
+	def dispatch image(EventHandlerDeclaration ele) {
+		loadImage('event.png')
+	}
+
+	def dispatch image(ExceptionTypeDeclaration ele) {
+		loadImage('variable.png') // TODO define png for exception?
+	}
+
+	def text(PackageAssociation it) {
+		'''package «name»'''
+	}
+
+	def text(ImportStatement it) {
+		'''import «it.importedNamespace»'''
 	}
 
 	def text(SystemResourceSetup ele) {
@@ -107,34 +140,75 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 			case SystemResourceEvent: '''system event'''
 			default: 'event'
 		}
-		val source = ele.eContainer
-		'''«eventType» «EcoreUtil.getID(source)».«EcoreUtil.getID(ele)»'''
+	}
+
+	def text(EventHandlerDeclaration it) {
+		switch (event) {
+			SystemEventSource: '''every «(event as SystemEventSource).origin.name».«(event as SystemEventSource).source.name»'''
+			TimeIntervalEvent: '''every «(event as TimeIntervalEvent).interval.value» «(event as TimeIntervalEvent).unit.literal.toFirstLower»'''
+		}
 	}
 
 	def text(Operation ele) {
 		'''fun <b>«ele.name»: «BaseUtils.getType(ele)»</b>'''
 	}
-	
+
 	def text(SignalInstance ele) {
 		var vci = ele.instanceOf;
 		
 		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci?.name» <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
 	}
-	
+
 	def text(VariableDeclaration ele) {
 		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
 	}
-	
+
 	def text(InferenceResult ir) {
-		'''«ir.type.name»«IF ir.bindings.empty === false»&lt;«FOR t: ir.bindings SEPARATOR(", ")»«t.getText()»«ENDFOR»&gt;«ENDIF»'''
+		'''«ir.type.name»«IF ir.bindings.empty === false»<«FOR t: ir.bindings SEPARATOR(", ")»«t.getText()»«ENDFOR»>«ENDIF»'''
 	}
-	
+
+	def text(ExceptionTypeDeclaration it) {
+		'''exception «name»'''
+	}
+
+	def text(StructureType it) {
+		'''struct «name»'''
+	}
+
+	def text(Parameter it) {
+		'''«name»«IF typeSpecifier !== null» : «typeSpecifier»«ENDIF»'''
+	}
+
+	def text(EnumerationType it) {
+		'''enum «name»'''
+	}
+
+	def text(SumType it) {
+		'''alt «name»'''
+	}
+
+	def text(Singleton it) {
+		'''«name»'''
+	}
+
+	def text(NamedProductType it) {
+		'''«name»'''
+	}
+
+	def text(AnonymousProductType it) {
+		'''«name»«IF typeSpecifiers !== null» : «FOR typeSepc : typeSpecifiers SEPARATOR ", "»«typeSepc»«ENDFOR»«ENDIF»'''
+	}
+
+	def text(GeneratedType it) {
+		'''generated type «name»'''
+	}
+
 	override protected convertToString(Object text) {
-		if(text instanceof CharSequence) {
+		if (text instanceof CharSequence) {
 			// enables us to use Xtend templates
 			return text.toString();
 		} else {
-			return super.convertToString(text);			
+			return super.convertToString(text);
 		}
 	}
 
@@ -142,5 +216,11 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 		val bundleIconUrl = 'platform:/plugin/org.eclipse.mita.program.ui/icons/';
 		return ImageDescriptor.createFromURL(new URL(bundleIconUrl + imageName));
 	}
-	
+
+	override protected StyledString convertToStyledString(Object text) {
+		if (text instanceof CharSequence) {
+			return new StyledString(text.toString);
+		}
+		return super.convertToStyledString(text)
+	}
 }

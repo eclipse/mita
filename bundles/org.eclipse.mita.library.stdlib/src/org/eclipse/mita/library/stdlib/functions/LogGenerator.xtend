@@ -13,15 +13,16 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.library.stdlib.StringGenerator
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
-import com.google.inject.Inject
-import org.eclipse.mita.base.types.NamedElement
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class LogGenerator extends AbstractFunctionGenerator {
 	
@@ -32,7 +33,7 @@ class LogGenerator extends AbstractFunctionGenerator {
 	protected IPlatformLoggingGenerator loggingGenerator
 
 	
-	override generate(ElementReferenceExpression function, String resultVariableName) {
+	override generate(ElementReferenceExpression function, IGeneratorNode resultVariableName) {
 		val functionName = (function.reference as NamedElement).name;
 		val level = switch(functionName) {
 			case "logDebug": LogLevel.Debug

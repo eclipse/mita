@@ -15,7 +15,7 @@ import org.eclipse.mita.base.types.StructureType
 import static extension org.eclipse.mita.base.util.BaseUtils.zip;
 
 class ExpressionUtils {
-	def static getSortedArgumentsAsMap(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
+	def static getSortedArgumentsAsMap(Iterable<? extends Parameter> parameters, Iterable<Argument> arguments) {
 		val args = getSortedArguments(parameters, arguments);
 		val map = new TreeMap<Parameter, Argument>([p1, p2 | p1.name.compareTo(p2.name)]);
 		parameters.zip(args).forEach[map.put(it.key, it.value)];

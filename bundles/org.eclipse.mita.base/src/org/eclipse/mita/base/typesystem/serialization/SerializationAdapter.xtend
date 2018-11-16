@@ -74,6 +74,9 @@ class SerializationAdapter {
     		.fromJson(json, SerializedObject)
     		.fromValueObject() as AbstractType;
 	}
+//	protected dispatch def ValidationIssue fromValueObject(SerializedValidationIssue obj) {
+//		new ValidationIssue(obj.severity, obj.message, obj.target.???, obj.issueCode);
+//	}
 	protected dispatch def EReference fromValueObject(SerializedEReference obj) {
 		val registry = EPackage.Registry.INSTANCE;
 		val ePackage = registry.getEPackage(obj.ePackageName);

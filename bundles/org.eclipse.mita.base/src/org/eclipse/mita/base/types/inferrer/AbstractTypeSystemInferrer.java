@@ -49,7 +49,7 @@ public abstract class AbstractTypeSystemInferrer implements ITypeSystemInferrer 
 	protected ITypeSystem registry;
 
 	@Inject
-	TypeValidator typeValidator;
+	protected TypeValidator typeValidator;
 
 	protected IValidationIssueAcceptor acceptor;
 
@@ -70,12 +70,12 @@ public abstract class AbstractTypeSystemInferrer implements ITypeSystemInferrer 
 	}
 
 	@Override
-	public final InferenceResult infer(EObject object) {
+	public InferenceResult infer(EObject object) {
 		return infer(object, null);
 	}
 
 	@Override
-	public final InferenceResult infer(EObject object, IValidationIssueAcceptor acceptor) {
+	public InferenceResult infer(EObject object, IValidationIssueAcceptor acceptor) {
 		initTypeCache();
 		this.acceptor = (acceptor != null ? acceptor : new ListBasedValidationIssueAcceptor());
 		InferenceResult result = inferTypeDispatch(object);

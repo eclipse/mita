@@ -22,6 +22,7 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
@@ -31,7 +32,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected TypeGenerator typeGenerator
 	
-	override generate(ElementReferenceExpression functionCall, String resultVariableName) {
+	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
 		val firstArg = functionCall.arguments.get(0)?.value;
 		val siginst = if(firstArg instanceof FeatureCall && (firstArg as FeatureCall).reference instanceof SignalInstance) {
 			(firstArg as FeatureCall).reference as SignalInstance;

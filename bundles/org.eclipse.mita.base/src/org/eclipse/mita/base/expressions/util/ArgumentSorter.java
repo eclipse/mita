@@ -27,7 +27,7 @@ import org.eclipse.mita.base.types.Parameter;
  */
 public class ArgumentSorter {
 
-	public static EList<Expression> getOrderedExpressions(List<Argument> arguments, Operation operation) {
+	public static EList<Expression> getOrderedExpressions(EList<Argument> arguments, Operation operation) {
 		Expression[] result = new Expression[arguments.size()];
 		for (int index = 0; index < arguments.size(); index++) {
 			Argument argument = arguments.get(index);

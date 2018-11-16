@@ -29,6 +29,7 @@ import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class SomeTypeGenerator extends AbstractTypeGenerator {
 	
@@ -58,7 +59,8 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 		
-		override generate(ElementReferenceExpression ref, String resultVariableName) {
+
+		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			
 			return codeFragmentProvider.create('''«resultVariableName» = «variable.generate»''');
@@ -71,7 +73,8 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 	
-		override generate(ElementReferenceExpression ref, String resultVariableName) {
+
+		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val value = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'value');
 			

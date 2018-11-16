@@ -27,6 +27,7 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.base.util.BaseUtils
@@ -114,10 +115,10 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 
 			val realType = ref.realType;
 			val realArgs = if(realType instanceof HasAccessors) {
-				realType.accessorsTypes.map[it.type];
+				realType.accessorsTypes;
 			}
 			else {
-				#[realType];
+				#[TypesFactory.eINSTANCE.createPresentTypeSpecifier => [it.type = realType]];
 			}
 			
 			if(realArgs.length != arguments.length) {

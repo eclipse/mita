@@ -129,10 +129,9 @@ class SumTypesTest extends AbstractGeneratorTest {
 				accessor.name.toString == "data"
 			] !== null
 		]
-		val init4 = init3.operand as ICASTTypeIdInitializerExpression;
-		val init5 = init4.initializer as IASTInitializerList;
-		val init6 = init5.clauses.filter(ICASTDesignatedInitializer)
-		init6.forEach[init|  
+		val init4 = init3.operand as IASTInitializerList;
+		val init5 = init4.clauses.filter(ICASTDesignatedInitializer)
+		init5.forEach[init|  
 			val nameDesign = init.designators.head as ICASTFieldDesignator
 			val name = nameDesign.name.toString
 			val valueExpr = init.operand as IASTLiteralExpression
@@ -239,6 +238,19 @@ class SumTypesTest extends AbstractGeneratorTest {
 				    return b;
 				}
 			'''	
+		);
+		ast.assertNoCompileErrors();
+	}
+	
+	@Test
+	def testSumTypesAnonymus() {
+		val ast = generateAndParseApplication(
+			'''
+				package test;
+				import platforms.unittest;
+				alt foo { bar: int32 }
+				let foobar = foo.bar(1);
+			'''
 		);
 		ast.assertNoCompileErrors();
 	}

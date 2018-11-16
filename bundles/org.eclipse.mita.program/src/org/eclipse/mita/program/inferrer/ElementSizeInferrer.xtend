@@ -18,6 +18,7 @@ import java.util.LinkedList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
+import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
@@ -40,6 +41,7 @@ import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
@@ -155,12 +157,26 @@ class ElementSizeInferrer {
 		return obj.inferFromType;
 	}
 	
-	protected def dispatch ElementSizeInferenceResult doInfer(VariableDeclaration obj) {
-		val type = BaseUtils.getType(obj);
-		if(obj.initialization === null) {
-			obj.inferFromType(type);
+
+	protected def dispatch ElementSizeInferenceResult doInfer(VariableDeclaration variable) {
+		val type = BaseUtils.getType(variable);
+		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
+		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
+		val initialization = variable.initialization ?: (
+			referencesToVariable
+				.map[it.eContainer]
+				.filter(AssignmentExpression)
+				.filter[ae |
+					val left = ae.varRef; 
+					left instanceof ElementReferenceExpression && (left as ElementReferenceExpression).reference === variable 
+				]
+				.map[it.expression]
+				.head
+		)
+		if(initialization === null) {
+			variable.inferFromType(type);
 		} else {
-			return obj.initialization.infer;
+			return initialization.infer;
 		}
 	}
 	protected def dispatch ElementSizeInferenceResult doInfer(PrimitiveValueExpression obj) {

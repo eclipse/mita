@@ -12,6 +12,8 @@ import org.eclipse.mita.base.typesystem.infra.TypeAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtext.util.OnChangeEvictingCache
 import java.util.ArrayDeque
+import java.util.Iterator
+import java.util.NoSuchElementException
 
 class BaseUtils {	
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
@@ -157,5 +159,6 @@ class BaseUtils {
 		return Thread.currentThread().getStackTrace().get(2 + framesAbove).getLineNumber();
 	}
 }
+
 
 

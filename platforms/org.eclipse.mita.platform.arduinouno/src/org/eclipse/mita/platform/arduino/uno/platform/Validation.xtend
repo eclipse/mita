@@ -20,44 +20,10 @@ import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.program.validation.MethodCall
+import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
 
 class Validation implements IResourceValidator {
-
-	private static class MethodCall {
-		final ArgumentExpression source
-		final SignalInstance sigInst
-		final EStructuralFeature structFeature
-		final Operation method
-		
-		private new(ArgumentExpression ae, Operation op, SignalInstance si, EStructuralFeature sf) {
-			source = ae;
-			sigInst = si;
-			structFeature = sf;
-			method = op;
-		}
-		static dispatch def cons(ArgumentExpression ae, Operation op, SignalInstance si, EStructuralFeature sf) {
-			new MethodCall(ae,op,si,sf);
-		}
-		static dispatch def cons(Object _1, Object _2, Object _3, Object _4) {
-			null;
-		}	
-		
-		override toString() {
-			val setup = EcoreUtil2.getContainerOfType(sigInst, SystemResourceSetup)
-			return '''�setup?.name�.�sigInst.name�.�method.name�(�FOR arg : source.arguments SEPARATOR(", ")��StaticValueInferrer.infer(arg.value, [])?.toString?:"null"��ENDFOR�)'''
-		}
-		
-		override hashCode() {
-			toString.hashCode()
-		}
-		
-		override equals(Object arg0) {
-			if(arg0 instanceof MethodCall) {
-				return toString == arg0.toString;
-			}
-			return super.equals(arg0)
-		}
-	}
 	
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
 		val functionCalls1 = program.eAllContents.filter(FeatureCall).filter[it.operationCall].toList;
@@ -87,7 +53,7 @@ class Validation implements IResourceValidator {
 					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
 				}
 				return null;
-			]).filterNull
+			]).filterNull.filter(MethodCallSigInst)
 		
 		val filterSigInstName = [String name | 
 			return sigInstAccesses.filter[
@@ -120,7 +86,7 @@ class Validation implements IResourceValidator {
 		gpioWrites.forEach[validateGpioWrite(it, acceptor)]
 	}
 	
-	def validateGpioWrite(MethodCall call, ValidationMessageAcceptor acceptor) {
+	def validateGpioWrite(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
 		val init = call.sigInst.initialization as ElementReferenceExpression;
 		val value = init.arguments.get(1).value
 		if (value instanceof ElementReferenceExpression){

@@ -1,10 +1,14 @@
 ---
 description: "Mita is a new programming language for embedded IoT devices. It is for everyone coming from a world of Javascript, Typescript, Kotlin, Scala, Java or C."
-title: "Mita"
+title: "Eclipse Mita"
 draft: false
 ---
 
-Mita is a programming language that is focused on making Internet-Of-Things things easier to program, especially for developers without an embedded development background. 
+<div style="width:100%; text-align:center">
+    <img src="images/mita.svg" height="200">
+</div>
+
+Eclipse Mita is a programming language that is focused on making Internet-Of-Things things easier to program, especially for developers without an embedded development background. 
 It aims to increase programmer productivity, enables fast exploration of use-cases and tries to make you feel right at home on an embedded device.
 
 ```Typescript
@@ -16,7 +20,7 @@ setup smartphone : BLE {
     var shockDetected = bool_characteristic(UUID=0xCAFE);
 }
 
-every accelerometer.activity {
+every accelerometer.any_motion {
     if(accelerometer.magnitude.read() > 5000) {
         smartphone.shockDetected.write(true);
     }

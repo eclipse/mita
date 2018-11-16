@@ -41,7 +41,9 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ListBasedValidationIssueAcceptor
@@ -75,9 +77,9 @@ import static org.eclipse.mita.base.scoping.MitaTypeSystem.ARRAY_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.BOOL_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.DOUBLE_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.FLOAT_TYPE
-import static org.eclipse.mita.base.scoping.MitaTypeSystem.INT32_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.MODALITY_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.REFERENCE_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.INT32_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.SIGINST_TYPE
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 
@@ -150,8 +152,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 			return refType.bindings.head;
 		} else {
 			this.acceptor.accept(
-				new ValidationIssue(Severity.ERROR, DEREFERENCE_OF_NON_REFERENCE_MSG, e,
-					DEREFERENCE_OF_NON_REFERENCE_CODE));
+				new ValidationIssue(Severity.ERROR, DEREFERENCE_OF_NON_REFERENCE_MSG, e, null, DEREFERENCE_OF_NON_REFERENCE_CODE));
 			return null;
 		}
 	}
@@ -168,7 +169,6 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 		val originalItemType = e.instanceOf.inferTypeDispatch;
 
 		val typeSpec = if (explicitType !== null) {
-			assertNotType(explicitType, VARIABLE_VOID_TYPE, getResultFor(VOID));
 			assertAssignable(explicitType, originalItemType,
 				String.format(VARIABLE_DECLARATION, explicitType, originalItemType));
 				
@@ -221,7 +221,6 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 
 	def doInfer(VariableDeclaration e) {
 		var explicitType = e.typeSpecifier.inferTypeDispatch;
-		assertNotType(explicitType, VARIABLE_VOID_TYPE, getResultFor(VOID));
 		if (e.initialization === null)
 			return explicitType;
 
@@ -362,7 +361,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 				val argType = this.inferTypeDispatch(varArgs);
 				val parameterValue = args.get(parameter);
 				
-				assertWithinRange(argType, parameterValue, varArgs);
+				assertWithinRange(argType, parameterValue, parameterValue);
 			}
 		}
 		
@@ -389,7 +388,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 		if(range !== null) {
 			if(staticIntValue < range.get(0) || staticIntValue > range.get(1)) {
 				val errorMessage = String.format(INTEGER_VALUE_OUT_OF_RANGE_MSG, range.get(0), range.get(1));
-				acceptor.accept(new ValidationIssue(Severity.ERROR, errorMessage, target, INTEGER_VALUE_OUT_OF_RANGE_CODE));
+				acceptor.accept(new ValidationIssue(Severity.ERROR, errorMessage, target, null, INTEGER_VALUE_OUT_OF_RANGE_CODE));
 			}
 		}
 	}
@@ -412,9 +411,17 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 	
 	override doInfer(FeatureCall fc) {
 		if (fc.reference instanceof SumAlternative) {
-			return InferenceResult.from(fc.reference as SumAlternative)
+			val owner = fc.arguments.head.value;
+			if(owner instanceof ElementReferenceExpression) {
+				val ref = owner.reference;
+				if(ref instanceof SumType) {
+					return InferenceResult.from(ref);
+				}
+			}
 		}
-		return super.doInfer(fc);
+		else {
+			return super.doInfer(fc);
+		}
 	}
 	
 	def doInfer(SystemResourceSetup e) {
@@ -455,7 +462,7 @@ class ProgramDslTypeInferrer extends ExpressionsTypeInferrer {
 				return InferenceResult.from(ref);
 			}
 			else if(ref instanceof SumAlternative) {
-				return InferenceResult.from(ref);
+				return InferenceResult.from(ref.eContainer as SumType);
 			}
 			return super.doInfer(e);
 		}
