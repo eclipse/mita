@@ -49,7 +49,12 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 	
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new ExplicitInstanceConstraint(instance.map(f), typeScheme.map(f), errorMessage);
+		val newL = instance.map(f);
+		val newR = typeScheme.map(f);
+		if(instance !== newL || instance !== newR) {
+			return new ExplicitInstanceConstraint(newL, newR, errorMessage);
+		} 
+		return this;
 	}
 	
 	override getOperator() {

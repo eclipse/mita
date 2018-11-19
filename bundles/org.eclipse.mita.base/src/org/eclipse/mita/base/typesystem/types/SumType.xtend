@@ -11,6 +11,8 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 
+import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+
 @EqualsHashCode
 @Accessors
 @FinalFieldsConstructor
@@ -38,7 +40,11 @@ class SumType extends TypeConstructorType {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		return new SumType(origin, name, typeArguments.map[ f.apply(it) ].force, superTypes);
+		val newTypeArgs = typeArguments.map[ f.apply(it) ].force;
+		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
+			return new SumType(origin, name, newTypeArgs, superTypes);	
+		}
+		return this;
 	}
 	
 }

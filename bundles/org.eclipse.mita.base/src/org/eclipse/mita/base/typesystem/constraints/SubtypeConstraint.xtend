@@ -55,7 +55,12 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		return new SubtypeConstraint(subType.map(f), superType.map(f), errorMessage);
+		val newL = subType.map(f);
+		val newR = superType.map(f);
+		if(subType !== newL || superType !== newR) {
+			return new SubtypeConstraint(newL, newR, errorMessage);
+		}
+		return this;
 	}
 	
 	override getOperator() {

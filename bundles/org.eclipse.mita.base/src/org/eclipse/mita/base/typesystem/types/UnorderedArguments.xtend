@@ -10,6 +10,8 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
+import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+
 @EqualsHashCode
 @Accessors
 class UnorderedArguments extends TypeConstructorType {
@@ -21,7 +23,11 @@ class UnorderedArguments extends TypeConstructorType {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new UnorderedArguments(origin, name, argParamNamesAndValueTypes.map[it.key -> it.value.map(f)]);
+		val newArgs = argParamNamesAndValueTypes.map[it.key -> it.value.map(f)].force;
+		if(argParamNamesAndValueTypes.zip(newArgs).exists[it.key.value !== it.value.value]) {
+			return new UnorderedArguments(origin, name, newArgs);	
+		}
+		return this;
 	}
 	
 	override getFreeVars() {

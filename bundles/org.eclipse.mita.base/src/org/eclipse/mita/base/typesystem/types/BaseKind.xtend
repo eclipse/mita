@@ -21,7 +21,11 @@ class BaseKind extends AbstractBaseType {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new BaseKind(origin, name, kindOf.map(f));
+		val newKindOf = kindOf.map(f);
+		if(newKindOf !== kindOf) {
+			return new BaseKind(origin, name, newKindOf);
+		}
+		return this;
 	}
 	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
 		return new BaseKind(origin, name, kindOf.replaceProxies(resolve));

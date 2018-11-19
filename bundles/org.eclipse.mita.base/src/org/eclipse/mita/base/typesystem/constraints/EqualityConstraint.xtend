@@ -42,14 +42,12 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	}
 			
 	override map((AbstractType)=>AbstractType f) {
-		val newL = f.apply(left);
-		val newR = f.apply(right);
-		if(left != newL || right != newR) {
+		val newL = left.map(f);
+		val newR = right.map(f);
+		if(left !== newL || right !== newR) {
 			return new EqualityConstraint(newL, newR, errorMessage);
 		} 
-		else {
-			return this;
-		}
+		return this;
 	}
 	
 	override getOperator() {

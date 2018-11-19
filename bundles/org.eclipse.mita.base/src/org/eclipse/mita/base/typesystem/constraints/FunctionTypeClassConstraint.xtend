@@ -50,7 +50,10 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newType = typ.map(f);
-		return new FunctionTypeClassConstraint(errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);
+		if(newType !== typ) {
+			return new FunctionTypeClassConstraint(errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);	
+		}
+		return this;
 	}
 	
 	override modifyNames(String suffix) {

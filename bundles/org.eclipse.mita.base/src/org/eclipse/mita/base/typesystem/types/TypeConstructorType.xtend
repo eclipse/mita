@@ -15,6 +15,8 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
+import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+
 @FinalFieldsConstructor
 @EqualsHashCode
 @Accessors
@@ -54,7 +56,11 @@ class TypeConstructorType extends AbstractType {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		return new TypeConstructorType(origin, name, typeArguments.map[f.apply(it)].force, superTypes);
+		val newTypeArgs = typeArguments.map[ f.apply(it) ].force;
+		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
+			return new TypeConstructorType(origin, name, newTypeArgs, superTypes);
+		}
+		return this;
 	}
 	
 }

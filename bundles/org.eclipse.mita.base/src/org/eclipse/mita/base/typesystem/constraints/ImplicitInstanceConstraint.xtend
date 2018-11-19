@@ -42,7 +42,12 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f), errorMessage);
+		val newL = isInstance.map(f);
+		val newR = ofType.map(f);
+		if(isInstance !== newL || ofType !== newR) {
+			return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f), errorMessage);
+		}
+		return this;
 	}
 		
 	override getOperator() {

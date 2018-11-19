@@ -56,6 +56,10 @@ class TypeScheme extends AbstractType {
 	override replace(Substitution sub) {
 		// slow path: collisions between bound vars and substitution. need to filter and apply manually.
 		if(vars.exists[sub.substitutions.containsKey(it)]) {
+			if(freeVars.forall[!sub.substitutions.containsKey(it)]) {
+				// no need to do anything
+				return this;
+			}
 			return new TypeScheme(origin, this.vars, 
 				sub.substitutions.entrySet.reject[vars.contains(it.key)].fold(this.on, [t0, tv_t | t0.replace(tv_t.key, tv_t.value)])	
 			);
@@ -65,7 +69,11 @@ class TypeScheme extends AbstractType {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		return new TypeScheme(origin, vars, f.apply(on));
+		val newOn = on.map(f);
+		if(on !== newOn) {
+			return new TypeScheme(origin, vars, newOn);
+		}
+		return this;
 	}
 	
 	override modifyNames(String suffix) {
