@@ -23,12 +23,12 @@ import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramFactory
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.WhileStatement
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.expressions.ValueRange
 
 class PrepareArrayRuntimeChecksStage extends AbstractTransformationStage {
 	

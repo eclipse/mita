@@ -1,5 +1,6 @@
 package org.eclipse.mita.base.typesystem.infra
 
+import com.google.inject.name.Named
 import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
@@ -9,6 +10,7 @@ import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtext.diagnostics.IDiagnosticConsumer
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
@@ -17,7 +19,6 @@ import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import com.google.inject.name.Named
 
 class MitaLinker extends Linker {
 
@@ -77,6 +78,7 @@ class MitaLinker extends Linker {
 		val json = allConstraintSystemJsons.map['''"«it.key.toString»": «it.value»'''].join("{", ",", "}", [it?.toString])
 		val allConstraintSystems = allConstraintSystemJsons
 			.map[it.value]
+			.map[GZipper.decompress(it)]
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]
 			.indexed.map[it.value.modifyNames('''.«it.key»''')].force;
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);

@@ -27,6 +27,7 @@ import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
+import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.INode
@@ -65,15 +66,17 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		
 		if (eObject.eContainer() === null) {
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
-			constraintFactory.setIsLinking(true)
-			constraintFactory.getTypeRegistry().setIsLinking(true)
-			val constraints = constraintFactory.create(eObject)
-			val String json = serializationAdapter.toJSON(constraints)
-			userData.put(CONSTRAINTS, json)
-			
-			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.deserializeConstraintSystemFromJSON(json, null))
+			constraintFactory.setIsLinking(true);
+			constraintFactory.getTypeRegistry().setIsLinking(true);
+			val constraints = constraintFactory.create(eObject);
+			val String json = serializationAdapter.toJSON(constraints);
+			val jsonCompressed = GZipper.compress(json);
+			userData.put(CONSTRAINTS, jsonCompressed);
+			val lenRaw = json.length;
+			val lenCompressed = jsonCompressed.length;
+			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.deserializeConstraintSystemFromJSON(GZipper.decompress(jsonCompressed), null));
 			if (json != constraintsBackOut) {
-				throw new Exception("Constraint serialization was not invariant")
+				throw new Exception("Constraint serialization was not invariant");
 			}
 		}
 	}
