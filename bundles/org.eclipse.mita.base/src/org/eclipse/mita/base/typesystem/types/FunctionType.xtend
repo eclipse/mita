@@ -10,6 +10,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
+import static extension org.eclipse.mita.base.util.BaseUtils.zip;
 
 @EqualsHashCode
 @Accessors
@@ -24,9 +25,6 @@ class FunctionType extends TypeConstructorType {
 	
 	new(EObject origin, String cons, Iterable<AbstractType> typeArgs, Iterable<AbstractType> superTypes) {
 		super(origin, cons, typeArgs, superTypes);
-		if(this.toString == "x_axis_args(∗string) → modality<i32>") {
-			print("");
-		}
 	}
 	
 	def AbstractType getFrom() {
@@ -71,7 +69,11 @@ class FunctionType extends TypeConstructorType {
 
 	
 	override map((AbstractType)=>AbstractType f) {
-		return new FunctionType(origin, name, typeArguments.map[it.map(f)].force, superTypes);
+		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
+		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
+			return new FunctionType(origin, name, newTypeArgs, superTypes);
+		}
+		return this;
 	}
 	
 }

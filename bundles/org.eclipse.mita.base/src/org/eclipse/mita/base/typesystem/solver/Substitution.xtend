@@ -5,22 +5,39 @@ import com.google.inject.Provider
 import java.util.Collections
 import java.util.HashMap
 import java.util.Map
+import java.util.function.Predicate
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.Status
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
 	protected Map<TypeVariable, AbstractType> content = new HashMap();
 	
+	public def Substitution filter(Predicate<TypeVariable> predicate) {
+		val result = new Substitution;
+		result.constraintSystemProvider = constraintSystemProvider;
+		
+		result.content.putAll(content.filter[tv, __| predicate.test(tv) ])
+		
+		return result;
+	}
+	
+	protected def checkDuplicate(TypeVariable key, Provider<AbstractType> type) {
+		if(content.containsKey(key)) {
+			println('''overriding «key» ≔ «content.get(key)» with «type.get»''')
+		}
+	}
+	
 	public def void add(TypeVariable variable, AbstractType type) {
 		if(variable === null || type === null) {
 			throw new NullPointerException;
 		}
-		if(content.containsKey(variable)) {
-			println('''overriding «variable» ≔ «content.get(variable)» with «type»''')
-		}
+		checkDuplicate(variable, [type]);
 		this.content.put(variable, type.replace(this));
 		if(variable.toString == "f_300.2" && type.toString == "i32") {
 			print("")
@@ -77,7 +94,17 @@ class Substitution {
 		result.instanceCount = system.instanceCount;
 		result.symbolTable.putAll(system.symbolTable);
 		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>
-		result.constraints.addAll(system.constraints.map[c | c.replace(this)]);
+		// atomic constraints may become composite by substitution, the opposite can't happen
+		val unknownConstrains = system.atomicConstraints.map[c | c.replace(this)].force;
+		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic]);
+		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic]);
+		val alwaysNonAtomic = system.nonAtomicConstraints.map[c | c.replace(this)];
+		alwaysNonAtomic.forEach[
+			if(it.isAtomic) {
+				throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
+			}
+		]
+		result.nonAtomicConstraints.addAll(alwaysNonAtomic);
 		result.typeClasses.putAll(system.typeClasses.mapValues[it.replace(this)])
 		return result;
 	}

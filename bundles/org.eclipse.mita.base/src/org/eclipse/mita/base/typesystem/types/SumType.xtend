@@ -40,7 +40,7 @@ class SumType extends TypeConstructorType {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		val newTypeArgs = typeArguments.map[ f.apply(it) ].force;
+		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
 			return new SumType(origin, name, newTypeArgs, superTypes);	
 		}

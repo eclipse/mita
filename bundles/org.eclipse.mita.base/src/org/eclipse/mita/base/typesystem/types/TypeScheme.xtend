@@ -61,7 +61,7 @@ class TypeScheme extends AbstractType {
 				return this;
 			}
 			return new TypeScheme(origin, this.vars, 
-				sub.substitutions.entrySet.reject[vars.contains(it.key)].fold(this.on, [t0, tv_t | t0.replace(tv_t.key, tv_t.value)])	
+				on.replace(sub.filter[vars.contains(it)])
 			);
 		} else {
 			return new TypeScheme(origin, this.vars, this.on.replace(sub));			

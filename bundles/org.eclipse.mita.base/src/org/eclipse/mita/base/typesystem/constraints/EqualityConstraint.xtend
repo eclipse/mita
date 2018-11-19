@@ -16,9 +16,6 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		super(source);
 		this.left = left;
 		this.right = right;
-		if(this.toString == "f_52.0 ≡ f_47.0") {
-			print("");
-		}
 	}
 
 	override toString() {

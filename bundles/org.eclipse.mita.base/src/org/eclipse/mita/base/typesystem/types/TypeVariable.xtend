@@ -12,9 +12,6 @@ class TypeVariable extends AbstractType {
 	
 	new(EObject origin, String name) {
 		super(origin, name)
-		if(name == "p_49") {
-			print("")
-		}
 	}
 	
 	override toString() {

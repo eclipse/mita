@@ -32,15 +32,21 @@ import org.eclipse.xtext.util.OnChangeEvictingCache
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.types.TypeHole
+import org.eclipse.emf.ecore.resource.ResourceSet
 
 @Accessors
 class ConstraintSystem {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider; 
 	@Inject protected SerializationAdapter serializationAdapter;
-	protected List<AbstractTypeConstraint> constraints = new ArrayList;
 	protected Map<URI, TypeVariable> symbolTable = new HashMap();
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
 	protected Map<EObject, AbstractType> typeTranslations = new HashMap();
+	protected List<AbstractTypeConstraint> atomicConstraints = newArrayList;
+	protected List<AbstractTypeConstraint> nonAtomicConstraints = newArrayList;
+	
+	def getConstraints() {
+		return atomicConstraints + nonAtomicConstraints;
+	}
 
 	// not use atm - is not passed through/serialized in the index
 	protected Graph<AbstractType> explicitSubtypeRelations;
@@ -106,7 +112,8 @@ class ConstraintSystem {
 		val result = constraintSystemProvider.get();
 		result.constraintSystemProvider = result.constraintSystemProvider ?: constraintSystemProvider;
 		result.instanceCount = instanceCount;
-		result.constraints += constraints.map[it.modifyNames(suffix)]
+		result.atomicConstraints += atomicConstraints.map[it.modifyNames(suffix)]
+		result.nonAtomicConstraints += nonAtomicConstraints.map[it.modifyNames(suffix)]
 		result.symbolTable.putAll(symbolTable.mapValues[it.modifyNames(suffix) as TypeVariable])
 		result.typeClasses.putAll(typeClasses.mapValues[it.modifyNames(suffix)]);
 		return result;
@@ -165,7 +172,12 @@ class ConstraintSystem {
 	}
 	
 	def void addConstraint(AbstractTypeConstraint constraint) {
-		this.constraints.add(constraint);
+		if(constraint.isAtomic) {
+			atomicConstraints += constraint;
+		}
+		else {
+			nonAtomicConstraints += constraint;
+		}
 	}
 	
 	def TypeClass getTypeClassOrNull(QualifiedName qn) {
@@ -184,10 +196,6 @@ class ConstraintSystem {
 			typeClasses.put(qn, typeClass);
 		}
 		return typeClasses.get(qn);
-	}
-		
-	def getConstraints() {
-		return Collections.unmodifiableList(constraints);
 	}
 	
 	override toString() {
@@ -227,9 +235,16 @@ class ConstraintSystem {
 		if(constraints.empty) {
 			return (null -> result);
 		}
-	
-		result.constraints = constraints.tail.force;
-		return constraints.head -> result;
+		
+		return (if(!atomicConstraints.empty) {
+			result.atomicConstraints = atomicConstraints.tail.force;
+			result.nonAtomicConstraints = nonAtomicConstraints;
+			atomicConstraints.head;
+		}
+		else {
+			result.nonAtomicConstraints = nonAtomicConstraints.tail.force;
+			nonAtomicConstraints.head;
+		}) -> result;
 	}
 	
 	def takeOneNonAtomic() {
@@ -239,21 +254,19 @@ class ConstraintSystem {
 		result.constraintSystemProvider = constraintSystemProvider;
 		result.explicitSubtypeRelations = explicitSubtypeRelations;
 		result.typeClasses = typeClasses;
-
-		val atomics = constraints.filter[constraintIsAtomic];
-		val nonAtomics = constraints.filter[!constraintIsAtomic];
-
-		if(nonAtomics.empty) {
-			result.constraints = atomics.force;
+		
+		if(nonAtomicConstraints.empty) {
+			result.atomicConstraints = atomicConstraints;
 			return (null -> result);
 		}
 		
-		result.constraints = (nonAtomics.tail + atomics).force;
-		return nonAtomics.head -> result;
+		result.nonAtomicConstraints = nonAtomicConstraints.tail.force;
+		result.atomicConstraints = atomicConstraints;
+		return nonAtomicConstraints.head -> result;
 	}
 	
 	def hasNonAtomicConstraints() {
-		return this.constraints.exists[!constraintIsAtomic];
+		return !nonAtomicConstraints.empty;
 	}
 	
 	def constraintIsAtomic(AbstractTypeConstraint c) {
@@ -263,7 +276,7 @@ class ConstraintSystem {
 	def plus(AbstractTypeConstraint constraint) {
 		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
 		result.constraintSystemProvider = result.constraintSystemProvider ?: constraintSystemProvider;
-		result.constraints.add(constraint);
+		result.addConstraint(constraint);
 		return ConstraintSystem.combine(#[this, result]);
 	}
 	
@@ -280,7 +293,8 @@ class ConstraintSystem {
 //				r.constraints.add(new EqualityConstraint(it.value, t.symbolTable.get(it.key), "CS:267 (merge)"))
 			]
 			r.symbolTable.putAll(t.symbolTable);
-			r.constraints.addAll(t.constraints);
+			r.atomicConstraints += t.atomicConstraints;
+			r.nonAtomicConstraints += t.nonAtomicConstraints;
 			r.typeClasses.putAll(t.typeClasses);
 			r.typeTranslations.putAll(t.typeTranslations)
 			t.explicitSubtypeRelations => [g | g.nodes.forEach[typeNode | 
@@ -296,9 +310,8 @@ class ConstraintSystem {
 	}
 	
 	def replace(Substitution substitution) {
-		val newConstraints = new ArrayList();
-		newConstraints.addAll(constraints.map[ it.replace(substitution) ]);
-		this.constraints = newConstraints;
+		atomicConstraints = atomicConstraints.map[ it.replace(substitution) ].force;
+		nonAtomicConstraints = nonAtomicConstraints.map[ it.replace(substitution) ].force;
 		return this;
 	}
 	
@@ -307,7 +320,11 @@ class ConstraintSystem {
 		result.instanceCount = instanceCount;
 		result.symbolTable.putAll(symbolTable);
 
-		result.constraints += constraints.map[ 
+		result.atomicConstraints += atomicConstraints.map[ 
+			it.replaceProxies[ 
+				this.resolveProxy(it, resource, scopeProvider).head
+			] ].force;
+		result.nonAtomicConstraints += nonAtomicConstraints.map[ 
 			it.replaceProxies[ 
 				this.resolveProxy(it, resource, scopeProvider).head
 			] ].force;
