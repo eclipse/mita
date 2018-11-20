@@ -28,8 +28,14 @@ class Substitution {
 	}
 	
 	protected def checkDuplicate(TypeVariable key, Provider<AbstractType> type) {
-		if(content.containsKey(key)) {
-			println('''overriding «key» ≔ «content.get(key)» with «type.get»''')
+		val prevType = content.get(key);
+		if(prevType !== null) {
+			val newType = type.get;
+			if(prevType != newType) {
+				print("")
+			}
+
+			println('''overriding «key» ≔ «prevType» with «newType»''')
 		}
 	}
 	

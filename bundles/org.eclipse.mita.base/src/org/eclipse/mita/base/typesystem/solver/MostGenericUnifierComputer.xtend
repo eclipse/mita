@@ -105,11 +105,9 @@ class MostGenericUnifierComputer {
 		} else if(t1.class == t2.class) {
 			val error = result.unify(t1, t2);
 			if(error !== null) {
-				// mark substition as errornous
 				return UnificationResult.failure(null, error.message);
 			}
-		} else {
-			return UnificationResult.failure(null, '''MGU: Cannot unify «t1» and «t2»''');
+			return UnificationResult.success(result);
 		}
 		
 		// none is free - ask the defined types
@@ -118,14 +116,14 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, IntegerType t1, IntegerType t2) {
 		if(t1 != t2) {
-			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
+			return new UnificationIssue(#[t1, t2], '''MGU121: Cannot unify «t1» and «t2»''');
 		}
 		return null;
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, ProdType t1, ProdType t2) {
 		if(t1.typeArguments.length != t2.typeArguments.length) {
-			return new UnificationIssue(#[t1, t2], '''«t1» and «t2» differ in their number of arguments''');
+			return new UnificationIssue(#[t1, t2], '''MGU128: «t1» and «t2» differ in their number of arguments''');
 		}
 		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
@@ -135,7 +133,7 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, SumType t1, SumType t2) {
 		if(t1.typeArguments.length != t2.typeArguments.length) {
-			return new UnificationIssue(#[t1, t2], '''«t1» and «t2» differ in their number of arguments''');
+			return new UnificationIssue(#[t1, t2], '''MGU138: «t1» and «t2» differ in their number of arguments''');
 		}
 		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
@@ -162,7 +160,7 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, AtomicType t1, AtomicType t2) {
 		if(t1.name != t2.name) {
-			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
+			return new UnificationIssue(#[t1, t2], '''MGU165: Cannot unify «t1» and «t2»''');
 		}
 		
 		// not an issue
@@ -171,11 +169,11 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, TypeConstructorType t1, TypeConstructorType t2) {
 		if(t1.name != t2.name) {
-			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
+			return new UnificationIssue(#[t1, t2], '''MGU174: Cannot unify «t1» and «t2»''');
 		}
 		
 		if(t1.typeArguments.size !== t2.typeArguments.size) {
-			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify with different number of type arguments: «t1» and «t2»''')
+			return new UnificationIssue(#[t1, t2], '''MGU178: Cannot unify with different number of type arguments: «t1» and «t2»''')
 		}
 		
 		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
@@ -187,7 +185,7 @@ class MostGenericUnifierComputer {
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, AbstractType t2) {
 		if(t1 != t2) { 
-			return new UnificationIssue(#[t1, t2], '''MGU: Cannot unify «t1» and «t2»''');
+			return new UnificationIssue(#[t1, t2], '''MGU190: Cannot unify «t1» and «t2»''');
 		}
 	}
 }

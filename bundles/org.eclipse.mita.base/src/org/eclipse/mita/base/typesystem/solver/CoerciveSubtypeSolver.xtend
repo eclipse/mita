@@ -380,6 +380,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint) {
 		val t1 = constraint.left;
 		val t2 = constraint.right;
+		if(t1 == t2) {
+			return SimplificationResult.success(system, substitution);
+		}
 		return system.doSimplify(substitution, typeResolutionOrigin, constraint, t1, t2);
 	}
 	
