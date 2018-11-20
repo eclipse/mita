@@ -43,13 +43,11 @@ class ConstraintSystem {
 	protected Map<EObject, AbstractType> typeTranslations = new HashMap();
 	protected List<AbstractTypeConstraint> atomicConstraints = newArrayList;
 	protected List<AbstractTypeConstraint> nonAtomicConstraints = newArrayList;
+	protected Graph<AbstractType> explicitSubtypeRelations;
 	
 	def getConstraints() {
 		return atomicConstraints + nonAtomicConstraints;
 	}
-
-	// not use atm - is not passed through/serialized in the index
-	protected Graph<AbstractType> explicitSubtypeRelations;
 	
 	var int instanceCount = 0;
 		

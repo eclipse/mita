@@ -17,21 +17,20 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 import static extension org.eclipse.mita.base.util.BaseUtils.zip;
 
-@FinalFieldsConstructor
 @EqualsHashCode
 @Accessors
 class TypeConstructorType extends AbstractType {
 	protected static Integer instanceCount = 0;
 	protected val List<AbstractType> typeArguments;
-	// transient makes EqualsHashCode ignore this
-	protected final transient List<AbstractType> superTypes = new ArrayList();
 	
-	new(EObject origin, String name, Iterable<AbstractType> typeArguments, Iterable<AbstractType> superTypes) {
-		this(origin, name, typeArguments.force);
-		this.superTypes += superTypes;
-		if(this.toString == "bar_args(foo(), f_60.0, f_67.0)") {
-			print("")
-		}
+	new(EObject origin, String name, List<AbstractType> typeArguments) {
+		super(origin, name);
+		this.typeArguments = typeArguments;
+	}
+	
+	new(EObject origin, String name, Iterable<AbstractType> typeArguments) {
+		super(origin, name);
+		this.typeArguments = typeArguments.force;
 	}
 	
 	def AbstractTypeConstraint getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
@@ -39,12 +38,12 @@ class TypeConstructorType extends AbstractType {
 	}
 	def void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newCType = new TypeConstructorType(origin, name, newTypeVars, superTypes);
+		val newCType = new TypeConstructorType(origin, name, newTypeVars);
 		s.add(tv, newCType);
 	}
 		
 	override toString() {
-		return '''«super.toString»«IF !typeArguments.empty»<«typeArguments.join(", ")»>«ENDIF»«IF !superTypes.empty» ⩽ «superTypes.map[it.name]»«ENDIF»'''
+		return '''«super.toString»«IF !typeArguments.empty»<«typeArguments.join(", ")»>«ENDIF»'''
 	}
 	
 	override getFreeVars() {
@@ -58,7 +57,7 @@ class TypeConstructorType extends AbstractType {
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new TypeConstructorType(origin, name, newTypeArgs, superTypes);
+			return new TypeConstructorType(origin, name, newTypeArgs);
 		}
 		return this;
 	}

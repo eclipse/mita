@@ -181,7 +181,7 @@ class StdlibTypeRegistry {
 		return getIntegerTypes(typeResolveOrigin).filter[typeResolveOrigin.isSubType(t, it)].force
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, TypeConstructorType t, EObject typeResolveOrigin) {
-		return  #[t] + t.superTypes.flatMap[s.getSuperTypes(it, typeResolveOrigin)].force;
+		return  #[t];
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
 		return #[t];

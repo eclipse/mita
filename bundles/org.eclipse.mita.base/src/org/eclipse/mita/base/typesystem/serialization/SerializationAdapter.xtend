@@ -52,6 +52,8 @@ import org.eclipse.xtext.naming.QualifiedName
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.emf.ecore.EStructuralFeature
+import org.eclipse.mita.base.typesystem.infra.Graph
+import java.util.HashMap
 
 class SerializationAdapter {
 	
@@ -109,7 +111,18 @@ class SerializationAdapter {
 			.toMap([ it.key ], [ it.value ])
 		);
 		result.constraintSystemProvider = constraintSystemProvider;
+		result.explicitSubtypeRelations = obj.explicitSubtypeRelations.fromValueObject() as Graph<AbstractType>;
 		return result;
+	}
+	
+	protected dispatch def Graph<AbstractType> fromValueObject(SerializedAbstractTypeGraph obj) {
+		new Graph<AbstractType>() => [
+			outgoing.putAll(obj.outgoing);
+			incoming.putAll(obj.incoming);
+			nodeIndex.putAll(obj.nodeIndex.mapValues[it.fromValueObject as AbstractType]);
+			nextNodeInt = obj.nextNodeInt;
+			computeReverseMap();
+		]
 	}
 	
 	protected dispatch def TypeClass fromValueObject(SerializedTypeClass obj) {
@@ -181,8 +194,7 @@ class SerializationAdapter {
 		return new FunctionType(
 			obj.origin.resolveEObject(),
 			obj.name,
-			obj.typeArguments.fromSerializedTypes(),
-			obj.superTypes.fromSerializedTypes()
+			obj.typeArguments.fromSerializedTypes()
 		);
 	}
 	
@@ -191,16 +203,16 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
-		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
+		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
-		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
+		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeConstructorType obj) {
-		return new TypeConstructorType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes(), obj.superTypes.fromSerializedTypes());
+		return new TypeConstructorType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeScheme obj) {
@@ -290,11 +302,21 @@ class SerializationAdapter {
 				.entrySet.sortBy[it.key.toString]
 				.map[it.key.toString() -> it.value.toValueObject as SerializedTypeVariable ]
 				.toMap([it.key], [it.value])
-			constraints = obj.constraints.toSet.map[ it.toValueObject() as SerializedAbstractTypeConstraint ].toList
+			constraints = obj.constraints.map[ it.toValueObject() as SerializedAbstractTypeConstraint ].force.toSet.toList
 			typeClasses = obj.typeClasses
 				.entrySet.sortBy[it.key]
 				.map[ it.key.toString() -> it.value.toValueObject as SerializedTypeClass ]
 				.toMap([ it.key ], [ it.value ]);
+			explicitSubtypeRelations = obj.explicitSubtypeRelations.toValueObject as SerializedAbstractTypeGraph
+		]
+	}
+	
+	protected dispatch def SerializedObject toValueObject(Graph<AbstractType> obj) {
+		new SerializedAbstractTypeGraph => [
+			outgoing = obj.outgoing;
+			incoming = obj.incoming;
+			nodeIndex = obj.nodeIndex.mapValues[it.toValueObject as SerializedAbstractType];
+			nextNodeInt = obj.nextNodeInt;
 		]
 	}
 	
@@ -425,7 +447,6 @@ class SerializationAdapter {
 		ctxt.name = obj.name
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
 		ctxt.typeArguments = obj.typeArguments.map[ it.toValueObject as SerializedAbstractType ].toList
-		ctxt.superTypes = obj.superTypes.map[ it.toValueObject as SerializedAbstractType ].toList
 		return ctxt
 	}
 	

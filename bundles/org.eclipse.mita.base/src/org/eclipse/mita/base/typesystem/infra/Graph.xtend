@@ -34,6 +34,14 @@ class Graph<T> implements Cloneable {
 		return c;
 	}
 	
+	def computeReverseMap() {
+		reverseMap.clear();
+		nodeIndex.entrySet.forEach[i_t |
+			reverseMap.putIfAbsent(i_t.value, new HashSet());
+			reverseMap.get(i_t.value).add(i_t.key);
+		]
+	}
+	
 	def getNodes() {
 		return nodeIndex.values;
 	}

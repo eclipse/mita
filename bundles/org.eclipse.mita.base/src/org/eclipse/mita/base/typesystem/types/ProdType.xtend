@@ -11,18 +11,26 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+import org.eclipse.emf.ecore.EObject
+import java.util.List
 
-@FinalFieldsConstructor
 @EqualsHashCode
 @Accessors
 class ProdType extends TypeConstructorType {
+	
+	new(EObject origin, String name, List<AbstractType> typeArguments) {
+		super(origin, name, typeArguments);
+	}
+	new(EObject origin, String name, Iterable<AbstractType> typeArguments) {
+		super(origin, name, typeArguments);
+	}
 			
 	override toString() {
 		(name ?: "") + "(" + typeArguments.join(", ") + ")"
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {
-		new ProdType(origin, name, typeArguments.map[ it.replace(from, with) ].force, superTypes);
+		new ProdType(origin, name, typeArguments.map[ it.replace(from, with) ].force);
 	}
 	
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
@@ -31,7 +39,7 @@ class ProdType extends TypeConstructorType {
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newPType = new ProdType(origin, name, newTypeVars, superTypes);
+		val newPType = new ProdType(origin, name, newTypeVars);
 		s.add(tv, newPType);
 	}
 	
@@ -42,7 +50,7 @@ class ProdType extends TypeConstructorType {
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new ProdType(origin, name, newTypeArgs, superTypes);
+			return new ProdType(origin, name, newTypeArgs);
 		}
 		return this;
 	}

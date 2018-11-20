@@ -3,8 +3,9 @@ package org.eclipse.mita.base.typesystem.serialization
 import java.util.ArrayList
 import java.util.List
 import java.util.Map
-import org.eclipse.mita.base.typesystem.types.Signedness
+import java.util.Set
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
+import org.eclipse.mita.base.typesystem.types.Signedness
 
 class SerializedObject {
     public String _type;
@@ -18,6 +19,18 @@ class SerializedConstraintSystem extends SerializedObject {
 	public List<SerializedAbstractTypeConstraint> constraints = new ArrayList;
 	public Map<String, SerializedTypeVariable> symbolTable;
 	public Map<String, SerializedTypeClass> typeClasses;
+	public SerializedAbstractTypeGraph explicitSubtypeRelations;
+}
+
+class SerializedAbstractTypeGraph extends SerializedObject {
+    new() {
+        _type = "SerializedAbstractTypeGraph";
+    }
+    
+	public Map<Integer, Set<Integer>> outgoing;
+	public Map<Integer, Set<Integer>> incoming;
+	public Map<Integer, SerializedAbstractType> nodeIndex;
+	public int nextNodeInt = 0;
 }
 
 class SerializedValidationIssue extends SerializedObject {
@@ -129,7 +142,6 @@ class SerializedTypeConstructorType extends SerializedAbstractType {
     }
 
 	public List<SerializedAbstractType> typeArguments;
-	public List<SerializedAbstractType> superTypes;
 }
 
 class SerializedFunctionType extends SerializedTypeConstructorType {

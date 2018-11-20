@@ -295,7 +295,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				// handle named parameters: if _refType is unorderedArgs, sort them
 				val prodType = if(refType instanceof UnorderedArguments) {
 					val sortedArgs = ExpressionUtils.getSortedArguments((fun as Operation).parameters, refType.argParamNamesAndValueTypes, [it], [it.key]);
-					new ProdType(refType.origin, refType.name, sortedArgs.map[it.value], refType.superTypes);
+					new ProdType(refType.origin, refType.name, sortedArgs.map[it.value]);
 				} else {
 					refType;
 				}

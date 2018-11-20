@@ -16,15 +16,15 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip;
 @Accessors
 class FunctionType extends TypeConstructorType {		
 	new(EObject origin, String cons, AbstractType from, AbstractType to) {
-		this(origin, cons, #[from, to], #[]);
+		this(origin, cons, #[from, to]);
 		
 //		if(from === null || to === null) {
 //			throw new NullPointerException;
 //		}
 	}
 	
-	new(EObject origin, String cons, Iterable<AbstractType> typeArgs, Iterable<AbstractType> superTypes) {
-		super(origin, cons, typeArgs, superTypes);
+	new(EObject origin, String cons, Iterable<AbstractType> typeArgs) {
+		super(origin, cons, typeArgs);
 	}
 	
 	def AbstractType getFrom() {
@@ -71,7 +71,7 @@ class FunctionType extends TypeConstructorType {
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new FunctionType(origin, name, newTypeArgs, superTypes);
+			return new FunctionType(origin, name, newTypeArgs);
 		}
 		return this;
 	}
