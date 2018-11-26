@@ -4,6 +4,7 @@ import com.google.inject.name.Named
 import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
+import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
@@ -63,6 +64,13 @@ class MitaLinker extends Linker {
 	def collectAndSolveTypes(EObject obj, IDiagnosticProducer producer) {
 		// top level element - gather constraints and solve
 		val resource = obj.eResource;
+		val errors = if(resource instanceof ResourceImpl) {
+			resource.errors;
+		}
+		if(!errors.nullOrEmpty) {
+			return;
+		}
+		
 		val resourceDescriptions = resourceDescriptionsProvider.get(resource.resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
@@ -70,13 +78,9 @@ class MitaLinker extends Linker {
 		
 		val exportedObjects = /*thisExportedObjects + */(visibleContainers
 			.flatMap[ it.exportedObjects ].force);
-		val uris = exportedObjects.map[it.EObjectURI]
-		val allConstraintSystemJsons = exportedObjects
+		val allConstraintSystems = exportedObjects
 			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filter[it.value !== null]
-			.force
-		val json = allConstraintSystemJsons.map['''"«it.key.toString»": «it.value»'''].join("{", ",", "}", [it?.toString])
-		val allConstraintSystems = allConstraintSystemJsons
 			.map[it.value]
 			.map[GZipper.decompress(it)]
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]

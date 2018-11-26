@@ -210,6 +210,21 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return reference ?: rawReference;
 	}
 	
+	protected def Pair<AbstractType, AbstractType> computeTypesInArgument(ConstraintSystem system, Argument arg) {
+		val feature = ExpressionsPackage.eINSTANCE.argument_Parameter;
+		val paramName = NodeModelUtils.findNodesForFeature(arg, feature).head?.text?.trim;
+		val paramType = if(!paramName.nullOrEmpty) {
+			system.resolveReferenceToSingleAndGetType(arg, feature) as AbstractType;
+		}
+		
+		return paramType -> system.computeConstraints(arg.value);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument arg) {
+		val ptype_etype = computeTypesInArgument(system, arg);
+		return system.associate(ptype_etype.key ?: ptype_etype.value, arg);
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
@@ -243,13 +258,17 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 				else {
 					NodeModelUtils.findNodesForFeature(it.value, ExpressionsPackage.eINSTANCE.argument_Parameter).head?.text -> (it.value -> it.value.value)
 				}
-			]
+			].force
 			
+			// if size <= 1 then nothing's unordered so we can skip this
 			val argType = if(argumentParamsAndValues.forall[!it.key.nullOrEmpty] && argumentParamsAndValues.size > 1) {
 				val List<Pair<Pair<String, Pair<Argument, Expression>>, Pair<AbstractType, AbstractType>>> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
 					val arg = it.value.key;
 					val aValue = it.value.value;
-					it -> (system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType -> system.computeConstraints(aValue) as AbstractType);
+					val exprType = system.computeConstraints(aValue) as AbstractType;
+					val paramType = system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;
+					system.associate(paramType, arg);
+					it -> (paramType -> exprType);
 				].force
 				argumentParamTypesAndValueTypes.forEach[
 					system.addConstraint(new SubtypeConstraint(it.value.value, it.value.key, new ValidationIssue(Severity.ERROR, '''«it.key.value» not compatible with «it.key.key»''', it.key.value.key, null, "")));
@@ -264,10 +283,10 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 				new UnorderedArguments(null, txt + "_args", withAutoFirstArg.map[it.key.key -> it.value.value]);
 			} else {
 				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {
-					#[system.newTypeHole(varOrFun) as AbstractType] + varOrFun.arguments.map[system.computeConstraints(it.value) as AbstractType]
+					#[system.newTypeHole(varOrFun) as AbstractType] + varOrFun.arguments.map[system.computeConstraints(it) as AbstractType]
 				}
 				else {
-					varOrFun.arguments.map[system.computeConstraints(it.value) as AbstractType];
+					varOrFun.arguments.map[system.computeConstraints(it) as AbstractType];
 				}
 				system.computeArgumentConstraintsWithTypes(txt, args.force);
 			}

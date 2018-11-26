@@ -980,7 +980,7 @@ bus named-singleton GPIO {
 	signal digitalOut(pin : GPIOPin, initialValue : bool = false) : bool
 }
 
-export exception EndOfFileException
+export exception EndOfFileException;
 
 io named-singleton SDCard {
 	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
