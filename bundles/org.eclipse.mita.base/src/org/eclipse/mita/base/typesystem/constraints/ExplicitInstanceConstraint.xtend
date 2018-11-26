@@ -21,6 +21,10 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		instance + " ⩽ " + typeScheme
 	}
 	
+	override getErrorMessage() {
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, instance, typeScheme));
+	}
+	
 	new(AbstractType instance, AbstractType typeScheme, ValidationIssue errorMessage) {
 		super(errorMessage);
 		this.instance = instance;
@@ -52,7 +56,7 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		val newL = instance.map(f);
 		val newR = typeScheme.map(f);
 		if(instance !== newL || instance !== newR) {
-			return new ExplicitInstanceConstraint(newL, newR, errorMessage);
+			return new ExplicitInstanceConstraint(newL, newR, _errorMessage);
 		} 
 		return this;
 	}

@@ -17,6 +17,10 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		this.left = left;
 		this.right = right;
 	}
+	
+	override getErrorMessage() {
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, left, right));
+	}
 
 	override toString() {
 		left + " ≡ " + right
@@ -42,7 +46,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		val newL = left.map(f);
 		val newR = right.map(f);
 		if(left !== newL || right !== newR) {
-			return new EqualityConstraint(newL, newR, errorMessage);
+			return new EqualityConstraint(newL, newR, _errorMessage);
 		} 
 		return this;
 	}

@@ -28,6 +28,10 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		}
 	}
 	
+	override getErrorMessage() {
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, subType, superType));
+	}
+	
 	override toString() {
 		subType + " ⩽ " + superType
 	}
@@ -58,7 +62,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		val newL = subType.map(f);
 		val newR = superType.map(f);
 		if(subType !== newL || superType !== newR) {
-			return new SubtypeConstraint(newL, newR, errorMessage);
+			return new SubtypeConstraint(newL, newR, _errorMessage);
 		}
 		return this;
 	}

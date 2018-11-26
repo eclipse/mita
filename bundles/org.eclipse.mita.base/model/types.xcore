@@ -154,7 +154,10 @@ class StructuralParameter extends Parameter {
 }
 
 class TypeConstructor extends VirtualFunction {
-	container transient StructuralType constructedType opposite constructor
+	
+	op StructuralType getConstructedType() {
+		return this.eContainer as StructuralType;
+	}
 	
 	op void generateMembers() {
 		super.generateMembers();
@@ -192,6 +195,20 @@ class TypeConstructor extends VirtualFunction {
 		return constructedType.typeParameters;
 	}
 }
+
+class AnonymousProductTypeImportingConstructor extends SumSubTypeConstructor {
+	op Parameter[] getParameters() {
+		generateMembers();
+		val anonymousProductType = constructedType as AnonymousProductType;
+		// sadly this doesn't work since types aren't linked for some reason
+		val realType = anonymousProductType.typeSpecifiers.head?.^type;
+		if(realType instanceof StructuralType) {
+			return (#[sumTypeParameter] + realType.constructor.parameters).toEList;
+		}
+		return anonymousProductType.constructor.parameters;
+	}
+}
+
 class SumSubTypeConstructor extends TypeConstructor {
 	contains transient Parameter sumTypeParameter
 	
@@ -239,7 +256,7 @@ class ComplexType extends Type, GenericElement {
 }
 class StructuralType extends ComplexType {
 	contains StructuralParameter[] parameters
-	contains transient TypeConstructor constructor opposite constructedType
+	contains transient TypeConstructor constructor
 }
 
 class GenericElement extends NamedElement {
@@ -459,6 +476,7 @@ class AnonymousStructuralParameter extends StructuralParameter {
 }
 class AnonymousProductType extends SumAlternative {
 	contains PresentTypeSpecifier[] typeSpecifiers 
+	//contains transient AnonymousProductTypeImportingConstructor importingConstructor
 	
 	op void generateMembers() {
 		super.generateMembers();

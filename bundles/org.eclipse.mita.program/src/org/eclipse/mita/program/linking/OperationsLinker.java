@@ -22,13 +22,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
-import org.eclipse.mita.program.scoping.ExtensionMethodHelper;
-import org.eclipse.mita.program.scoping.OperationUserDataHelper;
-import org.eclipse.xtext.resource.IEObjectDescription;
-import org.eclipse.xtext.xbase.lib.IteratorExtensions;
 import org.eclipse.mita.base.expressions.ArgumentExpression;
 import org.eclipse.mita.base.expressions.Expression;
-import org.eclipse.mita.base.expressions.FeatureCall;
 import org.eclipse.mita.base.expressions.util.ArgumentSorter;
 import org.eclipse.mita.base.types.Operation;
 import org.eclipse.mita.base.types.Type;
@@ -37,8 +32,12 @@ import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer;
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult;
 import org.eclipse.mita.base.types.typesystem.ITypeSystem;
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor;
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity;
 import org.eclipse.mita.base.types.validation.TypeValidator;
+import org.eclipse.mita.program.scoping.ExtensionMethodHelper;
+import org.eclipse.mita.program.scoping.OperationUserDataHelper;
+import org.eclipse.xtext.diagnostics.Severity;
+import org.eclipse.xtext.resource.IEObjectDescription;
+import org.eclipse.xtext.xbase.lib.IteratorExtensions;
 
 import com.google.inject.Inject;
 

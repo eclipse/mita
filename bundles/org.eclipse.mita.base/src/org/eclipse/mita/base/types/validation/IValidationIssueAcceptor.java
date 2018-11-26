@@ -15,7 +15,7 @@ import java.util.List;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity;
+import org.eclipse.xtext.diagnostics.Severity;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -28,9 +28,6 @@ import com.google.common.collect.Lists;
 public interface IValidationIssueAcceptor {
 
 	public static class ValidationIssue {
-		public static enum Severity {
-			ERROR, WARNING, INFO
-		}
 
 		private Severity severity;
 		private String message;

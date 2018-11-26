@@ -322,7 +322,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(EqualityConstraint obj) {
 		new SerializedEqualityConstraint => [
-			errorMessage = obj.errorMessage.toValueObject as SerializedValidationIssue
+			errorMessage = obj._errorMessage.toValueObject as SerializedValidationIssue
 			left = obj.left.toValueObject as SerializedAbstractType
 			right = obj.right.toValueObject as SerializedAbstractType
 		]
@@ -330,7 +330,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(JavaClassInstanceConstraint obj) {
 		new SerializedJavaClassInstanceConstraint => [
-			errorMessage = obj.errorMessage.toValueObject as SerializedValidationIssue
+			errorMessage = obj._errorMessage.toValueObject as SerializedValidationIssue
 			what = obj.what.toValueObject as SerializedAbstractType;
 			javaClass = obj.javaClass.name;
 		]
@@ -338,7 +338,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(ExplicitInstanceConstraint obj) {
 		new SerializedExplicitInstanceConstraint => [
-			errorMessage = obj.errorMessage.toValueObject as SerializedValidationIssue
+			errorMessage = obj._errorMessage.toValueObject as SerializedValidationIssue
 			instance = obj.instance.toValueObject as SerializedAbstractType
 			typeScheme = obj.typeScheme.toValueObject as SerializedAbstractType
 		]
@@ -346,7 +346,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(ImplicitInstanceConstraint obj) {
 		new SerializedImplicitInstanceConstraint => [
-			errorMessage = obj.errorMessage.toValueObject as SerializedValidationIssue
+			errorMessage = obj._errorMessage.toValueObject as SerializedValidationIssue
 			isInstance = obj.isInstance.toValueObject as SerializedAbstractType
 			ofType = obj.ofType.toValueObject as SerializedAbstractType
 		]
@@ -354,7 +354,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(SubtypeConstraint obj) {
 		new SerializedSubtypeConstraint => [
-			errorMessage = obj.errorMessage.toValueObject as SerializedValidationIssue
+			errorMessage = obj._errorMessage.toValueObject as SerializedValidationIssue
 			subType = obj.subType.toValueObject as SerializedAbstractType
 			superType = obj.superType.toValueObject as SerializedAbstractType
 		]
@@ -362,7 +362,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedObject toValueObject(FunctionTypeClassConstraint obj) {
 		new SerializedFunctionTypeClassConstraint => [
-			errorMessage = obj.errorMessage.toValueObject as SerializedValidationIssue
+			errorMessage = obj._errorMessage.toValueObject as SerializedValidationIssue
 			type = obj.typ.toValueObject as SerializedAbstractType
 			functionCall = if(obj.functionCall === null) null else EcoreUtil.getURI(obj.functionCall).toString();
 			functionReference = obj.functionReference?.toValueObject;

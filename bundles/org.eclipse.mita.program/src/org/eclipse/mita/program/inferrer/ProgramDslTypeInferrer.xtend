@@ -43,12 +43,10 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeParameter
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ListBasedValidationIssueAcceptor
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.ArrayLiteral
@@ -72,14 +70,15 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.scoping.ExtensionMethodHelper
 import org.eclipse.mita.program.validation.ProgramDslTypeValidator
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.diagnostics.Severity
 
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.ARRAY_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.BOOL_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.DOUBLE_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.FLOAT_TYPE
+import static org.eclipse.mita.base.scoping.MitaTypeSystem.INT32_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.MODALITY_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.REFERENCE_TYPE
-import static org.eclipse.mita.base.scoping.MitaTypeSystem.INT32_TYPE
 import static org.eclipse.mita.base.scoping.MitaTypeSystem.SIGINST_TYPE
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 

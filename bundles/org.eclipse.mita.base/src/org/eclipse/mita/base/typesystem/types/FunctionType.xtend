@@ -7,10 +7,10 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.xtext.diagnostics.Severity
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
-import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
 
 @EqualsHashCode
 @Accessors

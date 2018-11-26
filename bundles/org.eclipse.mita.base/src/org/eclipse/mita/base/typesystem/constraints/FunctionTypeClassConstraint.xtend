@@ -8,7 +8,6 @@ import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.Validatio
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.mita.base.typesystem.solver.UnificationIssue
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -28,7 +27,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	
 	@Inject
 	val Provider<ConstraintSystem> constraintSystemProvider;
-	
+		
 	new(AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV, ValidationIssue errorMessage) {
 		this(errorMessage, typ, qn, functionCall, functionReference, returnTypeTV, null);
 	}
@@ -40,24 +39,24 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		val nc = constraintSystemProvider.get(); 
 		if(at instanceof FunctionType) {
 			// the returned type should be smaller than the expected type so it can be assigned
-			nc.addConstraint(new SubtypeConstraint(at.to, returnTypeTV, errorMessage));
+			nc.addConstraint(new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible''')));
 			return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)
 		}
 		else { 
-			return SimplificationResult.failure(errorMessage)
+			return SimplificationResult.failure(_errorMessage)
 		}
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newType = typ.map(f);
 		if(newType !== typ) {
-			return new FunctionTypeClassConstraint(errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);	
+			return new FunctionTypeClassConstraint(_errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);	
 		}
 		return this;
 	}
 	
 	override modifyNames(String suffix) {
-		return new FunctionTypeClassConstraint(errorMessage, typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, constraintSystemProvider);
+		return new FunctionTypeClassConstraint(_errorMessage, typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, constraintSystemProvider);
 	}
 	
 	override isAtomic() {

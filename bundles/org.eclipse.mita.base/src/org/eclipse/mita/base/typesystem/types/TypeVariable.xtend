@@ -40,7 +40,7 @@ class TypeVariable extends AbstractType {
 	}
 	
 	override toGraphviz() {
-		return "";
+		return '''"«name»"''';
 	}
 	
 	override replace(Substitution sub) {

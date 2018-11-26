@@ -119,6 +119,10 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 			break;
 		case INFO:
 			break;
+		case IGNORE:
+			break;
+		default:
+			break;
 		}
 	}
 

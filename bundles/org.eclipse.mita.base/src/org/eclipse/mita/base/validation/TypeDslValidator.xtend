@@ -8,7 +8,7 @@ import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
+import org.eclipse.xtext.diagnostics.Severity
 
 import static org.eclipse.mita.base.types.inferrer.AbstractTypeSystemInferrer.ASSERT_COMPATIBLE
 import static org.eclipse.mita.base.types.inferrer.AbstractTypeSystemInferrer.ASSERT_NOT_TYPE
@@ -130,7 +130,16 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 				warning(issue.getMessage(), issue.feature, issue.getIssueCode());			
 			}
 		}
-		case INFO: { }
+		case INFO: { 
+			if(issue.target !== null) {
+				info(issue.getMessage(), issue.target, issue.feature, issue.issueCode);
+			}
+			else {
+				info(issue.getMessage(), issue.feature, issue.getIssueCode());			
+			}
+		}
+		case IGNORE: {
+		}
 		}
 	}
 	

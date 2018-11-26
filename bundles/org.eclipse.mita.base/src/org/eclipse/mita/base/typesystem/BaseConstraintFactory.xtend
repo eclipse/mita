@@ -25,6 +25,7 @@ import org.eclipse.mita.base.expressions.RelationalOperator
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
+import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
@@ -42,7 +43,6 @@ import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
@@ -65,6 +65,7 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
@@ -329,9 +330,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 			if(expr.operator == RelationalOperator.EQUALS || expr.operator == RelationalOperator.EQUALS) {
 				// left and right must be subtype of some common type
 				val commonTV = system.newTypeVariable(null);
-				val mkIssue = [new ValidationIssue(Severity.ERROR, '''«expr.leftOperand» and «expr.rightOperand» don't share a common type''', it, null, "")];
-				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), commonTV, mkIssue.apply(expr.leftOperand)));
-				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), commonTV, mkIssue.apply(expr.rightOperand)));		
+				val mkIssue = [String f1, String f2, Expression e | new ValidationIssue(Severity.ERROR, '''«expr.leftOperand»«f1» and «expr.rightOperand»«f2» don't share a common type''', e, null, "")];
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), commonTV, mkIssue.apply(" (:: %s)", "", expr.leftOperand)));
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), commonTV, mkIssue.apply("", " (:: %s)", expr.rightOperand)));		
 			}
 			else {
 				val x8type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.x8TypeQID);
@@ -394,6 +395,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 	}
 	 
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, AnonymousProductType prodType) {
+//		if(prodType.importingConstructor !== null) {
+//			system.associate(null, prodType.importingConstructor);
+//		}
+		return system._doTranslateTypeDeclaration(prodType as SumAlternative);
+	}
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		val prodType = new ProdType(sumAlt, sumAlt.name, types);

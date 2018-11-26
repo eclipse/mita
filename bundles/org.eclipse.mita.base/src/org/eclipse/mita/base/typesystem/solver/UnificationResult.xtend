@@ -3,8 +3,8 @@ package org.eclipse.mita.base.typesystem.solver
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtext.diagnostics.Severity
 
 @Accessors
 class UnificationResult { 

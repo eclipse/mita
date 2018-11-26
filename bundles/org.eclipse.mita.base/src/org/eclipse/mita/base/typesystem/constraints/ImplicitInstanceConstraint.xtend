@@ -45,7 +45,7 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 		val newL = isInstance.map(f);
 		val newR = ofType.map(f);
 		if(isInstance !== newL || ofType !== newR) {
-			return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f), errorMessage);
+			return new ImplicitInstanceConstraint(isInstance.map(f), ofType.map(f), _errorMessage);
 		}
 		return this;
 	}

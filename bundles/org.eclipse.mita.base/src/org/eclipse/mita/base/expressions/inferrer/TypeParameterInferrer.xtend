@@ -27,8 +27,8 @@ import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ListBasedValidationIssueAcceptor
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.base.types.validation.TypeValidator
+import org.eclipse.xtext.diagnostics.Severity
 
 import static org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrerMessages.*
 import static org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.NOT_COMPATIBLE_CODE

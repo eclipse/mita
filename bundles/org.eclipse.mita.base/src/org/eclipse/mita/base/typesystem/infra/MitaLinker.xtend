@@ -4,6 +4,7 @@ import com.google.inject.name.Named
 import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
+import org.eclipse.emf.ecore.impl.EObjectImpl
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
@@ -18,8 +19,11 @@ import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.validation.EObjectDiagnosticImpl
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.xtext.diagnostics.Severity
 
 class MitaLinker extends Linker {
 
@@ -59,6 +63,15 @@ class MitaLinker extends Linker {
 		}
 		
 		//super.ensureLinked(obj, producer)
+	}
+	
+	def resolveProxy(Resource resource, EObject obj) {
+		(if(obj !== null && obj.eIsProxy) {
+			if(obj instanceof EObjectImpl) {
+				val uri = obj.eProxyURI;
+				resource.resourceSet.getEObject(uri, true);
+			}
+		}) ?: obj;
 	}
 	
 	def collectAndSolveTypes(EObject obj, IDiagnosticProducer producer) {
@@ -101,6 +114,15 @@ class MitaLinker extends Linker {
 				if(resource instanceof MitaBaseResource) {
 					resource.latestSolution = solution;
 					resource.cancelIndicator.canceled = true;
+					resource.errors += solution.issues.filter[it.target !== null].filter[it.severity == Severity.ERROR].map[
+						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
+					]
+					resource.warnings += solution.issues.filter[it.target !== null].filter[it.severity == Severity.WARNING].map[
+						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
+					]
+					resource.warnings += solution.issues.filter[it.target !== null].filter[it.severity == Severity.INFO].map[
+						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
+					]
 				}
 			}
 			if(solution !== null && solution.solution !== null) {

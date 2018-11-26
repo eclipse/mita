@@ -15,8 +15,12 @@ import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.Validatio
 @Accessors
 abstract class AbstractTypeConstraint {
 	
-	// TODO: make this (AbstractTypeConstraint) => String to allow more inspection
-	val ValidationIssue errorMessage;
+	// You can use a format string as message to use final inferred types
+	// java strings allow argument reuse with positional formatters like "%2$s" <-> second argument as string
+	val ValidationIssue _errorMessage;
+	def getErrorMessage() {
+		return _errorMessage;	
+	}
 	
 	abstract def AbstractTypeConstraint map((AbstractType) => AbstractType f);
 

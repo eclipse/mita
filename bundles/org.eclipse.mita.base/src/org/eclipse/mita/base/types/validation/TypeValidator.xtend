@@ -9,19 +9,20 @@
  */
 package org.eclipse.mita.base.types.validation
 
+import com.google.inject.Inject
+import java.util.List
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.xtext.diagnostics.Severity
+
 import static org.eclipse.mita.base.types.inferrer.AbstractTypeSystemInferrer.ASSERT_COMPATIBLE
 import static org.eclipse.mita.base.types.inferrer.AbstractTypeSystemInferrer.ASSERT_NOT_TYPE
 import static org.eclipse.mita.base.types.inferrer.AbstractTypeSystemInferrer.ASSERT_SAME
 import static org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.NOT_COMPATIBLE_CODE
 import static org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.NOT_SAME_CODE
 import static org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.NOT_TYPE_CODE
-import java.util.List
-import org.eclipse.mita.base.types.ComplexType
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
-import com.google.inject.Inject
 
 class TypeValidator {
 	@Inject protected ITypeSystem registry

@@ -4,8 +4,8 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import java.util.Set
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.xtext.diagnostics.Severity
 
 class SerializedObject {
     public String _type;
