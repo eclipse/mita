@@ -9,6 +9,7 @@ import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.AdditiveOperator
 import org.eclipse.mita.base.expressions.BinaryExpression
 import org.eclipse.mita.base.expressions.BoolLiteral
+import org.eclipse.mita.base.expressions.ConditionalExpression
 import org.eclipse.mita.base.expressions.DoubleLiteral
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
@@ -40,13 +41,14 @@ import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.TypeTranslationAdapter
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -63,16 +65,12 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.expressions.ConditionalExpression
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -361,15 +359,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected def AbstractType translateTypeDeclaration(ConstraintSystem system, EObject obj) {
-		// some types may have circular dependencies. 
-		// To make it easy to solve this we cache type translations, reducing the required number of translations to O(1).
-		// So if some translation needs to recurse it can safely do so, as long as at least one member in the recursive circle sets its type translation before recursing.
-		val typeTrans = TypeTranslationAdapter.get(system, obj, [|
-			system.doTranslateTypeDeclaration(obj)
-		])
-		// for the same reason we need to iterate over all children of these types.
-		// since some of these types might call computeConstrains on their eContainer we need to get out the big guns or have a translateForChildren dispatch method.
-		PreventRecursion.preventRecursion(obj, [|system.computeConstraintsForChildren(obj); return null;]);
+		val typeTrans = system.doTranslateTypeDeclaration(obj);
+		system.computeConstraintsForChildren(obj);
 		// if we compile more than once without changes we need to associate again. Hence we always associate here to be safe.
 		system.associate(typeTrans, obj);
 		return typeTrans;
@@ -390,27 +381,25 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		return TypeTranslationAdapter.set(system, structType, new ProdType(structType, structType.name, types)) => [
-			system.computeConstraints(structType.constructor);	
-		];
+		system.computeConstraints(structType.constructor);	
+		return new ProdType(structType, structType.name, types);
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
 		val subTypes = new ArrayList();
-		return TypeTranslationAdapter.set(system, sumType, new SumType(sumType, sumType.name, subTypes)) => [
-			sumType.alternatives.forEach[ sumAlt |
-				subTypes.add(system.translateTypeDeclaration(sumAlt));
-			];
-		]
+		sumType.alternatives.forEach[ sumAlt |
+			subTypes.add(system.translateTypeDeclaration(sumAlt));
+		];
+		return new SumType(sumType, sumType.name, subTypes);
+		
 	}
 	 
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		val prodType = new ProdType(sumAlt, sumAlt.name, types);
-		system.explicitSubtypeRelations.addEdge(prodType, system.translateTypeDeclaration(sumAlt.eContainer));
-		return TypeTranslationAdapter.set(system, sumAlt, prodType) => [
-			system.computeConstraints(sumAlt.constructor);
-		];
+		system.explicitSubtypeRelations.addEdge(prodType, system.getTypeVariable(sumAlt.eContainer));
+		system.computeConstraints(sumAlt.constructor);
+		return prodType;
 	}
 		
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
@@ -419,14 +408,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.computeConstraints(it)
 		].force();
 
-		return TypeTranslationAdapter.set(system, genType, if(typeParameters.empty) {
+		system.computeConstraints(genType.constructor);			
+		return if(typeParameters.empty) {
 			new AtomicType(genType, genType.name);
 		}
 		else {
 			new TypeScheme(genType, typeArgs, new TypeConstructorType(genType, genType.name, typeArgs.map[it as AbstractType].force));
-		}) => [
-			system.computeConstraints(genType.constructor);			
-		]
+		}
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, ExceptionTypeDeclaration genType) {

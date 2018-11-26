@@ -40,7 +40,6 @@ class ConstraintSystem {
 	@Inject protected SerializationAdapter serializationAdapter;
 	protected Map<URI, TypeVariable> symbolTable = new HashMap();
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
-	protected Map<EObject, AbstractType> typeTranslations = new HashMap();
 	protected List<AbstractTypeConstraint> atomicConstraints = newArrayList;
 	protected List<AbstractTypeConstraint> nonAtomicConstraints = newArrayList;
 	protected Graph<AbstractType> explicitSubtypeRelations;
@@ -294,7 +293,6 @@ class ConstraintSystem {
 			r.atomicConstraints += t.atomicConstraints;
 			r.nonAtomicConstraints += t.nonAtomicConstraints;
 			r.typeClasses.putAll(t.typeClasses);
-			r.typeTranslations.putAll(t.typeTranslations)
 			t.explicitSubtypeRelations => [g | g.nodes.forEach[typeNode | 
 				g.reverseMap.get(typeNode).forEach[typeIdx |
 					g.getPredecessors(typeIdx).forEach[r.explicitSubtypeRelations.addEdge(it, typeNode)]
@@ -334,7 +332,6 @@ class ConstraintSystem {
 			])
 		]);
 		
-		result.typeTranslations.putAll(typeTranslations);
 		
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
 		return result;

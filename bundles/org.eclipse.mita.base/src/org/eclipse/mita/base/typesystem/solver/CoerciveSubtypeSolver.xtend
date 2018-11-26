@@ -6,6 +6,7 @@ import java.util.List
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
@@ -19,6 +20,7 @@ import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
@@ -34,6 +36,7 @@ import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.init
@@ -62,9 +65,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	val enableDebug = true;
 	
+	def CancelIndicator getCancelIndicatorOrNull(Resource resource) {
+		if(resource instanceof MitaBaseResource) {
+			return resource.cancelIndicator;
+		}
+		return null;
+	}
+	
 	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
 		val debugOutput = enableDebug && typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
 		
+		val cancelInidicator = typeResolutionOrigin.eResource.getCancelIndicatorOrNull;		
 		var currentSystem = system;
 		var currentSubstitution = Substitution.EMPTY;
 		if(typeResolutionOrigin.eIsProxy) {
@@ -76,11 +87,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		val issues = newArrayList;
 		for(var i = 0; i < 10; i++) {
+			if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
+				return null;
+			}
 			if(debugOutput) {
 				println("------------------")
 				println(currentSystem);
 			}
 			val simplification = currentSystem.simplify(currentSubstitution, typeResolutionOrigin);
+			if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
+				return null;
+			}
 			if(!simplification.valid) {
 				if(simplification?.system?.constraints.nullOrEmpty || simplification?.substitution?.content?.entrySet.nullOrEmpty) {
 					return new ConstraintSolution(currentSystem, simplification.substitution, simplification.issues);
@@ -90,12 +107,16 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 //					return new ConstraintSolution(simplification.system, simplification.substitution, #[simplification.issue])
 				}
 			}
+			
 			val simplifiedSystem = simplification.system;
 			val simplifiedSubst = simplification.substitution;
 			if(debugOutput) {
 				println(simplification);
 			}
 			val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst, typeResolutionOrigin);
+			if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
+				return null;
+			}
 			if(!solution.issues.empty) {
 				if(solution?.constraints?.constraints.nullOrEmpty || solution?.solution?.content?.entrySet.nullOrEmpty) {
 					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, solution.issues);

@@ -88,11 +88,15 @@ class MitaLinker extends Linker {
 				print("")
 			}
 			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
+			if(resource instanceof MitaBaseResource) {
+				resource.mkCancelIndicator();
+			}
 			
 			val solution = constraintSolver.solve(preparedSystem, obj);
 			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {
 					resource.latestSolution = solution;
+					resource.cancelIndicator.canceled = true;
 				}
 			}
 			if(solution !== null && solution.solution !== null) {
