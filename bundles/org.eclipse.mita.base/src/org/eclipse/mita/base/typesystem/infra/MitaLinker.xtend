@@ -101,14 +101,14 @@ class MitaLinker extends Linker {
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {
-			if(obj.eResource.URI.lastSegment == "application.mita") {
-				print("")
-			}
 			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
 			if(resource instanceof MitaBaseResource) {
 				resource.mkCancelIndicator();
 			}
 			
+			if(obj.eResource.URI.lastSegment == "application.mita") {
+				print("")
+			}
 			val solution = constraintSolver.solve(preparedSystem, obj);
 			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {

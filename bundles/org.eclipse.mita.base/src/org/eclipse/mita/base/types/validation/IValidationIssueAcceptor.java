@@ -41,10 +41,18 @@ public interface IValidationIssueAcceptor {
 		
 		public ValidationIssue(ValidationIssue self, String newMessage) {
 			this.message = newMessage;
-			this.severity = self.severity;
-			this.issueCode = self.issueCode;
-			this.target = self.target;
-			this.feature = self.feature;
+			if(self != null) {
+				this.severity = self.severity;
+				this.issueCode = self.issueCode;
+				this.target = self.target;
+				this.feature = self.feature;
+			}
+			else {
+				this.severity = Severity.ERROR;
+				this.issueCode = "";
+				this.target = null;
+				this.feature = null;
+			}
 		}
 		
 		public ValidationIssue(Severity severity, String message, EObject target, EStructuralFeature feature, String issueCode) {

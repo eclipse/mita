@@ -14,6 +14,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
 import org.eclipse.mita.base.typesystem.SubtypeCheckResult
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 
 /* Interesting papers:
  *  Generalizing Hindley-Milner Type Inference Algorithms: https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
@@ -41,7 +42,7 @@ class MostGenericUnifierComputer {
 			} 
 			val t1 = t1_t2.key;
 			val t2 = t1_t2.value;
-			val u2 = compute(t1, t2);
+			val u2 = compute(null, t1, t2);
 			return combine(u1, u2);
 		])
 	}
@@ -74,7 +75,7 @@ class MostGenericUnifierComputer {
 			val tv = tv_t.key;
 			val t1 = tv_t.value;
 			val t2 = s2.content.get(tv);
-			val unification = compute(t1, t2);
+			val unification = compute(null, t1, t2);
 			if(unification.valid) {
 				if(unification.substitution.content.containsKey(tv)) {
 					ur.substitution.add(tv, unification.substitution.content.get(tv));
@@ -93,7 +94,7 @@ class MostGenericUnifierComputer {
 		return UnificationResult.success(s1.apply(s2).apply(unificationResult.substitution));
 	}
 	
-	def UnificationResult compute(AbstractType t1, AbstractType t2) {
+	def UnificationResult compute(ValidationIssue issue, AbstractType t1, AbstractType t2) {
 		val t1IsFree = t1 instanceof TypeVariable;
 		val t2IsFree = t2 instanceof TypeVariable;
 		
@@ -102,10 +103,10 @@ class MostGenericUnifierComputer {
 			result.add(t1 as TypeVariable, t2);
 		} else if(t2IsFree) {
 			result.add(t2 as TypeVariable, t1);
-		} else if(t1.class == t2.class) {
+		} else {
 			val error = result.unify(t1, t2);
 			if(error !== null) {
-				return UnificationResult.failure(null, error.message);
+				return UnificationResult.failure(new ValidationIssue(issue, error.message));
 			}
 			return UnificationResult.success(result);
 		}

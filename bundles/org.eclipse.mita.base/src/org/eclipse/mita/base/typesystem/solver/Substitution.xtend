@@ -54,6 +54,9 @@ class Substitution {
 //		else {
 //			this.content.put(variable, type);	
 //		}
+//		if(this.toString.contains("bool ≔ x8")) {
+//			print("");
+//		}
 	}
 	
 	public def void add(Map<TypeVariable, AbstractType> content) {

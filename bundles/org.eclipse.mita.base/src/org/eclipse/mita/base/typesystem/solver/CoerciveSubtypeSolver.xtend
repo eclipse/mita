@@ -181,9 +181,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return true;
 	}
 	
-	protected def SimplificationResult simplify(ConstraintSystem system, Substitution subtitution, EObject typeResolutionOrigin) {
+	protected def SimplificationResult simplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
 		var resultSystem = system;
-		var resultSub = subtitution;
+		var resultSub = substitution;
 		var issues = newArrayList;
 		while(resultSystem.hasNonAtomicConstraints()) {
 			val constraintAndSystem = resultSystem.takeOneNonAtomic();
@@ -326,7 +326,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				// - via instantiation/unification 
 				if(typ instanceof FunctionType) {
 					val subtypeCheckResult = typeRegistry.isSubtypeOf(typeResolutionOrigin, prodType, typ.from);
-					val mbUnification = mguComputer.compute(prodType, typ.from);
+					val mbUnification = mguComputer.compute(constraint._errorMessage, prodType, typ.from);
 					val result = if(subtypeCheckResult.invalid && !mbUnification.valid) {
 						new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)] + mbUnification.issues, typ, fun, distance);
 					} else {
@@ -408,7 +408,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, TypeScheme t1, AbstractType t2) {
-		val unification = mguComputer.compute(t1, t2);
+		val unification = mguComputer.compute(constraint._errorMessage, t1, t2);
 		if(unification.valid) {
 			return SimplificationResult.success(system, substitution.apply(unification.substitution));
 		}
@@ -420,7 +420,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, AbstractType t1, AbstractType t2) {
 		// unify
-		val mgu = mguComputer.compute(t1, t2);
+		if(t1.toString == "bool" || t2.toString == "bool") {
+			print("")
+		}
+		val mgu = mguComputer.compute(constraint._errorMessage, t1, t2);
 		if(!mgu.valid) {
 			return SimplificationResult.failure(mgu.issues);
 		}
@@ -648,15 +651,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		])
 	}
 	protected def UnificationResult unify(Iterable<Pair<AbstractType, AbstractType>> loselyConnectedComponents, Substitution substitution) {
-		var result = substitution;
-		for(w: loselyConnectedComponents) {
-			val unification = mguComputer.compute(w.key, w.value);
-			if(!unification.valid) {
-				return unification;
-			}
-			result = unification.substitution.apply(result);
+		val unification = mguComputer.compute(loselyConnectedComponents);
+		if(unification.valid) {
+			return UnificationResult.success(substitution.apply(unification.substitution));
 		}
-		return UnificationResult.success(result);
+		return unification
 	}
 
 }

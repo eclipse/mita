@@ -311,18 +311,18 @@ class BaseConstraintFactory implements IConstraintFactory {
 			new ValidationIssue(Severity.ERROR, '''«expr.condition» must be a boolean expression''', expr.condition, null, "")));
 		// true and false case must be subtype of some common type
 		val commonTV = system.getTypeVariable(expr);
-		val mkIssue = [new ValidationIssue(Severity.ERROR, '''«expr.trueCase» and «expr.falseCase» don't share a common type''', it, null, "")];
-		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.trueCase), commonTV, mkIssue.apply(expr.trueCase)));
-		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.falseCase), commonTV, mkIssue.apply(expr.falseCase)));		
+		val mkIssue = [String f1, String f2, Expression e | new ValidationIssue(Severity.ERROR, '''«expr.trueCase»«f1» and «expr.falseCase»«f2» don't share a common type''', e, null, "")];
+		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.trueCase), commonTV, mkIssue.apply(" (:: %s)", "", expr.trueCase)));
+		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.falseCase), commonTV, mkIssue.apply("", " (:: %s)", expr.falseCase)));		
 		return system.associate(commonTV);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BinaryExpression expr) {
 		if(expr.operator instanceof LogicalOperator) {
 			val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
-			val mkIssue = [new ValidationIssue(Severity.ERROR, '''«it» must be of type bool''', it, null, "")];
-			system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.leftOperand), mkIssue.apply(expr.leftOperand)))
-			system.addConstraint(new EqualityConstraint(boolType, system.computeConstraints(expr.rightOperand), mkIssue.apply(expr.leftOperand)))
+			val mkIssue = [new ValidationIssue(Severity.ERROR, '''«it» (:: %s) must be of type %s''', it, null, "")];
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), boolType, mkIssue.apply(expr.leftOperand)))
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), boolType, mkIssue.apply(expr.leftOperand)))
 			return system.associate(boolType, expr);
 		}
 		else if(expr.operator instanceof RelationalOperator) {
