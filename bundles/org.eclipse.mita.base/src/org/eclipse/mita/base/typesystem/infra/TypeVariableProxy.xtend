@@ -41,6 +41,9 @@ class TypeVariableProxy extends TypeVariable {
 	}
 	
 	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+		if(this.toString.startsWith("p_244")) {
+			print("");
+		}
 		return resolve.apply(this);
 	}
 	

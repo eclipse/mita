@@ -40,6 +40,7 @@ import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
+import org.eclipse.mita.program.IsTypeMatchCase
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
@@ -54,6 +55,10 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.program.IsOtherCase
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
+import org.eclipse.mita.base.typesystem.types.SumType
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -149,25 +154,61 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, WhereIsStatement stmt) {
 		stmt.isCases.forEach[system.computeConstraints(it)];
+		val matchVarTV = system.computeConstraints(stmt.matchElement);
+		system.addConstraint(new JavaClassInstanceConstraint(
+			new ValidationIssue(Severity.ERROR, '''You may only use sum types in where...is statements, not «stmt.matchElement» :: %s''', stmt.matchElement, null, ""), 
+			matchVarTV, SumType
+		))
 		return null;
 	}
 	
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsTypeMatchCase decon) {
+		// is(anyVec.vec0d) {...}
+		val matchVariable = system.getTypeVariable((decon.eContainer as WhereIsStatement).matchElement);
+		val feature = ProgramPackage.eINSTANCE.isTypeMatchCase_ProductType;
+		val deconType = system.getTypeVariableProxy(decon, feature);
+		val prodTypeName = NodeModelUtils.findNodesForFeature(decon, feature).head?.text?.trim
+		system.addConstraint(new SubtypeConstraint(deconType, matchVariable, 
+			new ValidationIssue(Severity.ERROR, '''«prodTypeName» (:: %s) not subtype of %s''', decon, feature, "")
+		));
+		system.computeConstraints(decon.body);
+		return system.associate(deconType, decon);
+	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase decon) {
-
-		//TODO: add subtype constraint between prod type and matchVariable
-		//val matchVariable = TypeVariableAdapter.get((decon.eContainer as WhereIsStatement).matchElement);
+		// is(anyVec.vec2d -> x, y) {...}
+		val matchVariable = system.getTypeVariable((decon.eContainer as WhereIsStatement).matchElement);
 		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType].force;
-		val combinedType = new ProdType(decon, decon.productType?.toString ?: "", vars);
-		val deconType = system.resolveReferenceToSingleAndGetType(decon, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType);
+		val feature = ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType;
+		val prodTypeName = NodeModelUtils.findNodesForFeature(decon, feature).head?.text?.trim
+		// TODO replace with type classes mb., since split(".").last is sorta hacky
+		val combinedType = new ProdType(decon, prodTypeName.split("\\.").last, vars);
+		val deconType = system.resolveReferenceToSingleAndGetType(decon, feature);
 
 		system.addConstraint(new EqualityConstraint(deconType, combinedType, new ValidationIssue(Severity.ERROR, '''Couldn't resolve types''', decon, null, "")));
+		system.addConstraint(new SubtypeConstraint(deconType, matchVariable, 
+			new ValidationIssue(Severity.ERROR, '''«prodTypeName» (:: %s) not subtype of %s''', decon, feature, "")
+		));
 		system.computeConstraints(decon.body);
 		return system.associate(combinedType);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsAssignmentCase asign) {
+		// is(x: anyVec.vec1d) {...}
+		val matchVariable = system.getTypeVariable((asign.eContainer as WhereIsStatement).matchElement);
+		val deconType = system.computeConstraints(asign.assignmentVariable);
+		system.addConstraint(new SubtypeConstraint(deconType, matchVariable, 
+			new ValidationIssue(Severity.ERROR, 
+				'''«asign.assignmentVariable» (:: %s) not subtype of %s''', 
+				asign.assignmentVariable, TypesPackage.eINSTANCE.typedElement_TypeSpecifier, "")
+		));
 		system.computeConstraints(asign.body);
-		return system.computeConstraints(asign.assignmentVariable);
+		return deconType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsOtherCase otherCase) {
+		system.computeConstraintsForChildren(otherCase);
+		return system.getTypeVariable(otherCase);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReferenceExpression expr) {

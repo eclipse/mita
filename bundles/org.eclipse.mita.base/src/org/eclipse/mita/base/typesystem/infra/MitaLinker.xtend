@@ -118,13 +118,13 @@ class MitaLinker extends Linker {
 					resource.cancelIndicator.canceled = true;
 					resource.errors += solution.issues.filter[it.target !== null].filter[it.severity == Severity.ERROR].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
-					].toSet
+					]
 					resource.warnings += solution.issues.filter[it.target !== null].filter[it.severity == Severity.WARNING].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
-					].toSet
+					]
 					resource.warnings += solution.issues.filter[it.target !== null].filter[it.severity == Severity.INFO].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
-					].toSet
+					]
 				}
 			}
 			if(solution !== null && solution.solution !== null) {
