@@ -7,6 +7,8 @@ import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.FunctionType
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -50,11 +52,11 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	override isAtomic() {
-		return  (subType instanceof TypeVariable && superType instanceof TypeVariable)
-			 || (subType instanceof TypeVariable && superType instanceof AbstractBaseType)
-			 || (subType instanceof AbstractBaseType && superType instanceof TypeVariable)
-			 || (subType instanceof TypeVariable && superType instanceof ProdType)
-			 || (subType instanceof ProdType && superType instanceof TypeVariable)
+		return  (subType.isAtomic && superType.isAtomic)
+	}
+	
+	private def isAtomic(AbstractType t) {
+		return t instanceof AbstractBaseType || t instanceof TypeVariable || (t instanceof TypeConstructorType && !(t instanceof FunctionType))
 	}
 	
 	override toGraphviz() {

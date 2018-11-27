@@ -159,7 +159,7 @@ class SerializationAdapter {
 			obj.errorMessage.fromValueObject as ValidationIssue,
 			obj.type.fromValueObject() as AbstractType,
 			obj.instanceOfQN.toQualifiedName, 
-			obj.functionCall.resolveEObject, 
+			obj.functionCall.resolveEObject(true), 
 			obj.functionReference?.fromValueObject as EReference, 
 			obj.returnTypeTV.fromValueObject as TypeVariable, 
 			constraintSystemProvider

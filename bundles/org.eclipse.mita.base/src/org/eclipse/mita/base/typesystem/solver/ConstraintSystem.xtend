@@ -113,6 +113,9 @@ class ConstraintSystem {
 		result.nonAtomicConstraints += nonAtomicConstraints.map[it.modifyNames(suffix)]
 		result.symbolTable.putAll(symbolTable.mapValues[it.modifyNames(suffix) as TypeVariable])
 		result.typeClasses.putAll(typeClasses.mapValues[it.modifyNames(suffix)]);
+		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
+		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.modifyNames(suffix)];
+		result.explicitSubtypeRelations.computeReverseMap();
 		return result;
 	}
 	
@@ -334,6 +337,8 @@ class ConstraintSystem {
 		
 		
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
+		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replaceProxies([this.resolveProxy(it, resource, scopeProvider).head])];
+		result.explicitSubtypeRelations.computeReverseMap();
 		return result;
 	}
 	

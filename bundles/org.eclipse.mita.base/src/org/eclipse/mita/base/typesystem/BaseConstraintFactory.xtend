@@ -593,7 +593,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		val typeVar = system.getTypeVariable(typeVarOrigin);
 		if(typeVar != t && t !== null) { 
-			system.addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» must be of type «t»''', typeVarOrigin, null, "")));
+			system.addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» must be of type "%2$s"''', typeVarOrigin, null, "")));
 		}
 		return typeVar;	
 	}

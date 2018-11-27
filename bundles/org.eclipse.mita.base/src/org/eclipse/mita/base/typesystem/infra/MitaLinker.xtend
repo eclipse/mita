@@ -91,6 +91,9 @@ class MitaLinker extends Linker {
 		
 		val exportedObjects = /*thisExportedObjects + */(visibleContainers
 			.flatMap[ it.exportedObjects ].force);
+		if(obj.eResource.URI.lastSegment == "application.mita") {
+			print("")
+		}
 		val allConstraintSystems = exportedObjects
 			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filter[it.value !== null]
@@ -98,6 +101,7 @@ class MitaLinker extends Linker {
 			.map[GZipper.decompress(it)]
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]
 			.indexed.map[it.value.modifyNames('''.«it.key»''')].force;
+			
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {
@@ -106,9 +110,7 @@ class MitaLinker extends Linker {
 				resource.mkCancelIndicator();
 			}
 			
-			if(obj.eResource.URI.lastSegment == "application.mita") {
-				print("")
-			}
+			
 			val solution = constraintSolver.solve(preparedSystem, obj);
 			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {

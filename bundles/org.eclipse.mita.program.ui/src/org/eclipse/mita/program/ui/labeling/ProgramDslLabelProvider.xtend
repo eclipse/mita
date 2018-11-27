@@ -50,6 +50,7 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
+import org.apache.commons.lang.StringEscapeUtils
 
 /**
  * Provides labels for EObjects.
@@ -125,9 +126,9 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 
 	def text(SystemResourceSetup ele) {
 		if(ele.type instanceof Connectivity) {
-			'''connectivity <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
+			'''connectivity <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele).toString)»</b>'''
 		} else {
-			'''resource <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
+			'''resource <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele).toString)»</b>'''
 		}
 	}
 	
@@ -150,17 +151,17 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(Operation ele) {
-		'''fun <b>«ele.name»: «BaseUtils.getType(ele)»</b>'''
+		'''fun <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele).toString)»</b>'''
 	}
 
 	def text(SignalInstance ele) {
 		var vci = ele.instanceOf;
 		
-		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci?.name» <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
+		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci?.name» <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele).toString)»</b>'''
 	}
 
 	def text(VariableDeclaration ele) {
-		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name» : «BaseUtils.getType(ele)»</b>'''
+		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele).toString)»</b>'''
 	}
 
 	def text(InferenceResult ir) {
@@ -176,7 +177,7 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(Parameter it) {
-		'''«name»«IF typeSpecifier !== null» : «typeSpecifier»«ENDIF»'''
+		'''«name»«IF typeSpecifier !== null»: «typeSpecifier»«ENDIF»'''
 	}
 
 	def text(EnumerationType it) {
@@ -196,11 +197,15 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(AnonymousProductType it) {
-		'''«name»«IF typeSpecifiers !== null» : «FOR typeSepc : typeSpecifiers SEPARATOR ", "»«typeSepc»«ENDFOR»«ENDIF»'''
+		'''«name»«IF typeSpecifiers !== null»: «FOR typeSepc: typeSpecifiers SEPARATOR ", "»«typeSepc»«ENDFOR»«ENDIF»'''
 	}
 
 	def text(GeneratedType it) {
 		'''generated type «name»'''
+	}
+
+	def text(EObject it) {
+		'''«it»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(it).toString)»'''
 	}
 
 	override protected convertToString(Object text) {

@@ -15,6 +15,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.mita.base.util.BaseUtils
 
 @FinalFieldsConstructor
 @Accessors
@@ -33,8 +34,8 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	}
 		
 	override onResolve(ConstraintSystem cs, Substitution sub, EObject op, AbstractType at) {
-		if(functionReference !== null) {
-			//functionCall.eSet(functionReference, op);
+		if(functionReference !== null && !functionCall.eIsProxy) {
+			BaseUtils.ignoreChange(functionCall, [functionCall.eSet(functionReference, op)]);
 		}
 		val nc = constraintSystemProvider.get(); 
 		if(at instanceof FunctionType) {

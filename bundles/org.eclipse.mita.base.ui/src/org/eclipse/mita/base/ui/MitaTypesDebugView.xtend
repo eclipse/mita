@@ -261,7 +261,7 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return (element as ValidationIssue).target?.toString() ?: "null";
+                return originString((element as ValidationIssue).target) ?: "null";
             }
             
         });

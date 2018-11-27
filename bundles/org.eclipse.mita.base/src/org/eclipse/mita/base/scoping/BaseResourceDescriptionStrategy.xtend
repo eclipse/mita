@@ -66,6 +66,9 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		
 		if (eObject.eContainer() === null) {
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
+			if(eObject.eResource.URI.toString.endsWith("application.mita")) {
+				print("")
+			}
 			constraintFactory.setIsLinking(true);
 			constraintFactory.getTypeRegistry().setIsLinking(true);
 			val constraints = constraintFactory.create(eObject);

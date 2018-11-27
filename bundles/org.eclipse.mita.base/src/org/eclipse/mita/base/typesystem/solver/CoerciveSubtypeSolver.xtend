@@ -171,10 +171,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			println("------------------")
 			println(resolvedGraphSubstitution);
 		}		
-		return new ConstraintSolution(system, resolvedGraphSubstitution, resolvedGraphAndSubst.value);
-//		val solution = resolvedGraph.unify(resolvedGraphSubstitution);
-//		
-//		return new ConstraintSolution(system, solution.substitution, (resolvedGraphAndSubst.value + solution.issues).filterNull.toList);
+//		return new ConstraintSolution(system, resolvedGraphSubstitution, resolvedGraphAndSubst.value);
+		val newEqualities = resolvedGraph.unify();
+		system.nonAtomicConstraints.addAll(newEqualities);
+		return new ConstraintSolution(system, resolvedGraphSubstitution, (resolvedGraphAndSubst.value).filterNull.toList);
 	}
 	
 	protected def boolean isWeaklyUnifiable(ConstraintSystem system) {
@@ -640,25 +640,18 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return (graph -> resultSub) -> issues;
 	}
 	
-	protected def UnificationResult unify(ConstraintGraph graph, Substitution substitution) {
-		val loselyConnectedComponents = graph.typeVariables.map[graph.looselyConnectedComponent(it)].toSet;
-		loselyConnectedComponents.map[it.map[ni | graph.nodeIndex.get(ni)].toList].fold(UnificationResult.success(substitution), [ur, lcc |
-			if(ur.valid === false) {
-				return ur;
+	protected def Iterable<AbstractTypeConstraint> unify(ConstraintGraph graph) {
+		return graph.typeVariables.flatMap[ tv | 
+			val inc = graph.incoming.get(tv);
+			val out = graph.outgoing.get(tv);
+			if(inc.size <= 1 && out.size <= 1) {
+				return inc.map[it -> tv] + out.map[it -> tv];
 			}
-			val lccEdges = lcc.tail.zip(lcc.init);
-			val sub = ur.substitution;
-			return unify(lccEdges, sub);
-		])
+			return #[];
+		]
+		.map[graph.nodeIndex.get(it.key) -> graph.nodeIndex.get(it.value)]
+		.map[new EqualityConstraint(it.key, it.value, new ValidationIssue(Severity.ERROR, "unification of graph", ""))]
 	}
-	protected def UnificationResult unify(Iterable<Pair<AbstractType, AbstractType>> loselyConnectedComponents, Substitution substitution) {
-		val unification = mguComputer.compute(loselyConnectedComponents);
-		if(unification.valid) {
-			return UnificationResult.success(substitution.apply(unification.substitution));
-		}
-		return unification
-	}
-
 }
 
 class ConstraintGraphProvider implements Provider<ConstraintGraph> {
@@ -702,17 +695,18 @@ class ConstraintGraph extends Graph<AbstractType> {
 		return nodeIndex.filter[k, v| v instanceof TypeVariable].keySet;
 	}
 	def getBaseTypePredecessors(Integer t) {
-		return getPredecessors(t).filter(AbstractBaseType).force
+		return getPredecessors(t).filter[!(it instanceof TypeVariable)].force
 	}
 
 	def getBaseTypeSuccecessors(Integer t) {
-		return getSuccessors(t).filter(AbstractBaseType).force
+		return getSuccessors(t).filter[!(it instanceof TypeVariable)].force
 	}
 	
 	def <T extends AbstractType> getSupremum(Iterable<T> ts) {
-		val tsCut = ts.map[
+		val tsWithSuperTypes = ts.map[
 			typeRegistry.getSuperTypes(constraintSystem, it, typeResolutionOrigin).toSet
-		].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
+		].force
+		val tsCut = tsWithSuperTypes.reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
 		return tsCut.findFirst[candidate | 
 			tsCut.forall[u | 
 				typeRegistry.isSubType(u.origin, candidate, u)
