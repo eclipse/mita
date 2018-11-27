@@ -159,7 +159,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			new ValidationIssue(Severity.ERROR, '''You may only use sum types in where...is statements, not «stmt.matchElement» :: %s''', stmt.matchElement, null, ""), 
 			matchVarTV, SumType
 		))
-		return null;
+		return system.associate(matchVarTV, stmt);
 	}
 	
 	
