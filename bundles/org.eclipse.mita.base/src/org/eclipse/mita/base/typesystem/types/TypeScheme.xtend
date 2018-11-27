@@ -9,6 +9,10 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
+import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+
 @EqualsHashCode
 @Accessors
 class TypeScheme extends AbstractType {	
@@ -19,6 +23,9 @@ class TypeScheme extends AbstractType {
 		super(origin, '''tscheme''');
 		this.vars = vars;
 		this.on = on;
+		if(this.toString == "∀[f_646].modality<f_646.1>") {
+			print("")
+		}
 	}
 	
 	override toString() {
@@ -69,15 +76,15 @@ class TypeScheme extends AbstractType {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		val newOn = on.map(f);
-		if(on !== newOn) {
-			return new TypeScheme(origin, vars, newOn);
-		}
-		return this;
+		return f.apply(this);
+	}
+	
+	override replaceProxies((TypeVariableProxy)=>AbstractType resolve) {
+		return new TypeScheme(origin, vars.map[replaceProxies(resolve) as TypeVariable].force, on.replaceProxies(resolve))
 	}
 	
 	override modifyNames(String suffix) {
-		return new TypeScheme(origin, BaseUtils.force(vars.map[modifyNames(suffix) as TypeVariable]), on.modifyNames(suffix))
+		return new TypeScheme(origin, vars.map[modifyNames(suffix) as TypeVariable].force, on.modifyNames(suffix))
 	}
 	
 }

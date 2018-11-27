@@ -445,8 +445,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(origin === null) {
 			print("")
 		}
-		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %2$s''', origin, null, "")));
-		system.addConstraint(new ImplicitInstanceConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %2$s''', origin, null, "")));
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %s''', origin, null, "")));
+		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %s''', origin, null, "")));
 		nestedType;
 	}
 	
@@ -467,8 +467,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val typeName = typeSpecifier.type?.name ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)?.head?.text?.trim;
 			val typeInstance = new TypeConstructorType(null, typeName, typeArgs);
 			val typeInstanceVar = system.newTypeVariable(null);
-			system.addConstraint(new ExplicitInstanceConstraint(typeInstanceVar, type, new ValidationIssue(Severity.ERROR, '''«typeSpecifier» is not instance of «typeName»''', typeSpecifier, null, "")));
-			system.addConstraint(new ImplicitInstanceConstraint(typeInstance, typeInstanceVar, new ValidationIssue(Severity.ERROR, '''«typeSpecifier» is not instance of «typeName»''', typeSpecifier, null, "")));
+			system.addConstraint(new ExplicitInstanceConstraint(typeInstanceVar, type, new ValidationIssue(Severity.ERROR, '''«typeSpecifier» is not instance of %2$s''', typeSpecifier, null, "")));
+			system.addConstraint(new EqualityConstraint(typeInstance, typeInstanceVar, new ValidationIssue(Severity.ERROR, '''«typeSpecifier» is not instance of %2$s''', typeSpecifier, null, "")));
 			typeInstance;
 		}
 		

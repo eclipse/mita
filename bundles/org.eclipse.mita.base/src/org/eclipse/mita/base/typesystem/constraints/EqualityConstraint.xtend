@@ -16,7 +16,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		super(source);
 		this.left = left;
 		this.right = right;
-		if(this.toString == "optional<f_0> ≡ f_145.0") {
+		if(this.toString == "modality<i32> ≡ modality<u16>") {
 			print("");
 		}
 	}

@@ -45,7 +45,7 @@ class Substitution {
 		}
 		checkDuplicate(variable, [type]);
 		this.content.put(variable, type.replace(this));
-		if(variable.toString == "f_57.0" && type.toString == "baz()") {
+		if(variable.toString == "f_40.0" && type.toString == "u32") {
 			print("")
 		}
 //		if(type.freeVars.exists[content.containsKey(it)]) {

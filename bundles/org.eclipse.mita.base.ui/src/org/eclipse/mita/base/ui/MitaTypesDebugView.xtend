@@ -280,7 +280,7 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return originString((element as Pair<TypeVariable, AbstractType>).key?.origin);
+                return ((element as Pair<TypeVariable, AbstractType>).key?.origin?.toString);
             }
             
         });
