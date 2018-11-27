@@ -171,9 +171,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			println("------------------")
 			println(resolvedGraphSubstitution);
 		}		
-		val solution = resolvedGraph.unify(resolvedGraphSubstitution);
-		
-		return new ConstraintSolution(system, solution.substitution, (resolvedGraphAndSubst.value + solution.issues).filterNull.toList);
+		return new ConstraintSolution(system, resolvedGraphSubstitution, resolvedGraphAndSubst.value);
+//		val solution = resolvedGraph.unify(resolvedGraphSubstitution);
+//		
+//		return new ConstraintSolution(system, solution.substitution, (resolvedGraphAndSubst.value + solution.issues).filterNull.toList);
 	}
 	
 	protected def boolean isWeaklyUnifiable(ConstraintSystem system) {
@@ -736,6 +737,12 @@ class ConstraintGraph extends Graph<AbstractType> {
 		val t = nodeIndex.get(i);
 		if(t?.origin === null) {
 			return super.nodeToString(i)	
+		}
+		val origin = t.origin;
+		if(origin.eIsProxy) {
+			if(origin instanceof BasicEObjectImpl) {
+				return '''«origin.eProxyURI.lastSegment».«origin.eProxyURI.fragment»(«t», «i»)'''
+			}
 		}
 		return '''«t.origin»(«t», «i»)'''
 	}

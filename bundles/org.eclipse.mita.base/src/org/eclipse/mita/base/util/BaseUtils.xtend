@@ -156,7 +156,8 @@ class BaseUtils {
 		return lineNumberOf(1);
 	}
 	def static int lineNumberOf(int framesAbove) {
-		return Thread.currentThread().getStackTrace().get(2 + framesAbove).getLineNumber();
+		return framesAbove;
+		//return Thread.currentThread().getStackTrace().get(2 + framesAbove).getLineNumber();
 	}
 }
 

@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.constraints
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
@@ -23,7 +24,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		
 		subType = sub;
 		superType = top;
-		if(this.toString == "string ⩽ f_0") {
+		if(this.toString.startsWith("v2d(v2d_s(i32, i32)) ⩽ f_57")) {
 			print("")
 		}
 	}
@@ -52,6 +53,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return  (subType instanceof TypeVariable && superType instanceof TypeVariable)
 			 || (subType instanceof TypeVariable && superType instanceof AbstractBaseType)
 			 || (subType instanceof AbstractBaseType && superType instanceof TypeVariable)
+			 || (subType instanceof TypeVariable && superType instanceof ProdType)
+			 || (subType instanceof ProdType && superType instanceof TypeVariable)
 	}
 	
 	override toGraphviz() {
@@ -62,6 +65,9 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		val newL = subType.map(f);
 		val newR = superType.map(f);
 		if(subType !== newL || superType !== newR) {
+			if(this.toString == "f_31.0 ⩽ f_24.0" || this.toString == "f_58.0 ⩽ f_24.0") {
+				print("")
+			}
 			return new SubtypeConstraint(newL, newR, _errorMessage);
 		}
 		return this;

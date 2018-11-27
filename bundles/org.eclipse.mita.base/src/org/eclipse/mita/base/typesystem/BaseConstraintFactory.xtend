@@ -311,9 +311,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 			new ValidationIssue(Severity.ERROR, '''«expr.condition» must be a boolean expression''', expr.condition, null, "")));
 		// true and false case must be subtype of some common type
 		val commonTV = system.getTypeVariable(expr);
+		val trueTV = system.computeConstraints(expr.trueCase);
+		var falseTV = system.computeConstraints(expr.falseCase);
 		val mkIssue = [String f1, String f2, Expression e | new ValidationIssue(Severity.ERROR, '''«expr.trueCase»«f1» and «expr.falseCase»«f2» don't share a common type''', e, null, "")];
-		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.trueCase), commonTV, mkIssue.apply(" (:: %s)", "", expr.trueCase)));
-		system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.falseCase), commonTV, mkIssue.apply("", " (:: %s)", expr.falseCase)));		
+		system.addConstraint(new SubtypeConstraint(trueTV, commonTV, mkIssue.apply(" (:: %s)", "", expr.trueCase)));
+		system.addConstraint(new SubtypeConstraint(falseTV, commonTV, mkIssue.apply("", " (:: %s)", expr.falseCase)));		
 		return system.associate(commonTV);
 	}
 	
