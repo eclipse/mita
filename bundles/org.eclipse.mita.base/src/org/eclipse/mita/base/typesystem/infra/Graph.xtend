@@ -69,7 +69,7 @@ class Graph<T> implements Cloneable {
 		return idx;
 	}
 	
-	def void addEdge(Integer fromIndex, Integer toIndex) {
+	def Pair<Integer, Integer> addEdge(Integer fromIndex, Integer toIndex) {
 		val outgoingAdjacencyList = outgoing.get(fromIndex) ?: new HashSet<Integer>();
 		outgoingAdjacencyList.add(toIndex);
 		outgoing.put(fromIndex, outgoingAdjacencyList);
@@ -77,13 +77,14 @@ class Graph<T> implements Cloneable {
 		val incomingAdjacencyList = incoming.get(toIndex) ?: new HashSet<Integer>();
 		incomingAdjacencyList.add(fromIndex);
 		incoming.put(toIndex, incomingAdjacencyList);
+		return fromIndex -> toIndex;
 	}
 	
-	def addEdge(T from, T to) {		
+	def Pair<Integer, Integer> addEdge(T from, T to) {		
 		val fromIndex = addNode(from)
 		val toIndex = addNode(to);
 		
-		addEdge(fromIndex, toIndex);
+		return addEdge(fromIndex, toIndex);
 	}
 
 	def Optional<List<Integer>> getCycleHelper(Integer v, Set<Integer> visited, Stack<Integer> recStack) {
@@ -138,7 +139,7 @@ class Graph<T> implements Cloneable {
 		nodeIndex.remove(nodeIdx);
 	}
 		
-	def static <S, T extends Graph<S>> T removeCycles(T g0, (Iterable<Pair<S, S>>)=>S cycleCombiner) {
+	def static <S, T extends Graph<S>> T removeCycles(T g0, (T, Iterable<Pair<Pair<Integer, S>, Pair<Integer, S>>>)=>Integer cycleCombiner) {
 		var g = g0.clone() as T;
 		var mbCycle = g.getCycle;
 		while(mbCycle.present) {
@@ -146,9 +147,8 @@ class Graph<T> implements Cloneable {
 			val biMap = HashBiMap.create(g.nodeIndex);
 			val cycle = mbCycle.get.map[it -> _g.nodeIndex.get(it)];
 			val cycleNodesOnly = mbCycle.get.map[_g.nodeIndex.get(it)];
-			val cycleEdges = cycleNodesOnly.init.zip(cycleNodesOnly.tail).force;
-			val replacementNode = cycleCombiner.apply(cycleEdges);
-			val replacementNodeIdx = _g.addNode(replacementNode);
+			val cycleEdges = cycle.init.zip(cycle.tail).force;
+			val replacementNodeIdx = cycleCombiner.apply(_g, cycleEdges);
 			// a cycle contains one node twice: start and end. remove it here
 			val cycleNodes = cycle.tail.toList;
 

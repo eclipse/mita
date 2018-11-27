@@ -12,6 +12,9 @@ class TypeVariable extends AbstractType {
 	
 	new(EObject origin, String name) {
 		super(origin, name)
+		if(this.toString == "f_244.0") {
+			print("");
+		}
 	}
 	
 	override toString() {

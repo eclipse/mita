@@ -21,6 +21,10 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 		}
 	}
 	
+	override getErrorMessage() {
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, isInstance, ofType));
+	}
+	
 	override getActiveVars() {
 		return types.flatMap[freeVars];
 	}

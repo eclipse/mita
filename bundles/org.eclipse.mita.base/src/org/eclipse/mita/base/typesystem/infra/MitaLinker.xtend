@@ -91,9 +91,6 @@ class MitaLinker extends Linker {
 		
 		val exportedObjects = /*thisExportedObjects + */(visibleContainers
 			.flatMap[ it.exportedObjects ].force);
-		if(obj.eResource.URI.lastSegment == "application.mita") {
-			print("")
-		}
 		val allConstraintSystems = exportedObjects
 			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filter[it.value !== null]
@@ -106,6 +103,9 @@ class MitaLinker extends Linker {
 		
 		if(combinedSystem !== null) {
 			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
+			if(obj.eResource.URI.lastSegment == "application.mita") {
+				print("")
+			}
 			if(resource instanceof MitaBaseResource) {
 				resource.mkCancelIndicator();
 			}

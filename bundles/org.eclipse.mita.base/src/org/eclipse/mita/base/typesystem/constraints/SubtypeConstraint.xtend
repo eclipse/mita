@@ -52,7 +52,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	override isAtomic() {
-		return  (subType.isAtomic && superType.isAtomic)
+		return  (subType.isAtomic && superType.isAtomic) //&& (subType instanceof TypeVariable || superType instanceof TypeVariable)
 	}
 	
 	private def isAtomic(AbstractType t) {

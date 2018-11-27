@@ -442,8 +442,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, AbstractType inner, AbstractType outerTypeScheme, String outerName) {
 		val outerTypeInstance = system.newTypeVariable(null);
 		val nestedType = new TypeConstructorType(origin, outerName, #[inner]);
-		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin» is not instance of «outerName»''', origin, null, "")));
-		system.addConstraint(new ImplicitInstanceConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin» is not instance of «outerName»''', origin, null, "")));
+		if(origin === null) {
+			print("")
+		}
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %2$s''', origin, null, "")));
+		system.addConstraint(new ImplicitInstanceConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %2$s''', origin, null, "")));
 		nestedType;
 	}
 	

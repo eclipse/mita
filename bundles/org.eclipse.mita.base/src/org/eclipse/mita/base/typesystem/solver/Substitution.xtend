@@ -84,6 +84,7 @@ class Substitution {
 	
 	public def Substitution apply(Substitution to) {
 		val result = new Substitution();
+		result.content = new HashMap(((this.content.size + to.content.size) * 1.4) as int);
 		result.constraintSystemProvider = this.constraintSystemProvider ?: to.constraintSystemProvider;
 		result.content.putAll(this.content.mapValues[it.replace(to)]);
 		val appliedSubstitution = new HashMap(to.content.mapValues[it.replace(result)]);

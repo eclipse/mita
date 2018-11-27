@@ -39,8 +39,10 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import static extension org.eclipse.mita.base.util.BaseUtils.init
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import java.util.HashMap
+import java.util.Set
+import java.util.HashSet
 
 /**
  * Solves coercive subtyping as described in 
@@ -572,22 +574,29 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			var Substitution s = substitution;
 			var Boolean success = true;
 			var String msg = "";
-			var Iterable<Pair<AbstractType, AbstractType>> origin = null;
+			var Iterable<Pair<Pair<Integer, AbstractType>, Pair<Integer, AbstractType>>> origin = null;
 		}
-		val gWithoutCycles = Graph.removeCycles(gWithCycles, [cycle | 
-			val mgu = mguComputer.compute(cycle); 
+		val Map<Integer, Set<SubtypeConstraint>> errorMessages = new HashMap();
+		val gWithoutCycles = Graph.removeCycles(gWithCycles, [g, cycle | 
+			val mgu = mguComputer.compute(cycle.map[it.key.value -> it.value.value]); 
 			if(mgu.valid) {
-				val newTypes = mgu.substitution.applyToTypes(cycle.flatMap[t1_t2 | #[t1_t2.key, t1_t2.value]]);
+				val newTypes = mgu.substitution.applyToTypes(cycle.flatMap[t1_t2 | #[t1_t2.key.value, t1_t2.value.value]]);
 				finalState.s = finalState.s.apply(mgu.substitution);
-				return newTypes.head;
+				val newType = newTypes.head;
+				val newTypeIdx = g.addNode(newType);
+				cycle.flatMap[#[it.key.key, it.value.key]].toSet.forEach[ idx |
+					errorMessages.computeIfAbsent(newTypeIdx, [new HashSet()]).addAll(gWithCycles.errorMessages.getOrDefault(idx, new HashSet()))
+				]
+				return newTypeIdx;
 			}
 			else {
 				finalState.success = false;
 				finalState.origin = cycle.toList;
-				finalState.msg = '''CSS: Cyclic dependencies could not be resolved: «finalState.origin.map[it.key.origin ?: it.key].join(' ⩽ ')»''';
-				return new BottomType(null, finalState.msg);
+				finalState.msg = '''CSS: Cyclic dependencies could not be resolved: «finalState.origin.map[it.key.value.origin ?: it.key.value].join(' ⩽ ')»''';
+				return g.addNode(new BottomType(null, finalState.msg));
 			}
 		])
+		errorMessages.forEach[k, v|gWithoutCycles.errorMessages.merge(k, v, [v1, v2 | (v1 + v2).toSet])]
 		if(finalState.success) {
 			return (gWithoutCycles -> UnificationResult.success(finalState.s));
 		}
@@ -621,7 +630,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					supremum !== null && successors.forall[ t | 
 						typeRegistry.isSubType(typeResolutionOrigin, supremum, t)
 					];
-					issues += (graph.errorMessages.getOrDefault(v, #[]) + #[new ValidationIssue(Severity.ERROR, "CSS: Unable to find valid subtype for " + v.name, v.origin, null, "")]);
+					issues += ((graph.errorMessages.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
+					'''Unable to find valid subtype for «v.name». Candidates «predecessors» don't share a super type (best guess: «supremum ?: "none"»)''', 
+					v.origin, null, "")].toSet);
 				}
 			}
 			else if(!successors.empty) {
@@ -630,7 +641,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					graph.replace(v, infimum);
 					resultSub = resultSub.replace(v, infimum) => [add(v, infimum)];
 				} else {
-					issues += (graph.errorMessages.getOrDefault(v, #[]) + #[new ValidationIssue(Severity.ERROR, "CSS: Unable to find valid subtype for " + v.name, v.origin, null, "")]);
+					issues += ((graph.errorMessages.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
+					'''Unable to find valid subtype for «v.name». Candidates «successors» don't share a sub type (best guess: «infimum ?: "none"»)''',
+					v.origin, null, "")]);
 				}
 			}
 			if(enableDebug) {
@@ -677,7 +690,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	protected val ConstraintSystem constraintSystem;
 	protected val EObject typeResolutionOrigin;
 	@Accessors
-	protected val Map<AbstractType, Iterable<ValidationIssue>> errorMessages;
+	protected val Map<Integer, Set<SubtypeConstraint>> errorMessages = new HashMap;
 	
 	new(ConstraintSystem system, StdlibTypeRegistry typeRegistry, EObject typeResolutionOrigin) {
 		this.typeRegistry = typeRegistry;
@@ -685,11 +698,13 @@ class ConstraintGraph extends Graph<AbstractType> {
 		this.typeResolutionOrigin = typeResolutionOrigin;
 		system.constraints
 			.filter(SubtypeConstraint)
-			.forEach[ addEdge(it.subType, it.superType) ];
-		errorMessages = system.constraints
-			.filter(SubtypeConstraint)
-			.flatMap[#[it.subType -> it.errorMessage, it.superType -> it.errorMessage]]
-			.toSet.groupBy[it.key].mapValues[it.map[it.value]]
+			.forEach[ 
+				val idxs = addEdge(it.subType, it.superType)
+				if(idxs !== null) {
+					errorMessages.computeIfAbsent(idxs.key,   [new HashSet]).add(it);
+					errorMessages.computeIfAbsent(idxs.value, [new HashSet]).add(it);
+				}
+			];
 	}
 	def getTypeVariables() {
 		return nodeIndex.filter[k, v| v instanceof TypeVariable].keySet;
@@ -709,14 +724,14 @@ class ConstraintGraph extends Graph<AbstractType> {
 		val tsCut = tsWithSuperTypes.reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
 		return tsCut.findFirst[candidate | 
 			tsCut.forall[u | 
-				typeRegistry.isSubType(u.origin, candidate, u)
+				typeRegistry.isSubType(typeResolutionOrigin, candidate, u)
 			]
 		];
 	}
 	
 	def <T extends AbstractType> getInfimum(Iterable<T> ts) {
 		val tsCut = ts.map[typeRegistry.getSubTypes(it, typeResolutionOrigin).toSet].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet;
-		return tsCut.findFirst[candidate | tsCut.forall[l | typeRegistry.isSubType(l.origin, l, candidate)]];
+		return tsCut.findFirst[candidate | tsCut.forall[l | typeRegistry.isSubType(typeResolutionOrigin, l, candidate)]];
 	}
 	
 	def getSupremum(AbstractType t) {
@@ -743,7 +758,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	
 	override addEdge(Integer fromIndex, Integer toIndex) {
 		if(fromIndex == toIndex) {
-			return;
+			return null;
 		}
 		super.addEdge(fromIndex, toIndex);
 	}

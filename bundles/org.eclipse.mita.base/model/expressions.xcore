@@ -36,7 +36,7 @@ abstract class BinaryExpression extends Expression {
 	op EEnumerator getOperator()
 	contains Expression rightOperand
 	op String toString() {
-		return leftOperand.toString + " " + operator.toString + " " + rightOperand.toString;
+		return leftOperand + " " + operator + " " + rightOperand;
 	} 
 }
 abstract class UnaryExpression extends Expression {
@@ -249,7 +249,7 @@ class PostFixUnaryExpression extends UnaryExpression {
 class PrimitiveValueExpression extends Expression {
 	contains Literal value
 	op String toString() {
-		return "prim»" + value.toString;
+		return "prim»" + value;
 	}
 }
 abstract class ArrayAccessOrOperationCallExpression {
@@ -271,7 +271,7 @@ class FeatureCall extends ElementReferenceExpression {
 	
 	op String toString() {
 		val refText = reference?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
-		arguments.head?.value?.toString + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "")
+		arguments.head?.value + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "")
 	}
 }
 
@@ -316,7 +316,7 @@ class Argument extends Expression {
 	op String toString() {
 		val refText = parameter?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.argument_Parameter)?.head?.text;
 
-		return (if(refText !== null) refText + "=" else "") + value.toString();
+		return (if(refText !== null) refText + "=" else "") + value;
 	}
 }
 

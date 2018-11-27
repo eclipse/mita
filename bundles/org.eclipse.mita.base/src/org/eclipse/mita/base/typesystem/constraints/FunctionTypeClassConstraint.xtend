@@ -40,7 +40,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		val nc = constraintSystemProvider.get(); 
 		if(at instanceof FunctionType) {
 			// the returned type should be smaller than the expected type so it can be assigned
-			nc.addConstraint(new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible''')));
+			nc.addConstraint(new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %s is not subtype of %s''')));
 			return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)
 		}
 		else { 

@@ -8,13 +8,26 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 @Accessors
-@EqualsHashCode
 abstract class AbstractType {
 	
 	protected final transient EObject origin;
 	protected final String name;
 	
 	abstract def AbstractType map((AbstractType) => AbstractType f);
+	
+	override boolean equals(Object other) {
+		if (this === other)
+		  return true;
+		if (other === null)
+		  return false;
+		if (getClass() !== other.getClass())
+		  return false;
+		return name == (other as AbstractType).name;
+	}
+	
+	override hashCode() {
+		return name.hashCode();
+	}
 	
 	def AbstractType replace(TypeVariable from, AbstractType with) {
 		map[it.replace(from, with)];

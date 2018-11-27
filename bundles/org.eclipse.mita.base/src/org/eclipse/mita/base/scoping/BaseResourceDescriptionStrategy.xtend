@@ -77,10 +77,10 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			userData.put(CONSTRAINTS, jsonCompressed);
 			val lenRaw = json.length;
 			val lenCompressed = jsonCompressed.length;
-			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.deserializeConstraintSystemFromJSON(GZipper.decompress(jsonCompressed), null));
-			if (json != constraintsBackOut) {
-				throw new Exception("Constraint serialization was not invariant");
-			}
+//			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.deserializeConstraintSystemFromJSON(GZipper.decompress(jsonCompressed), null));
+//			if (json != constraintsBackOut) {
+//				throw new Exception("Constraint serialization was not invariant");
+//			}
 		}
 	}
 
