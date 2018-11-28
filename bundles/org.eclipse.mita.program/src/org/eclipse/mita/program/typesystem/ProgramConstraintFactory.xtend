@@ -59,6 +59,9 @@ import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.program.IsOtherCase
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.mita.base.util.BaseUtils
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -168,29 +171,53 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val matchVariable = system.getTypeVariable((decon.eContainer as WhereIsStatement).matchElement);
 		val feature = ProgramPackage.eINSTANCE.isTypeMatchCase_ProductType;
 		val deconType = system.getTypeVariableProxy(decon, feature);
-		val prodTypeName = NodeModelUtils.findNodesForFeature(decon, feature).head?.text?.trim
+		val prodTypeName = BaseUtils.getText(decon, feature)
 		system.addConstraint(new SubtypeConstraint(deconType, matchVariable, 
 			new ValidationIssue(Severity.ERROR, '''«prodTypeName» (:: %s) not subtype of %s''', decon, feature, "")
 		));
 		system.computeConstraints(decon.body);
 		return system.associate(deconType, decon);
 	}
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase decon) {
-		// is(anyVec.vec2d -> x, y) {...}
-		val matchVariable = system.getTypeVariable((decon.eContainer as WhereIsStatement).matchElement);
-		val vars = decon.deconstructors.map[system.computeConstraints(it) as AbstractType].force;
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsDeconstructionCase deconCase) {
+		// is(anyVec.vec2d -> ...) {...}
+		val matchVariable = system.getTypeVariable((deconCase.eContainer as WhereIsStatement).matchElement);
 		val feature = ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType;
-		val prodTypeName = NodeModelUtils.findNodesForFeature(decon, feature).head?.text?.trim
-		// TODO replace with type classes mb., since split(".").last is sorta hacky
-		val combinedType = new ProdType(decon, prodTypeName.split("\\.").last, vars);
-		val deconType = system.resolveReferenceToSingleAndGetType(decon, feature);
-
-		system.addConstraint(new EqualityConstraint(deconType, combinedType, new ValidationIssue(Severity.ERROR, '''Couldn't resolve types''', decon, null, "")));
+		val prodTypeName = BaseUtils.getText(deconCase, feature)?.split("\\.").last
+		val deconType = system.resolveReferenceToSingleAndGetType(deconCase, feature);
+		
+		val varsAndParameterNames = deconCase.deconstructors.map[
+			val paramName = BaseUtils.getText(it, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember);
+			it -> paramName;
+		].force;
+		
+		// is(anyVec.vec2d -> a=x, b=y) {...}
+		if(varsAndParameterNames.forall[!it.value.nullOrEmpty]) {
+			val List<UnorderedArgsInformation> deconstructedParamTypesAndValueTypes = varsAndParameterNames.map[
+				val decon = it.key;
+				val referencedParamName = it.value;
+				val paramType = system.getTypeVariableProxy(decon, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember, QualifiedName.create(#[prodTypeName, referencedParamName])) as AbstractType;
+				val variableType = system.getTypeVariable(decon);
+				new UnorderedArgsInformation(referencedParamName, decon, decon, paramType, variableType);
+			].force;
+			
+			deconstructedParamTypesAndValueTypes.forEach[
+				system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» not compatible with «it.nameOfReferencedObject»''', it.expressionObject, null, "")));
+			]
+		}
+		// is(anyVec.vec2d -> x, y) {...}
+		else {
+			val vars = deconCase.deconstructors.map[system.computeConstraints(it) as AbstractType].force;
+			// TODO replace with type classes mb., since split(".").last is sorta hacky
+			val varsType = new ProdType(deconCase, prodTypeName, vars);
+	
+			system.addConstraint(new EqualityConstraint(deconType, varsType, new ValidationIssue(Severity.ERROR, '''Couldn't resolve types''', deconCase, null, "")));
+		}
 		system.addConstraint(new SubtypeConstraint(deconType, matchVariable, 
-			new ValidationIssue(Severity.ERROR, '''«prodTypeName» (:: %s) not subtype of %s''', decon, feature, "")
+			new ValidationIssue(Severity.ERROR, '''«prodTypeName» (:: %s) not subtype of %s''', deconCase, feature, "")
 		));
-		system.computeConstraints(decon.body);
-		return system.associate(combinedType);
+		system.computeConstraints(deconCase.body);
+		return null;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IsAssignmentCase asign) {
@@ -233,7 +260,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConfigurationItemValue configItemValue) {
 		val leftSide = system.resolveReferenceToSingleAndGetType(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item);
 		val rightSide = system.computeConstraints(configItemValue.value);
-		val txt = NodeModelUtils.findNodesForFeature(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item).head?.text?.trim;
+		val txt = BaseUtils.getText(configItemValue, ProgramPackage.eINSTANCE.configurationItemValue_Item);
 		system.addConstraint(new SubtypeConstraint(rightSide, leftSide, 
 			new ValidationIssue(Severity.ERROR, '''«configItemValue.value» not valid for «txt»''', configItemValue, null, "")));
 		return system.associate(leftSide, configItemValue);
@@ -253,7 +280,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
 	protected def Pair<AbstractType, AbstractType> computeTypesInArgument(ConstraintSystem system, Argument arg) {
 		val feature = ExpressionsPackage.eINSTANCE.argument_Parameter;
-		val paramName = NodeModelUtils.findNodesForFeature(arg, feature).head?.text?.trim;
+		val paramName = BaseUtils.getText(arg, feature);
 		val paramType = if(!paramName.nullOrEmpty) {
 			system.resolveReferenceToSingleAndGetType(arg, feature) as AbstractType;
 		}
@@ -265,6 +292,15 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val ptype_etype = computeTypesInArgument(system, arg);
 		return system.associate(ptype_etype.key ?: ptype_etype.value, arg);
 	}
+	
+	@FinalFieldsConstructor
+	static protected class UnorderedArgsInformation {
+		protected val String nameOfReferencedObject;
+		protected val EObject referencingObject;
+		protected val EObject expressionObject;
+		protected val AbstractType referencedType;
+		protected val AbstractType expressionType; 
+	} 
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
@@ -302,26 +338,27 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			].force
 			
 			// if size <= 1 then nothing's unordered so we can skip this
-			val argType = if(argumentParamsAndValues.forall[!it.key.nullOrEmpty] && argumentParamsAndValues.size > 1) {
-				val List<Pair<Pair<String, Pair<Argument, Expression>>, Pair<AbstractType, AbstractType>>> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
+			val argType = if(argumentParamsAndValues.size > 1 && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
+				val List<UnorderedArgsInformation> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
 					val arg = it.value.key;
 					val aValue = it.value.value;
 					val exprType = system.computeConstraints(aValue) as AbstractType;
 					val paramType = system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;
 					system.associate(paramType, arg);
-					it -> (paramType -> exprType);
+					new UnorderedArgsInformation(it.key, arg, aValue, paramType, exprType);
 				].force
 				argumentParamTypesAndValueTypes.forEach[
-					system.addConstraint(new SubtypeConstraint(it.value.value, it.value.key, new ValidationIssue(Severity.ERROR, '''«it.key.value» not compatible with «it.key.key»''', it.key.value.key, null, "")));
+					//Pair<Pair<String, Pair<Argument, Expression>>, Pair<AbstractType, AbstractType>>
+					system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» not compatible with «it.nameOfReferencedObject»''', it.referencingObject, null, "")));
 				]
 				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
 					val tv = system.newTypeHole(varOrFun) as AbstractType;
-					(#[("self" -> (null as Argument -> null as Expression)) -> (tv -> tv) ] + argumentParamTypesAndValueTypes).force;
+					(#[new UnorderedArgsInformation("self", null, null, tv, tv)] + argumentParamTypesAndValueTypes).force;
 				}
 				else {
 					argumentParamTypesAndValueTypes
 				}
-				new UnorderedArguments(null, txt + "_args", withAutoFirstArg.map[it.key.key -> it.value.value]);
+				new UnorderedArguments(null, txt + "_args", withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
 			} else {
 				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {
 					#[system.newTypeHole(varOrFun) as AbstractType] + varOrFun.arguments.map[system.computeConstraints(it) as AbstractType]

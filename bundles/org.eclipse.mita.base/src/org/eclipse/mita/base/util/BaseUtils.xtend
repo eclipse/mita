@@ -2,20 +2,23 @@ package org.eclipse.mita.base.util
 
 import com.google.common.collect.Iterables
 import com.google.common.collect.Lists
+import java.util.ArrayDeque
 import java.util.Deque
 import java.util.Iterator
 import java.util.List
 import java.util.NoSuchElementException
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.util.OnChangeEvictingCache
-import java.util.ArrayDeque
-import java.util.Iterator
-import java.util.NoSuchElementException
 
-class BaseUtils {	
+class BaseUtils {
+	def static getText(EObject obj, EStructuralFeature feature) {
+		return NodeModelUtils.findNodesForFeature(obj, feature).head?.text?.trim;
+	}
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
 		new Iterator<Pair<X, Y>>() {
 			override hasNext() {

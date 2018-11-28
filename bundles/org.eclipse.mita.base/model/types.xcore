@@ -5,7 +5,6 @@ import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 class TypeSpecifier {}
 class PresentTypeSpecifier extends TypeSpecifier {
@@ -29,7 +28,7 @@ class PresentTypeSpecifier extends TypeSpecifier {
 //			NodeModelUtils.getTokenText(nameNode);
 //		};
 		val typeName = if(^type === null) {
-			val refText = NodeModelUtils.findNodesForFeature(this, TypesPackage.eINSTANCE.presentTypeSpecifier_Type).head?.text ?: "";
+			val refText = BaseUtils.getText(this, TypesPackage.eINSTANCE.presentTypeSpecifier_Type) ?: "";
 			refText.trim
 		} else {
 			^type.toString

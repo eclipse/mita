@@ -21,6 +21,7 @@ import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Property
@@ -67,7 +68,7 @@ class SystemResourceSetup {
 	}
 	
 	op String toString() {
-		val typeName = NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.systemResourceSetup_Type).head?.text?.trim()
+		val typeName = BaseUtils.getText(this, ProgramPackage.eINSTANCE.systemResourceSetup_Type);
 		return 'setup ' + name + ': ' + typeName + ' {...}';
 	}
 }
@@ -76,7 +77,7 @@ class ConfigurationItemValue {
 	refers ConfigurationItem item
 	contains Expression value
 	op String toString() {
-		return (item?.toString() ?: NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.configurationItemValue_Item).head?.text?.trim()) + " = " + value.toString();
+		return (item?.toString() ?: BaseUtils.getText(this, ProgramPackage.eINSTANCE.configurationItemValue_Item)) + " = " + value.toString();
 	}
 }
 

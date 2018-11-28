@@ -20,6 +20,7 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.VirtualFunction
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
@@ -82,7 +83,7 @@ class PlatformDslResourceDescriptionStrategy extends BaseResourceDescriptionStra
 		exportedResources.forEach[
 			super.createEObjectDescriptions(it, acceptor);
 			if(it instanceof SystemResourceAlias) {
-				val originalResourceName = NodeModelUtils.findNodesForFeature(it, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate).head?.text?.trim;
+				val originalResourceName = BaseUtils.getText(it, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate);
 				if(!originalResourceName.nullOrEmpty) {
 					it.createAdditionalDescriptions(localResourceScope.get(originalResourceName).modalities, acceptor)	
 				}

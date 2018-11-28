@@ -38,6 +38,10 @@ class UnorderedArguments extends TypeConstructorType {
 		return "";
 	}
 	
+	override toString() {
+		return '''UOA(«name», «argParamNamesAndValueTypes»)'''
+	}
+	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newParamAndValueTypes = argParamNamesAndValueTypes.map[ it.key -> system.newTypeVariable(it.value.origin) as AbstractType ].force;
 		val newType = new UnorderedArguments(origin, name, newParamAndValueTypes);

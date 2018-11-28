@@ -570,9 +570,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			// unqualified resolving of parameter names
 			val container = EcoreUtil2.getContainerOfType(context.eContainer, ElementReferenceExpression);
 			if(container.reference === null) {
-				val erefTxt = NodeModelUtils.findNodesForFeature(container, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text?.trim;
+				val erefTxt = BaseUtils.getText(container, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 				val systemResourceSetup = EcoreUtil2.getContainerOfType(container.eContainer, SystemResourceSetup);
-				val systemResourceTxt = NodeModelUtils.findNodesForFeature(systemResourceSetup, ProgramPackage.eINSTANCE.systemResourceSetup_Type).head?.text?.trim;
+				val systemResourceTxt = BaseUtils.getText(systemResourceSetup, ProgramPackage.eINSTANCE.systemResourceSetup_Type);
 				val normalizer = #[new ImportNormalizer(QualifiedName.create(systemResourceTxt, erefTxt), true, false)]
 				return new ImportScope(normalizer, originalScope, null, TypesPackage.eINSTANCE.parameter, false);
 			}

@@ -5,16 +5,16 @@ import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.platform.SystemResourceAlias
-import org.eclipse.mita.base.typesystem.types.BaseKind
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 class PlatformConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AbstractSystemResource res) {
@@ -24,7 +24,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemResourceAlias alias) {
 		val delegateType = system.resolveReferenceToSingleAndGetType(alias, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate);
-		val delegateName = NodeModelUtils.findNodesForFeature(alias, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate).head?.text?.trim ?: "";
+		val delegateName = BaseUtils.getText(alias, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate) ?: "";
 		system.associate(new BaseKind(alias.typeKind, delegateName, delegateType));
 		return system.associate(delegateType, alias);
 	}
