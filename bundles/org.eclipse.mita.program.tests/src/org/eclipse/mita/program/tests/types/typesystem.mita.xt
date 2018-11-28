@@ -138,6 +138,15 @@ fn <T> foo2() {
 	let bar: optional<T>; 
 	let bar2 =  bar;
 	let bar3 = &bar2;
-	let bar4 = *bar3;
+	let bar4 = *bar3; 
+	// XPECT errors --> "" at ""
+	let bar5 = new array<int32>(10, 20);
+	let bar6 = new array<int32>(10);
+	// XPECT errors --> "" at ""
+	let bar7 = new array<int32>();
+	let bar8 = new array<int32>(size=10);
+	// we should error here but don't yet
+	let bar9 = new array<int32>(foo=10);
 	return;  
 } 
+ 

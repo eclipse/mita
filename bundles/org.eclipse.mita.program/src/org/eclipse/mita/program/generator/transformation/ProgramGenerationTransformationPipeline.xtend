@@ -24,8 +24,6 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 	@Inject EscapeWhitespaceInStringStage escapeWhitespaceInStringStage
 	@Inject UnravelModalityAccessStage unravelModalityAccessStage
 	@Inject GroupModalityAccessStage groupModalityAccessStage
-	@Inject ResolveGeneratedTypeConstructorStage resolveGeneratedTypeConstructorStage
-	@Inject UnravelFunctionCallsStage unravelFunctionCallsStage
 	@Inject UnravelInterpolatedStringsStage unravelInterpolatedStringsStage
 	@Inject PrepareLoopForFunctionUnvravelingStage prepareLoopForFunctionUnvravelingStage
 	@Inject PrepareArrayRuntimeChecksStage prepareArrayRuntimeChecksStage
@@ -66,8 +64,6 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 			escapeWhitespaceInStringStage,
 			unravelModalityAccessStage,
 			groupModalityAccessStage,
-			resolveGeneratedTypeConstructorStage,
-			//unravelFunctionCallsStage,
 			unravelInterpolatedStringsStage,
 			prepareLoopForFunctionUnvravelingStage,
 			prepareArrayRuntimeChecksStage,

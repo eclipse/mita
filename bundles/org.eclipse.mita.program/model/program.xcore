@@ -41,6 +41,7 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.TypeConstructor
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.program.model.ModelUtils 
+import org.eclipse.mita.base.expressions.ArgumentExpression
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -306,15 +307,13 @@ class CatchStatement extends AbstractStatement {
 	contains ProgramBlock body
 }
 
-class NewInstanceExpression extends ElementReferenceExpression {
+class NewInstanceExpression extends ArgumentExpression {
 	contains PresentTypeSpecifier ^type
 	
-	op EObject getReference() {
-		val t = ^type.^type
-		if (t instanceof GeneratedType) {
-			t.constructor
-		} else {
-			super.reference
+	op Operation getReference() {
+		val refType = ^type.^type;
+		if(refType instanceof GeneratedType) {
+			return refType.constructor;
 		}
 	}
 }

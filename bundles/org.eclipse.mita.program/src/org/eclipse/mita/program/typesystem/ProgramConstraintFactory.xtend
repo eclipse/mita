@@ -63,6 +63,7 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
+import org.eclipse.mita.program.NewInstanceExpression
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -299,6 +300,38 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		protected val AbstractType expressionType; 
 	} 
 	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NewInstanceExpression newInstanceExpression) {
+		val returnType = system.computeConstraints(newInstanceExpression.type);
+		val typeName = BaseUtils.getText(newInstanceExpression.type, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+		val functionTypeVar = system.newTypeVariableProxy(newInstanceExpression, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, QualifiedName.create(typeName, "con"));
+		val argumentParamsAndValues = newInstanceExpression.arguments.map[
+			BaseUtils.getText(it, ExpressionsPackage.eINSTANCE.argument_Parameter) -> (it -> it.value)
+		].force
+		val argType = if(argumentParamsAndValues.size > 1 && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
+			val List<UnorderedArgsInformation> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
+				val arg = it.value.key;
+				val aValue = it.value.value;
+				val exprType = system.computeConstraints(aValue) as AbstractType;
+				val paramType = system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;
+				if(paramType instanceof TypeVariableProxy) {
+					paramType.ambiguityResolutionStrategy = AmbiguityResolutionStrategy.MakeNew;
+				}
+				system.associate(paramType, arg);
+				new UnorderedArgsInformation(it.key, arg, aValue, paramType, exprType);
+			].force
+			argumentParamTypesAndValueTypes.forEach[
+				system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
+			]
+			new UnorderedArguments(null, "con_args", argumentParamTypesAndValueTypes.map[it.nameOfReferencedObject -> it.expressionType]);
+		}
+		else {
+			val args = newInstanceExpression.arguments.map[system.computeConstraints(it) as AbstractType];
+			system.computeArgumentConstraintsWithTypes("con", args.force);
+		}
+		system.computeConstraintsForFunctionCall(newInstanceExpression, null, "con", argType, #[functionTypeVar]);
+		return system.associate(returnType, newInstanceExpression);
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
@@ -348,7 +381,6 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 					new UnorderedArgsInformation(it.key, arg, aValue, paramType, exprType);
 				].force
 				argumentParamTypesAndValueTypes.forEach[
-					//Pair<Pair<String, Pair<Argument, Expression>>, Pair<AbstractType, AbstractType>>
 					system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
 				]
 				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
