@@ -2,6 +2,7 @@ package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 /**
  * Base types are types without type variables (e.g. atomic types or integers)
@@ -15,7 +16,7 @@ abstract class AbstractBaseType extends AbstractType {
 		return "";
 	}
 	
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
 		return this;
 	}
 	

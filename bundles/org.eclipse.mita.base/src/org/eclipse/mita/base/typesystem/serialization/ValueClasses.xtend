@@ -4,6 +4,7 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import java.util.Set
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.xtext.diagnostics.Severity
 
@@ -193,6 +194,7 @@ class SerializedTypeVariableProxy extends SerializedTypeVariable {
     
 	public SerializedEReference reference;
 	public String targetQID;
+	public AmbiguityResolutionStrategy ambiguityResolutionStrategy;
 }
 
 class SerializedAbstractTypeConstraint extends SerializedObject {

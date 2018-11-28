@@ -2,10 +2,9 @@ package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.emf.ecore.impl.EObjectImpl
 
 @EqualsHashCode
 class TypeVariable extends AbstractType {
@@ -50,7 +49,7 @@ class TypeVariable extends AbstractType {
 		sub.substitutions.getOrDefault(this, this);
 	}
 	
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
+	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
 		return this;
 	}
 	

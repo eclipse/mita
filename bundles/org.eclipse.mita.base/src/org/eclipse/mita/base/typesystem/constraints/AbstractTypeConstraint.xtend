@@ -9,6 +9,7 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 @FinalFieldsConstructor
 @EqualsHashCode
@@ -51,8 +52,8 @@ abstract class AbstractTypeConstraint {
 	
 	abstract def boolean isAtomic();
 	
-	def AbstractTypeConstraint replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return map[it.replaceProxies(resolve)]
+	def AbstractTypeConstraint replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
+		return map[it.replaceProxies(system, resolve)]
 	}
 	
 	def AbstractTypeConstraint modifyNames(String suffix) {

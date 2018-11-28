@@ -53,6 +53,9 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
+			if(message.equals("Function id2 cannot be used here: Return type incompatible: i32 is not subtype of f_67.0")) {
+				System.out.print("");
+			}
 		}
 		
 		public ValidationIssue(Severity severity, String message, EObject target, EStructuralFeature feature, String issueCode) {

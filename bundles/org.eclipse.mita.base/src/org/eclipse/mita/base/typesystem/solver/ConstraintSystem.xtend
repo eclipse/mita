@@ -2,10 +2,7 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import java.util.ArrayList
-import java.util.Collections
 import java.util.HashMap
-import java.util.HashSet
 import java.util.List
 import java.util.Map
 import org.eclipse.emf.common.util.URI
@@ -22,17 +19,14 @@ import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.typesystem.types.TypeHole
-import org.eclipse.emf.ecore.resource.ResourceSet
 
 @Accessors
 class ConstraintSystem {
@@ -320,16 +314,16 @@ class ConstraintSystem {
 		result.symbolTable.putAll(symbolTable);
 
 		result.atomicConstraints += atomicConstraints.map[ 
-			it.replaceProxies[ 
-				this.resolveProxy(it, resource, scopeProvider).head
-			] ].force;
+			it.replaceProxies(result, [ 
+				result.resolveProxy(it, resource, scopeProvider)
+			]) ].force;
 		result.nonAtomicConstraints += nonAtomicConstraints.map[ 
-			it.replaceProxies[ 
-				this.resolveProxy(it, resource, scopeProvider).head
-			] ].force;
+			it.replaceProxies(result, [ 
+				result.resolveProxy(it, resource, scopeProvider)
+			]) ].force;
 		result.typeClasses.putAll(typeClasses.mapValues[ 
 			it.replaceProxies([ 
-				this.resolveProxy(it, resource, scopeProvider)
+				result.resolveProxy(it, resource, scopeProvider)
 			], [
 				resource.resourceSet.getEObject(it, false)
 			])
@@ -337,7 +331,7 @@ class ConstraintSystem {
 		
 		
 		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
-		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replaceProxies([this.resolveProxy(it, resource, scopeProvider).head])];
+		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replaceProxies(this, [this.resolveProxy(it, resource, scopeProvider)])];
 		result.explicitSubtypeRelations.computeReverseMap();
 		return result;
 	}
@@ -359,7 +353,7 @@ class ConstraintSystem {
 		if(!cachedTypeSerializations.empty && cachedTypeSerializations.forall[it !== null]) {
 			val cachedTypes = cachedTypeSerializations.map[serializationAdapter.deserializeTypeFromJSON(it, [ resource.resourceSet.getEObject(it, false) ])]
 			// these proxies should not be ambiguous, otherwise we should have created a type class!
-			return cachedTypes.map[typ | typ.replaceProxies[ this.resolveProxy(it, resource, scopeProvider).head ]];
+			return cachedTypes.map[typ | typ.replaceProxies(this, [ this.resolveProxy(it, resource, scopeProvider) ])];
 		}
 		
 		val replacementObjects = scopeElements.map[EObjectOrProxy].force;

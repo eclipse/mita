@@ -26,7 +26,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		
 		subType = sub;
 		superType = top;
-		if(this.toString.startsWith("v2d(v2d_s(i32, i32)) ⩽ f_57")) {
+		if(this.toString == ("f_645.1 ⩽ f_625.1")) {
 			print("")
 		}
 	}

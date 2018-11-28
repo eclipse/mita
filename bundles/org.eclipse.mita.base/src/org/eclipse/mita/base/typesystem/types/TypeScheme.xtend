@@ -79,8 +79,8 @@ class TypeScheme extends AbstractType {
 		return f.apply(this);
 	}
 	
-	override replaceProxies((TypeVariableProxy)=>AbstractType resolve) {
-		return new TypeScheme(origin, vars.map[replaceProxies(resolve) as TypeVariable].force, on.replaceProxies(resolve))
+	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
+		return new TypeScheme(origin, vars.map[replaceProxies(system, resolve) as TypeVariable].force, on.replaceProxies(system, resolve))
 	}
 	
 	override modifyNames(String suffix) {

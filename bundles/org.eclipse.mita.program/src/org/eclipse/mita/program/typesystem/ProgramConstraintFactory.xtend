@@ -62,6 +62,7 @@ import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -198,7 +199,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 				val referencedParamName = it.value;
 				val paramType = system.getTypeVariableProxy(decon, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember, QualifiedName.create(#[prodTypeName, referencedParamName])) as AbstractType;
 				val variableType = system.getTypeVariable(decon);
-				system.addConstraint(new SubtypeConstraint(variableType, paramType, new ValidationIssue(Severity.ERROR, '''«decon» not compatible with «referencedParamName»''', decon, null, "")));
+				system.addConstraint(new SubtypeConstraint(variableType, paramType, new ValidationIssue(Severity.ERROR, '''«decon» (:: %s) not compatible with «referencedParamName» (:: %s)''', decon, null, "")));
 			];
 		}
 		// is(anyVec.vec2d -> x, y) {...}
@@ -340,12 +341,15 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 					val aValue = it.value.value;
 					val exprType = system.computeConstraints(aValue) as AbstractType;
 					val paramType = system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;
+					if(paramType instanceof TypeVariableProxy) {
+						paramType.ambiguityResolutionStrategy = AmbiguityResolutionStrategy.MakeNew;
+					}
 					system.associate(paramType, arg);
 					new UnorderedArgsInformation(it.key, arg, aValue, paramType, exprType);
 				].force
 				argumentParamTypesAndValueTypes.forEach[
 					//Pair<Pair<String, Pair<Argument, Expression>>, Pair<AbstractType, AbstractType>>
-					system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» not compatible with «it.nameOfReferencedObject»''', it.referencingObject, null, "")));
+					system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
 				]
 				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
 					val tv = system.newTypeHole(varOrFun) as AbstractType;

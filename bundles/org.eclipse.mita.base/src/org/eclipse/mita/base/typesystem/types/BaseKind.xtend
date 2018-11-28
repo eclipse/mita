@@ -5,6 +5,7 @@ import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 @EqualsHashCode
 @Accessors
@@ -27,8 +28,8 @@ class BaseKind extends AbstractBaseType {
 		}
 		return this;
 	}
-	override replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		return new BaseKind(origin, name, kindOf.replaceProxies(resolve));
+	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
+		return new BaseKind(origin, name, kindOf.replaceProxies(system, resolve));
 	}
 	
 	override modifyNames(String suffix) {

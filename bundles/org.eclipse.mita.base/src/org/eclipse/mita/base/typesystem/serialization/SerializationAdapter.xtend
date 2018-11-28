@@ -230,7 +230,10 @@ class SerializationAdapter {
 		if(origin === null) {
 			obj.origin.resolveEObject(true);
 		}
-		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName);
+		if(obj.name == "p_46") {
+			print("");
+		}
+		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy);
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
@@ -506,6 +509,7 @@ class SerializationAdapter {
 			fill(it, obj)
 			it.reference = obj.reference?.toValueObject as SerializedEReference;
 			it.targetQID = obj.targetQID.toString;
+			it.ambiguityResolutionStrategy = obj.ambiguityResolutionStrategy;
 		]
 	}
 	

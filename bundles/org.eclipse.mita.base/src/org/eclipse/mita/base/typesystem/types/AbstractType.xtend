@@ -53,8 +53,8 @@ abstract class AbstractType {
 	
 	abstract def String toGraphviz();
 	
-	def AbstractType replaceProxies((TypeVariableProxy) => AbstractType resolve) {
-		map[it.replaceProxies(resolve)];
+	def AbstractType replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
+		map[it.replaceProxies(system, resolve)];
 	}
 	
 	def AbstractType modifyNames(String suffix) {
