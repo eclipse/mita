@@ -99,7 +99,7 @@ every 100 milliseconds {
 		is(anyVec.vec2d -> a1, b2) {
 		
 		}
-		//XPECT errors --> "MGU128: vec2d(f_379.0, f_380.0) and vec2d(f_382.0) differ in their number of arguments" at "is(anyVec.vec2d -> a1) { 		  		}"
+		//XPECT errors --> "MGU128: vec2d(f_471.0, f_472.0) and vec2d(f_474.0) differ in their number of arguments" at "is(anyVec.vec2d -> a1) { 		  		}"
 		is(anyVec.vec2d -> a1) {
 		 
 		}
@@ -139,10 +139,16 @@ fn <T> foo2() {
 	let bar2 =  bar;
 	let bar3 = &bar2;
 	let bar4 = *bar3; 
-	// XPECT errors --> "" at ""
+	/* XPECT errors ---
+		"Function con cannot be used here" at "new array<int32>(10, 20)"
+		"con_args(xint8, xint8) not instance of con\n	∀[f_16.2].con_args(uint32) → array<f_16.2> = con<T>([size: uint32 (static: true)])\n" at "new array<int32>(10, 20)"
+	--- */
 	let bar5 = new array<int32>(10, 20);
 	let bar6 = new array<int32>(10);
-	// XPECT errors --> "" at ""
+	/* XPECT errors ---
+		"Function con cannot be used here" at "new array<int32>()"
+		"con_args() not instance of con\n	∀[f_16.2].con_args(uint32) → array<f_16.2> = con<T>([size: uint32 (static: true)])\n" at "new array<int32>()"
+	--- */
 	let bar7 = new array<int32>();
 	let bar8 = new array<int32>(size=10);
 	// we should error here but don't yet

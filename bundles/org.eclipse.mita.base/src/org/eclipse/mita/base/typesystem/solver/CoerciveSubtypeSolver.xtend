@@ -101,12 +101,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return null;
 			}
 			if(!simplification.valid) {
+				issues += simplification.issues;
 				if(simplification?.system?.constraints.nullOrEmpty || simplification?.substitution?.content?.entrySet.nullOrEmpty) {
 					return new ConstraintSolution(currentSystem, simplification.substitution, simplification.issues);
-				}
-				else {
-					issues += simplification.issues;
-//					return new ConstraintSolution(simplification.system, simplification.substitution, #[simplification.issue])
 				}
 			}
 			
@@ -120,12 +117,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return null;
 			}
 			if(!solution.issues.empty) {
+				issues += solution.issues;
 				if(solution?.constraints?.constraints.nullOrEmpty || solution?.solution?.content?.entrySet.nullOrEmpty) {
-					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, solution.issues);
-				}
-				else {
-					issues += solution.issues;
-					//return new ConstraintSolution(solution.constraints, solution.solution, solution.issues);
+					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, issues);
 				}
 			}
 			result = solution;
@@ -201,13 +195,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				//return SimplificationResult.failure(simplification.issue);
 			}
 			else {
-				val witnessNotWeaklyUnifyable = simplification.substitution.content.entrySet.findFirst[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]];
-				if(witnessNotWeaklyUnifyable !== null) {
-					return new SimplificationResult(resultSub, 
-						#[witnessNotWeaklyUnifyable.key, witnessNotWeaklyUnifyable.value].map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessNotWeaklyUnifyable, it.origin, null, "")], 
-						resultSystem
-					);
-				}	
+				val witnessesNotWeaklyUnifyable = simplification.substitution.content.entrySet.filter[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]].flatMap[#[it.key, it.value]].force;
+				if(!witnessesNotWeaklyUnifyable.empty) {
+					print("");
+					issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.toString, it.origin, null, "")]; 
+					witnessesNotWeaklyUnifyable.filter(TypeVariable).forEach[
+						simplification.substitution.content.remove(it);
+					]	
+				}
 				resultSub = simplification.substitution;
 				resultSystem = resultSub.apply(simplification.system);
 			}
@@ -298,7 +293,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
 			val fun = typeClass.instances.get(refType);
 			if(fun instanceof Operation) {
-				return constraint.onResolve(system, substitution, fun, refType);				
+				return constraint.onResolve(system, substitution, fun, refType);			
 			}
 			else {
 				return SimplificationResult.failure(constraint.errorMessage)
