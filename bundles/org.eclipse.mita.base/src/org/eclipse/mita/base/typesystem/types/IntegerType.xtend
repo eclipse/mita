@@ -25,11 +25,11 @@ class IntegerType extends NumericType {
 	
 	protected def static String prefix(Signedness signedness) {
 		if(signedness == Signedness.Signed) {
-			return 'i';
+			return 'int';
 		} else if(signedness == Signedness.Unsigned) {
-			return 'u';
+			return 'uint';
 		} else {
-			return 'x';
+			return 'xint';
 		}
 	}
 	

@@ -1,0 +1,143 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+setup net : MySingletonConnectivity { 
+} 
+    
+setup backend : MyConnectivity {
+	cfg00 = "mqtt://192.168.137.1";
+	cfg04 = net;
+	var t = vci01(p01=10);
+}        
+   
+struct mData {
+	var x: int32;
+	var y: int32; 
+	var z: int32;
+	var r: uint16;
+}     
+   
+alt anyVec {
+	vec0d | vec1d: {x: int32} | vec2d: {x: int32, y: string}
+}   
+ 
+fn id(x: int32?): int32? {
+	return x;
+}
+    
+fn id(x: int32): int32 {
+	return x;  
+}      
+  
+fn id(x: string): string {
+	return x;
+}   
+
+fn id2(x: int32, y: int8): int32 {
+	return x;  
+}      
+  
+fn id2(x: string, y: int8): string {
+	return x;
+}
+    
+native checked fn C_Magnetometer_init(): void header "magnetometer.h";
+native checked fn C_Magnetometer_read(): mData header "magnetometer.h";
+
+every 100 milliseconds {
+	let a : int32? = 0;
+	let b = a.id();   
+}
+
+every 100 milliseconds { 
+	// XPECT warnings --> "<auto>.vec1d([self: ∗anyVec, x: int32])(prim»i»10) has type ∗anyVec(vec0d | vec1d | vec2d)" at ".vec1d(10)"
+	let c = .vec1d(10); 
+	let d = c.x(); 
+	let e = "asdf";     
+	let f = 8;        
+	let g: string = id(e);          
+	let h = id(f); 
+	let h2 = id2(y=0, x=e);
+	let h3 = id2(y=0, x=f);    
+	let m = C_Magnetometer_read();
+	let asdf: &&int32;    
+	let wert: int32?;
+	let foo: modality<uint16>;   
+	let bar: uint32? = 10;
+	let barp: uint16? = 10;
+	let bar2 = bar; 
+	let bar3 = &bar2; 
+	let bar4 = 1 == 1? *bar3: bar; 
+	let a: modality<uint32> = MySensor.modality01; 
+	let asdfgasd = true && false;
+	let a2 = f == (10 as int32); 
+	/* XPECT warnings ---
+	 	 "<auto>.vec1d([self: ∗anyVec, x: int32])(prim»i»10) has type ∗anyVec(vec0d | vec1d | vec2d)" at ".vec1d(10)"
+	 	 "<auto>.vec0d([self: ∗anyVec])() has type ∗anyVec(vec0d | vec1d | vec2d)" at ".vec0d"
+	 * --- */
+	let a3 = true? .vec0d: .vec1d(10);
+	where(a3) {  
+		is(anyVec.vec0d) { 
+			  
+		} 
+		is(anyVec.vec1d -> x) {
+			 
+		} 
+		is(anyVec.vec2d -> a1=y, b1=x) {
+ 
+		}
+		is(anyVec.vec2d -> a1=y) {
+		 
+		} 
+		is(anyVec.vec2d -> a1, b2) {
+		
+		}
+		//XPECT errors --> "MGU128: vec2d(f_379.0, f_380.0) and vec2d(f_382.0) differ in their number of arguments" at "is(anyVec.vec2d -> a1) { 		  		}"
+		is(anyVec.vec2d -> a1) {
+		 
+		}
+		is(x: anyVec.vec1d) {
+			
+		} 
+	}
+	/* XPECT errors ---
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f (:: xint8) and g don't share a common type" at "f"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+		"f and g (:: string) don't share a common type" at "g"
+	 --- */
+	let a4 = f == g;
+//	let k = m.x;    
+	//backend.t.write(`[${m.x}, ${m.y}, ${m.z}, ${m.r}]`);
+}   
+    
+fn <T> foo2() {
+	let bar: optional<T>; 
+	let bar2 =  bar;
+	let bar3 = &bar2;
+	let bar4 = *bar3;
+	return;  
+} 
