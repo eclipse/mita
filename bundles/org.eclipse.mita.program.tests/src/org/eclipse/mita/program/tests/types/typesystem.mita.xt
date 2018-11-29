@@ -151,7 +151,7 @@ fn <T> foo2() {
 	--- */
 	let bar7 = new array<int32>();
 	let bar8 = new array<int32>(size=10);
-	// we should error here but don't yet
+	// XPECT errors --> "" at ""
 	let bar9 = new array<int32>(foo=10);
 	return;  
 } 

@@ -22,10 +22,13 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.expressions.util.ArgumentSorter
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
+class ParameterWithDefaultValue extends Parameter {
+	contains Expression defaultValue
+}
 
-class GeneratedTypeParameter extends Parameter {
+
+class GeneratedTypeParameter extends ParameterWithDefaultValue {
 	boolean ^static
-	contains Expression value
 }
 
 abstract class Expression {

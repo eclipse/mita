@@ -45,6 +45,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.types.SignalParameter
 import java.util.ArrayList
+import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 
 /**
  * Solves coercive subtyping as described in 
@@ -318,7 +319,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					if(fun instanceof Operation) {
 						val sortedArgs = ExpressionUtils.getSortedArguments(fun.parameters, refType.argParamNamesAndValueTypes, 
 							[it], [it.key], [
-								if(it instanceof SignalParameter) {
+								if(it instanceof ParameterWithDefaultValue) {
 									if(it.defaultValue !== null) { 
 										return it.name -> substitution.apply(system.getTypeVariable(it.defaultValue));
 									}
@@ -337,10 +338,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						if(refType instanceof ProdType) {
 							val assignedArgs = refType.typeArguments
 							if(assignedArgs.size < fun.parameters.size) {
-								val mbDefaultParameterValues = fun.parameters.drop(assignedArgs.size).filter(SignalParameter);
+								val mbDefaultParameterValues = fun.parameters.drop(assignedArgs.size).filter(ParameterWithDefaultValue);
 								if(!mbDefaultParameterValues.empty && mbDefaultParameterValues.forall[it.defaultValue !== null]) {
-									val defaultParameterValues = mbDefaultParameterValues.map[it.defaultValue];
-									val defaultParameterTypes = defaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
+									val defaultParameterTypes = mbDefaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
 									val args = assignedArgs + defaultParameterTypes;
 									return new ProdType(refType.origin, refType.name, args);
 								}
@@ -369,7 +369,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						}
 						// TODO insert coercion
 						else {
-							new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance);
+							new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance + subtypeCheckResult.constraints.size);
 						}
 					}
 					return result;

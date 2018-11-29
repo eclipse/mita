@@ -34,7 +34,7 @@ public interface IValidationIssueAcceptor {
 		private Severity severity;
 		private String message;
 		private String issueCode;
-		private EObject target;
+		private transient EObject target;
 		private EStructuralFeature feature;
 
 		public ValidationIssue(Severity severity, String message, String issueCode) {

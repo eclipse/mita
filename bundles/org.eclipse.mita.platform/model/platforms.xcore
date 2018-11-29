@@ -48,7 +48,6 @@ enum Instantiability {
 
 class SystemSpecification extends PackageAssociation {
 	contains AbstractSystemResource[] resources
-	contains Type[] types
 }
 
 // DO NOT SWAP the order of inheritance here as a bug in Xcore will cause the DSL generation to fail with an NPE

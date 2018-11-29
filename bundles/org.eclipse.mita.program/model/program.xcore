@@ -49,7 +49,6 @@ class Program extends PackageAssociation {
 	contains VariableDeclaration[] globalVariables
 	contains Operation[] functionDefinitions
 	contains EventHandlerDeclaration[] eventHandlers
-	contains Type[] types
 	op String toString() {
 		return "PROGRAM " + name;
 	}

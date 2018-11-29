@@ -89,7 +89,7 @@ GeneratedTypeConstructor returns GeneratedTypeConstructor:
 
 GeneratedTypeParameter returns GeneratedTypeParameter:
 	{GeneratedTypeParameter}
-	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' value=Expression)?
+	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' defaultValue=Expression)?
 ;
 
 TypeParameter returns TypeParameter:

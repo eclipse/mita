@@ -72,6 +72,7 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -300,6 +301,18 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
 	}
 	
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ParameterWithDefaultValue param) {
+		val paramType = system._computeConstraints(param as Parameter);
+		if(param.defaultValue !== null) {
+			val valueType = system.computeConstraints(param.defaultValue);
+			system.addConstraint(new SubtypeConstraint(valueType, paramType, 
+				new ValidationIssue(Severity.ERROR, '''Invalid default value «param.defaultValue» (:: %s) for parameter «param.name» (:: s)''', param.defaultValue, null, "")
+			))
+		}
+		return paramType;
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BoolLiteral bl) {
 		val boolType = typeRegistry.getTypeModelObjectProxy(system, bl, StdlibTypeRegistry.boolTypeQID);
 		return system.associate(boolType, bl);
@@ -410,7 +423,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		system.computeConstraints(sumAlt.constructor);
 		return prodType;
 	}
-		
+	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
 		val typeArgs = typeParameters.map[ 
