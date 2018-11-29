@@ -44,7 +44,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
  */
 class StaticValueInferrer {
 	
-	public static class SumTypeRepr {
+	static class SumTypeRepr {
 				
 		public val String name;
 		public val Map<String, Expression> properties;

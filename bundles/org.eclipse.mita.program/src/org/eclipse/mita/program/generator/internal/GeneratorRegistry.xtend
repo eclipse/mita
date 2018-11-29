@@ -38,7 +38,7 @@ class GeneratorRegistry {
 	@Inject
 	protected PluginResourceLoader loader
 
-	private final LoadingCache<GeneratedElement, Optional<IGenerator>> generatorCache = CacheBuilder.newBuilder().
+	final LoadingCache<GeneratedElement, Optional<IGenerator>> generatorCache = CacheBuilder.newBuilder().
 		build(new CacheLoader<GeneratedElement, Optional<IGenerator>>() {
 			
 			override Optional<IGenerator> load(GeneratedElement elem) {

@@ -27,7 +27,7 @@ import org.eclipse.xtext.generator.trace.node.TemplateNode
 class CodeFragment extends CompositeGeneratorNode {
 	
 	
-	public static class IncludePath {
+	static class IncludePath {
 		public static final int ULTRA_LOW_PRIORITY = 0;
 		public static final int VERY_LOW_PRIORITY = 250;
 		public static final int LOW_PRIORITY = 500;
@@ -36,15 +36,15 @@ class CodeFragment extends CompositeGeneratorNode {
 		public static final int VERY_HIGH_PRIORITY = 1000;
 		public static final int ULTRA_HIGH_PRIORITY = 1250;
 		
-		private final String path;
-		private final boolean systemInclude;
-		private final int priority;
+		final String path;
+		final boolean systemInclude;
+		final int priority;
 
-		public new(String path, boolean isSystemInclude) {
+		new(String path, boolean isSystemInclude) {
 			this(path, isSystemInclude, DEFAULT_PRIORITY);
 		}
 
-		public new(String path, boolean isSystemInclude, int priority) {
+		new(String path, boolean isSystemInclude, int priority) {
 			this.path = path;
 			systemInclude = isSystemInclude;
 			this.priority = priority;
@@ -87,12 +87,12 @@ class CodeFragment extends CompositeGeneratorNode {
 	/**
 	 * The include paths for header files required by this code fragment.
 	 */
-	private final List<IncludePath> includePaths = new LinkedList;
+	final List<IncludePath> includePaths = new LinkedList;
 	
 	/**
 	 * The global preamble which is added to the beginning of the C file this code will be placed in.
 	 */
-	private IGeneratorNode preamble = null;
+	IGeneratorNode preamble = null;
 	
 	/**
 	 * Adds the relative path to a header file to the list of includes. 
@@ -100,7 +100,7 @@ class CodeFragment extends CompositeGeneratorNode {
 	 * @param path the path to add
 	 * @return this code fragment
 	 */
-	public def CodeFragment addHeader(String path, boolean isSystemInclude) {
+	def CodeFragment addHeader(String path, boolean isSystemInclude) {
 		val includePath = new IncludePath(path, isSystemInclude);
 		this.includePaths.add(includePath);
 		return this;
@@ -112,7 +112,7 @@ class CodeFragment extends CompositeGeneratorNode {
 	 * @param path the path to add
 	 * @return this code fragment
 	 */
-	public def CodeFragment addHeader(String path, boolean isSystemInclude, int priority) {
+	def CodeFragment addHeader(String path, boolean isSystemInclude, int priority) {
 		val includePath = new IncludePath(path, isSystemInclude, priority);
 		this.includePaths.add(includePath);
 		return this;
@@ -124,7 +124,7 @@ class CodeFragment extends CompositeGeneratorNode {
 	 * @param paths the paths to add
 	 * @return this code fragment
 	 */
-	public def CodeFragment addHeader(IncludePath... paths) {
+	def CodeFragment addHeader(IncludePath... paths) {
 		this.includePaths.addAll(paths);
 		return this;
 	}
@@ -135,12 +135,12 @@ class CodeFragment extends CompositeGeneratorNode {
 	 * @param preamble the preamble to set
 	 * @return this code fragment
 	 */
-	public def CodeFragment setPreamble(IGeneratorNode preamble) {
+	def CodeFragment setPreamble(IGeneratorNode preamble) {
 		this.preamble = preamble;		
 		return this;
 	}
 	
-	public def CodeFragment setPreamble(StringConcatenationClient preamble) {
+	def CodeFragment setPreamble(StringConcatenationClient preamble) {
 		this.preamble = new TemplateNode(preamble, traceExtension);
 		return this;
 	}
@@ -148,7 +148,7 @@ class CodeFragment extends CompositeGeneratorNode {
 	/**
 	 * @return the includePaths
 	 */
-	public def List<IncludePath> getIncludePaths() {
+	def List<IncludePath> getIncludePaths() {
 		return includePaths;
 	}
 
@@ -160,7 +160,7 @@ class CodeFragment extends CompositeGeneratorNode {
 		return includes.sortBy[x | x.priority * (if(x.isSystemInclude) 10 else 1)].reverse.map[x | x.toString]
 	}
 	
-	public def toHeader(CompilationContext context, String guardName) {
+	def toHeader(CompilationContext context, String guardName) {
 		val includes = (includePaths + children.findIncludes).combineIncludes;
 		val preamble = new CompositeGeneratorNode();
 		if(this.preamble !== null) {
@@ -188,7 +188,7 @@ class CodeFragment extends CompositeGeneratorNode {
 		return result;
 	}
 	
-	public def toImplementation(CompilationContext context) {
+	def toImplementation(CompilationContext context) {
 		val includes = (includePaths + children.findIncludes).combineIncludes;
 		val preamble = new CompositeGeneratorNode();
 		if(this.preamble !== null) {
@@ -244,7 +244,7 @@ class CodeFragment extends CompositeGeneratorNode {
 		nodes
 	}
 	
-	public static def CompositeGeneratorNode cleanNullChildren(CompositeGeneratorNode fragment) {
+	static def CompositeGeneratorNode cleanNullChildren(CompositeGeneratorNode fragment) {
 		val newChildren = new LinkedList;
 		newChildren.addAll(fragment.children);
 		newChildren.cleanNullChildren;

@@ -19,11 +19,10 @@ import org.eclipse.cdt.core.dom.ast.IASTEqualsInitializer
 import org.eclipse.cdt.core.dom.ast.IASTInitializerList
 import org.eclipse.cdt.core.dom.ast.IASTLiteralExpression
 import org.eclipse.cdt.core.dom.ast.IASTSimpleDeclaration
+import org.eclipse.cdt.core.dom.ast.c.ICASTDesignatedInitializer
 import org.eclipse.cdt.core.dom.ast.c.ICASTFieldDesignator
-import org.eclipse.cdt.core.dom.ast.c.ICASTTypeIdInitializerExpression
 import org.junit.Assert
 import org.junit.Test
-import org.eclipse.cdt.core.dom.ast.c.ICASTDesignatedInitializer
 
 class SumTypesTest extends AbstractGeneratorTest {
 	/* Template

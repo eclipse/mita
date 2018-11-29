@@ -45,7 +45,7 @@ abstract class AbstractTransformationStage {
 	
 	protected ITransformationPipelineInfoProvider pipelineInfoProvider;
 	
-	private final List<(EObject)=>void> postTransformations = new LinkedList;
+	final List<(EObject)=>void> postTransformations = new LinkedList;
 	
 	public static final int ORDER_VERY_EARLY = 100;
 	public static final int ORDER_EARLY = 300;

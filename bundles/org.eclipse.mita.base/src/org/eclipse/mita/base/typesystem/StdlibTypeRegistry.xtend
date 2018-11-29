@@ -223,10 +223,10 @@ class StdlibTypeRegistry {
 		return (bSub <= bTop).subtypeMsgFromBoolean('''STR:«BaseUtils.lineNumber»: «top.name» is too small for «sub.name»''');
 	}
 	
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, FloatingType sub, FloatingType top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, FloatingType sub, FloatingType top) {
 		return (sub.widthInBytes <= top.widthInBytes).subtypeMsgFromBoolean(sub, top);
 	}
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, IntegerType sub, IntegerType top) {		
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, IntegerType sub, IntegerType top) {		
 		val bTop = top.widthInBytes;
 		val int bSub = switch(sub.signedness) {
 			case Signed: {
@@ -251,27 +251,27 @@ class StdlibTypeRegistry {
 		return checkByteWidth(sub, top, bSub, bTop);
 	}
 	
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, FunctionType sub, FunctionType top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, FunctionType sub, FunctionType top) {
 		//    fa :: a -> b   <:   fb :: c -> d 
 		// ⟺ every fa can be used as fb 
 		// ⟺ b >: d ∧    a <: c
 		return context.isSubtypeOf(top.from, sub.from).orElse(context.isSubtypeOf(sub.to, top.to));
 	}
 			
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, BottomType sub, AbstractType sup) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, BottomType sub, AbstractType sup) {
 		// ⊥ is subtype of everything
 		return SubtypeCheckResult.valid;
 	}
 	
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, SumType sub, SumType top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, SumType sub, SumType top) {
 		top.typeArguments.forall[topAlt | sub.typeArguments.exists[subAlt | context.isSubType(subAlt, topAlt)]].subtypeMsgFromBoolean(sub, top)
 	}
 	
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, ProdType sub, SumType top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, ProdType sub, SumType top) {
 		top.typeArguments.exists[context.isSubType(sub, it)].subtypeMsgFromBoolean(sub, top)
 	}
 	
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, ProdType sub, ProdType top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, ProdType sub, ProdType top) {
 		if(sub.typeArguments.length != top.typeArguments.length) {
 			return SubtypeCheckResult.invalid('''STR:«BaseUtils.lineNumber»: «sub.name» and «top.name» differ in the number of type arguments''')
 		}
@@ -281,17 +281,17 @@ class StdlibTypeRegistry {
 		}
 		return result;
 	}
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, BaseKind sub, BaseKind top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, BaseKind sub, BaseKind top) {
 		return context.isSubtypeOf(sub.kindOf, top.kindOf);
 	}
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, AbstractType sub, AbstractType top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, AbstractType sub, AbstractType top) {
 		return (top.getSubTypes(context).toList.contains(sub)).subtypeMsgFromBoolean(sub, top);
 	}
 	
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, TypeHole sub, AbstractType top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, TypeHole sub, AbstractType top) {
 		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, new ValidationIssue(Severity.ERROR, '''Couldn't infer type/arg here''', top.origin, null, ""))]);
 	}
-	public dispatch def SubtypeCheckResult isSubtypeOf(EObject context, AbstractType sub, TypeHole top) {
+	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, AbstractType sub, TypeHole top) {
 		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, new ValidationIssue(Severity.ERROR, '''Couldn't infer type/arg here''', top.origin, null, ""))]);
 	}
 	

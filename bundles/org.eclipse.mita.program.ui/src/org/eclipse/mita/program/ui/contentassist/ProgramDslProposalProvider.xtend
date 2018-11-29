@@ -24,7 +24,6 @@ import org.eclipse.jface.viewers.StyledString
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.ComplexType
-import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
@@ -52,11 +51,11 @@ import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor
 class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 
 	@Inject
-	private ProposalPriorityHelper priorityHelper;
+	ProposalPriorityHelper priorityHelper;
 	@Inject
-	private ILabelProvider labelProvider;
+	ILabelProvider labelProvider;
 	@Inject
-	private IScopeProvider scopeProvider;
+	IScopeProvider scopeProvider;
 	@Inject
 	protected ITypeSystemInferrer typeInferrer;
 	@Inject 

@@ -16,26 +16,17 @@
  */
 package org.eclipse.mita.platform.scoping
 
-import com.google.inject.Inject
-import java.util.Collections
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.platform.ConfigurationItem
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
-import org.eclipse.xtext.scoping.impl.FilteringScope
-import org.eclipse.xtext.scoping.impl.ImportNormalizer
-import org.eclipse.xtext.scoping.impl.ImportScope
-import org.eclipse.xtext.naming.IQualifiedNameProvider
 
 /**
  * This class contains custom scoping description.
@@ -44,9 +35,6 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
  * on how and when to use it.
  */
 class PlatformDSLScopeProvider extends AbstractPlatformDSLScopeProvider {
-
-	@Inject
-	IQualifiedNameProvider qualifiedNameProvider;
 
 	def IScope scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val configItem = EcoreUtil2.getContainerOfType(context, ConfigurationItem);

@@ -20,6 +20,7 @@ import org.eclipse.mita.base.expressions.MultiplicativeOperator
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
 import org.eclipse.mita.base.expressions.NumericalMultiplyDivideExpression
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
+import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.RelationalOperator
 import org.eclipse.mita.base.expressions.StringLiteral
@@ -46,7 +47,6 @@ import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.Validatio
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
-import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
@@ -72,7 +72,6 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -90,13 +89,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected boolean isLinking;
 	
-	public override ConstraintSystem create(EObject context) {		
+	override ConstraintSystem create(EObject context) {		
 		val result = constraintSystemProvider.get();
 		result.computeConstraints(context);
 		return result;
 	}
 	
-	public override setIsLinking(boolean isLinking) {
+	override setIsLinking(boolean isLinking) {
 		this.isLinking = isLinking;
 	}
 	override getTypeRegistry() {

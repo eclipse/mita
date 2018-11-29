@@ -20,7 +20,7 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 // TODO This is a workaround for https://github.com/eclipse/xtext-core/issues/359 and can be removed when this is fixed in XText.
 class ProgramDslGeneratorNodeProcessor extends GeneratorNodeProcessor {
 	
-	private int increment = 0;
+	int increment = 0;
 	
 	override process(IGeneratorNode root) {
 		increment = 0;

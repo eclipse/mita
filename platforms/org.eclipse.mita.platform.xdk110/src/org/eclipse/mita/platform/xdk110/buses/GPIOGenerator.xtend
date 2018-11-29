@@ -13,14 +13,13 @@
 
 package org.eclipse.mita.platform.xdk110.buses
 
-import com.google.inject.Inject
+import java.util.Map
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import java.util.Map
 
 class GPIOGenerator extends AbstractSystemResourceGenerator {
 	

@@ -122,7 +122,7 @@ class CompileCommand extends AbstractCommand {
 		}
 	}
 
-	public static def getAllMitaAndPlatformFilesInClasspath() {
+	static def getAllMitaAndPlatformFilesInClasspath() {
 		val rootURLs = new LinkedList<URL>();
 		var cl = Thread.currentThread().getContextClassLoader();
 		while (cl !== null) {

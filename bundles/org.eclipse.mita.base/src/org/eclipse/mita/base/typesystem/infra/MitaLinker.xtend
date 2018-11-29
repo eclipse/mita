@@ -5,16 +5,19 @@ import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.impl.EObjectImpl
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtext.diagnostics.IDiagnosticConsumer
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
@@ -22,10 +25,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.validation.EObjectDiagnosticImpl
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.diagnostics.Severity
-import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.xtext.diagnostics.DiagnosticMessage
 
 class MitaLinker extends Linker {
 

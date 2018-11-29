@@ -34,9 +34,7 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Property;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeParameter;
-import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.base.types.TypesPackage;
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer;
 import org.eclipse.mita.base.types.typesystem.ITypeSystem;
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor;
 import org.eclipse.xtext.validation.Check;
@@ -96,8 +94,6 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 
 	@Inject
 	private GenericsPrettyPrinter printer;
-	@Inject
-	private ITypeSystemInferrer typeInferrer;
 	@Inject
 	private ITypeSystem typeSystem;
 

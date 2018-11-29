@@ -6,7 +6,6 @@ import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
@@ -16,21 +15,26 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.mita.program.ConfigurationItemValue
@@ -40,7 +44,9 @@ import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
+import org.eclipse.mita.program.IsOtherCase
 import org.eclipse.mita.program.IsTypeMatchCase
+import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
@@ -50,20 +56,13 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.diagnostics.Severity
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.program.IsOtherCase
-import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
-import org.eclipse.mita.base.typesystem.types.SumType
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
-import org.eclipse.mita.program.NewInstanceExpression
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -107,7 +106,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement _) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement __) {
 		return null;
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ProgramBlock pb) {

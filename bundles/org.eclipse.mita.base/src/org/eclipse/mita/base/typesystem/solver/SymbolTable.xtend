@@ -15,7 +15,7 @@ class SymbolTable {
 	@Inject
 	protected IQualifiedNameProvider nameProvider;
 	
-	public def put(EObject obj) {
+	def put(EObject obj) {
 		val fqn = nameProvider.getFullyQualifiedName(obj);
 		if(content.containsKey(fqn)) {
 //			throw new IllegalArgumentException('''fqn already known: «fqn»''');
@@ -23,11 +23,11 @@ class SymbolTable {
 		this.content.put(fqn, obj);
 	}
 	
-	public def getContent() {
+	def getContent() {
 		return Collections.unmodifiableMap(this.content);
 	}
 
-	public def get(EObject obj) {
+	def get(EObject obj) {
 		return content.get(nameProvider.getFullyQualifiedName(obj));
 	}
 	

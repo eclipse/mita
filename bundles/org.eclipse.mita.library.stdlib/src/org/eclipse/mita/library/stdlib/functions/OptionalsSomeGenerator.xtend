@@ -16,7 +16,7 @@ package org.eclipse.mita.library.stdlib.functions
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.library.stdlib.OptionalGenerator
 import org.eclipse.mita.library.stdlib.OptionalGenerator.enumOptional
@@ -24,8 +24,6 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class OptionalsSomeGenerator extends AbstractFunctionGenerator {

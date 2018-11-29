@@ -93,7 +93,7 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 	}
 
 	protected IScope getLibraryScope(Resource context, EReference reference) {
-		Iterable<URI> defaultLibraries = Iterables.concat(libraryProvider.getLibraries());
+		Iterable<URI> defaultLibraries = Iterables.<URI>concat(libraryProvider.getLibraries());
 		List<IEObjectDescription> descriptions = new ArrayList<>();
 		for(URI uri : defaultLibraries) {
 			// we have previously loaded all libraries into the resource set

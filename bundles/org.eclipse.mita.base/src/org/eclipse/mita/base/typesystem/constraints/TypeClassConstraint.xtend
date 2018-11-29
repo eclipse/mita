@@ -17,7 +17,7 @@ abstract class TypeClassConstraint extends AbstractTypeConstraint {
 	
 	protected val AbstractType typ;
 	protected val QualifiedName instanceOfQN;
-	public def SimplificationResult onResolve(ConstraintSystem cs, Substitution sub, EObject op, AbstractType at);
+	def SimplificationResult onResolve(ConstraintSystem cs, Substitution sub, EObject op, AbstractType at);
 	
 	override getActiveVars() {
 		return typ.freeVars;

@@ -19,9 +19,9 @@ import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ReturnStatement
@@ -31,8 +31,6 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.base.util.BaseUtils
 
 class OptionalGenerator extends AbstractTypeGenerator {
 	
@@ -46,7 +44,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	protected GeneratorRegistry registry
 		
 	public static final String ENUM_NAME = "enumOptional";
-	public static enum enumOptional {
+	static enum enumOptional {
 		Some, None
 	}
 	public static final String OPTIONAL_FLAG_MEMBER = "flag";

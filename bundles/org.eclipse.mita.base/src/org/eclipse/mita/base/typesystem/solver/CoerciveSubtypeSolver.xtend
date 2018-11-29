@@ -10,6 +10,7 @@ import java.util.Set
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
@@ -43,9 +44,6 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.types.SignalParameter
-import java.util.ArrayList
-import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 
 /**
  * Solves coercive subtyping as described in 
@@ -606,7 +604,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			var Boolean success = true;
 			var Set<SubtypeConstraint> nonUnifiable = new HashSet();
 			var Set<SubtypeConstraint> unifiedConstraints = new HashSet();
-			var Iterable<Pair<Pair<Integer, AbstractType>, Pair<Integer, AbstractType>>> origin = null;
 		}
 		val Map<Integer, Set<SubtypeConstraint>> errorMessages = new HashMap();
 		val gWithoutCycles = Graph.removeCycles(gWithCycles, [g, cycle | 
@@ -625,7 +622,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			else {
 				finalState.success = false;
-				finalState.origin = cycle.toList;
 				val msg = '''CSS: Cyclic dependencies could not be resolved: «cycle.map[it.key.value + " -> "].join("")» -> «cycle.head.key.value»''';
 				finalState.nonUnifiable += cycleNodes.flatMap[g.nodeSourceConstraints.getOrDefault(it.key, emptySet)];
 				return g.addNode(new BottomType(null, msg));

@@ -5,6 +5,7 @@ Bundle-Vendor: Eclipse.org/Mita
 Bundle-Version: 0.1.0.qualifier
 Bundle-SymbolicName: org.eclipse.mita.base.ui; singleton:=true
 Bundle-ActivationPolicy: lazy
+Automatic-Module-Name: org.eclipse.mita.base.ui
 Require-Bundle: org.eclipse.mita.base,
  org.eclipse.mita.base.ide,
  org.eclipse.xtext.ui,

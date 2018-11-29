@@ -17,12 +17,12 @@ class MitaBaseResource extends LazyLinkingResource {
 		mkCancelIndicator();
 	}
 	
-	public def MitaCancelInidicator mkCancelIndicator() {
+	def MitaCancelInidicator mkCancelIndicator() {
 		cancelIndicator = new MitaCancelInidicator();
 		return cancelIndicator;
 	}
 	
-	public static class MitaCancelInidicator implements CancelIndicator {
+	static class MitaCancelInidicator implements CancelIndicator {
 		public boolean canceled = false;
 		override isCanceled() {
 			return canceled;

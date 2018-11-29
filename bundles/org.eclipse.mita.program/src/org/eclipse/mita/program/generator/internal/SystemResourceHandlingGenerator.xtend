@@ -29,7 +29,6 @@ import org.eclipse.mita.program.generator.IComponentConfiguration
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.mita.program.model.ModelUtils
 
 class SystemResourceHandlingGenerator {
 
@@ -79,7 +78,7 @@ class SystemResourceHandlingGenerator {
 				 * Enables the «name» sensor.
 				 */
 				«exceptionType» «(setup ?: component).enableName»(void);
-	
+
 				«IF setup !== null»
 				«FOR signalInstance : setup?.signalInstances»
 				«val signalType = BaseUtils.getType(signalInstance.instanceOf)»
@@ -87,7 +86,7 @@ class SystemResourceHandlingGenerator {
 				 * Provides read access to «signalInstance.name».
 				 */
 				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result);
-	
+
 				«IF signalInstance.writeable»
 				/**
 				 * Provides write access to «signalInstance.name».
@@ -157,7 +156,7 @@ class SystemResourceHandlingGenerator {
 				}
 				
 				«ENDIF»
-	
+
 				«ENDFOR»
 				«ENDIF»
 				«internalGenerator?.generateAdditionalImplementation()»

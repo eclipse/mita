@@ -16,13 +16,11 @@ package org.eclipse.mita.base.scoping
 import com.google.inject.Inject
 import java.util.Collections
 import org.eclipse.emf.common.util.URI
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl
-import org.eclipse.xtext.resource.IEObjectDescription
-import org.eclipse.xtext.resource.IResourceServiceProvider
-import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.typesystem.GenericTypeSystem
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.xtext.resource.IEObjectDescription
+import org.eclipse.xtext.resource.IResourceServiceProvider
 import org.eclipse.xtext.resource.XtextResourceSet
 
 class MitaTypeSystem extends GenericTypeSystem {
@@ -41,9 +39,7 @@ class MitaTypeSystem extends GenericTypeSystem {
 	public static val FLOAT_TYPE = "float";
 	public static val BOOL_TYPE = "bool";
 
-	private static var MitaTypeSystem INSTANCE = new MitaTypeSystem()
-
-	private var nativeTypesLoaded = false;
+	static var MitaTypeSystem INSTANCE = new MitaTypeSystem()
 
 	protected new() {
 	}

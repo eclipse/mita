@@ -27,7 +27,6 @@ import org.eclipse.mita.base.expressions.FeatureCall;
 import org.eclipse.mita.base.types.Operation;
 import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Type;
-import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.base.types.TypesFactory;
 import org.eclipse.mita.base.types.TypesPackage;
 import org.eclipse.mita.program.Program;

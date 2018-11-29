@@ -67,7 +67,6 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
-import org.eclipse.emf.ecore.EcorePackage
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -118,14 +117,14 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	static class CombiningScope implements IScope {
 		var Iterable<IScope> scopes;
 
-		public new(IScope s1, IScope s2) {
+		new(IScope s1, IScope s2) {
 			scopes = #[s1, s2];
 			if (s1 === null || s2 === null) {
 				throw new NullPointerException;
 			}
 		}
 
-		public new(Iterable<IScope> scopes) {
+		new(Iterable<IScope> scopes) {
 			this.scopes = scopes.filterNull;
 		}
 

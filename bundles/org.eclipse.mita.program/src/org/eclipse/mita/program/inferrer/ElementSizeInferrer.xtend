@@ -17,8 +17,8 @@ import com.google.inject.Inject
 import java.util.LinkedList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
@@ -45,7 +45,6 @@ import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
 

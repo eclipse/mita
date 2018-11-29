@@ -17,7 +17,6 @@ import com.google.inject.Inject
 import java.net.URL
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.SignalInstance

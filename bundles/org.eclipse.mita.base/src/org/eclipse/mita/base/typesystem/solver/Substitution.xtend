@@ -18,7 +18,7 @@ class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
 	protected Map<TypeVariable, AbstractType> content = new HashMap();
 	
-	public def Substitution filter(Predicate<TypeVariable> predicate) {
+	def Substitution filter(Predicate<TypeVariable> predicate) {
 		val result = new Substitution;
 		result.constraintSystemProvider = constraintSystemProvider;
 		
@@ -39,7 +39,7 @@ class Substitution {
 		}
 	}
 	
-	public def void add(TypeVariable variable, AbstractType type) {
+	def void add(TypeVariable variable, AbstractType type) {
 		if(variable === null || type === null) {
 			throw new NullPointerException;
 		}
@@ -59,20 +59,20 @@ class Substitution {
 //		}
 	}
 	
-	public def void add(Map<TypeVariable, AbstractType> content) {
+	def void add(Map<TypeVariable, AbstractType> content) {
 		this.add(content.entrySet.map[it.key->it.value])
 	}
-	public def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
+	def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
 		content.forEach[add(it.key, it.value)];
 	}
 	
-	public def Substitution replace(TypeVariable from, AbstractType with) {
+	def Substitution replace(TypeVariable from, AbstractType with) {
 		val result = new Substitution();
 		result.content = new HashMap(content.mapValues[it.replace(from, with)])
 		return result;
 	}
 	
-	public def apply(TypeVariable typeVar) {
+	def apply(TypeVariable typeVar) {
 		var AbstractType result = typeVar;
 		var nextResult = content.get(result); 
 		while(nextResult !== null && result != nextResult && !result.freeVars.empty) {
@@ -82,7 +82,7 @@ class Substitution {
 		return result;
 	}
 	
-	public def Substitution apply(Substitution to) {
+	def Substitution apply(Substitution to) {
 		val result = new Substitution();
 		result.content = new HashMap(((this.content.size + to.content.size) * 1.4) as int);
 		result.constraintSystemProvider = this.constraintSystemProvider ?: to.constraintSystemProvider;
@@ -92,14 +92,14 @@ class Substitution {
 		return result;
 	}
 	
-	public def AbstractType applyToType(AbstractType typ) {
+	def AbstractType applyToType(AbstractType typ) {
 		typ.replace(this);
 	}
-	public def Iterable<AbstractType> applyToTypes(Iterable<AbstractType> types) {
+	def Iterable<AbstractType> applyToTypes(Iterable<AbstractType> types) {
 		return types.map[applyToType];
 	}
 	
-	public def apply(ConstraintSystem system) {
+	def apply(ConstraintSystem system) {
 		val result = (constraintSystemProvider ?: system.constraintSystemProvider).get();
 		result.instanceCount = system.instanceCount;
 		result.symbolTable.putAll(system.symbolTable);
@@ -121,7 +121,7 @@ class Substitution {
 		return result;
 	}
 	
-	public def Map<TypeVariable, AbstractType> getSubstitutions() {
+	def Map<TypeVariable, AbstractType> getSubstitutions() {
 		return Collections.unmodifiableMap(content);
 	}
 	

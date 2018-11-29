@@ -16,7 +16,6 @@ package org.eclipse.mita.program.generator
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 

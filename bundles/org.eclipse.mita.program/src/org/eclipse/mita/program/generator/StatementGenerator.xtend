@@ -46,6 +46,7 @@ import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.GeneratedType
@@ -105,9 +106,6 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.mita.base.scoping.MitaTypeSystem
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 
