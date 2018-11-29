@@ -15,6 +15,7 @@ import java.util.List;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.xtend.lib.annotations.EqualsHashCode;
 import org.eclipse.xtext.diagnostics.Severity;
 
 import com.google.common.base.Predicate;
@@ -27,6 +28,7 @@ import com.google.common.collect.Lists;
  */
 public interface IValidationIssueAcceptor {
 
+	@EqualsHashCode
 	public static class ValidationIssue {
 
 		private Severity severity;
@@ -53,7 +55,7 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(message.equals("Function id2 cannot be used here: Return type incompatible: i32 is not subtype of f_67.0")) {
+			if(message.equals("Can't return x (:: uint8) since it's not of a subtype of xint8")) {
 				System.out.print("");
 			}
 		}

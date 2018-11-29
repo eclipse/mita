@@ -90,6 +90,9 @@ class MitaLinker extends Linker {
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		
+		val cancelIndicator = if(resource instanceof MitaBaseResource) {
+			resource.mkCancelIndicator();
+		}
 		
 		val exportedObjects = /*thisExportedObjects + */(visibleContainers
 			.flatMap[ it.exportedObjects ].force);
@@ -100,18 +103,21 @@ class MitaLinker extends Linker {
 			.map[GZipper.decompress(it)]
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]
 			.indexed.map[it.value.modifyNames('''.«it.key»''')].force;
-			
+		
+		if(cancelIndicator !== null && cancelIndicator.canceled) {
+			return;
+		}
+		
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {
 			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
+			if(cancelIndicator !== null && cancelIndicator.canceled) {
+				return;
+			}
 			if(obj.eResource.URI.lastSegment == "application.mita") {
 				print("")
 			}
-			if(resource instanceof MitaBaseResource) {
-				resource.mkCancelIndicator();
-			}
-			
 			
 			val solution = constraintSolver.solve(preparedSystem, obj);
 			if(solution !== null) {
@@ -130,6 +136,9 @@ class MitaLinker extends Linker {
 				}
 			}
 			if(solution !== null && solution.solution !== null) {
+				if(obj.eResource.URI.lastSegment == "application.mita") {
+				print("")
+			}
 				solution.solution.substitutions.entrySet.forEach[
 					var origin = it.key.origin;
 					if(origin !== null && origin.eIsProxy) {

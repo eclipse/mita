@@ -427,7 +427,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val functionReturnVar = if(enclosingFunction === null) {
 			 typeRegistry.getTypeModelObjectProxy(system, statement, StdlibTypeRegistry.voidTypeQID);
 		} else {
-			system.computeConstraints(enclosingFunction.typeSpecifier)
+			system.getTypeVariable(enclosingFunction.typeSpecifier)
 		}
 		val returnValVar = if(statement.value === null) {
 			system.associate(typeRegistry.getTypeModelObjectProxy(system, statement, StdlibTypeRegistry.voidTypeQID), statement);

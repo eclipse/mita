@@ -17,8 +17,9 @@ class MitaBaseResource extends LazyLinkingResource {
 		mkCancelIndicator();
 	}
 	
-	public def void mkCancelIndicator() {
+	public def MitaCancelInidicator mkCancelIndicator() {
 		cancelIndicator = new MitaCancelInidicator();
+		return cancelIndicator;
 	}
 	
 	public static class MitaCancelInidicator implements CancelIndicator {
