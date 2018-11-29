@@ -37,11 +37,14 @@ import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
+import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.IfStatement
+import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsOtherCase
@@ -113,6 +116,33 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		system.computeConstraintsForChildren(pb);
 		return null;
 	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayLiteral arrayLiteral) {
+		val literalTypes = arrayLiteral.values.map[system.computeConstraints(it)];
+		val innerType = system.newTypeVariable(null);
+		literalTypes.forEach[
+			system.addConstraint(new SubtypeConstraint(it, innerType, new ValidationIssue(Severity.ERROR, '''«it» (:: %s) doesn't share a common type with the other members of this array literal''', it.origin, null, "")))
+		]
+		val arrayTypeSchemeTV = typeRegistry.getTypeModelObjectProxy(system, arrayLiteral, StdlibTypeRegistry.arrayTypeQID);
+		val outerType = system.nestInType(arrayLiteral, innerType, arrayTypeSchemeTV, "array");
+		return system.associate(outerType, arrayLiteral);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IfStatement ifElse) {
+		val boolType = typeRegistry.getTypeModelObjectProxy(system, ifElse, StdlibTypeRegistry.boolTypeQID);
+		system.addConstraint(new EqualityConstraint(boolType, 
+			system.computeConstraints(ifElse.condition), 
+			new ValidationIssue(Severity.ERROR, '''Conditions in if(...) must be of type bool, is of type %s''', ifElse.condition, null, "")
+		))
+		system.computeConstraintsForChildren(ifElse);
+		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, InterpolatedStringExpression expr) {
+		val stringType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.stringTypeQID);
+		return system.associate(stringType, expr);
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae) {
 		if(ae.operator == AssignmentOperator.ASSIGN) {
 			system.addConstraint(new SubtypeConstraint(

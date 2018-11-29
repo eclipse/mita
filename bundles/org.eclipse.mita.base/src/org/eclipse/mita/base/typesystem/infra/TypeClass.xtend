@@ -32,7 +32,7 @@ class TypeClass {
 	override toString() {
 		return '''
 		«instances.values.filter(NamedElement).head?.name»
-			«FOR t_o: instances.entrySet»
+			«FOR t_o: instances.entrySet.sortBy[it.key.toString]»
 			«t_o.key» = «t_o.value»
 			«ENDFOR»
 		'''; 
