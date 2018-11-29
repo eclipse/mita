@@ -22,7 +22,10 @@ class ExpressionUtils {
 		return map;
 	}
 	
-	def static <P, A, P1 extends Parameter> getSortedArguments(Iterable<P> parameters, Iterable<A> arguments, (P) => P1 getParam, (A) => String getArgName) {
+	def static <P, A, P1 extends Parameter> Iterable<A> getSortedArguments(
+		Iterable<P> parameters, Iterable<A> arguments, 
+		(P) => P1 getParam, (A) => String getArgName, (P) => A getResultIfNotSupplied
+	) {
 		if(arguments.empty || getArgName.apply(arguments.head) === null) {
 			arguments;
 		}
@@ -30,12 +33,12 @@ class ExpressionUtils {
 			/* Important: we must not filterNull this list as that destroys the order of arguments. It is possible
 			 * that we do not find an argument matching a parameter.
 			 */
-			parameters.map[parm | arguments.findFirst[getArgName.apply(it) == getParam.apply(parm).name]]
+			parameters.map[parm | arguments.findFirst[getArgName.apply(it) == getParam.apply(parm).name] ?: getResultIfNotSupplied.apply(parm)]
 		}
 	}
 	
 	def static <T extends Parameter, A extends Argument> getSortedArguments(Iterable<T> parameters, Iterable<A> arguments) {
-		return getSortedArguments(parameters, arguments, [it], [it.parameter?.name]);
+		return getSortedArguments(parameters, arguments, [it], [it.parameter?.name], [null]);
 	}
 	
 	def static getFunctionCallArguments(ElementReferenceExpression functionCall) {

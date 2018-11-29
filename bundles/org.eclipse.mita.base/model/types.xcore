@@ -5,6 +5,7 @@ import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.expressions.Expression
 
 class TypeSpecifier {}
 class PresentTypeSpecifier extends TypeSpecifier {
@@ -307,7 +308,9 @@ class Parameter extends TypedElement, NamedElement {
 		return name + ": " + typeSpecifier
 	}
 }
-
+class SignalParameter extends Parameter {
+	contains Expression defaultValue
+}
 
 
 class Enumerator extends Declaration {

@@ -2,8 +2,11 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import java.util.HashMap
+import java.util.HashSet
 import java.util.List
 import java.util.Map
+import java.util.Set
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
@@ -40,9 +43,7 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import java.util.HashMap
-import java.util.Set
-import java.util.HashSet
+import org.eclipse.mita.base.types.SignalParameter
 
 /**
  * Solves coercive subtyping as described in 
@@ -292,12 +293,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
 		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
 			val fun = typeClass.instances.get(refType);
-			if(fun instanceof Operation) {
-				return constraint.onResolve(system, substitution, fun, refType);			
-			}
-			else {
-				return SimplificationResult.failure(constraint.errorMessage)
-			}
+			return constraint.onResolve(system, substitution, fun, refType);
 		}
 		if(typeClass !== null) {
 			val unificationResults = typeClass.instances.entrySet.map[k_v | 
@@ -313,12 +309,46 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				val distance = typ_distance.value;
 				// handle named parameters: if _refType is unorderedArgs, sort them
 				val prodType = if(refType instanceof UnorderedArguments) {
-					val sortedArgs = ExpressionUtils.getSortedArguments((fun as Operation).parameters, refType.argParamNamesAndValueTypes, [it], [it.key]);
-					new ProdType(refType.origin, refType.name, sortedArgs.map[it.value]);
+					if(fun instanceof Operation) {
+						val sortedArgs = ExpressionUtils.getSortedArguments(fun.parameters, refType.argParamNamesAndValueTypes, 
+							[it], [it.key], [
+								if(it instanceof SignalParameter) {
+									if(it.defaultValue !== null) { 
+										return it.name -> substitution.apply(system.getTypeVariable(it.defaultValue));
+									}
+								} 
+								return it.name -> null;
+							]
+						);
+						new ProdType(refType.origin, refType.name, sortedArgs.map[it.value]);
+					}
+					else {
+						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Can't use named parameters for non-operations''')], typ, fun, distance);
+					}
 				} else {
-					refType;
+					// handle default values
+					if(fun instanceof Operation) {[|
+						if(refType instanceof ProdType) {
+							val assignedArgs = refType.typeArguments
+							if(assignedArgs.size < fun.parameters.size) {
+								val mbDefaultParameterValues = fun.parameters.drop(assignedArgs.size).filter(SignalParameter);
+								if(!mbDefaultParameterValues.empty && mbDefaultParameterValues.forall[it.defaultValue !== null]) {
+									val defaultParameterValues = mbDefaultParameterValues.map[it.defaultValue];
+									val defaultParameterTypes = defaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
+									val args = assignedArgs + defaultParameterTypes;
+									return new ProdType(refType.origin, refType.name, args);
+								}
+							}	
+						}
+						return refType;
+					].apply()}
+					else {
+						refType;
+					}
 				}
-					
+				
+				
+				
 				// two possible ways to be part of this type class:
 				// - via subtype (uint8 < uint32)
 				// - via instantiation/unification 
@@ -352,7 +382,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val processedResults = processedResultsUnsorted
 				.sortBy[it.distanceToTargetType].toList;
 			val result = processedResults.findFirst[
-				it.valid //&& it.function instanceof Operation
+				it.valid 
 			]
 			if(result !== null) {
 				val sub = result.sideEffectSubstitution;

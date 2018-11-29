@@ -307,7 +307,7 @@ class CatchStatement extends AbstractStatement {
 	contains ProgramBlock body
 }
 
-class NewInstanceExpression extends ArgumentExpression {
+class NewInstanceExpression extends ElementReferenceExpression {
 	contains PresentTypeSpecifier ^type
 	
 	op Operation getReference() {

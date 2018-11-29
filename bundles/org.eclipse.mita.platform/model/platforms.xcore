@@ -76,9 +76,7 @@ class ConfigurationItem extends Property {
 class Signal extends Operation {
 	contains SignalEvent[] events opposite signal
 }
-class SignalParameter extends Parameter {
-	contains Expression defaultValue
-}
+
 
 class SystemResourceEvent extends Event {
 }

@@ -24,6 +24,8 @@ import org.eclipse.xtext.validation.EObjectDiagnosticImpl
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.diagnostics.Severity
+import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.xtext.diagnostics.DiagnosticMessage
 
 class MitaLinker extends Linker {
 
@@ -139,9 +141,9 @@ class MitaLinker extends Linker {
 						// we had the object loaded anyways, so we can set the type
 						TypeAdapter.set(origin, type);
 						
-//						if(type instanceof BottomType) {
-//							producer.addDiagnostic( new DiagnosticMessage(type.message, Severity.ERROR, "bottomType"));
-//						}
+						if(type instanceof BottomType) {
+							resource.errors.add(new EObjectDiagnosticImpl(Severity.ERROR, "bottom_type", type.message, resolveProxy(resource, type.origin) ?: obj, null, 0, #[]));
+						}
 					}
 				]				
 			}
