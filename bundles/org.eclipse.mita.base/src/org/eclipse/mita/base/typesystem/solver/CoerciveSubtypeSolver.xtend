@@ -44,6 +44,7 @@ import org.eclipse.xtext.util.CancelIndicator
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.types.SignalParameter
+import java.util.ArrayList
 
 /**
  * Solves coercive subtyping as described in 
@@ -598,35 +599,40 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val finalState = new Object() {
 			var Substitution s = substitution;
 			var Boolean success = true;
-			var String msg = "";
+			var Set<SubtypeConstraint> nonUnifiable = new HashSet();
+			var Set<SubtypeConstraint> unifiedConstraints = new HashSet();
 			var Iterable<Pair<Pair<Integer, AbstractType>, Pair<Integer, AbstractType>>> origin = null;
 		}
 		val Map<Integer, Set<SubtypeConstraint>> errorMessages = new HashMap();
 		val gWithoutCycles = Graph.removeCycles(gWithCycles, [g, cycle | 
+			val cycleNodes = cycle.flatMap[#[it.key, it.value]].force;
 			val mgu = mguComputer.compute(cycle.map[it.key.value -> it.value.value]); 
 			if(mgu.valid) {
-				val newTypes = mgu.substitution.applyToTypes(cycle.flatMap[t1_t2 | #[t1_t2.key.value, t1_t2.value.value]]);
+				val newTypes = mgu.substitution.applyToTypes(cycleNodes.map[it.value]);
 				finalState.s = finalState.s.apply(mgu.substitution);
+				finalState.unifiedConstraints += cycleNodes.flatMap[g.nodeSourceConstraints.get(it.key)];
 				val newType = newTypes.head;
 				val newTypeIdx = g.addNode(newType);
-				cycle.flatMap[#[it.key.key, it.value.key]].toSet.forEach[ idx |
-					errorMessages.computeIfAbsent(newTypeIdx, [new HashSet()]).addAll(gWithCycles.errorMessages.getOrDefault(idx, new HashSet()))
+				cycleNodes.map[it.key].toSet.forEach[ idx |
+					errorMessages.computeIfAbsent(newTypeIdx, [new HashSet()]).addAll(gWithCycles.nodeSourceConstraints.getOrDefault(idx, new HashSet()))
 				]
 				return newTypeIdx;
 			}
 			else {
 				finalState.success = false;
 				finalState.origin = cycle.toList;
-				finalState.msg = '''CSS: Cyclic dependencies could not be resolved: «finalState.origin.map[it.key.value.origin ?: it.key.value].join(' ⩽ ')»''';
-				return g.addNode(new BottomType(null, finalState.msg));
+				val msg = '''CSS: Cyclic dependencies could not be resolved: «cycle.map[it.key.value + " -> "]» -> «cycle.head.key.value»''';
+				finalState.nonUnifiable += cycleNodes.flatMap[g.nodeSourceConstraints.getOrDefault(it.key, emptySet)];
+				return g.addNode(new BottomType(null, msg));
 			}
 		])
-		errorMessages.forEach[k, v|gWithoutCycles.errorMessages.merge(k, v, [v1, v2 | (v1 + v2).toSet])]
+		errorMessages.forEach[k, v|gWithoutCycles.nodeSourceConstraints.merge(k, v, [v1, v2 | (v1 + v2).toSet])]
 		if(finalState.success) {
 			return (gWithoutCycles -> UnificationResult.success(finalState.s));
 		}
 		else {
-			return (gWithoutCycles -> UnificationResult.failure(null, finalState.msg));
+			finalState.nonUnifiable.removeAll(finalState.unifiedConstraints);
+			return (gWithoutCycles -> UnificationResult.failure(finalState.nonUnifiable.map[it.errorMessage]));
 		}
 	}
 	
@@ -655,7 +661,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					supremum !== null && successors.forall[ t | 
 						typeRegistry.isSubType(typeResolutionOrigin, supremum, t)
 					];
-					issues += ((graph.errorMessages.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
+					issues += ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «predecessors» don't share a super type (best guess: «supremum ?: "none"»)''', 
 					v.origin, null, "")].toSet);
 				}
@@ -666,7 +672,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					graph.replace(v, infimum);
 					resultSub = resultSub.replace(v, infimum) => [add(v, infimum)];
 				} else {
-					issues += ((graph.errorMessages.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
+					issues += ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «successors» don't share a sub type (best guess: «infimum ?: "none"»)''',
 					v.origin, null, "")]);
 				}
@@ -715,7 +721,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	protected val ConstraintSystem constraintSystem;
 	protected val EObject typeResolutionOrigin;
 	@Accessors
-	protected val Map<Integer, Set<SubtypeConstraint>> errorMessages = new HashMap;
+	protected val Map<Integer, Set<SubtypeConstraint>> nodeSourceConstraints = new HashMap;
 	
 	new(ConstraintSystem system, StdlibTypeRegistry typeRegistry, EObject typeResolutionOrigin) {
 		this.typeRegistry = typeRegistry;
@@ -726,8 +732,8 @@ class ConstraintGraph extends Graph<AbstractType> {
 			.forEach[ 
 				val idxs = addEdge(it.subType, it.superType)
 				if(idxs !== null) {
-					errorMessages.computeIfAbsent(idxs.key,   [new HashSet]).add(it);
-					errorMessages.computeIfAbsent(idxs.value, [new HashSet]).add(it);
+					nodeSourceConstraints.computeIfAbsent(idxs.key,   [new HashSet]).add(it);
+					nodeSourceConstraints.computeIfAbsent(idxs.value, [new HashSet]).add(it);
 				}
 			];
 	}

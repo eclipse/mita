@@ -119,7 +119,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			system.addConstraint(new SubtypeConstraint(
 				system.computeConstraints(ae.expression), 
 				system.computeConstraints(ae.varRef), 
-				new ValidationIssue(Severity.ERROR, '''«ae.expression» cannot be assigned to «ae.varRef»''', ae, null, "")
+				new ValidationIssue(Severity.ERROR, '''«ae.expression» (:: %s) cannot be assigned to «ae.varRef» (:: %s)''', ae, null, "")
 			));
 		}
 		else {
@@ -145,7 +145,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		if(explicitType !== null && inferredType !== null) {
 			system.addConstraint(new SubtypeConstraint(
 				inferredType, explicitType, 
-				new ValidationIssue(Severity.ERROR, '''«vardecl.initialization» cannot be assigned to variables of type «vardecl.typeSpecifier»''', vardecl, null, "")
+				new ValidationIssue(Severity.ERROR, '''«vardecl.initialization» (:: %s) cannot be assigned to variables of type «vardecl.typeSpecifier» (:: %s)''', vardecl, null, "")
 			));
 			result = explicitType;
 		} else if(explicitType !== null || inferredType !== null) {
@@ -435,7 +435,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			system.associate(system.computeConstraints(statement.value), statement);
 		}
 
-		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar, new ValidationIssue(Severity.ERROR, '''Can't return «statement.value»''', statement, null, "")));
+		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar, new ValidationIssue(Severity.ERROR, '''Can't return «statement.value» (:: %s) since it's not of a subtype of %s''', statement, null, "")));
 		return returnValVar;	
 	}
 }
