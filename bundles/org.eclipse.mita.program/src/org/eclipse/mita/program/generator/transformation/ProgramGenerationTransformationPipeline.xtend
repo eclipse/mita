@@ -16,7 +16,7 @@ package org.eclipse.mita.program.generator.transformation
 import org.eclipse.mita.program.Program
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 
 class ProgramGenerationTransformationPipeline implements ITransformationPipelineInfoProvider {
 	

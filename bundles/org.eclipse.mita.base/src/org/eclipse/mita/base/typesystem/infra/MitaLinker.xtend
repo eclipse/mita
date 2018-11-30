@@ -57,6 +57,9 @@ class MitaLinker extends Linker {
 
 	override ensureLinked(EObject obj, IDiagnosticProducer producer) {
 		if(obj.eContainer === null) {
+			if(obj.eResource.modified) {
+				return;
+			}
 			BaseUtils.ignoreChange(obj,  [
 				obj.eAllContents.filter(GeneratedObject).forEach[it.generateMembers()]
 			]);

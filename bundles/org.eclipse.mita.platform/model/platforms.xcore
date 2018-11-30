@@ -16,10 +16,11 @@ package org.eclipse.mita.platform
 
 import org.eclipse.mita.base.types.GeneratedElement
 import org.eclipse.mita.base.types.PackageAssociation
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.Type
 
 enum Instantiability {
@@ -47,7 +48,8 @@ enum Instantiability {
 class SystemSpecification extends PackageAssociation {
 	contains AbstractSystemResource[] resources
 }
-
+class SignalParameter extends ParameterWithDefaultValue {
+}
 // DO NOT SWAP the order of inheritance here as a bug in Xcore will cause the DSL generation to fail with an NPE
 abstract class AbstractSystemResource extends Type, GeneratedElement {
 	Instantiability instantiable

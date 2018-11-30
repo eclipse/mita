@@ -15,7 +15,7 @@ package org.eclipse.mita.program.generator;
 
 import java.util.NoSuchElementException;
 
-import org.eclipse.mita.base.expressions.Expression;
+import org.eclipse.mita.base.types.Expression;
 import org.eclipse.mita.base.types.Enumerator;
 
 /**

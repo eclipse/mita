@@ -18,21 +18,17 @@ import org.eclipse.emf.ecore.EEnumerator
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.util.ArgumentSorter
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-
-class ParameterWithDefaultValue extends Parameter {
-	contains Expression defaultValue
-}
-
 
 class GeneratedTypeParameter extends ParameterWithDefaultValue {
 	boolean ^static
 }
 
-abstract class Expression {
-}
+
 
 abstract class BinaryExpression extends Expression {
 	contains Expression leftOperand

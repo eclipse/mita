@@ -143,7 +143,7 @@ ArrayLiteral returns program::ArrayLiteral:
 ;
 
 @Override 
-PrimaryExpression returns expressions::Expression:
+PrimaryExpression returns types::Expression:
 	PrimitiveValueExpression
 	| FeatureCall
 	| NewInstanceExpression
@@ -161,7 +161,7 @@ ReferenceExpression returns program::ReferenceExpression hidden():
 ;
 
 // no need to capture as its own expression
-@Override ParenthesizedExpression returns expressions::Expression:
+@Override ParenthesizedExpression returns types::Expression:
     '(' Expression ')'
 ;
 

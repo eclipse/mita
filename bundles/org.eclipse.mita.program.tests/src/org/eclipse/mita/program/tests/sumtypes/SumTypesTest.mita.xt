@@ -27,20 +27,20 @@ alt anyVec {
 	| vec4d: int32, int32, int32, int32
 }
 
-//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "incVecs"
+//xpect warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "incVecs"
 fn incVecs(a: anyVec) {
 	// 4*int32 + 1 = 4*4 + 1 = 17
 	// XPECT inferredSize --> 17
     var b: anyVec;
     where(a) {
     	is(anyVec.vec0d) {
-    		b = anyVec.vec0d();
+    		b = anyVec.vec0d(); 
     	} 
         is(x: anyVec.vec1d) {
-        	b = anyVec.vec1d(x + 1);
+        	b = anyVec.vec1d(x._0 + 1);
         } 
         is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
-        	b = anyVec.vec2d(x = x + 1, y = y + 1);
+        	b = anyVec.vec2d(vec2d_t(x = x + 1, y = y + 1));
         }
         is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
         	b = anyVec.vec3d(x + 1, y + 1, z + 1);
@@ -48,8 +48,8 @@ fn incVecs(a: anyVec) {
         is(anyVec.vec1d -> x) {
         	b = anyVec.vec1d(x + 1);
 		}
-        is(anyVec.vec2d -> x, y) {
-        	b = anyVec.vec2d(x = x + 1, y = y + 1);
+        is(anyVec.vec2d -> s) { 
+        	b = anyVec.vec2d(vec2d_t(x = s.x + 1, y = s.y + 1));
         }
         is(anyVec.vec3d -> x, y, z) {
         	b = anyVec.vec3d(x + 1, y + 1, z + 1);
@@ -95,9 +95,9 @@ fn incVecs(a: anyVec) {
         	// XPECT errors --> "Wrong number of arguments, expected [int32]." at "anyVec.vec1d(x + 1, x + 2)"
         	b = anyVec.vec1d(x + 1, x + 2);
 		}
-        is(anyVec.vec2d -> x, y) {
+        is(anyVec.vec2d -> s) {
         	// XPECT errors --> "Wrong number of arguments, expected [int32, int32]." at "anyVec.vec2d(x + 1, y + 1, x + 2)"
-        	b = anyVec.vec2d(x + 1, y + 1, x + 2);
+        	b = anyVec.vec2d(s.x + 1, s.y + 1, s.x + 2);
         }
         is(anyVec.vec3d -> x, y, z) {
         	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32]." at "anyVec.vec3d(x + 1, y + 1, z + 1, x + 2)"
@@ -137,6 +137,7 @@ fn incVecs(a: anyVec) {
     	// XPECT errors --> "Deconstruction cases must not mix named and anonymous deconstructors" at "is(anyVec.vec3d -> x, y = vec3d.y, z) {      	}"
     	is(anyVec.vec3d -> x, y = vec3d.y, z) {
     	}
+    	// XPECT errors --> "let y( vec2d.y) (:: f_869.0) not compatible with vec2d.y (:: int32)" at "y = vec2d.y"
     	is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
     		// types are checked
     		// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on anyVec and badVec2d." at "b = badVec2d(1, true)"
@@ -154,7 +155,7 @@ fn incVecs(a: anyVec) {
         	bVec = badVec2d(x = x, y = y);
         }
         isother {
-        }
+        }  
     }
 	return b;
 }

@@ -11,7 +11,6 @@ import org.eclipse.mita.base.expressions.BinaryExpression
 import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.ConditionalExpression
 import org.eclipse.mita.base.expressions.DoubleLiteral
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
@@ -20,7 +19,6 @@ import org.eclipse.mita.base.expressions.MultiplicativeOperator
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
 import org.eclipse.mita.base.expressions.NumericalMultiplyDivideExpression
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
-import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.RelationalOperator
 import org.eclipse.mita.base.expressions.StringLiteral
@@ -28,11 +26,13 @@ import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructuralParameter
@@ -271,13 +271,14 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeCastExpression expr) {
 		val realType = system.computeConstraints(expr.operand);
 		val castType = system.resolveReferenceToSingleAndGetType(expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type);
+		val castTypeName = BaseUtils.getText(expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type);
 		// can only cast from and to numeric types
 		system.addConstraint(new JavaClassInstanceConstraint(
-			new ValidationIssue(Severity.ERROR, '''«expr.operand» may not be casted''', expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Operand, ""), 
+			new ValidationIssue(Severity.ERROR, '''«expr.operand» (:: %1$s) may not be casted''', expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Operand, ""), 
 			realType, NumericType
 		));
 		system.addConstraint(new JavaClassInstanceConstraint(
-			new ValidationIssue(Severity.ERROR, '''May not cast to «castType»''', expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type, ""), 
+			new ValidationIssue(Severity.ERROR, '''May not cast to «castTypeName»''', expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type, ""), 
 			castType, NumericType
 		));
 		return system.associate(castType, expr);

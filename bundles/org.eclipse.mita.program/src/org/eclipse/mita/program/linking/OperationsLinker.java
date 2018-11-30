@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.eclipse.mita.base.expressions.ArgumentExpression;
-import org.eclipse.mita.base.expressions.Expression;
+import org.eclipse.mita.base.types.Expression;
 import org.eclipse.mita.base.expressions.util.ArgumentSorter;
 import org.eclipse.mita.base.types.Operation;
 import org.eclipse.mita.base.types.Type;

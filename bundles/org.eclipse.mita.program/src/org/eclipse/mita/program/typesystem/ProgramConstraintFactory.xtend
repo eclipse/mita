@@ -222,12 +222,16 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			it -> paramName;
 		].force;
 		
-		// is(anyVec.vec2d -> a=x, b=y) {...}
+		// is(anyVec.vec2d -> a=vec2d.x, b=vec2d.y) {...}
 		if(varsAndParameterNames.forall[!it.value.nullOrEmpty]) {
 			varsAndParameterNames.forEach[
 				val decon = it.key;
 				val referencedParamName = it.value;
-				val paramType = system.getTypeVariableProxy(decon, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember, QualifiedName.create(#[prodTypeName, referencedParamName])) as AbstractType;
+				// this one enforces a=vec2d.x
+				val paramQID = QualifiedName.create(#[referencedParamName]);
+				// this one enforces/allows a=x
+				//val paramQID = QualifiedName.create(#[prodTypeName, referencedParamName]);
+				val paramType = system.getTypeVariableProxy(decon, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember, paramQID) as AbstractType;
 				val variableType = system.getTypeVariable(decon);
 				system.addConstraint(new SubtypeConstraint(variableType, paramType, new ValidationIssue(Severity.ERROR, '''«decon» (:: %s) not compatible with «referencedParamName» (:: %s)''', decon, null, "")));
 			];

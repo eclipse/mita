@@ -17,7 +17,7 @@ import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.platform.Modality

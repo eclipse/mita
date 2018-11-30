@@ -5,7 +5,6 @@ import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 
 class TypeSpecifier {}
 class PresentTypeSpecifier extends TypeSpecifier {
@@ -308,8 +307,14 @@ class Parameter extends TypedElement, NamedElement {
 		return name + ": " + typeSpecifier
 	}
 }
-class SignalParameter extends ParameterWithDefaultValue {
+
+abstract class Expression {
 }
+class ParameterWithDefaultValue extends Parameter {
+	contains Expression defaultValue
+}
+
+
 
 
 class Enumerator extends Declaration {
@@ -495,25 +500,7 @@ class AnonymousProductType extends SumAlternative {
 			])
 		}
 	}
-	op Type realType() {
-		if(typeSpecifiers.length == 1) {
-			val mbRealType = typeSpecifiers.get(0).^type;
-			if(mbRealType instanceof HasAccessors) {
-				return mbRealType;
-			}
-		}
-		return this;	
-	}
 	op PresentTypeSpecifier[] accessorsTypes() {
-		// need to duplicate functionality, since calling realType and deferring to that ones accessor types would create infinite recursion if it returns this
-		// could check with == this, but that would be more confusing I think
-		if(typeSpecifiers.length == 1) {
-			val actualTypeSpec = typeSpecifiers.get(0)
-			val actualType = actualTypeSpec.^type;
-			if(actualType instanceof HasAccessors) {
-				return actualType.accessorsTypes;
-			}
-		}
 		return typeSpecifiers;
 	}
 	contains transient StructuralParameter[] generatedParameters

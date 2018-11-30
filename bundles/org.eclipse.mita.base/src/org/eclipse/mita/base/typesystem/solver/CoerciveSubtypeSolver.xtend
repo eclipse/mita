@@ -10,9 +10,9 @@ import java.util.Set
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
@@ -325,6 +325,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 								return it.name -> null;
 							]
 						);
+						if(sortedArgs.exists[it.value === null]) {
+							return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Too few arguments''')], typ, fun, distance);
+						}
 						new ProdType(refType.origin, refType.name, sortedArgs.map[it.value]);
 					}
 					else {

@@ -15,7 +15,7 @@ package org.eclipse.mita.program.generator.transformation
 
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.GeneratedType

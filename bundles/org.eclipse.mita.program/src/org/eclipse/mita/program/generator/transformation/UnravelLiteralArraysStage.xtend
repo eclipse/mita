@@ -14,7 +14,7 @@
 package org.eclipse.mita.program.generator.transformation
 
 import org.eclipse.mita.program.generator.transformation.AbstractUnravelingStage
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.ArrayLiteral

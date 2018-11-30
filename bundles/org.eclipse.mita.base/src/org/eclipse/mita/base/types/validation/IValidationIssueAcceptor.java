@@ -55,7 +55,7 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(message.equals("Can't return x (:: uint8) since it's not of a subtype of xint8")) {
+			if(message.equals("May not cast to p_150")) {
 				System.out.print("");
 			}
 		}

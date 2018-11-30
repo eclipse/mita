@@ -11,12 +11,10 @@
  */
 package org.eclipse.mita.base.expressions.util;
 
-import java.util.List;
-
 import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.mita.base.expressions.Argument;
-import org.eclipse.mita.base.expressions.Expression;
+import org.eclipse.mita.base.types.Expression;
 import org.eclipse.mita.base.types.Operation;
 import org.eclipse.mita.base.types.Parameter;
 
@@ -24,7 +22,7 @@ import org.eclipse.mita.base.types.Parameter;
  * 
  * @author andreas muelder - Initial contribution and API
  * 
- */
+ */ 
 public class ArgumentSorter {
 
 	public static EList<Expression> getOrderedExpressions(EList<Argument> arguments, Operation operation) {

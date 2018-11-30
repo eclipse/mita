@@ -21,7 +21,7 @@ import java.util.HashMap
 import java.util.Map
 import java.util.NoSuchElementException
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.program.SystemResourceSetup

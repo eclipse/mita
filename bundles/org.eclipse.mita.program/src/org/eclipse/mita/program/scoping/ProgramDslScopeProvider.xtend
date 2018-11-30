@@ -23,7 +23,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
@@ -88,16 +88,16 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return IScope.NULLSCOPE;
 	}
 
-	override scope_Argument_parameter(ElementReferenceExpression exp, EReference _ref) {
+	override scope_Argument_parameter(ElementReferenceExpression exp, EReference ref) {
 		if (EcoreUtil2.getContainerOfType(exp, SystemResourceSetup) !== null) {
-			scopeInSetupBlock(exp, _ref);
+			scopeInSetupBlock(exp, ref);
 		} else {
 			val nodes = NodeModelUtils.findNodesForFeature(exp,
 				ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
 			if (nodes.isEmpty) {
-				return super.scope_Argument_parameter(exp, _ref);
+				return super.scope_Argument_parameter(exp, ref);
 			} else {
-				return exp.getCandidateParameterScope(nodes.head.text)
+				return exp.getCandidateParameterScope(nodes.head.text, ref)
 			}
 		}
 	}
@@ -161,7 +161,12 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	def protected IScope getCandidateParameterScope(EObject context, String crossRefString) {
-		return getCandidateParameterScope(context, crossRefString, delegate.getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE));
+		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
+		return getCandidateParameterScope(context, crossRefString, delegate.getScope(context, ref), ref);
+	}
+	
+	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, EReference ref) {
+		return getCandidateParameterScope(context, crossRefString, delegate.getScope(context, ref), ref);
 	}
 	
 	def protected IScope getCandidateParameterScope(IScope globalScope, SumType superType, SumAlternative subType, String constructor) {
@@ -202,7 +207,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE.EReferenceType, false) as IScope;
 	}
 	
-	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, IScope globalScope) {
+	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, IScope globalScope, EReference ref) {
 		if (context instanceof FeatureCall) {
 			if (context.arguments.head.value instanceof ElementReferenceExpression) {
 				val owner = context.arguments.head.value as ElementReferenceExpression;
@@ -217,7 +222,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			}
 		}
 		// import by name, for named parameters of structs and functions
-		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
 		val qualifiedLinkName = fqnConverter.toQualifiedName(crossRefString)
 		val scopeDequalified = new ImportScope(
 			#[new ImportNormalizer(qualifiedLinkName, true, false)],
@@ -409,7 +413,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
 
 		inclusion && !exclusion;
 	]
@@ -430,7 +434,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
 			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
 
 		inclusion && !exclusion;
 	]
@@ -504,6 +508,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	dispatch def IScope scopeInSetupBlock(ConfigurationItemValue context, EReference reference) {
 		// configuration item values and unqualified enumerator values
 		val originalScope = getDelegate().getScope(context, reference);
+		if(context.item === null) {
+			return originalScope;
+		}
 		val itemType = BaseUtils.getType(context.item)?.origin;
 
 		if (itemType instanceof EnumerationType) {
@@ -590,7 +597,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			if (container !== null && container != context) {
 				if(container instanceof ConfigurationItemValue) {
 					val confItem = container.item;
-					val typ = confItem.type;
+					val typ = confItem?.type;
 					if(typ instanceof SumType) {
 						return Scopes.scopeFor(typ.alternatives.map[it.constructor]);
 					} else if(typ instanceof StructureType) {
