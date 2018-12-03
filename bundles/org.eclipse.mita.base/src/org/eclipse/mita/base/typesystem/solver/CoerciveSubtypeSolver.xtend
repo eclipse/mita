@@ -664,6 +664,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			if(!predecessors.empty) {
 				if(supremumIsValid) {
 					// assign-sup
+					if(v.toString == "f_190.0" && supremum.toString == "xint8") {
+						print("")
+					}
 					graph.replace(v, supremum);
 					resultSub = resultSub.replace(v, supremum) => [add(v, supremum)];
 				} else {

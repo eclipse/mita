@@ -6,6 +6,7 @@ import java.util.Map
 import java.util.Set
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.diagnostics.Severity
 
 class SerializedObject {
@@ -277,6 +278,6 @@ class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstr
 	public SerializedObject functionReference;
 	public SerializedTypeVariable returnTypeTV;
 	public String instanceOfQN;
-	public boolean returnTypeIsCovariant;
+	public Variance returnTypeVariance;
 }
 

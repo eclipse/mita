@@ -60,6 +60,12 @@ public interface IValidationIssueAcceptor {
 			}
 		}
 		
+		public ValidationIssue(String message, EObject target) {
+			this(Severity.ERROR, message, target, null, "");
+		}
+		public ValidationIssue(Severity severity, String message, EObject target) {
+			this(severity, message, target, null, "");
+		}
 		public ValidationIssue(Severity severity, String message, EObject target, EStructuralFeature feature, String issueCode) {
 			Assert.isNotNull(message);
 			Assert.isNotNull(issueCode);

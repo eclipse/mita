@@ -73,6 +73,38 @@ export native unchecked function __MODULO__(x: uint32, y: uint32): uint32 header
 export native unchecked function __MODULO__(x: uint16, y: uint16): uint16 header "math.h";
 export native unchecked function __MODULO__(x: uint8 , y: uint8 ): uint8  header "math.h";
 
+export native unchecked function __LEFTSHIFT__(x:  int32, y: uint8):  int32 header "math.h";
+export native unchecked function __LEFTSHIFT__(x:  int16, y: uint8):  int16 header "math.h";
+export native unchecked function __LEFTSHIFT__(x:  int8 , y: uint8):  int8  header "math.h";
+export native unchecked function __LEFTSHIFT__(x: uint32, y: uint8): uint32 header "math.h";
+export native unchecked function __LEFTSHIFT__(x: uint16, y: uint8): uint16 header "math.h";
+export native unchecked function __LEFTSHIFT__(x: uint8 , y: uint8): uint8  header "math.h";
+
+export native unchecked function __RIGHTSHIFT__(x:  int32, y: uint8):  int32 header "math.h";
+export native unchecked function __RIGHTSHIFT__(x:  int16, y: uint8):  int16 header "math.h";
+export native unchecked function __RIGHTSHIFT__(x:  int8 , y: uint8):  int8  header "math.h";
+export native unchecked function __RIGHTSHIFT__(x: uint32, y: uint8): uint32 header "math.h";
+export native unchecked function __RIGHTSHIFT__(x: uint16, y: uint8): uint16 header "math.h";
+export native unchecked function __RIGHTSHIFT__(x: uint8 , y: uint8): uint8  header "math.h";
+
+export native unchecked function __PREINCREMENT__(x:  int32):  int32 header "math.h";
+export native unchecked function __PREINCREMENT__(x:  int16):  int16 header "math.h";
+export native unchecked function __PREINCREMENT__(x:  int8 ):  int8  header "math.h";
+export native unchecked function __PREINCREMENT__(x: uint32): uint32 header "math.h";
+export native unchecked function __PREINCREMENT__(x: uint16): uint16 header "math.h";
+export native unchecked function __PREINCREMENT__(x: uint8 ): uint8  header "math.h";
+export native unchecked function __PREINCREMENT__(x: float ): float  header "math.h";
+export native unchecked function __PREINCREMENT__(x: double): double header "math.h";
+
+export native unchecked function __POSTINCREMENT__(x:  int32):  int32 header "math.h";
+export native unchecked function __POSTINCREMENT__(x:  int16):  int16 header "math.h";
+export native unchecked function __POSTINCREMENT__(x:  int8 ):  int8  header "math.h";
+export native unchecked function __POSTINCREMENT__(x: uint32): uint32 header "math.h";
+export native unchecked function __POSTINCREMENT__(x: uint16): uint16 header "math.h";
+export native unchecked function __POSTINCREMENT__(x: uint8 ): uint8  header "math.h";
+export native unchecked function __POSTINCREMENT__(x: float ): float  header "math.h";
+export native unchecked function __POSTINCREMENT__(x: double): double header "math.h";
+
 export generated type string
 	generator "org.eclipse.mita.library.stdlib.StringGenerator"
 	size-inferrer "org.eclipse.mita.library.stdlib.StringSizeInferrer"

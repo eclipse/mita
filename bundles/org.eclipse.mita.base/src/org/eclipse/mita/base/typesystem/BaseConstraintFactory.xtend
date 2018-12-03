@@ -7,6 +7,7 @@ import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.AdditiveOperator
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.BinaryExpression
 import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.ConditionalExpression
@@ -26,6 +27,7 @@ import org.eclipse.mita.base.expressions.RelationalOperator
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
@@ -43,6 +45,7 @@ import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
@@ -72,7 +75,6 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.TypesUtil
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -235,38 +237,70 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// a -> b
 		val referencedFunctionType = new FunctionType(null, functionName, argType, resultType);
 		// a -> B >: A -> B
-		system.addConstraint(new SubtypeConstraint(refType, referencedFunctionType, issue));
+		system.addConstraint(new SubtypeConstraint(fromTV, argType, issue));
+		val varianceOfResultVar = TypesUtil.getVarianceInAssignment(functionCall);
+		switch(varianceOfResultVar) {
+			case Covariant: {
+				system.addConstraint(new SubtypeConstraint(resultType, toTV, issue));
+			}
+			case Contravariant: {
+				system.addConstraint(new SubtypeConstraint(toTV, resultType, issue));
+			}
+			case Invariant: {
+				system.addConstraint(new EqualityConstraint(toTV, resultType, issue));
+			}
+			
+		}
 		
 		val useTypeClassProxy = !candidates.filter(TypeVariableProxy).empty
-		if(candidates.size > 1 || useTypeClassProxy) {
-			val tcQN = QualifiedName.create(functionName);
-			// this function call has the side effect of creating the type class.
-			val typeClass = if(useTypeClassProxy) {
-				if(candidates.size != 1) {
-					throw new Exception("BCF: Somethings wrong!");
-				}
-				system.getTypeClassProxy(tcQN, candidates.head as TypeVariableProxy);
+		
+		
+		val typeClassQN = QualifiedName.create(functionName);
+		// this function call has the side effect of creating the type class.
+		val typeClass = if(useTypeClassProxy) {
+			if(candidates.size != 1) {
+				throw new Exception("BCF: Somethings wrong!");
 			}
-			else {
-				system.getTypeClass(tcQN, candidates.map[it as AbstractType -> it.origin]) => [ typeClass |	
-				// add all candidates this TC doesn't already contain
-					candidates.reject[typeClass.instances.containsKey(it)].force.forEach[
-						typeClass.instances.put(it, it.origin);
-					]	
-				]
-			}
-			system.addConstraint(new FunctionTypeClassConstraint(issue, fromTV, tcQN, functionCall, functionReference, toTV, TypesUtil.isInLHSOfAssignment(functionCall), constraintSystemProvider));
+			system.getTypeClassProxy(typeClassQN, candidates.head as TypeVariableProxy);
 		}
 		else {
-			val funRef = candidates.head;
-			if(functionReference !== null && functionCall.eGet(functionReference) === null) {
-				functionCall.eSet(functionReference, funRef.origin);	
-			}
-			// the actual function should be a subtype of the expected function so it can be used here
-			system.addConstraint(new SubtypeConstraint(funRef, refType, issue));
+			system.getTypeClass(typeClassQN, candidates.map[it as AbstractType -> it.origin]) => [ typeClass |	
+			// add all candidates this TC doesn't already contain
+				candidates.reject[typeClass.instances.containsKey(it)].force.forEach[
+					typeClass.instances.put(it, it.origin);
+				]	
+			]
 		}
+		system.addConstraint(new FunctionTypeClassConstraint(issue, fromTV, typeClassQN, functionCall, functionReference, toTV, varianceOfResultVar, constraintSystemProvider));
+		
+		
 		// B
 		resultType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayAccessExpression expr) {
+		val arrayType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.arrayTypeQID);
+		val innerType = system.getTypeVariable(expr);
+		val supposedExpressionArrayType = nestInType(system, expr, innerType, arrayType, "array");
+		val refType = system.computeConstraints(expr.owner);
+		system.addConstraint(new EqualityConstraint(refType, supposedExpressionArrayType, new ValidationIssue(Severity.ERROR, '''«expr.owner» (:: %s) must be of type array<...>''', expr.owner)));
+		val accessor = expr.arraySelector;
+		val accessorType = system.computeConstraints(accessor);
+		
+		// here we could link to a builtin/generated function to facilitate easier code generation. For now just assert uintxx.
+		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u32TypeQID);
+		system.addConstraint(new SubtypeConstraint(accessorType, uint32Type, new ValidationIssue(Severity.ERROR, '''«accessor» (:: %s) must be an unsigned integer''', accessor)));	
+				
+		return innerType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ValueRange vr) {
+		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, vr, StdlibTypeRegistry.u32TypeQID);
+		#[vr.lowerBound, vr.upperBound].filterNull.forEach[
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(it), uint32Type, new ValidationIssue(Severity.ERROR, '''«it» (:: %s) must be an unsigned integer''', it)));
+		]
+		return system.associate(uint32Type, vr);
+		
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeCastExpression expr) {

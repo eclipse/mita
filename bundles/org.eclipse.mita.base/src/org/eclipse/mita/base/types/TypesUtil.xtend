@@ -15,6 +15,8 @@ import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.typesystem.types.Variance
 
 /** 
  * @author Thomas Kutz - Initial contribution and API
@@ -22,13 +24,22 @@ import org.eclipse.mita.base.expressions.AssignmentExpression
 class TypesUtil {
 	public static final String ID_SEPARATOR = "."
 
-	static def isInLHSOfAssignment(EObject obj) {
+	static def getVarianceInAssignment(EObject obj) {
 		val mbAssignment = EcoreUtil2.getContainerOfType(obj, AssignmentExpression);
 		if(mbAssignment !== null) {
 			val lhs = mbAssignment.varRef;
-			return lhs.eAllContents.exists[it === obj];
+			if(lhs === obj || lhs.eAllContents.exists[it === obj]) {
+				// obj is only on the left hand side of the assignment
+				if(mbAssignment.operator == AssignmentOperator.ASSIGN) {
+					return Variance.Contravariant;	
+				}
+				// other operators are *mutating*, therefore obj is both argument and destination. Therefore it must be invariant.
+				else {
+					return Variance.Invariant;					
+				}
+			}
 		}
-		return false;
+		return Variance.Covariant;
 	}
 
 	def static String computeQID(NamedElement element) {
