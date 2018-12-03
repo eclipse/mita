@@ -162,6 +162,7 @@ class SerializationAdapter {
 			obj.functionCall.resolveEObject(true), 
 			obj.functionReference?.fromValueObject as EReference, 
 			obj.returnTypeTV.fromValueObject as TypeVariable, 
+			obj.returnTypeIsCovariant,
 			constraintSystemProvider
 		);
 	}
@@ -371,6 +372,7 @@ class SerializationAdapter {
 			functionReference = obj.functionReference?.toValueObject;
 			returnTypeTV = obj.returnTypeTV.toValueObject as SerializedTypeVariable;
 			instanceOfQN = obj.instanceOfQN.toString()
+			returnTypeIsCovariant = obj.returnTypeIsCovariant;
 		]
 	}
 		

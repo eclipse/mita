@@ -13,12 +13,23 @@ import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.expressions.AssignmentExpression
 
 /** 
  * @author Thomas Kutz - Initial contribution and API
  */
 class TypesUtil {
 	public static final String ID_SEPARATOR = "."
+
+	static def isInLHSOfAssignment(EObject obj) {
+		val mbAssignment = EcoreUtil2.getContainerOfType(obj, AssignmentExpression);
+		if(mbAssignment !== null) {
+			val lhs = mbAssignment.varRef;
+			return lhs.eAllContents.exists[it === obj];
+		}
+		return false;
+	}
 
 	def static String computeQID(NamedElement element) {
 		if (element.getName() === null) {

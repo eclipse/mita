@@ -72,6 +72,7 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.TypesUtil
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -254,7 +255,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 					]	
 				]
 			}
-			system.addConstraint(new FunctionTypeClassConstraint(issue, fromTV, tcQN, functionCall, functionReference, toTV, constraintSystemProvider));
+			system.addConstraint(new FunctionTypeClassConstraint(issue, fromTV, tcQN, functionCall, functionReference, toTV, TypesUtil.isInLHSOfAssignment(functionCall), constraintSystemProvider));
 		}
 		else {
 			val funRef = candidates.head;

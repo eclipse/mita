@@ -258,7 +258,7 @@ class SerializedEStructuralFeature extends SerializedObject {
 	public String javaMethod;
 	public String ePackageName;
 	public String eClassName;
-	public String eReferenceName;	
+	public String eReferenceName;
 }
 
 class SerializedEReference extends SerializedEStructuralFeature {
@@ -277,5 +277,6 @@ class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstr
 	public SerializedObject functionReference;
 	public SerializedTypeVariable returnTypeTV;
 	public String instanceOfQN;
+	public boolean returnTypeIsCovariant;
 }
 
