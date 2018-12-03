@@ -15,7 +15,6 @@ package org.eclipse.mita.platform.xdk110.sensors
 
 import com.google.inject.Inject
 import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation

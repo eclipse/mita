@@ -24,7 +24,7 @@ class Graph<T> implements Cloneable {
 	protected Map<T, Set<Integer>> reverseMap = new HashMap();
 	protected int nextNodeInt = 0;
 
-	public override clone() {
+	override clone() {
 		val c = super.clone() as Graph<T>;
 		c.outgoing = new HashMap(c.outgoing);
 		c.incoming = new HashMap(c.incoming);

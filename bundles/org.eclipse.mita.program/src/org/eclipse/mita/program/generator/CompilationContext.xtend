@@ -19,10 +19,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Platform
@@ -56,9 +53,9 @@ class CompilationContext {
 	@Inject
 	protected ModelUtils modelUtils;
 	
-	private var Boolean isInited = false;
+	var Boolean isInited = false;
 
-	public def init(Iterable<Program> compilationUnits, Iterable<Program> stdLib) {
+	def init(Iterable<Program> compilationUnits, Iterable<Program> stdLib) {
 		if(isInited) {
 			throw new IllegalStateException("CompilationContext.init was called twice");
 		}
@@ -93,22 +90,22 @@ class CompilationContext {
 		this.resourceGraph = resourceGraph;
 	}
 	
-	public def Iterable<Program> getAllUnits() {
+	def Iterable<Program> getAllUnits() {
 		assertInited();
 		return units;
 	}
 
-	public def Iterable<SystemResourceSetup> getAllSystemResourceSetup() {
+	def Iterable<SystemResourceSetup> getAllSystemResourceSetup() {
 		assertInited();
 		return systemResourceSetups;
 	}
 	
-	public def SystemResourceSetup getSetupFor(AbstractSystemResource resource) {
+	def SystemResourceSetup getSetupFor(AbstractSystemResource resource) {
 		assertInited();
 		return allSystemResourceSetup.findFirst[ EcoreUtil.getID(it.type) == EcoreUtil.getID(resource) ];
 	}
 	
-	public def Iterable<EventHandlerDeclaration> getAllEventHandlers() {
+	def Iterable<EventHandlerDeclaration> getAllEventHandlers() {
 		assertInited();
 		return eventHandler;
 	}
@@ -134,7 +131,7 @@ class CompilationContext {
 		return (unitAndStdlibExceptions + platformExceptions).groupBy[it.name].entrySet.map[it.value.head];
 	}
 		
-	public def getAllGeneratedTypesUsed() {
+	def getAllGeneratedTypesUsed() {
 		assertInited();
 		return (units + stdlib).flatMap[program |
 			(program.eAllContents.filter(TypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
@@ -145,7 +142,7 @@ class CompilationContext {
 		].groupBy[it.toString].entrySet.map[it.value.head];
 	}
 	
-	public def getResourceGraph() {
+	def getResourceGraph() {
 		assertInited();
 		return resourceGraph;
 	}

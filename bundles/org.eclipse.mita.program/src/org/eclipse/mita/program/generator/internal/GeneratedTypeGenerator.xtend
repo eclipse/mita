@@ -21,7 +21,6 @@ import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.base.util.BaseUtils
 
 class GeneratedTypeGenerator {
 	

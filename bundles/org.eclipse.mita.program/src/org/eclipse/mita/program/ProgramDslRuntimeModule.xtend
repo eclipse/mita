@@ -107,7 +107,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		return ProgramDslFormatter;
 	}
 
-	public def Class<? extends IGeneratorOnResourceSet> bindIGeneratorOnResourceSet() {
+	def Class<? extends IGeneratorOnResourceSet> bindIGeneratorOnResourceSet() {
 		return ProgramDslGenerator;
 	}
 	

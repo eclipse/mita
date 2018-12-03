@@ -13,14 +13,11 @@
 
 package org.eclipse.mita.library.stdlib
 
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.program.inferrer.ElementSizeInferrer
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 class ReferenceSizeInferrer extends ElementSizeInferrer {
 	

@@ -18,13 +18,11 @@ import java.util.LinkedList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ReturnStatement
@@ -44,7 +42,6 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 
 class StringGenerator extends AbstractTypeGenerator {
 	
@@ -199,7 +196,6 @@ class StringGenerator extends AbstractTypeGenerator {
 			.addHeader('stdio.h', true)
 			.addHeader('inttypes.h', true)
 		} else if(initialization.isOperationCall) {
-			val elementReference = initialization as ElementReferenceExpression;
 			codeFragmentProvider.create(
 			'''
 				char «name»_buf[«byteCount»] = {0};

@@ -45,7 +45,7 @@ import org.eclipse.mita.program.tests.util.TestProjectHelper
 
 @RunWith(XtextRunner)
 @InjectWith(ProgramDslInjectorProvider)
-public class AbstractGeneratorTest {
+class AbstractGeneratorTest {
 
 	@Inject
 	protected ParseHelper<Program> parseHelper;
@@ -54,7 +54,7 @@ public class AbstractGeneratorTest {
 	protected IGenerator2 generator;
 
 	@Inject
-	private Provider<XtextResourceSet> resourceSetProvider;
+	Provider<XtextResourceSet> resourceSetProvider;
 
 	@Inject extension TestProjectHelper
 

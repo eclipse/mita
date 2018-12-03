@@ -36,11 +36,11 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 
 	private static class NoRebuildBuildContextDecorator implements IBuildContext {
 
-		private final IBuildContext delegate
+		final IBuildContext delegate
 
 		MitaResourceSet resourceSet;
 
-		public new(MitaResourceSet resourceSet, IBuildContext delegate) {
+		new(MitaResourceSet resourceSet, IBuildContext delegate) {
 			this.resourceSet = resourceSet;
 			this.delegate = delegate;
 		}
@@ -76,13 +76,13 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 	protected ThreadLocal<Boolean> buildSemaphore = new ThreadLocal<Boolean>();
 
 	@Inject(optional=true)
-	private IGeneratorOnResourceSet generator;
+	IGeneratorOnResourceSet generator;
 
 	@Inject
-	private ResourceDescriptionsProvider resourceDescriptionsProvider;
+	ResourceDescriptionsProvider resourceDescriptionsProvider;
 
 	@Inject
-	private IContainer.Manager containerManager;
+	IContainer.Manager containerManager;
 	
 	@Inject
 	Provider<MitaResourceSet> resourceSetProvider;

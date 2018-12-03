@@ -55,7 +55,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	/**
 	 * Prepares this generator for producing code by supplying all contextual information for doing so.
 	 */
-	public def void prepare(AbstractSystemResource component, SystemResourceSetup setup, IComponentConfiguration config, Iterable<EventHandlerDeclaration> eventHandler) {
+	def void prepare(AbstractSystemResource component, SystemResourceSetup setup, IComponentConfiguration config, Iterable<EventHandlerDeclaration> eventHandler) {
 		this.component = component;
 		this.setup = setup;
 		this.configuration = config;
@@ -69,7 +69,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 * 
 	 * @return the generated code
 	 */
-	public def CodeFragment generateSetup();
+	def CodeFragment generateSetup();
 	
 	/**
 	 * Generates the body of the enable function of a system resource.
@@ -78,7 +78,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 * 
 	 * @return the generated code
 	 */
-	public def CodeFragment generateEnable();
+	def CodeFragment generateEnable();
 	
 	/**
 	 * Generates custom additional content for the component header file.
@@ -89,7 +89,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 * @param context the system resource to generate header content for
 	 * @return the generated code
 	 */
-	public def CodeFragment generateAdditionalHeaderContent() {
+	def CodeFragment generateAdditionalHeaderContent() {
 		return CodeFragment.EMPTY;
 	}
 	
@@ -102,7 +102,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 * @param context the system resource to generate implementation for
 	 * @return the generated code
 	 */
-	public def CodeFragment generateAdditionalImplementation() {
+	def CodeFragment generateAdditionalImplementation() {
 		return CodeFragment.EMPTY;
 	}
 	
@@ -120,7 +120,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 * 				  handler code one needs to find if we're in a try statement or not.
 	 * @return the generated code
 	 */
-	public def CodeFragment generateAccessPreparationFor(ModalityAccessPreparation accessPreparation) {
+	def CodeFragment generateAccessPreparationFor(ModalityAccessPreparation accessPreparation) {
 		throw new UnsupportedOperationException("This generator does not support modalities. This is a problem of the platform implementation.");	
 	}
 	
@@ -134,7 +134,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 * @param modality The modality to generate the access code for
 	 * @return the generated code
 	 */
-	public def CodeFragment generateModalityAccessFor(ModalityAccess modality) {
+	def CodeFragment generateModalityAccessFor(ModalityAccess modality) {
 		throw new UnsupportedOperationException("This generator does not support modalities. This is a problem of the platform implementation.");
 	}
 	
@@ -147,7 +147,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 * 
 	 * @return the generated code
 	 */
-	public def CodeFragment generateSignalInstanceSetter(SignalInstance signalInstance, String valueVariableName) {
+	def CodeFragment generateSignalInstanceSetter(SignalInstance signalInstance, String valueVariableName) {
 		throw new UnsupportedOperationException("This generator does not support signals. This is a problem of the platform implementation.");
 	}
 	
@@ -159,7 +159,7 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 * 
 	 * @return the generated code
 	 */
-	public def CodeFragment generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
+	def CodeFragment generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
 		throw new UnsupportedOperationException("This generator does not support signals. This is a problem of the platform implementation.");
 	}
 

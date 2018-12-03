@@ -5,16 +5,19 @@ import javax.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.impl.EObjectImpl
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtext.diagnostics.IDiagnosticConsumer
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.resource.IContainer
@@ -22,8 +25,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.validation.EObjectDiagnosticImpl
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.diagnostics.Severity
 
 class MitaLinker extends Linker {
 
@@ -88,6 +89,9 @@ class MitaLinker extends Linker {
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		
+		val cancelIndicator = if(resource instanceof MitaBaseResource) {
+			resource.mkCancelIndicator();
+		}
 		
 		val exportedObjects = /*thisExportedObjects + */(visibleContainers
 			.flatMap[ it.exportedObjects ].force);
@@ -98,36 +102,42 @@ class MitaLinker extends Linker {
 			.map[GZipper.decompress(it)]
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]
 			.indexed.map[it.value.modifyNames('''.«it.key»''')].force;
-			
+		
+		if(cancelIndicator !== null && cancelIndicator.canceled) {
+			return;
+		}
+		
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {
 			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
+			if(cancelIndicator !== null && cancelIndicator.canceled) {
+				return;
+			}
 			if(obj.eResource.URI.lastSegment == "application.mita") {
 				print("")
 			}
-			if(resource instanceof MitaBaseResource) {
-				resource.mkCancelIndicator();
-			}
-			
 			
 			val solution = constraintSolver.solve(preparedSystem, obj);
 			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {
 					resource.latestSolution = solution;
 					resource.cancelIndicator.canceled = true;
-					resource.errors += solution.issues.filter[it.target !== null].filter[it.severity == Severity.ERROR].map[
+					resource.errors += solution.issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]
-					resource.warnings += solution.issues.filter[it.target !== null].filter[it.severity == Severity.WARNING].map[
+					resource.warnings += solution.issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]
-					resource.warnings += solution.issues.filter[it.target !== null].filter[it.severity == Severity.INFO].map[
+					resource.warnings += solution.issues.filter[it.target !== null].toSet.filter[it.severity == Severity.INFO].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]
 				}
 			}
 			if(solution !== null && solution.solution !== null) {
+				if(obj.eResource.URI.lastSegment == "application.mita") {
+				print("")
+			}
 				solution.solution.substitutions.entrySet.forEach[
 					var origin = it.key.origin;
 					if(origin !== null && origin.eIsProxy) {
@@ -139,9 +149,9 @@ class MitaLinker extends Linker {
 						// we had the object loaded anyways, so we can set the type
 						TypeAdapter.set(origin, type);
 						
-//						if(type instanceof BottomType) {
-//							producer.addDiagnostic( new DiagnosticMessage(type.message, Severity.ERROR, "bottomType"));
-//						}
+						if(type instanceof BottomType) {
+							resource.errors.add(new EObjectDiagnosticImpl(Severity.ERROR, "bottom_type", type.message, resolveProxy(resource, type.origin) ?: obj, null, 0, #[]));
+						}
 					}
 				]				
 			}

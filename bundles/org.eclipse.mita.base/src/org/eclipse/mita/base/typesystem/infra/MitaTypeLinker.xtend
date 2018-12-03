@@ -5,12 +5,11 @@ import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtext.CrossReference
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.nodemodel.INode
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.mita.base.util.BaseUtils
 
 class MitaTypeLinker extends Linker {
 	

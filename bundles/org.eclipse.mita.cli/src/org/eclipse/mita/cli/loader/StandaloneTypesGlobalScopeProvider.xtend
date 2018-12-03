@@ -28,10 +28,10 @@ import org.eclipse.xtext.scoping.impl.SimpleScope
 class StandaloneTypesGlobalScopeProvider extends TypesGlobalScopeProvider {
 	
 	@Inject
-	private IResourceServiceProvider.Registry serviceProviderRegistry;
+	IResourceServiceProvider.Registry serviceProviderRegistry;
 	
 	@Inject
-	private ILibraryProvider libraryProvider
+	ILibraryProvider libraryProvider
 	
 	override protected getLibraryScope(Resource context, EReference reference) {
 		val result = new HashSet();

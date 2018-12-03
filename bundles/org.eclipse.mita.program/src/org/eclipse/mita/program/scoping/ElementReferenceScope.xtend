@@ -16,8 +16,11 @@ package org.eclipse.mita.program.scoping
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.TypeAccessor
+import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
@@ -27,16 +30,14 @@ import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.AbstractScope
-
-import static extension org.eclipse.xtext.EcoreUtil2.*
-import org.eclipse.mita.base.types.StructuralParameter
-import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.xtext.util.SimpleAttributeResolver
-import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.mita.base.types.TypeKind
+
+import static extension org.eclipse.emf.ecore.util.EcoreUtil.*
+import static extension org.eclipse.xtext.EcoreUtil2.*
 
 class ElementReferenceScope extends AbstractScope {
 
@@ -75,7 +76,7 @@ class ElementReferenceScope extends AbstractScope {
 	}
 	
 	def addSumTypes(ArrayList<EObject> result, EObject context) {
-		result += context.getContainerOfType(Program).types.filter(SumType).map[it.typeKind]
+		result += context.getContainerOfType(PackageAssociation).types.filter(SumType).map[it.typeKind]
 	}
 	
 	def addDeconstructorVariables(ArrayList<EObject> result, EObject context) {
@@ -93,11 +94,11 @@ class ElementReferenceScope extends AbstractScope {
 	    /* Here we just add the structures defined in the same program/compilation
 	     * unit. The outer scope will provide structures defined elsewhere.
 	     */
-		result += object.getContainerOfType(Program).types.filter(StructureType)
+		result += object.getContainerOfType(PackageAssociation).types.filter(StructureType)
 	}
 	
 	def addStructureAccessors(ArrayList<EObject> result, EObject object) {
-		result += object.getContainerOfType(Program).types.allContents.filter(TypeAccessor).toIterable;
+		result += object.getContainerOfType(PackageAssociation).types.allContents.filter(TypeAccessor).toIterable;
 	}
 	
 	def addFunctionParameter(ArrayList<EObject> result, EObject object) {
@@ -128,11 +129,11 @@ class ElementReferenceScope extends AbstractScope {
 	}
 
 	def addGlobalFunctions(List<EObject> result, EObject object) {
-		result += object.getContainerOfType(Program).functionDefinitions
+		result += object.getContainerOfType(Program)?.functionDefinitions?.toList ?: #[]
 	}
 
 	def addGlobalVariables(List<EObject> result, EObject object) {
-		result += object.getContainerOfType(Program).globalVariables
+		result += object.getContainerOfType(Program)?.globalVariables?.toList ?: #[]
 	}
 
 	def void addProgramBlocks(List<EObject> result, EObject object) {

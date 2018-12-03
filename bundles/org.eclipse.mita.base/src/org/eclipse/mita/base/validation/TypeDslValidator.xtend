@@ -30,7 +30,7 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 	@Inject
 	protected ITypeSystem registry;
 
-	public def assertNotType(InferenceResult currentResult, String msg, IValidationIssueAcceptor acceptor,
+	def assertNotType(InferenceResult currentResult, String msg, IValidationIssueAcceptor acceptor,
 			InferenceResult... candidates) {
 		if (currentResult === null)
 			return;
@@ -42,7 +42,7 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 		}
 	}
 
-	public def void assertSame(InferenceResult result1, InferenceResult result2, String msg,
+	def void assertSame(InferenceResult result1, InferenceResult result2, String msg,
 			IValidationIssueAcceptor acceptor) {
 		if (result1 === null || result2 === null)
 			return;
@@ -55,7 +55,7 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 		assertTypeBindingsSame(result1, result2, msg, acceptor);
 	}
 
-	public def assertCompatible(InferenceResult result1, InferenceResult result2, String msg,
+	def assertCompatible(InferenceResult result1, InferenceResult result2, String msg,
 			IValidationIssueAcceptor acceptor) {
 		if (result1 === null || result2 === null || isNullOnComplexType(result1, result2)
 				|| isNullOnComplexType(result2, result1)) {
@@ -70,7 +70,7 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 
 	}
 
-	public def assertAssignable(InferenceResult varResult, InferenceResult valueResult, String msg,
+	def assertAssignable(InferenceResult varResult, InferenceResult valueResult, String msg,
 			IValidationIssueAcceptor acceptor) {
 		if (varResult === null || valueResult === null || isNullOnComplexType(varResult, valueResult)) {
 			return;
@@ -83,7 +83,7 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 		assertTypeBindingsSame(varResult, valueResult, msg, acceptor);
 	}
 
-	public def assertTypeBindingsSame(InferenceResult result1, InferenceResult result2, String msg,
+	def assertTypeBindingsSame(InferenceResult result1, InferenceResult result2, String msg,
 			IValidationIssueAcceptor acceptor) {
 		val bindings1 = result1.getBindings();
 		val bindings2 = result2.getBindings();
@@ -97,7 +97,7 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 		}
 	}
 
-	public def assertIsSubType(InferenceResult subResult, InferenceResult superResult, String msg,
+	def assertIsSubType(InferenceResult subResult, InferenceResult superResult, String msg,
 			IValidationIssueAcceptor acceptor) {
 		if (subResult === null || superResult === null)
 			return;
@@ -107,7 +107,7 @@ class TypeDslValidator extends ExpressionsValidator implements IValidationIssueA
 		}
 	}
 
-	public def isNullOnComplexType(InferenceResult result1, InferenceResult result2) {
+	def isNullOnComplexType(InferenceResult result1, InferenceResult result2) {
 		return result1.getType() instanceof ComplexType
 				&& registry.isSame(result2.getType(), registry.getType(ITypeSystem.NULL));
 	}

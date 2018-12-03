@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Mita Standard Library
+Automatic-Module-Name: org.eclipse.mita.library.stdlib
 Bundle-SymbolicName: org.eclipse.mita.library.stdlib;singleton:=true
 Bundle-Version: 0.1.0.qualifier
 Bundle-Vendor: Eclipse.org/Mita

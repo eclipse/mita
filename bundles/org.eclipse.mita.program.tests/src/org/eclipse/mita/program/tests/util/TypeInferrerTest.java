@@ -14,6 +14,7 @@
 package org.eclipse.mita.program.tests.util;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.mita.base.util.BaseUtils;
 import org.junit.runner.RunWith;
 import org.xpect.XpectImport;
 import org.xpect.expectation.IStringExpectation;
@@ -23,21 +24,15 @@ import org.xpect.runner.XpectRunner;
 import org.xpect.xtext.lib.setup.ThisOffset;
 import org.xpect.xtext.lib.setup.XtextStandaloneSetup;
 import org.xpect.xtext.lib.setup.XtextWorkspaceSetup;
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer;
-
-import com.google.inject.Inject;
 
 @SuppressWarnings("deprecation")
 @RunWith(XpectRunner.class)
 @XpectImport({ XtextStandaloneSetup.class, XtextWorkspaceSetup.class })
 public class TypeInferrerTest {
-
-	@Inject
-	protected ITypeSystemInferrer typeInferrer;
 	
 	@Xpect
 	public void inferredType(@StringExpectation IStringExpectation expectation, @ThisOffset EObject expr) {
-		expectation.assertEquals(typeInferrer.infer(expr));
+		expectation.assertEquals(BaseUtils.getType(expr));
 	}
 	
 }

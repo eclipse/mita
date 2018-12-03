@@ -1,12 +1,11 @@
 package org.eclipse.mita.base.util
 
+import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
-import java.io.Reader
 import java.util.zip.GZIPInputStream
 import java.util.zip.GZIPOutputStream
-import java.io.BufferedReader
 
 // See https://stackoverflow.com/questions/16351668/compression-and-decompression-of-string-data-in-java
 class GZipper {

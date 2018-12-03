@@ -9,11 +9,11 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 class TypeAdapter extends AdapterImpl {
 	protected final AbstractType type;
 	
-	public static def void set(EObject obj, AbstractType type) {
+	static def void set(EObject obj, AbstractType type) {
 		obj.eAdapters.add(new TypeAdapter(type));
 	}
 	
-	public static def AbstractType get(EObject obj) {
+	static def AbstractType get(EObject obj) {
 		return obj.eAdapters.filter(TypeAdapter).head?.type;
 	}
 	

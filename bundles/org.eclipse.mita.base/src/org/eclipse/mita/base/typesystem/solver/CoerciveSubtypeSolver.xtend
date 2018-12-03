@@ -2,11 +2,15 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import java.util.HashMap
+import java.util.HashSet
 import java.util.List
 import java.util.Map
+import java.util.Set
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.expressions.ParameterWithDefaultValue
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
@@ -40,9 +44,6 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import java.util.HashMap
-import java.util.Set
-import java.util.HashSet
 
 /**
  * Solves coercive subtyping as described in 
@@ -101,12 +102,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return null;
 			}
 			if(!simplification.valid) {
+				issues += simplification.issues;
 				if(simplification?.system?.constraints.nullOrEmpty || simplification?.substitution?.content?.entrySet.nullOrEmpty) {
 					return new ConstraintSolution(currentSystem, simplification.substitution, simplification.issues);
-				}
-				else {
-					issues += simplification.issues;
-//					return new ConstraintSolution(simplification.system, simplification.substitution, #[simplification.issue])
 				}
 			}
 			
@@ -120,12 +118,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return null;
 			}
 			if(!solution.issues.empty) {
+				issues += solution.issues;
 				if(solution?.constraints?.constraints.nullOrEmpty || solution?.solution?.content?.entrySet.nullOrEmpty) {
-					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, solution.issues);
-				}
-				else {
-					issues += solution.issues;
-					//return new ConstraintSolution(solution.constraints, solution.solution, solution.issues);
+					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, issues);
 				}
 			}
 			result = solution;
@@ -150,10 +145,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected def ConstraintSolution solveSubtypeConstraints(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
 		val debugOutput = enableDebug && typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
 		
+		val issues = newArrayList;
+		
 		val constraintGraphAndSubst = system.buildConstraintGraph(substitution, typeResolutionOrigin);
 		if(!constraintGraphAndSubst.value.valid) {
 			val failure = constraintGraphAndSubst.value;
-			return new ConstraintSolution(system, failure.substitution, failure.issues);
+			issues += failure.issues;
+			//return new ConstraintSolution(system, failure.substitution, failure.issues);
 		}
 		val constraintGraph = constraintGraphAndSubst.key;
 		val constraintGraphSubstitution = constraintGraphAndSubst.value.substitution;
@@ -174,9 +172,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			println(resolvedGraphSubstitution);
 		}		
 //		return new ConstraintSolution(system, resolvedGraphSubstitution, resolvedGraphAndSubst.value);
-		val newEqualities = resolvedGraph.unify();
-		system.nonAtomicConstraints.addAll(newEqualities);
-		return new ConstraintSolution(system, resolvedGraphSubstitution, (resolvedGraphAndSubst.value).filterNull.toList);
+		if(issues.empty) {
+			val newEqualities = resolvedGraph.unify();
+			system.nonAtomicConstraints.addAll(newEqualities);
+		}
+		return new ConstraintSolution(system, resolvedGraphSubstitution, (issues + resolvedGraphAndSubst.value).filterNull.toList);
 	}
 	
 	protected def boolean isWeaklyUnifiable(ConstraintSystem system) {
@@ -201,13 +201,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				//return SimplificationResult.failure(simplification.issue);
 			}
 			else {
-				val witnessNotWeaklyUnifyable = simplification.substitution.content.entrySet.findFirst[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]];
-				if(witnessNotWeaklyUnifyable !== null) {
-					return new SimplificationResult(resultSub, 
-						#[witnessNotWeaklyUnifyable.key, witnessNotWeaklyUnifyable.value].map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessNotWeaklyUnifyable, it.origin, null, "")], 
-						resultSystem
-					);
-				}	
+				val witnessesNotWeaklyUnifyable = simplification.substitution.content.entrySet.filter[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]].flatMap[#[it.key, it.value]].force;
+				if(!witnessesNotWeaklyUnifyable.empty) {
+					print("");
+					issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.toString, it.origin, null, "")]; 
+					witnessesNotWeaklyUnifyable.filter(TypeVariable).forEach[
+						simplification.substitution.content.remove(it);
+					]	
+				}
 				resultSub = simplification.substitution;
 				resultSystem = resultSub.apply(simplification.system);
 			}
@@ -297,12 +298,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
 		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
 			val fun = typeClass.instances.get(refType);
-			if(fun instanceof Operation) {
-				return constraint.onResolve(system, substitution, fun, refType);				
-			}
-			else {
-				return SimplificationResult.failure(constraint.errorMessage)
-			}
+			return constraint.onResolve(system, substitution, fun, refType);
 		}
 		if(typeClass !== null) {
 			val unificationResults = typeClass.instances.entrySet.map[k_v | 
@@ -318,12 +314,45 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				val distance = typ_distance.value;
 				// handle named parameters: if _refType is unorderedArgs, sort them
 				val prodType = if(refType instanceof UnorderedArguments) {
-					val sortedArgs = ExpressionUtils.getSortedArguments((fun as Operation).parameters, refType.argParamNamesAndValueTypes, [it], [it.key]);
-					new ProdType(refType.origin, refType.name, sortedArgs.map[it.value]);
+					if(fun instanceof Operation) {
+						val sortedArgs = ExpressionUtils.getSortedArguments(fun.parameters, refType.argParamNamesAndValueTypes, 
+							[it], [it.key], [
+								if(it instanceof ParameterWithDefaultValue) {
+									if(it.defaultValue !== null) { 
+										return it.name -> substitution.apply(system.getTypeVariable(it.defaultValue));
+									}
+								} 
+								return it.name -> null;
+							]
+						);
+						new ProdType(refType.origin, refType.name, sortedArgs.map[it.value]);
+					}
+					else {
+						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Can't use named parameters for non-operations''')], typ, fun, distance);
+					}
 				} else {
-					refType;
+					// handle default values
+					if(fun instanceof Operation) {[|
+						if(refType instanceof ProdType) {
+							val assignedArgs = refType.typeArguments
+							if(assignedArgs.size < fun.parameters.size) {
+								val mbDefaultParameterValues = fun.parameters.drop(assignedArgs.size).filter(ParameterWithDefaultValue);
+								if(!mbDefaultParameterValues.empty && mbDefaultParameterValues.forall[it.defaultValue !== null]) {
+									val defaultParameterTypes = mbDefaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
+									val args = assignedArgs + defaultParameterTypes;
+									return new ProdType(refType.origin, refType.name, args);
+								}
+							}	
+						}
+						return refType;
+					].apply()}
+					else {
+						refType;
+					}
 				}
-					
+				
+				
+				
 				// two possible ways to be part of this type class:
 				// - via subtype (uint8 < uint32)
 				// - via instantiation/unification 
@@ -338,7 +367,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						}
 						// TODO insert coercion
 						else {
-							new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance);
+							new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance + subtypeCheckResult.constraints.size);
 						}
 					}
 					return result;
@@ -357,7 +386,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val processedResults = processedResultsUnsorted
 				.sortBy[it.distanceToTargetType].toList;
 			val result = processedResults.findFirst[
-				it.valid //&& it.function instanceof Operation
+				it.valid 
 			]
 			if(result !== null) {
 				val sub = result.sideEffectSubstitution;
@@ -573,35 +602,46 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val finalState = new Object() {
 			var Substitution s = substitution;
 			var Boolean success = true;
-			var String msg = "";
-			var Iterable<Pair<Pair<Integer, AbstractType>, Pair<Integer, AbstractType>>> origin = null;
+			var Set<SubtypeConstraint> nonUnifiable = new HashSet();
+			var Set<SubtypeConstraint> unifiedConstraints = new HashSet();
 		}
 		val Map<Integer, Set<SubtypeConstraint>> errorMessages = new HashMap();
 		val gWithoutCycles = Graph.removeCycles(gWithCycles, [g, cycle | 
+			val cycleNodes = cycle.flatMap[#[it.key, it.value]].force;
 			val mgu = mguComputer.compute(cycle.map[it.key.value -> it.value.value]); 
 			if(mgu.valid) {
-				val newTypes = mgu.substitution.applyToTypes(cycle.flatMap[t1_t2 | #[t1_t2.key.value, t1_t2.value.value]]);
+				val newTypes = mgu.substitution.applyToTypes(cycleNodes.map[it.value]);
 				finalState.s = finalState.s.apply(mgu.substitution);
+				finalState.unifiedConstraints += cycleNodes.flatMap[g.nodeSourceConstraints.get(it.key)];
 				val newType = newTypes.head;
 				val newTypeIdx = g.addNode(newType);
-				cycle.flatMap[#[it.key.key, it.value.key]].toSet.forEach[ idx |
-					errorMessages.computeIfAbsent(newTypeIdx, [new HashSet()]).addAll(gWithCycles.errorMessages.getOrDefault(idx, new HashSet()))
+				cycleNodes.map[it.key].toSet.forEach[ idx |
+					errorMessages.computeIfAbsent(newTypeIdx, [new HashSet()]).addAll(gWithCycles.nodeSourceConstraints.getOrDefault(idx, new HashSet()))
 				]
 				return newTypeIdx;
 			}
 			else {
 				finalState.success = false;
-				finalState.origin = cycle.toList;
-				finalState.msg = '''CSS: Cyclic dependencies could not be resolved: «finalState.origin.map[it.key.value.origin ?: it.key.value].join(' ⩽ ')»''';
-				return g.addNode(new BottomType(null, finalState.msg));
+				val msg = '''CSS: Cyclic dependencies could not be resolved: «cycle.map[it.key.value + " -> "].join("")» -> «cycle.head.key.value»''';
+				finalState.nonUnifiable += cycleNodes.flatMap[g.nodeSourceConstraints.getOrDefault(it.key, emptySet)];
+				return g.addNode(new BottomType(null, msg));
 			}
 		])
-		errorMessages.forEach[k, v|gWithoutCycles.errorMessages.merge(k, v, [v1, v2 | (v1 + v2).toSet])]
+		errorMessages.forEach[k, v|gWithoutCycles.nodeSourceConstraints.merge(k, v, [v1, v2 | (v1 + v2).toSet])]
 		if(finalState.success) {
 			return (gWithoutCycles -> UnificationResult.success(finalState.s));
 		}
 		else {
-			return (gWithoutCycles -> UnificationResult.failure(null, finalState.msg));
+			finalState.nonUnifiable.removeAll(finalState.unifiedConstraints);
+			return (gWithoutCycles -> new UnificationResult(
+				finalState.s,
+				finalState.nonUnifiable
+					.filter[
+						val str = typeRegistry.isSubtypeOf(typeResolutionOrigin, it.subType, it.superType);
+						return !str.valid || !str.constraints.empty;
+					]
+					.map[it.errorMessage]
+			));
 		}
 	}
 	
@@ -611,6 +651,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
+			if(v.toString == "f_106.0") {
+				print("")
+			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
 			val supremum = graph.getSupremum(predecessors);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);
@@ -630,9 +673,15 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					supremum !== null && successors.forall[ t | 
 						typeRegistry.isSubType(typeResolutionOrigin, supremum, t)
 					];
-					issues += ((graph.errorMessages.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
+					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «predecessors» don't share a super type (best guess: «supremum ?: "none"»)''', 
 					v.origin, null, "")].toSet);
+					if(newIssues.toString.contains("Can't return x (:: uint8) since it's not of a subtype of xint8")) {
+						print("");
+						graph.getBaseTypePredecessors(vIdx);
+						graph.getSupremum(predecessors);
+					}
+					issues += newIssues;
 				}
 			}
 			else if(!successors.empty) {
@@ -641,9 +690,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					graph.replace(v, infimum);
 					resultSub = resultSub.replace(v, infimum) => [add(v, infimum)];
 				} else {
-					issues += ((graph.errorMessages.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
+					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «successors» don't share a sub type (best guess: «infimum ?: "none"»)''',
 					v.origin, null, "")]);
+					if(newIssues.toString.contains("Can't return x (:: uint8) since it's not of a subtype of xint8")) {
+						print("");
+					}
+					issues += newIssues;
 				}
 			}
 			if(enableDebug) {
@@ -690,7 +743,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	protected val ConstraintSystem constraintSystem;
 	protected val EObject typeResolutionOrigin;
 	@Accessors
-	protected val Map<Integer, Set<SubtypeConstraint>> errorMessages = new HashMap;
+	protected val Map<Integer, Set<SubtypeConstraint>> nodeSourceConstraints = new HashMap;
 	
 	new(ConstraintSystem system, StdlibTypeRegistry typeRegistry, EObject typeResolutionOrigin) {
 		this.typeRegistry = typeRegistry;
@@ -701,8 +754,8 @@ class ConstraintGraph extends Graph<AbstractType> {
 			.forEach[ 
 				val idxs = addEdge(it.subType, it.superType)
 				if(idxs !== null) {
-					errorMessages.computeIfAbsent(idxs.key,   [new HashSet]).add(it);
-					errorMessages.computeIfAbsent(idxs.value, [new HashSet]).add(it);
+					nodeSourceConstraints.computeIfAbsent(idxs.key,   [new HashSet]).add(it);
+					nodeSourceConstraints.computeIfAbsent(idxs.value, [new HashSet]).add(it);
 				}
 			];
 	}
@@ -718,7 +771,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	}
 	
 	def <T extends AbstractType> getSupremum(Iterable<T> ts) {
-		val tsWithSuperTypes = ts.map[
+		val tsWithSuperTypes = ts.filter[!(it instanceof BottomType)].map[
 			typeRegistry.getSuperTypes(constraintSystem, it, typeResolutionOrigin).toSet
 		].force
 		val tsCut = tsWithSuperTypes.reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
@@ -726,7 +779,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 			tsCut.forall[u | 
 				typeRegistry.isSubType(typeResolutionOrigin, candidate, u)
 			]
-		];
+		] ?: ts.filter(BottomType).head;
 	}
 	
 	def <T extends AbstractType> getInfimum(Iterable<T> ts) {

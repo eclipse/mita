@@ -3,15 +3,13 @@ package org.eclipse.mita.base.typesystem.types
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
-import static extension org.eclipse.mita.base.util.BaseUtils.zip;
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 @EqualsHashCode
 @Accessors

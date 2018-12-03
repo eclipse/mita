@@ -6,7 +6,6 @@ import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
@@ -16,31 +15,41 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
+import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.IfStatement
+import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
+import org.eclipse.mita.program.IsOtherCase
 import org.eclipse.mita.program.IsTypeMatchCase
+import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
@@ -50,19 +59,13 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.diagnostics.Severity
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.program.IsOtherCase
-import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
-import org.eclipse.mita.base.typesystem.types.SumType
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -106,19 +109,46 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement _) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement __) {
 		return null;
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ProgramBlock pb) {
 		system.computeConstraintsForChildren(pb);
 		return null;
 	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayLiteral arrayLiteral) {
+		val literalTypes = arrayLiteral.values.map[system.computeConstraints(it)];
+		val innerType = system.newTypeVariable(null);
+		literalTypes.forEach[
+			system.addConstraint(new SubtypeConstraint(it, innerType, new ValidationIssue(Severity.ERROR, '''«it» (:: %s) doesn't share a common type with the other members of this array literal''', it.origin, null, "")))
+		]
+		val arrayTypeSchemeTV = typeRegistry.getTypeModelObjectProxy(system, arrayLiteral, StdlibTypeRegistry.arrayTypeQID);
+		val outerType = system.nestInType(arrayLiteral, innerType, arrayTypeSchemeTV, "array");
+		return system.associate(outerType, arrayLiteral);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IfStatement ifElse) {
+		val boolType = typeRegistry.getTypeModelObjectProxy(system, ifElse, StdlibTypeRegistry.boolTypeQID);
+		system.addConstraint(new EqualityConstraint(boolType, 
+			system.computeConstraints(ifElse.condition), 
+			new ValidationIssue(Severity.ERROR, '''Conditions in if(...) must be of type bool, is of type %s''', ifElse.condition, null, "")
+		))
+		system.computeConstraintsForChildren(ifElse);
+		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, InterpolatedStringExpression expr) {
+		val stringType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.stringTypeQID);
+		return system.associate(stringType, expr);
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae) {
 		if(ae.operator == AssignmentOperator.ASSIGN) {
 			system.addConstraint(new SubtypeConstraint(
 				system.computeConstraints(ae.expression), 
 				system.computeConstraints(ae.varRef), 
-				new ValidationIssue(Severity.ERROR, '''«ae.expression» cannot be assigned to «ae.varRef»''', ae, null, "")
+				new ValidationIssue(Severity.ERROR, '''«ae.expression» (:: %s) cannot be assigned to «ae.varRef» (:: %s)''', ae, null, "")
 			));
 		}
 		else {
@@ -144,7 +174,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		if(explicitType !== null && inferredType !== null) {
 			system.addConstraint(new SubtypeConstraint(
 				inferredType, explicitType, 
-				new ValidationIssue(Severity.ERROR, '''«vardecl.initialization» cannot be assigned to variables of type «vardecl.typeSpecifier»''', vardecl, null, "")
+				new ValidationIssue(Severity.ERROR, '''«vardecl.initialization» (:: %s) cannot be assigned to variables of type «vardecl.typeSpecifier» (:: %s)''', vardecl, null, "")
 			));
 			result = explicitType;
 		} else if(explicitType !== null || inferredType !== null) {
@@ -299,6 +329,38 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		protected val AbstractType expressionType; 
 	} 
 	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NewInstanceExpression newInstanceExpression) {
+		val returnType = system.computeConstraints(newInstanceExpression.type);
+		val typeName = BaseUtils.getText(newInstanceExpression.type, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+		val functionTypeVar = system.newTypeVariableProxy(newInstanceExpression, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, QualifiedName.create(typeName, "con"));
+		val argumentParamsAndValues = newInstanceExpression.arguments.map[
+			BaseUtils.getText(it, ExpressionsPackage.eINSTANCE.argument_Parameter) -> (it -> it.value)
+		].force
+		val argType = if(argumentParamsAndValues.size > 1 && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
+			val List<UnorderedArgsInformation> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
+				val arg = it.value.key;
+				val aValue = it.value.value;
+				val exprType = system.computeConstraints(aValue) as AbstractType;
+				val paramType = system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;
+				if(paramType instanceof TypeVariableProxy) {
+					paramType.ambiguityResolutionStrategy = AmbiguityResolutionStrategy.MakeNew;
+				}
+				system.associate(paramType, arg);
+				new UnorderedArgsInformation(it.key, arg, aValue, paramType, exprType);
+			].force
+			argumentParamTypesAndValueTypes.forEach[
+				system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
+			]
+			new UnorderedArguments(null, "con_args", argumentParamTypesAndValueTypes.map[it.nameOfReferencedObject -> it.expressionType]);
+		}
+		else {
+			val args = newInstanceExpression.arguments.map[system.computeConstraints(it) as AbstractType];
+			system.computeArgumentConstraintsWithTypes("con", args.force);
+		}
+		system.computeConstraintsForFunctionCall(newInstanceExpression, null, "con", argType, #[functionTypeVar]);
+		return system.associate(returnType, newInstanceExpression);
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
 		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
 		
@@ -348,7 +410,6 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 					new UnorderedArgsInformation(it.key, arg, aValue, paramType, exprType);
 				].force
 				argumentParamTypesAndValueTypes.forEach[
-					//Pair<Pair<String, Pair<Argument, Expression>>, Pair<AbstractType, AbstractType>>
 					system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
 				]
 				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
@@ -395,7 +456,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val functionReturnVar = if(enclosingFunction === null) {
 			 typeRegistry.getTypeModelObjectProxy(system, statement, StdlibTypeRegistry.voidTypeQID);
 		} else {
-			system.computeConstraints(enclosingFunction.typeSpecifier)
+			system.getTypeVariable(enclosingFunction.typeSpecifier)
 		}
 		val returnValVar = if(statement.value === null) {
 			system.associate(typeRegistry.getTypeModelObjectProxy(system, statement, StdlibTypeRegistry.voidTypeQID), statement);
@@ -403,7 +464,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			system.associate(system.computeConstraints(statement.value), statement);
 		}
 
-		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar, new ValidationIssue(Severity.ERROR, '''Can't return «statement.value»''', statement, null, "")));
+		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar, new ValidationIssue(Severity.ERROR, '''Can't return «statement.value» (:: %s) since it's not of a subtype of %s''', statement, null, "")));
 		return returnValVar;	
 	}
 }

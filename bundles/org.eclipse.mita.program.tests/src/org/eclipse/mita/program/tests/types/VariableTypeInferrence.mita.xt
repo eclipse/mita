@@ -8,24 +8,27 @@ END_SETUP */
 package test;
 import platforms.unittest;
  
-function variableInference() : void{ 
-	//XPECT inferredType --> uint8
+function variableInference() : void { 
+	//XPECT inferredType --> xint8
 	var x = 10;
+	//XPECT inferredType --> uint8
 	var z : uint8 = x; 
 } 
 
-function variableInferenceExpression() : void{
-	//XPECT inferredType --> uint8
+function variableInferenceExpression() : void {
+	//XPECT inferredType --> xint8
 	var x = 10;
+	//XPECT inferredType --> uint8
 	var z : uint8 = (x * 3) + 10;
 }
 
-function variableInferenceOperationCall() : void{
+function variableInferenceOperationCall() : void {
+	//XPECT inferredType --> array<int8>
 	var array : array<int8> = new array<int8>(size = 10);
-	//XPECT inferredType --> uint8  
+	//XPECT inferredType --> xint8  
 	var x = 10;   
 	testIt(x, 10);         
-	//XPECT inferredType --> uint32
+	//XPECT inferredType --> xint8
 	var y = 10;
 	testIt(param2 = y, param1 = 10);   
 } 
@@ -34,40 +37,42 @@ function testIt(param1 : uint8, param2 : uint32) : bool {
 	return true;
 }
 
-function variableInferenceExtensionOperationCall() : void{
+function variableInferenceExtensionOperationCall() : void {
 	var opt : optional<int8> = 10;
 	//XPECT inferredType --> int8 
 	var x = opt.value();     
 }
 
-function variableInferenceRecursion(){
-	//XPECT inferredType --> int32
+function variableInferenceRecursion() {
+	//XPECT inferredType --> xint8
 	var x = 10;
-	//XPECT inferredType --> int32
+	//XPECT inferredType --> xint8
 	var z = x;
 }
 
-function variableInferenceIf(){
-	//XPECT inferredType --> int32
+function variableInferenceIf() {
+	//XPECT inferredType --> xint8
 	var x = 10;
 	if(x > 10){
 		
 	}
 }
 
-function variableInferenceFloat(){
-	//XPECT inferredType --> float
+function variableInferenceFloat() {
+	//XPECT inferredType --> xint8
 	var x  = 10;
+	//XPECT inferredType --> f32
 	var z : float = x;
-	//XPECT inferredType --> float
+	//XPECT inferredType --> f32
 	var y = 10.0f; 
 }
  
-function variableInferenceDouble(){
-	//XPECT inferredType --> double
-	var x  = 10;
+function variableInferenceDouble() {
+	//XPECT inferredType --> xint8
+	var x = 10;
+	//XPECT inferredType --> f64
 	var z : double = x;
-	// XPECT inferredType --> double
+	// XPECT inferredType --> f64
 	var y = 10.0d; 
 }
 
@@ -77,18 +82,18 @@ function variableInferenceGenerated() {
     //XPECT inferredType --> optional<int32>
     var yo = xo;
     
-    //XPECT inferredType --> int32
+    //XPECT inferredType --> xint8
     var xs = 42;
     //XPECT inferredType --> string
     var ys = `${xs}`;
     
-    //XPECT inferredType --> array<int32>
+    //XPECT inferredType --> array<xint8>
     var xa = [1,2,3,4];
-    //XPECT inferredType --> array<int32>
+    //XPECT inferredType --> array<xint8>
     var ya = xa;
 }
 
-function variableInferenceBoolean(){
+function variableInferenceBoolean() {
 	//XPECT inferredType --> bool
 	var x  = true;
 }
@@ -98,22 +103,25 @@ function test(){
 	var x = inferMe();  
 }
 
-function inferMe(){
+function inferMe() {
 	var z : uint8  = 10;
 	return z;  
 }
 
-function inferByInitialization(){
+function inferByInitialization() {
 	var x : uint8 = 10;
 	var y : int8 = 10;
 	//XPECT inferredType --> int16
 	var z = x + y;
 }	
 
-function noCommonType(){
+function noCommonType() {
 	var x : int32 = 10;
 	var y : uint32 = 10;
-	//XPECT inferredType --> int32
+	/* XPECT errors --- 
+		"Function __PLUS__ cannot be used here" at "x + y"
+		"__PLUS___args(int32, uint32) not instance of __PLUS__\n	__PLUS___args(f32, f32) → f32 = __PLUS__([x: float, y: float])\n	__PLUS___args(f64, f64) → f64 = __PLUS__([x: double, y: double])\n	__PLUS___args(int16, int16) → int16 = __PLUS__([x: int16, y: int16])\n	__PLUS___args(int32, int32) → int32 = __PLUS__([x: int32, y: int32])\n	__PLUS___args(int8, int8) → int8 = __PLUS__([x: int8, y: int8])\n	__PLUS___args(uint16, uint16) → uint16 = __PLUS__([x: uint16, y: uint16])\n	__PLUS___args(uint32, uint32) → uint32 = __PLUS__([x: uint32, y: uint32])\n	__PLUS___args(uint8, uint8) → uint8 = __PLUS__([x: uint8, y: uint8])\n" at "x + y"
+		--- */
 	var z = x + y;  
 }
 

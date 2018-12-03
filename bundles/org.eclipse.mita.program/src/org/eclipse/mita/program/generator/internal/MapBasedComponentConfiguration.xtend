@@ -39,7 +39,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	}
 	
 	
-	private final Map<String, ConfigItemValue> configurationItems;
+	final Map<String, ConfigItemValue> configurationItems;
 	
 	new(AbstractSystemResource resource, CompilationContext context, SystemResourceSetup setup) {
 		configurationItems = new HashMap();

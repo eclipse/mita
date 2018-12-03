@@ -26,15 +26,15 @@ import org.eclipse.mita.cli.commands.CompileToCAdapter
 class StandaloneLibraryProvider implements ILibraryProvider {
 	protected ResourceSet resourceSet;
 
-	static private ILibraryProvider instance = new StandaloneLibraryProvider();
+	static ILibraryProvider instance = new StandaloneLibraryProvider();
 	
-	public static def ILibraryProvider getInstance() {
+	static def ILibraryProvider getInstance() {
 		return instance;
 	}
 
 	protected new() { }
 
-	public def init(ResourceSet resourceSet) {
+	def init(ResourceSet resourceSet) {
 		this.resourceSet = resourceSet;
 	}
 

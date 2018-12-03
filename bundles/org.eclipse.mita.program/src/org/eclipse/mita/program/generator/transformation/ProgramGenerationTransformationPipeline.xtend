@@ -24,15 +24,13 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 	@Inject EscapeWhitespaceInStringStage escapeWhitespaceInStringStage
 	@Inject UnravelModalityAccessStage unravelModalityAccessStage
 	@Inject GroupModalityAccessStage groupModalityAccessStage
-	@Inject ResolveGeneratedTypeConstructorStage resolveGeneratedTypeConstructorStage
-	@Inject UnravelFunctionCallsStage unravelFunctionCallsStage
 	@Inject UnravelInterpolatedStringsStage unravelInterpolatedStringsStage
 	@Inject PrepareLoopForFunctionUnvravelingStage prepareLoopForFunctionUnvravelingStage
 	@Inject PrepareArrayRuntimeChecksStage prepareArrayRuntimeChecksStage
 	@Inject UnravelLiteralArraysStage unravelLiteralArrayReturnStage
 	@Inject EnforceOperatorPrecedenceStage enforceOperatorPrecedenceStage
 
-	public def transform(Program program) {
+	def transform(Program program) {
 		val stages = getOrderedStages();
 
 		var result = program;
@@ -42,7 +40,7 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 		return result;
 	}
 	
-	public override boolean willBeUnraveled(EObject obj) {
+	override boolean willBeUnraveled(EObject obj) {
 		if(obj instanceof Expression) {
 			for(stage : orderedStages) {
 				if(stage instanceof AbstractUnravelingStage) {
@@ -66,8 +64,6 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 			escapeWhitespaceInStringStage,
 			unravelModalityAccessStage,
 			groupModalityAccessStage,
-			resolveGeneratedTypeConstructorStage,
-			//unravelFunctionCallsStage,
 			unravelInterpolatedStringsStage,
 			prepareLoopForFunctionUnvravelingStage,
 			prepareArrayRuntimeChecksStage,

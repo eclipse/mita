@@ -84,12 +84,12 @@ GeneratedType returns GeneratedType:
 
 GeneratedTypeConstructor returns GeneratedTypeConstructor:
 	{GeneratedTypeConstructor}
-	'constructor' name=ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')' 
+	'constructor' name='con' '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')' 
 ;
 
 GeneratedTypeParameter returns GeneratedTypeParameter:
 	{GeneratedTypeParameter}
-	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' value=Expression)?
+	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' defaultValue=Expression)?
 ;
 
 TypeParameter returns TypeParameter:

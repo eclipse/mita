@@ -21,16 +21,14 @@ import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.NativeType
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.base.util.BaseUtils
 
 /**
  * Facade for generating types.

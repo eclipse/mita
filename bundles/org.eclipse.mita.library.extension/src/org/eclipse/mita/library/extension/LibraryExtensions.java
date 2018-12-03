@@ -20,11 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.emf.common.util.URI;
-import org.osgi.framework.FrameworkUtil;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
