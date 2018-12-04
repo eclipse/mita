@@ -24,11 +24,16 @@ import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
+import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -44,6 +49,8 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.infra.ClassTree
+import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 
 /**
  * Solves coercive subtyping as described in 
@@ -89,6 +96,23 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return new ConstraintSolution(system, null, #[new ValidationIssue(Severity.ERROR, "INTERNAL ERROR: Subtype solving cannot terminate", typeResolutionOrigin, null, "") ]);
 		}
 		val issues = newArrayList;
+
+		// do one simplification pass to solve equalities etc. then unify type classes
+		val simplification1 = currentSystem.simplify(currentSubstitution, typeResolutionOrigin);
+		if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
+			return null;
+		}
+		if(!simplification1.valid) {
+			issues += simplification1.issues;
+			if(simplification1?.system?.constraints.nullOrEmpty || simplification1?.substitution?.content?.entrySet.nullOrEmpty) {
+				return new ConstraintSolution(currentSystem, simplification1.substitution, simplification1.issues);
+			}
+		}
+		currentSystem = simplification1.system;
+		currentSubstitution = simplification1.substitution;
+		
+		currentSystem = unifyTypeClassInstances(currentSystem);
+		
 		for(var i = 0; i < 10; i++) {
 			if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
 				return null;
@@ -140,6 +164,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		]
 		
 		return new ConstraintSolution(currentSystem, currentSubstitution, issues);
+	}
+	
+	def ConstraintSystem unifyTypeClassInstances(ConstraintSystem system) {
+		val result = new ConstraintSystem(system);
+		result.typeClasses.replaceAll[__, tc | TypeClassUnifier.INSTANCE.unifyTypeClassInstances(result, tc)];
+		return result;
 	}
 	
 	protected def ConstraintSolution solveSubtypeConstraints(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {

@@ -3,9 +3,9 @@ package org.eclipse.mita.base.util
 import com.google.common.collect.Iterables
 import com.google.common.collect.Lists
 import java.util.ArrayDeque
+import java.util.ArrayList
 import java.util.Deque
 import java.util.Iterator
-import java.util.List
 import java.util.NoSuchElementException
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
@@ -134,7 +134,7 @@ class BaseUtils {
 	def static void main(String[] args) {
 
 	}
-	def static <T> List<T> force(Iterable<T> list) {
+	def static <T> ArrayList<T> force(Iterable<T> list) {
 		return Lists.newArrayList(list);
 	}
 	

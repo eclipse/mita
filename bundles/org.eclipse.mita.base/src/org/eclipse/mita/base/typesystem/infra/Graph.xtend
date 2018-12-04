@@ -23,7 +23,14 @@ class Graph<T> implements Cloneable {
 	protected Map<Integer, T> nodeIndex = new HashMap();
 	protected Map<T, Set<Integer>> reverseMap = new HashMap();
 	protected int nextNodeInt = 0;
-
+	
+	def copyTo(Graph<T> other) {
+		other.outgoing =   new HashMap(outgoing);
+		other.incoming =   new HashMap(incoming);
+		other.nodeIndex =  new HashMap(nodeIndex);
+		other.reverseMap = new HashMap(reverseMap);	
+	}
+	
 	override clone() {
 		val c = super.clone() as Graph<T>;
 		c.outgoing = new HashMap(c.outgoing);

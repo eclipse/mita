@@ -99,15 +99,23 @@ class ConstraintSystem {
 		]);
 	}
 	
+	new(ConstraintSystem self) {
+		this();
+		constraintSystemProvider = constraintSystemProvider ?: self.constraintSystemProvider;
+		instanceCount = self.instanceCount;
+		atomicConstraints += self.atomicConstraints;
+		nonAtomicConstraints += self.nonAtomicConstraints;
+		symbolTable.putAll(self.symbolTable);
+		typeClasses.putAll(self.typeClasses);
+		self.explicitSubtypeRelations.copyTo(explicitSubtypeRelations);
+	}
+		
 	def ConstraintSystem modifyNames(String suffix) {
-		val result = constraintSystemProvider.get();
-		result.constraintSystemProvider = result.constraintSystemProvider ?: constraintSystemProvider;
-		result.instanceCount = instanceCount;
-		result.atomicConstraints += atomicConstraints.map[it.modifyNames(suffix)]
-		result.nonAtomicConstraints += nonAtomicConstraints.map[it.modifyNames(suffix)]
-		result.symbolTable.putAll(symbolTable.mapValues[it.modifyNames(suffix) as TypeVariable])
-		result.typeClasses.putAll(typeClasses.mapValues[it.modifyNames(suffix)]);
-		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
+		val result = new ConstraintSystem(this);
+		result.atomicConstraints.replaceAll([it.modifyNames(suffix)])
+		result.nonAtomicConstraints.replaceAll([it.modifyNames(suffix)])
+		result.symbolTable.replaceAll([k, v | v.modifyNames(suffix) as TypeVariable])
+		result.typeClasses.replaceAll([k, v | v.modifyNames(suffix)]);
 		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.modifyNames(suffix)];
 		result.explicitSubtypeRelations.computeReverseMap();
 		return result;
@@ -309,19 +317,17 @@ class ConstraintSystem {
 	}
 	
 	def ConstraintSystem replaceProxies(Resource resource, IScopeProvider scopeProvider) {
-		val result = constraintSystemProvider.get();
-		result.instanceCount = instanceCount;
-		result.symbolTable.putAll(symbolTable);
+		val result = new ConstraintSystem(this);
 
-		result.atomicConstraints += atomicConstraints.map[ 
+		result.atomicConstraints = atomicConstraints.map[ 
 			it.replaceProxies(result, [ 
 				result.resolveProxy(it, resource, scopeProvider)
 			]) ].force;
-		result.nonAtomicConstraints += nonAtomicConstraints.map[ 
+		result.nonAtomicConstraints = nonAtomicConstraints.map[ 
 			it.replaceProxies(result, [ 
 				result.resolveProxy(it, resource, scopeProvider)
 			]) ].force;
-		result.typeClasses.putAll(typeClasses.mapValues[ 
+		result.typeClasses = new HashMap(typeClasses.mapValues[ 
 			it.replaceProxies([ 
 				result.resolveProxy(it, resource, scopeProvider)
 			], [
@@ -329,8 +335,7 @@ class ConstraintSystem {
 			])
 		]);
 		
-		
-		result.explicitSubtypeRelations = explicitSubtypeRelations.clone() as Graph<AbstractType>;
+		explicitSubtypeRelations.copyTo(result.explicitSubtypeRelations);
 		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replaceProxies(this, [this.resolveProxy(it, resource, scopeProvider)])];
 		result.explicitSubtypeRelations.computeReverseMap();
 		return result;

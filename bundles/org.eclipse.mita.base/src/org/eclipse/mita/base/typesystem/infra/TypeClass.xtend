@@ -17,12 +17,17 @@ import org.eclipse.emf.ecore.impl.EObjectImpl
 @Accessors
 class TypeClass {
 	val Map<AbstractType, EObject> instances;
+	val AbstractType mostSpecificGeneralization;
 	
 	new() {
 		this(new HashMap());
 	}
 	new(Map<AbstractType, EObject> instances) {
+		this(instances, null);
+	}
+	new(Map<AbstractType, EObject> instances, AbstractType mostSpecificGeneralization) {
 		this.instances = new HashMap(instances);
+		this.mostSpecificGeneralization = mostSpecificGeneralization;
 	}
 	new(Iterable<Pair<AbstractType, EObject>> instances) {
 		this();
