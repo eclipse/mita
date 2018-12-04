@@ -8,6 +8,10 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 @EqualsHashCode
 class TypeVariable extends AbstractType {
+	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
+		return system.newTypeVariable(null);
+	}
+	
 	
 	new(EObject origin, String name) {
 		super(origin, name)

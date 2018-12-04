@@ -109,6 +109,14 @@ class BaseUtils {
 		}
 	}
 	
+	
+	def static <T> Iterable<Iterable<T>> transpose(Iterable<? extends Iterable<T>> xss) {
+		if(xss.head.empty) {
+			return #[];
+		}
+		#[xss.map[it.head]] + transpose(xss.map[it.tail]);
+	}
+		
 	def static void ignoreChange(EObject obj, () => void action) {
 		ignoreChange(obj.eResource, action);
 	}
@@ -132,7 +140,7 @@ class BaseUtils {
 	} 
 			
 	def static void main(String[] args) {
-
+		println(transpose(#[#[1,2,3], #[4,5,6]]));
 	}
 	def static <T> ArrayList<T> force(Iterable<T> list) {
 		return Lists.newArrayList(list);

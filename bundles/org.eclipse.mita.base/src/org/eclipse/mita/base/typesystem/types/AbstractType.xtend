@@ -9,6 +9,10 @@ import org.eclipse.xtend.lib.annotations.Accessors
 @Accessors
 abstract class AbstractType {
 	
+	static def AbstractType unify(ConstraintSystem system, Iterable<AbstractType> instances) {
+		return system.newTypeVariable(null);
+	} 
+	
 	protected final transient EObject origin;
 	protected final String name;
 	

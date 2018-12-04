@@ -8,16 +8,13 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
 // can only handle classes that don't implement interfaces (since the class hierarchy with interfaces is a graph and we only check for assignable, which uses interfaces, too).
 // if needed instead of using isAssignableFrom you can walk supertypes.
-class ClassTree<T> {
-	static val String INDENT = "  ";
-		
-	val Class<? extends T> node;
-	var ArrayList<ClassTree<T>> children = new ArrayList;
+class ClassTree<T> extends Tree<Class<? extends T>> {
 	
 	new(Class<? extends T> node) {
-		this.node = node;
+		super(node)
 	}
-	
+		
+		
 	def ClassTree<T> add(Class<? extends T> c) {
 		return this.merge(new ClassTree(c));
 	}
@@ -31,14 +28,14 @@ class ClassTree<T> {
 		else {
 			// there is a superType of c in children
 			// since the class hierarchy is a tree there one of those, and no children is a subtype of c
-			val superOfNewNode = children.findFirst[it.node.isAssignableFrom(c.node)]
+			val superOfNewNode = children.findFirst[it.node.isAssignableFrom(c.node)] as ClassTree<T>;
 			if(superOfNewNode !== null) {
 				superOfNewNode.merge(c);
 			}
 			// otherwise there is at least one node that is a subtype of c. find them all and add them all to c
 			else {
-				val subtypes = children.filter[c.node.isAssignableFrom(it.node)].force;
-				val independent = (#[c] + children.filter[!subtypes.contains(it)]).force as ArrayList<ClassTree<T>>;
+				val subtypes = children.filter[c.node.isAssignableFrom(it.node)].map[it as ClassTree<T>].force;
+				val independent = (#[c] + children.filter[!subtypes.contains(it)]).force as ArrayList<Tree<Class<? extends T>>>;
 				children = independent;
 				subtypes.forEach[
 					c.merge(it);
@@ -52,29 +49,8 @@ class ClassTree<T> {
 		return children.flatMap[postOrderTraversal] + #[node]
 	}
 	
-	override toString() {
-		val sb = new StringBuilder;
-		toString(sb, 0);
-		return sb.toString;
+	override protected nodeToString(Class<? extends T> node) {
+		return node.simpleName
 	}
 	
-	def void toString(StringBuilder sb, int indentCount) {
-		for(var i = 0; i < indentCount; i++) {
-			sb.append(INDENT);
-		}
-		sb.append(node.simpleName);
-		sb.append("\n");
-		val indentCount2 = indentCount + 1;
-		children.forEach[
-			it.toString(sb, indentCount2);
-		]
-		
-	}
-	
-	
-	@FinalFieldsConstructor
-	public static class Node<T> {
-		public val int idx;
-		public val T t;
-	}
 }

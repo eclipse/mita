@@ -168,7 +168,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	def ConstraintSystem unifyTypeClassInstances(ConstraintSystem system) {
 		val result = new ConstraintSystem(system);
-		result.typeClasses.replaceAll[__, tc | TypeClassUnifier.INSTANCE.unifyTypeClassInstances(result, tc)];
+		result.typeClasses.replaceAll[__, tc | TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(result, tc)];
 		return result;
 	}
 	

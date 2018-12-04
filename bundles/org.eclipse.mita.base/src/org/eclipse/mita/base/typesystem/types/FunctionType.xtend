@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.types
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -14,7 +15,14 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 
 @EqualsHashCode
 @Accessors
-class FunctionType extends TypeConstructorType {		
+class FunctionType extends TypeConstructorType {
+	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
+		return new FunctionType(null, instances.head.name, 
+			TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as FunctionType].map[it.from]),
+			TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as FunctionType].map[it.to])
+		)
+	}
+			
 	new(EObject origin, String cons, AbstractType from, AbstractType to) {
 		this(origin, cons, #[from, to]);
 		
