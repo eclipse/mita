@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
@@ -18,6 +19,14 @@ class TypeVariable extends AbstractType {
 		if(this.toString == "f_222") {
 			print("");
 		}
+	}
+	
+	override quote() {
+		return new Tree(this);
+	}
+	
+	override quoteLike(Tree<AbstractType> structure) {
+		return quote();
 	}
 	
 	override toString() {

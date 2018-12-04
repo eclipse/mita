@@ -1,7 +1,9 @@
 package org.eclipse.mita.base.typesystem.infra
 
 import java.util.ArrayList
+import org.eclipse.xtend.lib.annotations.Accessors
 
+@Accessors
 class Tree<T> {
 	static val String INDENT = "  ";
 	
@@ -22,7 +24,7 @@ class Tree<T> {
 		for(var i = 0; i < indentCount; i++) {
 			sb.append(INDENT);
 		}
-		sb.append(node.nodeToString);
+		sb.append(node?.nodeToString);
 		sb.append("\n");
 		val indentCount2 = indentCount + 1;
 		children.forEach[

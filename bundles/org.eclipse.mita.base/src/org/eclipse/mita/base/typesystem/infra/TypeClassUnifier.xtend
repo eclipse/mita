@@ -11,6 +11,9 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import java.util.Set
+import org.eclipse.mita.base.util.BaseUtils
+import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+import static extension org.eclipse.mita.base.util.BaseUtils.transpose;
 
 class TypeClassUnifier {
 	public static val TypeClassUnifier INSTANCE = new TypeClassUnifier();
@@ -39,12 +42,25 @@ class TypeClassUnifier {
 	
 	def AbstractType unifyTypeClassInstancesTypes(ConstraintSystem system, AbstractType commonTypeStructure, Set<AbstractType> instances) {
 		// find out that fst :: (a, i32) -> c
-		val commonTypesAcross = unifyTypeClassInstancesWithCommonTypesAcross(commonTypeStructure, instances);
-		return commonTypesAcross;
+		val structure = commonTypeStructure.quote();
+		val quotedInstances = instances.map[quoteLike(structure)];
+		
+		val commonTypesAcross = unifyTypeClassInstancesWithCommonTypesAcross(structure, quotedInstances);
+		return null;
 	}
 	
-	def AbstractType unifyTypeClassInstancesWithCommonTypesAcross(AbstractType commonTypeStructure, Set<AbstractType> instances) {
-		return commonTypeStructure;
+	def Tree<AbstractType> unifyTypeClassInstancesWithCommonTypesAcross(Tree<AbstractType> commonTypeStructure, Iterable<Tree<AbstractType>> instances) {
+		val result = new Tree(
+			if(instances.map[it.node].groupBy[it].size == 1) {
+				instances.head.node
+			}
+			else {				
+				commonTypeStructure.node	
+			}
+		);
+		
+		result.children += commonTypeStructure.children.zip(instances.map[it.children].transpose).map[unifyTypeClassInstancesWithCommonTypesAcross(it.key, it.value)]
+		return result;
 	}
 	
 	def AbstractType unifyTypeClassInstancesStructure(ConstraintSystem system, Iterable<AbstractType> _instances) {

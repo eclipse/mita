@@ -5,6 +5,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
@@ -43,6 +44,18 @@ class TypeConstructorType extends AbstractType {
 	new(EObject origin, String name, Iterable<AbstractType> typeArguments) {
 		super(origin, name);
 		this.typeArguments = typeArguments.force;
+	}
+		
+	override Tree<AbstractType> quote() {
+		val result = new Tree<AbstractType>(this);
+		result.children += typeArguments.map[it.quote()];
+		return result;
+	}
+	
+	override quoteLike(Tree<AbstractType> structure) {
+		val result = new Tree<AbstractType>(this);
+		result.children += typeArguments.zip(structure.children).map[it.key.quoteLike(it.value)]
+		return result;
 	}
 	
 	def AbstractTypeConstraint getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {

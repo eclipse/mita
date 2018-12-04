@@ -5,6 +5,7 @@ import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.mita.base.typesystem.infra.Tree
 
 @Accessors
 abstract class AbstractType {
@@ -17,6 +18,9 @@ abstract class AbstractType {
 	protected final String name;
 	
 	abstract def AbstractType map((AbstractType) => AbstractType f);
+	
+	abstract def Tree<AbstractType> quote();
+	abstract def Tree<AbstractType> quoteLike(Tree<AbstractType> structure);
 	
 	override boolean equals(Object other) {
 		if (this === other)

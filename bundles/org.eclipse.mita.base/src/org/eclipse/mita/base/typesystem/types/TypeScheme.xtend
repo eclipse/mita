@@ -10,6 +10,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.infra.Tree
 
 @EqualsHashCode
 @Accessors
@@ -24,6 +25,18 @@ class TypeScheme extends AbstractType {
 		if(this.toString == "∀[f_646].modality<f_646.1>") {
 			print("")
 		}
+	}
+	
+	override Tree<AbstractType> quote() {
+		val result = new Tree<AbstractType>(this);
+		result.children += on.quote();
+		return result;
+	}
+	
+	override quoteLike(Tree<AbstractType> structure) {
+		val result = new Tree<AbstractType>(this);
+		result.children += on.quoteLike(structure.children.head);
+		return result;
 	}
 	
 	override toString() {

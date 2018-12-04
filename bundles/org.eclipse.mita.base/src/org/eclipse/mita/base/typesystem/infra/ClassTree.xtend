@@ -46,7 +46,7 @@ class ClassTree<T> extends Tree<Class<? extends T>> {
 	}
 	
 	def Iterable<Class<? extends T>> postOrderTraversal() {
-		return children.flatMap[postOrderTraversal] + #[node]
+		return children.map[it as ClassTree<T>].flatMap[it.postOrderTraversal] + #[node]
 	}
 	
 	override protected nodeToString(Class<? extends T> node) {
