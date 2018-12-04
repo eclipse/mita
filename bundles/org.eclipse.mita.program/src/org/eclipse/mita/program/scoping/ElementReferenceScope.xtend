@@ -38,6 +38,7 @@ import org.eclipse.xtext.util.SimpleAttributeResolver
 
 import static extension org.eclipse.emf.ecore.util.EcoreUtil.*
 import static extension org.eclipse.xtext.EcoreUtil2.*
+import org.eclipse.xtext.resource.IEObjectDescription
 
 class ElementReferenceScope extends AbstractScope {
 
@@ -47,6 +48,10 @@ class ElementReferenceScope extends AbstractScope {
 		//super(unqualifySumTypeConstructors(outer), false)
 		super(outer, false);
 		this.context = context
+	}
+	
+	override protected isShadowed(IEObjectDescription input) {
+		return false;
 	}
 	
 //	static def IScope unqualifySumTypeConstructors(IScope scope) {

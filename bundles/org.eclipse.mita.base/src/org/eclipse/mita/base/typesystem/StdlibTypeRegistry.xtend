@@ -42,6 +42,7 @@ class StdlibTypeRegistry {
 	public static val doubleTypeQID = QualifiedName.create(#[/*"stdlib",*/ "double"]);
 	public static val boolTypeQID = QualifiedName.create(#[/*"stdlib",*/ "bool"]);
 	public static val x8TypeQID = QualifiedName.create(#[/*"stdlib",*/ 'xint8']);
+	public static val u32TypeQID = QualifiedName.create(#[/*"stdlib",*/ 'uint32']);
 	public static val integerTypeQIDs = #['xint8', 'int8', 'uint8', 'int16', 'xint16', 'uint16', 'xint32', 'int32', 'uint32'].map[QualifiedName.create(#[/*"stdlib",*/ it])];
 	public static val optionalTypeQID = QualifiedName.create(#[/*"stdlib",*/ "optional"]);
 	public static val referenceTypeQID = QualifiedName.create(#[/*"stdlib",*/ "reference"]);
@@ -53,6 +54,9 @@ class StdlibTypeRegistry {
 	public static val timesFunctionQID = QualifiedName.create(#["stdlib", "__TIMES__"]);
 	public static val divisionFunctionQID = QualifiedName.create(#["stdlib", "__DIVISION__"]);
 	public static val moduloFunctionQID = QualifiedName.create(#["stdlib", "__MODULO__"]);
+	public static val leftShiftFunctionQID = QualifiedName.create(#["stdlib", "__LEFTSHIFT__"]);
+	public static val rightShiftFunctionQID = QualifiedName.create(#["stdlib", "__RIGHTSHIFT__"]);
+	public static val postincrementFunctionQID = QualifiedName.create(#["stdlib", "__POSTINCREMENT__"]);
 	
 	@Inject IScopeProvider scopeProvider;
 	

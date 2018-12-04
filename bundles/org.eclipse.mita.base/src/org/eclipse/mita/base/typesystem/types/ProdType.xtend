@@ -19,9 +19,15 @@ class ProdType extends TypeConstructorType {
 	
 	new(EObject origin, String name, List<AbstractType> typeArguments) {
 		super(origin, name, typeArguments);
+		if(this.toString == "__PLUS___args(xint8, int16)") {
+			print("")
+		}
 	}
 	new(EObject origin, String name, Iterable<AbstractType> typeArguments) {
 		super(origin, name, typeArguments);
+		if(this.toString == "__PLUS___args(xint8, int16)") {
+			print("")
+		}
 	}
 			
 	override toString() {

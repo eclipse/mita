@@ -16,6 +16,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.typesystem.types.Variance
 
 @FinalFieldsConstructor
 @Accessors
@@ -25,12 +26,15 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	val EObject functionCall;
 	val EReference functionReference;
 	val TypeVariable returnTypeTV;
+	// covariant means that the result is giving something instead of taking
+	// types are contravariant on the LHS of AssignmentExpressions 
+	val Variance returnTypeVariance;
 	
 	@Inject
 	val Provider<ConstraintSystem> constraintSystemProvider;
 		
-	new(AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV, ValidationIssue errorMessage) {
-		this(errorMessage, typ, qn, functionCall, functionReference, returnTypeTV, null);
+	new(AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV, Variance returnTypeVariance, ValidationIssue errorMessage) {
+		this(errorMessage, typ, qn, functionCall, functionReference, returnTypeTV, returnTypeVariance, null);
 	}
 		
 	override onResolve(ConstraintSystem cs, Substitution sub, EObject op, AbstractType at) {
@@ -39,8 +43,21 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		}
 		val nc = constraintSystemProvider.get(); 
 		if(at instanceof FunctionType) {
-			// the returned type should be smaller than the expected type so it can be assigned
-			nc.addConstraint(new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s''')));
+			val newConstraint = switch(returnTypeVariance) {
+				case Covariant: {
+					// the returned type should be smaller than the expected type so it can be assigned
+					new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s'''));
+				}
+				case Contravariant: {
+					// if we are the target of an assignment we need to accept superclasses
+					new SubtypeConstraint(returnTypeTV, at.to, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s'''));
+				}
+				case Invariant: {
+					new EqualityConstraint(returnTypeTV, at.to, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not equal to %2$s'''));
+				}
+				
+			}
+			nc.addConstraint(newConstraint);
 			return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)
 		}
 		else { 
@@ -51,13 +68,13 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	override map((AbstractType)=>AbstractType f) {
 		val newType = typ.map(f);
 		if(newType !== typ) {
-			return new FunctionTypeClassConstraint(_errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, constraintSystemProvider);	
+			return new FunctionTypeClassConstraint(_errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, returnTypeVariance, constraintSystemProvider);	
 		}
 		return this;
 	}
 	
 	override modifyNames(String suffix) {
-		return new FunctionTypeClassConstraint(_errorMessage, typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, constraintSystemProvider);
+		return new FunctionTypeClassConstraint(_errorMessage, typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, returnTypeVariance, constraintSystemProvider);
 	}
 	
 	override isAtomic() {

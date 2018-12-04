@@ -6,6 +6,7 @@ import java.util.Map
 import java.util.Set
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.diagnostics.Severity
 
 class SerializedObject {
@@ -258,7 +259,7 @@ class SerializedEStructuralFeature extends SerializedObject {
 	public String javaMethod;
 	public String ePackageName;
 	public String eClassName;
-	public String eReferenceName;	
+	public String eReferenceName;
 }
 
 class SerializedEReference extends SerializedEStructuralFeature {
@@ -277,5 +278,6 @@ class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstr
 	public SerializedObject functionReference;
 	public SerializedTypeVariable returnTypeTV;
 	public String instanceOfQN;
+	public Variance returnTypeVariance;
 }
 
