@@ -4,6 +4,7 @@ import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
@@ -66,6 +67,10 @@ class SumType extends TypeConstructorType {
 			return new SumType(origin, name, newTypeArgs);	
 		}
 		return this;
+	}
+	
+	override unqote(Iterable<Tree<AbstractType>> children) {
+		return new SumType(origin, name, children.map[it.node.unqote(it.children)].force);
 	}
 	
 }

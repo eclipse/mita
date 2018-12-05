@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.types
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.mita.base.typesystem.infra.Tree
 
 @EqualsHashCode
 class AtomicType extends AbstractBaseType {

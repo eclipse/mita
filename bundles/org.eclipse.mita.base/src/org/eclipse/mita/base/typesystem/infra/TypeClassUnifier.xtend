@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.infra
 
-import java.util.HashMap
+import java.util.Set
+import java.util.TreeSet
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -10,10 +11,12 @@ import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
-import java.util.Set
-import org.eclipse.mita.base.util.BaseUtils
-import static extension org.eclipse.mita.base.util.BaseUtils.zip;
-import static extension org.eclipse.mita.base.util.BaseUtils.transpose;
+
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.transpose
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import java.util.Comparator
+import com.google.common.collect.Comparators
 
 class TypeClassUnifier {
 	public static val TypeClassUnifier INSTANCE = new TypeClassUnifier();
@@ -46,7 +49,9 @@ class TypeClassUnifier {
 		val quotedInstances = instances.map[quoteLike(structure)];
 		
 		val commonTypesAcross = unifyTypeClassInstancesWithCommonTypesAcross(structure, quotedInstances);
-		return null;
+		val commonTypeQuoted = unifyTypeClassInstancesWithReusedTypes(commonTypesAcross, quotedInstances);
+		val commonType = commonTypeQuoted.node.unqote(commonTypeQuoted.children);
+		return new TypeScheme(null, commonType.freeVars.force, commonType);
 	}
 	
 	def Tree<AbstractType> unifyTypeClassInstancesWithCommonTypesAcross(Tree<AbstractType> commonTypeStructure, Iterable<Tree<AbstractType>> instances) {
@@ -61,6 +66,39 @@ class TypeClassUnifier {
 		
 		result.children += commonTypeStructure.children.zip(instances.map[it.children].transpose).map[unifyTypeClassInstancesWithCommonTypesAcross(it.key, it.value)]
 		return result;
+	}
+	
+	def Tree<AbstractType> unifyTypeClassInstancesWithReusedTypes(Tree<AbstractType> _commonTypeStructure, Iterable<Tree<AbstractType>> instances) {
+		val commonTypeStructure = Tree.copy(_commonTypeStructure);
+		val freeVarsAndPaths = commonTypeStructure.toPathIterable.filter[it.value instanceof TypeVariable].force;
+		while(!freeVarsAndPaths.empty) {
+			val pathAndVar = freeVarsAndPaths.head;
+			freeVarsAndPaths.remove(0);
+			val path = pathAndVar.key;
+			val typeVar = pathAndVar.value;
+			val instanceVars = instances.map[it.get(path)];
+			// a list of lists of paths
+			// for each instance, a list of paths to locations of typeVar
+			val Iterable<Iterable<Iterable<Integer>>> reusedLocations = instances.zip(instanceVars).map[it.key.findAll(it.value)];
+			// by making them sets we can merge them (conceptually) by intersecting
+			val reusedLocationsMergable = reusedLocations.map[locs |
+				new TreeSet<Iterable<Integer>>(Comparators.lexicographical(Comparator.naturalOrder)) => [
+					addAll(locs);	
+				];
+			];
+			val commonPaths = reusedLocationsMergable.tail.fold(reusedLocationsMergable.head, [s1, s2 | 
+				val intersection = new TreeSet<Iterable<Integer>>(Comparators.lexicographical(Comparator.naturalOrder));
+				intersection.addAll(s1);
+				intersection.retainAll(s2);
+				return intersection as Set<Iterable<Integer>>;
+			]);
+			commonPaths.forEach[ p |
+				commonTypeStructure.set(p, typeVar);	
+				freeVarsAndPaths.removeIf[Comparators.lexicographical(Comparator.naturalOrder).compare(it.key, p) == 0];
+			]
+			
+		}
+		return commonTypeStructure;
 	}
 	
 	def AbstractType unifyTypeClassInstancesStructure(ConstraintSystem system, Iterable<AbstractType> _instances) {

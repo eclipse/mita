@@ -98,4 +98,8 @@ class TypeScheme extends AbstractType {
 		return new TypeScheme(origin, vars.map[modifyNames(suffix) as TypeVariable].force, on.modifyNames(suffix))
 	}
 	
+	override unqote(Iterable<Tree<AbstractType>> children) {
+		return new TypeScheme(origin, vars, children.head.node.unqote(children.head.children))
+	}
+	
 }

@@ -21,7 +21,8 @@ abstract class AbstractType {
 	
 	abstract def Tree<AbstractType> quote();
 	abstract def Tree<AbstractType> quoteLike(Tree<AbstractType> structure);
-	
+	abstract def AbstractType unqote(Iterable<Tree<AbstractType>> children);
+		
 	override boolean equals(Object other) {
 		if (this === other)
 		  return true;
@@ -67,4 +68,5 @@ abstract class AbstractType {
 	def AbstractType modifyNames(String suffix) {
 		map[it.modifyNames(suffix)];
 	}
+	
 }

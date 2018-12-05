@@ -87,4 +87,8 @@ class TypeConstructorType extends AbstractType {
 		return this;
 	}
 	
+	override unqote(Iterable<Tree<AbstractType>> children) {
+		return new TypeConstructorType(origin, name, children.map[it.node.unqote(it.children)].force);
+	}
+	
 }

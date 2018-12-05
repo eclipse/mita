@@ -42,4 +42,8 @@ abstract class AbstractBaseType extends AbstractType {
 		return this;
 	}
 	
+	override unqote(Iterable<Tree<AbstractType>> children) {
+		return this;
+	}
+	
 }

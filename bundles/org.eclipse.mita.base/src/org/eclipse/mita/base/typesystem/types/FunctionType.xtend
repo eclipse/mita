@@ -12,6 +12,7 @@ import org.eclipse.xtext.diagnostics.Severity
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.infra.Tree
 
 @EqualsHashCode
 @Accessors
@@ -74,7 +75,9 @@ class FunctionType extends TypeConstructorType {
 	}
 	
 
-
+	override unqote(Iterable<Tree<AbstractType>> children) {
+		return new FunctionType(origin, name, children.map[it.node.unqote(it.children)].force);
+	}
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;

@@ -14,6 +14,7 @@ import org.eclipse.xtext.diagnostics.Severity
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.infra.Tree
 
 @EqualsHashCode
 @Accessors
@@ -72,6 +73,10 @@ class ProdType extends TypeConstructorType {
 			return new ProdType(origin, name, newTypeArgs);
 		}
 		return this;
+	}
+	
+	override unqote(Iterable<Tree<AbstractType>> children) {
+		return new ProdType(origin, name, children.map[it.node.unqote(it.children)].force);
 	}
 	
 }
