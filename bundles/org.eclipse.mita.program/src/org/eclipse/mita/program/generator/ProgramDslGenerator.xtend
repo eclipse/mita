@@ -190,6 +190,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			|| resourceOrSetup instanceof SystemResourceSetup) { 
 				files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».h''', resourceOrSetup as EObject, systemResourceGenerator.generateHeader(context, resourceOrSetup));
 				files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».c''', resourceOrSetup as EObject, systemResourceGenerator.generateImplementation(context, resourceOrSetup));
+				files += systemResourceGenerator.generateAdditionalFiles(fsa, context, resourceOrSetup);
 			}
 		}
 	

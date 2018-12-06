@@ -14,10 +14,17 @@
 package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.function.Function
+import java.util.stream.Stream
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.plugin.EcorePlugin
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
@@ -76,6 +83,39 @@ class GeneratorUtils {
 	
 	@Inject(optional = true)
 	protected IPlatformLoggingGenerator loggingGenerator;
+
+	/**
+	 * Opens the file at *fileLoc* either absolute or relative to the current project, depending on whether the path is absolute or relative.
+	 * In the case of the standalone compiler this will open *fileLoc* relative to the user's command.
+	 * If the file does not exist, returns null.
+	 */
+	def Stream<String> getFileContents(Resource resourceInProject, String fileLoc) {
+		val path = Paths.get(fileLoc);
+		return (if(path.isAbsolute) {
+			if(!Files.exists(path)) {
+				null;
+			}
+			else {
+				Files.newBufferedReader(path);
+			}
+		}
+		else {
+			val workspaceRoot = EcorePlugin.workspaceRoot;
+			if(workspaceRoot === null) {
+				// special case for standalone compiler
+				Files.newBufferedReader(path);
+			}
+			else {
+				val file = workspaceRoot.getProject(resourceInProject.URI.segment(1)).getFile(fileLoc);
+				if(!file.exists) {
+					null;
+				}
+				else {
+			        new BufferedReader(new InputStreamReader(file.getContents(), file.charset));
+				}
+			}
+		})?.lines;
+	}
 
 	def getGlobalInitName(Program program) {
 		return '''initGlobalVariables_«program.eResource.URI.lastSegment.replace(".mita", "")»'''

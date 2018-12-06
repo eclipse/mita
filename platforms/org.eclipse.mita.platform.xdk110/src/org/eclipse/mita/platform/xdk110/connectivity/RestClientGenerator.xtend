@@ -227,7 +227,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		codeFragmentProvider.create('''
 		Retcode_T exception = RETCODE_OK;
 
-		«servalpalGenerator.generateSetup()»
+		«servalpalGenerator.generateSetup(false)»
 
 		responseReceivedSemaphore = xSemaphoreCreateBinary();
 		''')
