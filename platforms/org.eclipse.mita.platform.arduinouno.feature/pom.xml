@@ -7,7 +7,7 @@
 		<groupId>org.eclipse.mita</groupId>
 		<artifactId>org.eclipse.mita.releng</artifactId>
 		<version>0.1.0-SNAPSHOT</version>
-		<relativePath>..</relativePath>
+		<relativePath>../../bundles</relativePath>
 	</parent>
 	<groupId>org.eclipse.mita</groupId>
 	<artifactId>org.eclipse.mita.platform.arduino.uno.feature</artifactId>
