@@ -49,7 +49,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		val isSecure = brokerUri.scheme == "mqtts";
 		if(isSecure) {
 			val certificateFileLoc = configuration.getString("certificatePath");
-			val certificate = generatorUtils.getFileContents(component.eResource, certificateFileLoc);
+			val certificate = generatorUtils.getFileContents(setup.eResource, certificateFileLoc);
 			if(certificate === null) {
 				return #[];
 			}
@@ -89,6 +89,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		
 		codeFragmentProvider.create('''
 		Retcode_T exception = RETCODE_OK;
+		StringDescr_wrap(&username, usernameBuf);
+		StringDescr_wrap(&password, passwordBuf);
+		
 
 		«servalpalGenerator.generateSetup(isSecure)»
 		
@@ -273,7 +276,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 		«generatorUtils.generateExceptionHandler(setup, "exception")»
 
-		mqttSession.MQTTVersion = 3;
+		mqttSession.MQTTVersion = 4;
 		mqttSession.keepAliveInterval = 60;
 		mqttSession.cleanSession = false;
 		mqttSession.will.haveWill = false;
@@ -321,11 +324,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
                 StringDescr_T username;
                 const char* usernameBuf = «username»;
-                StringDescr_wrap(&username, usernameBuf);
 
                 StringDescr_T password;
                 const char* passwordBuf = «password»;
-                StringDescr_wrap(&password, passwordBuf);
 				''').addHeader("Serval_StringDescr.h", true);
 			}
 		}
@@ -438,8 +439,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttConnectHandle, 0UL);
-			if(RC_OK != Mqtt_connect(&mqttSession)) {
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT")»
+			retcode_t rc = Mqtt_connect(&mqttSession);
+			if(RC_OK != rc) {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT: 0x%d", codeFragmentProvider.create('''rc'''))»
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_FAILED);
 			}
 			if (pdTRUE != xSemaphoreTake(mqttConnectHandle, pdMS_TO_TICKS(30000)))
