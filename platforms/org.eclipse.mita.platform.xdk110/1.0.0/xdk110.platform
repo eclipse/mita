@@ -759,7 +759,7 @@ connectivity many MQTT {
 	configuration-item sntpServer: string = "pool.ntp.org:123"
 	
 	/**
-	 * The path to the server's public certificate to use for authentication. Format: *.crt. Absolute or relative to the project root.
+	 * The path to the server's public certificate to use for authentication. PEM format. Absolute or relative to the project root.
 	 */
 	configuration-item certificatePath: string
 	
