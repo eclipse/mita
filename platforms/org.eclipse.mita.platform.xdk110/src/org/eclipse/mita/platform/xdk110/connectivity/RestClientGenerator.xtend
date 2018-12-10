@@ -121,13 +121,13 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
 		
 		codeFragmentProvider.create('''
-		size_t messageLength = strlen((const char*) *«variableName»);
+		size_t messageLength = strlen((const char*) *«variableName») + 1;
 		if(messageLength > sizeof(httpBodyBuffer))
 		{
 			return EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION;
 		}
 		
-		memcpy(httpBodyBuffer, *«variableName», strlen(*«variableName»));
+		memcpy(httpBodyBuffer, *«variableName», messageLength);
 
 		Retcode_T exception = RETCODE_OK;
 		Ip_Address_T destAddr;
