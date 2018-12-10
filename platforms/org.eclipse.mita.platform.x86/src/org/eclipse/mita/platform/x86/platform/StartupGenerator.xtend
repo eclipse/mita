@@ -44,6 +44,11 @@ class StartupGenerator implements IPlatformStartupGenerator {
 						«evt.handlerName»();
 						fflush(stdout);
 					}
+				«ELSE»
+					if(«handler.handlerName»_flag) {
+						«handler.handlerName»_flag = false;
+						«evt.handlerName»();
+					}
 				«ENDIF»
 				«ENDFOR»
 				sleepMs(5);
@@ -52,6 +57,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		''')
 		.addHeader('time.h', true)
 		.addHeader('stdio.h', true)
+		.addHeader('stdbool.h', true)
 		.setPreamble('''
 		#ifdef linux
 		#include <unistd.h>

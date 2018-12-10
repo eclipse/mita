@@ -15,15 +15,16 @@
 package org.eclipse.mita.platform.x86.platform
 
 import com.google.inject.Inject
+import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.SystemEventSource
+import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.program.TimeIntervalEvent
 
 class EventLoopGenerator implements IPlatformEventLoopGenerator {
 
@@ -53,12 +54,12 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	
 	override generateEventHeaderPreamble(CompilationContext context) {
 		return codeFragmentProvider.create('''
-			«FOR handler : context.allEventHandlers.filter[it.event instanceof SystemResourceEvent]»
-			volatile bool «handler.handlerName»_flag;
+			«FOR handler : context.allEventHandlers.filter[it.event instanceof SystemEventSource]»
+				volatile bool «handler.handlerName»_flag;
 			«ENDFOR»
 			«FOR handler : context.allTimeEvents»
 				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
-				extern clock_t lastTick«period.toString.toFirstUpper»;
+				clock_t lastTick«period.toString.toFirstUpper»;
 			«ENDFOR»
 		''')
 		.addHeader("stdbool.h", true);
@@ -73,7 +74,12 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	}
 	
 	override generateSetupPreamble(CompilationContext context) {
-		return CodeFragment.EMPTY;
+		val startupEventHandler = context.allEventHandlers.filter[it.event instanceof SystemEventSource].findFirst[(it.event as SystemEventSource).source.name == "startup"]
+		return codeFragmentProvider.create('''
+			«IF startupEventHandler !== null»
+			«startupEventHandler.handlerName»_flag = 1;
+			«ENDIF»
+		''');
 	}
 	
 	override generateEnablePreamble(CompilationContext context) {

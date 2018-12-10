@@ -50,12 +50,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 			return 0;
 		''')
 
-		return codeFragmentProvider.create(body).setPreamble('''
-			«FOR handler : context.allTimeEvents»
-				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
-				clock_t lastTick«period.toString.toFirstUpper»;
-			«ENDFOR»
-			
+		return codeFragmentProvider.create(body).setPreamble('''	
 			int32_t Time_Enable(void) {
 				«FOR handler : context.allTimeEvents»
 					«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
@@ -64,7 +59,8 @@ class TimeGenerator implements IPlatformTimeGenerator {
 			}
 		''')
 		.addHeader('time.h', true)
-		.addHeader('MitaExceptions.h', false);
+		.addHeader('MitaExceptions.h', false)
+		.addHeader('MitaEvents.h', false);
 	}
 	
 }
