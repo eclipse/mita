@@ -39,9 +39,9 @@
 				<version>${tycho-version}</version>
 				<configuration>
 					<environmentVariables>
-          	<MitaCLI>${basedir}/../../bundles/org.eclipse.mita.cli/target/*-cli.jar</MitaCLI>
-          	<x86platform>${basedir}/../../bundles/org.eclipse.mita.repository/target/org.eclipse.mita.platform.x86_*.jar</x86platform>
-          	<stdlib>${basedir}/../../bundles/org.eclipse.mita.cli/target/org.eclipse.mita.library.stdlib_*.jar</stdlib>
+          	<MitaCLI>${basedir}/..//org.eclipse.mita.cli/target/org.eclipse.mita.cli-0.1.0-SNAPSHOT.jar</MitaCLI>
+          	<x86platform>${basedir}/../org.eclipse.mita.platform.x86/target/org.eclipse.mita.platform.x86_0.1.0-SNAPSHOT.jar</x86platform>
+          	<stdlib>${basedir}/../org.eclipse.mita.library.stdlib/target/org.eclipse.mita.library.stdlib-0.1.0-SNAPSHOT.jar</stdlib>
           </environmentVariables>
 					<excludes>
 						<exclude>**/*Test.java</exclude>
