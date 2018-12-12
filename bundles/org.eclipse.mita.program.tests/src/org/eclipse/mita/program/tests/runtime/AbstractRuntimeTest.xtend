@@ -9,6 +9,7 @@ import java.util.Map
 import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 import java.lang.ProcessBuilder.Redirect
+import java.util.List
 
 class AbstractRuntimeTest {
 	/**
@@ -16,7 +17,7 @@ class AbstractRuntimeTest {
 	 */
 	def Pair<Path, Path> setup(String name, String mitaCode) {
 		val project = Files.createTempDirectory(name);
-		val mitaFile = Files.createTempFile(project, "application", ".mita");
+		val mitaFile = Files.createFile(project.resolve("application.mita"));
 		Files.write(mitaFile, mitaCode.getBytes("UTF-8"));
 		return project -> mitaFile;
 	}
@@ -36,7 +37,7 @@ class AbstractRuntimeTest {
 		val javaExec = env.getOrDefault("java", "java");
 		val ps = File.pathSeparatorChar;
 		
-		val command = '''«javaExec» -cp «pluginsPath»«ps»«compilerJar» org.eclipse.mita.cli.Main compile -p «projectFolder.toString»''';
+		val List<String> command = #[javaExec, "-cp", '''«pluginsPath»«ps»«compilerJar»''',  "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
 		
 		val ProcessBuilder builder = new ProcessBuilder(command);
 		builder.redirectOutput(Redirect.INHERIT);
