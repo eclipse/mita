@@ -40,6 +40,9 @@ class AbstractRuntimeTest {
 		val ps = File.pathSeparatorChar;
 		
 		val List<String> command = #[javaExec, "-cp", '''«x86platformJar»«ps»«stdlibJar»«ps»«compilerJar»''',  "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
+		println("compiling mita project...");
+		println(command.join(", "));
+		println("");
 		
 		val ProcessBuilder builder = new ProcessBuilder(command);
 		builder.redirectOutput(Redirect.INHERIT);
@@ -54,6 +57,9 @@ class AbstractRuntimeTest {
 		val make = env.getOrDefault("make", "make");
 		
 		val command = #[make, "-C", projectFolder.resolve("src-gen").toString, target];
+		println("compiling C project...");
+		println(command.join(", "));
+		println("");
 		
 		val ProcessBuilder builder = new ProcessBuilder(command);
 		builder.redirectOutput(Redirect.INHERIT);
@@ -63,6 +69,9 @@ class AbstractRuntimeTest {
 	}
 	
 	def Stream<String> runAtMost(Path pathToExecutable, int timeInSeconds) {
+		println("running exe...");
+		println(pathToExecutable);
+		println("");
 		val Runtime rt = Runtime.getRuntime();
 		val Process pr = rt.exec(pathToExecutable.toString);
 		val output = new BufferedReader(new InputStreamReader(pr.inputStream));

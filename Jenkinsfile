@@ -27,17 +27,6 @@ pipeline {
             }
         }
 
-        stage("deploy") {
-            steps {
-                sh "mvn -P!plugins -P!platforms -P!tests -Pdeployment -Psign -f bundles/pom.xml install"
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'bundles/org.eclipse.mita.repository/target/*,bundles/org.eclipse.mita.cli/target/*-cli.jar', fingerprint: true
-                }
-            }
-        }
-
         stage('base tests') {
             steps {
                 wrap([$class:'Xvnc', useXauthority: true]) {
@@ -49,6 +38,17 @@ pipeline {
 					junit 'bundles/**/target/surefire-reports/TEST-*.xml' 
 				}
 			}
+        }
+
+        stage("deploy") {
+            steps {
+                sh "mvn -P!plugins -P!platforms -P!tests -Pdeployment -Psign -f bundles/pom.xml install"
+            }
+            post {
+                always {
+                    archiveArtifacts artifacts: 'bundles/org.eclipse.mita.repository/target/*,bundles/org.eclipse.mita.cli/target/*-cli.jar', fingerprint: true
+                }
+            }
         }
     }
 }
