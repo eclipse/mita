@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit
 import java.util.stream.Stream
 import java.lang.ProcessBuilder.Redirect
 import java.util.List
+import java.nio.file.Paths
 
 class AbstractRuntimeTest {
 	/**
@@ -39,7 +40,15 @@ class AbstractRuntimeTest {
 		val javaExec = env.getOrDefault("java", "java");
 		val ps = File.pathSeparatorChar;
 		
-		val List<String> command = #[javaExec, "-cp", '''«x86platformJar»«ps»«stdlibJar»«ps»«compilerJar»''',  "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
+		val cpEntries = #[compilerJar, x86platformJar, stdlibJar];
+		
+		cpEntries.forEach[
+			if(!Files.exists(Paths.get(it))) {
+				System.err.println("Not found: " + it);
+			}
+		]
+		
+		val List<String> command = #[javaExec, "-cp", '''«cpEntries.join(ps.toString)»''',  "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
 		println("compiling mita project...");
 		println(command.join(", "));
 		println("");
