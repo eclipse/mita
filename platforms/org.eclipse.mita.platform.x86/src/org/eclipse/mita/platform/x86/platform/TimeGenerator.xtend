@@ -37,7 +37,11 @@ class TimeGenerator implements IPlatformTimeGenerator {
 	protected extension GeneratorUtils
 	
 	override generateTimeEnable(CompilationContext context, EventHandlerDeclaration handler) {
-		return codeFragmentProvider.create('''Time_Enable();''')
+		val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent);
+		return codeFragmentProvider.create('''lastTick«period.toString.toFirstUpper» = clock();''')
+			.addHeader('time.h', true)
+			.addHeader('MitaExceptions.h', false)
+			.addHeader('MitaEvents.h', false);
 	}
 
 	override generateTimeGoLive(CompilationContext context) {
@@ -46,21 +50,9 @@ class TimeGenerator implements IPlatformTimeGenerator {
 
 	override generateTimeSetup(CompilationContext context) {
 		
-		val body = codeFragmentProvider.create('''
+		return codeFragmentProvider.create('''
 			return 0;
 		''')
-
-		return codeFragmentProvider.create(body).setPreamble('''	
-			int32_t Time_Enable(void) {
-				«FOR handler : context.allTimeEvents»
-					«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
-					lastTick«period.toString.toFirstUpper» = clock();
-				«ENDFOR»
-			}
-		''')
-		.addHeader('time.h', true)
-		.addHeader('MitaExceptions.h', false)
-		.addHeader('MitaEvents.h', false);
 	}
 	
 }

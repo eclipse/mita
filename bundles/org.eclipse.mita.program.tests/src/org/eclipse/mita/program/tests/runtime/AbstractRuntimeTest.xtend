@@ -53,10 +53,13 @@ class AbstractRuntimeTest {
 		
 		val make = env.getOrDefault("make", "make");
 		
-		val command = '''«make» -C «projectFolder.toString» «target»''';
+		val command = #[make, "-C", projectFolder.resolve("src-gen").toString, target];
 		
-		val Runtime rt = Runtime.getRuntime();
-		val Process pr = rt.exec(command);
+		val ProcessBuilder builder = new ProcessBuilder(command);
+		builder.redirectOutput(Redirect.INHERIT);
+		builder.redirectError(Redirect.INHERIT);
+		val Process pr = builder.start(); // may throw IOException
+		pr.waitFor;
 	}
 	
 	def Stream<String> runAtMost(Path pathToExecutable, int timeInSeconds) {

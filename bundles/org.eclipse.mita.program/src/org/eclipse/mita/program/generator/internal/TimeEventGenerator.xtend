@@ -98,6 +98,7 @@ class TimeEventGenerator {
 			
 			«ENDFOR»
 		''')
+		.addHeader('MitaTime.h', false)
 		.toImplementation(context)
 	}
 	

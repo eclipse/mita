@@ -38,6 +38,11 @@
 				<artifactId>tycho-surefire-plugin</artifactId>
 				<version>${tycho-version}</version>
 				<configuration>
+					<environmentVariables>
+          	<MitaCLI>${basedir}/../../bundles/org.eclipse.mita.cli/target/*-cli.jar</MitaCLI>
+          	<x86platform>${basedir}/../../bundles/org.eclipse.mita.repository/target/org.eclipse.mita.platform.x86_*.jar</x86platform>
+          	<stdlib>${basedir}/../../bundles/org.eclipse.mita.cli/target/org.eclipse.mita.library.stdlib_*.jar</stdlib>
+          </environmentVariables>
 					<excludes>
 						<exclude>**/*Test.java</exclude>
 						<exclude>**/*Test.xtend</exclude>
