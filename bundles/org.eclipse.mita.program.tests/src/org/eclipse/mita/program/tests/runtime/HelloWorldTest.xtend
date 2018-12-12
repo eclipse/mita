@@ -28,7 +28,7 @@ class HelloWorldTest extends AbstractRuntimeTest {
 		native unchecked fn exit(status: int16): void header "stdlib.h";
 		''').key;
 		compileMita(projectPath);
-		compileC(projectPath, "");
+		compileC(projectPath, "all");
 		val executable = projectPath.resolve(Paths.get("src-gen", "build", "app"));
 		val lines = runAtMost(executable, 60);
 		val lastLine = lines.iterator.last;
