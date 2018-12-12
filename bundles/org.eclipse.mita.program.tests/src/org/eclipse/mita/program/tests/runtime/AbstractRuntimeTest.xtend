@@ -28,16 +28,18 @@ class AbstractRuntimeTest {
 	 * - "java", path to a jre java binary or java in the "PATH" environment variable
 	 * - "make", path to the make binary or java in the "PATH" environment variable
 	 * - "MitaCLI", path to a jar file containing the compiler
-	 * - "plugins", path to (a folder containing) the x86 platform
+	 * - "x86platform", path to the x86 platform
+	 * - "stdlib", path to the jar containing the stdlib
 	 */
 	def void compileMita(Path projectFolder) {
 		val Map<String, String> env = System.getenv();
 		val compilerJar = env.getOrDefault("MitaCLI", "org.eclipse.mita.cli.jar");
-		val pluginsPath = env.getOrDefault("plugins", "org.eclipse.mita.repository/target/plugins/");
+		val x86platformJar = env.getOrDefault("x86platform", "org.eclipse.mita.repository/target/plugins/org.eclipse.mita.platform.x86_0.1.0.jar");
+		val stdlibJar = env.getOrDefault("stdlib", "org.eclipse.mita.repository/target/plugins/org.eclipse.mita.library.stdlib_0.1.0.jar");
 		val javaExec = env.getOrDefault("java", "java");
 		val ps = File.pathSeparatorChar;
 		
-		val List<String> command = #[javaExec, "-cp", '''«pluginsPath»«ps»«compilerJar»''',  "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
+		val List<String> command = #[javaExec, "-cp", '''«x86platformJar»«ps»«stdlibJar»«ps»«compilerJar»''',  "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
 		
 		val ProcessBuilder builder = new ProcessBuilder(command);
 		builder.redirectOutput(Redirect.INHERIT);
