@@ -39,7 +39,7 @@
 				<version>${tycho-version}</version>
 				<configuration>
 					<environmentVariables>
-          	<MitaCLI>${basedir}/../org.eclipse.mita.cli/target/org.eclipse.mita.cli-0.1.0-SNAPSHOT.jar</MitaCLI>
+          	<MitaCLI>${basedir}/../org.eclipse.mita.cli/target/org.eclipse.mita.cli-0.1.0-SNAPSHOT-cli.jar</MitaCLI>
           	<x86platform>${basedir}/../../platforms/org.eclipse.mita.platform.x86/target/org.eclipse.mita.platform.x86-0.1.0-SNAPSHOT.jar</x86platform>
           	<stdlib>${basedir}/../org.eclipse.mita.library.stdlib/target/org.eclipse.mita.library.stdlib-0.1.0-SNAPSHOT.jar</stdlib>
           </environmentVariables>
