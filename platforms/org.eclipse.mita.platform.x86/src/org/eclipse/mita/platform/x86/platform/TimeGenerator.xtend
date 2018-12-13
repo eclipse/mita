@@ -38,7 +38,32 @@ class TimeGenerator implements IPlatformTimeGenerator {
 	
 	override generateTimeEnable(CompilationContext context, EventHandlerDeclaration handler) {
 		val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent);
-		return codeFragmentProvider.create('''lastTick«period.toString.toFirstUpper» = clock();''')
+		return codeFragmentProvider.create('''lastTick«period.toString.toFirstUpper» = getTime();''')
+			.setPreamble('''
+			#ifdef __linux__
+			#include <unistd.h>
+			#include <time.h>
+			#include <bits/time.h>
+			#include <bits/types/struct_timespec.h>
+			void sleepMs(uint32_t ms) {
+				usleep(ms * 1000);
+			}
+			int32_t getTime(void) {
+				struct timespec ts;
+				clock_gettime(CLOCK_MONOTONIC, &ts);
+				return 1000*ts.tv_sec + ts.tv_nsec/1000000; 
+			}
+			#endif
+			#ifdef _WIN32
+			#include <windows.h>
+			void sleepMs(uint32_t ms) {
+				Sleep(ms);
+			}
+			int32_t getTime() {
+				clock();
+			}
+			#endif
+			''')
 			.addHeader('time.h', true)
 			.addHeader('MitaExceptions.h', false)
 			.addHeader('MitaEvents.h', false);
@@ -52,6 +77,24 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		
 		return codeFragmentProvider.create('''
 			return 0;
+		''')
+	}
+	
+	override generateAdditionalHeaderContent(CompilationContext context) {
+		return codeFragmentProvider.create('''
+		#ifdef __linux__
+		#include <unistd.h>
+		#include <time.h>
+		#include <bits/time.h>
+		#include <bits/types/struct_timespec.h>
+		void sleepMs(uint32_t ms);
+		int32_t getTime(void);
+		#endif
+		#ifdef _WIN32
+		#include <windows.h>
+		void sleepMs(uint32_t ms);
+		int32_t getTime();
+		#endif
 		''')
 	}
 	

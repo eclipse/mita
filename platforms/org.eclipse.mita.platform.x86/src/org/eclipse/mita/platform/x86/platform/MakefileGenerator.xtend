@@ -26,7 +26,7 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 	override generateMakefile(Iterable<Program> program, List<String> sourceFiles) {
 		return codeFragmentProvider.create('''
 		export CC=gcc
-		export CCFLAGS=-Wall -std=c99
+		export CCFLAGS=-Wall -std=c99 -D_POSIX_C_SOURCE=199309L -D_DEFAULT_SOURCE
 		export BUILDDIR=./build
 		export SOURCE_INCLUDES = -I. -I./base
 		export SOURCE_DIR=.

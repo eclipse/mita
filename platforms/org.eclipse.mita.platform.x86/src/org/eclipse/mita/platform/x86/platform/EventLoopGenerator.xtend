@@ -59,7 +59,7 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 			«ENDFOR»
 			«FOR handler : context.allTimeEvents»
 				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
-				clock_t lastTick«period.toString.toFirstUpper»;
+				int32_t lastTick«period.toString.toFirstUpper»;
 			«ENDFOR»
 		''')
 		.addHeader("stdbool.h", true);

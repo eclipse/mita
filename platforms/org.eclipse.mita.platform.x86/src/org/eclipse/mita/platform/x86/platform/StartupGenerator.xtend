@@ -34,7 +34,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 			Mita_initialize();
 			Mita_goLive();
 			while(1) {
-				clock_t now = clock();
+				int32_t now = getTime();
 				«FOR handler : context.allEventHandlers»
 				«val evt = handler.event»
 				«IF evt instanceof TimeIntervalEvent»
@@ -57,17 +57,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		''')
 		.addHeader('time.h', true)
 		.addHeader('stdio.h', true)
-		.addHeader('stdbool.h', true)
-		.setPreamble('''
-		#ifdef linux
-		#include <unistd.h>
-		#define sleepMs(X) (usleep(X * 1000))
-		#endif
-		#ifdef _WIN32
-		#include <windows.h>
-		#define sleepMs(X) (Sleep(X))
-		#endif
-		''');
+		.addHeader('stdbool.h', true);
 	}
 
 }

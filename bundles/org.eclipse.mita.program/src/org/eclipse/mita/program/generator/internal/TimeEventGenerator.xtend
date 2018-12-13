@@ -38,6 +38,7 @@ class TimeEventGenerator {
 	def generateHeader(CompilationContext context) {
 		val exceptionType = exceptionGenerator.exceptionType
 		val allTimeEventHandler = context.allEventHandlers.filter[e | e.event instanceof TimeIntervalEvent ];
+		val generator = timeGenerator;
 		
 		return codeFragmentProvider.create('''
 			«exceptionType» SetupTime(void);
@@ -47,6 +48,8 @@ class TimeEventGenerator {
 			«FOR handler : allTimeEventHandler»
 			«exceptionType» «handler.enableName»(void);
 			«ENDFOR»
+			
+			«generator.generateAdditionalHeaderContent(context)»
 		''')
 		.toHeader(context, 'MITA_TIME_H')
 	}

@@ -55,6 +55,8 @@ public interface IPlatformTimeGenerator {
 	 */
 	public CodeFragment generateTimeEnable(CompilationContext context, EventHandlerDeclaration handler);
 
+	public CodeFragment generateAdditionalHeaderContent(CompilationContext context);
+	
 	public class NullImpl implements IPlatformTimeGenerator {
 
 		@Override
@@ -69,6 +71,11 @@ public interface IPlatformTimeGenerator {
 
 		@Override
 		public CodeFragment generateTimeEnable(CompilationContext context, EventHandlerDeclaration handler) {
+			return CodeFragment.EMPTY;
+		}
+		
+		@Override
+		public CodeFragment generateAdditionalHeaderContent(CompilationContext context) {
 			return CodeFragment.EMPTY;
 		}
 	}

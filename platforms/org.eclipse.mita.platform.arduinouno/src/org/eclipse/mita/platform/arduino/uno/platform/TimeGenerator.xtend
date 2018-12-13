@@ -90,4 +90,8 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		.addHeader('Timer.h', false)
 	}
 	
+	override generateAdditionalHeaderContent(CompilationContext context) {
+		return CodeFragment.EMPTY;
+	}
+	
 }
