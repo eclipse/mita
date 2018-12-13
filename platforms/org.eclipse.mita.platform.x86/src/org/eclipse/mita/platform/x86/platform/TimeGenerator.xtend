@@ -44,7 +44,6 @@ class TimeGenerator implements IPlatformTimeGenerator {
 			#include <unistd.h>
 			#include <time.h>
 			#include <bits/time.h>
-			#include <bits/types/struct_timespec.h>
 			void sleepMs(uint32_t ms) {
 				usleep(ms * 1000);
 			}
@@ -86,7 +85,6 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		#include <unistd.h>
 		#include <time.h>
 		#include <bits/time.h>
-		#include <bits/types/struct_timespec.h>
 		void sleepMs(uint32_t ms);
 		int32_t getTime(void);
 		#endif
