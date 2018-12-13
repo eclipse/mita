@@ -1,4 +1,4 @@
-package org.eclipse.mita.program.tests.runtime
+package org.eclipse.mita.program.runtime.tests
 
 import java.io.BufferedReader
 import java.io.File
@@ -40,7 +40,7 @@ class AbstractRuntimeTest {
 		val javaExec = env.getOrDefault("java", "java");
 		val ps = File.pathSeparatorChar;
 		
-		val cpEntries = #[compilerJar, x86platformJar, stdlibJar];
+		val cpEntries = #[compilerJar, x86platformJar];
 		
 		cpEntries.forEach[
 			if(!Files.exists(Paths.get(it))) {
@@ -48,7 +48,7 @@ class AbstractRuntimeTest {
 			}
 		]
 		
-		val List<String> command = #[javaExec, "-cp", '''«cpEntries.join(ps.toString)»''',  "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
+		val List<String> command = #[javaExec, "-jar", compilerJar, "-cp", '''«cpEntries.join(ps.toString)»''', "compile", "-p", projectFolder.toString];
 		println("compiling mita project...");
 		println(command.join(", "));
 		println("");

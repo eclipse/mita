@@ -1,4 +1,4 @@
-package org.eclipse.mita.program.tests.runtime
+package org.eclipse.mita.program.runtime.tests
 
 import org.junit.Test
 import java.nio.file.Paths

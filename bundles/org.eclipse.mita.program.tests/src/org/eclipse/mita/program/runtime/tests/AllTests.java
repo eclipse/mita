@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-package org.eclipse.mita.program.tests.runtime;
+package org.eclipse.mita.program.runtime.tests;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
