@@ -48,7 +48,7 @@ class AbstractRuntimeTest {
 			}
 		]
 		
-		val List<String> command = #[javaExec, "-jar", compilerJar, "-cp", '''«cpEntries.join(ps.toString)»''',  "compile", "-p", projectFolder.toString];
+		val List<String> command = #[javaExec, "-cp", '''«cpEntries.join(ps.toString)»''', "-jar", compilerJar, "compile", "-p", projectFolder.toString];
 		println("compiling mita project...");
 		println(command.join(", "));
 		println("");
