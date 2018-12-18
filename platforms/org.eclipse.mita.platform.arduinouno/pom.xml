@@ -9,7 +9,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	
 	<groupId>org.eclipse.mita</groupId>
-	<artifactId>org.eclipse.mita.platform.arduino.uno</artifactId>
+	<artifactId>org.eclipse.mita.platform.arduino</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 	<packaging>eclipse-plugin</packaging>
 
