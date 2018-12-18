@@ -3,6 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Arduino Uno Platform (Beta)
 Bundle-SymbolicName: org.eclipse.mita.platform.arduino;singleton:=true
 Bundle-Version: 0.1.0.qualifier
+Eclipse-BundleShape: dir
 Automatic-Module-Name: org.eclipse.mita.platform.arduinouno
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.mita.library.extension,

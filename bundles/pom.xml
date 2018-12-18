@@ -80,7 +80,7 @@
             <modules>
                 <module>../platforms/org.eclipse.mita.platform.xdk110</module>
                 <module>../platforms/org.eclipse.mita.platform.unittest</module>
-                <module>../platforms/org.eclipse.mita.platform.arduinouno</module>
+                <module>../platforms/org.eclipse.mita.platform.arduino</module>
             </modules>
         </profile>
         
@@ -99,7 +99,7 @@
             <modules>
                 <module>org.eclipse.mita.feature</module>
                 <module>../platforms/org.eclipse.mita.platform.xdk110.feature</module>
-                <module>../platforms/org.eclipse.mita.platform.arduinouno.feature</module>
+                <module>../platforms/org.eclipse.mita.platform.arduino.feature</module>
                 <module>org.eclipse.mita.repository</module>
             </modules>
         </profile>
