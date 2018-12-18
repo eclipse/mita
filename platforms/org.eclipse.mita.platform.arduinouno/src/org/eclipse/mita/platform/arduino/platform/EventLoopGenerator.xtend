@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-package org.eclipse.mita.platform.arduino.uno.platform
+package org.eclipse.mita.platform.arduino.platform
 
 import com.google.inject.Inject
 import org.eclipse.mita.program.EventHandlerDeclaration
@@ -50,13 +50,13 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	override generateEventHeaderPreamble(CompilationContext context) {
 		return codeFragmentProvider.create('''
 			«IF context.allTimeEvents.length !== 0» 
-			#define TIMED_APPLICATION
+				#define TIMED_APPLICATION
 			«ENDIF»
 			«FOR handler : context.allEventHandlers»
-			
-			volatile bool «handler.handlerName»_flag;
-			bool get«handler.handlerName»_flag();
-			void set«handler.handlerName»(bool val);
+				
+				volatile bool «handler.handlerName»_flag;
+				bool get«handler.handlerName»_flag();
+				void set«handler.handlerName»(bool val);
 			«ENDFOR»
 		''');
 	}

@@ -1,4 +1,4 @@
-package org.eclipse.mita.platform.arduino.uno.buses
+package org.eclipse.mita.platform.arduino.buses
 
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -21,9 +21,9 @@ class GPIOGenerator extends AbstractSystemResourceGenerator {
 
 	override generateEnable() {
 		codeFragmentProvider.create('''
-		«FOR signaleInstace : setup.signalInstances»
-		GPIO_Connect(«signaleInstace.pinName», «signaleInstace.pinMode»);
-		«ENDFOR»
+			«FOR signaleInstace : setup.signalInstances»
+				GPIO_Connect(«signaleInstace.pinName», «signaleInstace.pinMode»);
+			«ENDFOR»
 		''').addHeader("GPIO.h", false)
 	}
 	

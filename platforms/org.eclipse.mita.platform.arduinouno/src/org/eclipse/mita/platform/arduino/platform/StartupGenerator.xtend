@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
  
-package org.eclipse.mita.platform.arduino.uno.platform
+package org.eclipse.mita.platform.arduino.platform
 
 import org.eclipse.mita.program.generator.IPlatformStartupGenerator
 import org.eclipse.mita.program.generator.CompilationContext
@@ -42,9 +42,9 @@ class StartupGenerator implements IPlatformStartupGenerator {
 			return 0;
 		''').setPreamble(
 			'''
-			«FOR handler : context.allEventHandlers»
-			extern void set«handler.handlerName»_flag();
-			«ENDFOR»
+				«FOR handler : context.allEventHandlers»
+					extern void set«handler.handlerName»_flag();
+				«ENDFOR»
 			'''
 		)
 	}

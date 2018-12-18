@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
  
-package org.eclipse.mita.platform.arduino.uno.platform
+package org.eclipse.mita.platform.arduino.platform
 
 import com.google.inject.Inject
 import org.eclipse.mita.program.generator.CodeFragment

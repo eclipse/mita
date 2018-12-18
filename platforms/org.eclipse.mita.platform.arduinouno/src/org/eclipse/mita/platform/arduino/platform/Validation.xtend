@@ -1,8 +1,7 @@
-package org.eclipse.mita.platform.arduino.uno.platform
+package org.eclipse.mita.platform.arduino.platform
 
 import java.util.HashSet
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
@@ -12,15 +11,11 @@ import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
-import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.xtext.validation.ValidationMessageAcceptor
 import org.eclipse.mita.program.validation.MethodCall
 import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
+import org.eclipse.xtext.validation.ValidationMessageAcceptor
 
 class Validation implements IResourceValidator {
 	

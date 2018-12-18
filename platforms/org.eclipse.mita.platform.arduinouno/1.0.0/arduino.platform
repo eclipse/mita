@@ -1,11 +1,11 @@
-package platforms.arduino.uno;
+package platforms.arduino;
 
 
 /**
  * Sensor for buttons
  */
 sensor Button {
-	generator "org.eclipse.mita.platform.arduino.uno.sensors.ButtonGenerator"
+	generator "org.eclipse.mita.platform.arduino.sensors.ButtonGenerator"
 	
 	/**
 	 * Result is true, if the button is pressed. Gives the current state of the button.
@@ -51,10 +51,10 @@ enum Modes {
 }
 
 /*
- * General Purpose Input Output support for Arduino Uno
+ * General Purpose Input Output support for Arduino
  */
 bus named-singleton GPIO {
-	generator "org.eclipse.mita.platform.arduino.uno.buses.GPIOGenerator"
+	generator "org.eclipse.mita.platform.arduino.buses.GPIOGenerator"
 	
 	signal pinMode(pin : ArduinoUnoPins, mode : Modes) : bool
 }
@@ -64,7 +64,7 @@ alias button_two for Button
 
 
 /** 
- * The current pinout - this is how the Arduino Uno needs to be connected, if the button is used.
+ * The current pinout - this is how the Arduino needs to be connected, if the button is used.
  * Arduino Pin |  Function
  * -------------------------
  *      2      | button_one
@@ -73,8 +73,8 @@ alias button_two for Button
  * The buttons are if not pressed logical high (5V).
  * Additionally, every port can be accessed by using the GPIO 
  */
-platform ArduinoUno {
-	module "org.eclipse.mita.platform.arduino.uno.platform.ArduinoUnoPlatformGeneratorModule"
+platform Arduino {
+	module "org.eclipse.mita.platform.arduino.platform.ArduinoUnoPlatformGeneratorModule"
 	has button_one
 	has button_two
 	has GPIO

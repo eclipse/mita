@@ -10,8 +10,8 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
- 
-package org.eclipse.mita.platform.arduino.uno.sensors
+
+package org.eclipse.mita.platform.arduino.sensors
 
 import com.google.inject.Inject
 import org.eclipse.mita.platform.AbstractSystemResource

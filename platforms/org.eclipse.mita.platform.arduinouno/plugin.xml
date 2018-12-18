@@ -4,14 +4,14 @@
    <extension
          point="org.eclipse.mita.library.extension.type_library">
       <Library
-            description="Arduino Uno Platform Definition"
-            id="platforms.arduino.uno"
-            module="org.eclipse.mita.platform.arduinouno.platform.ArduinoPlatformGeneratorModule"
-            name="Arduino Uno Platform Definition"
+            description="Arduino Platform Definition"
+            id="platforms.arduino"
+            module="org.eclipse.mita.platform.arduino.platform.ArduinoPlatformGeneratorModule"
+            name="Arduino Platform Definition"
             optional="true"
             version="1.0.0">
          <ResourceURI
-               uri="platform:/plugin/org.eclipse.mita.platform.arduino.uno/1.0.0/arduino.uno.platform">
+               uri="platform:/plugin/org.eclipse.mita.platform.arduino/1.0.0/arduino.platform">
          </ResourceURI>
          <Dependency
                id="org.eclipse.mita.library.stdlib"></Dependency>
