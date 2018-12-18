@@ -29,13 +29,13 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	@Inject 
 	protected extension GeneratorUtils
 	
-	public def generateEventloopInject(String functionName, String userParam1, String userParam2) {
+	def generateEventloopInject(String functionName, String userParam1, String userParam2) {
 		return codeFragmentProvider.create('''
 			«functionName»();
 		''')
 	}
 	
-	public def generateEventloopInject(String functionName) {
+	def generateEventloopInject(String functionName) {
 		return generateEventloopInject(functionName, '''NULL''', '''0''');
 	}
 	
