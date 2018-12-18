@@ -4,7 +4,8 @@
       label="Mita Arduino Uno Platform Feature"
       version="0.1.0.qualifier"
       provider-name="Eclipse.org/Mita">
-  <description>
+
+   <description>
       Contains the Mita Platform Arduino Uno
    </description>
 
@@ -19,13 +20,15 @@
 
       SPDX-License-Identifier: EPL-2.0
    </license>
-  <requires>
+
+   <requires>
       <import feature="org.eclipse.mita.feature"/>
-  </requires>
-<plugin
+   </requires>
+
+   <plugin
          id="org.eclipse.mita.platform.arduino.uno"
          download-size="0"
          install-size="0"
-         version="0.0.0"
-         unpack="false"/>
+         version="0.0.0"/>
+
 </feature>
