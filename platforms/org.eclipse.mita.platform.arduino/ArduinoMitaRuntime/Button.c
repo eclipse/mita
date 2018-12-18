@@ -66,7 +66,7 @@ Exception_T Button_Enable(ButtonNumber_T button, void* function, bool pressed) {
 	}
 	return STATUS_OK;
 }
-
+ 
 /**
  * Result is true, if the button is pressed. Gives the current state of the button.
  */
