@@ -192,7 +192,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(candidates === null || candidates.empty) {
 			return null;
 		}
-		val issue = new ValidationIssue(Severity.ERROR, '''Function «functionName» cannot be used here''', functionCall, functionReference, "");
+		val issue = new ValidationIssue(Severity.ERROR, '''Function «functionName» cannot be used here: %s, %s''', functionCall, functionReference, "");
 		/* This function is pretty complicated. It handles function calls like `f(x)` or `x.f()`.
 		 * We get:
 		 * - an object holding the function call, "f(x)"

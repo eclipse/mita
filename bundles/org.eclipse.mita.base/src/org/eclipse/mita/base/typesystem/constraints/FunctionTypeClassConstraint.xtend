@@ -18,7 +18,6 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.typesystem.types.Variance
 
-@FinalFieldsConstructor
 @Accessors
 @EqualsHashCode
 class FunctionTypeClassConstraint extends TypeClassConstraint {

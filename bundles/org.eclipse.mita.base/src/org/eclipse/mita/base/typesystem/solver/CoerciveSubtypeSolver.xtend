@@ -119,14 +119,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				if(funTypeInstance instanceof FunctionType) {
 				
 					val typeThatShouldBeInstance = tcc.typ;
-					currentSystem.addConstraint(new EqualityConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''CSS: 118''', null)));
-					if(tcc.returnTypeVariance == Variance.Covariant) {
-						currentSystem.addConstraint(new SubtypeConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''CSS: 122''', null)));
-					} else if(tcc.returnTypeVariance == Variance.Contravariant) {
-						currentSystem.addConstraint(new SubtypeConstraint(tcc.returnTypeTV, funTypeInstance.to, new ValidationIssue('''CSS: 120''', null)));
-					} else {
+					currentSystem.addConstraint(new SubtypeConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''CSS: 118''', null)));
+//					if(tcc.returnTypeVariance == Variance.Covariant) {
+//						currentSystem.addConstraint(new SubtypeConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''CSS: 122''', null)));
+//					} else if(tcc.returnTypeVariance == Variance.Contravariant) {
+//						currentSystem.addConstraint(new SubtypeConstraint(tcc.returnTypeTV, funTypeInstance.to, new ValidationIssue('''CSS: 120''', null)));
+//					} else {
 						currentSystem.addConstraint(new EqualityConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''CSS: 124''', null)));
-					}
+//					}
 				}
 			}
 		}
@@ -526,7 +526,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		t1.typeArguments.zip(t2.typeArguments).forEach[
 			newSystem.addConstraint(new EqualityConstraint(it.key, it.value, constraint._errorMessage));
 		]
-		return SimplificationResult.success(ConstraintSystem.combine(system, newSystem), substitution);
+		return SimplificationResult.success(ConstraintSystem.combine(#[system, newSystem]), substitution);
 		
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, AbstractType t1, AbstractType t2) {
