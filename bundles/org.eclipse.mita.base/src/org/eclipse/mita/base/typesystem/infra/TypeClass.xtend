@@ -50,24 +50,18 @@ class TypeClass {
 	}
 	
 	def replace(TypeVariable from, AbstractType with) {
-		return new TypeClass(instances.entrySet.map[
-			it.key.replace(from, with) -> it.value
-		])
+		return new TypeClass(instances.entrySet.toMap([it.key.replace(from, with)], [it.value]), mostSpecificGeneralization);
 	}
 	
 	def replace(Substitution sub) {
-		return new TypeClass(instances.entrySet.map[
-			it.key.replace(sub) -> it.value
-		])
+		return new TypeClass(instances.entrySet.toMap([it.key.replace(sub)], [it.value]), mostSpecificGeneralization)
 	}
 	def replaceProxies((TypeVariableProxy) => Iterable<AbstractType> typeVariableResolver, (URI) => EObject objectResolver) {
 		return this;
 	}
 	
 	def TypeClass modifyNames(String suffix) {
-		return new TypeClass(instances
-			.entrySet.map[k_v | k_v.key.modifyNames(suffix) -> k_v.value]
-		)
+		return new TypeClass(instances.entrySet.toMap([it.key.modifyNames(suffix)], [it.value]), mostSpecificGeneralization)
 	}
 }
 

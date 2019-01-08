@@ -1,12 +1,10 @@
 package org.eclipse.mita.base.typesystem.infra
 
 import java.util.ArrayList
-import org.eclipse.xtend.lib.annotations.Accessors
-import java.util.Iterator
-import com.google.common.collect.Iterables
 import java.util.Collections
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import java.util.List
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.xtend.lib.annotations.Accessors
+import static extension org.eclipse.mita.base.util.BaseUtils.zip;
 
 @Accessors
 class Tree<T> {
@@ -19,10 +17,30 @@ class Tree<T> {
 		this.node = node;
 	}
 	
+	override equals(Object other) {
+		if(other instanceof Tree) {
+			return this.node == other.node 
+				&& this.children.size == other.children.size 
+				&& this.children.zip(other.children).fold(false, [b, t1t2 | b && t1t2.key == t1t2.value])
+		}
+		return false;
+	}
+	
 	static def <T> Tree<T> copy(Tree<T> other) {
 		val result = new Tree(other.node);
 		result.children += other.children.map[copy(it)];
 		return result;
+	}
+	
+	def <S> Tree<Pair<T, S>> zip(Tree<S> other) {
+		val result = new Tree(this.node -> other.node)
+		result.children += this.children.zip(other.children).map[it.key.zip(it.value)]
+		return result;
+	}
+	
+	def <S> S fold(S seed, (S, T) => S f) {
+		val sChildren = children.fold(seed, [s, t | t.fold(s, f)]);
+		return f.apply(sChildren, node);
 	}
 	
 	override toString() {

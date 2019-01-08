@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
@@ -51,8 +52,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return #[subType, superType];
 	}
 	
-	override isAtomic() {
-		return  (subType.isAtomic && superType.isAtomic) //&& (subType instanceof TypeVariable || superType instanceof TypeVariable)
+	override isAtomic(ConstraintSystem system) {
+		return  (subType.isAtomic && superType.isAtomic) || (subType.canHaveSuperTypes || superType.canHaveSuperTypes)//&& (subType instanceof TypeVariable || superType instanceof TypeVariable)
 	}
 		
 	def canHaveSuperTypes(AbstractType type) {
@@ -60,7 +61,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	private def isAtomic(AbstractType t) {
-		return t instanceof AbstractBaseType || t instanceof TypeVariable || (t instanceof TypeConstructorType && !(t instanceof FunctionType))
+		return t instanceof AbstractBaseType || t instanceof TypeVariable
 	}
 	
 	private def isCompositeButShouldNotBeResolved(AbstractType t) {

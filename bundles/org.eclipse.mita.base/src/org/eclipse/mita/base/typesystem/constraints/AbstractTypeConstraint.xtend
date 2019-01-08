@@ -50,7 +50,7 @@ abstract class AbstractTypeConstraint {
 	
 	abstract def String toGraphviz();
 	
-	abstract def boolean isAtomic();
+	abstract def boolean isAtomic(ConstraintSystem system);
 	
 	def AbstractTypeConstraint replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
 		return map[it.replaceProxies(system, resolve)]

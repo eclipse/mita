@@ -101,6 +101,7 @@ class Substitution {
 	
 	def apply(ConstraintSystem system) {
 		val result = (constraintSystemProvider ?: system.constraintSystemProvider).get();
+		result.typeClasses.putAll(system.typeClasses.mapValues[it.replace(this)])
 		result.instanceCount = system.instanceCount;
 		result.symbolTable.putAll(system.symbolTable);
 		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>
@@ -108,16 +109,15 @@ class Substitution {
 		result.explicitSubtypeRelations.computeReverseMap;
 		// atomic constraints may become composite by substitution, the opposite can't happen
 		val unknownConstrains = system.atomicConstraints.map[c | c.replace(this)].force;
-		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic]);
-		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic]);
+		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);
+		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic(result)]);
 		val alwaysNonAtomic = system.nonAtomicConstraints.map[c | c.replace(this)];
 		alwaysNonAtomic.forEach[
-			if(it.isAtomic) {
+			if(it.isAtomic(result)) {
 				throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
 			}
 		]
 		result.nonAtomicConstraints.addAll(alwaysNonAtomic);
-		result.typeClasses.putAll(system.typeClasses.mapValues[it.replace(this)])
 		return result;
 	}
 	

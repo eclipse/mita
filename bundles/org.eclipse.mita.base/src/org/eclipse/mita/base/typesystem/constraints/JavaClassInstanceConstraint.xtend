@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -54,7 +55,7 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 		return "java instanceof"
 	}
 	
-	override isAtomic() {
+	override isAtomic(ConstraintSystem system) {
 		return what instanceof TypeVariable
 	}
 	

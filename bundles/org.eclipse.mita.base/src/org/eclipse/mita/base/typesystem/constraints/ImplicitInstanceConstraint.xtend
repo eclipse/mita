@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -58,7 +59,7 @@ class ImplicitInstanceConstraint extends AbstractTypeConstraint {
 		return "implicit instanceof"
 	}
 	
-	override isAtomic() {
+	override isAtomic(ConstraintSystem system) {
 		val r1 = isInstance instanceof TypeVariable;
 		val r2 = ofType instanceof TypeVariable;
 		val r3 = r1 || r2;

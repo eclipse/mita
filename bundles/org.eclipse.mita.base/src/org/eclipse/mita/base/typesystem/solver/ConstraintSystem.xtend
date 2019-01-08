@@ -174,7 +174,7 @@ class ConstraintSystem {
 	}
 	
 	def void addConstraint(AbstractTypeConstraint constraint) {
-		if(constraint.isAtomic) {
+		if(constraint.isAtomic(this)) {
 			atomicConstraints += constraint;
 		}
 		else {
@@ -272,7 +272,7 @@ class ConstraintSystem {
 	}
 	
 	def constraintIsAtomic(AbstractTypeConstraint c) {
-		return c.isAtomic;
+		return c.isAtomic(this);
 	}
 	
 	def plus(AbstractTypeConstraint constraint) {

@@ -102,13 +102,13 @@ class SerializationAdapter {
 		obj.symbolTable.entrySet.forEach[u_tv | 
 			result.symbolTable.put(URI.createURI(u_tv.key), fromValueObject(u_tv.value) as TypeVariable);
 		];
-		obj.constraints.map[ it.fromValueObject() as AbstractTypeConstraint ].forEach[ result.addConstraint(it) ];
 		result.typeClasses.putAll(obj
 			.typeClasses
 			.entrySet
 			.map[ it.key.toQualifiedName -> it.value.fromValueObject() as TypeClass ]
 			.toMap([ it.key ], [ it.value ])
 		);
+		obj.constraints.map[ it.fromValueObject() as AbstractTypeConstraint ].forEach[ result.addConstraint(it) ];
 		result.constraintSystemProvider = constraintSystemProvider;
 		result.explicitSubtypeRelations = obj.explicitSubtypeRelations.fromValueObject() as Graph<AbstractType>;
 		return result;

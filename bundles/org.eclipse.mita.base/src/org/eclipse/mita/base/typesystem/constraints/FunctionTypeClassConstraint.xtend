@@ -11,12 +11,13 @@ import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.Variance
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.typesystem.types.Variance
+import com.google.common.base.Optional
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 
 @Accessors
 @EqualsHashCode
@@ -91,8 +92,43 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		return new FunctionTypeClassConstraint(_errorMessage, typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, returnTypeVariance, constraintSystemProvider);
 	}
 	
-	override isAtomic() {
-		return !typ.freeVars.empty
+	private var Optional<Boolean> cachedIsAtomic = Optional.absent;
+	
+	override isAtomic(ConstraintSystem system) {
+		val typeClass = system.typeClasses.get(instanceOfQN);
+		if(typeClass.mostSpecificGeneralization === null || typ.freeVars.empty) {	
+			return !typ.freeVars.empty
+		}
+		if(!cachedIsAtomic.present) {
+			cachedIsAtomic = Optional.of(!typ.isMoreSpecificThan(typeClass.mostSpecificGeneralization));
+		}
+	 	return cachedIsAtomic.get();
+	}
+	
+	def boolean isMoreSpecificThan(AbstractType instance, AbstractType generalization) {
+		// we only need the instantiated typescheme, but since we won't do anything with it other than looking at it (i.e. no constraints) we can just extract it
+		val argType = if(generalization instanceof TypeScheme) {
+			val funType = generalization.on;
+			if(funType instanceof FunctionType) {
+				funType.from;
+			}
+		}
+		if(argType !== null) {
+			val zipped = instance.quote.zip(argType.quote);
+			
+			// assure this has a more specific structure than the other, 
+			// which is only the case if quoting like the other thing is more generic i.e. not the same.
+			return (instance.quote != instance.quoteLike(argType.quote) 
+				&& zipped.fold(false, [b, t1_t2 | 
+					val t1 = t1_t2.key;
+					val t2 = t1_t2.value;
+					return b || (!(t1 instanceof TypeVariable) && (t2 instanceof TypeVariable))
+				]))
+		}
+		else {
+			// non type schemes are only type variables/should not happen
+			return true;
+		}		
 	}
 	
 		
