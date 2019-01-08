@@ -53,9 +53,16 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	override isAtomic(ConstraintSystem system) {
-		return  (subType.isAtomic && superType.isAtomic) || (subType.canHaveSuperTypes || superType.canHaveSuperTypes)//&& (subType instanceof TypeVariable || superType instanceof TypeVariable)
+		return  (subType.isAtomic && superType.isAtomic) || subType.canHaveSuperTypes || superType.hasCoercion//&& (subType instanceof TypeVariable || superType instanceof TypeVariable)
 	}
 		
+	dispatch def boolean hasCoercion(AbstractType type) {
+		return false;
+	}
+	dispatch def boolean hasCoercion(TypeConstructorType type) {
+		return type.type.name == "optional";
+	}
+	
 	def canHaveSuperTypes(AbstractType type) {
 		return type instanceof ProdType
 	}
