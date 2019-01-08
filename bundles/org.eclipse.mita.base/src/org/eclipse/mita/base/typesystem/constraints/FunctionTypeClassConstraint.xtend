@@ -33,6 +33,18 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	@Inject
 	val Provider<ConstraintSystem> constraintSystemProvider;
 		
+	new(ValidationIssue errorMessage, AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV, Variance returnTypeVariance, Provider<ConstraintSystem> csp) {
+		super(errorMessage, typ, qn);
+		this.functionCall = functionCall;
+		this.functionReference = functionReference;
+		this.returnTypeTV = returnTypeTV;
+		this.returnTypeVariance = returnTypeVariance;
+		this.constraintSystemProvider = csp;
+		if(this.toString.startsWith("read_args(f_84<xint8>) :: read")) {
+			print("");
+		}
+	}
+	
 	new(AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV, Variance returnTypeVariance, ValidationIssue errorMessage) {
 		this(errorMessage, typ, qn, functionCall, functionReference, returnTypeTV, returnTypeVariance, null);
 	}
@@ -45,6 +57,9 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		if(at instanceof FunctionType) {
 			val newConstraint = switch(returnTypeVariance) {
 				case Covariant: {
+					if(this.toString.startsWith("read_args(modality<int32>) :: read")) {
+						print("");
+					}
 					// the returned type should be smaller than the expected type so it can be assigned
 					new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s'''));
 				}

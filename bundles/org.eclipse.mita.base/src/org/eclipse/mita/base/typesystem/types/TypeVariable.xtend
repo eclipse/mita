@@ -74,7 +74,7 @@ class TypeVariable extends AbstractType {
 		return new TypeVariable(origin, name + suffix)
 	}
 	
-	override unqote(Iterable<Tree<AbstractType>> children) {
+	override unquote(Iterable<Tree<AbstractType>> children) {
 		return this;
 	}
 

@@ -73,6 +73,7 @@ import org.eclipse.mita.base.expressions.PostFixUnaryExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
 import org.eclipse.core.runtime.Assert
+import org.eclipse.mita.base.typesystem.types.AtomicType
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
@@ -92,7 +93,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		system.computeConstraints(eventHandler.block);
 		
 		val voidType = typeRegistry.getTypeModelObjectProxy(system, eventHandler, StdlibTypeRegistry.voidTypeQID);
-		return system.associate(new FunctionType(eventHandler, eventHandler.event.toString, voidType, voidType));
+		return system.associate(new FunctionType(eventHandler, new AtomicType(eventHandler.event, eventHandler.event.toString), voidType, voidType));
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
@@ -100,7 +101,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			
 		val fromType = system.computeParameterType(function, function.parameters);
 		val toType = system.computeConstraints(function.typeSpecifier);
-		val funType = new FunctionType(function, function.name, fromType, toType);
+		val funType = new FunctionType(function, new AtomicType(function), fromType, toType);
 		var result = system.associate(	
 			if(typeArgs.empty) {
 				funType
@@ -290,7 +291,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		else {
 			val vars = deconCase.deconstructors.map[system.computeConstraints(it) as AbstractType].force;
 			// TODO replace with type classes mb., since split(".").last is sorta hacky
-			val varsType = new ProdType(deconCase, prodTypeName, vars);
+			val varsType = new ProdType(deconCase, new AtomicType(null, prodTypeName), vars);
 	
 			system.addConstraint(new EqualityConstraint(deconType, varsType, new ValidationIssue(Severity.ERROR, '''Couldn't resolve types''', deconCase, null, "")));
 		}
@@ -328,7 +329,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.referenceTypeQID);
 		val resultType = system.newTypeVariable(expr);
 		val outerTypeInstance = system.computeConstraints(expr.expression);
-		val nestedType = new TypeConstructorType(null, "reference", #[resultType]);
+		val nestedType = new TypeConstructorType(null, new AtomicType(null, "reference"), #[resultType]);
 		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, referenceTypeVarOrigin, new ValidationIssue(Severity.ERROR, '''INTERNAL ERROR: failed to instantiate reference<T>''', expr, null, "")));
 		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''INTERNAL ERROR: failed to instantiate reference<T>''', expr, null, "")));
 		return system.associate(resultType, expr);
@@ -405,7 +406,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			argumentParamTypesAndValueTypes.forEach[
 				system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
 			]
-			new UnorderedArguments(null, "con_args", argumentParamTypesAndValueTypes.map[it.nameOfReferencedObject -> it.expressionType]);
+			new UnorderedArguments(null, new AtomicType(null, "con_args"), argumentParamTypesAndValueTypes.map[it.nameOfReferencedObject -> it.expressionType]);
 		}
 		else {
 			val args = newInstanceExpression.arguments.map[system.computeConstraints(it) as AbstractType];
@@ -473,7 +474,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 				else {
 					argumentParamTypesAndValueTypes
 				}
-				new UnorderedArguments(null, txt + "_args", withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
+				new UnorderedArguments(null, new AtomicType(null, txt + "_args"), withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
 			} else {
 				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {
 					#[system.newTypeHole(varOrFun) as AbstractType] + varOrFun.arguments.map[system.computeConstraints(it) as AbstractType]

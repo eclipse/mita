@@ -84,7 +84,7 @@ class SerializedTypeHole extends SerializedTypeVariable {
 	}
 }
 
-class SerializedUnorderedArguments extends SerializedAbstractType {
+class SerializedUnorderedArguments extends SerializedTypeConstructorType {
 	new() {
         _type = "SerializedUnorderedArguments";
     }
@@ -143,6 +143,7 @@ class SerializedTypeConstructorType extends SerializedAbstractType {
         _type = "SerializedTypeConstructorType";
     }
 
+    public SerializedAbstractType type;
 	public List<SerializedAbstractType> typeArguments;
 }
 

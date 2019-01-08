@@ -4,6 +4,7 @@ import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.Validatio
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -25,7 +26,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		
 		subType = sub;
 		superType = top;
-		if(this.toString == ("f_645.1 ⩽ f_625.1")) {
+		if(this.toString == ("int32 ⩽ f_145.0")) {
 			print("")
 		}
 	}
@@ -53,9 +54,17 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	override isAtomic() {
 		return  (subType.isAtomic && superType.isAtomic) //&& (subType instanceof TypeVariable || superType instanceof TypeVariable)
 	}
+		
+	def canHaveSuperTypes(AbstractType type) {
+		return type instanceof ProdType
+	}
 	
 	private def isAtomic(AbstractType t) {
 		return t instanceof AbstractBaseType || t instanceof TypeVariable || (t instanceof TypeConstructorType && !(t instanceof FunctionType))
+	}
+	
+	private def isCompositeButShouldNotBeResolved(AbstractType t) {
+		(t instanceof ProdType)
 	}
 	
 	override toGraphviz() {
@@ -63,12 +72,12 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
+		if(this.toString == ("int32 ⩽ f_145.0")) {
+			print("")
+		}
 		val newL = subType.map(f);
 		val newR = superType.map(f);
 		if(subType !== newL || superType !== newR) {
-			if(this.toString == "f_31.0 ⩽ f_24.0" || this.toString == "f_58.0 ⩽ f_24.0") {
-				print("")
-			}
 			return new SubtypeConstraint(newL, newR, _errorMessage);
 		}
 		return this;

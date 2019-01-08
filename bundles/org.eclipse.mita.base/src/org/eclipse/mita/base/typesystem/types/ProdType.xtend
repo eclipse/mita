@@ -25,21 +25,21 @@ class ProdType extends TypeConstructorType {
 			return system.newTypeVariable(null);
 		}
 		// else transpose the instances' type args (so we have a list of all the first args, all the second args, etc.), then unify each of those
-		return new ProdType(null, instances.head.name, 
+		return new ProdType(null, TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as TypeConstructorType].map[it.type]),
 			BaseUtils.transpose(instances.map[it as ProdType].map[it.typeArguments])
 			.map[TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, it)]
 			.force
 		)
 	}
 	
-	new(EObject origin, String name, List<AbstractType> typeArguments) {
-		super(origin, name, typeArguments);
+	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
+		super(origin, type, typeArguments);
 		if(this.toString == "__PLUS___args(xint8, int16)") {
 			print("")
 		}
 	}
-	new(EObject origin, String name, Iterable<AbstractType> typeArguments) {
-		super(origin, name, typeArguments);
+	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
+		super(origin, type, typeArguments);
 		if(this.toString == "__PLUS___args(xint8, int16)") {
 			print("")
 		}
@@ -48,18 +48,14 @@ class ProdType extends TypeConstructorType {
 	override toString() {
 		(name ?: "") + "(" + typeArguments.join(", ") + ")"
 	}
-	
-	override replace(TypeVariable from, AbstractType with) {
-		new ProdType(origin, name, typeArguments.map[ it.replace(from, with) ].force);
-	}
-	
+		
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
 		return new SubtypeConstraint(tau, sigma, new ValidationIssue(Severity.ERROR, '''«tau» is not subtype of «sigma»''', ""));
 	}
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newPType = new ProdType(origin, name, newTypeVars);
+		val newPType = new ProdType(origin, type, newTypeVars);
 		s.add(tv, newPType);
 	}
 	
@@ -69,14 +65,15 @@ class ProdType extends TypeConstructorType {
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new ProdType(origin, name, newTypeArgs);
+		val newType = type.map(f);
+		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
+			return new ProdType(origin, newType, newTypeArgs);
 		}
 		return this;
 	}
 	
-	override unqote(Iterable<Tree<AbstractType>> children) {
-		return new ProdType(origin, name, children.map[it.node.unqote(it.children)].force);
+	override unquote(Iterable<Tree<AbstractType>> children) {
+		return new ProdType(origin, children.head.node.unquote(children.head.children), children.tail.map[it.node.unquote(it.children)].force);
 	}
 	
 }

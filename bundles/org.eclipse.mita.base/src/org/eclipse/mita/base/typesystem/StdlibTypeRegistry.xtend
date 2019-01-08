@@ -34,6 +34,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#[/*"stdlib",*/ "void"]);
@@ -61,6 +62,9 @@ class StdlibTypeRegistry {
 	@Inject IScopeProvider scopeProvider;
 	
 	protected boolean isLinking = false;
+	protected OnChangeEvictingCache cache = new OnChangeEvictingCache(); 
+	
+	
 	
 	def setIsLinking(boolean isLinking) {
 		this.isLinking = isLinking;
@@ -70,8 +74,8 @@ class StdlibTypeRegistry {
 		if(isLinking) {
 			return null;
 		}
-		val scope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		val obj = scope.getSingleElement(qn)?.EObjectOrProxy;
+		val scope = cache.get("SCOPE_TYPE", context.eResource, [|scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)]);
+		val obj = cache.get(qn, context.eResource, [|scope.getSingleElement(qn)?.EObjectOrProxy]);
 		return obj;
 	}
 	def getTypeModelObjectProxy(ConstraintSystem system, EObject context, QualifiedName qn) {
@@ -116,25 +120,25 @@ class StdlibTypeRegistry {
 	protected def getOptionalType(ConstraintSystem system, EObject context) {
 		val optionalType = getTypeModelObject(context, StdlibTypeRegistry.optionalTypeQID) as GeneratedType;
 		val typeArgs = #[system.newTypeVariable(optionalType.typeParameters.head)]
-		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, "optional", typeArgs.map[it as AbstractType]));
+		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, new AtomicType(optionalType, "optional"), typeArgs.map[it as AbstractType]));
 	}
 	
 	protected def getReferenceType(ConstraintSystem system, EObject context) {
-		val optionalType = getTypeModelObject(context, StdlibTypeRegistry.referenceTypeQID) as GeneratedType;
-		val typeArgs = #[system.newTypeVariable(optionalType.typeParameters.head)]
-		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, "reference", typeArgs.map[it as AbstractType]));
+		val referenceType = getTypeModelObject(context, StdlibTypeRegistry.referenceTypeQID) as GeneratedType;
+		val typeArgs = #[system.newTypeVariable(referenceType.typeParameters.head)]
+		return new TypeScheme(referenceType, typeArgs, new TypeConstructorType(referenceType, new AtomicType(referenceType, "reference"), typeArgs.map[it as AbstractType]));
 	}
 	
 	protected def getSigInstType(ConstraintSystem system, EObject context) {
 		val sigInstType = getTypeModelObject(context, StdlibTypeRegistry.sigInstTypeQID) as GeneratedType;
 		val typeArgs = #[system.newTypeVariable(sigInstType.typeParameters.head)]
-		return new TypeScheme(sigInstType, typeArgs, new TypeConstructorType(sigInstType, "siginst", typeArgs.map[it as AbstractType]));
+		return new TypeScheme(sigInstType, typeArgs, new TypeConstructorType(sigInstType, new AtomicType(sigInstType, "siginst"), typeArgs.map[it as AbstractType]));
 	}
 
 	protected def getModalityType(ConstraintSystem system, EObject context) {
 		val modalityType = getTypeModelObject(context, StdlibTypeRegistry.modalityTypeQID) as GeneratedType;
 		val typeArgs = #[system.newTypeVariable(modalityType.typeParameters.head)]
-		return new TypeScheme(modalityType, typeArgs, new TypeConstructorType(modalityType, "modality", typeArgs.map[it as AbstractType]));
+		return new TypeScheme(modalityType, typeArgs, new TypeConstructorType(modalityType, new AtomicType(modalityType, "modality"), typeArgs.map[it as AbstractType]));
 	}
 		
 	protected def Iterable<AbstractType> getFloatingTypes(EObject context) {
@@ -285,6 +289,7 @@ class StdlibTypeRegistry {
 		}
 		return result;
 	}
+	
 	dispatch def SubtypeCheckResult isSubtypeOf(EObject context, BaseKind sub, BaseKind top) {
 		return context.isSubtypeOf(sub.kindOf, top.kindOf);
 	}

@@ -193,26 +193,26 @@ class SerializationAdapter {
 	protected dispatch def AbstractType fromValueObject(SerializedFunctionType obj) {
 		return new FunctionType(
 			obj.origin.resolveEObject(),
-			obj.name,
+			obj.type.fromValueObject as AbstractType,
 			obj.typeArguments.fromSerializedTypes()
 		);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedUnorderedArguments obj) {
-		return new UnorderedArguments(obj.origin.resolveEObject(), obj.name, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
+		return new UnorderedArguments(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
-		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
+		return new ProdType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
-		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
+		return new SumType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeConstructorType obj) {
-		return new TypeConstructorType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
+		return new TypeConstructorType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeScheme obj) {
@@ -450,6 +450,7 @@ class SerializationAdapter {
 	protected dispatch def Object fill(SerializedTypeConstructorType ctxt, TypeConstructorType obj) {
 		ctxt.name = obj.name
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
+		ctxt.type = obj.type.toValueObject as SerializedAbstractType
 		ctxt.typeArguments = obj.typeArguments.map[ it.toValueObject as SerializedAbstractType ].toList
 		return ctxt
 	}

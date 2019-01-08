@@ -28,10 +28,16 @@ class TypeClass {
 	new(Map<AbstractType, EObject> instances, AbstractType mostSpecificGeneralization) {
 		this.instances = new HashMap(instances);
 		this.mostSpecificGeneralization = mostSpecificGeneralization;
+		if(this.toString.contains("f_1719.6 = x_axis: int32")) {
+			print("");
+		}
 	}
 	new(Iterable<Pair<AbstractType, EObject>> instances) {
 		this();
 		instances.forEach[this.instances.put(it.key, it.value)];
+		if(this.toString.contains("f_1719.6 = x_axis: int32")) {
+			print("");
+		}
 	}
 	
 	override toString() {
@@ -66,9 +72,15 @@ class TypeClass {
 }
 
 @Accessors
-@FinalFieldsConstructor
 class TypeClassProxy extends TypeClass {
 	val TypeVariableProxy toResolve;
+	
+	new(TypeVariableProxy toResolve) {
+		this.toResolve = toResolve;
+		if(this.toString.contains("p_4")) {
+			print("");
+		}
+	}
 	
 	override TypeClass modifyNames(String suffix) {
 		return new TypeClassProxy(toResolve.modifyNames(suffix) as TypeVariableProxy);

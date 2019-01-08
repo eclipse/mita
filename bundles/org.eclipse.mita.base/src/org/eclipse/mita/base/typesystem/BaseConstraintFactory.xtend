@@ -174,7 +174,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 
 	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
 		val parmTypes = parms.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		return new ProdType(null, function.name + "_args", parmTypes);
+		return new ProdType(null, new AtomicType(function, function.name + "_args"), parmTypes);
 	}
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {
@@ -182,7 +182,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.computeArgumentConstraintsWithTypes(functionName, argTypes);
 	}
 	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, String functionName, Iterable<AbstractType> argTypes) {
-		return new ProdType(null, functionName + "_args", argTypes);
+		return new ProdType(null, new AtomicType(null, functionName + "_args"), argTypes);
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<TypeVariable> candidates) {
@@ -229,13 +229,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// B
 		val toTV = system.newTypeVariable(null);
 		// A -> B
-		val refType = new FunctionType(null, functionName + "_call", fromTV, toTV);
+		val refType = new FunctionType(null, new AtomicType(null, functionName + "_call"), fromTV, toTV);
 		// a
 		val argType = argumentType
 		// b
 		val resultType = system.newTypeVariable(null);
 		// a -> b
-		val referencedFunctionType = new FunctionType(null, functionName, argType, resultType);
+		val referencedFunctionType = new FunctionType(null, new AtomicType(null, functionName), argType, resultType);
 		// a -> B >: A -> B
 		system.addConstraint(new SubtypeConstraint(fromTV, argType, issue));
 		val varianceOfResultVar = TypesUtil.getVarianceInAssignment(functionCall);
@@ -387,8 +387,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 			else {
 				val x8type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.x8TypeQID);
 				val mkIssue = [new ValidationIssue(Severity.ERROR, '''«it» must be an integer type''', it, null, "")];
-				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), x8type, mkIssue.apply(expr.leftOperand)))
-				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), x8type, mkIssue.apply(expr.rightOperand)))
+				system.addConstraint(new SubtypeConstraint(x8type, system.computeConstraints(expr.leftOperand), mkIssue.apply(expr.leftOperand)))
+				system.addConstraint(new SubtypeConstraint(x8type, system.computeConstraints(expr.rightOperand), mkIssue.apply(expr.rightOperand)))
 			}
 			return system.associate(boolType, expr);
 		}
@@ -433,7 +433,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		system.computeConstraints(structType.constructor);	
-		return new ProdType(structType, structType.name, types);
+		return new ProdType(structType, new AtomicType(structType), types);
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
@@ -441,7 +441,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		sumType.alternatives.forEach[ sumAlt |
 			subTypes.add(system.translateTypeDeclaration(sumAlt));
 		];
-		return new SumType(sumType, sumType.name, subTypes);
+		return new SumType(sumType, new AtomicType(sumType), subTypes);
 		
 	}
 	 
@@ -453,7 +453,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		val prodType = new ProdType(sumAlt, sumAlt.name, types);
+		val prodType = new ProdType(sumAlt, new AtomicType(sumAlt), types);
 		system.explicitSubtypeRelations.addEdge(prodType, system.getTypeVariable(sumAlt.eContainer));
 		system.computeConstraints(sumAlt.constructor);
 		return prodType;
@@ -470,7 +470,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			new AtomicType(genType, genType.name);
 		}
 		else {
-			new TypeScheme(genType, typeArgs, new TypeConstructorType(genType, genType.name, typeArgs.map[it as AbstractType].force));
+			new TypeScheme(genType, typeArgs, new TypeConstructorType(genType, new AtomicType(genType), typeArgs.map[it as AbstractType].force));
 		}
 	}
 	
@@ -489,7 +489,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, AbstractType inner, AbstractType outerTypeScheme, String outerName) {
 		val outerTypeInstance = system.newTypeVariable(null);
-		val nestedType = new TypeConstructorType(origin, outerName, #[inner]);
+		val nestedType = new TypeConstructorType(origin, new AtomicType(origin, outerName), #[inner]);
 		if(origin === null) {
 			print("")
 		}
@@ -513,7 +513,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			// this type specifier is an instance of type
 			val typeArgs = typeArguments.map[system.computeConstraints(it) as AbstractType].force;
 			val typeName = typeSpecifier.type?.name ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)?.head?.text?.trim;
-			val typeInstance = new TypeConstructorType(null, typeName, typeArgs);
+			val typeInstance = new TypeConstructorType(null, new AtomicType(null, typeName), typeArgs);
 			val typeInstanceVar = system.newTypeVariable(null);
 			system.addConstraint(new ExplicitInstanceConstraint(typeInstanceVar, type, new ValidationIssue(Severity.ERROR, '''«typeSpecifier» is not instance of %2$s''', typeSpecifier, null, "")));
 			system.addConstraint(new EqualityConstraint(typeInstance, typeInstanceVar, new ValidationIssue(Severity.ERROR, '''«typeSpecifier» is not instance of %2$s''', typeSpecifier, null, "")));

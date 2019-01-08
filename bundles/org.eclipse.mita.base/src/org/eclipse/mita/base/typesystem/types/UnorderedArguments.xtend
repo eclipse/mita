@@ -17,15 +17,16 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip;
 class UnorderedArguments extends TypeConstructorType {
 	protected val List<Pair<String, AbstractType>> argParamNamesAndValueTypes = new ArrayList;
 	
-	new(EObject origin, String name, Iterable<Pair<String, AbstractType>> argTypes) {
-		super(origin, name, argTypes.map[it.value].force)
+	new(EObject origin, AbstractType type, Iterable<Pair<String, AbstractType>> argTypes) {
+		super(origin, type, argTypes.map[it.value].force)
 		this.argParamNamesAndValueTypes += argTypes;
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newArgs = argParamNamesAndValueTypes.map[it.key -> it.value.map(f)].force;
-		if(argParamNamesAndValueTypes.zip(newArgs).exists[it.key.value !== it.value.value]) {
-			return new UnorderedArguments(origin, name, newArgs);	
+		val newType = type.map(f);
+		if(type !== newType || argParamNamesAndValueTypes.zip(newArgs).exists[it.key.value !== it.value.value]) {
+			return new UnorderedArguments(origin, newType, newArgs);	
 		}
 		return this;
 	}
@@ -44,7 +45,7 @@ class UnorderedArguments extends TypeConstructorType {
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newParamAndValueTypes = argParamNamesAndValueTypes.map[ it.key -> system.newTypeVariable(it.value.origin) as AbstractType ].force;
-		val newType = new UnorderedArguments(origin, name, newParamAndValueTypes);
+		val newType = new UnorderedArguments(origin, type, newParamAndValueTypes);
 		s.add(tv, newType);
 	}
 }

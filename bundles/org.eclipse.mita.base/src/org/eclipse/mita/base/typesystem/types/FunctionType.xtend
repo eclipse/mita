@@ -18,22 +18,22 @@ import org.eclipse.mita.base.typesystem.infra.Tree
 @Accessors
 class FunctionType extends TypeConstructorType {
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
-		return new FunctionType(null, instances.head.name, 
+		return new FunctionType(null, TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as TypeConstructorType].map[it.type]),
 			TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as FunctionType].map[it.from]),
 			TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as FunctionType].map[it.to])
 		)
 	}
 			
-	new(EObject origin, String cons, AbstractType from, AbstractType to) {
-		this(origin, cons, #[from, to]);
+	new(EObject origin, AbstractType type, AbstractType from, AbstractType to) {
+		this(origin, type, #[from, to]);
 		
 //		if(from === null || to === null) {
 //			throw new NullPointerException;
 //		}
 	}
 	
-	new(EObject origin, String cons, Iterable<AbstractType> typeArgs) {
-		super(origin, cons, typeArgs);
+	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArgs) {
+		super(origin, type, typeArgs);
 	}
 	
 	def AbstractType getFrom() {
@@ -66,7 +66,7 @@ class FunctionType extends TypeConstructorType {
 	}
 	
 	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
-		val newFType = new FunctionType(origin, name, system.newTypeVariable(from.origin), system.newTypeVariable(to.origin));
+		val newFType = new FunctionType(origin, type, system.newTypeVariable(from.origin), system.newTypeVariable(to.origin));
 		s.add(tv, newFType);
 	}
 	
@@ -75,14 +75,15 @@ class FunctionType extends TypeConstructorType {
 	}
 	
 
-	override unqote(Iterable<Tree<AbstractType>> children) {
-		return new FunctionType(origin, name, children.map[it.node.unqote(it.children)].force);
+	override unquote(Iterable<Tree<AbstractType>> children) {
+		return new FunctionType(origin, children.head.node.unquote(children.head.children), children.tail.map[it.node.unquote(it.children)].force);
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new FunctionType(origin, name, newTypeArgs);
+		val newType = type.map(f);
+		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
+			return new FunctionType(origin, newType, newTypeArgs);
 		}
 		return this;
 	}

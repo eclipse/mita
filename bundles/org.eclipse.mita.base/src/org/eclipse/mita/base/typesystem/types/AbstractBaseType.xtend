@@ -11,6 +11,9 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 abstract class AbstractBaseType extends AbstractType {
 	
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
+		if(instances.groupBy[it].size == 1) {
+			return instances.head;
+		}
 		return system.newTypeVariable(null);
 	}
 	
@@ -42,7 +45,7 @@ abstract class AbstractBaseType extends AbstractType {
 		return this;
 	}
 	
-	override unqote(Iterable<Tree<AbstractType>> children) {
+	override unquote(Iterable<Tree<AbstractType>> children) {
 		return this;
 	}
 	
