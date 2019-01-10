@@ -1,17 +1,18 @@
 /********************************************************************************
- * Copyright (c) 2018 itemis AG.
+ * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
  *
  * Contributors:
+ *    Bosch Connected Devices and Solutions GmbH - initial contribution
  *    itemis AG - initial contribution
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
- 
-package org.eclipse.mita.platform.arduino.uno.platform
+  
+package org.eclipse.mita.platform.x86.platform
 
 import org.eclipse.mita.program.generator.IPlatformTimeGenerator
 import org.eclipse.mita.program.generator.CompilationContext
@@ -36,7 +37,35 @@ class TimeGenerator implements IPlatformTimeGenerator {
 	protected extension GeneratorUtils
 	
 	override generateTimeEnable(CompilationContext context, EventHandlerDeclaration handler) {
-		return codeFragmentProvider.create('''Timer_Enable();''')
+		val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent);
+		return codeFragmentProvider.create('''lastTick«period.toString.toFirstUpper» = getTime();''')
+			.setPreamble('''
+			#ifdef __linux__
+			#include <unistd.h>
+			#include <time.h>
+			#include <bits/time.h>
+			void sleepMs(uint32_t ms) {
+				usleep(ms * 1000);
+			}
+			int32_t getTime(void) {
+				struct timespec ts;
+				clock_gettime(CLOCK_MONOTONIC, &ts);
+				return 1000*ts.tv_sec + ts.tv_nsec/1000000; 
+			}
+			#endif
+			#ifdef _WIN32
+			#include <windows.h>
+			void sleepMs(uint32_t ms) {
+				Sleep(ms);
+			}
+			int32_t getTime() {
+				clock();
+			}
+			#endif
+			''')
+			.addHeader('time.h', true)
+			.addHeader('MitaExceptions.h', false)
+			.addHeader('MitaEvents.h', false);
 	}
 
 	override generateTimeGoLive(CompilationContext context) {
@@ -45,53 +74,26 @@ class TimeGenerator implements IPlatformTimeGenerator {
 
 	override generateTimeSetup(CompilationContext context) {
 		
-		val body = codeFragmentProvider.create('''
-			Exception_T result = STATUS_OK;
-			
-			result = Timer_Connect();
-			if(result != STATUS_OK)
-			{
-				return result;
-			}
+		return codeFragmentProvider.create('''
+			return 0;
 		''')
-
-		return codeFragmentProvider.create(body).setPreamble('''
-			«FOR handler : context.allTimeEvents»
-				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
-				static uint32_t count_«period» = 0;
-				bool get«handler.handlerName»_flag(){
-					return «handler.handlerName»_flag;
-				}
-				
-				void set«handler.handlerName»_flag(bool val){
-					«handler.handlerName»_flag = val;
-				}
-			«ENDFOR»
-			
-			
-			Exception_T Tick_Timer(void)
-			{
-			«FOR handler : context.allTimeEvents»
-				«val period = ModelUtils.getIntervalInMilliseconds(handler.event as TimeIntervalEvent)»
-					count_«period»++;
-					if(count_«period» % «period» == 0)
-					{
-						count_«period» = 0;
-						«handler.handlerName»_flag = true;
-					}
-				
-			«ENDFOR»			
-				return STATUS_OK;
-			}
-		''')
-		.addHeader('MitaExceptions.h', false)
-		.addHeader('MitaEvents.h', false)
-		.addHeader('MitaTime.h', false)
-		.addHeader('Timer.h', false)
 	}
 	
 	override generateAdditionalHeaderContent(CompilationContext context) {
-		return CodeFragment.EMPTY;
+		return codeFragmentProvider.create('''
+		#ifdef __linux__
+		#include <unistd.h>
+		#include <time.h>
+		#include <bits/time.h>
+		void sleepMs(uint32_t ms);
+		int32_t getTime(void);
+		#endif
+		#ifdef _WIN32
+		#include <windows.h>
+		void sleepMs(uint32_t ms);
+		int32_t getTime();
+		#endif
+		''')
 	}
 	
 }
