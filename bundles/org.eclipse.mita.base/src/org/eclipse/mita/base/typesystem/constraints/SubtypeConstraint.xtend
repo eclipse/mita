@@ -1,11 +1,12 @@
 package org.eclipse.mita.base.typesystem.constraints
 
+import com.google.common.base.Optional
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -52,19 +53,33 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return #[subType, superType];
 	}
 	
+	private var Optional<Boolean> cachedIsAtomic = Optional.absent;
+	
 	override isAtomic(ConstraintSystem system) {
-		return  (subType.isAtomic && superType.isAtomic) || subType.canHaveSuperTypes || superType.hasCoercion//&& (subType instanceof TypeVariable || superType instanceof TypeVariable)
+		if(!cachedIsAtomic.present) {
+			cachedIsAtomic = Optional.of((subType.isAtomic && superType.isAtomic) || system.canHaveSuperTypes(subType) || system.hasSubtypes(superType));
+		}
+	 	return cachedIsAtomic.get();
 	}
 		
-	dispatch def boolean hasCoercion(AbstractType type) {
-		return false;
+	dispatch def boolean hasSubtypes(ConstraintSystem system, AbstractType type) {
+		val idxs = system.explicitSubtypeRelations.reverseMap.get(type) ?: #[];
+		val explicitSuperTypes = idxs.flatMap[system.explicitSubtypeRelations.getPredecessors(it)];
+		return !explicitSuperTypes.empty;
 	}
-	dispatch def boolean hasCoercion(TypeConstructorType type) {
-		return type.type.name == "optional";
+	dispatch def boolean hasSubtypes(ConstraintSystem system, TypeConstructorType type) {
+		return type.type.name == "optional" || system._hasSubtypes(type as AbstractType);
+	}
+	dispatch def boolean hasSubtypes(ConstraintSystem system, SumType type) {
+		return !type.typeArguments.empty || system._hasSubtypes(type as AbstractType);
 	}
 	
-	def canHaveSuperTypes(AbstractType type) {
-		return type instanceof ProdType
+	def canHaveSuperTypes(ConstraintSystem system, AbstractType type) {
+		
+		val idxs = system.explicitSubtypeRelations.reverseMap.get(type) ?: #[];
+		val explicitSuperTypes = idxs.flatMap[system.explicitSubtypeRelations.getSuccessors(it)];
+		
+		return explicitSuperTypes.empty;
 	}
 	
 	private def isAtomic(AbstractType t) {

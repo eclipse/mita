@@ -13,6 +13,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
@@ -112,8 +113,10 @@ class Substitution {
 		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);
 		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic(result)]);
 		val alwaysNonAtomic = system.nonAtomicConstraints.map[c | c.replace(this)];
-		alwaysNonAtomic.forEach[
-			if(it.isAtomic(result)) {
+		system.nonAtomicConstraints.zip(alwaysNonAtomic).forEach[
+			if(it.value.isAtomic(result)) {
+				it.key.isAtomic(result);
+				it.value.isAtomic(result);
 				throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
 			}
 		]
