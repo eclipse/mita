@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem
 
 import com.google.inject.Inject
+import java.util.HashSet
 import java.util.List
 import java.util.Set
 import java.util.regex.Pattern
@@ -31,10 +32,10 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#[/*"stdlib",*/ "void"]);
@@ -184,8 +185,12 @@ class StdlibTypeRegistry {
 	}
 	
 	def Set<AbstractType> getSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
-		val idxs = s.explicitSubtypeRelations.reverseMap.get(t.superTypeGraphHandle) ?: #[];
-		val explicitSuperTypes = #[t] + idxs.flatMap[s.explicitSubtypeRelations.getSuccessors(it)];
+		val g = s.explicitSubtypeRelations;
+		val idxs = g.reverseMap.get(t.superTypeGraphHandle) ?: #[];
+		val explicitSuperTypes = #[t] + idxs.flatMap[
+			val keys = g.walk(g.outgoing, new HashSet(), it) [i, v | i];
+			return keys.map[key | s.explicitSubtypeRelationsTypeSource.get(key) ?: g.nodeIndex.get(key)];
+		].force;
 		val ta_t = s.getOptionalType(typeResolveOrigin ?: t.origin).instantiate(s);
 		val ta = ta_t.key.head;
 		val optionalType = ta_t.value

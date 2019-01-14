@@ -105,9 +105,12 @@ class Substitution {
 		result.typeClasses.putAll(system.typeClasses.mapValues[it.replace(this)])
 		result.instanceCount = system.instanceCount;
 		result.symbolTable.putAll(system.symbolTable);
+		// to keep overridden methods etc. we clone instead of using a copy constructor
 		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>
 		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replace(this)];
 		result.explicitSubtypeRelations.computeReverseMap;
+		result.explicitSubtypeRelationsTypeSource = new HashMap(system.explicitSubtypeRelationsTypeSource);
+		result.explicitSubtypeRelationsTypeSource.replaceAll[k, v | v.replace(this)];
 		// atomic constraints may become composite by substitution, the opposite can't happen
 		val unknownConstrains = system.atomicConstraints.map[c | c.replace(this)].force;
 		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);

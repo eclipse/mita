@@ -29,7 +29,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		
 		subType = sub;
 		superType = top;
-		if(this.toString == ("baz() ⩽ v2d(f_208)")) {
+		if(this.toString == ("baz() ⩽ bar")) {
 			print("")
 		}
 	}
