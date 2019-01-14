@@ -176,8 +176,15 @@ class StdlibTypeRegistry {
 		}
 	}
 	
+	public static dispatch def getSuperTypeGraphHandle(AbstractType t) {
+		return t;
+	}
+	public static dispatch def getSuperTypeGraphHandle(TypeConstructorType t) {
+		return t.type;
+	}
+	
 	def Set<AbstractType> getSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
-		val idxs = s.explicitSubtypeRelations.reverseMap.get(t) ?: #[];
+		val idxs = s.explicitSubtypeRelations.reverseMap.get(t.superTypeGraphHandle) ?: #[];
 		val explicitSuperTypes = #[t] + idxs.flatMap[s.explicitSubtypeRelations.getSuccessors(it)];
 		val ta_t = s.getOptionalType(typeResolveOrigin ?: t.origin).instantiate(s);
 		val ta = ta_t.key.head;

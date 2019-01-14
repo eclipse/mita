@@ -453,8 +453,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		val prodType = new ProdType(sumAlt, new AtomicType(sumAlt), types);
-		system.explicitSubtypeRelations.addEdge(prodType, system.getTypeVariable(sumAlt.eContainer));
+		val selfType = new AtomicType(sumAlt);
+		val prodType = new ProdType(sumAlt, selfType, types);
+		system.explicitSubtypeRelations.addEdge(selfType, new AtomicType(sumAlt.eContainer, (sumAlt.eContainer as org.eclipse.mita.base.types.SumType).name));
 		system.computeConstraints(sumAlt.constructor);
 		return prodType;
 	}

@@ -55,7 +55,7 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(message.equals("May not cast to p_150")) {
+			if(message.equals("bar.baz([self: ∗bar])() (:: baz()) and bar.v2d([self: ∗bar, _0: v2d_s])(v2d_s([x: int32, y: int32])(prim»i»1 / a, prim»i»1)) don't share a common type")) {
 				System.out.print("");
 			}
 		}
@@ -75,6 +75,9 @@ public interface IValidationIssueAcceptor {
 			this.target = target;
 			this.issueCode = issueCode;
 			this.feature = feature;
+			if(message.equals("bar.baz([self: ∗bar])() (:: baz()) and bar.v2d([self: ∗bar, _0: v2d_s])(v2d_s([x: int32, y: int32])(prim»i»1 / a, prim»i»1)) don't share a common type")) {
+				System.out.print("");
+			}
 		}
 
 		public Severity getSeverity() {

@@ -11,6 +11,7 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -28,7 +29,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		
 		subType = sub;
 		superType = top;
-		if(this.toString == ("int32 ⩽ f_145.0")) {
+		if(this.toString == ("baz() ⩽ v2d(f_208)")) {
 			print("")
 		}
 	}
@@ -57,13 +58,22 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		if(!cachedIsAtomic.present) {
-			cachedIsAtomic = Optional.of((subType.isAtomic && superType.isAtomic) || system.canHaveSuperTypes(subType) || system.hasSubtypes(superType));
+			cachedIsAtomic = Optional.of((subType.isAtomic && superType.isAtomic) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
 		}
 	 	return cachedIsAtomic.get();
 	}
+	
+	dispatch def boolean typesAreCommon(AbstractType type, AbstractType type2) {
+		return false
+	}
+	
+	// for example t1 and t2 are sum type constructors. Then previously this was tv <= t2, now it's t1 <= t2. Then someone else already did what this constraint would have done. 
+	dispatch def boolean typesAreCommon(TypeConstructorType type1, TypeConstructorType type2) {
+		return type1.class == type2.class && type1.type.name == type2.type.name
+	}
 		
 	dispatch def boolean hasSubtypes(ConstraintSystem system, AbstractType type) {
-		val idxs = system.explicitSubtypeRelations.reverseMap.get(type) ?: #[];
+		val idxs = system.explicitSubtypeRelations.reverseMap.get(StdlibTypeRegistry.getSuperTypeGraphHandle(type)) ?: #[];
 		val explicitSuperTypes = idxs.flatMap[system.explicitSubtypeRelations.getPredecessors(it)];
 		return !explicitSuperTypes.empty;
 	}
@@ -75,11 +85,13 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	def canHaveSuperTypes(ConstraintSystem system, AbstractType type) {
-		
-		val idxs = system.explicitSubtypeRelations.reverseMap.get(type) ?: #[];
+		if(type.toString.contains("array")) {
+			print("")
+		}
+		val idxs = system.explicitSubtypeRelations.reverseMap.get(StdlibTypeRegistry.getSuperTypeGraphHandle(type)) ?: #[];
 		val explicitSuperTypes = idxs.flatMap[system.explicitSubtypeRelations.getSuccessors(it)];
 		
-		return explicitSuperTypes.empty;
+		return !explicitSuperTypes.empty;
 	}
 	
 	private def isAtomic(AbstractType t) {
