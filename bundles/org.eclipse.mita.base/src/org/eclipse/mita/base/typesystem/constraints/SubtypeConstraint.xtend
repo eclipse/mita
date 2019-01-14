@@ -29,9 +29,6 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		
 		subType = sub;
 		superType = top;
-		if(this.toString == ("baz() ⩽ v2d(f_208)")) {
-			print("")
-		}
 	}
 	
 	override getErrorMessage() {
@@ -85,9 +82,6 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	def canHaveSuperTypes(ConstraintSystem system, AbstractType type) {
-		if(type.toString.contains("array")) {
-			print("")
-		}
 		val idxs = system.explicitSubtypeRelations.reverseMap.get(StdlibTypeRegistry.getSuperTypeGraphHandle(type)) ?: #[];
 		val explicitSuperTypes = idxs.flatMap[system.explicitSubtypeRelations.getSuccessors(it)];
 		
@@ -107,9 +101,6 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		if(this.toString == ("int32 ⩽ f_145.0")) {
-			print("")
-		}
 		val newL = subType.map(f);
 		val newR = superType.map(f);
 		if(subType !== newL || superType !== newR) {

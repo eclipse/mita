@@ -16,9 +16,6 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		super(source);
 		this.left = left;
 		this.right = right;
-		if(this.toString == "optional<f_0> ≡ f_107.0") {
-			print("");
-		}
 	}
 	
 	override getErrorMessage() {

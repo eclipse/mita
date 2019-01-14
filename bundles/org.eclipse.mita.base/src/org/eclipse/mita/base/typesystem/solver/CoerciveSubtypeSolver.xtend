@@ -531,9 +531,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, AbstractType t1, AbstractType t2) {
 		// unify
-		if(t1.toString == "bool" || t2.toString == "bool") {
-			print("")
-		}
 		val mgu = mguComputer.compute(constraint._errorMessage, t1, t2);
 		if(!mgu.valid) {
 			return SimplificationResult.failure(mgu.issues);
@@ -730,9 +727,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
-			if(v.toString == "f_24.0") {
-				print("")
-			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
 			val supremum = graph.getSupremum(predecessors);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);
@@ -743,9 +737,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			if(!predecessors.empty) {
 				if(supremumIsValid) {
 					// assign-sup
-					if(v.toString == "f_190.0" && supremum.toString == "xint8") {
-						print("")
-					}
 					graph.replace(v, supremum);
 					resultSub = resultSub.replace(v, supremum) => [add(v, supremum)];
 				} else {
@@ -758,11 +749,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «predecessors» don't share a super type (best guess: «supremum ?: "none"»)''', 
 					v.origin, null, "")].toSet);
-					if(newIssues.toString.contains("Can't return x (:: uint8) since it's not of a subtype of xint8")) {
-						print("");
-						graph.getBaseTypePredecessors(vIdx);
-						graph.getSupremum(predecessors);
-					}
 					issues += newIssues;
 				}
 			}
@@ -775,9 +761,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «successors» don't share a sub type (best guess: «infimum ?: "none"»)''',
 					v.origin, null, "")]);
-					if(newIssues.toString.contains("Can't return x (:: uint8) since it's not of a subtype of xint8")) {
-						print("");
-					}
 					issues += newIssues;
 				}
 			}

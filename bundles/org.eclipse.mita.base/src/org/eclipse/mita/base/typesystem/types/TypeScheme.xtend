@@ -22,9 +22,6 @@ class TypeScheme extends AbstractType {
 		super(origin, '''tscheme''');
 		this.vars = vars;
 		this.on = on;
-		if(this.toString == "∀[f_646].modality<f_646.1>") {
-			print("")
-		}
 	}
 	
 	override Tree<AbstractType> quote() {

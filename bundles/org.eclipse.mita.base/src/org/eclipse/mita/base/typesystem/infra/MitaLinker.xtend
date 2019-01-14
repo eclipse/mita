@@ -139,8 +139,8 @@ class MitaLinker extends Linker {
 			}
 			if(solution !== null && solution.solution !== null) {
 				if(obj.eResource.URI.lastSegment == "application.mita") {
-				print("")
-			}
+					print("")
+				}
 				solution.solution.substitutions.entrySet.forEach[
 					var origin = it.key.origin;
 					if(origin !== null && origin.eIsProxy) {
