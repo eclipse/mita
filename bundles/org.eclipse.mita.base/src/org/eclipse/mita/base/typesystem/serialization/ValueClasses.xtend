@@ -22,6 +22,7 @@ class SerializedConstraintSystem extends SerializedObject {
 	public Map<String, SerializedTypeVariable> symbolTable;
 	public Map<String, SerializedTypeClass> typeClasses;
 	public SerializedAbstractTypeGraph explicitSubtypeRelations;
+	public Map<Integer, SerializedAbstractType> explicitSubtypeRelationsTypeSource;
 }
 
 class SerializedAbstractTypeGraph extends SerializedObject {

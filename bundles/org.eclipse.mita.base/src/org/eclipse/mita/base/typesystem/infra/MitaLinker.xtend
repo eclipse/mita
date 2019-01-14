@@ -110,6 +110,9 @@ class MitaLinker extends Linker {
 			return;
 		}
 		
+		if(obj.eResource.URI.lastSegment == "application.mita") {
+			print("")
+		}
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {
@@ -118,9 +121,6 @@ class MitaLinker extends Linker {
 				return;
 			}
 			
-			if(obj.eResource.URI.lastSegment == "application.mita") {
-				print("")
-			}
 			val solution = constraintSolver.solve(preparedSystem, obj);
 			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {

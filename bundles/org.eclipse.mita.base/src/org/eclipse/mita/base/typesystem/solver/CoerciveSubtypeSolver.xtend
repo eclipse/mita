@@ -24,15 +24,13 @@ import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.mita.base.typesystem.infra.TypeClass
+import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
-import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -40,7 +38,6 @@ import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
-import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
@@ -49,15 +46,13 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.infra.ClassTree
-import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 
 /**
  * Solves coercive subtyping as described in 
  * Extending Hindley-Milner Type Inference with Coercive Structural Subtyping
  * Traytel et al., https://www21.in.tum.de/~nipkow/pubs/aplas11.pdf
  */
-class CoerciveSubtypeSolver implements IConstraintSolver {
+class CoerciveSubtypeSolver implements IConstraintSolver {	
 	@Inject
 	protected MostGenericUnifierComputer mguComputer
 	
@@ -884,6 +879,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	override replace(AbstractType from, AbstractType with) {
 		super.replace(from, with)
 		constraintSystem?.explicitSubtypeRelations?.replace(from, with);
+		//constraintSystem?.explicitSubtypeRelationsTypeSource?.replaceAll([k, v | v.replace(from, with)]);
 	}
 	
 } 

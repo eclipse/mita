@@ -37,6 +37,7 @@ class ConstraintSystem {
 	protected List<AbstractTypeConstraint> atomicConstraints = newArrayList;
 	protected List<AbstractTypeConstraint> nonAtomicConstraints = newArrayList;
 	protected Graph<AbstractType> explicitSubtypeRelations;
+	protected Map<Integer, AbstractType> explicitSubtypeRelationsTypeSource = new HashMap();
 	
 	def getConstraints() {
 		return atomicConstraints + nonAtomicConstraints;
@@ -108,6 +109,7 @@ class ConstraintSystem {
 		symbolTable.putAll(self.symbolTable);
 		typeClasses.putAll(self.typeClasses);
 		self.explicitSubtypeRelations.copyTo(explicitSubtypeRelations);
+		explicitSubtypeRelationsTypeSource = new HashMap(self.explicitSubtypeRelationsTypeSource);
 	}
 		
 	def ConstraintSystem modifyNames(String suffix) {
@@ -118,6 +120,7 @@ class ConstraintSystem {
 		result.typeClasses.replaceAll([k, v | v.modifyNames(suffix)]);
 		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.modifyNames(suffix)];
 		result.explicitSubtypeRelations.computeReverseMap();
+		result.explicitSubtypeRelationsTypeSource.replaceAll[k, v | v.modifyNames(suffix)];
 		return result;
 	}
 	
@@ -225,36 +228,13 @@ class ConstraintSystem {
 		'''
 	}
 	
-	def takeOne() {
-		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
-		
-		result.instanceCount = instanceCount;
-		result.symbolTable.putAll(symbolTable)
-		result.constraintSystemProvider = constraintSystemProvider;
-		result.explicitSubtypeRelations = explicitSubtypeRelations;
-		result.typeClasses = typeClasses;
-	
-		if(constraints.empty) {
-			return (null -> result);
-		}
-		
-		return (if(!atomicConstraints.empty) {
-			result.atomicConstraints = atomicConstraints.tail.force;
-			result.nonAtomicConstraints = nonAtomicConstraints;
-			atomicConstraints.head;
-		}
-		else {
-			result.nonAtomicConstraints = nonAtomicConstraints.tail.force;
-			nonAtomicConstraints.head;
-		}) -> result;
-	}
-	
 	def takeOneNonAtomic() {
 		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
 		result.instanceCount = instanceCount;
 		result.symbolTable.putAll(symbolTable)
 		result.constraintSystemProvider = constraintSystemProvider;
 		result.explicitSubtypeRelations = explicitSubtypeRelations;
+		result.explicitSubtypeRelationsTypeSource = explicitSubtypeRelationsTypeSource;
 		result.typeClasses = typeClasses;
 		
 		if(nonAtomicConstraints.empty) {
@@ -300,8 +280,19 @@ class ConstraintSystem {
 			r.typeClasses.putAll(t.typeClasses);
 			t.explicitSubtypeRelations => [g | g.nodes.forEach[typeNode | 
 				g.reverseMap.get(typeNode).forEach[typeIdx |
-					g.getPredecessors(typeIdx).forEach[r.explicitSubtypeRelations.addEdge(it, typeNode)]
-					g.getSuccessors(typeIdx).forEach[r.explicitSubtypeRelations.addEdge(typeNode, it)]
+					val typeSource = t.explicitSubtypeRelationsTypeSource.get(typeIdx);
+					g.getPredecessors(typeIdx).forEach[
+						val newIdx = r.explicitSubtypeRelations.addEdge(it, typeNode).key;
+						if(typeSource !== null) {
+							r.explicitSubtypeRelationsTypeSource.put(newIdx, typeSource);
+						}
+					]
+					g.getSuccessors(typeIdx).forEach[
+						val newIdx = r.explicitSubtypeRelations.addEdge(typeNode, it).value;
+						if(typeSource !== null) {
+							r.explicitSubtypeRelationsTypeSource.put(newIdx, typeSource);
+						}
+					]
 				]
 			]]
 			return r;
@@ -338,6 +329,8 @@ class ConstraintSystem {
 		explicitSubtypeRelations.copyTo(result.explicitSubtypeRelations);
 		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replaceProxies(this, [this.resolveProxy(it, resource, scopeProvider)])];
 		result.explicitSubtypeRelations.computeReverseMap();
+		result.explicitSubtypeRelationsTypeSource = new HashMap(explicitSubtypeRelationsTypeSource);
+		result.explicitSubtypeRelationsTypeSource.replaceAll[k, v | v.replaceProxies(this, [this.resolveProxy(it, resource, scopeProvider)])];
 		return result;
 	}
 	

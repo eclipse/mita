@@ -111,6 +111,9 @@ class SerializationAdapter {
 		obj.constraints.map[ it.fromValueObject() as AbstractTypeConstraint ].forEach[ result.addConstraint(it) ];
 		result.constraintSystemProvider = constraintSystemProvider;
 		result.explicitSubtypeRelations = obj.explicitSubtypeRelations.fromValueObject() as Graph<AbstractType>;
+		result.explicitSubtypeRelationsTypeSource = obj.explicitSubtypeRelationsTypeSource.entrySet.toMap(
+			[it.key], [it.value.fromValueObject as AbstractType]
+		)
 		return result;
 	}
 	
@@ -311,6 +314,9 @@ class SerializationAdapter {
 				.map[ it.key.toString() -> it.value.toValueObject as SerializedTypeClass ]
 				.toMap([ it.key ], [ it.value ]);
 			explicitSubtypeRelations = obj.explicitSubtypeRelations.toValueObject as SerializedAbstractTypeGraph
+			explicitSubtypeRelationsTypeSource = obj.explicitSubtypeRelationsTypeSource.entrySet.toMap(
+				[it.key], [it.value.toValueObject as SerializedAbstractType]
+			)
 		]
 	}
 	
