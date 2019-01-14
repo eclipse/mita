@@ -59,6 +59,7 @@ class StdlibTypeRegistry {
 	public static val leftShiftFunctionQID = QualifiedName.create(#["stdlib", "__LEFTSHIFT__"]);
 	public static val rightShiftFunctionQID = QualifiedName.create(#["stdlib", "__RIGHTSHIFT__"]);
 	public static val postincrementFunctionQID = QualifiedName.create(#["stdlib", "__POSTINCREMENT__"]);
+	public static val postdecrementFunctionQID = QualifiedName.create(#["stdlib", "__POSTDECREMENT__"]);
 	
 	@Inject IScopeProvider scopeProvider;
 	

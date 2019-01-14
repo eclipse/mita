@@ -16,9 +16,6 @@ class BaseKind extends AbstractBaseType {
 	new(EObject origin, String name, AbstractType kindOf) {
 		super(origin, name);
 		this.kindOf = kindOf;
-		if(name.contains("BMA280") || name.contains("string")) {
-			print("");
-		}
 	}
 	
 	override map((AbstractType)=>AbstractType f) {

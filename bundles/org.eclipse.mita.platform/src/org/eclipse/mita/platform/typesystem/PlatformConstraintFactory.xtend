@@ -15,8 +15,14 @@ import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.platform.SystemResourceAlias
+import org.eclipse.mita.platform.SystemSpecification
 
 class PlatformConstraintFactory extends BaseConstraintFactory {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemSpecification spec) {
+		system.computeConstraintsForChildren(spec);
+		return null;
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AbstractSystemResource res) {
 		system.computeConstraintsForChildren(res);
 		system.computeConstraints(res.typeKind);
@@ -31,7 +37,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Modality modality) {
 		// modalities are accessed like `accelerometer.x_axis.read()`. 
-		// Therefore, accelerometer.x_axis needs the type "SystemResource -> modality<concreteType>"
+		// Therefore, x_axis needs the type "SystemResource -> modality<concreteType>"
 		val returnType = system.computeConstraints(modality.typeSpecifier);
 		// \T. modality<T>
 		val modalityType = typeRegistry.getTypeModelObjectProxy(system, modality, StdlibTypeRegistry.modalityTypeQID);
@@ -46,7 +52,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Signal sig) {
 		// signals are accessed like `mqtt.t.write("foo")`. 
-		// Therefore, mqtt.t needs the type "(SystemResource, arg1, ...) -> siginst<concreteType>"
+		// Therefore, t needs the type "(SystemResource, arg1, ...) -> siginst<concreteType>"
 		// and topic needs to be of type (String, u32) -> ((SystemResource, arg1, ...) -> siginst<concreteType>)
 		val returnType = system.computeConstraints(sig.typeSpecifier);
 		// \T. sigInst<T>
@@ -56,9 +62,23 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		
 		val systemResource = sig.eContainer as AbstractSystemResource;
 		
-		val sigInstSetupType = new FunctionType(null, new AtomicType(sig, sig.name + "_inst"), new ProdType(null, new AtomicType(sig, sig.name + "_inst_args"), #[system.getTypeVariable(systemResource)]), sigInstWithType);
+		val sigInstSetupType = new FunctionType(
+			null, 
+			new AtomicType(sig, sig.name + "_inst"), 
+			new ProdType(null, new AtomicType(sig, sig.name + "_inst_args"), #[system.getTypeVariable(systemResource)]), 
+			sigInstWithType
+		);
 		
-		val resultType = new FunctionType(sig, new AtomicType(sig, sig.name), new ProdType(null, new AtomicType(sig, sig.name + "_args"), sig.parameters.map[system.computeConstraints(it) as AbstractType]), sigInstSetupType);
+		val resultType = new FunctionType(
+			sig, 
+			new AtomicType(sig, sig.name), 
+			new ProdType(
+				null, 
+				new AtomicType(sig, sig.name + "_args"), 
+				sig.parameters.map[system.computeConstraints(it) as AbstractType]
+			), 
+			sigInstSetupType
+		);
 		return system.associate(resultType);
 	}
 }

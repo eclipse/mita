@@ -66,9 +66,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		
 		if (eObject.eContainer() === null) {
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
-			if(eObject.eResource.URI.toString.endsWith("application.mita")) {
-				print("")
-			}
 			constraintFactory.setIsLinking(true);
 			constraintFactory.getTypeRegistry().setIsLinking(true);
 			val constraints = constraintFactory.create(eObject);
@@ -77,10 +74,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			userData.put(CONSTRAINTS, jsonCompressed);
 			val lenRaw = json.length;
 			val lenCompressed = jsonCompressed.length;
-//			val String constraintsBackOut = serializationAdapter.toJSON(serializationAdapter.deserializeConstraintSystemFromJSON(GZipper.decompress(jsonCompressed), null));
-//			if (json != constraintsBackOut) {
-//				throw new Exception("Constraint serialization was not invariant");
-//			}
 		}
 	}
 
@@ -88,7 +81,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		if(specifier instanceof PresentTypeSpecifier){
 			if(specifier.optional){
 				return MitaTypeSystem.OPTIONAL_TYPE
-			}else if (!specifier.referenceModifiers.isEmpty){
+			} else if (!specifier.referenceModifiers.isEmpty){
 				return MitaTypeSystem.REFERENCE_TYPE
 			}
 		}

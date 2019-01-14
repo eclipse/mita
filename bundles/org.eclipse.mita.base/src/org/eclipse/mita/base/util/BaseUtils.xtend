@@ -17,7 +17,7 @@ import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class BaseUtils {
 	def static getText(EObject obj, EStructuralFeature feature) {
-		return NodeModelUtils.findNodesForFeature(obj, feature).head?.text?.trim;
+		return NodeModelUtils.findNodesForFeature(obj, feature)?.head?.text?.trim;
 	}
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
 		new Iterator<Pair<X, Y>>() {
@@ -143,6 +143,9 @@ class BaseUtils {
 		println(transpose(#[#[1,2,3], #[4,5,6]]));
 	}
 	def static <T> ArrayList<T> force(Iterable<T> list) {
+		if(list.class == ArrayList) {
+			return list as ArrayList<T>;
+		}
 		return Lists.newArrayList(list);
 	}
 	

@@ -25,15 +25,15 @@ class TypesUtil {
 	public static final String ID_SEPARATOR = "."
 
 	static def getVarianceInAssignment(EObject obj) {
-		val mbAssignment = EcoreUtil2.getContainerOfType(obj, AssignmentExpression);
-		if(mbAssignment !== null) {
-			val lhs = mbAssignment.varRef;
+		val maybeAssignment = EcoreUtil2.getContainerOfType(obj, AssignmentExpression);
+		if(maybeAssignment !== null) {
+			val lhs = maybeAssignment.varRef;
 			if(lhs === obj || lhs.eAllContents.exists[it === obj]) {
 				// obj is only on the left hand side of the assignment
-				if(mbAssignment.operator == AssignmentOperator.ASSIGN) {
+				if(maybeAssignment.operator == AssignmentOperator.ASSIGN) {
 					return Variance.Contravariant;	
 				}
-				// other operators are *mutating*, therefore obj is both argument and destination. Therefore it must be invariant.
+				// other operators are *mutating*, therefore obj is both argument and destination. Hence it must be invariant.
 				else {
 					return Variance.Invariant;					
 				}

@@ -96,6 +96,15 @@ export native unchecked function __PREINCREMENT__(x: uint8 ): uint8  header "mat
 export native unchecked function __PREINCREMENT__(x: float ): float  header "math.h";
 export native unchecked function __PREINCREMENT__(x: double): double header "math.h";
 
+export native unchecked function __PREDECREMENT__(x:  int32):  int32 header "math.h";
+export native unchecked function __PREDECREMENT__(x:  int16):  int16 header "math.h";
+export native unchecked function __PREDECREMENT__(x:  int8 ):  int8  header "math.h";
+export native unchecked function __PREDECREMENT__(x: uint32): uint32 header "math.h";
+export native unchecked function __PREDECREMENT__(x: uint16): uint16 header "math.h";
+export native unchecked function __PREDECREMENT__(x: uint8 ): uint8  header "math.h";
+export native unchecked function __PREDECREMENT__(x: float ): float  header "math.h";
+export native unchecked function __PREDECREMENT__(x: double): double header "math.h";
+
 export native unchecked function __POSTINCREMENT__(x:  int32):  int32 header "math.h";
 export native unchecked function __POSTINCREMENT__(x:  int16):  int16 header "math.h";
 export native unchecked function __POSTINCREMENT__(x:  int8 ):  int8  header "math.h";
@@ -104,6 +113,15 @@ export native unchecked function __POSTINCREMENT__(x: uint16): uint16 header "ma
 export native unchecked function __POSTINCREMENT__(x: uint8 ): uint8  header "math.h";
 export native unchecked function __POSTINCREMENT__(x: float ): float  header "math.h";
 export native unchecked function __POSTINCREMENT__(x: double): double header "math.h";
+
+export native unchecked function __POSTDECREMENT__(x:  int32):  int32 header "math.h";
+export native unchecked function __POSTDECREMENT__(x:  int16):  int16 header "math.h";
+export native unchecked function __POSTDECREMENT__(x:  int8 ):  int8  header "math.h";
+export native unchecked function __POSTDECREMENT__(x: uint32): uint32 header "math.h";
+export native unchecked function __POSTDECREMENT__(x: uint16): uint16 header "math.h";
+export native unchecked function __POSTDECREMENT__(x: uint8 ): uint8  header "math.h";
+export native unchecked function __POSTDECREMENT__(x: float ): float  header "math.h";
+export native unchecked function __POSTDECREMENT__(x: double): double header "math.h";
 
 export generated type string
 	generator "org.eclipse.mita.library.stdlib.StringGenerator"
