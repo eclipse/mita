@@ -18,8 +18,8 @@ function variableInference() : void {
 function variableInferenceExpression() : void {
 	//XPECT inferredType --> xint8
 	var x = 10;
-	//XPECT inferredType --> uint8
-	var z : uint8 = (x * 3) + 10;
+	//XPECT inferredType --> uint16
+	var z: uint16 = (x * 3) + 10;
 }
 
 function variableInferenceOperationCall() : void {

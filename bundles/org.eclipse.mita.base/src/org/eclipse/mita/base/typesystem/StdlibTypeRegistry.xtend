@@ -5,6 +5,9 @@ import java.util.HashSet
 import java.util.List
 import java.util.Set
 import java.util.regex.Pattern
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.IStatus
+import org.eclipse.core.runtime.Status
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.types.GeneratedType
@@ -189,8 +192,14 @@ class StdlibTypeRegistry {
 		val g = s.explicitSubtypeRelations;
 		val idxs = g.reverseMap.get(t.superTypeGraphHandle) ?: #[];
 		val explicitSuperTypes = #[t] + idxs.flatMap[
-			val keys = g.walk(g.outgoing, new HashSet(), it) [i, v | i];
-			return keys.map[key | s.explicitSubtypeRelationsTypeSource.get(key) ?: g.nodeIndex.get(key)];
+			val keys = g.walk(g.outgoing, new HashSet(), it) [i, v | i -> v];
+			return keys.map[key_typeName | 
+				val realType = s.explicitSubtypeRelationsTypeSource.get(key_typeName.key) ?: key_typeName.value
+				if(realType.name != key_typeName.value.name) {
+					throw new CoreException(new Status(IStatus.ERROR, "org.eclipse.mita.base", "Bad reverse lookup!"));
+				}
+				return realType;
+			];
 		].force;
 		val ta_t = s.getOptionalType(typeResolveOrigin ?: t.origin).instantiate(s);
 		val ta = ta_t.key.head;
@@ -212,6 +221,9 @@ class StdlibTypeRegistry {
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Object t, EObject typeResolveOrigin) {
 		return #[];
+	}
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Void v, EObject typeResolveOrigin) {
+		return #[]
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(IntegerType t, EObject typeResolveOrigin) {
 		return getIntegerTypes(typeResolveOrigin).filter[typeResolveOrigin.isSubType(it, t)].force

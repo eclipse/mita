@@ -44,15 +44,9 @@ class TypeVariableProxy extends TypeVariable {
 	
 	new(EObject origin, String name, EReference reference, QualifiedName qualifiedName) {
 		this(origin, name, reference, qualifiedName, false);
-		if(qualifiedName.toString.trim == "∗foo") {
-			print("");
-		}
 	}
 	
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
-		if(this.toString.startsWith("p_244")) {
-			print("");
-		}
 		val candidates = resolve.apply(this);
 		return if(candidates.size === 1) {
 			candidates.head;

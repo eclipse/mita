@@ -16,6 +16,7 @@ import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
@@ -68,7 +69,6 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
@@ -77,6 +77,10 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		println('''Prog: «program.eResource»''');
 		system.computeConstraintsForChildren(program);
 		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumSubTypeConstructor function) {
+		return system._computeConstraints(function as Operation);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {

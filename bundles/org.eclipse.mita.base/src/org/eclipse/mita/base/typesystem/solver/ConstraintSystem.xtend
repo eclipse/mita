@@ -100,16 +100,16 @@ class ConstraintSystem {
 		]);
 	}
 	
-	new(ConstraintSystem self) {
+	new(ConstraintSystem other) {
 		this();
-		constraintSystemProvider = constraintSystemProvider ?: self.constraintSystemProvider;
-		instanceCount = self.instanceCount;
-		atomicConstraints += self.atomicConstraints;
-		nonAtomicConstraints += self.nonAtomicConstraints;
-		symbolTable.putAll(self.symbolTable);
-		typeClasses.putAll(self.typeClasses);
-		self.explicitSubtypeRelations.copyTo(explicitSubtypeRelations);
-		explicitSubtypeRelationsTypeSource = new HashMap(self.explicitSubtypeRelationsTypeSource);
+		constraintSystemProvider = constraintSystemProvider ?: other.constraintSystemProvider;
+		instanceCount = other.instanceCount;
+		atomicConstraints += other.atomicConstraints;
+		nonAtomicConstraints += other.nonAtomicConstraints;
+		symbolTable.putAll(other.symbolTable);
+		typeClasses.putAll(other.typeClasses);
+		other.explicitSubtypeRelations.copyTo(explicitSubtypeRelations);
+		explicitSubtypeRelationsTypeSource = new HashMap(other.explicitSubtypeRelationsTypeSource);
 	}
 		
 	def ConstraintSystem modifyNames(String suffix) {
@@ -282,13 +282,13 @@ class ConstraintSystem {
 				g.reverseMap.get(typeNode).forEach[typeIdx |
 					val typeSource = t.explicitSubtypeRelationsTypeSource.get(typeIdx);
 					g.getPredecessors(typeIdx).forEach[
-						val newIdx = r.explicitSubtypeRelations.addEdge(it, typeNode).key;
+						val newIdx = r.explicitSubtypeRelations.addEdge(it, typeNode).value;
 						if(typeSource !== null) {
 							r.explicitSubtypeRelationsTypeSource.put(newIdx, typeSource);
 						}
 					]
 					g.getSuccessors(typeIdx).forEach[
-						val newIdx = r.explicitSubtypeRelations.addEdge(typeNode, it).value;
+						val newIdx = r.explicitSubtypeRelations.addEdge(typeNode, it).key;
 						if(typeSource !== null) {
 							r.explicitSubtypeRelationsTypeSource.put(newIdx, typeSource);
 						}

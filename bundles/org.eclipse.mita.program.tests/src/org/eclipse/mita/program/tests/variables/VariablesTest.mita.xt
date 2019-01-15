@@ -10,7 +10,7 @@ import platforms.unittest;
 
 // Mutable variables are declared with the var keyword
 function variableMutabilityTest() : void {
-	var foo = 1;
+	var foo: uint8 = 1;
 	foo = 2;
 	
 	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int32 and bool." at "foo = true"

@@ -55,7 +55,7 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(message.equals("bar.baz() (:: baz()) and bar.v2d(v2d_s(prim»i»1 / a, prim»i»1)) don't share a common type")) {
+			if(message.equals("<auto>.baz() (:: baz()) has a different type than e (:: f_205.0)")) {
 				System.out.print("");
 			}
 		}
@@ -75,7 +75,7 @@ public interface IValidationIssueAcceptor {
 			this.target = target;
 			this.issueCode = issueCode;
 			this.feature = feature;
-			if(message.equals("bar.baz() (:: baz()) and bar.v2d(v2d_s(prim»i»1 / a, prim»i»1)) don't share a common type")) {
+			if(message.equals("<auto>.baz() (:: baz()) has a different type than e (:: f_205.0)")) {
 				System.out.print("");
 			}
 		}

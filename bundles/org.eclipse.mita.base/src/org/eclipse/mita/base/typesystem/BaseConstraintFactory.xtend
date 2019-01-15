@@ -2,7 +2,6 @@ package org.eclipse.mita.base.typesystem
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
@@ -26,7 +25,6 @@ import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
 import org.eclipse.mita.base.expressions.ValueRange
-import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
@@ -40,6 +38,7 @@ import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeParameter
@@ -63,7 +62,6 @@ import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
-import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -228,16 +226,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val fromTV = system.newTypeVariable(null);
 		// B
 		val toTV = system.newTypeVariable(null);
-		// A -> B
-		val refType = new FunctionType(null, new AtomicType(null, functionName + "_call"), fromTV, toTV);
-		// a
-		val argType = argumentType
 		// b
 		val resultType = system.newTypeVariable(null);
-		// a -> b
-		val referencedFunctionType = new FunctionType(null, new AtomicType(null, functionName), argType, resultType);
 		// a -> B >: A -> B
-		system.addConstraint(new SubtypeConstraint(fromTV, argType, issue));
+		system.addConstraint(new SubtypeConstraint(fromTV, argumentType, issue));
 		val varianceOfResultVar = TypesUtil.getVarianceInAssignment(functionCall);
 		switch(varianceOfResultVar) {
 			case Covariant: {
@@ -280,7 +272,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		
 		// B
-		resultType;
+		return resultType;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayAccessExpression expr) {
@@ -440,6 +432,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				system.computeConstraints(obj.typeKind);
 			}
 		}
+		system.computeConstraintsForChildren(obj);
 		return typeTrans;
 	}
 
@@ -466,11 +459,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return new ProdType(structType, new AtomicType(structType), types);
 	}
 	
-	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, org.eclipse.mita.base.types.SumType sumType) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumType sumType) {
 		val subTypes = sumType.alternatives.map[ sumAlt |
 			system.translateTypeDeclaration(sumAlt);
 		].force;
-		return new SumType(sumType, new AtomicType(sumType), subTypes);	
+		return new org.eclipse.mita.base.typesystem.types.SumType(sumType, new AtomicType(sumType), subTypes);	
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
@@ -478,7 +471,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		val prodType = new ProdType(sumAlt, selfType, types);
 
-		val superType = new AtomicType(sumAlt.eContainer, (sumAlt.eContainer as org.eclipse.mita.base.types.SumType).name);
+		val superType = new AtomicType(sumAlt.eContainer, (sumAlt.eContainer as SumType).name);
 
 		val iSelf_iSuper = system.explicitSubtypeRelations.addEdge(selfType, superType);
 		system.explicitSubtypeRelationsTypeSource.put(iSelf_iSuper.key, prodType);
