@@ -47,6 +47,7 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.util.DebugTimer
 
 /**
  * Solves coercive subtyping as described in 
@@ -79,6 +80,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
+		val debugTimer = new DebugTimer();
 		val debugOutput = enableDebug && typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
 		
 		val cancelInidicator = typeResolutionOrigin.eResource.getCancelIndicatorOrNull;		
@@ -91,6 +93,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 
 		// do one simplification pass to solve equalities etc. then unify type classes
+		debugTimer.start("simplify.1");
 		val simplification1 = currentSystem.simplify(currentSubstitution, typeResolutionOrigin);
 		if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
 			return null;
@@ -103,7 +106,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		currentSystem = simplification1.system;
 		currentSubstitution = simplification1.substitution;
+		debugTimer.stop();
 		
+		debugTimer.start("tcc-unification");
 		currentSystem = unifyTypeClassInstances(currentSystem);
 		for(tcc: currentSystem.constraints.filter(FunctionTypeClassConstraint).force) {
 			val typeClass = currentSystem.typeClasses.get(tcc.instanceOfQN);
@@ -116,7 +121,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				}
 			}
 		}
+		debugTimer.stop()
 		
+		debugTimer.start("solveloop")
 		for(var i = 0; i < 10; i++) {
 			if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
 				return null;
@@ -125,6 +132,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				println("------------------")
 				println(currentSystem);
 			}
+			
+			debugTimer.start("simplify." + (i + 2));
 			val simplification = currentSystem.simplify(currentSubstitution, typeResolutionOrigin);
 			if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
 				return null;
@@ -135,12 +144,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					return new ConstraintSolution(currentSystem, simplification.substitution, simplification.issues);
 				}
 			}
-			
 			val simplifiedSystem = simplification.system;
 			val simplifiedSubst = simplification.substitution;
 			if(debugOutput) {
 				println(simplification);
 			}
+			debugTimer.stop()
+			
+			debugTimer.start("solveSubtypeConstraints." + (i + 2));
 			val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst, typeResolutionOrigin);
 			if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
 				return null;
@@ -153,8 +164,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			result = solution;
 			currentSubstitution = result.solution;
+			debugTimer.stop();
+			
+			debugTimer.start("substitute." + (i + 2));
 			currentSystem = currentSubstitution.apply(result.constraints);
+			debugTimer.stop();
 		}
+		debugTimer.stop()
 		
 		issues += validateSubtypes(currentSystem, typeResolutionOrigin);
 		
@@ -169,19 +185,21 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			issues += new ValidationIssue(Severity.INFO, '''«origin» has type «th_t.value»''', th_t.key.origin, null, "") 
 		]
 		
+		println('''solve timing:\n«debugTimer»''')
+		
 		return new ConstraintSolution(currentSystem, currentSubstitution, issues);
 	}
 		
-		def Iterable<ValidationIssue> validateSubtypes(ConstraintSystem system, EObject typeResolutionOrigin) {
-			return system.constraints.filter(SubtypeConstraint).flatMap[
-				if(!typeRegistry.isSubType(typeResolutionOrigin, it.subType, it.superType)) {
-					#[it.errorMessage]
-				}
-				else {
-					#[]
-				}
-			]
-		}
+	def Iterable<ValidationIssue> validateSubtypes(ConstraintSystem system, EObject typeResolutionOrigin) {
+		return system.constraints.filter(SubtypeConstraint).flatMap[
+			if(!typeRegistry.isSubType(typeResolutionOrigin, it.subType, it.superType)) {
+				#[it.errorMessage]
+			}
+			else {
+				#[]
+			}
+		]
+	}
 	
 	def ConstraintSystem unifyTypeClassInstances(ConstraintSystem system) {
 		val result = new ConstraintSystem(system);
