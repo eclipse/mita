@@ -175,7 +175,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			issues += new ValidationIssue(Severity.INFO, '''«origin» has type «th_t.value»''', th_t.key.origin, null, "") 
 		]
 		
-		println('''solve timing:\n«debugTimer»''')
+		println('''
+		solve timing («typeResolutionOrigin.eResource.URI.lastSegment»):
+		«debugTimer»''')
 		
 		return new ConstraintSolution(currentSystem, currentSubstitution, issues);
 	}
@@ -234,15 +236,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		var resultSub = substitution;
 		var issues = newArrayList;
 		while(resultSystem.hasNonAtomicConstraints()) {
-			val constraintAndSystem = resultSystem.takeOneNonAtomic();
-			val constraint = constraintAndSystem.key;
-			val constraintSystem = constraintAndSystem.value;
+			val constraint = resultSystem.takeOneNonAtomic();
 
-			val simplification = doSimplify(constraintSystem, resultSub, typeResolutionOrigin, constraint);
+			val simplification = doSimplify(resultSystem, resultSub, typeResolutionOrigin, constraint);
 			if(!simplification.valid) {
 				issues += simplification.issues;
 				// just throw out the constraint for now
-				resultSystem = constraintSystem;
 				//return SimplificationResult.failure(simplification.issue);
 			}
 			else {

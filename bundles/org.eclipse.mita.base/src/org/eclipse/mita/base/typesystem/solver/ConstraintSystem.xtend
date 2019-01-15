@@ -229,22 +229,11 @@ class ConstraintSystem {
 	}
 	
 	def takeOneNonAtomic() {
-		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
-		result.instanceCount = instanceCount;
-		result.symbolTable.putAll(symbolTable)
-		result.constraintSystemProvider = constraintSystemProvider;
-		result.explicitSubtypeRelations = explicitSubtypeRelations;
-		result.explicitSubtypeRelationsTypeSource = explicitSubtypeRelationsTypeSource;
-		result.typeClasses = typeClasses;
-		
 		if(nonAtomicConstraints.empty) {
-			result.atomicConstraints = atomicConstraints;
-			return (null -> result);
+			return null;
 		}
 		
-		result.nonAtomicConstraints = nonAtomicConstraints.tail.force;
-		result.atomicConstraints = atomicConstraints;
-		return nonAtomicConstraints.head -> result;
+		return nonAtomicConstraints.remove(0);
 	}
 	
 	def hasNonAtomicConstraints() {
