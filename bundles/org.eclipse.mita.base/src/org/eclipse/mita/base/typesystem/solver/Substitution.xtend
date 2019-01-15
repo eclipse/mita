@@ -11,6 +11,7 @@ import org.eclipse.core.runtime.Status
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.DebugTimer
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
@@ -94,24 +95,37 @@ class Substitution {
 	}
 	
 	def apply(ConstraintSystem system) {
+		return apply(system, new DebugTimer());
+	}
+	def apply(ConstraintSystem system, DebugTimer debugTimer) {
 		val result = (constraintSystemProvider ?: system.constraintSystemProvider).get();
 		
+		debugTimer.start("typeClasses")
 		result.typeClasses.putAll(system.typeClasses.mapValues[it.replace(this)])
 		result.instanceCount = system.instanceCount;
-		result.symbolTable.putAll(system.symbolTable);
+		result.symbolTable = system.symbolTable;
+		debugTimer.stop("typeClasses")
 		
 		// to keep overridden methods etc. we clone instead of using a copy constructor
+		debugTimer.start("explicitSubtypeRelations");
 		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>
 		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replace(this)];
 		result.explicitSubtypeRelations.computeReverseMap;
 		result.explicitSubtypeRelationsTypeSource = new HashMap(system.explicitSubtypeRelationsTypeSource.mapValues[it.replace(this)]);
+		debugTimer.stop("explicitSubtypeRelations");
 		
+		debugTimer.start("constraints");
 		// atomic constraints may become composite by substitution, the opposite can't happen
 		val unknownConstrains = system.atomicConstraints.map[c | c.replace(this)].force;
+		val alwaysNonAtomic = system.nonAtomicConstraints.map[c | c.replace(this)].force;
+		debugTimer.stop("constraints");
+
+		debugTimer.start("atomicity");
 		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);
 		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic(result)]);
+		debugTimer.stop("atomicity");
 		
-		val alwaysNonAtomic = system.nonAtomicConstraints.map[c | c.replace(this)].force;
+		debugTimer.start("constraintAssert");
 		// assert this
 		system.nonAtomicConstraints.zip(alwaysNonAtomic).forEach[
 			if(it.value.isAtomic(result)) {
@@ -120,6 +134,7 @@ class Substitution {
 				throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
 			}
 		]
+		debugTimer.stop("constraintAssert");
 		result.nonAtomicConstraints = alwaysNonAtomic;
 		return result;
 	}

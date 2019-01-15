@@ -12,6 +12,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.infra.CachedBoolean
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -51,11 +52,11 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return #[subType, superType];
 	}
 	
-	private var Optional<Boolean> cachedIsAtomic = Optional.absent;
+	private var CachedBoolean cachedIsAtomic = CachedBoolean.Uncached;
 	
 	override isAtomic(ConstraintSystem system) {
-		if(!cachedIsAtomic.present) {
-			cachedIsAtomic = Optional.of((subType.isAtomic && superType.isAtomic) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
+		if(cachedIsAtomic == CachedBoolean.Uncached) {
+			cachedIsAtomic = CachedBoolean.from((subType.isAtomic && superType.isAtomic) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
 		}
 	 	return cachedIsAtomic.get();
 	}

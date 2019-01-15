@@ -105,7 +105,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		currentSystem = simplification1.system;
 		currentSubstitution = simplification1.substitution;
-		debugTimer.stop();
+		debugTimer.stop("simplify.1");
 		
 		debugTimer.start("tcc-unification");
 		currentSystem = unifyTypeClassInstances(currentSystem);
@@ -120,7 +120,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				}
 			}
 		}
-		debugTimer.stop()
+		debugTimer.stop("tcc-unification")
 		
 		debugTimer.start("solveloop")
 		for(var i = 0; i < 10; i++) {
@@ -141,7 +141,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			val simplifiedSystem = simplification.system;
 			val simplifiedSubst = simplification.substitution;
-			debugTimer.stop()
+			debugTimer.stop("simplify." + (i + 2))
 			
 			debugTimer.start("solveSubtypeConstraints." + (i + 2));
 			val solution = solveSubtypeConstraints(simplifiedSystem, simplifiedSubst, typeResolutionOrigin);
@@ -156,13 +156,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			result = solution;
 			currentSubstitution = result.solution;
-			debugTimer.stop();
+			debugTimer.stop("solveSubtypeConstraints." + (i + 2));
 			
 			debugTimer.start("substitute." + (i + 2));
 			currentSystem = currentSubstitution.apply(result.constraints);
-			debugTimer.stop();
+			debugTimer.stop("substitute." + (i + 2));
 		}
-		debugTimer.stop()
+		debugTimer.stop("solveloop")
 		
 		issues += validateSubtypes(currentSystem, typeResolutionOrigin);
 		
@@ -242,7 +242,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			
 			debugTimer.start(constraint.class.simpleName);
 			val simplification = doSimplify(resultSystem, resultSub, typeResolutionOrigin, constraint);
-			debugTimer.stop();
+			debugTimer.stop(constraint.class.simpleName);
 			
 			if(!simplification.valid) {
 				issues += simplification.issues;
@@ -258,15 +258,18 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						simplification.substitution.content.remove(it);
 					]	
 				}
-				debugTimer.stop();
+				debugTimer.stop("UnifyCheck");
 				
 				resultSub = simplification.substitution;
-				debugTimer.start("Substitution");
-				resultSystem = resultSub.apply(simplification.system);
-				debugTimer.stop();
+				//debugTimer.start("Substitution");
+				resultSystem = resultSub.apply(simplification.system, debugTimer);
+				//debugTimer.stop("Substitution");
+				#["typeClasses", "explicitSubtypeRelations", "constraints", "atomicity", "constraintAssert"].forEach[
+					debugTimer.consolidateByPrefix(/*"Substitution." + */ it);
+				]
 			}
 		}
-		val classes = #["UnifyCheck", "Substitution", "SubtypeConstraint", "EqualityConstraint", "ImplicitInstanceConstraint", "FunctionTypeClassConstraint"];
+		val classes = #["UnifyCheck", /*"Substitution", */"SubtypeConstraint", "EqualityConstraint", "ImplicitInstanceConstraint", "FunctionTypeClassConstraint"];
 		classes.forEach[
 			debugTimer.consolidateByPrefix(it)
 		]
@@ -498,7 +501,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return SimplificationResult.failure(mgu.issues);
 		}
 		
-		return SimplificationResult.success(mgu.substitution.apply(system), mgu.substitution.apply(substitution));
+		return SimplificationResult.success(system, mgu.substitution.apply(substitution));
 	}
 		
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint) {
@@ -536,14 +539,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeVariable sub, TypeConstructorType top) {
 		// expand-l:   a <= Ct1...tn
 		val expansion = substitutionProvider.get() => [top.expand(system, it, sub)];
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage)));
+		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	} 
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeVariable top) {
 		// expand-r:   Ct1...tn <= a
 		val expansion = substitutionProvider.get() => [sub.expand(system, it, top)];
-		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage)));
+		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	}

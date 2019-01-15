@@ -18,6 +18,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
 import com.google.common.base.Optional
 import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.typesystem.infra.CachedBoolean
 
 @Accessors
 @EqualsHashCode
@@ -91,15 +92,15 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		return new FunctionTypeClassConstraint(_errorMessage, typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, returnTypeVariance, constraintSystemProvider);
 	}
 	
-	private var Optional<Boolean> cachedIsAtomic = Optional.absent;
+	private var CachedBoolean cachedIsAtomic = CachedBoolean.Uncached;
 	
 	override isAtomic(ConstraintSystem system) {
 		val typeClass = system.typeClasses.get(instanceOfQN);
 		if(typeClass.mostSpecificGeneralization === null || typ.freeVars.empty) {	
 			return !typ.freeVars.empty
 		}
-		if(!cachedIsAtomic.present) {
-			cachedIsAtomic = Optional.of(!typ.isMoreSpecificThan(typeClass.mostSpecificGeneralization));
+		if(cachedIsAtomic == CachedBoolean.Uncached) {
+			cachedIsAtomic = CachedBoolean.from(!typ.isMoreSpecificThan(typeClass.mostSpecificGeneralization));
 		}
 	 	return cachedIsAtomic.get();
 	}

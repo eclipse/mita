@@ -11,13 +11,38 @@ class DebugTimer {
 	protected val traces = new Stack<Trace>();
 	protected val results = new LinkedList<TraceResult>();
 	
+	var foo = 0;
+	
 	public def start(String name) {
+		if(name == "simplify.1") {
+			foo++;
+			if(foo > 1) {
+				print("");
+			}
+		}
 		this.traces.push(new Trace(Instant.now(), name, Thread.currentThread.id));
+	}
+	
+	public def stop(String expectedName) {
+		if (!this.traces.isEmpty()) {
+			val prev = this.traces.pop();
+			val internalPrefix = computeName(prev.name);
+			this.results.add(new TraceResult(Duration.between(prev.start, Instant.now()).nano, internalPrefix, traces.length));
+			
+			if(prev.name != expectedName) {
+				throw new Exception("different timer stopped");
+			}
+			if (prev.threadID !== Thread.currentThread.id) {
+				throw new Exception("timer stopped from different thread");
+			}
+		}
 	}
 	
 	public def getByPrefix(String prefix) {
 		results.filter[it.name.startsWith(prefix)]
 	}
+	
+	
 	
 	public def consolidateByPrefix(String prefix) {
 		val internalPrefix = computeName(prefix);
@@ -28,17 +53,6 @@ class DebugTimer {
 	
 	protected def computeName(String lastSegment) {
 		return (traces.map[it.name] + #[lastSegment]).join(".")
-	}
-	
-	public def stop() {
-		if (!this.traces.isEmpty()) {
-			val prev = this.traces.pop();
-			if (prev.threadID !== Thread.currentThread.id) {
-				throw new Exception("timer stopped from different thread");
-			}
-			val internalPrefix = computeName(prev.name);
-			this.results.add(new TraceResult(Duration.between(prev.start, Instant.now()).nano, internalPrefix, traces.length));
-		}
 	}
 	
 	public override toString() {
