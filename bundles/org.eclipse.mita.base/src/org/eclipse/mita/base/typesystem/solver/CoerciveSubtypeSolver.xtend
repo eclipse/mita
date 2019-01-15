@@ -70,6 +70,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	@Inject
 	protected StdlibTypeRegistry typeRegistry;
 	
+	protected var DebugTimer debugTimer;
+	
 	def CancelIndicator getCancelIndicatorOrNull(Resource resource) {
 		if(resource instanceof MitaBaseResource) {
 			return resource.cancelIndicator;
@@ -78,7 +80,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
-		val debugTimer = new DebugTimer();
+		debugTimer = new DebugTimer();
 		
 		val cancelInidicator = typeResolutionOrigin.eResource.getCancelIndicatorOrNull;		
 		var currentSystem = system;
@@ -237,14 +239,18 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		var issues = newArrayList;
 		while(resultSystem.hasNonAtomicConstraints()) {
 			val constraint = resultSystem.takeOneNonAtomic();
-
+			
+			debugTimer.start(constraint.class.simpleName);
 			val simplification = doSimplify(resultSystem, resultSub, typeResolutionOrigin, constraint);
+			debugTimer.stop();
+			
 			if(!simplification.valid) {
 				issues += simplification.issues;
 				// just throw out the constraint for now
 				//return SimplificationResult.failure(simplification.issue);
 			}
 			else {
+				debugTimer.start("UnifyCheck");
 				val witnessesNotWeaklyUnifyable = simplification.substitution.content.entrySet.filter[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]].flatMap[#[it.key, it.value]].force;
 				if(!witnessesNotWeaklyUnifyable.empty) {
 					issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.toString, it.origin, null, "")]; 
@@ -252,10 +258,18 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						simplification.substitution.content.remove(it);
 					]	
 				}
+				debugTimer.stop();
+				
 				resultSub = simplification.substitution;
+				debugTimer.start("Substitution");
 				resultSystem = resultSub.apply(simplification.system);
+				debugTimer.stop();
 			}
 		}
+		val classes = #["UnifyCheck", "Substitution", "SubtypeConstraint", "EqualityConstraint", "ImplicitInstanceConstraint", "FunctionTypeClassConstraint"];
+		classes.forEach[
+			debugTimer.consolidateByPrefix(it)
+		]
 		return new SimplificationResult(resultSub, issues, resultSystem);
 	}
 		

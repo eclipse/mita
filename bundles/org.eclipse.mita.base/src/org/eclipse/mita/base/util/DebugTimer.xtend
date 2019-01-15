@@ -10,9 +10,24 @@ import java.time.Duration
 class DebugTimer {
 	protected val traces = new Stack<Trace>();
 	protected val results = new LinkedList<TraceResult>();
-		
+	
 	public def start(String name) {
 		this.traces.push(new Trace(Instant.now(), name, Thread.currentThread.id));
+	}
+	
+	public def getByPrefix(String prefix) {
+		results.filter[it.name.startsWith(prefix)]
+	}
+	
+	public def consolidateByPrefix(String prefix) {
+		val internalPrefix = computeName(prefix);
+		val time = results.filter[it.name.startsWith(internalPrefix)].fold(0L, [i, t| i+t.timeNs]);
+		results.removeIf[it.name.startsWith(internalPrefix)];
+		results.add(new TraceResult(time, internalPrefix, traces.length));
+	}
+	
+	protected def computeName(String lastSegment) {
+		return (traces.map[it.name] + #[lastSegment]).join(".")
 	}
 	
 	public def stop() {
@@ -21,7 +36,8 @@ class DebugTimer {
 			if (prev.threadID !== Thread.currentThread.id) {
 				throw new Exception("timer stopped from different thread");
 			}
-			this.results.add(new TraceResult(Duration.between(prev.start, Instant.now()), prev.name, traces.length));
+			val internalPrefix = computeName(prev.name);
+			this.results.add(new TraceResult(Duration.between(prev.start, Instant.now()).nano, internalPrefix, traces.length));
 		}
 	}
 	
@@ -32,14 +48,14 @@ class DebugTimer {
 	@FinalFieldsConstructor
 	@Accessors
 	static class TraceResult {
-		protected val Duration time;
+		protected val long timeNs;
 		protected val String name;
 		protected val int depth;
 		
 		public override toString() {
 			val indent = newCharArrayOfSize(depth * 4);
 			indent.replaceAll([' ']);
-			return '''«new String(indent)»«name»: «time.toMillis()» ms''';
+			return '''«new String(indent)»«name»: «timeNs/1000000» ms''';
 		}
 	}
 	
