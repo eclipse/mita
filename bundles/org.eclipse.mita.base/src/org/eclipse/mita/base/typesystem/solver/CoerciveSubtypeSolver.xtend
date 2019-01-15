@@ -70,8 +70,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	@Inject
 	protected StdlibTypeRegistry typeRegistry;
 	
-	val enableDebug = true;
-	
 	def CancelIndicator getCancelIndicatorOrNull(Resource resource) {
 		if(resource instanceof MitaBaseResource) {
 			return resource.cancelIndicator;
@@ -81,7 +79,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
 		val debugTimer = new DebugTimer();
-		val debugOutput = enableDebug && typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
 		
 		val cancelInidicator = typeResolutionOrigin.eResource.getCancelIndicatorOrNull;		
 		var currentSystem = system;
@@ -128,10 +125,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
 				return null;
 			}
-			if(debugOutput) {
-				println("------------------")
-				println(currentSystem);
-			}
 			
 			debugTimer.start("simplify." + (i + 2));
 			val simplification = currentSystem.simplify(currentSubstitution, typeResolutionOrigin);
@@ -146,9 +139,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			val simplifiedSystem = simplification.system;
 			val simplifiedSubst = simplification.substitution;
-			if(debugOutput) {
-				println(simplification);
-			}
 			debugTimer.stop()
 			
 			debugTimer.start("solveSubtypeConstraints." + (i + 2));
@@ -208,8 +198,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected def ConstraintSolution solveSubtypeConstraints(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
-		val debugOutput = enableDebug && typeResolutionOrigin.eResource.URI.lastSegment == "application.mita";
-		
 		val issues = newArrayList;
 		
 		val constraintGraphAndSubst = system.buildConstraintGraph(substitution, typeResolutionOrigin);
@@ -220,25 +208,19 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		val constraintGraph = constraintGraphAndSubst.key;
 		val constraintGraphSubstitution = constraintGraphAndSubst.value.substitution;
-		if(debugOutput) {
-			println("------------------")
-			println(constraintGraph.toGraphviz());
-			println(constraintGraphSubstitution);
-		}		
+
 		val resolvedGraphAndSubst = constraintGraph.resolve(constraintGraphSubstitution, typeResolutionOrigin);
 		val resolvedGraph = resolvedGraphAndSubst.key.key;
 		val resolvedGraphSubstitution = resolvedGraphAndSubst.key.value;
 		if(resolvedGraphSubstitution === null) {	
 			return new ConstraintSolution(system, resolvedGraphSubstitution, resolvedGraphAndSubst.value);
 		}
-		if(debugOutput) {
-			println("------------------")
-			println(resolvedGraphSubstitution);
-		}
+
 		if(issues.empty) {
 			val newEqualities = resolvedGraph.unify();
 			system.nonAtomicConstraints.addAll(newEqualities);
 		}
+
 		return new ConstraintSolution(system, resolvedGraphSubstitution, (issues + resolvedGraphAndSubst.value).filterNull.toList);
 	}
 	
@@ -266,7 +248,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			else {
 				val witnessesNotWeaklyUnifyable = simplification.substitution.content.entrySet.filter[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]].flatMap[#[it.key, it.value]].force;
 				if(!witnessesNotWeaklyUnifyable.empty) {
-					print("");
 					issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.toString, it.origin, null, "")]; 
 					witnessesNotWeaklyUnifyable.filter(TypeVariable).forEach[
 						simplification.substitution.content.remove(it);
@@ -276,7 +257,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				resultSystem = resultSub.apply(simplification.system);
 			}
 		}
-		
 		return new SimplificationResult(resultSub, issues, resultSystem);
 	}
 		
@@ -596,9 +576,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 	protected def Pair<ConstraintGraph, UnificationResult> buildConstraintGraph(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
 		val gWithCycles = constraintGraphProvider.get(system, typeResolutionOrigin);
-		if(enableDebug) {
-			println(gWithCycles.toGraphviz);
-		}
+		
 		val finalState = new Object() {
 			var Substitution s = substitution;
 			var Boolean success = true;
@@ -687,9 +665,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					v.origin, null, "")]);
 					issues += newIssues;
 				}
-			}
-			if(enableDebug) {
-				println(graph.toGraphviz);
 			}
 		}
 		return (graph -> resultSub) -> issues;

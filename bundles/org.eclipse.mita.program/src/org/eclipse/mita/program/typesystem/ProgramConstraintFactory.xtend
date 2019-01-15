@@ -74,7 +74,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
-		println('''Prog: «program.eResource»''');
+		println('''Computing constraints for program: «program.eResource.URI.lastSegment»''');
 		system.computeConstraintsForChildren(program);
 		return null;
 	}
