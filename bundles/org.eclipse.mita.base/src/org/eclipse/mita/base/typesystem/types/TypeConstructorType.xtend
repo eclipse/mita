@@ -23,6 +23,7 @@ class TypeConstructorType extends AbstractType {
 	protected static Integer instanceCount = 0;
 	protected val AbstractType type;
 	protected val List<AbstractType> typeArguments;
+	private val List<TypeVariable> _freeVars;
 	
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
 		// if not all sum types have the same number of arguments, return a new TV
@@ -41,12 +42,11 @@ class TypeConstructorType extends AbstractType {
 		super(origin, type.name);
 		this.type = type;
 		this.typeArguments = typeArguments;
+		this._freeVars = typeArguments.flatMap[it.freeVars].force;
 	}
 	
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
-		super(origin, type.name);
-		this.type = type;
-		this.typeArguments = typeArguments.force;
+		this(origin, type, typeArguments.force);
 	}
 		
 	override Tree<AbstractType> quote() {
@@ -76,7 +76,7 @@ class TypeConstructorType extends AbstractType {
 	}
 	
 	override getFreeVars() {
-		return typeArguments.flatMap[it.freeVars];
+		return _freeVars;
 	}
 	
 	override toGraphviz() {

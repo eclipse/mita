@@ -65,8 +65,6 @@ class MitaLinker extends Linker {
 			]);
 			collectAndSolveTypes(obj, producer);
 		}
-		
-		//super.ensureLinked(obj, producer)
 	}
 	
 	def resolveProxy(Resource resource, EObject obj) {
@@ -100,8 +98,8 @@ class MitaLinker extends Linker {
 			.flatMap[ it.exportedObjects ].force);
 		val allConstraintSystems = exportedObjects
 			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
-			.filter[it.value !== null]
 			.map[it.value]
+			.filterNull
 			.map[GZipper.decompress(it)]
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]
 			.indexed.map[it.value.modifyNames('''.«it.key»''')].force;

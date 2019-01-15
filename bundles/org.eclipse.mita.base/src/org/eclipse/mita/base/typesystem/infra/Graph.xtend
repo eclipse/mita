@@ -1,7 +1,6 @@
 package org.eclipse.mita.base.typesystem.infra
 
 import com.google.common.base.Optional
-import com.google.common.collect.HashBiMap
 import java.util.ArrayList
 import java.util.HashMap
 import java.util.HashSet
@@ -151,9 +150,7 @@ class Graph<T> implements Cloneable {
 		var mbCycle = g.getCycle;
 		while(mbCycle.present) {
 			val _g = g;
-			val biMap = HashBiMap.create(g.nodeIndex);
 			val cycle = mbCycle.get.map[it -> _g.nodeIndex.get(it)];
-			val cycleNodesOnly = mbCycle.get.map[_g.nodeIndex.get(it)];
 			val cycleEdges = cycle.init.zip(cycle.tail).force;
 			val replacementNodeIdx = cycleCombiner.apply(_g, cycleEdges);
 			// a cycle contains one node twice: start and end. remove it here

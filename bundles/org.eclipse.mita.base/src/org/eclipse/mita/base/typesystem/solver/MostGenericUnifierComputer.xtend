@@ -100,18 +100,17 @@ class MostGenericUnifierComputer {
 		val result = substitutionProvider.get();
 		if(t1IsFree) {
 			result.add(t1 as TypeVariable, t2);
+			return UnificationResult.success(result);
 		} else if(t2IsFree) {
 			result.add(t2 as TypeVariable, t1);
-		} else {
-			val error = result.unify(t1, t2);
-			if(error !== null) {
-				return UnificationResult.failure(new ValidationIssue(issue, error.message));
-			}
 			return UnificationResult.success(result);
+		} 
+
+		val error = result.unify(t1, t2);
+		if(error !== null) {
+			return UnificationResult.failure(new ValidationIssue(issue, error.message));
 		}
-		
-		// none is free - ask the defined types
-		return UnificationResult.success(result);
+		return UnificationResult.success(result);		
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, IntegerType t1, IntegerType t2) {

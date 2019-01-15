@@ -225,15 +225,6 @@ class SerializedJavaClassInstanceConstraint extends SerializedAbstractTypeConstr
 	public String javaClass;
 }
 
-class SerializedImplicitInstanceConstraint extends SerializedAbstractTypeConstraint {
-	new() {
-		_type = "SerializedImplicitInstanceConstraint";
-	}
-	
-	public SerializedAbstractType isInstance;
-	public SerializedAbstractType ofType;
-}
-
 class SerializedExplicitInstanceConstraint extends SerializedAbstractTypeConstraint {
     new() {
         _type = "SerializedExplicitInstanceConstraint";

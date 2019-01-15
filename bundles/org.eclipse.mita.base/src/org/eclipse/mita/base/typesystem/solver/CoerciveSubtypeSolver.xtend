@@ -19,9 +19,10 @@ import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
-import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.infra.ConstraintGraph
+import org.eclipse.mita.base.typesystem.infra.ConstraintGraphProvider
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
@@ -87,9 +88,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return new ConstraintSolution(system, currentSubstitution, #[new ValidationIssue(Severity.ERROR, "INTERNAL ERROR: typeResolutionOrigin must not be a proxy", typeResolutionOrigin, null, "")]);
 		}
 		var ConstraintSolution result = null;
-		if(!system.isWeaklyUnifiable()) {
-			return new ConstraintSolution(system, null, #[new ValidationIssue(Severity.ERROR, "INTERNAL ERROR: Subtype solving cannot terminate", typeResolutionOrigin, null, "") ]);
-		}
 		val issues = newArrayList;
 
 		// do one simplification pass to solve equalities etc. then unify type classes
@@ -112,16 +110,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			if(typeClass.mostSpecificGeneralization !== null) {
 				val funTypeInstance = typeClass.mostSpecificGeneralization.instantiate(currentSystem).value;
 				if(funTypeInstance instanceof FunctionType) {
-				
 					val typeThatShouldBeInstance = tcc.typ;
 					currentSystem.addConstraint(new SubtypeConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''CSS: 118''', null)));
-//					if(tcc.returnTypeVariance == Variance.Covariant) {
-//						currentSystem.addConstraint(new SubtypeConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''CSS: 122''', null)));
-//					} else if(tcc.returnTypeVariance == Variance.Contravariant) {
-//						currentSystem.addConstraint(new SubtypeConstraint(tcc.returnTypeTV, funTypeInstance.to, new ValidationIssue('''CSS: 120''', null)));
-//					} else {
-						currentSystem.addConstraint(new EqualityConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''CSS: 124''', null)));
-//					}
+					currentSystem.addConstraint(new EqualityConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''CSS: 124''', null)));
 				}
 			}
 		}
@@ -219,15 +210,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val resolvedGraphAndSubst = constraintGraph.resolve(constraintGraphSubstitution, typeResolutionOrigin);
 		val resolvedGraph = resolvedGraphAndSubst.key.key;
 		val resolvedGraphSubstitution = resolvedGraphAndSubst.key.value;
-		if(resolvedGraphSubstitution === null) {
-			
+		if(resolvedGraphSubstitution === null) {	
 			return new ConstraintSolution(system, resolvedGraphSubstitution, resolvedGraphAndSubst.value);
 		}
 		if(debugOutput) {
 			println("------------------")
 			println(resolvedGraphSubstitution);
-		}		
-//		return new ConstraintSolution(system, resolvedGraphSubstitution, resolvedGraphAndSubst.value);
+		}
 		if(issues.empty) {
 			val newEqualities = resolvedGraph.unify();
 			system.nonAtomicConstraints.addAll(newEqualities);
@@ -273,32 +262,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return new SimplificationResult(resultSub, issues, resultSystem);
 	}
 		
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ImplicitInstanceConstraint constraint) {
-		system.doSimplify(substitution, typeResolutionOrigin, constraint, constraint.isInstance, constraint.ofType);	
-	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ImplicitInstanceConstraint constraint, TypeConstructorType t1, TypeConstructorType t2) {
-		if(t1.name == t2.name && t1.typeArguments.length == t2.typeArguments.length) {
-			val newSystem = constraintSystemProvider.get();
-			t1.typeArguments.zip(t2.typeArguments).forEach[
-//				val leftType = it.key;
-//				if(leftType instanceof TypeVariable) {
-//					substitution.add(leftType, it.value);
-//				}
-				newSystem.addConstraint(new ImplicitInstanceConstraint(it.key, it.value, constraint.errorMessage));	
-			]
-			return SimplificationResult.success(ConstraintSystem.combine(#[system, newSystem]), substitution);
-		}
-		return SimplificationResult.failure(constraint.errorMessage);
-	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ImplicitInstanceConstraint constraint, TypeVariable t1, TypeVariable t2) {
-		return SimplificationResult.success(system, substitution);
-	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ImplicitInstanceConstraint constraint, AbstractType t1, AbstractType t2) {
-		if(t1 == t2) {
-			return SimplificationResult.success(system, substitution);
-		}
-		return SimplificationResult.failure(constraint.errorMessage);
-	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ExplicitInstanceConstraint constraint) {
 		val instance = constraint.typeScheme.instantiate(system);
@@ -349,16 +312,24 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 	}
 	
+	protected def handleDefaultParametersInTypeClassResolution(ConstraintSystem system, Substitution substitution, AbstractType refType, Operation fun) {
+		if(refType instanceof ProdType) {
+			val assignedArgs = refType.typeArguments
+			if(assignedArgs.size < fun.parameters.size) {
+				val mbDefaultParameterValues = fun.parameters.drop(assignedArgs.size).filter(ParameterWithDefaultValue);
+				if(!mbDefaultParameterValues.empty && mbDefaultParameterValues.forall[it.defaultValue !== null]) {
+					val defaultParameterTypes = mbDefaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
+					val args = assignedArgs + defaultParameterTypes;
+					return new ProdType(refType.origin, refType.type, args);
+				}
+			}	
+		}
+		return refType;
+	}
+	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, FunctionTypeClassConstraint constraint) {
-		if(constraint.typ.toString.startsWith("read_args")) {
-			print("");
-		}		
 		val refType = constraint.typ;
 		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
-		if(typeClass !== null && typeClass.instances.containsKey(refType)) {
-			val fun = typeClass.instances.get(refType);
-			return constraint.onResolve(system, substitution, fun, refType);
-		}
 		if(typeClass !== null) {
 			val unificationResults = typeClass.instances.entrySet.map[k_v | 
 				val typRaw = k_v.key;
@@ -394,45 +365,30 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					}
 				} else {
 					// handle default values
-					if(fun instanceof Operation) {[|
-						if(refType instanceof ProdType) {
-							val assignedArgs = refType.typeArguments
-							if(assignedArgs.size < fun.parameters.size) {
-								val mbDefaultParameterValues = fun.parameters.drop(assignedArgs.size).filter(ParameterWithDefaultValue);
-								if(!mbDefaultParameterValues.empty && mbDefaultParameterValues.forall[it.defaultValue !== null]) {
-									val defaultParameterTypes = mbDefaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
-									val args = assignedArgs + defaultParameterTypes;
-									return new ProdType(refType.origin, refType.type, args);
-								}
-							}	
-						}
-						return refType;
-					].apply()}
+					if(fun instanceof Operation) {
+						system.handleDefaultParametersInTypeClassResolution(substitution, refType, fun);
+					}
 					else {
 						refType;
 					}
 				}
 				
-				
-				
 				// two possible ways to be part of this type class:
 				// - via subtype (uint8 < uint32)
 				// - via instantiation/unification 
 				if(typ instanceof FunctionType) {
-					val subtypeCheckResult = typeRegistry.isSubtypeOf(typeResolutionOrigin, prodType, typ.from);
 					val mbUnification = mguComputer.compute(constraint._errorMessage, prodType, typ.from);
-					val result = if(subtypeCheckResult.invalid && !mbUnification.valid) {
-						new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)] + mbUnification.issues, typ, fun, distance);
-					} else {
-						if(mbUnification.valid) {
-							new TypeClassConstraintResolutionResult(mbUnification.substitution, #[], #[], typ, fun, distance);
-						}
-						// TODO insert coercion
-						else {
-							new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance + subtypeCheckResult.constraints.size);
-						}
+					if(mbUnification.valid) {
+						return new TypeClassConstraintResolutionResult(mbUnification.substitution, #[], #[], typ, fun, distance);
 					}
-					return result;
+					
+					val subtypeCheckResult = typeRegistry.isSubtypeOf(typeResolutionOrigin, prodType, typ.from);
+					if(!subtypeCheckResult.invalid) {
+						// TODO insert coercion
+						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance + subtypeCheckResult.constraints.size);
+					}
+					
+					return new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)] + mbUnification.issues, typ, fun, distance);
 				}
 
 				return new TypeClassConstraintResolutionResult(null, #[], #[new ValidationIssue(constraint.errorMessage, '''«constraint.errorMessage» -> «typ» is not a function type''')], typ, fun, distance);
@@ -517,13 +473,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return SimplificationResult.failure(constraint.errorMessage);
 		}
 		val newSystem = constraintSystemProvider.get();
-		newSystem.addConstraint(new EqualityConstraint(t1.type, t2.type, constraint.errorMessage));
+		newSystem.addConstraint(new EqualityConstraint(t1.type, t2.type, constraint._errorMessage));
 		t1.typeArguments.zip(t2.typeArguments).forEach[
 			newSystem.addConstraint(new EqualityConstraint(it.key, it.value, constraint._errorMessage));
 		]
 		return SimplificationResult.success(ConstraintSystem.combine(#[system, newSystem]), substitution);
-		
 	}
+	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, AbstractType t1, AbstractType t2) {
 		// unify
 		val mgu = mguComputer.compute(constraint._errorMessage, t1, t2);
@@ -546,53 +502,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return system._doSimplify(substitution, typeResolutionOrigin, constraint, sub as TypeConstructorType, top as TypeConstructorType);
 	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, SumType top) {
-		val subTypes = typeRegistry.getSubTypes(top, typeResolutionOrigin).toSet;
-		val similarSubTypes = subTypes.filter[sub.class == it.class];
-		val subTypesWithSameName = subTypes.filter[sub.name == it.name];
-		if(subTypes.contains(sub)) {
-			return SimplificationResult.success(system, substitution);
-		}
-		val topTypes = typeRegistry.getSuperTypes(system, sub, typeResolutionOrigin);
-		val similarTopTypes = topTypes.filter[it.class == top.class];
-		val superTypesWithSameName = topTypes.filter[it.name == top.name];
-		if(topTypes.contains(top)) {
-			return SimplificationResult.success(system, substitution);
-		} 
-		
-		if(similarSubTypes.size == 1) {
-			return system.doSimplify(substitution, typeResolutionOrigin, constraint, sub, similarSubTypes.head);
-		}
-		if(similarTopTypes.size == 1) {
-			return system.doSimplify(substitution, typeResolutionOrigin, constraint, similarTopTypes.head, top);
-		}
-		
-		if(similarSubTypes.size > 1) {
-			return similarSubTypes.map[system.doSimplify(substitution, typeResolutionOrigin, constraint, sub, it)].reduce[p1, p2| p1.or(p2)]
-		}
-		if(similarTopTypes.size > 1) {
-			return similarTopTypes.map[system.doSimplify(substitution, typeResolutionOrigin, constraint, it, top)].reduce[p1, p2| p1.or(p2)]
-		}
-		
-		if(subTypesWithSameName.size == 1) {
-			return system.doSimplify(substitution, typeResolutionOrigin, constraint, sub, subTypesWithSameName.head);
-		}
-	
-		if(superTypesWithSameName.size == 1) {
-			return system._doSimplify(substitution, typeResolutionOrigin, constraint, superTypesWithSameName.head, top);
-		}
-	
-	
-		//TODO: handle multiple super types with same name
-		//already handled: superTypesWithSameName.empty --> failure
-		return SimplificationResult.failure(constraint.errorMessage);
-	}
-	
-	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
-		val typeArgs1 = sub.typeArguments.force;
-		val typeArgs2 = top.typeArguments.force;
-		if(typeArgs1.length !== typeArgs2.length) {
+		if(sub.typeArguments.length !== top.typeArguments.length) {
 			return SimplificationResult.failure(#[new ValidationIssue(constraint.errorMessage, '''«sub» and «top» differ in their type arguments'''), constraint.errorMessage]);
 		}
 		if(sub.class != top.class) {
@@ -612,21 +523,21 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeVariable sub, TypeConstructorType top) {
-		// expand-l:   a <: Ct1...tn
+		// expand-l:   a <= Ct1...tn
 		val expansion = substitutionProvider.get() => [top.expand(system, it, sub)];
 		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage)));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	} 
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeVariable top) {
-		// expand-r:   Ct1...tn <: a
+		// expand-r:   Ct1...tn <= a
 		val expansion = substitutionProvider.get() => [sub.expand(system, it, top)];
 		val newSystem = expansion.apply(system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage)));
 		val newSubstitution = expansion.apply(substitution);
 		return SimplificationResult.success(newSystem, newSubstitution);
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, AbstractBaseType sub, AbstractBaseType top) { 
-		// eliminate:  U <: T
+		// eliminate:  U <= T
 		val subtypeCheckResult = typeRegistry.isSubtypeOf(typeResolutionOrigin, sub, top);
 		if(subtypeCheckResult.invalid) {
 			return SimplificationResult.failure(constraint.errorMessage);
@@ -641,7 +552,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, AbstractType sub, AbstractType top) { 
-		// eliminate:  U <: T
+		// eliminate:  U <= T
 		val subtypeCheckResult = typeRegistry.isSubtypeOf(typeResolutionOrigin, sub, top);
 		if(subtypeCheckResult.invalid) {
 			return SimplificationResult.failure(constraint.errorMessage);
@@ -780,109 +691,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 }
 
-class ConstraintGraphProvider implements Provider<ConstraintGraph> {
-	
-	@Inject 
-	StdlibTypeRegistry typeRegistry;
-	
-	@Inject
-	Provider<ConstraintSystem> constraintSystemProvider;
-	
-	override get() {
-		return new ConstraintGraph(constraintSystemProvider.get(), typeRegistry, null);
-	}
-	
-	def get(ConstraintSystem system, EObject typeResolutionOrigin) {
-		return new ConstraintGraph(system, typeRegistry, typeResolutionOrigin);
-	}
-}
-
-class ConstraintGraph extends Graph<AbstractType> {
-	
-	protected val StdlibTypeRegistry typeRegistry;
-	protected val ConstraintSystem constraintSystem;
-	protected val EObject typeResolutionOrigin;
-	@Accessors
-	protected val Map<Integer, Set<SubtypeConstraint>> nodeSourceConstraints = new HashMap;
-	
-	new(ConstraintSystem system, StdlibTypeRegistry typeRegistry, EObject typeResolutionOrigin) {
-		this.typeRegistry = typeRegistry;
-		this.constraintSystem = system;
-		this.typeResolutionOrigin = typeResolutionOrigin;
-		system.constraints
-			.filter(SubtypeConstraint)
-			.forEach[ 
-				val idxs = addEdge(it.subType, it.superType)
-				if(idxs !== null) {
-					nodeSourceConstraints.computeIfAbsent(idxs.key,   [new HashSet]).add(it);
-					nodeSourceConstraints.computeIfAbsent(idxs.value, [new HashSet]).add(it);
-				}
-			];
-	}
-	def getTypeVariables() {
-		return nodeIndex.filter[k, v| v instanceof TypeVariable].keySet;
-	}
-	def getBaseTypePredecessors(Integer t) {
-		return getPredecessors(t).filter[!(it instanceof TypeVariable)].force
-	}
-
-	def getBaseTypeSuccecessors(Integer t) {
-		return getSuccessors(t).filter[!(it instanceof TypeVariable)].force
-	}
-	
-	def <T extends AbstractType> getSupremum(Iterable<T> ts) {
-		val tsWithSuperTypes = ts.filter[!(it instanceof BottomType)].map[
-			typeRegistry.getSuperTypes(constraintSystem, it, typeResolutionOrigin).toSet
-		].force
-		val tsCut = tsWithSuperTypes.reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet; // cut over emptySet is emptySet
-		return tsCut.findFirst[candidate | 
-			tsCut.forall[u | 
-				typeRegistry.isSubType(typeResolutionOrigin, candidate, u)
-			]
-		] ?: ts.filter(BottomType).head;
-	}
-	
-	def <T extends AbstractType> getInfimum(Iterable<T> ts) {
-		val tsCut = ts.map[typeRegistry.getSubTypes(it, typeResolutionOrigin).toSet].reduce[s1, s2| s1.reject[!s2.contains(it)].toSet] ?: #[].toSet;
-		return tsCut.findFirst[candidate | tsCut.forall[l | typeRegistry.isSubType(typeResolutionOrigin, l, candidate)]];
-	}
-	
-	def getSupremum(AbstractType t) {
-		return getSupremum(#[t])
-	}
-	
-	def getInfimum(AbstractType t) {
-		return getInfimum(#[t])
-	}
-	
-	override nodeToString(Integer i) {
-		val t = nodeIndex.get(i);
-		if(t?.origin === null) {
-			return super.nodeToString(i)	
-		}
-		val origin = t.origin;
-		if(origin.eIsProxy) {
-			if(origin instanceof BasicEObjectImpl) {
-				return '''«origin.eProxyURI.lastSegment».«origin.eProxyURI.fragment»(«t», «i»)'''
-			}
-		}
-		return '''«t.origin»(«t», «i»)'''
-	}
-	
-	override addEdge(Integer fromIndex, Integer toIndex) {
-		if(fromIndex == toIndex) {
-			return null;
-		}
-		super.addEdge(fromIndex, toIndex);
-	}
-	
-	override replace(AbstractType from, AbstractType with) {
-		super.replace(from, with)
-		constraintSystem?.explicitSubtypeRelations?.replace(from, with);
-		//constraintSystem?.explicitSubtypeRelationsTypeSource?.replaceAll([k, v | v.replace(from, with)]);
-	}
-	
-} 
 
 @FinalFieldsConstructor
 @Accessors

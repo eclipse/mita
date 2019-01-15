@@ -99,8 +99,10 @@ class TypeClassUnifier {
 		val commonTypeStructure = Tree.copy(_commonTypeStructure);
 		val freeVarsAndPaths = commonTypeStructure.toPathIterable.filter[it.value instanceof TypeVariable].force;
 		while(!freeVarsAndPaths.empty) {
+			// pop from free vars
 			val pathAndVar = freeVarsAndPaths.head;
 			freeVarsAndPaths.remove(0);
+			
 			val path = pathAndVar.key;
 			val typeVar = pathAndVar.value;
 			val instanceVars = instances.map[it.get(path)].force;

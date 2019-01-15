@@ -278,7 +278,8 @@ class ConstraintSystem {
 			r.atomicConstraints += t.atomicConstraints;
 			r.nonAtomicConstraints += t.nonAtomicConstraints;
 			r.typeClasses.putAll(t.typeClasses);
-			t.explicitSubtypeRelations => [g | g.nodes.forEach[typeNode | 
+			val g = t.explicitSubtypeRelations 
+			g.nodes.forEach[typeNode | 
 				g.reverseMap.get(typeNode).forEach[typeIdx |
 					val typeSource = t.explicitSubtypeRelationsTypeSource.get(typeIdx);
 					g.getPredecessors(typeIdx).forEach[
@@ -294,7 +295,7 @@ class ConstraintSystem {
 						}
 					]
 				]
-			]]
+			]
 			return r;
 		]);
 		result.constraintSystemProvider = csp;

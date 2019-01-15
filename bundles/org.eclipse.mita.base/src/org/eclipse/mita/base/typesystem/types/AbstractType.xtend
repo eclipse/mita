@@ -42,6 +42,9 @@ abstract class AbstractType {
 	}
 	
 	def AbstractType replace(Substitution sub) {
+		if(this.hasNoFreeVars) {
+			return this;
+		}
 		map[it.replace(sub)];
 	}
 	
@@ -50,6 +53,10 @@ abstract class AbstractType {
 	}
 	
 	abstract def Iterable<TypeVariable> getFreeVars();
+	
+	def hasNoFreeVars() {
+		return freeVars.empty;
+	}
 	
 	override toString() {
 		name

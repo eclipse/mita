@@ -50,6 +50,9 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	}
 		
 	override onResolve(ConstraintSystem cs, Substitution sub, EObject op, AbstractType at) {
+		// now `at` is a concrete function type of operation `op`.
+		// We introduce a constraint to make sure that this function's return is compatible with the expected type computed before.
+		// (for example the explicit type of variable declarations)
 		if(functionReference !== null && !functionCall.eIsProxy) {
 			BaseUtils.ignoreChange(functionCall, [functionCall.eSet(functionReference, op)]);
 		}
@@ -57,9 +60,6 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		if(at instanceof FunctionType) {
 			val newConstraint = switch(returnTypeVariance) {
 				case Covariant: {
-					if(this.toString.startsWith("read_args(modality<int32>) :: read")) {
-						print("");
-					}
 					// the returned type should be smaller than the expected type so it can be assigned
 					new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s'''));
 				}
@@ -70,7 +70,6 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 				case Invariant: {
 					new EqualityConstraint(returnTypeTV, at.to, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not equal to %2$s'''));
 				}
-				
 			}
 			nc.addConstraint(newConstraint);
 			return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)

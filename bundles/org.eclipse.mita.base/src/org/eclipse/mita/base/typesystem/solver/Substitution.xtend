@@ -46,18 +46,6 @@ class Substitution {
 		}
 		checkDuplicate(variable, [type]);
 		this.content.put(variable, type.replace(this));
-		if(variable.toString == "f_190.0" && type.toString == "xint8") {
-			print("")
-		}
-//		if(type.freeVars.exists[content.containsKey(it)]) {
-//			//throw new Exception("did not replace correctly")
-//		} 
-//		else {
-//			this.content.put(variable, type);	
-//		}
-//		if(this.toString.contains("bool ≔ x8")) {
-//			print("");
-//		}
 	}
 	
 	def void add(Map<TypeVariable, AbstractType> content) {
@@ -88,12 +76,17 @@ class Substitution {
 		result.content = new HashMap(((this.content.size + to.content.size) * 1.4) as int);
 		result.constraintSystemProvider = this.constraintSystemProvider ?: to.constraintSystemProvider;
 		result.content.putAll(this.content.mapValues[it.replace(to)]);
+		
 		val appliedSubstitution = new HashMap(to.content.mapValues[it.replace(result)]);
 		result.add(appliedSubstitution);
+		
 		return result;
 	}
 	
 	def AbstractType applyToType(AbstractType typ) {
+		if(typ.hasNoFreeVars) {
+			return typ;
+		}
 		typ.replace(this);
 	}
 	def Iterable<AbstractType> applyToTypes(Iterable<AbstractType> types) {
@@ -102,20 +95,24 @@ class Substitution {
 	
 	def apply(ConstraintSystem system) {
 		val result = (constraintSystemProvider ?: system.constraintSystemProvider).get();
+		
 		result.typeClasses.putAll(system.typeClasses.mapValues[it.replace(this)])
 		result.instanceCount = system.instanceCount;
 		result.symbolTable.putAll(system.symbolTable);
+		
 		// to keep overridden methods etc. we clone instead of using a copy constructor
 		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>
 		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replace(this)];
 		result.explicitSubtypeRelations.computeReverseMap;
-		result.explicitSubtypeRelationsTypeSource = new HashMap(system.explicitSubtypeRelationsTypeSource);
-		result.explicitSubtypeRelationsTypeSource.replaceAll[k, v | v.replace(this)];
+		result.explicitSubtypeRelationsTypeSource = new HashMap(system.explicitSubtypeRelationsTypeSource.mapValues[it.replace(this)]);
+		
 		// atomic constraints may become composite by substitution, the opposite can't happen
 		val unknownConstrains = system.atomicConstraints.map[c | c.replace(this)].force;
 		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);
 		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic(result)]);
-		val alwaysNonAtomic = system.nonAtomicConstraints.map[c | c.replace(this)];
+		
+		val alwaysNonAtomic = system.nonAtomicConstraints.map[c | c.replace(this)].force;
+		// assert this
 		system.nonAtomicConstraints.zip(alwaysNonAtomic).forEach[
 			if(it.value.isAtomic(result)) {
 				it.key.isAtomic(result);
@@ -123,7 +120,7 @@ class Substitution {
 				throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
 			}
 		]
-		result.nonAtomicConstraints.addAll(alwaysNonAtomic);
+		result.nonAtomicConstraints = alwaysNonAtomic;
 		return result;
 	}
 	

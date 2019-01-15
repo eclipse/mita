@@ -25,7 +25,6 @@ import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
-import org.eclipse.mita.base.typesystem.constraints.ImplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
@@ -147,9 +146,6 @@ class SerializationAdapter {
 	
 	protected dispatch def ExplicitInstanceConstraint fromValueObject(SerializedExplicitInstanceConstraint obj) {
 		return new ExplicitInstanceConstraint(obj.instance.fromValueObject() as AbstractType, obj.typeScheme.fromValueObject() as AbstractType, obj.errorMessage.fromValueObject as ValidationIssue);
-	}
-	protected dispatch def ImplicitInstanceConstraint fromValueObject(SerializedImplicitInstanceConstraint obj) {
-		return new ImplicitInstanceConstraint(obj.isInstance.fromValueObject() as AbstractType, obj.ofType.fromValueObject() as AbstractType, obj.errorMessage.fromValueObject as ValidationIssue)
 	}
 	
 	protected dispatch def SubtypeConstraint fromValueObject(SerializedSubtypeConstraint obj) {
@@ -350,14 +346,6 @@ class SerializationAdapter {
 			errorMessage = obj._errorMessage.toValueObject as SerializedValidationIssue
 			instance = obj.instance.toValueObject as SerializedAbstractType
 			typeScheme = obj.typeScheme.toValueObject as SerializedAbstractType
-		]
-	}
-	
-	protected dispatch def SerializedObject toValueObject(ImplicitInstanceConstraint obj) {
-		new SerializedImplicitInstanceConstraint => [
-			errorMessage = obj._errorMessage.toValueObject as SerializedValidationIssue
-			isInstance = obj.isInstance.toValueObject as SerializedAbstractType
-			ofType = obj.ofType.toValueObject as SerializedAbstractType
 		]
 	}
 	
