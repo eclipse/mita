@@ -269,14 +269,24 @@ class ValueRange extends Expression {
 class FeatureCall extends ElementReferenceExpression {
 	
 	op String toString() {
-		val refText = reference?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
+		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
+		
+		var refText = ref?.toString()
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
+		refText = refText ?: "<null>"
+
 		arguments.head?.value + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "")
 	}
 }
 
 class FeatureCallWithoutFeature extends FeatureCall {
 	op String toString() {
-		val refText = reference?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
+		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
+		
+		var refText = ref?.toString()
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
+		refText = refText ?: "<null>"
+		
 		"<auto>." + refText + (if(operationCall) "(" + arguments.join(", ") + ")" else "")
 	}
 }
@@ -293,7 +303,12 @@ class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperat
 	}
 	
 	op String toString() {
-		val refText = reference?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text ?: "<null>";
+		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
+		
+		var refText = ref?.toString()
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
+		refText = refText ?: "<null>"
+		
 		return refText + (if(!arguments.empty) "(" + arguments.join(", ") + ")" else "")
 	}
 }
@@ -304,7 +319,12 @@ class TypeCastExpression extends Expression {
 	contains Expression operand
 	refers Type ^type
 	op String toString() {
-		val refText = ^type?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.typeCastExpression_Type).head?.text ?: "<null>";
+		val ref = eGet(ExpressionsPackage.eINSTANCE.typeCastExpression_Type, false)
+		
+		var refText = ref?.toString()
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.typeCastExpression_Type).head?.text
+		refText = refText ?: "<null>"
+		
 		return operand + " as " + refText;
 	}
 }
@@ -313,8 +333,12 @@ class Argument extends Expression {
 	contains Expression value
 	
 	op String toString() {
-		val refText = parameter?.toString() ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.argument_Parameter)?.head?.text;
-
+		val param = eGet(ExpressionsPackage.eINSTANCE.argument_Parameter, false)
+		
+		var refText = param?.toString()
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.argument_Parameter).head?.text
+		refText = refText ?: "<null>"
+		
 		return (if(refText !== null) refText + "=" else "") + value;
 	}
 }

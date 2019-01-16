@@ -5,6 +5,7 @@ import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.emf.ecore.EObject
 
 class TypeSpecifier {}
 class PresentTypeSpecifier extends TypeSpecifier {
@@ -20,20 +21,14 @@ class PresentTypeSpecifier extends TypeSpecifier {
 		} else {
 			"<" + typeArguments.map[if(it === null) {"null"} else {it.toString}].reduce[p1, p2| p1 + ", " + p2] + ">"
 		}
+
+		val ref = eGet(TypesPackage.eINSTANCE.presentTypeSpecifier_Type, false)
+		var refText = if (ref instanceof EObject && !(ref as EObject).eIsProxy) ref?.toString else null
+		refText = refText ?: BaseUtils.getText(this, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)
+		refText = refText ?: ""
+		refText = refText.trim
 		
-//		val nameNode = NodeModelUtils.findNodesForFeature(this, TypesPackage.Literals.TYPE_SPECIFIER__TYPE).head;
-//		val typeName = if(nameNode === null) {
-//			"null";
-//		} else {
-//			NodeModelUtils.getTokenText(nameNode);
-//		};
-		val typeName = if(^type === null) {
-			val refText = BaseUtils.getText(this, TypesPackage.eINSTANCE.presentTypeSpecifier_Type) ?: "";
-			refText.trim
-		} else {
-			^type.toString
-		}
-		return typeName + args;
+		return refText + args;
 	}
 }
 //class VirtualTypeSpecifier extends PresentTypeSpecifier {

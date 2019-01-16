@@ -74,7 +74,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
-		println('''Computing constraints for program: «program.eResource.URI.lastSegment»''');
+		println('''Computing constraints «program.eResource.URI.lastSegment» (rss «program.eResource.resourceSet.hashCode»)''');
 		system.computeConstraintsForChildren(program);
 		return null;
 	}
@@ -505,7 +505,8 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		// otherwise use the last candidate in scope. We can check here for ambiguity, otherwise this is just the "closest" candidate.
 		else {
 			val ref = system.resolveReferenceToSingleAndGetType(varOrFun, featureToResolve);
-			if(varOrFun.eGet(featureToResolve) === null && !(ref instanceof TypeVariableProxy)) {
+			val refval = varOrFun.eGet(featureToResolve, false);
+			if(refval === null && refval instanceof EObject && (refval as EObject).eIsProxy && !(ref instanceof TypeVariableProxy)) {
 				varOrFun.eSet(featureToResolve, ref.origin);
 			}
 			ref;

@@ -57,7 +57,6 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
@@ -536,7 +535,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 			// this type specifier is an instance of type
 			// compute <a, b>
 			val typeArgs = typeArguments.map[system.computeConstraints(it) as AbstractType].force;
-			val typeName = typeSpecifier.type?.name ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)?.head?.text?.trim;
+			val ref = typeSpecifier.eGet(TypesPackage.eINSTANCE.presentTypeSpecifier_Type, false)
+			val reftext = if(ref instanceof EObject && !(ref as EObject).eIsProxy) ref.toString() else null;
+			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)?.head?.text?.trim;
 			// compute constraints to validate t<a, b> (argument count etc.)
 			val typeInstance = system.nestInType(null, typeArgs, type, typeName);
 			typeInstance;

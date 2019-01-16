@@ -14,6 +14,8 @@ class DebugTimer {
 	var foo = 0;
 	
 	public def start(String name) {
+		if (true) return;
+		
 		if(name == "simplify.1") {
 			foo++;
 			if(foo > 1) {
@@ -24,6 +26,8 @@ class DebugTimer {
 	}
 	
 	public def stop(String expectedName) {
+		if (true) return;
+		
 		if (!this.traces.isEmpty()) {
 			val prev = this.traces.pop();
 			val internalPrefix = computeName(prev.name);
@@ -39,12 +43,14 @@ class DebugTimer {
 	}
 	
 	public def getByPrefix(String prefix) {
+		if (true) return #[];
+		
 		results.filter[it.name.startsWith(prefix)]
 	}
 	
-	
-	
 	public def consolidateByPrefix(String prefix) {
+		if (true) return;
+		
 		val internalPrefix = computeName(prefix);
 		val time = results.filter[it.name.startsWith(internalPrefix)].fold(0L, [i, t| i+t.timeNs]);
 		results.removeIf[it.name.startsWith(internalPrefix)];

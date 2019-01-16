@@ -74,7 +74,10 @@ class ConfigurationItemValue {
 	refers ConfigurationItem item
 	contains Expression value
 	op String toString() {
-		return (item?.toString() ?: BaseUtils.getText(this, ProgramPackage.eINSTANCE.configurationItemValue_Item)) + " = " + value.toString();
+		val ref = eGet(ProgramPackage.eINSTANCE.configurationItemValue_Item, false)
+		var refText = ref?.toString()
+		refText = refText ?: BaseUtils.getText(this, ProgramPackage.eINSTANCE.configurationItemValue_Item)
+		return refText + " = " + value.toString();
 	}
 }
 
@@ -116,7 +119,10 @@ class SystemEventSource extends EventSource {
 	refers Event source
 	
 	op String toString() {
-		val refText = (source?.toString()) ?: (NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.systemEventSource_Source).head?.text);
+		val ref = eGet(ProgramPackage.eINSTANCE.systemEventSource_Source, false);
+		var refText = ref?.toString();
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.systemEventSource_Source).head?.text;
+
 		return refText ?: "null";
 	}
 }
@@ -275,7 +281,9 @@ class IsDeconstructionCase extends IsCase {
 		return deconstructors.map[it.productMember === null].contains(true);
 	}
 	op String toString() {
-		val refText = (productType?.name) ?: NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType).head?.text;
+		val ref = eGet(ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType, false)
+		var refText = (ref as SumAlternative)?.name;
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType).head?.text;
 		return "is(" + refText + " -> " + deconstructors.join(", ") + ") { ... }" 
 	}
 }

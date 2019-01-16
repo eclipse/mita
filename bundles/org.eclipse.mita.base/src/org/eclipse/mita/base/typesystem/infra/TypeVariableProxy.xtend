@@ -32,14 +32,20 @@ class TypeVariableProxy extends TypeVariable {
 	}
 	
 	new(EObject origin, String name, EReference reference) {
-		this(origin, name, reference, QualifiedName.create((
-				(if(origin.eGet(reference) !== null) {
-					val obj = origin.eGet(reference);
-					if(obj instanceof NamedElement) {
-						obj.name;
-					}
-				}) ?: NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim
-			)?.split("\\.")), true);
+		this(origin, name, reference, TypeVariableProxy.getQName(origin, reference), true);
+	}
+	
+	protected static def getQName(EObject origin, EReference reference) {
+		var String maybeQname; 
+		if(!origin.eIsProxy) {
+			val obj = origin.eGet(reference, false);
+			if(obj instanceof NamedElement && obj instanceof EObject && !(obj as EObject).eIsProxy) {
+				maybeQname = (obj as NamedElement).name;
+			}
+		} 
+		
+		val qname = (maybeQname ?: NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim)?.split("\\.");
+		return QualifiedName.create(qname);
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName qualifiedName) {

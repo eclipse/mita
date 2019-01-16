@@ -67,6 +67,7 @@ abstract class AbstractSystemResource extends Type, GeneratedElement {
 class ConfigurationItem extends Property {
 	Boolean required = "false"
 	contains Expression defaultValue
+	
 	op String toString() {
 		return super.toString() + (if(defaultValue !== null) "(=" + defaultValue + ")" else "")
 	}

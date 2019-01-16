@@ -49,8 +49,14 @@ class MitaTypeLinker extends Linker {
 	}
 	
 	override protected clearReferences(EObject obj) {
-		
-		super.clearReferences(obj)
+//		super.clearReferences(obj)
+	}
+	
+	public def doActuallyClearReferences(EObject obj) {
+		val iter = getAllLinkableContents(obj);
+		while (iter.hasNext()) {
+			super.clearReferences(iter.next());			
+		}
 	}
 	
 }
