@@ -244,12 +244,15 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				debugTimer.start("constraints");
 				val constraintOutdated = resultSystem.takeOneNonAtomic();
 				val constraint = constraintOutdated.replace(resultSub);
+				debugTimer.stop("constraints");
+
+				debugTimer.start("atomicity");
 				if(constraint.isAtomic(resultSystem)) {
 					constraintOutdated.isAtomic(resultSystem);
 					constraint.isAtomic(resultSystem);
 					throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
 				}
-				debugTimer.stop("constraints");
+				debugTimer.stop("atomicity");
 				
 				debugTimer.start(constraint.class.simpleName);
 				val simplification = doSimplify(resultSystem, resultSub, typeResolutionOrigin, constraint);
@@ -266,23 +269,23 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.toString, it.origin, null, "")]; 
 						witnessesNotWeaklyUnifyable.filter(TypeVariable).forEach[
 							simplification.substitution.content.remove(it);
-						]	
+						]
 					}
 					debugTimer.stop("UnifyCheck");
 					
-					//debugTimer.start("Substitution");
 					resultSystem = returnedSub.applyToGraph(simplification.system, debugTimer);
 					resultSub = returnedSub.apply(resultSub);
-					//debugTimer.stop("Substitution");
 					#["typeClasses", "explicitSubtypeRelations", "constraints", "atomicity", "constraintAssert"].forEach[
-						debugTimer.consolidateByPrefix(/*"Substitution." + */ it);
+						debugTimer.consolidateByPrefix(it);
 					]
 				}
 			}
-			
 			resultSystem = resultSub.applyToAtomics(resultSystem, debugTimer);
+			debugTimer.consolidateByPrefix("constraints");			
+			debugTimer.consolidateByPrefix("atomicity");			
+			
 		} while(resultSystem.hasNonAtomicConstraints());
-		val classes = #["UnifyCheck", /*"Substitution", */"SubtypeConstraint", "EqualityConstraint", "ExplicitInstanceConstraint", "FunctionTypeClassConstraint"];
+		val classes = #["UnifyCheck", "SubtypeConstraint", "EqualityConstraint", "ExplicitInstanceConstraint", "FunctionTypeClassConstraint"];
 		classes.forEach[
 			debugTimer.consolidateByPrefix(it)
 		]

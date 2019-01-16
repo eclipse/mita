@@ -19,6 +19,7 @@ import java.util.Collections
 class TypeClass {
 	val Map<AbstractType, EObject> instances;
 	val AbstractType mostSpecificGeneralization;
+	val boolean hasNoFreeVars;
 	
 	new() {
 		this(new HashMap());
@@ -29,16 +30,10 @@ class TypeClass {
 	new(Map<AbstractType, EObject> instances, AbstractType mostSpecificGeneralization) {
 		this.instances = new HashMap(instances);
 		this.mostSpecificGeneralization = mostSpecificGeneralization;
-		if(this.toString.contains("f_1719.6 = x_axis: int32")) {
-			print("");
-		}
+		hasNoFreeVars = instances.keySet.forall[it.hasNoFreeVars]
 	}
 	new(Iterable<Pair<AbstractType, EObject>> instances) {
-		this();
-		instances.forEach[this.instances.put(it.key, it.value)];
-		if(this.toString.contains("f_1719.6 = x_axis: int32")) {
-			print("");
-		}
+		this(instances.toMap([it.key], [it.value]));
 	}
 	
 	override toString() {
@@ -51,10 +46,16 @@ class TypeClass {
 	}
 	
 	def replace(TypeVariable from, AbstractType with) {
+		if(this.hasNoFreeVars) {
+			return this;
+		}
 		return new TypeClass(instances.entrySet.toMap([it.key.replace(from, with)], [it.value]), mostSpecificGeneralization);
 	}
 	
 	def replace(Substitution sub) {
+		if(this.hasNoFreeVars) {
+			return this;
+		}
 		return new TypeClass(instances.entrySet.toMap([it.key.replace(sub)], [it.value]), mostSpecificGeneralization)
 	}
 	def replaceProxies((TypeVariableProxy) => Iterable<AbstractType> typeVariableResolver, (URI) => EObject objectResolver) {

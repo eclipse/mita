@@ -118,8 +118,8 @@ class Substitution {
 		
 		// to keep overridden methods etc. we clone instead of using a copy constructor
 		debugTimer.start("explicitSubtypeRelations");
-		system.explicitSubtypeRelations.nodeIndex.replaceAll[i, t | t.replace(this)];
-		system.explicitSubtypeRelations.computeReverseMap;
+//		system.explicitSubtypeRelations.nodeIndex.replaceAll[i, t | t.replace(this)];
+//		system.explicitSubtypeRelations.computeReverseMap;
 		system.explicitSubtypeRelationsTypeSource.replaceAll[tname, t | t.replace(this)];
 		debugTimer.stop("explicitSubtypeRelations");
 		
