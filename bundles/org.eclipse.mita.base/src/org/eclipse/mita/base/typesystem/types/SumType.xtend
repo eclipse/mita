@@ -41,7 +41,7 @@ class SumType extends TypeConstructorType {
 	}
 			
 	override toString() {
-		(name ?: "") + "(" + typeArguments.map[name].join(" | ") + ")"
+		(name ?: "") + "(" + typeArguments.map[toString].join(" | ") + ")"
 	}
 				
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {

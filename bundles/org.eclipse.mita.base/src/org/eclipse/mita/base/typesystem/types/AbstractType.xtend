@@ -6,6 +6,7 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.mita.base.typesystem.infra.Tree
+import java.util.HashSet
 
 @Accessors
 abstract class AbstractType {

@@ -46,10 +46,6 @@ class FunctionType extends TypeConstructorType {
 	override toString() {
 		from + " → " + to
 	}
-		
-	override getFreeVars() {
-		return #[from, to].filter(TypeVariable);
-	}
 	
 	override getTypeArguments() {
 		return #[from, to];

@@ -17,13 +17,12 @@ import org.eclipse.xtext.diagnostics.Severity
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 
-@EqualsHashCode
 @Accessors
 class TypeConstructorType extends AbstractType {
 	protected static Integer instanceCount = 0;
 	protected val AbstractType type;
 	protected val List<AbstractType> typeArguments;
-	private val List<TypeVariable> _freeVars;
+	private transient val List<TypeVariable> _freeVars;
 	
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
 		// if not all sum types have the same number of arguments, return a new TV
@@ -96,4 +95,40 @@ class TypeConstructorType extends AbstractType {
 		return new TypeConstructorType(origin, children.head.node.unquote(children.head.children), children.tail.map[it.node.unquote(it.children)].force);
 	}
 	
+	override boolean equals(Object obj) {
+		if(this === obj) { 
+			return true	
+		}
+		if(obj === null) {
+			return false
+		}
+		if(getClass() !== obj.getClass()) {
+			return false
+		}
+		if(!super.equals(obj)) {
+			return false
+		}
+		var TypeConstructorType other = (obj as TypeConstructorType)
+		if (this.type === null) {
+			if(other.type !== null) {
+				return false
+			}
+		} 
+		else if(!this.type.equals(other.type)) return false
+		if (this.typeArguments === null) {
+			if(other.typeArguments !== null) return false
+		} else if(this.typeArguments.size != (other.typeArguments.size)) return false
+		else if(this.typeArguments.zip(other.typeArguments).exists[!it.key.equals(it.value)]) {
+			return false;
+		}
+		return true
+	}
+
+	@Pure override int hashCode() {
+		val int prime = 31
+		var int result = super.hashCode()
+		result = prime * result + (if((this.type === null)) 0 else this.type.hashCode() )
+		result = prime * result + (if((this.typeArguments === null)) 0 else this.typeArguments.hashCode() )
+		return result
+	}
 }

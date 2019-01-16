@@ -15,6 +15,8 @@ import org.eclipse.mita.base.util.DebugTimer
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import java.util.HashSet
+import org.eclipse.mita.base.typesystem.types.BottomType
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
@@ -45,15 +47,18 @@ class Substitution {
 		if(variable === null || type === null) {
 			throw new NullPointerException;
 		}
-		checkDuplicate(variable, [type]);
-		this.content.put(variable, type.replace(this));
+		add(#[variable->type]);
 	}
 	
 	def void add(Map<TypeVariable, AbstractType> content) {
-		this.add(content.entrySet.map[it.key->it.value])
+		val newContent = new Substitution();
+		newContent.content = content;
+		val resultSub = newContent.apply(this);
+		this.content = resultSub.content;
+		//this.checkConsistency();
 	}
 	def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
-		content.forEach[add(it.key, it.value)];
+		add(content.toMap([it.key], [it.value]))
 	}
 	
 	def Substitution replace(TypeVariable from, AbstractType with) {
@@ -62,7 +67,7 @@ class Substitution {
 		return result;
 	}
 	
-	def apply(TypeVariable typeVar) {
+	def AbstractType apply(TypeVariable typeVar) {
 		var AbstractType result = typeVar;
 		var nextResult = content.get(result); 
 		while(nextResult !== null && result != nextResult && !result.freeVars.empty) {
@@ -72,15 +77,25 @@ class Substitution {
 		return result;
 	}
 	
-	def Substitution apply(Substitution to) {
+	def checkConsistency() {
+		val freeTypeVars = new HashSet(content.values.flatMap[it.freeVars.map[toString]].toSet);
+		val typeVars = content.keySet.map[toString].toSet;
+		freeTypeVars.retainAll(typeVars);
+		if(!freeTypeVars.empty) {
+			print("")
+			return false;
+		}
+		return true;
+	}
+	
+	def Substitution apply(Substitution oldEntries) {
 		val result = new Substitution();
-		result.content = new HashMap(((this.content.size + to.content.size) * 1.4) as int);
-		result.constraintSystemProvider = this.constraintSystemProvider ?: to.constraintSystemProvider;
-		result.content.putAll(this.content.mapValues[it.replace(to)]);
+		val newEntries = this;
+		result.content = new HashMap(((newEntries.content.size + oldEntries.content.size) * 1.4) as int);
+		result.constraintSystemProvider = newEntries.constraintSystemProvider ?: oldEntries.constraintSystemProvider;
+		result.content.putAll(oldEntries.content.mapValues[it.replace(newEntries)]);
 		
-		val appliedSubstitution = new HashMap(to.content.mapValues[it.replace(result)]);
-		result.add(appliedSubstitution);
-		
+		result.content.putAll(newEntries.content);
 		return result;
 	}
 	

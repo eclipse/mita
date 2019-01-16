@@ -42,7 +42,7 @@ class BaseKind extends AbstractBaseType {
 	}
 	
 	override getFreeVars() {
-		return #[];
+		return kindOf.freeVars;
 	}
 	
 	override toString() {
