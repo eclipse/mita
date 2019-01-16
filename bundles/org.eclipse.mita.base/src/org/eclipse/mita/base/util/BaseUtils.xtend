@@ -142,6 +142,7 @@ class BaseUtils {
 	def static void main(String[] args) {
 		println(transpose(#[#[1,2,3], #[4,5,6]]));
 	}
+	
 	def static <T> ArrayList<T> force(Iterable<T> list) {
 		if(list.class == ArrayList) {
 			return list as ArrayList<T>;

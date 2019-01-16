@@ -13,6 +13,7 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.emf.ecore.impl.EObjectImpl
+import java.util.Collections
 
 @Accessors
 class TypeClass {
@@ -70,10 +71,19 @@ class TypeClassProxy extends TypeClass {
 	val TypeVariableProxy toResolve;
 	
 	new(TypeVariableProxy toResolve) {
+		super(Collections.EMPTY_MAP);
 		this.toResolve = toResolve;
 		if(this.toString.contains("p_4")) {
 			print("");
 		}
+	}
+	
+	override replace(Substitution sub) {
+		return this;
+	}
+	
+	override replace(TypeVariable from, AbstractType with) {
+		return this;
 	}
 	
 	override TypeClass modifyNames(String suffix) {

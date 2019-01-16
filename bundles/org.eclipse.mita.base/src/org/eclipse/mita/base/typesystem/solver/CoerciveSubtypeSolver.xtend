@@ -70,7 +70,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	@Inject
 	protected StdlibTypeRegistry typeRegistry;
 	
-	protected var DebugTimer debugTimer;
+	protected var DebugTimer debugTimer = new DebugTimer();
 	
 	def CancelIndicator getCancelIndicatorOrNull(Resource resource) {
 		if(resource instanceof MitaBaseResource) {
@@ -81,7 +81,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
 		debugTimer = new DebugTimer();
-		
+				
 		val cancelInidicator = typeResolutionOrigin.eResource.getCancelIndicatorOrNull;		
 		var currentSystem = system;
 		var currentSubstitution = Substitution.EMPTY;
@@ -233,7 +233,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return true;
 	}
 	
-	protected def SimplificationResult simplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
+	def SimplificationResult simplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin) {
 		var resultSystem = system;
 		var resultSub = substitution;
 		var issues = newArrayList;

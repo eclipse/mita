@@ -27,6 +27,9 @@ import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
+import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
@@ -36,6 +39,9 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -49,7 +55,10 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	protected IConstraintFactory constraintFactory;
 	
 	@Inject 
-	protected SerializationAdapter serializationAdapter
+	protected SerializationAdapter serializationAdapter;
+	
+	@Inject
+	protected CoerciveSubtypeSolver coerciveSubtypeSolver;
 	
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
 		if (eObject instanceof TypedElement) {
@@ -69,11 +78,27 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			constraintFactory.setIsLinking(true);
 			constraintFactory.getTypeRegistry().setIsLinking(true);
 			val constraints = constraintFactory.create(eObject);
+			
+//			val csCopy = new ConstraintSystem(constraints);
+//			val simplification = coerciveSubtypeSolver.simplify(csCopy, Substitution.EMPTY, eObject);
+//			val substitution = simplification.substitution;
+//			val simplifiedConstraints = substitution.apply(constraints);
+			
+//			simplifiedConstraints.nonAtomicConstraints = simplifiedConstraints.nonAtomicConstraints.filter[
+//				if(it instanceof EqualityConstraint) {
+//					return it.left == it.right;
+//				}
+//				return false;
+//			].force;
+			
 			val String json = serializationAdapter.toJSON(constraints);
 			val jsonCompressed = GZipper.compress(json);
 			userData.put(CONSTRAINTS, jsonCompressed);
 			val lenRaw = json.length;
 			val lenCompressed = jsonCompressed.length;
+			if(eObject.eResource.URI.lastSegment == "application.mita") {
+				print("");	
+			}
 		}
 	}
 

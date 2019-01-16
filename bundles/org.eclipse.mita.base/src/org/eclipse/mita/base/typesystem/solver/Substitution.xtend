@@ -2,12 +2,15 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import java.util.ArrayList
 import java.util.Collections
 import java.util.HashMap
+import java.util.HashSet
 import java.util.Map
 import java.util.function.Predicate
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.Status
+import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -15,8 +18,6 @@ import org.eclipse.mita.base.util.DebugTimer
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import java.util.HashSet
-import org.eclipse.mita.base.typesystem.types.BottomType
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
@@ -132,9 +133,38 @@ class Substitution {
 		debugTimer.start("constraints");
 		// atomic constraints may become composite by substitution, the opposite can't happen
 		val unknownConstrains = system.atomicConstraints.map[c | c.replace(this)].force;
-		val alwaysNonAtomic = system.nonAtomicConstraints.map[c | c.replace(this)].force;
+		val alwaysNonAtomic = new ArrayList;
+		var i = 0;
+		var AbstractTypeConstraint x;
+//		for(c: system.nonAtomicConstraints) {
+//			x = c;
+//			c.toString;
+//			print("");
+//		}
+		for(c: system.nonAtomicConstraints) {
+			val nc = c.replace(this);
+			//println(c);
+//			println(nc);
+//			println(i);
+//			println("-----------");
+			alwaysNonAtomic.add(nc);
+			i++;
+		}
 		debugTimer.stop("constraints");
 
+		
+		debugTimer.start("constraintAssert");
+		// assert this
+		system.nonAtomicConstraints.zip(alwaysNonAtomic).forEach[
+			if(it.value.isAtomic(result)) {
+				it.key.isAtomic(result);
+				it.value.isAtomic(result);
+				throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
+			}
+		]
+		debugTimer.stop("constraintAssert");
+
+		result.nonAtomicConstraints = alwaysNonAtomic;
 		debugTimer.start("atomicity");
 		for(it: unknownConstrains) {
 			if(it.isAtomic(result)) {
@@ -147,18 +177,7 @@ class Substitution {
 //		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);
 //		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic(result)]);
 		debugTimer.stop("atomicity");
-		
-		debugTimer.start("constraintAssert");
-		// assert this
-		system.nonAtomicConstraints.zip(alwaysNonAtomic).forEach[
-			if(it.value.isAtomic(result)) {
-				it.key.isAtomic(result);
-				it.value.isAtomic(result);
-				throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
-			}
-		]
-		debugTimer.stop("constraintAssert");
-		result.nonAtomicConstraints = alwaysNonAtomic;
+
 		return result;
 	}
 	

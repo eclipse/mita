@@ -16,6 +16,7 @@ import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.SystemSpecification
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
 class PlatformConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemSpecification spec) {
@@ -75,7 +76,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 			new ProdType(
 				null, 
 				new AtomicType(sig, sig.name + "_args"), 
-				sig.parameters.map[system.computeConstraints(it) as AbstractType]
+				sig.parameters.map[system.computeConstraints(it) as AbstractType].force
 			), 
 			sigInstSetupType
 		);

@@ -1,5 +1,6 @@
 package org.eclipse.mita.base.typesystem.types
 
+import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
@@ -11,7 +12,6 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.diagnostics.Severity
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
@@ -40,7 +40,7 @@ class TypeConstructorType extends AbstractType {
 	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
 		super(origin, type.name);
 		this.type = type;
-		this.typeArguments = typeArguments;
+		this.typeArguments = typeArguments.force;
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
 	}
 	
@@ -114,10 +114,16 @@ class TypeConstructorType extends AbstractType {
 				return false
 			}
 		} 
-		else if(!this.type.equals(other.type)) return false
+		else if(!this.type.equals(other.type)) { 
+			return false
+		}
 		if (this.typeArguments === null) {
-			if(other.typeArguments !== null) return false
-		} else if(this.typeArguments.size != (other.typeArguments.size)) return false
+			if(other.typeArguments !== null) {
+				return false
+			}
+		} else if(this.typeArguments.size != (other.typeArguments.size)) {
+			return false
+		}
 		else if(this.typeArguments.zip(other.typeArguments).exists[!it.key.equals(it.value)]) {
 			return false;
 		}

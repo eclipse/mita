@@ -2,6 +2,7 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import java.util.ArrayList
 import java.util.HashMap
 import java.util.List
 import java.util.Map
@@ -34,8 +35,8 @@ class ConstraintSystem {
 	@Inject protected SerializationAdapter serializationAdapter;
 	protected Map<URI, TypeVariable> symbolTable = new HashMap();
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
-	protected List<AbstractTypeConstraint> atomicConstraints = newArrayList;
-	protected List<AbstractTypeConstraint> nonAtomicConstraints = newArrayList;
+	protected List<AbstractTypeConstraint> atomicConstraints = new ArrayList();
+	protected List<AbstractTypeConstraint> nonAtomicConstraints = new ArrayList();
 	protected Graph<AbstractType> explicitSubtypeRelations;
 	protected Map<Integer, AbstractType> explicitSubtypeRelationsTypeSource = new HashMap();
 	
@@ -104,8 +105,8 @@ class ConstraintSystem {
 		this();
 		constraintSystemProvider = constraintSystemProvider ?: other.constraintSystemProvider;
 		instanceCount = other.instanceCount;
-		atomicConstraints += other.atomicConstraints;
-		nonAtomicConstraints += other.nonAtomicConstraints;
+		atomicConstraints.addAll(other.atomicConstraints);
+		nonAtomicConstraints.addAll(other.nonAtomicConstraints);
 		symbolTable.putAll(other.symbolTable);
 		typeClasses.putAll(other.typeClasses);
 		other.explicitSubtypeRelations.copyTo(explicitSubtypeRelations);
@@ -178,10 +179,10 @@ class ConstraintSystem {
 	
 	def void addConstraint(AbstractTypeConstraint constraint) {
 		if(constraint.isAtomic(this)) {
-			atomicConstraints += constraint;
+			atomicConstraints.add(constraint);
 		}
 		else {
-			nonAtomicConstraints += constraint;
+			nonAtomicConstraints.add(constraint);
 		}
 	}
 	
@@ -264,8 +265,8 @@ class ConstraintSystem {
 //				r.constraints.add(new EqualityConstraint(it.value, t.symbolTable.get(it.key), "CS:267 (merge)"))
 			]
 			r.symbolTable.putAll(t.symbolTable);
-			r.atomicConstraints += t.atomicConstraints;
-			r.nonAtomicConstraints += t.nonAtomicConstraints;
+			r.atomicConstraints.addAll(t.atomicConstraints);
+			r.nonAtomicConstraints.addAll(t.nonAtomicConstraints);
 			r.typeClasses.putAll(t.typeClasses);
 			val g = t.explicitSubtypeRelations 
 			g.nodes.forEach[typeNode | 
