@@ -2,22 +2,16 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import java.util.ArrayList
 import java.util.Collections
 import java.util.HashMap
 import java.util.HashSet
 import java.util.Map
 import java.util.function.Predicate
-import org.eclipse.core.runtime.CoreException
-import org.eclipse.core.runtime.Status
-import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.DebugTimer
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import static extension org.eclipse.mita.base.util.BaseUtils.zip
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
@@ -111,74 +105,51 @@ class Substitution {
 	}
 	
 	def apply(ConstraintSystem system) {
-		return apply(system, new DebugTimer());
+		return applyToNonAtomics(applyToAtomics(applyToGraph(system)));
 	}
-	def apply(ConstraintSystem system, DebugTimer debugTimer) {
-		val result = (constraintSystemProvider ?: system.constraintSystemProvider).get();
-		
+	
+	def applyToGraph(ConstraintSystem system) {
+		return applyToGraph(system, new DebugTimer());
+	}
+	def applyToGraph(ConstraintSystem system, DebugTimer debugTimer) {
 		debugTimer.start("typeClasses")
-		result.typeClasses.putAll(system.typeClasses.mapValues[it.replace(this)])
-		result.instanceCount = system.instanceCount;
-		result.symbolTable = system.symbolTable;
+		system.typeClasses.replaceAll[qn, tc | tc.replace(this)];
 		debugTimer.stop("typeClasses")
 		
 		// to keep overridden methods etc. we clone instead of using a copy constructor
 		debugTimer.start("explicitSubtypeRelations");
-		result.explicitSubtypeRelations = system.explicitSubtypeRelations.clone as Graph<AbstractType>
-		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.replace(this)];
-		result.explicitSubtypeRelations.computeReverseMap;
-		result.explicitSubtypeRelationsTypeSource = new HashMap(system.explicitSubtypeRelationsTypeSource.mapValues[it.replace(this)]);
+		system.explicitSubtypeRelations.nodeIndex.replaceAll[i, t | t.replace(this)];
+		system.explicitSubtypeRelations.computeReverseMap;
+		system.explicitSubtypeRelationsTypeSource.replaceAll[tname, t | t.replace(this)];
 		debugTimer.stop("explicitSubtypeRelations");
 		
+		return system;
+	}
+	
+	def ConstraintSystem applyToAtomics(ConstraintSystem system) {
+		applyToAtomics(system, new DebugTimer);
+	}
+	def ConstraintSystem applyToAtomics(ConstraintSystem system, DebugTimer debugTimer) {
 		debugTimer.start("constraints");
 		// atomic constraints may become composite by substitution, the opposite can't happen
 		val unknownConstrains = system.atomicConstraints.map[c | c.replace(this)].force;
-		val alwaysNonAtomic = new ArrayList;
-		var i = 0;
-		var AbstractTypeConstraint x;
-//		for(c: system.nonAtomicConstraints) {
-//			x = c;
-//			c.toString;
-//			print("");
-//		}
-		for(c: system.nonAtomicConstraints) {
-			val nc = c.replace(this);
-			//println(c);
-//			println(nc);
-//			println(i);
-//			println("-----------");
-			alwaysNonAtomic.add(nc);
-			i++;
-		}
 		debugTimer.stop("constraints");
-
-		
-		debugTimer.start("constraintAssert");
-		// assert this
-		system.nonAtomicConstraints.zip(alwaysNonAtomic).forEach[
-			if(it.value.isAtomic(result)) {
-				it.key.isAtomic(result);
-				it.value.isAtomic(result);
-				throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
-			}
-		]
-		debugTimer.stop("constraintAssert");
-
-		result.nonAtomicConstraints = alwaysNonAtomic;
+		system.atomicConstraints.clear();
 		debugTimer.start("atomicity");
 		for(it: unknownConstrains) {
-			if(it.isAtomic(result)) {
-				result.atomicConstraints.add(it);
+			if(it.isAtomic(system)) {
+				system.atomicConstraints.add(it);
 			}
 			else {
-				result.nonAtomicConstraints.add(it);
+				system.nonAtomicConstraints.add(it);
 			}
 		}
-//		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);
-//		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic(result)]);
 		debugTimer.stop("atomicity");
-
-		return result;
+		return system;
+	}
+	def ConstraintSystem applyToNonAtomics(ConstraintSystem system) {
+		system.nonAtomicConstraints.replaceAll[it.replace(this)];
+		return system;
 	}
 	
 	def Map<TypeVariable, AbstractType> getSubstitutions() {
@@ -191,7 +162,15 @@ class Substitution {
 			return to;
 		}
 		
-		override apply(ConstraintSystem system) {
+		override applyToGraph(ConstraintSystem system, DebugTimer timer) {
+			return system;
+		}
+		
+		override applyToAtomics(ConstraintSystem system, DebugTimer timer) {
+			return system;
+		}
+		
+		override applyToNonAtomics(ConstraintSystem system) {
 			return system;
 		}
 		

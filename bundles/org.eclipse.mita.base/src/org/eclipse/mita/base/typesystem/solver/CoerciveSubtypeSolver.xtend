@@ -7,6 +7,8 @@ import java.util.HashSet
 import java.util.List
 import java.util.Map
 import java.util.Set
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.Status
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
@@ -39,6 +41,7 @@ import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
+import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
@@ -47,7 +50,6 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.util.DebugTimer
 
 /**
  * Solves coercive subtyping as described in 
@@ -237,40 +239,50 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		var resultSystem = system;
 		var resultSub = substitution;
 		var issues = newArrayList;
-		while(resultSystem.hasNonAtomicConstraints()) {
-			val constraint = resultSystem.takeOneNonAtomic();
-			
-			debugTimer.start(constraint.class.simpleName);
-			val simplification = doSimplify(resultSystem, resultSub, typeResolutionOrigin, constraint);
-			debugTimer.stop(constraint.class.simpleName);
-			
-			if(!simplification.valid) {
-				issues += simplification.issues;
-				// just throw out the constraint for now
-				//return SimplificationResult.failure(simplification.issue);
-			}
-			else {
-				debugTimer.start("UnifyCheck");
-				val witnessesNotWeaklyUnifyable = simplification.substitution.content.entrySet.filter[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]].flatMap[#[it.key, it.value]].force;
-				if(!witnessesNotWeaklyUnifyable.empty) {
-					issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.toString, it.origin, null, "")]; 
-					witnessesNotWeaklyUnifyable.filter(TypeVariable).forEach[
-						simplification.substitution.content.remove(it);
-					]	
+		do {
+			while(resultSystem.hasNonAtomicConstraints()) {
+				debugTimer.start("constraints");
+				val constraintOutdated = resultSystem.takeOneNonAtomic();
+				val constraint = constraintOutdated.replace(resultSub);
+				if(constraint.isAtomic(resultSystem)) {
+					constraintOutdated.isAtomic(resultSystem);
+					constraint.isAtomic(resultSystem);
+					throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.base", "Assertion violated: Non atomic constraint became atomic!"));
 				}
-				debugTimer.stop("UnifyCheck");
+				debugTimer.stop("constraints");
 				
-				val returnedSub = simplification.substitution;
-				//debugTimer.start("Substitution");
-				resultSystem = returnedSub.apply(simplification.system, debugTimer);
-				resultSub = returnedSub.apply(resultSub);
-				//debugTimer.stop("Substitution");
-				#["typeClasses", "explicitSubtypeRelations", "constraints", "atomicity", "constraintAssert"].forEach[
-					debugTimer.consolidateByPrefix(/*"Substitution." + */ it);
-				]
+				debugTimer.start(constraint.class.simpleName);
+				val simplification = doSimplify(resultSystem, resultSub, typeResolutionOrigin, constraint);
+				debugTimer.stop(constraint.class.simpleName);
+				
+				if(!simplification.valid) {
+					issues += simplification.issues;
+				}
+				else {
+					debugTimer.start("UnifyCheck");
+					val witnessesNotWeaklyUnifyable = simplification.substitution.content.entrySet.filter[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]].flatMap[#[it.key, it.value]].force;
+					if(!witnessesNotWeaklyUnifyable.empty) {
+						issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.toString, it.origin, null, "")]; 
+						witnessesNotWeaklyUnifyable.filter(TypeVariable).forEach[
+							simplification.substitution.content.remove(it);
+						]	
+					}
+					debugTimer.stop("UnifyCheck");
+					
+					val returnedSub = simplification.substitution;
+					//debugTimer.start("Substitution");
+					resultSystem = returnedSub.applyToGraph(simplification.system, debugTimer);
+					resultSub = returnedSub.apply(resultSub);
+					//debugTimer.stop("Substitution");
+					#["typeClasses", "explicitSubtypeRelations", "constraints", "atomicity", "constraintAssert"].forEach[
+						debugTimer.consolidateByPrefix(/*"Substitution." + */ it);
+					]
+				}
 			}
-		}
-		val classes = #["UnifyCheck", /*"Substitution", */"SubtypeConstraint", "EqualityConstraint", "ImplicitInstanceConstraint", "FunctionTypeClassConstraint"];
+			
+			resultSystem = resultSub.applyToAtomics(resultSystem, debugTimer);
+		} while(resultSystem.hasNonAtomicConstraints());
+		val classes = #["UnifyCheck", /*"Substitution", */"SubtypeConstraint", "EqualityConstraint", "ExplicitInstanceConstraint", "FunctionTypeClassConstraint"];
 		classes.forEach[
 			debugTimer.consolidateByPrefix(it)
 		]

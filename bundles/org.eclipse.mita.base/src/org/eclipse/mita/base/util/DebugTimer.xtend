@@ -11,19 +11,19 @@ class DebugTimer {
 	protected val traces = new Stack<Trace>();
 	protected val results = new LinkedList<TraceResult>();
 	
-	var foo = 0;
+	boolean disable = true;
 	
 	public def start(String name) {
-		if(name == "simplify.1") {
-			foo++;
-			if(foo > 1) {
-				print("");
-			}
+		if(disable) {
+			return;
 		}
 		this.traces.push(new Trace(Instant.now(), name, Thread.currentThread.id));
 	}
 	
 	public def stop(String expectedName) {
+		if(disable) {
+			return;
+		}
 		if (!this.traces.isEmpty()) {
 			val prev = this.traces.pop();
 			val internalPrefix = computeName(prev.name);
@@ -39,12 +39,18 @@ class DebugTimer {
 	}
 	
 	public def getByPrefix(String prefix) {
-		results.filter[it.name.startsWith(prefix)]
+		if(disable) {
+			return #[];
+		}
+		return results.filter[it.name.startsWith(prefix)]
 	}
 	
 	
 	
 	public def consolidateByPrefix(String prefix) {
+		if(disable) {
+			return;
+		}
 		val internalPrefix = computeName(prefix);
 		val time = results.filter[it.name.startsWith(internalPrefix)].fold(0L, [i, t| i+t.timeNs]);
 		results.removeIf[it.name.startsWith(internalPrefix)];
