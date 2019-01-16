@@ -136,8 +136,16 @@ class Substitution {
 		debugTimer.stop("constraints");
 
 		debugTimer.start("atomicity");
-		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);
-		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic(result)]);
+		for(it: unknownConstrains) {
+			if(it.isAtomic(result)) {
+				result.atomicConstraints.add(it);
+			}
+			else {
+				result.nonAtomicConstraints.add(it);
+			}
+		}
+//		result.atomicConstraints.addAll(unknownConstrains.filter[it.isAtomic(result)]);
+//		result.nonAtomicConstraints.addAll(unknownConstrains.filter[!it.isAtomic(result)]);
 		debugTimer.stop("atomicity");
 		
 		debugTimer.start("constraintAssert");
