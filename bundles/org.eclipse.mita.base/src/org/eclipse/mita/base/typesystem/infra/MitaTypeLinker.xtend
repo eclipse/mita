@@ -31,15 +31,6 @@ class MitaTypeLinker extends Linker {
 		}
 	}
 	
-	
-	override protected clearReference(EObject obj, EReference ref) {
-		return;
-//		if(shouldNotClearReference(obj, ref)) {
-//			return;
-//		}
-//		super.clearReference(obj, ref)
-	}
-	
 	override protected isNullValidResult(EObject obj, EReference eRef, INode node) {
 		return true;
 	}
