@@ -20,13 +20,14 @@ import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 
 /**
  * Interface for type generators.
  */
 abstract class AbstractTypeGenerator implements IGenerator {
 
-	@Inject StdlibTypeRegistry typeSystem;
+	@Inject SubtypeChecker subtypeChecker;
 
 	@Inject
 	protected TypeGenerator typeGenerator
@@ -57,7 +58,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 * Checks if this type supports a particular expression within its type hierarchy
 	 */
 	def boolean checkExpressionSupport(AbstractType type, AssignmentOperator operator, AbstractType otherType) {
-		return operator == AssignmentOperator.ASSIGN && typeSystem.isSubType(type.origin, otherType, type);
+		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(null, type.origin, otherType, type);
 	}
 	
 	/**

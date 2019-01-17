@@ -27,8 +27,11 @@ import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.IConstraintFactory
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
@@ -38,6 +41,9 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
+
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -85,13 +91,17 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 //			val simplification = coerciveSubtypeSolver.simplify(csCopy, Substitution.EMPTY, eObject);
 //			val substitution = simplification.substitution;
 //			val simplifiedConstraints = substitution.apply(constraints);
-			
+//			
 //			simplifiedConstraints.nonAtomicConstraints = simplifiedConstraints.nonAtomicConstraints.filter[
 //				if(it instanceof EqualityConstraint) {
 //					return it.left == it.right;
 //				}
 //				return false;
 //			].force;
+//			
+//			substitution.substitutions.forEach[t1, t2|
+//				simplifiedConstraints.nonAtomicConstraints.add(new EqualityConstraint(t1, t2, new ValidationIssue("Definition", t1.origin ?: t2.origin)))
+//			]
 			
 			val String json = serializationAdapter.toJSON(constraints);
 			val jsonCompressed = GZipper.compress(json);

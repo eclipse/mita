@@ -7,18 +7,17 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.solver.Substitution
 
-@FinalFieldsConstructor
 @Accessors
 @EqualsHashCode
 class BottomType extends AbstractBaseType {
-	protected final String message;
+	protected String message;
 	
 	override replace(TypeVariable from, AbstractType with) {
 		return this;
 	}
-	
+		
 	new(EObject origin, String message) {
-		super(origin, "⊥")
+		super(origin, "⊥");
 		this.message = message;
 	}
 	

@@ -513,18 +513,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		if(context.item === null) {
 			return originalScope;
 		}
-		val itemType = BaseUtils.getType(context.item)?.origin;
-
-		if (itemType instanceof EnumerationType) {
-			return filteredEnumeratorScope(originalScope, itemType);
-		} else if(itemType instanceof SumType) {
-			return originalScope;
-			//return filteredSumTypeScope(originalScope, itemType);
-		} else if(itemType instanceof SumAlternative) {
-			return originalScope
-		} else {
-			return originalScope;
-		}
+		return originalScope;
+		
 	}
 	
 	def filteredSumTypeScope(IScope originalScope, SumType itemType) {
@@ -654,7 +644,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			val obj = x.EObjectOrProxy;
 
 			val result = if (obj instanceof AbstractSystemResource) {
-					!obj.events.empty
+					obj.events === null || !obj.events.empty
 				} else {
 					false;
 				}
@@ -663,7 +653,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	def IScope scope_SystemEventSource_source(SystemEventSource context, EReference reference) {
-		return if (context === null || context.origin === null) {
+		return if (context === null || context.origin === null || context.origin.events.nullOrEmpty) {
 			IScope.NULLSCOPE;
 		} else {
 			Scopes.scopeFor(context.origin.events);

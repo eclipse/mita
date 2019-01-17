@@ -53,6 +53,9 @@ class TypeClass {
 	}
 	
 	def replace(Substitution sub) {
+		if(sub.substitutions.keySet.exists[it.name == "f_560.6"]) {
+			print("");
+		}
 		if(this.hasNoFreeVars) {
 			return this;
 		}

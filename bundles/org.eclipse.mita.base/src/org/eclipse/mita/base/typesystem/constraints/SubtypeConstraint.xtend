@@ -13,6 +13,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.infra.CachedBoolean
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -71,7 +72,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 		
 	dispatch def boolean hasSubtypes(ConstraintSystem system, AbstractType type) {
-		val idxs = system.explicitSubtypeRelations.reverseMap.get(StdlibTypeRegistry.getSuperTypeGraphHandle(type)) ?: #[];
+		val idxs = system.explicitSubtypeRelations.reverseMap.get(SubtypeChecker.getSuperTypeGraphHandle(type)) ?: #[];
 		val explicitSuperTypes = idxs.flatMap[system.explicitSubtypeRelations.getPredecessors(it)];
 		return !explicitSuperTypes.empty;
 	}
@@ -83,7 +84,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	def canHaveSuperTypes(ConstraintSystem system, AbstractType type) {
-		val idxs = system.explicitSubtypeRelations.reverseMap.get(StdlibTypeRegistry.getSuperTypeGraphHandle(type)) ?: #[];
+		val idxs = system.explicitSubtypeRelations.reverseMap.get(SubtypeChecker.getSuperTypeGraphHandle(type)) ?: #[];
 		val explicitSuperTypes = idxs.flatMap[system.explicitSubtypeRelations.getSuccessors(it)];
 		
 		return !explicitSuperTypes.empty;

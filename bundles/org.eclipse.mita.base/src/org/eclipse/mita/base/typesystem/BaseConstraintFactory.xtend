@@ -42,6 +42,7 @@ import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeKind
@@ -62,6 +63,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
@@ -461,6 +463,22 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
 	}
 	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
+		val typeArgs = function.typeParameters.map[system.computeConstraints(it)].force()
+			
+		val fromType = system.computeParameterType(function, function.parameters);
+		val toType = system.computeConstraints(function.typeSpecifier);
+		val funType = new FunctionType(function, new AtomicType(function), fromType, toType);
+		var result = system.associate(
+			if(typeArgs.empty) {
+				funType
+			} else {
+				new TypeScheme(function, typeArgs, funType);	
+			}
+		)
+		return result;
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalMultiplyDivideExpression expr) {
 		val opQID = switch(expr.operator) {
 			case(MultiplicativeOperator.MUL): StdlibTypeRegistry.timesFunctionQID
@@ -584,8 +602,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		].force;
 		return new org.eclipse.mita.base.typesystem.types.SumType(sumType, new AtomicType(sumType), subTypes);	
 	}
-	
+		
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
+		if(sumAlt.name == "Personal") {
+			print("");
+		}
+
 		val selfType = new AtomicType(sumAlt);
 		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		val prodType = new ProdType(sumAlt, selfType, types);
@@ -682,6 +704,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypedElement element) {
+		if(element instanceof SumSubTypeConstructor) {
+			print("");
+		}
 		return system.associate(system.computeConstraints(element.typeSpecifier), element);
 	}
 	

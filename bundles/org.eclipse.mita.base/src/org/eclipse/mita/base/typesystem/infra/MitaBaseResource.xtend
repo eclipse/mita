@@ -35,6 +35,7 @@ import org.eclipse.mita.base.util.BaseUtils
 import java.io.InputStream
 import java.util.Map
 import java.io.IOException
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -190,6 +191,22 @@ class MitaBaseResource extends LazyLinkingResource {
 			val solution = constraintSolver.solve(preparedSystem, obj);
 			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {
+					solution.solution.substitutions.entrySet.forEach[
+						var origin = it.key.origin;
+						if(origin !== null && origin.eIsProxy) {
+							origin = resource.resourceSet.getEObject((origin as BasicEObjectImpl).eProxyURI, false);
+						}
+						
+						if(origin !== null) {
+							val type = it.value;
+							// we had the object loaded anyways, so we can set the type
+							TypeAdapter.set(origin, type);
+							
+							if(type instanceof BottomType) {
+								solution.issues += new ValidationIssue(type.message, resolveProxy(resource, type.origin) ?: obj)
+							}
+						}
+					]
 					resource.latestSolution = solution;
 					resource.cancelIndicator.canceled = true;
 					resource.errors += solution.issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[
@@ -202,27 +219,6 @@ class MitaBaseResource extends LazyLinkingResource {
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]
 				}
-			}
-			if(solution !== null && solution.solution !== null) {
-				if(obj.eResource.URI.lastSegment == "application.mita") {
-					print("")
-				}
-				solution.solution.substitutions.entrySet.forEach[
-					var origin = it.key.origin;
-					if(origin !== null && origin.eIsProxy) {
-						origin = resource.resourceSet.getEObject((origin as BasicEObjectImpl).eProxyURI, false);
-					}
-					
-					if(origin !== null) {
-						val type = it.value;
-						// we had the object loaded anyways, so we can set the type
-						TypeAdapter.set(origin, type);
-						
-						if(type instanceof BottomType) {
-							resource.errors.add(new EObjectDiagnosticImpl(Severity.ERROR, "bottom_type", type.message, resolveProxy(resource, type.origin) ?: obj, null, 0, #[]));
-						}
-					}
-				]				
 			}
 		}
 	}

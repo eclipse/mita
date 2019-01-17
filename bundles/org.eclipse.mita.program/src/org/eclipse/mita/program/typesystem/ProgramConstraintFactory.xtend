@@ -73,31 +73,11 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return null;
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SumSubTypeConstructor function) {
-		return system._computeConstraints(function as Operation);
-	}
-	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
 		system.computeConstraints(eventHandler.block);
 		
 		val voidType = typeRegistry.getTypeModelObjectProxy(system, eventHandler, StdlibTypeRegistry.voidTypeQID);
 		return system.associate(new FunctionType(eventHandler, new AtomicType(eventHandler.event, eventHandler.event.toString), voidType, voidType));
-	}
-	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
-		val typeArgs = function.typeParameters.map[system.computeConstraints(it)].force()
-			
-		val fromType = system.computeParameterType(function, function.parameters);
-		val toType = system.computeConstraints(function.typeSpecifier);
-		val funType = new FunctionType(function, new AtomicType(function), fromType, toType);
-		var result = system.associate(
-			if(typeArgs.empty) {
-				funType
-			} else {
-				new TypeScheme(function, typeArgs, funType);	
-			}
-		)
-		return result;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement __) {

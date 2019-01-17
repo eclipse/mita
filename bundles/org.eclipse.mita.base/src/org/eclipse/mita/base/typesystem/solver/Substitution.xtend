@@ -8,6 +8,7 @@ import java.util.HashSet
 import java.util.Map
 import java.util.function.Predicate
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.DebugTimer
 
@@ -50,6 +51,9 @@ class Substitution {
 		newContent.content = content;
 		val resultSub = newContent.apply(this);
 		this.content = resultSub.content;
+		if(!content.values.filter(BottomType).empty) {
+			print("")
+		}
 		//this.checkConsistency();
 	}
 	def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
@@ -113,7 +117,12 @@ class Substitution {
 	}
 	def applyToGraph(ConstraintSystem system, DebugTimer debugTimer) {
 		debugTimer.start("typeClasses")
-		system.typeClasses.replaceAll[qn, tc | tc.replace(this)];
+		system.typeClasses.replaceAll[qn, tc | 
+			if(qn.toString == "Personal") {
+				print("");
+			}
+			tc.replace(this)
+		];
 		debugTimer.stop("typeClasses")
 		
 		// to keep overridden methods etc. we clone instead of using a copy constructor

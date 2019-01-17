@@ -229,9 +229,6 @@ class SerializationAdapter {
 		if(origin === null) {
 			obj.origin.resolveEObject(true);
 		}
-		if(obj.name == "p_46") {
-			print("");
-		}
 		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy);
 	}
 	

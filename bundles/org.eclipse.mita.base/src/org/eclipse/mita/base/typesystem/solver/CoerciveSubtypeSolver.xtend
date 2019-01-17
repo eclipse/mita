@@ -50,6 +50,7 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 
 /**
  * Solves coercive subtyping as described in 
@@ -71,6 +72,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	@Inject
 	protected StdlibTypeRegistry typeRegistry;
+	@Inject
+	protected SubtypeChecker subtypeChecker;
 	
 	protected var DebugTimer debugTimer = new DebugTimer();
 	
@@ -188,7 +191,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 	def Iterable<ValidationIssue> validateSubtypes(ConstraintSystem system, EObject typeResolutionOrigin) {
 		return system.constraints.filter(SubtypeConstraint).flatMap[
-			if(!typeRegistry.isSubType(typeResolutionOrigin, it.subType, it.superType)) {
+			if(!subtypeChecker.isSubType(system, typeResolutionOrigin, it.subType, it.superType)) {
 				#[it.errorMessage]
 			}
 			else {
@@ -215,7 +218,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val constraintGraph = constraintGraphAndSubst.key;
 		val constraintGraphSubstitution = constraintGraphAndSubst.value.substitution;
 
-		val resolvedGraphAndSubst = constraintGraph.resolve(constraintGraphSubstitution, typeResolutionOrigin);
+		val resolvedGraphAndSubst = resolve(system, constraintGraph, constraintGraphSubstitution, typeResolutionOrigin);
 		val resolvedGraph = resolvedGraphAndSubst.key.key;
 		val resolvedGraphSubstitution = resolvedGraphAndSubst.key.value;
 		if(resolvedGraphSubstitution === null) {	
@@ -412,7 +415,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						return new TypeClassConstraintResolutionResult(mbUnification.substitution, #[], #[], typ, fun, distance);
 					}
 					
-					val subtypeCheckResult = typeRegistry.isSubtypeOf(typeResolutionOrigin, prodType, typ.from);
+					val subtypeCheckResult = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, prodType, typ.from);
 					if(!subtypeCheckResult.invalid) {
 						// TODO insert coercion
 						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance + subtypeCheckResult.constraints.size);
@@ -563,7 +566,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, AbstractBaseType sub, AbstractBaseType top) { 
 		// eliminate:  U <= T
-		val subtypeCheckResult = typeRegistry.isSubtypeOf(typeResolutionOrigin, sub, top);
+		val subtypeCheckResult = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, sub, top);
 		if(subtypeCheckResult.invalid) {
 			return SimplificationResult.failure(constraint.errorMessage);
 		} else {
@@ -577,7 +580,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, AbstractType sub, AbstractType top) { 
 		// eliminate:  U <= T
-		val subtypeCheckResult = typeRegistry.isSubtypeOf(typeResolutionOrigin, sub, top);
+		val subtypeCheckResult = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, sub, top);
 		if(subtypeCheckResult.invalid) {
 			return SimplificationResult.failure(constraint.errorMessage);
 		} else {
@@ -640,7 +643,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				finalState.s,
 				finalState.nonUnifiable
 					.filter[
-						val str = typeRegistry.isSubtypeOf(typeResolutionOrigin, it.subType, it.superType);
+						val str = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, it.subType, it.superType);
 						return !str.valid || !str.constraints.empty;
 					]
 					.map[it.errorMessage]
@@ -648,30 +651,38 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 	}
 	
-	protected def Pair<Pair<ConstraintGraph, Substitution>, List<ValidationIssue>> resolve(ConstraintGraph graph, Substitution _subtitution, EObject typeResolutionOrigin) {
+	protected def Pair<Pair<ConstraintGraph, Substitution>, List<ValidationIssue>> resolve(ConstraintSystem system, ConstraintGraph graph, Substitution _subtitution, EObject typeResolutionOrigin) {
 		val varIdxs = graph.typeVariables;
 		var resultSub = _subtitution;
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
+			if(v.toString == "f_131.0") {
+				print("");
+			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
-			val supremum = graph.getSupremum(predecessors);
+			val supremum = graph.getSupremum(system, predecessors);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);
-			val infimum = graph.getInfimum(successors);
-			val supremumIsValid = supremum !== null && successors.forall[ t | typeRegistry.isSubType(typeResolutionOrigin, supremum, t) ];
-			val infimumIsValid = infimum !== null && predecessors.forall[ t | typeRegistry.isSubType(typeResolutionOrigin, t, infimum) ];
+			val infimum = graph.getInfimum(system, successors);
+			val supremumIsValid = supremum !== null && successors.forall[ t | subtypeChecker.isSubType(system, typeResolutionOrigin, supremum, t) ];
+			val infimumIsValid = infimum !== null && predecessors.forall[ t | subtypeChecker.isSubType(system, typeResolutionOrigin, t, infimum) ];
 			
 			if(!predecessors.empty) {
 				if(supremumIsValid) {
+					if(supremum instanceof BottomType) {
+						print("");
+						supremum.message = "Couldn't find a good supertype for " + predecessors.join(" and ")
+					}
 					// assign-sup
 					graph.replace(v, supremum);
-					resultSub = resultSub.replace(v, supremum) => [add(v, supremum)];
+					resultSub = resultSub.replace(v, supremum)
+					resultSub.add(v, supremum);
 				} else {
 					//redo for debugging
 					graph.getBaseTypePredecessors(vIdx);
-					graph.getSupremum(predecessors);
+					graph.getSupremum(system, predecessors);
 					supremum !== null && successors.forall[ t | 
-						typeRegistry.isSubType(typeResolutionOrigin, supremum, t)
+						subtypeChecker.isSubType(system, typeResolutionOrigin, supremum, t)
 					];
 					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «predecessors» don't share a super type (best guess: «supremum ?: "none"»)''', 
@@ -681,9 +692,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			else if(!successors.empty) {
 				if(infimumIsValid) {
+					if(infimum instanceof BottomType) {
+						print("");
+						graph.getBaseTypeSuccecessors(vIdx);
+						graph.getInfimum(system, successors);
+			
+						infimum.message = "Couldn't find a good subtype for " + predecessors.join(" and ")
+					}
 					// assign-inf
 					graph.replace(v, infimum);
-					resultSub = resultSub.replace(v, infimum) => [add(v, infimum)];
+					resultSub = resultSub.replace(v, infimum) 
+					resultSub.add(v, infimum);
 				} else {
 					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «successors» don't share a sub type (best guess: «infimum ?: "none"»)''',
