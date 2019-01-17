@@ -15,9 +15,8 @@ import java.util.Map
 import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
-import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.util.BaseUtils
@@ -43,16 +42,18 @@ class PlatformDslResourceDescriptionStrategy extends BaseResourceDescriptionStra
 	//			PlatformPackage.Literals.INPUT_OUTPUT, // we expose resources bound to the platform
 	//			PlatformPackage.Literals.SENSOR, // we expose resources bound to the platform
 	//			PlatformPackage.Literals.SYSTEM_RESOURCE_ALIAS // we expose resources bound to the platform
+	
 	def package void export(EObject obj, IAcceptor<IEObjectDescription> acceptor) {
-		var Map<String, String> map=new HashMap() 
-		map.put(EXPORTED, String.valueOf(true)) 
-		var QualifiedName firstQN=getQualifiedNameProvider().getFullyQualifiedName(obj) 
-		acceptor.accept(EObjectDescription.create(firstQN, obj, map)) 
-		var QualifiedName secondQN=typeQualifiedNameProvider.getFullyQualifiedName(obj) 
+		var Map<String, String> map = new HashMap()
+		map.put(EXPORTED, String.valueOf(true))
+		var QualifiedName firstQN = getQualifiedNameProvider().getFullyQualifiedName(obj)
+		acceptor.accept(EObjectDescription.create(firstQN, obj, map))
+		var QualifiedName secondQN = typeQualifiedNameProvider.getFullyQualifiedName(obj)
 		if (secondQN !== null && !secondQN.equals(firstQN)) {
-			acceptor.accept(EObjectDescription.create(secondQN, obj, map)) 
+			acceptor.accept(EObjectDescription.create(secondQN, obj, map))
 		}
 	}
+	
 	override boolean createEObjectDescriptions(EObject eObject, IAcceptor<IEObjectDescription> acceptor) {
 		if (getQualifiedNameProvider() === null) {
 			return false 
@@ -61,8 +62,10 @@ class PlatformDslResourceDescriptionStrategy extends BaseResourceDescriptionStra
 			// we want to suppress this object, don't export it
 			return false 
 		} else if (eObject instanceof SystemSpecification) {
-			return createPlatformDescription(eObject, acceptor) 
-		} else if ((eObject instanceof StructureType) || (eObject instanceof SumAlternative) || (eObject instanceof SumType) || (eObject.eContainer() instanceof SumAlternative && !(eObject instanceof TypeSpecifier)) || (eObject instanceof VirtualFunction)) {
+			var result = createPlatformDescription(eObject, acceptor);
+			result = super.createEObjectDescriptions(eObject, acceptor) || result;
+			return result;
+		} else if ((eObject instanceof Type) || (eObject.eContainer() instanceof SumAlternative && !(eObject instanceof TypeSpecifier)) || (eObject instanceof VirtualFunction)) {
 			export(eObject, acceptor) 
 			return true 
 		} else {

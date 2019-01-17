@@ -11,13 +11,6 @@ import org.eclipse.xtext.nodemodel.INode
 class MitaLinker extends LazyLinker {
 
 	override protected installProxies(EObject obj, IDiagnosticProducer producer, Multimap<Setting, INode> settingsToLink) {
-		if(obj.eContainer === null) {
-			obj.eAllContents
-				.filter(GeneratedObject)
-				.forEach[
-					it.generateMembers()
-				]
-		}
 		super.installProxies(obj, producer, settingsToLink);
 	}
 	

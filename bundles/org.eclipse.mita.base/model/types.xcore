@@ -216,7 +216,7 @@ class SumSubTypeConstructor extends TypeConstructor {
 			]
 		}
 		if((sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === null) {
-			(sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type === (this.eContainer.eContainer as SumType).typeKind;
+			(sumTypeParameter.typeSpecifier as PresentTypeSpecifier).^type = (this.eContainer.eContainer as SumType).typeKind;
 		}
 		super.generateMembers();
 	}

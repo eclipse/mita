@@ -19,6 +19,7 @@ import java.util.List
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Exportable
+import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
@@ -28,8 +29,6 @@ import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
@@ -39,9 +38,6 @@ import org.eclipse.xtext.resource.EObjectDescription
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -74,6 +70,12 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		}
 		
 		if (eObject.eContainer() === null) {
+			eObject.eAllContents
+				.filter(GeneratedObject)
+				.forEach[
+					it.generateMembers()
+				]
+			
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
 			constraintFactory.setIsLinking(true);
 			constraintFactory.getTypeRegistry().setIsLinking(true);

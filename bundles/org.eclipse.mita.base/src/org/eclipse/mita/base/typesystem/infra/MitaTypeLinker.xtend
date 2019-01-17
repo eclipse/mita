@@ -10,6 +10,8 @@ import org.eclipse.xtext.CrossReference
 import org.eclipse.xtext.diagnostics.IDiagnosticProducer
 import org.eclipse.xtext.linking.impl.Linker
 import org.eclipse.xtext.nodemodel.INode
+import org.eclipse.mita.base.types.GeneratedElement
+import org.eclipse.mita.base.types.GeneratedObject
 
 class MitaTypeLinker extends Linker {
 	
@@ -24,9 +26,6 @@ class MitaTypeLinker extends Linker {
 				BaseUtils.ignoreChange(obj, [
 					super.ensureIsLinked(obj, node, ref, handledReferences, producer);	
 				]);
-				//val txt = NodeModelUtils.getTokenText(node);
-//				println(txt);
-				//println('''Linking types: «obj.eResource?.URI.lastSegment»: «NodeModelUtils.getTokenText(node)» on («obj.eClass?.name»)«obj»''');
 			}
 		}
 	}
@@ -44,7 +43,7 @@ class MitaTypeLinker extends Linker {
 	}
 	
 	public def doActuallyClearReferences(EObject obj) {
-		for(o: obj.eAllContents.toIterable) {
+		for(o: obj.eAllContents.toIterable.filter[!(it instanceof GeneratedObject)]) {
 			super.clearReferences(o);
 		}
 	}

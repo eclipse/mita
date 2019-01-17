@@ -9,6 +9,7 @@ import org.eclipse.emf.ecore.impl.EObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
+import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
@@ -21,13 +22,19 @@ import org.eclipse.xtext.linking.lazy.LazyLinkingResource
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.nodemodel.INode
 import org.eclipse.xtext.resource.IContainer
+import org.eclipse.xtext.resource.IFragmentProvider
 import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.util.Triple
 import org.eclipse.xtext.validation.EObjectDiagnosticImpl
+import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.util.BaseUtils
+import java.io.InputStream
+import java.util.Map
+import java.io.IOException
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -57,6 +64,33 @@ class MitaBaseResource extends LazyLinkingResource {
 	
 	@Inject @Named("typeDependentLinker")
 	protected MitaTypeLinker typeDependentLinker;
+	
+	@Inject
+	protected XtextFragmentProvider fragmentProvider;
+
+	override protected doLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
+		super.doLoad(inputStream, options)
+	
+		BaseUtils.ignoreChange(this, [|
+			contents.get(0).eAllContents
+				.filter(GeneratedObject)
+				.forEach[
+					it.generateMembers()
+				]
+			return;
+		])
+	}
+
+	protected IFragmentProvider.Fallback fragmentProviderFallback = new IFragmentProvider.Fallback() {
+		
+		public override getFragment(EObject obj) {
+			return MitaBaseResource.super.getURIFragment(obj);
+		}
+		
+		public override getEObject(String fragment) {
+			return MitaBaseResource.super.getEObject(fragment);
+		}
+	};
 
 	new() {
 		super();
@@ -69,7 +103,12 @@ class MitaBaseResource extends LazyLinkingResource {
 			model = model.eContainer;
 		}
 
-		val diagnosticsConsumer = new ListBasedDiagnosticConsumer();		
+		val diagnosticsConsumer = new ListBasedDiagnosticConsumer();
+		model.eAllContents
+			.filter(GeneratedObject)
+			.forEach[
+				it.generateMembers()
+			]
 		typeLinker.doActuallyClearReferences(model);
 		typeLinker.linkModel(model, diagnosticsConsumer);
 		typeDependentLinker.linkModel(model, diagnosticsConsumer);
@@ -120,21 +159,26 @@ class MitaBaseResource extends LazyLinkingResource {
 		
 		val exportedObjects = /*thisExportedObjects + */(visibleContainers
 			.flatMap[ it.exportedObjects ].force);
-		val allConstraintSystems = exportedObjects
+		val jsons = exportedObjects
 			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
+			.filter[it.value !== null]
 			.map[it.value]
-			.filterNull
-			.map[GZipper.decompress(it)]
-			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ resource.resourceSet.getEObject(it, true) ]) ]
+			.map[GZipper.decompress(it)].force;
+		if(obj.eResource.URI.lastSegment == "application.mita") {
+			print("")
+		}
+		val allConstraintSystems = jsons
+			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ 
+				return resource.resourceSet.getEObject(it, true);
+//				val resourceOfObj = resource.resourceSet.getResource(it.trimFragment, true);
+//				return fragmentProvider.getEObject(resourceOfObj, it.fragment, fragmentProviderFallback);
+			]) ]
 			.indexed.map[it.value.modifyNames('''.«it.key»''')].force;
 		
 		if(cancelIndicator !== null && cancelIndicator.canceled) {
 			return;
 		}
 		
-		if(obj.eResource.URI.lastSegment == "application.mita") {
-			print("")
-		}
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
 		
 		if(combinedSystem !== null) {

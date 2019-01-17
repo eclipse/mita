@@ -6,12 +6,16 @@ import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.AdditiveOperator
+import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.BinaryExpression
 import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.ConditionalExpression
 import org.eclipse.mita.base.expressions.DoubleLiteral
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.LogicalOperator
@@ -52,6 +56,7 @@ import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -64,7 +69,10 @@ import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
@@ -180,6 +188,118 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, String functionName, Iterable<AbstractType> argTypes) {
 		return new ProdType(null, new AtomicType(null, functionName + "_args"), argTypes);
+	}
+	
+	protected def Pair<AbstractType, AbstractType> computeTypesInArgument(ConstraintSystem system, Argument arg) {
+		val feature = ExpressionsPackage.eINSTANCE.argument_Parameter;
+		val paramName = BaseUtils.getText(arg, feature);
+		val paramType = if(!paramName.nullOrEmpty) {
+			system.resolveReferenceToSingleAndGetType(arg, feature) as AbstractType;
+		}
+		
+		return paramType -> system.computeConstraints(arg.value);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument arg) {
+		val ptype_etype = computeTypesInArgument(system, arg);
+		return system.associate(ptype_etype.key ?: ptype_etype.value, arg);
+	}
+	
+	@FinalFieldsConstructor
+	@Accessors
+	static protected class UnorderedArgsInformation {
+		protected val String nameOfReferencedObject;
+		protected val EObject referencingObject;
+		protected val EObject expressionObject;
+		protected val AbstractType referencedType;
+		protected val AbstractType expressionType; 
+	} 
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
+		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
+		
+		/*
+		 * This function is pretty complicated. It handles both function calls and normal references to for example `f`, i.e.
+		 * - var y = f;
+		 * - var y = f(x);
+		 * - var y = x.f();
+		 * 
+		 * For this we need to look into scope to find all objects that could be referenced by f. 
+		 * If varOrFun is a function call, we want to do polymorphic dispatch, which means we need to create a typeClassConstraint.
+		 * Otherwise we resolve to the *last* candidate, which came into scope last and therefore is the nearest one. 
+		 * 
+		 * For function calls we delegate to computeConstraintsForFunctionCall to be able to reuse logic.
+		 */
+		
+		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
+						
+		// if isFunctionCall --> delegate. 
+		val refType = if(isFunctionCall) {
+			val txt = BaseUtils.getText(varOrFun, featureToResolve) ?: "null";
+			val candidates = system.resolveReferenceToTypes(varOrFun, featureToResolve);	
+			if(candidates.empty) {
+				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
+			}
+			
+			val argumentParamsAndValues = varOrFun.arguments.indexed.map[
+				if(it.key == 0 && varOrFun instanceof FeatureCall) {
+					"self" -> (it.value -> it.value.value)
+				}
+				else {
+					BaseUtils.getText(it.value, ExpressionsPackage.eINSTANCE.argument_Parameter) -> (it.value -> it.value.value)
+				}
+			].force
+			
+			// if size <= 1 then nothing's unordered so we can skip this
+			val argType = if(argumentParamsAndValues.size > 1 && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
+				val List<UnorderedArgsInformation> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
+					val arg = it.value.key;
+					val aValue = it.value.value;
+					val exprType = system.computeConstraints(aValue) as AbstractType;
+					val paramType = system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;
+					if(paramType instanceof TypeVariableProxy) {
+						paramType.ambiguityResolutionStrategy = AmbiguityResolutionStrategy.MakeNew;
+					}
+					system.associate(paramType, arg);
+					new UnorderedArgsInformation(it.key, arg, aValue, paramType, exprType);
+				].force
+				argumentParamTypesAndValueTypes.forEach[
+					system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
+				]
+				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
+					val tv = system.newTypeHole(varOrFun) as AbstractType;
+					(#[new UnorderedArgsInformation("self", null, null, tv, tv)] + argumentParamTypesAndValueTypes).force;
+				}
+				else {
+					argumentParamTypesAndValueTypes
+				}
+				new UnorderedArguments(null, new AtomicType(null, txt + "_args"), withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
+			} else {
+				val argTypes = varOrFun.arguments.map[system.computeConstraints(it) as AbstractType];
+				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {
+					#[system.newTypeHole(varOrFun) as AbstractType] + argTypes;
+				}
+				else {
+					argTypes;
+				}
+				system.computeArgumentConstraintsWithTypes(txt, args.force);
+			}
+			
+			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argType, candidates);
+		}
+		// otherwise use the last candidate in scope. We can check here for ambiguity, otherwise this is just the "closest" candidate.
+		else {
+			val ref = system.resolveReferenceToSingleAndGetType(varOrFun, featureToResolve);
+			val refval = varOrFun.eGet(featureToResolve, false);
+			if(refval === null && refval instanceof EObject && (refval as EObject).eIsProxy && !(ref instanceof TypeVariableProxy)) {
+				varOrFun.eSet(featureToResolve, ref.origin);
+			}
+			ref;
+		}
+		
+		// refType is the type of the referenced thing (or the function application)
+		// assert f/f(x): refType
+		return system.associate(refType, varOrFun);		
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<TypeVariable> candidates) {

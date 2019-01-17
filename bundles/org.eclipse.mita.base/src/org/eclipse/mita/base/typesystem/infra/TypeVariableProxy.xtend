@@ -29,6 +29,9 @@ class TypeVariableProxy extends TypeVariable {
 	new(EObject origin, String name, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy) {
 		this(origin, name, reference, targetQID);
 		this.ambiguityResolutionStrategy = ambiguityResolutionStrategy;
+		if(origin === null) {
+			print("")
+		}
 	}
 	
 	new(EObject origin, String name, EReference reference) {
@@ -45,6 +48,9 @@ class TypeVariableProxy extends TypeVariable {
 		} 
 		
 		val qname = (maybeQname ?: NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim)?.split("\\.");
+		if(qname?.join("").nullOrEmpty) {
+			print("")
+		}
 		return QualifiedName.create(qname);
 	}
 	
