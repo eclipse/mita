@@ -42,9 +42,6 @@ class TypeConstructorType extends AbstractType {
 		this.type = type;
 		this.typeArguments = typeArguments.force;
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
-		if(this.toString == "Ref_2V5()") {
-			print("")
-		}
 	}
 	
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {

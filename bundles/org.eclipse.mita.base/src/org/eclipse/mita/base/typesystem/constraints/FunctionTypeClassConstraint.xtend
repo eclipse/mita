@@ -41,9 +41,6 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		this.returnTypeTV = returnTypeTV;
 		this.returnTypeVariance = returnTypeVariance;
 		this.constraintSystemProvider = csp;
-		if(this.toString.startsWith("read_args(f_84<xint8>) :: read")) {
-			print("");
-		}
 	}
 	
 	new(AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV, Variance returnTypeVariance, ValidationIssue errorMessage) {

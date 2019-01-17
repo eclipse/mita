@@ -74,9 +74,6 @@ class TypeClassProxy extends TypeClass {
 	new(TypeVariableProxy toResolve) {
 		super(Collections.EMPTY_MAP);
 		this.toResolve = toResolve;
-		if(this.toString.contains("p_4")) {
-			print("");
-		}
 	}
 	
 	override replace(Substitution sub) {
