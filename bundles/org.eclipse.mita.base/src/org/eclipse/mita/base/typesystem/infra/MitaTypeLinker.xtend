@@ -53,9 +53,8 @@ class MitaTypeLinker extends Linker {
 	}
 	
 	public def doActuallyClearReferences(EObject obj) {
-		val iter = getAllLinkableContents(obj);
-		while (iter.hasNext()) {
-			super.clearReferences(iter.next());			
+		for(o: obj.eAllContents.toIterable) {
+			super.clearReferences(o);
 		}
 	}
 	

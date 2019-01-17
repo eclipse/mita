@@ -28,6 +28,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 @Accessors
 class ConstraintSystem {
@@ -350,10 +351,15 @@ class ConstraintSystem {
 			scopeProvider.getScope(tvp.origin, tvp.reference);
 			return #[new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
 		}
-		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && !tvp.origin.eIsSet(tvp.reference) && replacementObjects.size == 1) {
-			BaseUtils.ignoreChange(tvp.origin.eResource, [ 
-				tvp.origin.eSet(tvp.reference, replacementObjects.head);
-			]);
+		
+		
+		if(tvp.origin.eClass.EReferences.contains(tvp.reference)) {			
+			val currentEntry = tvp.origin.eGet(tvp.reference, false).castOrNull(EObject);
+		 	if((currentEntry === null || currentEntry.eIsProxy) && replacementObjects.size == 1) {
+				BaseUtils.ignoreChange(tvp.origin.eResource, [ 
+					tvp.origin.eSet(tvp.reference, replacementObjects.head);
+				]);
+			}
 		}
 		
 		return replacementObjects.map[

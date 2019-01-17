@@ -19,6 +19,14 @@ class BaseUtils {
 	def static getText(EObject obj, EStructuralFeature feature) {
 		return NodeModelUtils.findNodesForFeature(obj, feature)?.head?.text?.trim;
 	}
+	
+	def static <T> T castOrNull(Object o, Class<T> clazz) {
+		if(clazz.isInstance(o)) {
+			return clazz.cast(o);
+		}
+		return null;
+	}
+	
 	def static <X, Y> Iterator<Pair<X, Y>> zip(Iterator<X> xs, Iterator<Y> ys) {
 		new Iterator<Pair<X, Y>>() {
 			override hasNext() {

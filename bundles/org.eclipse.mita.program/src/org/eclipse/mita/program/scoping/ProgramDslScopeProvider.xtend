@@ -468,12 +468,14 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					val owner = context.arguments.head.value;
 
 					val s2 = (if (owner instanceof ElementReferenceExpression) {
-						if (owner.reference instanceof AbstractSystemResource ||
-							owner.reference instanceof SystemResourceSetup) {
+						val refOrProxy = owner.eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false) as EObject;
+						if (refOrProxy !== null && !refOrProxy.eIsProxy && (
+								refOrProxy instanceof AbstractSystemResource ||
+								refOrProxy instanceof SystemResourceSetup)) {
 							/* Special case: the type inferrer delivers a valid type for system resources and their setup.
 							 * 				 However, we musn't use that type to provide the scope but rather the direct rules (addFeatureScope).
 							 */
-							addFeatureScope(owner.reference, superScope);
+							addFeatureScope(refOrProxy, superScope);
 						}
 					}) ?: superScope;
 					
