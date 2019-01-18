@@ -163,7 +163,7 @@ class BaseUtils {
 	}
 	
 	def static EObject computeOrigin(EObject obj) {
-		val adapter = obj.eAdapters.filter(CopySourceAdapter).head;
+		val adapter = obj?.eAdapters?.filter(CopySourceAdapter)?.head;
 		return if(adapter === null) {
 			obj;
 		} else {

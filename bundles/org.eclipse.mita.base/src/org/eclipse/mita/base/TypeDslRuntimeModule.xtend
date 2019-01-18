@@ -17,11 +17,13 @@
 package org.eclipse.mita.base
 
 import com.google.inject.Binder
+import com.google.inject.name.Names
 import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaContainerManager
+import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
@@ -31,9 +33,9 @@ import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.xtext.conversion.IValueConverterService
+import org.eclipse.xtext.linking.lazy.LazyURIEncoder
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
-import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 
 class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 
@@ -65,7 +67,10 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 	}
 	
 	override bindIAllContainersState$Provider() {
-		return MitaResourceSetBasedAllContainersState$Provider;
+		return MitaResourceSetBasedAllContainersState.Provider;
 	}
 	
+	override configureUseIndexFragmentsForLazyLinking(Binder binder) {
+		binder.bind(boolean).annotatedWith(Names.named(LazyURIEncoder.USE_INDEXED_FRAGMENTS_BINDING)).toInstance(false);
+	}
 }

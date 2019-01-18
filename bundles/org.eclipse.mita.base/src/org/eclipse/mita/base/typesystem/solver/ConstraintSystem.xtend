@@ -346,7 +346,7 @@ class ConstraintSystem {
 			return cachedTypes.map[typ | typ.replaceProxies(this, [ this.resolveProxy(it, resource, scopeProvider) ])];
 		}
 		
-		val replacementObjects = scopeElements.map[EObjectOrProxy].force;
+		val replacementObjects = scopeElements.map[EObjectOrProxy].force.toSet;
 		if(replacementObjects.empty) { 
 			scopeProvider.getScope(tvp.origin, tvp.reference);
 			return #[new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];

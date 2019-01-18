@@ -18,13 +18,14 @@ import com.google.inject.Inject
 import java.util.function.Predicate
 import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
@@ -40,21 +41,32 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
+import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.SignalParameter
+import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.resource.IContainer
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 
 class ModelUtils {
 
 	@Inject protected IPackageResourceMapper packageResourceMapper;
+
+		@Inject
+	protected IContainer.Manager containerManager;
+	
+	@Inject
+	protected ResourceDescriptionsProvider resourceDescriptionsProvider;
+	
 
 	/**
 	 * Retrieves the variable declaration this nested expression is referencing.
@@ -112,22 +124,23 @@ class ModelUtils {
 	 * Retrieves the platform a program was written against.
 	 * 
 	 */
-	def getPlatform(Program program) {
-		val programResource = program.eResource;
-		val resourceSet = programResource.resourceSet;
+	def getPlatform(ResourceSet resourceSet, Program program) {
+		val resourceDescriptions = resourceDescriptionsProvider.get(resourceSet);
+		val thisResourceDescription = resourceDescriptions.getResourceDescription(program.eResource.URI);
+		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		
-		val libraries = program.imports
+		val platforms = visibleContainers
+			.flatMap[ it.exportedObjects ]
+			.filter[it.EClass == PlatformPackage.eINSTANCE.systemSpecification]
+			.map[it.EObjectOrProxy]
+			.filter(SystemSpecification);
+		
+		val importStrings = program.imports
 			.map[ it.importedNamespace ]
-			.flatMap[ packageResourceMapper.getResourceURIs(resourceSet, QualifiedName.create(it.split("\\."))) ];
-		val platformResourceUris = libraries.filter[r | r.fileExtension == 'platform'];
-
-		val platforms = platformResourceUris
-			.flatMap[uri| resourceSet.getResource(uri, true).allContents.toIterable ]
-			.filter(Platform);
-		if (platforms.length > 1) {
-			// TODO: handle this error properly
-		}
-		return platforms.head;
+		
+		val platformSpecification = platforms.filter[importStrings.contains(it.name)].head
+		
+		return platformSpecification?.eContents?.filter(Platform)?.head
 	}
 	
 	static def boolean containsAbstractType(InferenceResult ir) {

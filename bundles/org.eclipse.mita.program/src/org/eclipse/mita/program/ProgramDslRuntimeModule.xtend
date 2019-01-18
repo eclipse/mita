@@ -63,6 +63,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
+import org.eclipse.xtext.linking.lazy.LazyURIEncoder
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -133,6 +134,10 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 	
 	override bindIAllContainersState$Provider() {
 		return MitaResourceSetBasedAllContainersState.Provider;
+	}
+	
+	override configureUseIndexFragmentsForLazyLinking(Binder binder) {
+		binder.bind(boolean).annotatedWith(Names.named(LazyURIEncoder.USE_INDEXED_FRAGMENTS_BINDING)).toInstance(false);
 	}
 
 }

@@ -174,7 +174,7 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedBottomType obj) {
-		return new BottomType(obj.origin.resolveEObject(), obj.name, obj.message);
+		return new BottomType(obj.origin.resolveEObject(), obj.message);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFloatingType obj) {

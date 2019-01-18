@@ -21,6 +21,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 /**
  * Interface for type generators.
@@ -58,7 +59,10 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 * Checks if this type supports a particular expression within its type hierarchy
 	 */
 	def boolean checkExpressionSupport(AbstractType type, AssignmentOperator operator, AbstractType otherType) {
-		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(null, type.origin, otherType, type);
+		val obj = type.origin ?: otherType.origin;
+		val resource = obj.eResource;
+		val cs = if(resource instanceof MitaBaseResource) resource.latestSolution.constraints;
+		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(cs, type.origin, otherType, type);
 	}
 	
 	/**

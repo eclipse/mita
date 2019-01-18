@@ -38,6 +38,7 @@ import org.eclipse.mita.platform.infra.PlatformLinker
 import org.eclipse.mita.platform.scoping.PlatformDslImportScopeProvider
 import org.eclipse.mita.platform.scoping.PlatformDslResourceDescriptionStrategy
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
+import org.eclipse.xtext.linking.lazy.LazyURIEncoder
 import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
@@ -89,5 +90,9 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 	override bindIAllContainersState$Provider() {
 		return MitaResourceSetBasedAllContainersState.Provider;
 	}
-
+	
+	override configureUseIndexFragmentsForLazyLinking(Binder binder) {
+		binder.bind(boolean).annotatedWith(Names.named(LazyURIEncoder.USE_INDEXED_FRAGMENTS_BINDING)).toInstance(false);
+	}
+	
 }

@@ -227,13 +227,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Check(CheckType.NORMAL)
 	def checkProgram_platformValidator(Program program) {
-		val platform = modelUtils.getPlatform(program);
+		val platform = null;//modelUtils.getPlatform(program);
 		if (platform === null) {
 			//TODO: 
 //			error(String.format(NO_PLATFORM_SELECTED_MSG, LibraryExtensions.descriptors.filter[optional].map[id].join(", ")), program, ProgramPackage.eINSTANCE.program_EventHandlers,
 //				NO_PLATFORM_SELECTED_CODE);
 		} else {
-			runLibraryValidator(program, platform, platform.eResource, platform.validator);
+			//runLibraryValidator(program, platform, platform.eResource, platform.validator);
 		}
 	}
 	

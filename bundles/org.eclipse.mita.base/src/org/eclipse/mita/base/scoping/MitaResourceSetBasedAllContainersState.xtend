@@ -11,8 +11,11 @@ import org.eclipse.xtext.resource.containers.ResourceSetBasedAllContainersStateP
 class MitaResourceSetBasedAllContainersState extends FlatResourceSetBasedAllContainersState {
 	
 	static class Provider extends ResourceSetBasedAllContainersStateProvider {
+		@Inject
+		protected ILibraryProvider libraryProvider;
+		
 		override protected handleAdapterNotFound(ResourceSet resourceSet) {
-		 	new MitaResourceSetBasedAllContainersState(resourceSet);
+		 	new MitaResourceSetBasedAllContainersState(libraryProvider, resourceSet);
 		}
  	}
 	
@@ -22,8 +25,9 @@ class MitaResourceSetBasedAllContainersState extends FlatResourceSetBasedAllCont
 	protected Set<URI> stdlibUris;
 	protected Set<URI> dependencyUris;
 	
-	new(ResourceSet rs) {
+	new(ILibraryProvider libraryProvider, ResourceSet rs) {
 		super(rs)
+		this.libraryProvider = libraryProvider;
 	}
 	
 	override getVisibleContainerHandles(String handle) {

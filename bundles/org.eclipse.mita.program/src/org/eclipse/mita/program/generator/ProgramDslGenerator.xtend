@@ -34,6 +34,8 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.Platform
+import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.internal.EntryPointGenerator
@@ -51,10 +53,13 @@ import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
+import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
+import org.eclipse.xtext.resource.IContainer.Manager
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+
 /**
  * Generates code from your model files on save.
  * 
@@ -138,7 +143,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	}
 	
 	override doGenerate(ResourceSet input, IFileSystemAccess2 fsa, Function1<Resource, Boolean> includeInBuildPredicate) {
-		if(true) {
+		if(false) {
 			return;
 		}
 		val resourcesToCompile = input
@@ -151,7 +156,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		}
 		
 		// Include libraries such as the stdlib in the compilation context
-		val libs = libraryProvider.libraries;
+		val libs = libraryProvider.standardLibraries;
 		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
 		val stdlib = stdlibUri.map[input.getResource(it, false)].filterNull.map[it.contents.filter(Program).head].force;
 	
@@ -170,7 +175,8 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 //			.toList();
 		
 		val someProgram = compilationUnits.head;
-		val platform = modelUtils.getPlatform(someProgram);
+		
+		val platform = modelUtils.getPlatform(input, someProgram);
 		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
 		
 		val context = compilationContextProvider.get(compilationUnits, stdlib);

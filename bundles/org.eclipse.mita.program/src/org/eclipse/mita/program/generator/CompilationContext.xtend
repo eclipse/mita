@@ -69,7 +69,7 @@ class CompilationContext {
 		systemResourceSetups = compilationUnits.map[it.setup].flatten.toSet();
 		
 		eventHandler = compilationUnits.map[x|x.eventHandlers].flatten.toList();
-		platform = modelUtils.getPlatform(compilationUnits.head);
+		platform = modelUtils.getPlatform(units.head.eResource.resourceSet, compilationUnits.head);
 	}
 	
 	private def assertInited() {

@@ -165,8 +165,7 @@ class Graph<T> implements Cloneable {
 			
 			// filter the new node in case the MGU is already in the graph. Then we would change edges to all point to the MGU and remove it afterwards, leaving a broken graph.
 			cycleNodes.filter[it.key != replacementNodeIdx].forEach[_g.removeNode(it.key)];
-			
-			println(g.toGraphviz);		
+					
 			mbCycle = g.getCycle;
 		} 
 		return g;
