@@ -11,7 +11,6 @@ import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
@@ -30,7 +29,6 @@ import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
@@ -40,6 +38,7 @@ import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
@@ -49,6 +48,7 @@ import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsOtherCase
 import org.eclipse.mita.program.IsTypeMatchCase
+import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
@@ -56,6 +56,8 @@ import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.ReferenceExpression
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.SignalInstanceReadAccess
+import org.eclipse.mita.program.SignalInstanceWriteAccess
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
@@ -71,6 +73,51 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		println('''Computing constraints «program.eResource.URI.lastSegment» (rss «program.eResource.resourceSet.hashCode»)''');
 		system.computeConstraintsForChildren(program);
 		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ModalityAccess access) {
+		//modalityAccess: accelerometer.x_axis.read(): int32
+		//modalityTypeVar ~ typeof(x_axis) = SystemResource -> Modality<int32>
+		//systemResourceTypeVar ~ SystemResource (don't care about resource, so just put in a placeholder)
+		//resultInModality ~ Modality<T ~ int32>
+		//result ~ T 
+		val modalityTypeVar = system.resolveReferenceToSingleAndGetType(access, ProgramPackage.eINSTANCE.modalityAccess_Modality);
+		val systemResourceTypeVar = system.newTypeVariable(null);
+		val result = system.newTypeVariable(access);
+		val modalityTypeScheme = typeRegistry.getTypeModelObjectProxy(system, access, StdlibTypeRegistry.modalityTypeQID);
+		val resultInModality = system.nestInType(access, result, modalityTypeScheme, "modality");
+		val supposedModalityType = new FunctionType(null, new AtomicType(null, "modalityAccess"), systemResourceTypeVar, resultInModality);
+		system.addConstraint(new EqualityConstraint(modalityTypeVar, supposedModalityType, new ValidationIssue("%s needs to be of type '%s'", access)));
+		return result;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ExceptionBaseVariableDeclaration exception) {
+		system.associate(new AtomicType(exception, "Exception"));
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SignalInstanceReadAccess readAccess) {
+		val sigInstTypeVar = system.resolveReferenceToSingleAndGetType(readAccess, ProgramPackage.eINSTANCE.signalInstanceReadAccess_Vci);
+		val systemResourceTypeVar = system.newTypeVariable(null);
+		val result = system.newTypeVariable(readAccess);
+		val sigInstTypeScheme = typeRegistry.getTypeModelObjectProxy(system, readAccess, StdlibTypeRegistry.sigInstTypeQID);
+		val resultInSigInst = system.nestInType(readAccess, result, sigInstTypeScheme, "siginst");
+		val supposedModalityType = new FunctionType(null, new AtomicType(null, "sigInstReadAccess"), systemResourceTypeVar, resultInSigInst);
+		system.addConstraint(new EqualityConstraint(sigInstTypeVar, supposedModalityType, new ValidationIssue("%s needs to be of type '%s'", readAccess)));
+		return result;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SignalInstanceWriteAccess writeAccess) {
+		//mqtt.x.write("foo");
+		//x: SystemResource -> SignalInstance<T>
+		val sigInstTypeVar = system.resolveReferenceToSingleAndGetType(writeAccess, ProgramPackage.eINSTANCE.signalInstanceWriteAccess_Vci);
+		val systemResourceTypeVar = system.newTypeVariable(null);
+		val argumentType = system.newTypeVariable(null);
+		val sigInstTypeScheme = typeRegistry.getTypeModelObjectProxy(system, writeAccess, StdlibTypeRegistry.sigInstTypeQID);
+		val resultInSigInst = system.nestInType(writeAccess, argumentType, sigInstTypeScheme, "siginst");
+		val supposedSigInstType = new FunctionType(null, new AtomicType(null, "sigInstWriteAccess"), systemResourceTypeVar, resultInSigInst);
+		system.addConstraint(new EqualityConstraint(sigInstTypeVar, supposedSigInstType, new ValidationIssue("%s needs to be of type '%s'", writeAccess)));
+		system.addConstraint(new SubtypeConstraint(system.computeConstraints(writeAccess.value), argumentType, new ValidationIssue("%s must be subtype of %s", writeAccess)))
+		return system.associate(typeRegistry.getTypeModelObjectProxy(system, writeAccess, StdlibTypeRegistry.voidTypeQID), writeAccess);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {

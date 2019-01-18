@@ -2,6 +2,11 @@ package org.eclipse.mita.base.typesystem.infra
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
+import java.io.IOException
+import java.io.InputStream
+import java.util.Map
+import org.eclipse.emf.common.util.BasicEList
+import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
@@ -10,11 +15,13 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.diagnostics.Severity
@@ -31,11 +38,6 @@ import org.eclipse.xtext.validation.EObjectDiagnosticImpl
 import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.util.BaseUtils
-import java.io.InputStream
-import java.util.Map
-import java.io.IOException
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -95,6 +97,12 @@ class MitaBaseResource extends LazyLinkingResource {
 
 	new() {
 		super();
+		if(this.errors === null) {
+			this.errors = new BasicEList();
+		}
+		if(this.warnings === null) {
+			this.warnings = new BasicEList();
+		}
 		mkCancelIndicator();
 	}
 	
@@ -131,7 +139,7 @@ class MitaBaseResource extends LazyLinkingResource {
 	}
 	
 	
-	protected def resolveProxy(Resource resource, EObject obj) {
+	public static def resolveProxy(Resource resource, EObject obj) {
 		(if(obj !== null && obj.eIsProxy) {
 			if(obj instanceof EObjectImpl) {
 				val uri = obj.eProxyURI;
@@ -140,7 +148,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		}) ?: obj;
 	}
 	
-	def collectAndSolveTypes(EObject obj) {
+	public def collectAndSolveTypes(EObject obj) {
 		// top level element - gather constraints and solve
 		val resource = obj.eResource;
 		val errors = if(resource instanceof ResourceImpl) {

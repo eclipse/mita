@@ -108,6 +108,7 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class StatementGenerator {
 
@@ -438,7 +439,7 @@ class StatementGenerator {
 		 * explicitly encode this case anddevolve code generation the registered code generator of the generated-type. 
 		 */
 		val type = BaseUtils.getType(stmt);
-		val origin = type.origin;
+		val origin = MitaBaseResource.resolveProxy(stmt.eResource, type.origin);
 		if (origin instanceof GeneratedType) {
 			val generator = registry.getGenerator(origin);
 			if (generator !== null && generator.checkExpressionSupport(type, null, null)) {

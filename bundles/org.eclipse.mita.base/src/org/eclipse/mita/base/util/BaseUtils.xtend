@@ -17,7 +17,7 @@ import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class BaseUtils {
 	def static getText(EObject obj, EStructuralFeature feature) {
-		return NodeModelUtils.findNodesForFeature(obj, feature)?.head?.text?.trim;
+		return NodeModelUtils.findNodesForFeature(obj.computeOrigin, feature)?.head?.text?.trim;
 	}
 	
 	def static <T> T castOrNull(Object o, Class<T> clazz) {
@@ -159,7 +159,7 @@ class BaseUtils {
 	}
 	
 	def static AbstractType getType(EObject obj) {
-		return TypeAdapter.get(obj.computeOrigin);
+		return TypeAdapter.get(obj);
 	}
 	
 	def static EObject computeOrigin(EObject obj) {

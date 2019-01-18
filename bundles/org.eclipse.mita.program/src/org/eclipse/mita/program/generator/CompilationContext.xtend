@@ -19,7 +19,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Platform
@@ -134,11 +134,11 @@ class CompilationContext {
 	def getAllGeneratedTypesUsed() {
 		assertInited();
 		return (units + stdlib).flatMap[program |
-			(program.eAllContents.filter(TypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
-				BaseUtils.getType(it)
+			(program.eAllContents.filter(PresentTypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
+				it -> BaseUtils.getType(it)
 			].filter[
-				it.freeVars.empty && it.origin instanceof GeneratedType
-			].toIterable
+				it.value.freeVars.empty && it.value.origin instanceof GeneratedType
+			].map[it.value].toIterable
 		].groupBy[it.toString].entrySet.map[it.value.head];
 	}
 	

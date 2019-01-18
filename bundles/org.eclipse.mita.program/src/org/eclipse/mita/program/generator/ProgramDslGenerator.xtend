@@ -59,6 +59,8 @@ import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 /**
  * Generates code from your model files on save.
@@ -171,10 +173,16 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val compilationUnits = (resourcesToCompile)
 			.map[x | x.contents.filter(Program).head ]
 			.filterNull
-//			.map[x | transformer.get.transform(x.copy) ]
-//			.toList();
+			.map[x | 
+				val copy = x.copy;
+				BaseUtils.ignoreChange(copy, [transformer.get.transform(copy)]);
+				return copy;
+			]
+			.toList();
 		
 		val someProgram = compilationUnits.head;
+		
+		doType(someProgram);
 		
 		val platform = modelUtils.getPlatform(input, someProgram);
 		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
@@ -219,6 +227,13 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val codefragment = makefileGenerator?.generateMakefile(compilationUnits, files)
 		if(codefragment !== null && codefragment != CodeFragment.EMPTY)
 			fsa.produceFile('Makefile', someProgram, codefragment);
+	}
+		
+	def doType(Program program) {
+		val resource = program.eResource;
+		if(resource instanceof MitaBaseResource) {
+			resource.collectAndSolveTypes(program);
+		}
 	}
 		
 	def Iterable<String> getUserFiles(ResourceSet set) {
