@@ -150,7 +150,7 @@ class StringGenerator extends AbstractTypeGenerator {
 			} else if(operator == AssignmentOperator.ADD_ASSIGN) {
 				codeFragmentProvider.create('''
 				«prelude_rightCode.key»
-				strcat(«left.code.noTerminator», «right.code.noTerminator»);
+				strcat(«leftCode», «prelude_rightCode.value»);
 				''')
 				.addHeader('string.h', true);
 			} else {
