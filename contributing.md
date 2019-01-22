@@ -11,13 +11,13 @@ There are two ways you can extend Mita:
 
 ## Set up your Developer Workspace
 1. Download the <a href="https://wiki.eclipse.org/Eclipse_Oomph_Installer" target="_blank">Eclipse Installer</a> and start it
-3. On the first page, expand the menu on the upper right corner and select *Advanced Mode*
-4. On the *Product* page, select *Eclipse IDE for Eclipse Comitters* and click *Next*
-5. Add the Mita repository via the green "+" symbol. As catalog select *Github Projects* and as *Resource URIs* paste the following link: https://raw.githubusercontent.com/eclipse/mita/master/mita.setup
-6. Select the new *Mita* project, which will appear in *Github Projects* -> *User* -> *Mita* and continue by clicking *Next*.
-7. Choose a target folder for the installation by setting a *Root install folder* and an *Installation folder name* and click *Next*.
-8. The setup is done. Click on *Finish* and the installation will be executed.
-9. After this, a new Eclipse will be started. With the initial execution some *Setup Tasks* need to be executed. You can see the progress by clicking on the double arrow symbol on the bottom right. After finishing the *Setup Tasks* your environment is ready to use and should contain no errors.
+2. On the first page, expand the menu on the upper right corner and select *Advanced Mode*
+3. On the *Product* page, select *Eclipse IDE for Eclipse Comitters* and click *Next*
+4. Add the Mita repository via the green "+" symbol. As catalog select *Github Projects* and as *Resource URIs* paste the following link: https://raw.githubusercontent.com/eclipse/mita/master/mita.setup
+5. Select the new *Mita* project, which will appear in *Github Projects* -> *User* -> *Mita* and continue by clicking *Next*.
+6. Choose a target folder for the installation by setting a *Root install folder* and an *Installation folder name* and click *Next*.
+7. The setup is done. Click on *Finish* and the installation will be executed.
+8. After this, a new Eclipse will be started. With the initial execution some *Setup Tasks* need to be executed. You can see the progress by clicking on the double arrow symbol on the bottom right. After finishing the *Setup Tasks* your environment is ready to use and should contain no errors.
 
 ## Write and Run Tests
 Fixing a bug or introducing a new feature usually comes with writing a unit test to ensure that the new functionality will be still working in future. There are currently two test suites, one for testing code generators, and one for language specific tests:
