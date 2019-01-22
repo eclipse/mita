@@ -836,14 +836,14 @@ class StatementGenerator {
 	}
 	
 	def IGeneratorNode structureTypeCode(StructureType definition) {
-		return structureTypeCodeDecl(definition, definition.parameters, definition.baseName);
+		return structureTypeCodeDecl(definition, definition.parameters, definition.structName);
 	}
 	
-	def IGeneratorNode structureTypeCodeDecl(EObject obj, List<Parameter> parameters, String typeName) {
+	def IGeneratorNode structureTypeCodeDecl(EObject obj, List<Parameter> parameters, CodeFragment typeName) {
 		return structureTypeCodeReal(obj, parameters.map[new Pair(it.inferType.ctype, it.baseName)], typeName);
 	
 	}
-	@Traced def IGeneratorNode structureTypeCodeReal(EObject obj, List<Pair<CodeFragment, String>> typesAndNames, String typeName) {
+	@Traced def IGeneratorNode structureTypeCodeReal(EObject obj, List<Pair<CodeFragment, String>> typesAndNames, CodeFragment typeName) {
 		'''
 		typedef struct {
 			«FOR field : typesAndNames»

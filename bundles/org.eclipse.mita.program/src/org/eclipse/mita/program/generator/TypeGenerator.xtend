@@ -23,6 +23,7 @@ import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
@@ -68,6 +69,9 @@ class TypeGenerator implements IGenerator {
 	}
 	protected dispatch def CodeFragment code(NamedProductType productType, TypeSpecifier typeSpec) {
 		return codeFragmentProvider.create('''«productType.structType»''');
+	}
+	protected dispatch def CodeFragment code(SumType sumType, TypeSpecifier typeSpec) {
+		return codeFragmentProvider.create('''«sumType.structType»''');
 	}
 	
 	protected dispatch def CodeFragment code(ExceptionTypeDeclaration exception, TypeSpecifier typeSpec) {

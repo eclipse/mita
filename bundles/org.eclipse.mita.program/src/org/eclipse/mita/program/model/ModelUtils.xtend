@@ -55,6 +55,7 @@ import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.types.PackageAssociation
 
 class ModelUtils {
 
@@ -163,6 +164,10 @@ class ModelUtils {
 			// TODO: handle this error properly
 		}
 		return platforms.head;
+	}
+	
+	static def getPackageAssociation(EObject obj) {
+		return EcoreUtil2.getContainerOfType(obj, PackageAssociation);
 	}
 	
 	static def boolean containsAbstractType(InferenceResult ir) {
