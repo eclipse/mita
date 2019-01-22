@@ -15,7 +15,8 @@ To get an impression of how Mita looks like, check out a [short quick demo](http
 Please take a look at the Mita documentation which provides examples, a getting started guide and a language reference.
 
 ## Developer Resources
-* [Contributing](contributing.md): report bugs, setup your workspace, submit your changes, etc.
+* [Contributing](contributing.md): Learn how to report bugs, setup your workspace and submit your changes.
+* [Quality Guidelines](quality_guidelines.md): Learn how to write good commits and pull requests. 
 
 ## Get in Touch
 Come and find us in our [Mattermost channel at eclipse.org](https://mattermost.eclipse.org/eclipse/channels/mita) or
