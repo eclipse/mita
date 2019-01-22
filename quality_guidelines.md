@@ -32,7 +32,7 @@ As a summary, you should keep the following rules in mind:
 Here are some basic guidelines for writing readable, understandable code:
 1. Split your code semantically into classes and methods according to the [Single Responsibility Principle](https://en.wikipedia.org/wiki/Single_responsibility_principle).
 2. Give your classes, methods and variables meaningful names.
-3. Use comments only if you need to explain something that is not clear from your code. Before you put comments, think about rewriting your code to make it better understandable.
+3. Use comments only if you need to explain something that is not clear from your code. Before you write comments think about rewriting your code to make it better understandable.
 4. Use the standard Eclipse formatter (Ctrl+F) before committing.
 5. Remove warnings from your code (unused variables, imports etc.) before committing.
 6. Prefer using [Xtend](https://www.eclipse.org/xtend/) over Java. In most cases it is more concise and improves readability.
