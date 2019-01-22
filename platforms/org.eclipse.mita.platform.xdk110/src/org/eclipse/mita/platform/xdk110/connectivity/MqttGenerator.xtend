@@ -229,7 +229,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			{
 				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT_Enable : SNTP server time was not synchronized. Retrying...")»
 			}
-		}while (0UL == sntpTimeStampFromServer);
+		} while (0UL == sntpTimeStampFromServer);
 
 		struct tm time;
 		char timezoneISO8601format[40];
