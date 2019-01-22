@@ -103,7 +103,7 @@ class GeneratorUtils {
 	}
 	
 	public def String getUniqueIdentifier(EObject obj) {
-		return obj.uniqueIdentifierInternal + "_" + obj.occurrence.toString;
+		return obj.uniqueIdentifierInternal.replace(".", "_") + "_" + obj.occurrence.toString;
 	} 
 	
 	private def dispatch String getUniqueIdentifierInternal(Program p) {
