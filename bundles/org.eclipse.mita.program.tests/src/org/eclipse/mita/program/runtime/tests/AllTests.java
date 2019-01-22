@@ -18,7 +18,8 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @SuiteClasses({ 
-	HelloWorldTest.class
+	HelloWorldTest.class,
+	StringTest.class
 })
 @RunWith(Suite.class)
 public class AllTests {
