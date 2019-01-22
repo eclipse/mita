@@ -83,7 +83,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		 * means, be careful when you change this value. More information can be found here:
 		 * http://www.freertos.org/FAQMem.html#StackSize
 		 */
-		#define TASK_STACK_SIZE_EVENT_LOOP   (UINT16_C(700))
+		#define TASK_STACK_SIZE_EVENT_LOOP   (UINT16_C(2000))
 		
 		/**
 		 * The maximum number of events the event queue can hold. The default value should

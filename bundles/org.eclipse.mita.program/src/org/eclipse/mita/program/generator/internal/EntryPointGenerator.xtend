@@ -95,13 +95,6 @@ class EntryPointGenerator {
 				«exceptionType» exception = NO_EXCEPTION;
 				
 				«eventLoopGenerator.generateSetupPreamble(context)»
-
-				«IF context.hasTimeEvents»
-
-				// setup time
-				exception = SetupTime();
-				«"Time".generateLoggingExceptionHandler("setup")»
-				«ENDIF»
 			
 				«IF !allResourcesUsed.empty»
 				// setup resources
@@ -110,6 +103,13 @@ class EntryPointGenerator {
 				«resource.baseName.generateLoggingExceptionHandler("setup")»
 				
 				«ENDFOR»
+
+				«IF context.hasTimeEvents»
+
+				// setup time
+				exception = SetupTime();
+				«"Time".generateLoggingExceptionHandler("setup")»
+				«ENDIF»
 				«ENDIF»
 				return exception;
 			}

@@ -754,6 +754,16 @@ connectivity many MQTT {
 	required configuration-item url : string
 	
 	/**
+	 * A time server to use to get the current time. This is needed to allow certificate validation for MQTTS.
+	 */
+	configuration-item sntpServer: string = "pool.ntp.org:123"
+	
+	/**
+	 * The path to the server's public certificate to use for authentication. PEM format. Absolute or relative to the project root.
+	 */
+	configuration-item certificatePath: string
+	
+	/**
 	 * The client identifier (here: clientID) is a identifier of each MQTT client
      * connecting to a MQTT broker. It needs to be unique for the broker to
      * know the state of the client. 
