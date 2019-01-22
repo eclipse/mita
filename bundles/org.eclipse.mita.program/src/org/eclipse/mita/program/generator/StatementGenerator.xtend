@@ -43,6 +43,7 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
+import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.GeneratedType
@@ -102,9 +103,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.mita.base.scoping.MitaTypeSystem
+import org.eclipse.mita.base.types.HasAccessors
 
 class StatementGenerator {
 
@@ -295,6 +294,8 @@ class StatementGenerator {
 				}
 				// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
 				val needCast = EcoreUtil2.getContainerOfType(stmt, ProgramBlock) !== null
+				val hasAccessors = feature.realType instanceof HasAccessors;
+				 
 				'''
 				«IF needCast»(«sumType.structName») «ENDIF»{
 					.tag = «feature.enumName»«IF !(feature instanceof Singleton)», ««« there is no other field for singletons
@@ -303,7 +304,7 @@ class StatementGenerator {
 
 					.data.«altAccessor» = «IF needCast»(«dataType») «ENDIF»{
 						«FOR i_arg: stmt.arguments.indexed»
-						«IF !(feature.realType instanceof PrimitiveType)»«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < stmt.arguments.length - 1»,«ENDIF»
+						«IF hasAccessors»«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < stmt.arguments.length - 1»,«ENDIF»
 						«ENDFOR»
 					}
 					«ELSE»
@@ -808,8 +809,9 @@ class StatementGenerator {
 		val altAccessor = isDeconstructionCaseType.structName;
 		val idx = isDeconstructionCase.deconstructors.indexOf(stmt);
 		val productType = isDeconstructionCase.productType;
-		val member = accessor(productType, stmt.productMember, ".", "").apply(idx);
-		'''«varTypeSpec.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«member»;'''
+		val hasAccessors = isDeconstructionCaseType.realType instanceof HasAccessors;
+		val member = if(hasAccessors) accessor(productType, stmt.productMember, ".", "").apply(idx);
+		'''«varTypeSpec.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«IF hasAccessors»«member»«ENDIF»;'''
 	}
 	
 	@Traced dispatch def IGeneratorNode code(LoopBreakerStatement stmt) {
