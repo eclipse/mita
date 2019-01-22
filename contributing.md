@@ -1,4 +1,4 @@
-# How to contribute
+# How to Contribute
 
 ## Report an Issue
 In case you find a bug or have a feature request, please feel free to file an issue here on GitHub. If the issue already exists, you can also up-vote it. When creating a new issue, you can set labels for easier categorization like `bug`, `enhancement` etc. Priority labels are usually set by the project leads.
