@@ -698,6 +698,21 @@ alt IpConfiguration {
 	}
 }
 
+enum LoRaMessageConfirmation {
+	Confirmed, Unconfirmed
+}
+
+connectivity named-singleton LoRa {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.LoraGenerator"
+    validator "org.eclipse.mita.platform.xdk110.connectivity.LoraValidator"
+
+	required configuration-item loraAppKey: array<uint8>
+	required configuration-item loraAppEui: array<uint8>
+	configuration-item loraDeviceEui: array<uint8>
+	
+	signal port(num: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Confirmed): array<uint8>
+}
+
 /**
  * Specifies the connection to a wireless wide-area network, also refered to as WiFi. 
  */
@@ -980,7 +995,7 @@ bus named-singleton GPIO {
 	signal digitalOut(pin : GPIOPin, initialValue : bool = false) : bool
 }
 
-export exception EndOfFileException
+export exception EndOfFileException;
 
 io named-singleton SDCard {
 	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
@@ -1033,6 +1048,7 @@ platform XDK110 {
 	has MQTT
 	has HonoMqtt
 	has HttpRestClient
+	has LoRa
 	
 	has SDCard
 
