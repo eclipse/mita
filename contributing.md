@@ -35,5 +35,5 @@ In order to create a pull request you need a GitHub account as well as an Eclips
 2. Switch your git remote origin to reference your fork. You can do this directly in Eclipse: In the properties of the git repository just change the value of remote origin url.
 3. Create a branch for the issue you want to work on. The branch name starts with the issue number followed by some descriptive words.
 4. [Sign off](https://git-scm.com/docs/git-commit#git-commit--s) your commits using the same email address you are using for your Eclipse account. Please make sure you have signed the [Eclipse Contributor Agreement](https://www.eclipse.org/legal/ECA.php) in your Eclipse account. Otherwise your pull requests won't pass IP validation and we cannot merge them.
-5. Push the branch into your fork repository.
+5. Push the branch to your forked repository.
 6. Create a pull request here on GitHub by selecting your branch.
