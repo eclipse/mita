@@ -26,3 +26,14 @@ As a summary, you should keep the following rules in mind:
 1. A pull request contains all commits required to implement one issue. Do not mix multiple issues in one pull request.
 2. A pull request usually contains one or more test cases related to the issue.
 3. Make sure your pull request is not too large. If it gets too large, think about splitting it. One way is to separate refactoring code into a first PR and put your actual semantic changes into a second PR.
+
+## Code
+
+Here are some basic guidelines for writing readable, understandable code:
+1. Split your code semantically into classes and methods according to the [Single Responsibility Principle](https://en.wikipedia.org/wiki/Single_responsibility_principle).
+2. Give your classes, methods and variables meaningful names.
+3. Use comments only if you need to explain something that is not clear from your code. Before you put comments, think about rewriting your code to make it better understandable.
+4. Use the standard Eclipse formatter (Ctrl+F) before committing.
+5. Remove warnings from your code (unused variables, imports etc.) before committing.
+6. Prefer using [Xtend](https://www.eclipse.org/xtend/) over Java. In most cases it is more concise and improves readability.
+7. Use [Google Guice](https://github.com/google/guice/wiki/Motivation) for dependency injection instead of instantiating objects manually.
