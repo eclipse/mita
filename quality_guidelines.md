@@ -19,7 +19,7 @@ As a summary, you should keep the following rules in mind:
 2. Squash commits if they belong to the same logical change.
 3. Do not mix formatting of existing code with actual contribution.
 4. Usually, do not commit generated code.
-5. Do not commit user-sepcific settings containing location on you local machine.
+5. Do not commit user specific settings containing locations on you local machine.
 
 ## Pull Requests
 
