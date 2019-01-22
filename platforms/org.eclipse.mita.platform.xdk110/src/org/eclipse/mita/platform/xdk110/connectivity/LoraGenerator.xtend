@@ -239,14 +239,126 @@ class LoraGenerator extends AbstractSystemResourceGenerator {
 		return CodeFragment.EMPTY;
 	}
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String valueVariableName) {
+		val signal = signalInstance.instanceOf;
 		val confirmation = StaticValueInferrer.infer(ModelUtils.getArgumentValue(signalInstance, "confirmation"), []);
 		if(confirmation instanceof Enumerator) {
-			val portNum = ModelUtils.getArgumentValue(signalInstance, "num");
+			val portNum = ModelUtils.getArgumentValue(signalInstance, "portNum");
 			val sendName = "LoRa_Send" + confirmation.name;
-			
-			return codeFragmentProvider.create('''
-				return «sendName»(«portNum.code», «valueVariableName»->data, «valueVariableName»->length);
-			''')			
+			if(signal.name == "raw") {
+				return codeFragmentProvider.create('''
+					return «sendName»(«portNum.code», «valueVariableName»->data, «valueVariableName»->length);
+				''')
+			}
+			else {
+				/*
+				 * #define TEMPERATURE_DATA_CH      0x01
+				 * #define HUMIDITY_DATA_CH         0x02
+				 * #define PRESSURE_DATA_CH         0x03
+				 * #define ILLUMINANCE_DATA_CH      0x04
+				 */
+				/*
+				 * #define DIGITAL_INPUT_SINGLE_PAYLOAD_SIZE           3U
+				 * #define DIGITAL_OUTPUT_SINGLE_PAYLOAD_SIZE          3U
+				 * #define ANALOG_INPUT_SINGLE_PAYLOAD_SIZE            4U
+				 * #define ANALOG_OUTPUT_SINGLE_PAYLOAD_SIZE           4U
+				 * #define ILLUMINANCE_SENSOR_SINGLE_PAYLOAD_SIZE      4U
+				 * #define PRESENCE_SENSOR_SINGLE_PAYLOAD_SIZE         3U
+				 * #define TEMPERATURE_SENSOR_SINGLE_PAYLOAD_SIZE      4U
+				 * #define HUMIDITY_SENSOR_SINGLE_PAYLOAD_SIZE         3U
+				 * #define ACCELEROMETER_SINGLE_PAYLOAD_SIZE           8U
+				 * #define BAROMETER_SINGLE_PAYLOAD_SIZE               4U
+				 * #define GYROMETER_SINGLE_PAYLOAD_SIZE               8U
+				 * #define GPS_LOCATION_SINGLE_PAYLOAD_SIZE            11U
+				 */
+				return codeFragmentProvider.create('''
+					Retcode_T exception = NO_EXCEPTION;
+					CayenneLPPSerializer_Input_T cayenneLPPSerializerInput;
+					CayenneLPPSerializer_Output_T cayenneLPPSerializerOutput;
+					size_t bufferEntries = «valueVariableName»->length;
+					size_t bufferSize = 0;
+					for(size_t i = 0; i < bufferEntries; i++) {
+						bufferSize += payloadSizes[«valueVariableName»->data[i].tag];
+					}
+					uint8_t dataBuffer[bufferSize];
+					
+					cayenneLPPSerializerOutput.BufferPointer = dataBuffer;
+					for(size_t i = 0; i < bufferEntries; i++) {
+						 cayenneLPPSerializerInput.DataType = cayenneDataTypes[«valueVariableName»->data[i].tag];
+						 cayenneLPPSerializerInput.DataChannel = «valueVariableName»->data[i].tag; // todo actually use some kind of channel here?
+						 switch(«valueVariableName»->data[i].tag) {
+						 	case CayennePayload_DigitalInput_e:
+						 		cayenneLPPSerializerInput.Data.DigitalInput.DigitalInputValue = «valueVariableName»->data[i].data.DigitalInput;
+						 		break;
+						 	case CayennePayload_DigitalOutput_e:
+						 		cayenneLPPSerializerInput.Data.DigitalOutput.DigitalOutputValue = «valueVariableName»->data[i].data.DigitalOutput;
+						 		break;
+						 	case CayennePayload_AnalogInput_e:
+						 		cayenneLPPSerializerInput.Data.AnalogInput.AnalogInputValue = «valueVariableName»->data[i].data.AnalogInput;
+						 		break;
+						 	case CayennePayload_AnalogOutput_e:
+						 		cayenneLPPSerializerInput.Data.AnalogOutput.AnalogOutputValue = «valueVariableName»->data[i].data.AnalogOutput;
+						 		break;
+						 	case CayennePayload_IlluminanceSensor_e:
+						 		cayenneLPPSerializerInput.Data.IlluminanceSensor.IlluminanceSensorValue = «valueVariableName»->data[i].data.IlluminanceSensor;
+						 		break;
+						 	case CayennePayload_PresenceSensor_e:
+						 		cayenneLPPSerializerInput.Data.PresenceSensor.PresenceSensorValue = «valueVariableName»->data[i].data.PresenceSensor;
+						 		break;
+						 	case CayennePayload_TemperatureSensor_e:
+						 		cayenneLPPSerializerInput.Data.TemperatureSensor.TemperatureSensorValue = «valueVariableName»->data[i].data.TemperatureSensor;
+						 		break;
+						 	case CayennePayload_HumiditySensor_e:
+						 		cayenneLPPSerializerInput.Data.HumiditySensor.HumiditySensorValue = «valueVariableName»->data[i].data.HumiditySensor;
+						 		break;
+						 	case CayennePayload_Accelerometer_e:
+						 		cayenneLPPSerializerInput.Data.Accelerometer.AccelerometerXValue = «valueVariableName»->data[i].data.Accelerometer._0;
+						 		cayenneLPPSerializerInput.Data.Accelerometer.AccelerometerYValue = «valueVariableName»->data[i].data.Accelerometer._1;
+						 		cayenneLPPSerializerInput.Data.Accelerometer.AccelerometerZValue = «valueVariableName»->data[i].data.Accelerometer._2;
+						 		break;
+						 	case CayennePayload_Barometer_e:
+						 		cayenneLPPSerializerInput.Data.Barometer.BarometerValue = «valueVariableName»->data[i].data.Barometer;
+						 		break;
+						 	case CayennePayload_Gyrometer_e:
+						 		cayenneLPPSerializerInput.Data.Gyrometer.GyrometerXValue = «valueVariableName»->data[i].data.Gyrometer._0;
+						 		cayenneLPPSerializerInput.Data.Gyrometer.GyrometerYValue = «valueVariableName»->data[i].data.Gyrometer._1;
+						 		cayenneLPPSerializerInput.Data.Gyrometer.GyrometerZValue = «valueVariableName»->data[i].data.Gyrometer._2;
+						 		break;
+						 	case CayennePayload_GpsLocation_e:
+						 		cayenneLPPSerializerInput.Data.GPSLocation.Latitude = «valueVariableName»->data[i].data.GpsLocation.Latitude; 
+						 		cayenneLPPSerializerInput.Data.GPSLocation.Longitude = «valueVariableName»->data[i].data.GpsLocation.Longitude; 
+						 		cayenneLPPSerializerInput.Data.GPSLocation.Altitude = «valueVariableName»->data[i].data.GpsLocation.Altitude; 
+						 		break;
+						 }
+						 exception = CayenneLPPSerializer_SingleInstance(&cayenneLPPSerializerInput, &cayenneLPPSerializerOutput);
+						 «generateLoggingExceptionHandler("Cayenne", "conversion")»
+						 cayenneLPPSerializerOutput.BufferPointer += cayenneLPPSerializerOutput.BufferFilledLength;
+					}
+					return «sendName»(«portNum.code», dataBuffer, bufferSize);
+				''')
+				.addHeader("xdk110Types.h", false)
+				.addHeader("XDK_CayenneLPPSerializer.h", true)
+				.setPreamble('''
+				// translation CayennePayload_enum -> cayenne used buffer size in bytes
+				static const uint8_t payloadSizes[] = {
+					3, 3, 4, 4, 4, 3, 4, 3, 8, 4, 8, 11
+				};
+				// translation CayennePayload_enum -> CayenneLPPSerializer_DataType_T
+				static const CayenneLPPSerializer_DataType_T cayenneDataTypes[] = {
+					CAYENNE_LLP_SERIALIZER_DIGITAL_INPUT,
+					CAYENNE_LLP_SERIALIZER_DIGITAL_OUTPUT,
+					CAYENNE_LLP_SERIALIZER_ANALOG_INPUT,
+					CAYENNE_LLP_SERIALIZER_ANALOG_OUTPUT,
+					CAYENNE_LLP_SERIALIZER_ILLUMINANCE_SENSOR,
+					CAYENNE_LLP_SERIALIZER_PRESENCE_SENSOR,
+					CAYENNE_LLP_SERIALIZER_TEMPERATURE_SENSOR,
+					CAYENNE_LLP_SERIALIZER_HUMIDITY_SENSOR,
+					CAYENNE_LLP_SERIALIZER_ACCELEROMETER,
+					CAYENNE_LLP_SERIALIZER_BAROMETER,
+					CAYENNE_LLP_SERIALIZER_GYROMETER,
+					CAYENNE_LLP_SERIALIZER_GPS_LOCATION
+				};
+				''')
+			}
 		}
 		
 	}
