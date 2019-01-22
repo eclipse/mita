@@ -23,6 +23,7 @@ There are two ways you can extend Mita:
 Fixing a bug or introducing a new feature usually comes with writing a unit test to ensure that the new functionality will be still working in future. There are currently two test suites, one for testing code generators, and one for language specific tests:
 
 * Code Generator Tests: org.eclipse.mita.program.generator.tests.AllTests
+* Runtime Tests: org.eclipse.mita.program.runtime.tests.AllTests
 * Language (Xpect) Tests: org.eclipse.mita.program.tests.AllTests
 
 Both test suites can be run from within your Eclipse workspace via `right-click -> Run As -> JUnit Plugin Tests`
