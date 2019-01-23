@@ -60,6 +60,7 @@ import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.mita.program.generator.internal.UserCodeFileGenerator
+import org.eclipse.mita.base.types.StructureType
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -349,6 +350,10 @@ class GeneratorUtils {
 	dispatch def CodeFragment getStructName(SumAlternative sumAlternative) {
 		return codeFragmentProvider.create('''«sumAlternative.name»''')
 			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumAlternative)) + ".h", false);
+	}
+	dispatch def CodeFragment getStructName(StructureType structureType) {
+		return codeFragmentProvider.create('''«structureType.baseName»''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(structureType)) + ".h", false);
 	}
 	
 	dispatch def CodeFragment getStructType(Singleton singleton) {
