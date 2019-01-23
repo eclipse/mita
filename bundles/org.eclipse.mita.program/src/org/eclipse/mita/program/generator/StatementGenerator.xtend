@@ -31,7 +31,6 @@ import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.ConditionalExpression
 import org.eclipse.mita.base.expressions.DoubleLiteral
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.HexLiteral
@@ -49,6 +48,7 @@ import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
@@ -58,8 +58,12 @@ import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeAccessor
+import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.mita.base.types.VirtualFunction
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -108,7 +112,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class StatementGenerator {
 
@@ -277,43 +280,7 @@ class StatementGenerator {
 		if (stmt.operationCall) {
 			val feature = stmt.reference;
 			if(feature instanceof SumAlternative) {
-				val altAccessor = feature.structName;
-				val owner = stmt.arguments.head.value
-				if(!(owner instanceof ElementReferenceExpression) 
-				|| !((owner as ElementReferenceExpression).reference instanceof SumType)) {
-					return '''UNKNOWN ERROR @FeatureCall'''
-				}
-				val sumType = (owner as ElementReferenceExpression).reference as SumType;
-				val dataType = if(feature instanceof AnonymousProductType) {
-					if(feature.typeSpecifiers.length == 1) {
-						BaseUtils.getType(feature.typeSpecifiers.head).ctype;
-					}
-					else {
-						feature.structType
-					}
-				}
-				else {
-					feature.structType
-				}
-				// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
-				val needCast = EcoreUtil2.getContainerOfType(stmt, ProgramBlock) !== null
-				'''
-				«IF needCast»(«sumType.structName») «ENDIF»{
-					.tag = «feature.enumName»«IF !(feature instanceof Singleton)», ««« there is no other field for singletons
-
-					««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
-
-
-					.data.«altAccessor» = («dataType») {
-						«FOR i_arg: stmt.arguments.indexed»
-						«IF !(feature.realType instanceof PrimitiveType)»«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < stmt.arguments.length - 1»,«ENDIF»
-						«ENDFOR»	
-					}
-					«ELSE»
-					
-					«ENDIF»
-				}
-				'''
+				
 			} else {
 				/* The pogram transformation pipeline rewrites extension methods to regular element reference expressions.
 				 * Thus, we should never get here.
@@ -341,12 +308,70 @@ class StatementGenerator {
 		}
 	}
 
+	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, TypeConstructor cons, Iterable<Argument> arguments) {
+		val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null;
+		val structuralType = cons.eContainer;
+		'''
+		«IF needCast»(«structuralType.baseName») «ENDIF»{
+			«FOR i_arg : arguments.indexed SEPARATOR (',\n')»
+			.«IF i_arg.value.parameter !== null»«i_arg.value.parameter.name»«ELSE»«cons.parameters.get(i_arg.key).name»«ENDIF» = «i_arg.value.value.code»
+			«ENDFOR»
+		}'''
+	}
+	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, TypeAccessor accessor, Iterable<Argument> arguments) {
+		'''«arguments.head.code».«accessor.name»'''
+	}
+	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, VirtualFunction fun, Iterable<Argument> arguments) {
+		'''NOT IMPLEMENTED: «fun.eClass»''';
+	}
+	
+	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, SumSubTypeConstructor cons, Iterable<Argument> arguments) {
+		val constructedType = cons.eContainer;
+		if(constructedType instanceof SumAlternative) {
+			val altAccessor = constructedType.structName;
+			val sumType = constructedType.eContainer as SumType;
+			val dataType = if(constructedType instanceof AnonymousProductType) {
+				if(constructedType.typeSpecifiers.length == 1) {
+					BaseUtils.getType(constructedType.typeSpecifiers.head).ctype;
+				}
+				else {
+					constructedType.structType
+				}
+			}
+			else {
+				constructedType.structType
+			}
+			// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
+			val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null
+			return '''
+			«IF needCast»(«sumType.structName») «ENDIF»{
+				.tag = «constructedType.enumName»«IF !(constructedType instanceof Singleton)», ««« there is no other field for singletons
+
+				««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
+
+
+				.data.«altAccessor» = («dataType») {
+					«FOR i_arg: arguments.tail.indexed»
+					«IF !(constructedType.realType instanceof PrimitiveType)»«accessor(constructedType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
+					«ENDFOR»	
+				}
+				«ELSE»
+				
+				«ENDIF»
+			}
+			'''
+		}
+		return '''BROKEN MODEL''';
+	}
+
 	@Traced dispatch def IGeneratorNode code(ElementReferenceExpression stmt) {
 		val ref = stmt.reference
 		val id = ref.baseName
 
 		if (stmt.operationCall) {
-			if (ref instanceof FunctionDefinition) {
+			if (ref instanceof VirtualFunction) {
+				'''«generateVirtualFunctionCall(stmt, ref, stmt.arguments)»'''
+			} else if (ref instanceof FunctionDefinition) {
 				'''«ref.generateFunctionCall(codeFragmentProvider.create('''NULL''').addHeader("stdlib.h", true), stmt)»'''
 			} else if (ref instanceof GeneratedFunctionDefinition) {
 				'''«registry.getGenerator(ref)?.generate(stmt, null)»''';
@@ -356,16 +381,6 @@ class StatementGenerator {
 				} else {
 					'''«ref.generateNativeFunctionCallUnchecked(stmt)»'''
 				}
-			} else if (ref instanceof StructureType) {
-				val needCast = EcoreUtil2.getContainerOfType(stmt, ProgramBlock) !== null
-				'''
-				«IF needCast»(«ref.baseName») «ENDIF»{
-					«FOR i_arg : stmt.arguments.indexed SEPARATOR (',\n')»
-					.«IF i_arg.value.parameter !== null»«i_arg.value.parameter.name»«ELSE»«ref.parameters.get(i_arg.key).name»«ENDIF» = «i_arg.value.value.code»
-					«ENDFOR»
-				}'''
-			} else if(ref instanceof TypeAccessor) {
-				'''«stmt.arguments.head.code».«ref.name»'''
 			} else { 
 				if(ref instanceof Modality || ref instanceof SignalInstance) {
 					return '''''';
@@ -468,7 +483,11 @@ class StatementGenerator {
 
 	def IGeneratorNode generateFunCallStmt(IGeneratorNode variableName, AbstractType type, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
-		if (reference instanceof FunctionDefinition) {
+		if (reference instanceof VirtualFunction) {
+			return codeFragmentProvider.create('''
+				«variableName» = «generateVirtualFunctionCall(initialization, reference, initialization.arguments).noTerminator»;
+			''')
+		} else if (reference instanceof FunctionDefinition) {
 			return codeFragmentProvider.create('''
 				«generateFunctionCall(reference, codeFragmentProvider.create('''&«variableName»'''), initialization).noTerminator»;
 			''')
@@ -498,7 +517,7 @@ class StatementGenerator {
 	}
 	def IGeneratorNode initializationCode(EObject target, IGeneratorNode varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
 		val type = BaseUtils.getType(target);
-		val origin = type.origin;
+		val origin = MitaBaseResource.resolveProxy(target.eResource, type.origin);
 		
 		if (origin instanceof GeneratedType) {
 			val generator = registry.getGenerator(origin);
@@ -535,7 +554,7 @@ class StatementGenerator {
 		// «platformGenerator.typeGenerator.code(stmt.typeSpecifier)»
 		val initialization = stmt.initialization;
 		val type = BaseUtils.getType(stmt);
-		val origin = type.origin;
+		val origin = MitaBaseResource.resolveProxy(stmt.eResource, type.origin);
 	
 		var result = stmt.trace;
 		
@@ -565,7 +584,7 @@ class StatementGenerator {
 			// Assignment from functions is done by declaring, then passing in a reference
 			if(initialization.operationCall && 
 				// constructors of structural types are done directly
-				!(ref instanceof SumAlternative || ref instanceof StructureType)
+				!(ref instanceof TypeConstructor)
 			) {
 				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name»;''');
 			} else {

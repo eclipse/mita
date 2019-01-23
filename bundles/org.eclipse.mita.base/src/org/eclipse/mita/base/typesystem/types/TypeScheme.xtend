@@ -19,7 +19,7 @@ class TypeScheme extends AbstractType {
 	protected final AbstractType on;
 	
 	new(EObject origin, List<TypeVariable> vars, AbstractType on) {
-		super(origin, '''tscheme''');
+		super(origin, on.name);
 		this.vars = vars;
 		this.on = on;
 	}

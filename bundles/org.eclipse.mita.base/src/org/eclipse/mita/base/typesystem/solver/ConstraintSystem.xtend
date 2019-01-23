@@ -35,6 +35,7 @@ class ConstraintSystem {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider; 
 	@Inject protected SerializationAdapter serializationAdapter;
 	protected Map<URI, TypeVariable> symbolTable = new HashMap();
+	protected Map<QualifiedName, AbstractType> typeTable = new HashMap();
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
 	protected List<AbstractTypeConstraint> atomicConstraints = new ArrayList();
 	protected List<AbstractTypeConstraint> nonAtomicConstraints = new ArrayList();
@@ -109,6 +110,7 @@ class ConstraintSystem {
 		atomicConstraints.addAll(other.atomicConstraints);
 		nonAtomicConstraints.addAll(other.nonAtomicConstraints);
 		symbolTable.putAll(other.symbolTable);
+		typeTable.putAll(other.typeTable);
 		typeClasses.putAll(other.typeClasses);
 		other.explicitSubtypeRelations.copyTo(explicitSubtypeRelations);
 		explicitSubtypeRelationsTypeSource = new HashMap(other.explicitSubtypeRelationsTypeSource);
@@ -118,7 +120,8 @@ class ConstraintSystem {
 		val result = new ConstraintSystem(this);
 		result.atomicConstraints.replaceAll([it.modifyNames(suffix)])
 		result.nonAtomicConstraints.replaceAll([it.modifyNames(suffix)])
-		result.symbolTable.replaceAll([k, v | v.modifyNames(suffix) as TypeVariable])
+		result.symbolTable.replaceAll([k, v | v.modifyNames(suffix) as TypeVariable]);
+		result.typeTable.replaceAll([k, v | v.modifyNames(suffix)]);
 		result.typeClasses.replaceAll([k, v | v.modifyNames(suffix)]);
 		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.modifyNames(suffix)];
 		result.explicitSubtypeRelations.computeReverseMap();
@@ -266,6 +269,7 @@ class ConstraintSystem {
 //				r.constraints.add(new EqualityConstraint(it.value, t.symbolTable.get(it.key), "CS:267 (merge)"))
 			]
 			r.symbolTable.putAll(t.symbolTable);
+			r.typeTable.putAll(t.typeTable);
 			r.atomicConstraints.addAll(t.atomicConstraints);
 			r.nonAtomicConstraints.addAll(t.nonAtomicConstraints);
 			r.typeClasses.putAll(t.typeClasses);
@@ -336,8 +340,20 @@ class ConstraintSystem {
 		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
 			return #[getTypeVariable(tvp.origin.eGet(tvp.reference) as EObject)];
 		}
-
-		val scope = scopeProvider.getScope(tvp.origin, tvp.reference);
+		var origin = tvp.origin;
+		if(tvp.reference.name == "type") {
+			val typeCandidates = typeTable.entrySet.filter[it.key == tvp.targetQID]
+			if(!typeCandidates.empty) {
+				return typeCandidates.map[it.value].force;
+			}
+			else {
+				if(origin.eIsProxy) {
+					origin = EcoreUtil.resolve(origin, resource);
+				}
+			}
+		}
+		
+		val scope = scopeProvider.getScope(origin, tvp.reference);
 		val scopeElements = scope.getElements(tvp.targetQID).toList;
 		val cachedTypeSerializations = scopeElements.map[getUserData("TypeVariable")].toList;
 		if(!cachedTypeSerializations.empty && cachedTypeSerializations.forall[it !== null]) {
@@ -348,16 +364,17 @@ class ConstraintSystem {
 		
 		val replacementObjects = scopeElements.map[EObjectOrProxy].force.toSet;
 		if(replacementObjects.empty) { 
-			scopeProvider.getScope(tvp.origin, tvp.reference);
-			return #[new BottomType(tvp.origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
+			scopeProvider.getScope(origin, tvp.reference);
+			return #[new BottomType(origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
 		}
 		
 		
-		if(tvp.origin.eClass.EReferences.contains(tvp.reference)) {			
-			val currentEntry = tvp.origin.eGet(tvp.reference, false).castOrNull(EObject);
+		if(origin.eClass.EReferences.contains(tvp.reference)) {			
+			val currentEntry = origin.eGet(tvp.reference, false).castOrNull(EObject);
 		 	if((currentEntry === null || currentEntry.eIsProxy) && replacementObjects.size == 1) {
-				BaseUtils.ignoreChange(tvp.origin.eResource, [ 
-					tvp.origin.eSet(tvp.reference, replacementObjects.head);
+		 		val finalOrigin = origin;
+				BaseUtils.ignoreChange(origin.eResource, [ 
+					finalOrigin.eSet(tvp.reference, replacementObjects.head);
 				]);
 			}
 		}

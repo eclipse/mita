@@ -3,6 +3,9 @@ package org.eclipse.mita.base.typesystem
 import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.List
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.IStatus
+import org.eclipse.core.runtime.Status
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.AdditiveOperator
@@ -23,6 +26,7 @@ import org.eclipse.mita.base.expressions.MultiplicativeOperator
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
 import org.eclipse.mita.base.expressions.NumericalMultiplyDivideExpression
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
+import org.eclipse.mita.base.expressions.ParenthesizedExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.RelationalOperator
 import org.eclipse.mita.base.expressions.StringLiteral
@@ -574,15 +578,29 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, NativeType type) {
-		return typeRegistry.translateNativeType(type);
+		val nativeType = typeRegistry.translateNativeType(type);
+		system.typeTable.put(QualifiedName.create(type.name), nativeType);
+		return nativeType;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, PrimitiveType type) {
-		new AtomicType(type);
+		val atomicType = new AtomicType(type);
+		system.typeTable.put(QualifiedName.create(type.name), atomicType);
+		return atomicType;
 	}
 
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, TypeParameter type) {
-		return system.getTypeVariable(type);
+		val tv = system.getTypeVariable(type);
+		val container = type.eContainer;
+		val containerName = if(container instanceof GeneratedType) {
+			container.name;
+		} else if(container instanceof Operation) {
+			container.name;
+		}
+		if(containerName !== null) {
+			system.typeTable.put(QualifiedName.create(containerName, type.name), tv);
+		}
+		return tv;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
@@ -593,34 +611,41 @@ class BaseConstraintFactory implements IConstraintFactory {
 		 * ---------------
 		 * ProdType(foo, <>, [i32, i32])
 		 */
-		return new ProdType(structType, new AtomicType(structType), types);
+		val result = new ProdType(structType, new AtomicType(structType), types);
+		system.typeTable.put(QualifiedName.create(structType.name), result);
+		return result;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumType sumType) {
 		val subTypes = sumType.alternatives.map[ sumAlt |
 			system.translateTypeDeclaration(sumAlt);
 		].force;
-		return new org.eclipse.mita.base.typesystem.types.SumType(sumType, new AtomicType(sumType), subTypes);	
+		val result = new org.eclipse.mita.base.typesystem.types.SumType(sumType, new AtomicType(sumType), subTypes);
+		system.typeTable.put(QualifiedName.create(sumType.name), result);
+		return result;	
 	}
 		
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
-		if(sumAlt.name == "Personal") {
-			print("");
+		val sumType = sumAlt.eContainer;
+		if(sumType instanceof SumType) {
+			val selfType = new AtomicType(sumAlt);
+			val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
+			val prodType = new ProdType(sumAlt, selfType, types);
+	
+			val sumTypeName = sumType.name
+			val superType = new AtomicType(sumType, sumTypeName);
+	
+			val iSelf_iSuper = system.explicitSubtypeRelations.addEdge(selfType, superType);
+			system.explicitSubtypeRelationsTypeSource.put(iSelf_iSuper.key, prodType);
+			system.explicitSubtypeRelationsTypeSource.put(iSelf_iSuper.value, system.getTypeVariable(sumType));
+			
+			system.computeConstraints(sumAlt.constructor);
+			
+			system.typeTable.put(QualifiedName.create(sumTypeName, sumAlt.name), prodType);
+			
+			return prodType;	
 		}
-
-		val selfType = new AtomicType(sumAlt);
-		val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
-		val prodType = new ProdType(sumAlt, selfType, types);
-
-		val superType = new AtomicType(sumAlt.eContainer, (sumAlt.eContainer as SumType).name);
-
-		val iSelf_iSuper = system.explicitSubtypeRelations.addEdge(selfType, superType);
-		system.explicitSubtypeRelationsTypeSource.put(iSelf_iSuper.key, prodType);
-		system.explicitSubtypeRelationsTypeSource.put(iSelf_iSuper.value, system.getTypeVariable(sumAlt.eContainer));
-
-		system.computeConstraints(sumAlt.constructor);
-
-		return prodType;
+		throw new CoreException(new Status(IStatus.ERROR, null, 'Broken model: parent of sum alternative is not a sum type'));
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
@@ -630,20 +655,29 @@ class BaseConstraintFactory implements IConstraintFactory {
 		].force;
 
 		system.computeConstraints(genType.constructor);			
-		return if(typeParameters.empty) {
+		val result = if(typeParameters.empty) {
 			new AtomicType(genType, genType.name);
 		}
 		else {
 			new TypeScheme(genType, typeArgs, new TypeConstructorType(genType, new AtomicType(genType), typeArgs.map[it as AbstractType].force));
 		}
+		
+		system.typeTable.put(QualifiedName.create(genType.name), result);
+		
+		return result;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, ExceptionTypeDeclaration genType) {
-		return new AtomicType(genType);
+		val result = new AtomicType(genType);
+		system.typeTable.put(QualifiedName.create(genType.name), result);
+		return result;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, TypeKind context) {
-		return new BaseKind(context, context.kindOf.name, system.getTypeVariable(context.kindOf));
+		val result = new BaseKind(context, context.kindOf.name, system.getTypeVariable(context.kindOf));
+		// context.toString is '∗«context.kindOf.name»'
+		system.typeTable.put(QualifiedName.create(context.toString), result);
+		return result;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, EObject genType) {
@@ -662,6 +696,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %s''', origin, null, "")));
 		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %s''', origin, null, "")));
 		return nestedType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ParenthesizedExpression expr) {
+		return system.associate(system.computeConstraints(expr.expression), expr);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {

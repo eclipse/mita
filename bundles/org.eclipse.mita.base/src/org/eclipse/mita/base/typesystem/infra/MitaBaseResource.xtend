@@ -6,7 +6,6 @@ import java.io.IOException
 import java.io.InputStream
 import java.util.Map
 import org.eclipse.emf.common.util.BasicEList
-import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
@@ -22,6 +21,7 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.diagnostics.Severity
@@ -149,6 +149,7 @@ class MitaBaseResource extends LazyLinkingResource {
 	}
 	
 	public def collectAndSolveTypes(EObject obj) {
+		val timer = new DebugTimer(false);
 		// top level element - gather constraints and solve
 		val resource = obj.eResource;
 		val errors = if(resource instanceof ResourceImpl) {
@@ -158,6 +159,7 @@ class MitaBaseResource extends LazyLinkingResource {
 			return;
 		}
 		
+		timer.start("resourceDescriptions");
 		val resourceDescriptions = resourceDescriptionsProvider.get(resource.resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
@@ -173,9 +175,11 @@ class MitaBaseResource extends LazyLinkingResource {
 			.filter[it.value !== null]
 			.map[it.value]
 			.map[GZipper.decompress(it)].force;
+		timer.stop("resourceDescriptions");
 		if(obj.eResource.URI.lastSegment == "application.mita") {
 			print("")
 		}
+		timer.start("deserialize");
 		val allConstraintSystems = jsons
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ 
 				return resource.resourceSet.getEObject(it, true);
@@ -183,20 +187,26 @@ class MitaBaseResource extends LazyLinkingResource {
 //				return fragmentProvider.getEObject(resourceOfObj, it.fragment, fragmentProviderFallback);
 			]) ]
 			.indexed.map[it.value.modifyNames('''.«it.key»''')].force;
-		
+		timer.stop("deserialize");
 		if(cancelIndicator !== null && cancelIndicator.canceled) {
 			return;
 		}
 		
+		timer.start("combine");
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
+		timer.stop("combine");
 		
 		if(combinedSystem !== null) {
+			timer.start("proxies");
 			val preparedSystem = combinedSystem.replaceProxies(resource, scopeProvider);
+			timer.stop("proxies");
 			if(cancelIndicator !== null && cancelIndicator.canceled) {
 				return;
 			}
-			
+			timer.start("solve");
 			val solution = constraintSolver.solve(preparedSystem, obj);
+			timer.stop("solve");
+			println("report for:" + resource.URI.lastSegment + "\n" + timer.toString);
 			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {
 					solution.solution.substitutions.entrySet.forEach[

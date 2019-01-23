@@ -3,18 +3,18 @@ package org.eclipse.mita.base.typesystem.infra
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 @EqualsHashCode
 @Accessors
-@FinalFieldsConstructor
 class TypeVariableProxy extends TypeVariable {
 	protected final EReference reference;
 	// name of the origin member we want to resolve
@@ -24,6 +24,16 @@ class TypeVariableProxy extends TypeVariable {
 	
 	enum AmbiguityResolutionStrategy {
 		UseFirst, UseLast, MakeNew;
+	}
+	
+	new(EObject origin, String name, EReference reference, QualifiedName targetQID, boolean isLinkingProxy) {
+		super(origin, name);
+		this.reference = reference;
+		this.targetQID = targetQID;
+		this.isLinkingProxy = isLinkingProxy;
+		if(targetQID.toString == "None") {
+			print("")
+		}
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy) {
@@ -39,19 +49,21 @@ class TypeVariableProxy extends TypeVariable {
 	}
 	
 	protected static def getQName(EObject origin, EReference reference) {
-		var String maybeQname; 
+		var QualifiedName maybeQname; 
 		if(!origin.eIsProxy) {
 			val obj = origin.eGet(reference, false);
 			if(obj instanceof NamedElement && obj instanceof EObject && !(obj as EObject).eIsProxy) {
-				maybeQname = (obj as NamedElement).name;
+				if(obj instanceof SumAlternative) {
+					maybeQname = QualifiedName.create((obj.eContainer as SumType).name, obj.name);
+				}
+				else {
+					maybeQname = QualifiedName.create((obj as NamedElement).name);
+				}
 			}
 		} 
 		
-		val qname = (maybeQname ?: NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim)?.split("\\.");
-		if(qname?.join("").nullOrEmpty) {
-			print("")
-		}
-		return QualifiedName.create(qname);
+		val qname = (maybeQname ?: QualifiedName.create(NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim?.split("\\.")));
+		return qname;
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName qualifiedName) {

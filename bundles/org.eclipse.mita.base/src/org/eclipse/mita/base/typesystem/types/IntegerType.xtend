@@ -37,6 +37,9 @@ class IntegerType extends NumericType {
 		return this;
 	}
 	
+	def getCName() {
+		return '''«IF signedness == Signedness.Unsigned»u«ENDIF»int«widthInBytes * 8»_t'''
+	}
 }
 
 enum Signedness {

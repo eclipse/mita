@@ -75,7 +75,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	@Inject
 	protected SubtypeChecker subtypeChecker;
 	
-	protected var DebugTimer debugTimer = new DebugTimer();
+	protected var DebugTimer debugTimer = new DebugTimer(true);
 	
 	def CancelIndicator getCancelIndicatorOrNull(Resource resource) {
 		if(resource instanceof MitaBaseResource) {
@@ -85,7 +85,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
-		debugTimer = new DebugTimer();
+		debugTimer = new DebugTimer(true);
 				
 		val cancelInidicator = typeResolutionOrigin.eResource.getCancelIndicatorOrNull;		
 		var currentSystem = system;

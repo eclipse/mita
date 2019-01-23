@@ -41,6 +41,9 @@ class TypeConstructorType extends AbstractType {
 		super(origin, type.name);
 		this.type = type;
 		this.typeArguments = typeArguments.force;
+		if(this.typeArguments.contains(null)) {
+			throw new NullPointerException;
+		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
 	}
 	

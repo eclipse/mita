@@ -101,6 +101,9 @@ class SerializationAdapter {
 		obj.symbolTable.entrySet.forEach[u_tv | 
 			result.symbolTable.put(URI.createURI(u_tv.key), fromValueObject(u_tv.value) as TypeVariable);
 		];
+		obj.typeTable.entrySet.forEach[u_t | 
+			result.typeTable.put(u_t.key.toQualifiedName, fromValueObject(u_t.value) as AbstractType);
+		]
 		result.typeClasses.putAll(obj
 			.typeClasses
 			.entrySet
@@ -225,10 +228,8 @@ class SerializationAdapter {
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
 		// we resolve the origin of TypeVarProxies because we pass them to the scope later
-		val origin = obj.origin.resolveEObject(true);
-		if(origin === null) {
-			obj.origin.resolveEObject(true);
-		}
+		val resolve = obj.reference.eReferenceName != "type";
+		val origin = obj.origin.resolveEObject(resolve);
 		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy);
 	}
 	
@@ -300,6 +301,10 @@ class SerializationAdapter {
 			symbolTable = obj.symbolTable
 				.entrySet.sortBy[it.key.toString]
 				.map[it.key.toString() -> it.value.toValueObject as SerializedTypeVariable ]
+				.toMap([it.key], [it.value])
+			typeTable = obj.typeTable
+				.entrySet.sortBy[it.key.toString]
+				.map[it.key.toString -> it.value.toValueObject as SerializedAbstractType ]
 				.toMap([it.key], [it.value])
 			constraints = obj.constraints.map[ it.toValueObject() as SerializedAbstractTypeConstraint ].force.toSet.toList
 			typeClasses = obj.typeClasses

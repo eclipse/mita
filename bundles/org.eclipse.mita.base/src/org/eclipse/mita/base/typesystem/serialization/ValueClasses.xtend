@@ -20,6 +20,7 @@ class SerializedConstraintSystem extends SerializedObject {
 
 	public List<SerializedAbstractTypeConstraint> constraints = new ArrayList;
 	public Map<String, SerializedTypeVariable> symbolTable;
+	public Map<String, SerializedAbstractType> typeTable;
 	public Map<String, SerializedTypeClass> typeClasses;
 	public SerializedAbstractTypeGraph explicitSubtypeRelations;
 	public Map<Integer, SerializedAbstractType> explicitSubtypeRelationsTypeSource;

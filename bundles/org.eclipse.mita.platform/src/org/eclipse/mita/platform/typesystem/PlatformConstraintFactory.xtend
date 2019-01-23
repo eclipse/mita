@@ -17,6 +17,7 @@ import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.SystemSpecification
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import org.eclipse.xtext.naming.QualifiedName
 
 class PlatformConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemSpecification spec) {
@@ -27,12 +28,17 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AbstractSystemResource res) {
 		system.computeConstraintsForChildren(res);
 		system.computeConstraints(res.typeKind);
-		return system.associate(new AtomicType(res, res.name), res);
+		val result = new AtomicType(res, res.name);
+		system.typeTable.put(QualifiedName.create(res.name), result);
+		return system.associate(result, res);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemResourceAlias alias) {
 		val delegateType = system.resolveReferenceToSingleAndGetType(alias, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate);
 		val delegateName = BaseUtils.getText(alias, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate) ?: "";
-		system.associate(new BaseKind(alias.typeKind, delegateName, delegateType));
+		val aliasKind = new BaseKind(alias.typeKind, delegateName, delegateType);
+		system.associate(aliasKind);
+		system.typeTable.put(QualifiedName.create(alias.name), delegateType);
+		system.typeTable.put(QualifiedName.create(alias.typeKind.toString), aliasKind);
 		return system.associate(delegateType, alias);
 	}
 	

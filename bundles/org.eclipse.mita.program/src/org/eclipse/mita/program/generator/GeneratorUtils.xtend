@@ -29,6 +29,9 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.Connectivity
@@ -352,6 +355,20 @@ class GeneratorUtils {
 		return "ERROR: getStructName";
 	}
 	
+	dispatch def String getStructType(AtomicType singleton) {
+		//singletons don't contain actual data
+		return '''void''';
+	}
+	dispatch def String getStructType(ProdType productType) {
+		return '''«productType.name»_t''';		
+	}
+	dispatch def String getStructType(SumType productType) {
+		return '''«productType.name»_t''';		
+	}
+	dispatch def String getStructType(TypeConstructorType type) {
+		return '''«type.name»_t''';		
+	}
+	
 	dispatch def String getStructType(Singleton singleton) {
 		//singletons don't contain actual data
 		return '''void''';
@@ -368,7 +385,6 @@ class GeneratorUtils {
 	dispatch def String getStructType(NamedProductType productType) {
 		return '''«productType.baseName»_t''';
 	}
-	
 	
 	def dispatch String getBaseName(Sensor sensor) {
 		return sensor.name.toFirstUpper

@@ -11,7 +11,11 @@ class DebugTimer {
 	protected val traces = new Stack<Trace>();
 	protected val results = new LinkedList<TraceResult>();
 	
-	boolean disable = true;
+	boolean disable;
+	
+	new(boolean disable) {
+		this.disable = disable;
+	}
 	
 	public def start(String name) {
 		if(disable) {

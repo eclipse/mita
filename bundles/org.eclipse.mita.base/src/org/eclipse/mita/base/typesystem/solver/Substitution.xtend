@@ -113,7 +113,7 @@ class Substitution {
 	}
 	
 	def applyToGraph(ConstraintSystem system) {
-		return applyToGraph(system, new DebugTimer());
+		return applyToGraph(system, new DebugTimer(true));
 	}
 	def applyToGraph(ConstraintSystem system, DebugTimer debugTimer) {
 		debugTimer.start("typeClasses")
@@ -136,7 +136,7 @@ class Substitution {
 	}
 	
 	def ConstraintSystem applyToAtomics(ConstraintSystem system) {
-		applyToAtomics(system, new DebugTimer);
+		applyToAtomics(system, new DebugTimer(true));
 	}
 	def ConstraintSystem applyToAtomics(ConstraintSystem system, DebugTimer debugTimer) {
 		debugTimer.start("constraints");
