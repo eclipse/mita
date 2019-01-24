@@ -751,6 +751,10 @@ alt MqttAuthentication {
 	None | Login: {username: string, password: string}
 }
 
+alt MqttWill {
+	NoWill | LastWill: {topic: string, message: string, qos: uint8} 
+}
+
 /**
  * MQTT (Message Queuing Telemetry Transport) is an ISO standard (ISO/IEC PRF 20922) publish-subscribe-based messaging protocol.
  * This MQTT connectivity requires WLAN to be setup as well. 
@@ -786,6 +790,8 @@ connectivity many MQTT {
      * know the state of the client. 
 	 */
 	required configuration-item clientId : string
+	
+	configuration-item lastWill: MqttWill = NoWill()
 	
 	configuration-item authentication: MqttAuthentication = None()
 	
