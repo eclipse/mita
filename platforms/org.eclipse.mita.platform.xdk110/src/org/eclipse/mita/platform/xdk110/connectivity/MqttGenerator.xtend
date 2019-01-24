@@ -337,8 +337,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("HTTPRestClientSecurity.h", true)
 		.addHeader("time.h", true);
 		result.setPreamble('''
-		«IF(auth instanceof SumTypeRepr)»
-			«IF(auth.isLogin())»
+		«IF auth instanceof SumTypeRepr»
+			«IF auth.isLogin()»
 				«val username = auth.properties.get("username")»
 				«val password = auth.properties.get("password")»
 				StringDescr_T username;
