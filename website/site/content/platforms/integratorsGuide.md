@@ -28,7 +28,7 @@ Other than their category there is another thing differentiating system resource
 System resources define multiple things:
 - `generator` and `validator` are strings specifying the fully qualified Java class names of your generators and validators.
 - `sizeInferrer` specifies the fully qualified Java class name of a class that infers the size of things specified by your platform. You won't need to worry about this unless you build advanced signals or modalities though.
-- `configuration-item`s are things a user can configure once per setup. They can be used to specify sensor ranges, WLAN credentials or backend URLs. You can even use them to express dependencies between resources: for example the XDK's MQTT resource requires a WLAN resource to be set up.
+- `configuration-item`s are things a user can configure once per setup. They can be used to specify sensor ranges, WLAN credentials or backend URLs. You can even use them to express dependencies between resources: for example the XDK's MQTT resource requires a WLAN resource to be set up. You can mark configuration items as `required`.
 - `event`s can be handled by the user with `every` blocks. For now they are quite simple in that they cannot be instantiated or carry a payload.
 - `modality` specifies something that can be read from your resource. They can only be used with `singleton` resources.
 - `signal`s are things that can be instantiated multiple times per set up system resource and can be read from and written to. They can be configured with arguments like function calls.
@@ -71,7 +71,112 @@ All types you define in your `.platform` file are exported.
 
 ### Generators
 
+Generators are at the core of your platform implementation. They are written in Java or derivates like Xtend and generate the C code required to implement your resources. There are some standard generators you will need to implement and one for each system resource.
+
+Generators return this C code as `CodeFragments` which not only hold generated code but also a list of C includes the code requires as well as some preamble that will be prepended to the generated C files.
+
+Every platform needs to implement the following generators:
+- `IPlatformEventLoopGenerator`
+- `IPlatformExceptionGenerator`
+- `IPlatformLoggingGenerator`
+- `IPlatformMakefileGenerator`
+- `IPlatformStartupGenerator`
+- `IPlatformTimeGenerator`
+
+These generators are bound in your platform module extending `EmptyPlatformGeneratorModule`.
+
+#### Event Loop Generator
+
+The event loop generator is responsible for declaring data structures related to the main event loop like an RTOS queue. This queue will hold upcoming user defined event handlers. Therefore it also defines what arguments event handlers have since they will have to be compatible with your system.
+
+#### Exception Generator
+
+The exception generator translates Mita exceptions to C code. Therefore this generator defines the type used to represent exceptions as well as runtime representations of each exception. It also has to define a value for `NO_EXCEPTION`.
+
+#### Logging Generator
+
+The logging generator defines a fixed interface to log things like initialization. 
+
+#### Makefile Generator
+
+The makefile generator is a way to integrate Mita's generated code into a build system your platform uses. 
+
+It has access to all user code and is passed a list of C files to compile. Therefore you can do things like change flags according to which system resources are used.
+
+Should you require another mechanism for building applications please get in touch and we can talk about extending the current system to fit your needs.
+
+#### Startup Generator
+
+The startup generator generates the `main` function. Here you initialize your event loop, enqueue at least two neccessary functions, `Mita_initialize` and `Mita_goLive`, and start task schedulers or the like.
+
+`Mita_initialize` prepares all system resources whereas `Mita_goLive` starts timers and connects network resources. 
+
+#### Time Generator
+
+The time generator provides the most basic resource that should be available on all platforms: time. Time is set up in three phases:
+- `Setup` should be used to create timers and other data structures you require globally and for each time event. They should not be running yet.
+- `GoLive` should be used to enable i.e. start running any global timers.
+- `Enable` needs to start all per-event timers.
+
+#### Resource Specific Generators
+
+Each system resource comes with its own generator. System resources are prepared in two stages: `setup` and `enable`. When you generate code for each of these you have access to some prepared information:
+- `configuration` can be queued for configured values. You can either get preprocessed information like strings or integers or raw expressions. If the user did not configure anything you will get the default value if any exists.
+- `eventHandler` is a list of all declared event handlers of events of the system resource you're generating code for.
+- The configured system resource `component` and the `setup` of the system resource.
+
+Beyond that your generator will need to implement different methods according to which features it offers. 
+
+##### Events
+
+You can configure any events a resource offers in `setup`, however events should only fire after a resource has been enabled. Beyond that it is your responsibility to put any callbacks your event needs in a preamble of one of those stages and to inject user specified events into the event queue (or whichever dispatch method your platform provides and uses).
+
+To help you with this `GeneratorUtils.getHandlerName(EventHandlerDeclaration)` provides the C name of an event handler.
+
+##### Signals
+
+If the resource has signals you will need to implement `generateSignalInstanceGetter` and `generateSignalInstanceSetter` which will read or write signal instances. The compiler will call these methods once per signal instance so you can generate code for different configurations of different signals.
+
+For this you can use `ModelUtils.getArgumentValue(SignalInstance sigInst, String argumentName)` to get the arguments a signal is configured with. Beyond that you can walk the model to get things like configuration or referenced system resources.
+
+##### Modalities
+
+To generate code for modalities you need to implement `generateAccessPreparationFor` and `generateModalityAccessFor`. The first function is called whenever all modalities of a resource should be read. It should store these values somewhere in variables on the stack. The code generated in `generateModalityAccessFor` will then query these variables to produce a value to the user program. 
+
+To get a unique name for your variables you can use `GeneratorUtils.getUniqueIdentifier(ModalityAccessPreparation)`.
+
 ### Validation
+
+Validation is a way to check programs at compile time beyond the scope of types. Core Mita does things like check for array access out of bounds here. Since the scope of validation is pretty much unbound and a lot harder than type checking you should always try to use types to check configuration where possible. 
+
+Say you want to provide WLAN as a system resource. There are different kinds of authentication to WLAN: pre-shared key or enterprise. Your first instinct might be to offer three configuration items:
+
+```
+configuration-item isEnterprise: bool
+configuration-item username: string
+required configuration-item password: string
+```
+
+This covers both cases: the password is used as the pre-shared key unless isEnterprise is set to `true`. However now you would have to validate that, if `isEnterprise` is `true` the user also configured `username` and should produce the same error message as default validation for required configuration items. This is error prone and not intuitive to the user since obviously only one of those fields was marked required.
+
+A better approach would be to introduce a sum type that combines all three configuration items into one:
+
+```
+alt WlanAuthentication {
+	  Enterprise: {username: string, password: string}
+	| WithKey: {preSharedKey: string}
+}
+
+required configuration-item authentication: WlanAuthentication
+```
+
+This takes care of everything at once: passwords are no longer the same as pre-shared keys, authentication is required and both the user and type checker know that if you chose enterprise authentication you need two values, not one.
+
+Should types not be enough to correctly validate resource setups, for example for value ranges or number of accesses, platforms can specify both a global validator as well as validators per system resource. The first is specified in your platform resource and is called per `.mita` file whereas the second is specified per resource and called per setup of that resource. 
+
+Validators implement `IResourceValidator`, defining one method `validate`. System resource validators get each resource setup as the `context` argument. They then can walk the model to find bad configuration or usage and provide errors, warnings and information via the `ValidationMessageAcceptor`.
+
+No C code will be generated as long as errors are present.
 
 ### Platform Initialization
 
