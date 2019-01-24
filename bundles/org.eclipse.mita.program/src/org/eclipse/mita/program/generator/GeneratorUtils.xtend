@@ -66,6 +66,8 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.program.generator.internal.UserCodeFileGenerator
+import org.eclipse.mita.base.types.StructureType
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -368,39 +370,54 @@ class GeneratorUtils {
 		return null
 	}
 	
-	dispatch def String getEnumName(SumType sumType) {
-		return '''«sumType.name»_enum''';
+	dispatch def CodeFragment getEnumName(SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.name»_enum''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType)) + ".h", false);
 	}
-	dispatch def String getEnumName(SumAlternative singleton) {
+	dispatch def CodeFragment getEnumName(SumAlternative singleton) {
 		val parent = EcoreUtil2.getContainerOfType(singleton, SumType)
 		if(parent === null) {
-			return "ERROR: Model broken"
+			return codeFragmentProvider.create('''ERROR: Model broken''')
 		}
-		return '''«parent.name»_«singleton.name»_e''';
+		return codeFragmentProvider.create('''«parent.name»_«singleton.name»_e''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(singleton)) + ".h", false);
 	}
 	
-	dispatch def String getStructName(SumType sumType) {
-		return '''«sumType.name»''';
+	dispatch def CodeFragment getStructName(SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.name»''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType)) + ".h", false);
 	}
-	dispatch def String getStructName(SumAlternative sumType) {
-		return '''«sumType.name»''';
+	dispatch def CodeFragment getStructName(SumAlternative sumAlternative) {
+		return codeFragmentProvider.create('''«sumAlternative.name»''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumAlternative)) + ".h", false);
+	}
+	dispatch def CodeFragment getStructName(StructureType structureType) {
+		return codeFragmentProvider.create('''«structureType.baseName»''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(structureType)) + ".h", false);
 	}
 	
-	dispatch def String getStructType(Singleton singleton) {
+	dispatch def CodeFragment getStructType(Singleton singleton) {
 		//singletons don't contain actual data
-		return '''void''';
+		return codeFragmentProvider.create('''void''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(singleton)) + ".h", false);
 	}
-	dispatch def String getStructType(AnonymousProductType productType) {
+	dispatch def CodeFragment getStructType(AnonymousProductType productType) {
 		if(productType.typeSpecifiers.length > 1) {
-			return '''«productType.baseName»_t''';	
+			return codeFragmentProvider.create('''«productType.baseName»_t''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
 		}
 		else {
 			// we have only one type specifier, so we shorten to an alias
-			return '''ERROR: ONLY ONE MEMBER, SO USE THAT ONE'S SPECIFIER''';
+			return codeFragmentProvider.create('''ERROR: ONLY ONE MEMBER, SO USE THAT ONE'S SPECIFIER''');
 		}
 	}
-	dispatch def String getStructType(NamedProductType productType) {
-		return '''«productType.baseName»_t''';
+	dispatch def CodeFragment getStructType(NamedProductType productType) {
+		return codeFragmentProvider.create('''«productType.baseName»_t''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
+	}
+	dispatch def CodeFragment getStructType(SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.name»''')
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType)) + ".h", false);
 	}
 	
 	def dispatch String getBaseName(Sensor sensor) {

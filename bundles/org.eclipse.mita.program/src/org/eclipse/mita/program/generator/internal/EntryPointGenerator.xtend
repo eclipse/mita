@@ -79,7 +79,7 @@ class EntryPointGenerator {
 			baseIncludes.add(new IncludePath(systemResource.fileBasename + '.h', false));
 		}
 		for(program : context.allUnits.filter[containsCodeRelevantContent]) {
-			baseIncludes.add(new IncludePath(userCodeGenerator.getResourceBaseName(program) + '.h', false))
+			baseIncludes.add(new IncludePath(UserCodeFileGenerator.getResourceBaseName(program) + '.h', false))
 		}
 		
 		// and produce code
