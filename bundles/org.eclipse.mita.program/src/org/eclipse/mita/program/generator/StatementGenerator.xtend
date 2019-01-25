@@ -43,6 +43,7 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
+import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.scoping.MitaTypeSystem
@@ -110,12 +111,16 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
+import org.eclipse.mita.base.types.HasAccessors
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.model.ModelUtils.getRealType;
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.typesystem.types.NumericType
 
 class StatementGenerator {
 
@@ -284,7 +289,7 @@ class StatementGenerator {
 		if (stmt.operationCall) {
 			val feature = stmt.reference;
 			if(feature instanceof SumAlternative) {
-				
+
 			} else {
 				/* The pogram transformation pipeline rewrites extension methods to regular element reference expressions.
 				 * Thus, we should never get here.
@@ -349,6 +354,9 @@ class StatementGenerator {
 			}
 			// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
 			val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null
+			
+			val hasAccessors = constructedType.realType instanceof TypeConstructorType;
+			
 			return '''
 			«IF needCast»(«sumType.structType») «ENDIF»{
 				.tag = «constructedType.enumName»«IF !(constructedType instanceof Singleton)», ««« there is no other field for singletons
@@ -358,7 +366,7 @@ class StatementGenerator {
 
 				.data.«altAccessor» = («dataType») {
 					«FOR i_arg: arguments.tail.indexed»
-					«IF !(constructedType.realType instanceof PrimitiveType)»«accessor(constructedType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
+					«IF hasAccessors»«accessor(constructedType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
 					«ENDFOR»	
 				}
 				«ELSE»
@@ -606,9 +614,9 @@ class StatementGenerator {
 		else {
 			if (stmt.initialization !== null) {
 				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
-			} else if (type instanceof StructureType) {
+			} else if (type instanceof ProdType) {
 				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = {0};''');
-			} else if (type instanceof PrimitiveType) {
+			} else if (type instanceof NumericType) {
 				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = 0;''');
 			} else {
 				result.children += codeFragmentProvider.create('''«type.ctype» «stmt.name» = WARNING unsupported initialization;''');
@@ -847,8 +855,12 @@ class StatementGenerator {
 		val altAccessor = isDeconstructionCaseType.nameInStruct;
 		val idx = isDeconstructionCase.deconstructors.indexOf(stmt);
 		val productType = BaseUtils.getType(isDeconstructionCase.productType);
+
 		val member = accessor(productType, stmt.productMember, ".", "").apply(idx);
-		'''«varType.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«member»;'''
+		val hasAccessors = productType.realType instanceof TypeConstructorType;
+		
+		return '''«varType.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«IF hasAccessors»«member»«ENDIF»;'''
+
 	}
 	
 	@Traced dispatch def IGeneratorNode code(LoopBreakerStatement stmt) {
@@ -890,11 +902,11 @@ class StatementGenerator {
 		return structureTypeCodeDecl(definition, definition.parameters.map[it as Parameter].asEList, definition.structType);
 	}
 	
-	def IGeneratorNode structureTypeCodeDecl(EObject obj, List<Parameter> parameters, String typeName) {
+	def IGeneratorNode structureTypeCodeDecl(EObject obj, List<Parameter> parameters, CodeFragment typeName) {
 		return structureTypeCodeReal(obj, parameters.map[new Pair(BaseUtils.getType(it).ctype, it.baseName)], typeName);
 	
 	}
-	@Traced def IGeneratorNode structureTypeCodeReal(EObject obj, List<Pair<CodeFragment, String>> typesAndNames, String typeName) {
+	@Traced def IGeneratorNode structureTypeCodeReal(EObject obj, List<Pair<CodeFragment, String>> typesAndNames, CodeFragment typeName) {
 		'''
 		typedef struct {
 			«FOR field : typesAndNames»
@@ -929,17 +941,17 @@ class StatementGenerator {
 		
 		typedef enum {
 			«FOR alternative: definition.alternatives SEPARATOR(",")»
-			«BaseUtils.getType(alternative).enumName»
+			«alternative.enumName»
 			«ENDFOR»
-		} «BaseUtils.getType(definition).enumName»;
+		} «definition.enumName»;
 		
 		typedef struct {
-			«BaseUtils.getType(definition).enumName» tag;
+			«definition.enumName» tag;
 			union {
-				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«BaseUtils.getType(alternative as AnonymousProductType).ctype»«ELSE»«BaseUtils.getType(alternative).structType»«ENDIF» «BaseUtils.getType(alternative).nameInStruct»;
+				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«BaseUtils.getType(alternative).ctype»«ELSE»«alternative.structType»«ENDIF» «alternative.nameInStruct»;
 			«ENDFOR»
 			} data;
-		} «BaseUtils.getType(definition).structType»;
+		} «definition.structType»;
 		'''
 	}
 
@@ -976,6 +988,10 @@ class StatementGenerator {
 
 	private def getCtype(AbstractType type) {
 		if(type instanceof TypeVariable) codeFragmentProvider.create('''void*''') else typeGenerator.code(type);
+	}
+	
+	private def getCtype(Type type) {
+		if(type === null) codeFragmentProvider.create('''void*''') else typeGenerator.code(type);
 	}
 
 }

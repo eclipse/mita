@@ -286,9 +286,6 @@ BinaryLiteral:
 StringLiteral:
 	{StringLiteral} value=STRING;
 
-NullLiteral:
-	{NullLiteral} 'null';
-
 LogicalAndOperator:
 	'&&';
 
@@ -341,7 +338,7 @@ enum RelationalOperator:
 	equals='==' | notEquals='!=';
 
 terminal BOOL returns ecore::EBoolean:
-	'true' | 'false' | 'yes' | 'no';
+	'true' | 'false';
 
 terminal HEX returns ecore::ELong:
 	('0') ('x' | 'X') ('0'..'9' | 'a'..'f' | 'A'..'F')+;

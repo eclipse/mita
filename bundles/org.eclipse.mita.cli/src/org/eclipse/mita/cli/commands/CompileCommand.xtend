@@ -85,7 +85,7 @@ class CompileCommand extends AbstractCommand {
 		resourceSet.addLoadOption(XtextResource.OPTION_RESOLVE_ALL, Boolean.FALSE);
 		
 		// load libraries
-		val allFilesInClasspath = getAllMitaAndPlatformFilesInClasspath();
+		val allFilesInClasspath = getAllMitaAndPlatformFilesInClasspath().toList;
 		for(libraryFile : allFilesInClasspath) {
 			println("Loading " + libraryFile);
 			resourceSet.getResource(URI.createURI(libraryFile), true);

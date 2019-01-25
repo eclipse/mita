@@ -26,6 +26,8 @@ import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.xtext.generator.IFileSystemAccess2
+import java.util.stream.Collectors
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 
@@ -41,17 +43,67 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	@Inject
 	protected GeneratorUtils generatorUtils
 	
+	override generateAdditionalFiles(IFileSystemAccess2 fsa) {
+		val brokerUri = new URI(configuration.getString("url"));
+		val isSecure = brokerUri.scheme == "mqtts";
+		if(isSecure) {
+			val certificateFileLoc = configuration.getString("certificatePath");
+			val certificate = generatorUtils.getFileContents(setup.eResource, certificateFileLoc);
+			if(certificate === null) {
+				return #[];
+			}
+			return #["ServerCA.h" => [fsa.generateFile(it, 
+			'''
+				#define SERVER_CA \
+					«FOR line: certificate.collect(Collectors.toList) SEPARATOR(" \\")»
+					"«line»\n"
+					«ENDFOR»
+			''')]];
+		}
+		return #[];
+	}
 
 	override generateSetup() {
 		val brokerUri = new URI(configuration.getString("url"));
 		var brokerPortRaw = brokerUri.port;
-		val brokerPort = if(brokerPortRaw < 0) 1883 else brokerPortRaw;
-
+		val isSecure = brokerUri.scheme == "mqtts"
+		val brokerPort = if(brokerPortRaw < 0) {
+			if(isSecure) {
+				8883
+			} 
+			else {
+				1883
+			}
+		} 
+		else {
+			brokerPortRaw;
+		}
+		
+		val sntpUri = new URI(configuration.getString("sntpServer"));
+		val sntpPort = if(sntpUri.port < 0) {
+			123;
+		} else {
+			sntpUri.port;
+		}
+		
 		codeFragmentProvider.create('''
 		Retcode_T exception = RETCODE_OK;
+		StringDescr_wrap(&username, usernameBuf);
+		StringDescr_wrap(&password, passwordBuf);
+		
 
-		«servalpalGenerator.generateSetup()»
+		«servalpalGenerator.generateSetup(isSecure)»
+		
+		«IF isSecure»
+		exception = SNTP_Setup(&sntpSetup);
 
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		exception = HTTPRestClientSecurity_Setup();
+
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		«ENDIF»		
+		
 		mqttSubscribeHandle = xSemaphoreCreateBinary();
 		if (NULL == mqttSubscribeHandle)
 		{
@@ -60,12 +112,12 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		
 		«generatorUtils.generateExceptionHandler(setup, "exception")»
 		
-			mqttPublishHandle = xSemaphoreCreateBinary();
-			if (NULL == mqttPublishHandle)
-			{
-				vSemaphoreDelete(mqttSubscribeHandle);
-				exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-			}
+		mqttPublishHandle = xSemaphoreCreateBinary();
+		if (NULL == mqttPublishHandle)
+		{
+			vSemaphoreDelete(mqttSubscribeHandle);
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+		}
 		
 		«generatorUtils.generateExceptionHandler(setup, "exception")»
 		
@@ -106,7 +158,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		static const uint16_t MQTT_BROKER_PORT = «brokerPort»;
 
 		/**<  Macro for the non secure serval stack expected MQTT URL format */
-		#define MQTT_URL_FORMAT_NON_SECURE          "mqtt://%s:%d"
+		#define MQTT_URL_FORMAT          "«brokerUri.scheme»://%s:%d"
 
 		/**< Handle for MQTT subscribe operation  */
 		static SemaphoreHandle_t mqttSubscribeHandle;
@@ -124,6 +176,13 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		static bool mqttIsSubscribed = false;
 		/**< MQTT publish status */
 		static bool mqttWasPublished = false;
+		
+		«IF isSecure»
+		SNTP_Setup_T sntpSetup = {
+			.ServerUrl = "«sntpUri.path»",
+			.ServerPort = «sntpPort»
+		};
+		«ENDIF»
 		''')
 		.addHeader("Serval_Mqtt.h", true, IncludePath.LOW_PRIORITY)
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
@@ -133,6 +192,10 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	override generateEnable() {
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
+		
+		val brokerUri = new URI(configuration.getString("url"));
+		val isSecure = brokerUri.scheme == "mqtts";
+				
 		val result = codeFragmentProvider.create('''
 		Retcode_T exception = RETCODE_OK;
 
@@ -142,7 +205,41 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		char serverIpStringBuffer[16] = { 0 };
 
 		«servalpalGenerator.generateEnable()»
+		
+		«IF isSecure»
+		exception = SNTP_Enable();
+		
+		if(RC_OK != MbedTLSAdapter_Initialize())
+		{
+			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : unable to initialize Mbedtls.")»
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_HTTP_INIT_REQUEST_FAILED);
+		}
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		uint64_t sntpTimeStampFromServer = 0UL;
+		
+		/* We Synchronize the node with the SNTP server for time-stamp.
+		 * Since there is no point in doing a HTTPS communication without a valid time */
+		do
+		{
+			exception = SNTP_GetTimeFromServer(&sntpTimeStampFromServer, 60);
+			if ((RETCODE_OK != exception) || (0UL == sntpTimeStampFromServer))
+			{
+				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT_Enable : SNTP server time was not synchronized. Retrying...")»
+			}
+		} while (0UL == sntpTimeStampFromServer);
 
+		struct tm time;
+		char timezoneISO8601format[40];
+		TimeStamp_SecsToTm(sntpTimeStampFromServer, &time);
+		TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
+		
+		BCDS_UNUSED(sntpTimeStampFromServer); /* Copy of sntpTimeStampFromServer will be used be HTTPS for TLS handshake */
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+       	«ENDIF»
+		
 		retcode_t mqttRetcode = RC_OK;
 		mqttRetcode = Mqtt_initialize();
 		if (RC_OK != mqttRetcode)
@@ -178,7 +275,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 		«generatorUtils.generateExceptionHandler(setup, "exception")»
 
-		mqttSession.MQTTVersion = 3;
+		mqttSession.MQTTVersion = 4;
 		mqttSession.keepAliveInterval = 60;
 		mqttSession.cleanSession = false;
 		mqttSession.will.haveWill = false;
@@ -193,7 +290,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		StringDescr_wrap(&clientID, MQTT_CLIENT_ID);
 		mqttSession.clientID = clientID;
 
-		size_t neccessaryBytes = snprintf(mqttBrokerURL, sizeof(mqttBrokerURL), MQTT_URL_FORMAT_NON_SECURE, serverIpStringBuffer, MQTT_BROKER_PORT);
+		size_t neccessaryBytes = snprintf(mqttBrokerURL, sizeof(mqttBrokerURL), MQTT_URL_FORMAT, serverIpStringBuffer, MQTT_BROKER_PORT);
 		if(neccessaryBytes > sizeof(mqttBrokerURL)) {
 			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to convert IP")»
 			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
@@ -213,7 +310,11 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		}
 		
 		return exception;
-		''');
+		''')
+		.addHeader("XDK_SNTP.h", true)
+		.addHeader("MbedTLSAdapter.h", true)
+		.addHeader("HTTPRestClientSecurity.h", true)
+		.addHeader("time.h", true);
 		if(auth instanceof SumTypeRepr) {
 			if(auth.isLogin()) {
 				val username = auth.properties.get("username")?.code;
@@ -222,11 +323,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
                 StringDescr_T username;
                 const char* usernameBuf = «username»;
-                StringDescr_wrap(&username, usernameBuf);
 
                 StringDescr_T password;
                 const char* passwordBuf = «password»;
-                StringDescr_wrap(&password, passwordBuf);
 				''').addHeader("Serval_StringDescr.h", true);
 			}
 		}
@@ -339,8 +438,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttConnectHandle, 0UL);
-			if(RC_OK != Mqtt_connect(&mqttSession)) {
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT")»
+			retcode_t rc = Mqtt_connect(&mqttSession);
+			if(RC_OK != rc) {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT: 0x%d", codeFragmentProvider.create('''rc'''))»
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_FAILED);
 			}
 			if (pdTRUE != xSemaphoreTake(mqttConnectHandle, pdMS_TO_TICKS(30000)))

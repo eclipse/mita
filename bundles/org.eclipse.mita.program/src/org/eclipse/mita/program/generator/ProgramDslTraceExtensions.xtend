@@ -22,11 +22,8 @@ import org.eclipse.xtext.generator.trace.node.TracedAccessors
 @TracedAccessors(ProgramFactory)
 class ProgramDslTraceExtensions {
 
-	@Inject
-	protected extension ProgramCopier
-
 	override location(EObject obj) {
-		super.location(obj.origin ?: obj);
+		super.location(ProgramCopier.getOrigin(obj ?: obj));
 	}
 
 }

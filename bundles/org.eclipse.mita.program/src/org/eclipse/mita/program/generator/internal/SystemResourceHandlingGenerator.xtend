@@ -29,6 +29,7 @@ import org.eclipse.mita.program.generator.IComponentConfiguration
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.TypeGenerator
+import org.eclipse.xtext.generator.IFileSystemAccess2
 
 class SystemResourceHandlingGenerator {
 
@@ -52,6 +53,18 @@ class SystemResourceHandlingGenerator {
 	
 	@Inject
 	protected extension ProgramDslTraceExtensions
+
+	def generateAdditionalFiles(IFileSystemAccess2 fsa, CompilationContext context, EObject obj) {
+		val componentAndSetup = obj.getComponentAndSetup(context);
+		val component = componentAndSetup.key;
+		val setup = componentAndSetup.value;
+		
+		val internalGenerator = registry.getGenerator(component);
+		if(internalGenerator !== null) {
+			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
+		}
+		internalGenerator.generateAdditionalFiles(fsa);
+	}
 
 	def generateHeader(CompilationContext context, EObject obj) {
 		val componentAndSetup = obj.getComponentAndSetup(context);

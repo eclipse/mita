@@ -95,5 +95,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		return '''Internal«event.handlerName.toFirstUpper»'''
 	}
 	
-	
+	override generateAdditionalHeaderContent(CompilationContext context) {
+		return CodeFragment.EMPTY;
+	}
 }

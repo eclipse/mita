@@ -56,6 +56,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.resource.IContainer
+import org.eclipse.mita.base.types.PackageAssociation
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 
@@ -169,6 +170,10 @@ class ModelUtils {
 		val platformSpecification = platforms.filter[importStrings.contains(it.name)].head
 		
 		return platformSpecification?.eContents?.filter(Platform)?.head
+	}
+	
+	static def getPackageAssociation(EObject obj) {
+		return EcoreUtil2.getContainerOfType(obj, PackageAssociation);
 	}
 	
 	static def boolean containsAbstractType(InferenceResult ir) {

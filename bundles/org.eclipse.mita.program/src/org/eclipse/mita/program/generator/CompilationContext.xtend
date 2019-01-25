@@ -33,6 +33,7 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.IResourceGraph
 import org.eclipse.mita.program.generator.internal.ResourceGraphBuilder
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.xtend.lib.annotations.Accessors
 
 class CompilationContext {
 	protected Iterable<Program> units;
@@ -52,6 +53,9 @@ class CompilationContext {
 	
 	@Inject
 	protected ModelUtils modelUtils;
+	
+	@Accessors
+	protected String mitaVersion = "0.1.0";
 	
 	var Boolean isInited = false;
 

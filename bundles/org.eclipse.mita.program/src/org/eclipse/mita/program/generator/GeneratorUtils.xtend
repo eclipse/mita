@@ -14,10 +14,17 @@
 package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.function.Function
+import java.util.stream.Stream
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.plugin.EcorePlugin
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
@@ -63,6 +70,10 @@ import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.program.generator.internal.UserCodeFileGenerator
+import org.eclipse.mita.base.types.StructureType
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -80,6 +91,39 @@ class GeneratorUtils {
 	
 	@Inject(optional = true)
 	protected IPlatformLoggingGenerator loggingGenerator;
+
+	/**
+	 * Opens the file at *fileLoc* either absolute or relative to the current project, depending on whether the path is absolute or relative.
+	 * In the case of the standalone compiler this will open *fileLoc* relative to the user's command.
+	 * If the file does not exist, returns null.
+	 */
+	def Stream<String> getFileContents(Resource resourceInProject, String fileLoc) {
+		val path = Paths.get(fileLoc);
+		return (if(path.isAbsolute) {
+			if(!Files.exists(path)) {
+				null;
+			}
+			else {
+				Files.newBufferedReader(path);
+			}
+		}
+		else {
+			val workspaceRoot = EcorePlugin.workspaceRoot;
+			if(workspaceRoot === null) {
+				// special case for standalone compiler
+				Files.newBufferedReader(path);
+			}
+			else {
+				val file = workspaceRoot.getProject(resourceInProject.URI.segment(1)).getFile(fileLoc);
+				if(!file.exists) {
+					null;
+				}
+				else {
+			        new BufferedReader(new InputStreamReader(file.getContents(), file.charset));
+				}
+			}
+		})?.lines;
+	}
 
 	def getGlobalInitName(Program program) {
 		return '''initGlobalVariables_«program.eResource.URI.lastSegment.replace(".mita", "")»'''
@@ -107,7 +151,7 @@ class GeneratorUtils {
 	}
 	
 	public def String getUniqueIdentifier(EObject obj) {
-		return obj.uniqueIdentifierInternal + "_" + obj.occurrence.toString;
+		return obj.uniqueIdentifierInternal.replace(".", "_") + "_" + obj.occurrence.toString;
 	} 
 	
 	private def dispatch String getUniqueIdentifierInternal(Program p) {
@@ -332,64 +376,108 @@ class GeneratorUtils {
 		return null
 	}
 	
-	dispatch def String getEnumName(SumType sumType) {
-		return '''«sumType.name»_enum''';
+	dispatch def CodeFragment getEnumName(SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.name»_enum''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType.origin)) + ".h", false);
 	}
 	
-	dispatch def String getEnumName(ProdType prodType) {
+	dispatch def CodeFragment getEnumName(ProdType prodType) {
 		val parentName = prodType.userData.get("parentName");
 		if(parentName !== null) {
-			return '''«parentName»_«prodType.name»_e''';
+			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''');
+
 		}
-		return '''«prodType.name»_e/*WARNING parent null*/''';
+		return codeFragmentProvider.create('''«prodType.name»_e/*WARNING parent null*/''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(prodType.origin)) + ".h", false);
 	}
 	
-	dispatch def String getEnumName(EObject obj) {
-		return "ERROR: getEnumName";
+	dispatch def CodeFragment getEnumName(org.eclipse.mita.base.types.SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.name»_enum''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType.origin)) + ".h", false);
 	}
 	
-	dispatch def String getNameInStruct(SumType sumType) {
-		return '''«sumType.name»''';
-	}
-	dispatch def String getNameInStruct(ProdType prodType) {
-		return '''«prodType.name»''';
-	}
-	dispatch def String getNameInStruct(EObject obj) {
-		return "ERROR: getStructName";
+	dispatch def CodeFragment getEnumName(SumAlternative sumAlt) {
+		val parentName = (sumAlt.eContainer.castOrNull(org.eclipse.mita.base.types.SumType))?.name;
+		if(parentName !== null) {
+			return codeFragmentProvider.create('''«parentName»_«sumAlt.name»_e''');
+
+		}
+		return codeFragmentProvider.create('''«sumAlt.name»_e/*WARNING parent null*/''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(prodType.origin)) + ".h", false);
 	}
 	
-	dispatch def String getStructType(AtomicType singleton) {
+
+	dispatch def CodeFragment getEnumName(EObject obj) {
+		return codeFragmentProvider.create('''ERROR: getEnumName''');
+	}
+	
+	
+	dispatch def CodeFragment getStructName(SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.name»''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType.origin)) + ".h", false);
+	}
+	
+	dispatch def CodeFragment getStructName(SumAlternative sumAlternative) {
+		return codeFragmentProvider.create('''«sumAlternative.name»''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumAlternative)) + ".h", false);
+	}
+	
+	
+	dispatch def CodeFragment getNameInStruct(ProdType prodType) {
+		return codeFragmentProvider.create('''«prodType.name»''');
+	}
+	dispatch def CodeFragment getNameInStruct(EObject obj) {
+		return codeFragmentProvider.create('''ERROR: getStructName''');
+	}
+
+	dispatch def CodeFragment getStructName(StructureType structureType) {
+		return codeFragmentProvider.create('''«structureType.baseName»''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(structureType)) + ".h", false);
+	}
+
+	dispatch def CodeFragment getStructType(AtomicType singleton) {
 		//singletons don't contain actual data
-		return '''void''';
+		return codeFragmentProvider.create('''void''');
 	}
-	dispatch def String getStructType(ProdType productType) {
-		return '''«productType.name»_t''';		
+	dispatch def CodeFragment getStructType(ProdType productType) {
+		return codeFragmentProvider.create('''«productType.name»_t''')
+			//.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType.origin)) + ".h", false);
 	}
-	dispatch def String getStructType(SumType productType) {
-		return '''«productType.name»_t''';		
+	dispatch def CodeFragment getStructType(SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.name»_t''')
+			//.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType.origin)) + ".h", false);		
 	}
-	dispatch def String getStructType(TypeConstructorType type) {
-		return '''«type.name»_t''';		
+	dispatch def CodeFragment getStructType(TypeConstructorType type) {
+		return codeFragmentProvider.create('''«type.name»_t''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(type.origin)) + ".h", false);	
 	}
 	
-	dispatch def String getStructType(Singleton singleton) {
+	dispatch def CodeFragment getStructType(Singleton singleton) {
 		//singletons don't contain actual data
-		return '''void''';
+		return codeFragmentProvider.create('''void''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(singleton)) + ".h", false);
 	}
-	dispatch def String getStructType(AnonymousProductType productType) {
+	dispatch def CodeFragment getStructType(AnonymousProductType productType) {
 		if(productType.typeSpecifiers.length > 1) {
-			return '''«productType.baseName»_t''';	
+			return codeFragmentProvider.create('''«productType.baseName»_t''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
 		}
 		else {
 			// we have only one type specifier, so we shorten to an alias
-			return '''ERROR: ONLY ONE MEMBER, SO USE THAT ONE'S SPECIFIER''';
+			return codeFragmentProvider.create('''ERROR: ONLY ONE MEMBER, SO USE THAT ONE'S SPECIFIER''');
 		}
 	}
-	dispatch def String getStructType(NamedProductType productType) {
-		return '''«productType.baseName»_t''';
+	dispatch def CodeFragment getStructType(NamedProductType productType) {
+		return codeFragmentProvider.create('''«productType.baseName»_t''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
 	}
-	dispatch def String getStructType(StructureType productType) {
-		return '''«productType.baseName»_t''';
+	dispatch def CodeFragment getStructType(org.eclipse.mita.base.types.SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.baseName»_t''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
+	}
+	dispatch def CodeFragment getStructType(StructureType productType) {
+		return codeFragmentProvider.create('''«productType.baseName»_t''')
+		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
 	}
 	
 	def dispatch String getBaseName(Sensor sensor) {
@@ -405,11 +493,9 @@ class GeneratorUtils {
 	}
 	
 	def generateHeaderComment(CompilationContext context) {
-		val bundle = org.eclipse.core.runtime.Platform.getBundle("org.eclipse.mita.program");
-		val version = bundle.getVersion();
 		'''
 		/**
-		 * Generated by Eclipse Mita «version».
+		 * Generated by Eclipse Mita «context.mitaVersion».
 		 * @date «new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())»
 		 */
 

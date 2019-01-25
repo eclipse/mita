@@ -19,7 +19,7 @@ import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 
-class ServalPALGenerator extends AbstractSystemResourceGenerator {
+class ServalPALGenerator {
 	
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
@@ -28,7 +28,7 @@ class ServalPALGenerator extends AbstractSystemResourceGenerator {
 	protected IPlatformLoggingGenerator loggingGenerator
 	
 	
-		override generateSetup() {
+		def generateSetup(boolean isSecure) {
 		
 			codeFragmentProvider.create('''
 			
@@ -39,7 +39,7 @@ class ServalPALGenerator extends AbstractSystemResourceGenerator {
 			
 			if (RETCODE_OK == exception)
 			{
-				exception = ServalPal_Initialize(&ServalPALCmdProcessorHandle	);
+				exception = ServalPal_Initialize(&ServalPALCmdProcessorHandle);
 			}
 			
 			if (RETCODE_OK == exception)
@@ -50,7 +50,7 @@ class ServalPALGenerator extends AbstractSystemResourceGenerator {
 		''')
 		.setPreamble('''
 			#define TASK_PRIORITY_SERVALPAL_CMD_PROC            UINT32_C(3)
-			#define TASK_STACK_SIZE_SERVALPAL_CMD_PROC          UINT32_C(600)
+			#define TASK_STACK_SIZE_SERVALPAL_CMD_PROC          UINT32_C(«IF isSecure»2000«ELSE»600«ENDIF»)
 			#define TASK_QUEUE_LEN_SERVALPAL_CMD_PROC           UINT32_C(10)
 		''')
 		.addHeader("BCDS_ServalPalWiFi.h", true, IncludePath.HIGH_PRIORITY)
@@ -59,7 +59,7 @@ class ServalPALGenerator extends AbstractSystemResourceGenerator {
 	
 	
 	
-	override generateEnable() {
+	def generateEnable() {
 			 codeFragmentProvider.create('''
 
 				if(RETCODE_OK == exception)

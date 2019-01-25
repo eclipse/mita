@@ -51,9 +51,8 @@ class ProgramCopier {
 		copy.eAdapters.add(new CopySourceAdapter(origin));
 	}
 	
-	def EObject getOrigin(EObject obj) {
+	static def EObject getOrigin(EObject obj) {
 		BaseUtils.computeOrigin(obj);
 	}
-	
 	
 }
