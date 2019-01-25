@@ -94,15 +94,5 @@ class TypeGenerator implements IGenerator {
 	public dispatch def CodeFragment code(FloatingType type) {
 		var result = codeFragmentProvider.create('''«type.CName»''')
 		return result;
-	}
-	
-	
-	public dispatch def CodeFragment code(AbstractSystemResource type, AbstractType typeSpec) {
-		throw new UnsupportedOperationException('Cannot use system resources as types yet');
-	}
-	
-	public dispatch def CodeFragment code(Type type, AbstractType typeSpec) {
-		throw new UnsupportedOperationException('''Mita implementation error: missing type «type»''');
-	}
-	
+	}	
 }

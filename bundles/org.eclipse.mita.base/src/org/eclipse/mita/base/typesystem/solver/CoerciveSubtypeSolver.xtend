@@ -353,7 +353,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				if(!mbDefaultParameterValues.empty && mbDefaultParameterValues.forall[it.defaultValue !== null]) {
 					val defaultParameterTypes = mbDefaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
 					val args = assignedArgs + defaultParameterTypes;
-					return new ProdType(refType.origin, refType.type, args);
+					return new ProdType(refType.origin, refType.type, args) => [it.userData.putAll(refType.userData)];
 				}
 			}	
 		}
@@ -391,7 +391,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						if(sortedArgs.exists[it.value === null]) {
 							return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Too few arguments''')], typ, fun, distance);
 						}
-						new ProdType(refType.origin, new AtomicType(fun, fun.name), sortedArgs.map[it.value]);
+						new ProdType(refType.origin, new AtomicType(fun, fun.name), sortedArgs.map[it.value]) => [it.userData.putAll(refType.userData)];
 					}
 					else {
 						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Can't use named parameters for non-operations''')], typ, fun, distance);

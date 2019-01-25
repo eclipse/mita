@@ -61,7 +61,7 @@ class ProdType extends TypeConstructorType {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		val newType = type.map(f);
 		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new ProdType(origin, newType, newTypeArgs);
+			return new ProdType(origin, newType, newTypeArgs) => [it.userData = this.userData];
 		}
 		return this;
 	}

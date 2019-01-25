@@ -318,7 +318,7 @@ class ConstraintSystem {
 			it.replaceProxies([ 
 				result.resolveProxy(it, resource, scopeProvider)
 			], [
-				resource.resourceSet.getEObject(it, false)
+				resource.resourceSet.getEObject(it, true)
 			])
 		]);
 		

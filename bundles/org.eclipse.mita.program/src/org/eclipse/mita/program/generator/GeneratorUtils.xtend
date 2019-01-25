@@ -62,6 +62,7 @@ import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.types.StructureType
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -347,13 +348,13 @@ class GeneratorUtils {
 		return "ERROR: getEnumName";
 	}
 	
-	dispatch def String getStructName(SumType sumType) {
+	dispatch def String getNameInStruct(SumType sumType) {
 		return '''«sumType.name»''';
 	}
-	dispatch def String getStructName(ProdType prodType) {
+	dispatch def String getNameInStruct(ProdType prodType) {
 		return '''«prodType.name»''';
 	}
-	dispatch def String getStructName(EObject obj) {
+	dispatch def String getNameInStruct(EObject obj) {
 		return "ERROR: getStructName";
 	}
 	
@@ -385,6 +386,9 @@ class GeneratorUtils {
 		}
 	}
 	dispatch def String getStructType(NamedProductType productType) {
+		return '''«productType.baseName»_t''';
+	}
+	dispatch def String getStructType(StructureType productType) {
 		return '''«productType.baseName»_t''';
 	}
 	

@@ -19,6 +19,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import com.google.common.base.Optional
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.infra.CachedBoolean
+import org.eclipse.mita.base.expressions.ExpressionsPackage
 
 @Accessors
 @EqualsHashCode
@@ -51,7 +52,10 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		// now `at` is a concrete function type of operation `op`.
 		// We introduce a constraint to make sure that this function's return is compatible with the expected type computed before.
 		// (for example the explicit type of variable declarations)
-		if(functionReference !== null && !functionCall.eIsProxy) {
+		if(BaseUtils.getText(functionCall, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference) == "println") {
+			print("")
+		}
+		if(op !== null && functionReference !== null && !functionCall.eIsProxy) {
 			BaseUtils.ignoreChange(functionCall, [functionCall.eSet(functionReference, op)]);
 		}
 		val nc = constraintSystemProvider.get(); 

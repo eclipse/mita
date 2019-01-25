@@ -45,6 +45,9 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
+		if(this.toString == "vec2d(int32, int32)") {
+			print("");
+		}
 	}
 	
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
@@ -89,7 +92,7 @@ class TypeConstructorType extends AbstractType {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		val newType = type.map(f);
 		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new TypeConstructorType(origin, newType, newTypeArgs);
+			return new TypeConstructorType(origin, newType, newTypeArgs) => [it.userData = this.userData];
 		}
 		return this;
 	}

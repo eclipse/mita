@@ -31,6 +31,9 @@ class TypeClass {
 		this.instances = new HashMap(instances);
 		this.mostSpecificGeneralization = mostSpecificGeneralization;
 		hasNoFreeVars = instances.keySet.forall[it.hasNoFreeVars]
+		if(this.toString.trim == "	f_19.3 = ".trim()) {
+			print("")
+		}
 	}
 	new(Iterable<Pair<AbstractType, EObject>> instances) {
 		this(instances.toMap([it.key], [it.value]));

@@ -115,6 +115,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.model.ModelUtils.getRealType;
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 
 class StatementGenerator {
 
@@ -193,7 +194,7 @@ class StatementGenerator {
 		/* TODO: replace this hack with a typecast expression that supports TypeSpecifier
 		 * see https://github.com/Yakindu/statecharts/issues/1779
 		 */
-		val type = BaseUtils.getType(stmt.type)
+		val type = BaseUtils.getType(stmt)
 
 		'''(«typeGenerator.code(type)») («stmt.operand.code.noTerminator»)'''
 	}
@@ -315,7 +316,7 @@ class StatementGenerator {
 		val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null;
 		val structuralType = cons.eContainer;
 		'''
-		«IF needCast»(«structuralType.baseName») «ENDIF»{
+		«IF needCast»(«structuralType.structType») «ENDIF»{
 			«FOR i_arg : arguments.indexed SEPARATOR (',\n')»
 			.«IF i_arg.value.parameter !== null»«i_arg.value.parameter.name»«ELSE»«cons.parameters.get(i_arg.key).name»«ENDIF» = «i_arg.value.value.code»
 			«ENDFOR»
@@ -332,7 +333,7 @@ class StatementGenerator {
 		val eConstructedType = cons.eContainer;
 		val constructedType = BaseUtils.getType(eConstructedType);
 		if(cons.eContainer instanceof SumAlternative) {
-			val altAccessor = constructedType.structName;
+			val altAccessor = constructedType.nameInStruct;
 			val eSumType = eConstructedType.eContainer;
 			val sumType = BaseUtils.getType(eSumType);
 			val dataType = if(constructedType instanceof AnonymousProductType) {
@@ -349,7 +350,7 @@ class StatementGenerator {
 			// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
 			val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null
 			return '''
-			«IF needCast»(«sumType.structName») «ENDIF»{
+			«IF needCast»(«sumType.structType») «ENDIF»{
 				.tag = «constructedType.enumName»«IF !(constructedType instanceof Singleton)», ««« there is no other field for singletons
 
 				««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
@@ -371,7 +372,7 @@ class StatementGenerator {
 	
 	@Traced dispatch def IGeneratorNode code(ElementReferenceExpression stmt) {
 		val ref = stmt.reference
-		val id = ref.baseName
+		val id = ref?.baseName
 
 		if (stmt.operationCall) {
 			if (ref instanceof VirtualFunction) {
@@ -797,7 +798,7 @@ class StatementGenerator {
 		val where = stmt.eContainer as WhereIsStatement;
 		'''
 		case «varType.enumName»: {
-			«varType.ctype» «stmt.assignmentVariable.name» = «where.matchElement.code».data.«varType.structName»;
+			«varType.ctype» «stmt.assignmentVariable.name» = «where.matchElement.code».data.«varType.nameInStruct»;
 			«stmt.body.code.noBraces»
 			break;
 		}
@@ -843,7 +844,7 @@ class StatementGenerator {
 		val isDeconstructionCase = stmt.eContainer as IsDeconstructionCase;
 		val isDeconstructionCaseType = isDeconstructionCase.productType;
 		val where = isDeconstructionCase.eContainer as WhereIsStatement;
-		val altAccessor = isDeconstructionCaseType.structName;
+		val altAccessor = isDeconstructionCaseType.nameInStruct;
 		val idx = isDeconstructionCase.deconstructors.indexOf(stmt);
 		val productType = BaseUtils.getType(isDeconstructionCase.productType);
 		val member = accessor(productType, stmt.productMember, ".", "").apply(idx);
@@ -865,7 +866,14 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def header(FunctionDefinition definition) {
-		val resultType = BaseUtils.getType(definition);
+		// TODO handle type schemes properly
+		// but *basically* a function with type parameters can't do anything with them except pass values through, so we *could* translate to void*
+		// however that's like, java, so ...
+		var _resultType = BaseUtils.getType(definition);
+		if(_resultType instanceof TypeScheme) {
+			_resultType = _resultType.on;
+		}
+		val resultType = _resultType;
 		if(resultType instanceof FunctionType) {
 			return '''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.to.ctype»* _result«IF !definition.parameters.empty», «ENDIF»«FOR x : definition.parameters SEPARATOR ', '»«BaseUtils.getType(x).ctype» «x.name»«ENDFOR»);'''
 		}
@@ -879,7 +887,7 @@ class StatementGenerator {
 	}
 	
 	def IGeneratorNode structureTypeCode(StructureType definition) {
-		return structureTypeCodeDecl(definition, definition.parameters.map[it as Parameter].asEList, definition.baseName);
+		return structureTypeCodeDecl(definition, definition.parameters.map[it as Parameter].asEList, definition.structType);
 	}
 	
 	def IGeneratorNode structureTypeCodeDecl(EObject obj, List<Parameter> parameters, String typeName) {
@@ -921,17 +929,17 @@ class StatementGenerator {
 		
 		typedef enum {
 			«FOR alternative: definition.alternatives SEPARATOR(",")»
-			«alternative.enumName»
+			«BaseUtils.getType(alternative).enumName»
 			«ENDFOR»
-		} «definition.enumName»;
+		} «BaseUtils.getType(definition).enumName»;
 		
 		typedef struct {
-			«definition.enumName» tag;
+			«BaseUtils.getType(definition).enumName» tag;
 			union {
-				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«BaseUtils.getType(alternative as AnonymousProductType).ctype»«ELSE»«BaseUtils.getType(alternative).structType»«ENDIF» «BaseUtils.getType(alternative).structName»;
+				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«BaseUtils.getType(alternative as AnonymousProductType).ctype»«ELSE»«BaseUtils.getType(alternative).structType»«ENDIF» «BaseUtils.getType(alternative).nameInStruct»;
 			«ENDFOR»
 			} data;
-		} «BaseUtils.getType(definition).structName»;
+		} «BaseUtils.getType(definition).structType»;
 		'''
 	}
 
