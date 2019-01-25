@@ -352,7 +352,9 @@ class ConstraintSystem {
 				}
 			}
 		}
-		
+		if(origin.toString == "self") {
+			print("");
+		}
 		val scope = scopeProvider.getScope(origin, tvp.reference);
 		val scopeElements = scope.getElements(tvp.targetQID).toList;
 		val cachedTypeSerializations = scopeElements.map[getUserData("TypeVariable")].toList;

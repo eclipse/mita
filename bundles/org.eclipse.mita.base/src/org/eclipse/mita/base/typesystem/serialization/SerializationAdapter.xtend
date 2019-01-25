@@ -129,6 +129,11 @@ class SerializationAdapter {
 		]
 	}
 	
+	protected def AbstractType copyUserData(AbstractType at, SerializedAbstractType st) {
+		at.userData.putAll(st.userData);
+		return at;
+	}
+	
 	protected dispatch def TypeClass fromValueObject(SerializedTypeClass obj) {
 		new TypeClass(obj.instances.entrySet.map[
 			it.key.fromValueObject as AbstractType -> it.value.resolveEObject(true)
@@ -169,27 +174,27 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {
-		return new AtomicType(obj.origin.resolveEObject(), obj.name);
+		return new AtomicType(obj.origin.resolveEObject(), obj.name).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedBaseKind obj) {
-		return new BaseKind(obj.origin.resolveEObject(), obj.name, obj.kindOf.fromValueObject() as AbstractType);
+		return new BaseKind(obj.origin.resolveEObject(), obj.name, obj.kindOf.fromValueObject() as AbstractType).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedBottomType obj) {
-		return new BottomType(obj.origin.resolveEObject(), obj.message);
+		return new BottomType(obj.origin.resolveEObject(), obj.message).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFloatingType obj) {
-		return new FloatingType(obj.origin.resolveEObject(), obj.widthInBytes);
+		return new FloatingType(obj.origin.resolveEObject(), obj.widthInBytes).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedIntegerType obj) {
-		return new IntegerType(obj.origin.resolveEObject(), obj.widthInBytes, obj.signedness);
+		return new IntegerType(obj.origin.resolveEObject(), obj.widthInBytes, obj.signedness).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeHole obj) {
-		return new TypeHole(obj.origin.resolveEObject(), obj.name);
+		return new TypeHole(obj.origin.resolveEObject(), obj.name).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFunctionType obj) {
@@ -197,40 +202,40 @@ class SerializationAdapter {
 			obj.origin.resolveEObject(),
 			obj.type.fromValueObject as AbstractType,
 			obj.typeArguments.fromSerializedTypes()
-		);
+		).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedUnorderedArguments obj) {
-		return new UnorderedArguments(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
+		return new UnorderedArguments(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes())).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
-		return new ProdType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
+		return new ProdType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes()).copyUserData(obj);
 	}
 	
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
-		return new SumType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
+		return new SumType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes()).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeConstructorType obj) {
-		return new TypeConstructorType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
+		return new TypeConstructorType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes()).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeScheme obj) {
-		return new TypeScheme(obj.origin.resolveEObject(), obj.vars.map[ it.fromValueObject() as TypeVariable ].toList(), obj.on.fromValueObject() as AbstractType);
+		return new TypeScheme(obj.origin.resolveEObject(), obj.vars.map[ it.fromValueObject() as TypeVariable ].toList(), obj.on.fromValueObject() as AbstractType).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariable obj) {
 		val origin = obj.origin.resolveEObject();
-		return new TypeVariable(origin, obj.name);
+		return new TypeVariable(origin, obj.name).copyUserData(obj);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
 		// we resolve the origin of TypeVarProxies because we pass them to the scope later
 		val resolve = obj.reference.eReferenceName != "type";
 		val origin = obj.origin.resolveEObject(resolve);
-		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy);
+		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy).copyUserData(obj);
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
@@ -388,18 +393,7 @@ class SerializationAdapter {
 	protected dispatch def Object fill(SerializedAbstractType ctxt, AbstractType obj) {
 		ctxt.name = obj.name;
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
-		return ctxt;
-	}
-	
-	protected dispatch def Object fill(SerializedAbstractBaseType ctxt, AbstractBaseType obj) {
-		ctxt.name = obj.name;
-		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
-		return ctxt;
-	}
-	
-	protected dispatch def Object fill(SerializedTypeVariable ctxt, TypeVariable obj) {
-		ctxt.name = obj.name;
-		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
+		ctxt.userData = obj.userData;
 		return ctxt;
 	}
 		
@@ -444,18 +438,16 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def Object fill(SerializedTypeConstructorType ctxt, TypeConstructorType obj) {
-		ctxt.name = obj.name
-		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
+		_fill(ctxt as SerializedAbstractType, obj as AbstractType);
 		ctxt.type = obj.type.toValueObject as SerializedAbstractType
 		ctxt.typeArguments = obj.typeArguments.map[ it.toValueObject as SerializedAbstractType ].toList
 		return ctxt
 	}
 	
 	protected dispatch def Object fill(SerializedTypeScheme ctxt, TypeScheme obj) {
-		ctxt.name = obj.name;
+		_fill(ctxt as SerializedAbstractType, obj as AbstractType);
 		ctxt.vars = obj.vars.map[ it.toValueObject as SerializedTypeVariable ].force;
 		ctxt.on = obj.on.toValueObject as SerializedAbstractType;
-		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
 		return ctxt;
 	}
 	
@@ -466,12 +458,16 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def SerializedObject toValueObject(ProdType obj) {
-		new SerializedProductType => [ fill(it, obj) ]
+		new SerializedProductType => [ 
+			fill(it, obj)
+		]
 	}
 	
 
 	protected dispatch def SerializedObject toValueObject(SumType obj) {
-		new SerializedSumType => [ fill(it, obj) ]
+		new SerializedSumType => [ 
+			fill(it, obj)
+		]
 	}
 	
 	protected dispatch def SerializedObject toValueObject(TypeConstructorType obj) {

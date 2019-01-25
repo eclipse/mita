@@ -24,6 +24,7 @@ import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.FloatingType
 
 /**
  * Facade for generating types.
@@ -89,6 +90,12 @@ class TypeGenerator implements IGenerator {
 		var result = codeFragmentProvider.create('''«type.CName»''')
 		return result;
 	}
+	
+	public dispatch def CodeFragment code(FloatingType type) {
+		var result = codeFragmentProvider.create('''«type.CName»''')
+		return result;
+	}
+	
 	
 	public dispatch def CodeFragment code(AbstractSystemResource type, AbstractType typeSpec) {
 		throw new UnsupportedOperationException('Cannot use system resources as types yet');

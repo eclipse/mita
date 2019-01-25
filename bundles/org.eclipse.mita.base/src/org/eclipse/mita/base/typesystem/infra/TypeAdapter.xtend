@@ -14,7 +14,7 @@ class TypeAdapter extends AdapterImpl {
 	}
 	
 	static def AbstractType get(EObject obj) {
-		return obj.eAdapters.filter(TypeAdapter).head?.type;
+		return obj?.eAdapters?.filter(TypeAdapter)?.head?.type;
 	}
 	
 }

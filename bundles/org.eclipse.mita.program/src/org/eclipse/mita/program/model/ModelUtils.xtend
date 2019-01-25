@@ -15,6 +15,7 @@ package org.eclipse.mita.program.model
 
 import com.google.common.base.Optional
 import com.google.inject.Inject
+import java.util.List
 import java.util.function.Predicate
 import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
@@ -37,6 +38,8 @@ import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
@@ -51,7 +54,6 @@ import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
-import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.resource.IContainer
 
@@ -117,8 +119,34 @@ class ModelUtils {
 		Optional.absent;
 	}
 	
+	static dispatch def Optional<List<String>> getAccessorParameterNames(ProdType struct) {
+		val rt = struct.realType;
+		if(rt instanceof ProdType) {
+			return Optional.of(rt.typeArguments.map[it.name]);
+		}
+		return Optional.of(#[rt.name]);
+	}
+	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject obj) {
+		Optional.absent;
+	}
+	static dispatch def Optional<List<String>> getAccessorParameterNames(Void obj) {
+		Optional.absent;
+	}
 	
 	
+	static def dispatch AbstractType getRealType(AbstractType t) {
+		return t;
+	}
+	
+	static def dispatch AbstractType getRealType(ProdType sumConstructor) {
+		if(sumConstructor.userData.get("eClass") == "AnonymousProductType") {
+			val children = sumConstructor.typeArguments;
+			if(children.length == 1) {
+				return children.head.realType;
+			}
+		}
+		return sumConstructor;
+	}
 	
 	/**
 	 * Retrieves the platform a program was written against.

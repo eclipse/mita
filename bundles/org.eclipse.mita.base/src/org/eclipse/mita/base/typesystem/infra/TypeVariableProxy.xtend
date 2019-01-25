@@ -31,7 +31,7 @@ class TypeVariableProxy extends TypeVariable {
 		this.reference = reference;
 		this.targetQID = targetQID;
 		this.isLinkingProxy = isLinkingProxy;
-		if(targetQID.toString == "None") {
+		if(targetQID.toString == "") {
 			print("")
 		}
 	}

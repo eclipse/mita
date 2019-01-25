@@ -1,12 +1,13 @@
 package org.eclipse.mita.base.typesystem.types
 
+import java.util.HashMap
+import java.util.Map
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.mita.base.typesystem.infra.Tree
-import java.util.HashSet
 
 @Accessors
 abstract class AbstractType {
@@ -17,6 +18,7 @@ abstract class AbstractType {
 	
 	protected final transient EObject origin;
 	protected final String name;
+	protected Map<String, String> userData = new HashMap();
 	
 	abstract def AbstractType map((AbstractType) => AbstractType f);
 	
@@ -39,14 +41,14 @@ abstract class AbstractType {
 	}
 	
 	def AbstractType replace(TypeVariable from, AbstractType with) {
-		map[it.replace(from, with)];
+		map[it.replace(from, with)] => [it.userData = this.userData];
 	}
 	
 	def AbstractType replace(Substitution sub) {
 		if(this.hasNoFreeVars) {
 			return this;
 		}
-		map[it.replace(sub)];
+		return map[it.replace(sub)] => [it.userData = this.userData];
 	}
 	
 	def Pair<Iterable<TypeVariable>, AbstractType> instantiate(ConstraintSystem system) {
@@ -70,11 +72,11 @@ abstract class AbstractType {
 	abstract def String toGraphviz();
 	
 	def AbstractType replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
-		map[it.replaceProxies(system, resolve)];
+		map[it.replaceProxies(system, resolve)] => [it.userData = this.userData];
 	}
 	
 	def AbstractType modifyNames(String suffix) {
-		map[it.modifyNames(suffix)];
+		map[it.modifyNames(suffix)] => [it.userData = this.userData];
 	}
 	
 }

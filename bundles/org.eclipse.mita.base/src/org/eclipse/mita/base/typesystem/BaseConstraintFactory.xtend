@@ -467,20 +467,24 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
+	protected def AbstractType computeTypeForOperation(ConstraintSystem system, Operation function) {
 		val typeArgs = function.typeParameters.map[system.computeConstraints(it)].force()
 			
 		val fromType = system.computeParameterType(function, function.parameters);
 		val toType = system.computeConstraints(function.typeSpecifier);
 		val funType = new FunctionType(function, new AtomicType(function), fromType, toType);
-		var result = system.associate(
-			if(typeArgs.empty) {
-				funType
-			} else {
-				new TypeScheme(function, typeArgs, funType);	
-			}
-		)
-		return result;
+		
+		if(typeArgs.empty) {
+			return funType
+		} else {
+			return new TypeScheme(function, typeArgs, funType);	
+		}
+		
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
+		val result = computeTypeForOperation(system, function);
+		return system.associate(result);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalMultiplyDivideExpression expr) {
@@ -643,6 +647,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 			
 			system.typeTable.put(QualifiedName.create(sumTypeName, sumAlt.name), prodType);
 			
+			prodType.userData.put("parentName", sumTypeName);
+			prodType.userData.put("eClass", sumAlt.eClass.name);
+			
 			return prodType;	
 		}
 		throw new CoreException(new Status(IStatus.ERROR, null, 'Broken model: parent of sum alternative is not a sum type'));
@@ -663,6 +670,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		}
 		
 		system.typeTable.put(QualifiedName.create(genType.name), result);
+		
+		result.userData.put("generator", genType.generator)
 		
 		return result;
 	}

@@ -28,7 +28,6 @@ import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -62,6 +61,7 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.base.typesystem.types.SumType
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -334,13 +334,15 @@ class GeneratorUtils {
 	dispatch def String getEnumName(SumType sumType) {
 		return '''«sumType.name»_enum''';
 	}
-	dispatch def String getEnumName(SumAlternative singleton) {
-		val parent = EcoreUtil2.getContainerOfType(singleton, SumType)
-		if(parent === null) {
-			return "ERROR: Model broken"
+	
+	dispatch def String getEnumName(ProdType prodType) {
+		val parentName = prodType.userData.get("parentName");
+		if(parentName !== null) {
+			return '''«parentName»_«prodType.name»_e''';
 		}
-		return '''«parent.name»_«singleton.name»_e''';
+		return '''«prodType.name»_e/*WARNING parent null*/''';
 	}
+	
 	dispatch def String getEnumName(EObject obj) {
 		return "ERROR: getEnumName";
 	}
@@ -348,8 +350,8 @@ class GeneratorUtils {
 	dispatch def String getStructName(SumType sumType) {
 		return '''«sumType.name»''';
 	}
-	dispatch def String getStructName(SumAlternative sumType) {
-		return '''«sumType.name»''';
+	dispatch def String getStructName(ProdType prodType) {
+		return '''«prodType.name»''';
 	}
 	dispatch def String getStructName(EObject obj) {
 		return "ERROR: getStructName";

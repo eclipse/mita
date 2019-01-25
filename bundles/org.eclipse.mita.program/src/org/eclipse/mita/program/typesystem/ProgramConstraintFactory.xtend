@@ -42,6 +42,7 @@ import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.IfStatement
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.IsAssignmentCase
@@ -164,6 +165,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ProgramBlock pb) {
 		system.computeConstraintsForChildren(pb);
 		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, GeneratedFunctionDefinition fundef) {
+		val result = computeTypeForOperation(system, fundef);
+		result.userData.put("generator", fundef.generator);
+		return system.associate(result);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PostFixUnaryExpression expr) {

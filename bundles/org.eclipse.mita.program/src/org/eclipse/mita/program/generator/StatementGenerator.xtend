@@ -112,6 +112,9 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static extension org.eclipse.mita.program.model.ModelUtils.getRealType;
+import org.eclipse.mita.base.typesystem.types.ProdType
 
 class StatementGenerator {
 
@@ -326,10 +329,12 @@ class StatementGenerator {
 	}
 	
 	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, SumSubTypeConstructor cons, Iterable<Argument> arguments) {
-		val constructedType = cons.eContainer;
-		if(constructedType instanceof SumAlternative) {
+		val eConstructedType = cons.eContainer;
+		val constructedType = BaseUtils.getType(eConstructedType);
+		if(cons.eContainer instanceof SumAlternative) {
 			val altAccessor = constructedType.structName;
-			val sumType = constructedType.eContainer as SumType;
+			val eSumType = eConstructedType.eContainer;
+			val sumType = BaseUtils.getType(eSumType);
 			val dataType = if(constructedType instanceof AnonymousProductType) {
 				if(constructedType.typeSpecifiers.length == 1) {
 					BaseUtils.getType(constructedType.typeSpecifiers.head).ctype;
@@ -363,7 +368,7 @@ class StatementGenerator {
 		}
 		return '''BROKEN MODEL''';
 	}
-
+	
 	@Traced dispatch def IGeneratorNode code(ElementReferenceExpression stmt) {
 		val ref = stmt.reference
 		val id = ref.baseName
@@ -418,9 +423,8 @@ class StatementGenerator {
 		if(hasValue) {
 			val value = stmt.value;
 			val expressionType = BaseUtils.getType(value);
-			val origin = expressionType.origin
-			if (origin instanceof GeneratedType) {
-				_generatedTypeGenerator = registry.getGenerator(origin);
+			if (expressionType.isGeneratedType) {
+				_generatedTypeGenerator = registry.getGenerator(stmt.eResource, expressionType).castOrNull(AbstractTypeGenerator);
 				_resultType = expressionType;
 			}
 		}
@@ -442,6 +446,10 @@ class StatementGenerator {
 			«ENDIF»
 		'''
 	}
+	
+	def boolean isGeneratedType(AbstractType type) {
+		return type?.userData?.containsKey("generator");
+	}
 
 	@Traced dispatch def IGeneratorNode code(AssignmentExpression stmt) {
 		return '''«stmt.initializationCode.noTerminator»'''
@@ -454,9 +462,8 @@ class StatementGenerator {
 		 * explicitly encode this case anddevolve code generation the registered code generator of the generated-type. 
 		 */
 		val type = BaseUtils.getType(stmt);
-		val origin = MitaBaseResource.resolveProxy(stmt.eResource, type.origin);
-		if (origin instanceof GeneratedType) {
-			val generator = registry.getGenerator(origin);
+		if (type.isGeneratedType) {
+			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (generator !== null && generator.checkExpressionSupport(type, null, null)) {
 				return '''«generator.generateExpression(type, stmt, null, null)»''';
 			} else {
@@ -517,10 +524,9 @@ class StatementGenerator {
 	}
 	def IGeneratorNode initializationCode(EObject target, IGeneratorNode varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
 		val type = BaseUtils.getType(target);
-		val origin = MitaBaseResource.resolveProxy(target.eResource, type.origin);
 		
-		if (origin instanceof GeneratedType) {
-			val generator = registry.getGenerator(origin);
+		if (type.isGeneratedType) {
+			val generator = registry.getGenerator(target.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (initialization instanceof NewInstanceExpression) {
 				return generator.generateNewInstance(type, initialization);
 			} else if (initialization instanceof ArrayAccessExpression) {
@@ -554,7 +560,6 @@ class StatementGenerator {
 		// «platformGenerator.typeGenerator.code(stmt.typeSpecifier)»
 		val initialization = stmt.initialization;
 		val type = BaseUtils.getType(stmt);
-		val origin = MitaBaseResource.resolveProxy(stmt.eResource, type.origin);
 	
 		var result = stmt.trace;
 		
@@ -563,8 +568,8 @@ class StatementGenerator {
 		// generate declaration
 		// generated types
 
-		if (origin instanceof GeneratedType) {
-			val generator = registry.getGenerator(origin);
+		if (type.isGeneratedType) {
+			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			result.children += generator.generateVariableDeclaration(type, stmt);
 			if(type.name == MitaTypeSystem.ARRAY_TYPE && initialization instanceof ArrayLiteral) {
 				initializationDone = true;
@@ -789,11 +794,10 @@ class StatementGenerator {
 	
 	@Traced dispatch def IGeneratorNode code(IsAssignmentCase stmt) {
 		val varType = BaseUtils.getType(stmt.assignmentVariable);
-		val origin = varType.origin;
 		val where = stmt.eContainer as WhereIsStatement;
 		'''
-		case «origin.enumName»: {
-			«varType.ctype» «stmt.assignmentVariable.name» = «where.matchElement.code».data.«origin.structName»;
+		case «varType.enumName»: {
+			«varType.ctype» «stmt.assignmentVariable.name» = «where.matchElement.code».data.«varType.structName»;
 			«stmt.body.code.noBraces»
 			break;
 		}
@@ -822,14 +826,14 @@ class StatementGenerator {
 		'''
 	}
 	
-	def Function<Integer, String> accessor(SumAlternative productType, Parameter preferred, String prefix, String suffix) {
+	def Function<Integer, String> accessor(AbstractType productType, Parameter preferred, String prefix, String suffix) {
 		[idx | 
 			if(preferred !== null) {
 				'''«prefix»«preferred.name»«suffix»'''	
 			}
 			else {
-				ModelUtils.getAccessorParameters(productType)
-					.transform[parameters | '''«prefix»«parameters.get(idx).baseName»«suffix»''']
+				ModelUtils.getAccessorParameterNames(productType)
+					.transform[parameters | '''«prefix»«parameters.get(idx)»«suffix»''']
 					.or('''«prefix»_«idx»«suffix»''')
 			} ]
 	}
@@ -841,7 +845,7 @@ class StatementGenerator {
 		val where = isDeconstructionCase.eContainer as WhereIsStatement;
 		val altAccessor = isDeconstructionCaseType.structName;
 		val idx = isDeconstructionCase.deconstructors.indexOf(stmt);
-		val productType = isDeconstructionCase.productType;
+		val productType = BaseUtils.getType(isDeconstructionCase.productType);
 		val member = accessor(productType, stmt.productMember, ".", "").apply(idx);
 		'''«varType.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«member»;'''
 	}
@@ -924,10 +928,10 @@ class StatementGenerator {
 		typedef struct {
 			«definition.enumName» tag;
 			union {
-				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«BaseUtils.getType(alternative as AnonymousProductType).ctype»«ELSE»«alternative.structType»«ENDIF» «alternative.structName»;
+				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«BaseUtils.getType(alternative as AnonymousProductType).ctype»«ELSE»«BaseUtils.getType(alternative).structType»«ENDIF» «BaseUtils.getType(alternative).structName»;
 			«ENDFOR»
 			} data;
-		} «definition.structName»;
+		} «BaseUtils.getType(definition).structName»;
 		'''
 	}
 

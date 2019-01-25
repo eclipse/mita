@@ -1,5 +1,6 @@
 package org.eclipse.mita.base.scoping
 
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.xtext.naming.DefaultDeclarativeQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName

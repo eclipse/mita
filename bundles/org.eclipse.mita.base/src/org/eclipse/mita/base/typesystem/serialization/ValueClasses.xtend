@@ -72,6 +72,7 @@ abstract class SerializedAbstractType extends SerializedObject {
 
 	public String origin;
 	public String name;
+	public Map<String, String> userData;
 }
 
 abstract class SerializedAbstractBaseType extends SerializedAbstractType {

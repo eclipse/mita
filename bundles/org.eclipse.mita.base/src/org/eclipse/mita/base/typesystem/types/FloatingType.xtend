@@ -24,4 +24,13 @@ class FloatingType extends NumericType {
 		return #[];
 	}
 	
+	def getCName() {
+		if(widthInBytes == 4) {
+			return "float";
+		}
+		else if(widthInBytes == 8) {
+			return "double";
+		}
+		return toString;
+	}
 }

@@ -15,17 +15,22 @@ package org.eclipse.mita.program.scoping
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.IContainer
+import org.eclipse.xtext.scoping.IScope
+import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
 import org.eclipse.xtext.scoping.impl.MultimapBasedSelectable
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
-import org.eclipse.xtext.scoping.impl.ImportNormalizer
-import org.eclipse.xtext.naming.QualifiedName
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.xtext.scoping.Scopes
+import org.eclipse.mita.base.expressions.ExpressionsPackage
 
 class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProvider {
 
@@ -44,6 +49,16 @@ class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProv
 
 	override protected getImplicitImports(boolean ignoreCase) {
 		#[createImportedNamespaceResolver("stdlib.*", ignoreCase), new ImportNormalizer(QualifiedName.create(""), true, ignoreCase)]
+	}
+
+	override protected getLocalElementsScope(IScope parent, EObject context, EReference reference) {
+		if(context instanceof Operation) {
+			if(reference == ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference) {
+				return Scopes.scopeFor(context.parameters, parent);
+			}
+		}
+
+		return super.getLocalElementsScope(parent, context, reference)
 	}
 
 	// Adds the ownPackage as import

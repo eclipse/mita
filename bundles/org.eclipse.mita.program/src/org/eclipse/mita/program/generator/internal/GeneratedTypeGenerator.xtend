@@ -15,8 +15,8 @@ package org.eclipse.mita.program.generator.internal
 
 import com.google.inject.Inject
 import java.util.List
-import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
@@ -32,13 +32,11 @@ class GeneratedTypeGenerator {
 
     @Inject
     protected CodeFragmentProvider codeFragmentProvider
-    
-    @Inject ITypeSystemInferrer typeInferrer
 
 	def generateHeader(CompilationContext context, List<String> userTypeFiles) {
 		
-		val generatorsWithTypeSpecs = context.getAllGeneratedTypesUsed().map[new Pair(it, registry.getGenerator(it.origin as GeneratedType))].toList;
-		val generators = context.getAllGeneratedTypesUsed().map[it.origin as GeneratedType].groupBy[it.name].values.map[it.head].map[registry.getGenerator(it as GeneratedType)].toList;
+		val generatorsWithTypeSpecs = context.getAllGeneratedTypesUsed().map[new Pair(it, registry.getGenerator(context.allUnits.head.eResource, it) as AbstractTypeGenerator)].toList;
+		val generators = context.getAllGeneratedTypesUsed().groupBy[it.name].values.map[it.head].map[registry.getGenerator(context.allUnits.head.eResource, it) as AbstractTypeGenerator].toList;
 		
 		return codeFragmentProvider.create('''
 			«FOR generator: generators SEPARATOR("\n")» 
@@ -52,5 +50,4 @@ class GeneratedTypeGenerator {
 		''').addHeader(userTypeFiles.map[new IncludePath(it, false)])
 		.toHeader(context, 'MITA_GENERATED_TYPES_H')
 	}
-	
 }
