@@ -180,9 +180,23 @@ No C code will be generated as long as errors are present.
 
 ### Platform Initialization
 
+You initialize the platform in three phases:
+
+- In `main`, which you generate, you initialize your event system and should enqueue `Mita_initialize` and `Mita_goLive`. Since after `Mita_goLive` the system is fully running you could also inject an event like `platform.startup` here.
+- `Mita_initialize` calls the setup methods of all used system resources. It uses cross links between them to calculate some order in which to do this. It is assumed that unused resources don't need to be initialized and that all startup dependencies are declared with configuration items explicitly. If you have implicit dependencies your platform generators need to handle them themselves.
+- `Mita_goLive` calls the enable methods of all used system resources. After a resource has been enabled it may start to fire events. The order of enabling follows the same rules as with initialization.
+
+Global variables are initialized after all resources have been enabled.
+
 ### Event Loop
 
+Mita's current event system works as follows: when a system event occurs, such as an interrupt, it should insert all user event handlers pertaining to that event into the main event loop. This has the advantage that the user doesn't need to handle different execution contexts or consider race conditions, since all event handlers are exectuted sequentially. In particular user event handlers may not interrupt other user event handlers. Interrupts should use a separate stack and return quickly.
+
+This means that your implementation needs to implement this semantic of events as well, whether through a `while(true)` loop, an event queue, threads with locks or something else.
+
 ### Event Handlers
+
+User event handlers are translated by core Mita. To inject them into your event system you can get their function name with `GeneratorUtils.getHandlerName`. 
 
 ## Hands On
 
