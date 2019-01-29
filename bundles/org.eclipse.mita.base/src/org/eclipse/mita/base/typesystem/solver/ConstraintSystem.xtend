@@ -357,12 +357,6 @@ class ConstraintSystem {
 		}
 		val scope = scopeProvider.getScope(origin, tvp.reference);
 		val scopeElements = scope.getElements(tvp.targetQID).toList;
-		val cachedTypeSerializations = scopeElements.map[getUserData("TypeVariable")].toList;
-		if(!cachedTypeSerializations.empty && cachedTypeSerializations.forall[it !== null]) {
-			val cachedTypes = cachedTypeSerializations.map[serializationAdapter.deserializeTypeFromJSON(it, [ resource.resourceSet.getEObject(it, false) ])]
-			// these proxies should not be ambiguous, otherwise we should have created a type class!
-			return cachedTypes.map[typ | typ.replaceProxies(this, [ this.resolveProxy(it, resource, scopeProvider) ])];
-		}
 		
 		val replacementObjects = scopeElements.map[EObjectOrProxy].force.toSet;
 		if(replacementObjects.empty) { 

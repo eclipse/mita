@@ -9,246 +9,134 @@ import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.diagnostics.Severity
 
-class SerializedObject {
-    public String _type;
-}
 
-class SerializedConstraintSystem extends SerializedObject {
-    new() {
-        _type = "SerializedConstraintSystem";
-    }
-
+final class SerializedConstraintSystem {
 	public List<SerializedAbstractTypeConstraint> constraints = new ArrayList;
-	public Map<String, SerializedTypeVariable> symbolTable;
-	public Map<String, SerializedAbstractType> typeTable;
-	public Map<String, SerializedTypeClass> typeClasses;
+	public Map<String, Object> symbolTable;
+	public Map<String, Object> typeTable;
+	public Map<String, Object> typeClasses;
 	public SerializedAbstractTypeGraph explicitSubtypeRelations;
-	public Map<Integer, SerializedAbstractType> explicitSubtypeRelationsTypeSource;
+	public Map<Integer, Object> explicitSubtypeRelationsTypeSource;
 }
 
-class SerializedAbstractTypeGraph extends SerializedObject {
-    new() {
-        _type = "SerializedAbstractTypeGraph";
-    }
-    
+final class SerializedAbstractTypeGraph {    
 	public Map<Integer, Set<Integer>> outgoing;
 	public Map<Integer, Set<Integer>> incoming;
 	public Map<Integer, SerializedAbstractType> nodeIndex;
 	public int nextNodeInt = 0;
 }
 
-class SerializedValidationIssue extends SerializedObject {
-	new() {
-		_type = "SerializedValidationIssue";
-	}
-	
+final class SerializedValidationIssue {	
 	public Severity severity;
 	public String message;
 	public String issueCode;
 	public String target;
-	public SerializedEStructuralFeature feature;
+	public SerializedFeature feature;
 }
 
-class SerializedTypeClass extends SerializedObject {
-    new() {
-        _type = "SerializedTypeClass";
-    }
-
+final class SerializedTypeClass {
 	public Map<SerializedAbstractType, String> instances;
 }
 
-class SerializedTypeClassProxy extends SerializedTypeClass {
-    new() {
-        _type = "SerializedTypeClassProxy";
-    }
-
+final class SerializedTypeClassProxy {
 	public SerializedTypeVariableProxy toResolve;
 }
 
-abstract class SerializedAbstractType extends SerializedObject {
-    new() {
-        _type = "SerializedAbstractType";
-    }
-
+abstract class SerializedAbstractType {
 	public String origin;
 	public String name;
 	public Map<String, String> userData;
 }
 
 abstract class SerializedAbstractBaseType extends SerializedAbstractType {
-    new() {
-        _type = "SerializedAbstractBaseType";
-    }
 }
 
-class SerializedTypeHole extends SerializedTypeVariable {
-	new() {
-		_type = "SerializedTypeHole";
-	}
+final class SerializedTypeHole extends SerializedAbstractType {
 }
 
-class SerializedUnorderedArguments extends SerializedTypeConstructorType {
-	new() {
-        _type = "SerializedUnorderedArguments";
-    }
+final class SerializedUnorderedArguments extends SerializedCompoundType {
     public List<String> parameterNames = new ArrayList;
     public List<SerializedAbstractType> valueTypes = new ArrayList;
 }
 
-class SerializedAtomicType extends SerializedAbstractBaseType {
-    new() {
-        _type = "SerializedAtomicType";
-    }
-
+final class SerializedAtomicType extends SerializedAbstractBaseType {
 }
 
-class SerializedBaseKind extends SerializedAbstractBaseType {
-    new() {
-        _type = "SerializedBaseKind";
-    }
-
+final class SerializedBaseKind extends SerializedAbstractBaseType {
 	public SerializedAbstractType kindOf;
 }
 
-class SerializedBottomType extends SerializedAbstractBaseType {
-    new() {
-        _type = "SerializedBottomType";
-    }
-
+final class SerializedBottomType extends SerializedAbstractBaseType {
 	public String message;
 }
 
-class SerializedNumericType extends SerializedAbstractBaseType {
-    new() {
-        _type = "SerializedNumericType";
-    }
-
+abstract class SerializedNumericType extends SerializedAbstractBaseType {
 	public int widthInBytes;
 }
 
-class SerializedFloatingType extends SerializedNumericType {
-    new() {
-        _type = "SerializedFloatingType";
-    }
-
+final class SerializedFloatingType extends SerializedNumericType {
 }
 
-class SerializedIntegerType extends SerializedNumericType {
-    new() {
-        _type = "SerializedIntegerType";
-    }
-
+final class SerializedIntegerType extends SerializedNumericType {
 	public Signedness signedness;
 }
 
-class SerializedTypeConstructorType extends SerializedAbstractType {
-    new() {
-        _type = "SerializedTypeConstructorType";
-    }
-
-    public SerializedAbstractType type;
-	public List<SerializedAbstractType> typeArguments;
+abstract class SerializedCompoundType extends SerializedAbstractType {
+	public SerializedAbstractType type;
+	public List<SerializedAbstractType> typeArguments = new ArrayList;
 }
 
-class SerializedFunctionType extends SerializedTypeConstructorType {
-    new() {
-        _type = "SerializedFunctionType";
-    }
+final class SerializedTypeConstructorType extends SerializedCompoundType {
 }
 
-class SerializedProductType extends SerializedTypeConstructorType {
-    new() {
-        _type = "SerializedProductType";
-    }
-
+final class SerializedFunctionType extends SerializedCompoundType {
 }
 
-class SerializedCoSumType extends SerializedProductType {
-    new() {
-        _type = "SerializedCoSumType";
-    }
-
+final class SerializedProductType extends SerializedCompoundType {
 }
 
-class SerializedSumType extends SerializedTypeConstructorType {
-    new() {
-        _type = "SerializedSumType";
-    }
-
+final class SerializedSumType extends SerializedCompoundType {
 }
 
-class SerializedTypeScheme extends SerializedAbstractType {
-    new() {
-        _type = "SerializedTypeScheme";
-    }
-
+final class SerializedTypeScheme extends SerializedAbstractType {
 	public List<SerializedTypeVariable> vars;
 	public SerializedAbstractType on;
 }
 
-class SerializedTypeVariable extends SerializedAbstractType {
-    new() {
-        _type = "SerializedTypeVariable";
-    }
+final class SerializedTypeVariable extends SerializedAbstractType {
 }
 
-class SerializedTypeVariableProxy extends SerializedTypeVariable {
-    new() {
-        _type = "SerializedTypeVariableProxy";
-    }
-    
+final class SerializedTypeVariableProxy extends SerializedAbstractType {
 	public SerializedEReference reference;
 	public String targetQID;
 	public AmbiguityResolutionStrategy ambiguityResolutionStrategy;
 }
 
-class SerializedAbstractTypeConstraint extends SerializedObject {
-    new() {
-        _type = "SerializedAbstractTypeConstraint";
-    }
+abstract class SerializedAbstractTypeConstraint {
 	public SerializedValidationIssue errorMessage;
 }
 
-class SerializedEqualityConstraint extends SerializedAbstractTypeConstraint {
-    new() {
-        _type = "SerializedEqualityConstraint";
-    }
-
+final class SerializedEqualityConstraint extends SerializedAbstractTypeConstraint {
 	public SerializedAbstractType left;
 	public SerializedAbstractType right;
 }
 
-class SerializedJavaClassInstanceConstraint extends SerializedAbstractTypeConstraint {
-	new() {
-		_type = "SerializedJavaClassInstanceConstraint";
-	}
-	
+final class SerializedJavaClassInstanceConstraint extends SerializedAbstractTypeConstraint {
 	public SerializedAbstractType what;
 	public String javaClass;
 }
 
-class SerializedExplicitInstanceConstraint extends SerializedAbstractTypeConstraint {
-    new() {
-        _type = "SerializedExplicitInstanceConstraint";
-    }
-
+final class SerializedExplicitInstanceConstraint extends SerializedAbstractTypeConstraint {
 	public SerializedAbstractType instance;
 	public SerializedAbstractType typeScheme;
 }
 
-class SerializedSubtypeConstraint extends SerializedAbstractTypeConstraint {
-    new() {
-        _type = "SerializedSubtypeConstraint";
-    }
-
+final class SerializedSubtypeConstraint extends SerializedAbstractTypeConstraint {
 	public SerializedAbstractType subType;
 	public SerializedAbstractType superType;
 }
 
-class SerializedEStructuralFeature extends SerializedObject {
-	new() {
-		_type = "SerializedEStructuralFeature";
-	}
+abstract class SerializedFeature {
 	public String javaClass;
 	public String javaField;
 	public String javaMethod;
@@ -257,20 +145,16 @@ class SerializedEStructuralFeature extends SerializedObject {
 	public String eReferenceName;
 }
 
-class SerializedEReference extends SerializedEStructuralFeature {
-	new() {
-		_type = "SerializedEReference";
-	}
+final class SerializedEStructuralFeature extends SerializedFeature {
+}
+
+final class SerializedEReference extends SerializedFeature {
 }
  
-class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstraint {
-    new() {
-        _type = "SerializedFunctionTypeClassConstraint";
-    }
-
+final class SerializedFunctionTypeClassConstraint extends SerializedAbstractTypeConstraint {
 	public SerializedAbstractType type;
 	public String functionCall;
-	public SerializedObject functionReference;
+	public Object functionReference;
 	public SerializedTypeVariable returnTypeTV;
 	public String instanceOfQN;
 	public Variance returnTypeVariance;

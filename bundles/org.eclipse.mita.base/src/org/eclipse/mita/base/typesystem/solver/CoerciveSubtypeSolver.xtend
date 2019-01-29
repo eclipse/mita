@@ -697,7 +697,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						graph.getBaseTypeSuccecessors(vIdx);
 						graph.getInfimum(system, successors);
 			
-						infimum.message = "Couldn't find a good subtype for " + predecessors.join(" and ")
+						infimum.message = "Couldn't find a good subtype for " + successors.join(" and ")
 					}
 					// assign-inf
 					graph.replace(v, infimum);

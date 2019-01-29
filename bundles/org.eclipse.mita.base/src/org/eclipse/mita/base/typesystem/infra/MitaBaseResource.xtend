@@ -174,7 +174,8 @@ class MitaBaseResource extends LazyLinkingResource {
 			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filter[it.value !== null]
 			.map[it.value]
-			.map[GZipper.decompress(it)].force;
+			//.map[GZipper.decompress(it)]
+			.force;
 		timer.stop("resourceDescriptions");
 		if(obj.eResource.URI.lastSegment == "application.mita") {
 			print("")
@@ -182,7 +183,8 @@ class MitaBaseResource extends LazyLinkingResource {
 		timer.start("deserialize");
 		val allConstraintSystems = jsons
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ 
-				return resource.resourceSet.getEObject(it, true);
+				val res = resource.resourceSet.getEObject(it, true);
+				return res;
 //				val resourceOfObj = resource.resourceSet.getResource(it.trimFragment, true);
 //				return fragmentProvider.getEObject(resourceOfObj, it.fragment, fragmentProviderFallback);
 			]) ]

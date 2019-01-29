@@ -104,10 +104,18 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 //			]
 			
 			val String json = serializationAdapter.toJSON(constraints);
-			val jsonCompressed = GZipper.compress(json);
-			userData.put(CONSTRAINTS, jsonCompressed);
-			val lenRaw = json.length;
-			val lenCompressed = jsonCompressed.length;
+			val c2 = serializationAdapter.deserializeConstraintSystemFromJSON(json, [ 
+				val res = eObject.eResource.resourceSet.getEObject(it, true);
+				return res;
+//				val resourceOfObj = resource.resourceSet.getResource(it.trimFragment, true);
+//				return fragmentProvider.getEObject(resourceOfObj, it.fragment, fragmentProviderFallback);
+			])
+			userData.put(CONSTRAINTS, json);
+//			val String json = serializationAdapter.toJSON(constraints);
+//			val jsonCompressed = GZipper.compress(json);
+//			userData.put(CONSTRAINTS, jsonCompressed);
+//			val lenRaw = json.length;
+//			val lenCompressed = jsonCompressed.length;
 			if(eObject.eResource.URI.lastSegment == "application.mita") {
 				print("");	
 			}
