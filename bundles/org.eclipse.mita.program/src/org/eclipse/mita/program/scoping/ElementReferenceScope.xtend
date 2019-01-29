@@ -71,7 +71,7 @@ class ElementReferenceScope extends AbstractScope {
 		result.addDeconstructorVariables(context)
 		//result.addStructureTypes(context)
 		result.addStructureAccessors(context)
-		result.addSumTypes(context)
+		//result.addSumTypes(context)
 		Scopes.scopedElementsFor(result, [obj | 
 			if(obj instanceof TypeKind) {
 				return QualifiedName.create(obj.name.substring(1));

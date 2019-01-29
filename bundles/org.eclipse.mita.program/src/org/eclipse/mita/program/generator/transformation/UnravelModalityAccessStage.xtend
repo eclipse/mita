@@ -49,7 +49,7 @@ class UnravelModalityAccessStage extends AbstractUnravelingStage {
 		 *       As such this code is very likely to break in the future.
 		 */
 		val firstArgument = (unravelingObject as ArgumentExpression).arguments.head?.value;
-		val featureCall = firstArgument as FeatureCall
+		val featureCall = firstArgument as ElementReferenceExpression;
 		val modality = featureCall.reference as Modality;
 		val systemResource = (featureCall.arguments.head.value as ElementReferenceExpression).reference as AbstractSystemResource;
 		

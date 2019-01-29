@@ -40,6 +40,8 @@ import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.VariableDeclaration
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 
 /**
  * Infers the value of an expression at compile time.
@@ -66,6 +68,10 @@ class StaticValueInferrer {
 			typ.name + "." + name + "(" + properties.entrySet.map[name_expr | name_expr.key + " = " StaticValueInferrer.infer(name_expr.value, [])].join(", ") + ")"
 		}
 		
+	}
+	
+	static dispatch def Object infer(SumSubTypeConstructor constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {
+		return infer(constr.eContainer, expression, inferenceBlockerAcceptor);
 	}
 	static dispatch def Object infer(Singleton constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {
 		val props = new HashMap<String, Expression>(0);
@@ -172,11 +178,7 @@ class StaticValueInferrer {
 		inferenceBlockerAcceptor.apply(null);
 		return null;
 	}
-	
-	static dispatch def Object infer(FeatureCall expression, (EObject) => void inferenceBlockerAcceptor) {
-		return infer(expression.arguments.head.value, inferenceBlockerAcceptor);
-	}
-	
+			
 	static dispatch def Object infer(Expression expression, (EObject) => void inferenceBlockerAcceptor) {
 		inferenceBlockerAcceptor.apply(expression);
 		return null;

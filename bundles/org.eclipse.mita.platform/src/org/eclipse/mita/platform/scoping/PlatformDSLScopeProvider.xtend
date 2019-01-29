@@ -27,6 +27,18 @@ import org.eclipse.mita.platform.ConfigurationItem
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
+import org.eclipse.xtext.scoping.impl.FilteringScope
+import org.eclipse.xtext.resource.IEObjectDescription
+import org.eclipse.mita.platform.PlatformPackage
+import org.eclipse.mita.base.types.TypesPackage
+import com.google.common.base.Predicate
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.scoping.impl.ImportNormalizer
+import org.eclipse.xtext.naming.QualifiedName
+import java.util.Collections
+import org.eclipse.xtext.scoping.impl.ImportScope
+import org.eclipse.mita.base.scoping.TypeKindNormalizer
 
 /**
  * This class contains custom scoping description.
@@ -35,15 +47,45 @@ import org.eclipse.xtext.scoping.Scopes
  * on how and when to use it.
  */
 class PlatformDSLScopeProvider extends AbstractPlatformDSLScopeProvider {
+	
+	val Predicate<IEObjectDescription> globalElementFilter = [ x |
+		val inclusion = 
+			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass)) ||
+			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
 
-	def IScope scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
-		val configItem = EcoreUtil2.getContainerOfType(context, ConfigurationItem);
-		val typ = configItem?.type;
-		val superScope = delegate.getScope(context, ref);
-		if(typ instanceof SumType) {
-			return Scopes.scopeFor(typ.alternatives);
-		}
-		return superScope;
+		val exclusion = 
+			(PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
+
+		inclusion && !exclusion;
+	]
+	
+	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
+		val delegateScope = delegate.getScope(context, ref);
+		val superScope = new FilteringScope(delegateScope, globalElementFilter);
+		val scope = (if(context instanceof ElementReferenceExpression) {
+			if(context.isOperationCall && context.arguments.size > 0) {
+				val owner = context.arguments.head.value;
+
+				val ownerText = NodeModelUtils.findNodesForFeature(owner, ref)?.head?.text ?: "";
+				val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
+				new ImportScope(#[normalizer], superScope, null, null, false);
+				
+			}
+		}) ?: superScope;
+		val typeKindNormalizer = new TypeKindNormalizer();
+		return new ImportScope(#[typeKindNormalizer], scope, null, null, false);
+		
 	}
 
 //	def IScope scope_FeatureCall_feature(FeatureCall context, EReference reference) {

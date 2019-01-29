@@ -52,7 +52,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		// now `at` is a concrete function type of operation `op`.
 		// We introduce a constraint to make sure that this function's return is compatible with the expected type computed before.
 		// (for example the explicit type of variable declarations)
-		if(BaseUtils.getText(functionCall, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference) == "println") {
+		if(BaseUtils.getText(functionCall, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference) == "Dhcp") {
 			print("")
 		}
 		if(op !== null && functionReference !== null && !functionCall.eIsProxy) {

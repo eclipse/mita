@@ -672,12 +672,15 @@ class BaseConstraintFactory implements IConstraintFactory {
 		system.typeTable.put(QualifiedName.create(genType.name), result);
 		
 		result.userData.put("generator", genType.generator)
+		if(genType.sizeInferrer !== null) {
+			result.userData.put("sizeInferrer", genType.sizeInferrer)
+		}
 		
 		return result;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, ExceptionTypeDeclaration genType) {
-		val result = new AtomicType(genType);
+		val result = new AtomicType(genType, "Exception");
 		system.typeTable.put(QualifiedName.create(genType.name), result);
 		return result;
 	}

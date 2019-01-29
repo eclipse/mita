@@ -67,6 +67,7 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
+import org.eclipse.mita.base.scoping.TypeKindNormalizer
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -255,34 +256,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	protected final OnChangeEvictingCache scope_FeatureCall_feature_cache = new OnChangeEvictingCache();
 
-	def IScope scope_FeatureCall_feature(FeatureCall context, EReference reference) {
-		scope_FeatureCall_feature_cache.get(context, context.eResource, [
-			val owner = context.arguments.head.value
-
-			var scope = IScope.NULLSCOPE;
-			val ownerType = BaseUtils.getType(owner);
-
-			if (owner instanceof ElementReferenceExpression) {
-				if (owner.reference instanceof AbstractSystemResource ||
-					owner.reference instanceof SystemResourceSetup) {
-					/* Special case: the type inferrer delivers a valid type for system resources and their setup.
-					 * 				 However, we musn't use that type to provide the scope but rather the direct rules (addFeatureScope).
-					 */
-					return addFeatureScope(owner.reference, scope);
-				}
-			}
-
-			if (ownerType !== null) {
-				scope = getExtensionMethodScope(context, reference, ownerType);
-				return addFeatureScope(ownerType, scope)
-			} else if (owner instanceof ElementReferenceExpression) {
-				return addFeatureScope(owner.reference, scope)
-			} else {
-				return getDelegate().getScope(context, reference);
-			}
-		])
-	}
-
 	protected def getExtensionMethodScope(Expression context, EReference reference, AbstractType type) {
 		return new FilteringScope(delegate.getScope(context, reference), [ x |
 			(x.EClass == ProgramPackage.Literals.FUNCTION_DEFINITION ||
@@ -446,6 +419,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 //			PlatformPackage.Literals.SENSOR.isSuperTypeOf(x.EClass) ||
 //			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x.EClass) ||
 			TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x.EClass) ||
+			TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass) ||
 			TypesPackage.Literals.TYPE_PARAMETER.isSuperTypeOf(x.EClass); // exclude gloabal type parameters, local ones are added in TypeReferenceScope
 		inclusion && !exclusion;
 	]
@@ -466,26 +440,15 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			val scope = (if(context instanceof ElementReferenceExpression) {
 				if(context.isOperationCall && context.arguments.size > 0) {
 					val owner = context.arguments.head.value;
-
-					val s2 = (if (owner instanceof ElementReferenceExpression) {
-						val refOrProxy = owner.eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false) as EObject;
-						if (refOrProxy !== null && !refOrProxy.eIsProxy && (
-								refOrProxy instanceof AbstractSystemResource ||
-								refOrProxy instanceof SystemResourceSetup)) {
-							/* Special case: the type inferrer delivers a valid type for system resources and their setup.
-							 * 				 However, we musn't use that type to provide the scope but rather the direct rules (addFeatureScope).
-							 */
-							addFeatureScope(refOrProxy, superScope);
-						}
-					}) ?: superScope;
 					
 					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref)?.head?.text ?: "";
 					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
-					addFeatureScope(owner, new ImportScope(Collections.singletonList(normalizer), s2, null, null, false));
+					new ImportScope(#[normalizer], superScope, null, null, false);
 					
 				}
 			}) ?: superScope;
-			new ElementReferenceScope(scope, context);
+			val typeKindNormalizer = new TypeKindNormalizer();
+			new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
 		}
 	}
 

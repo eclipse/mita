@@ -12,18 +12,23 @@ package org.eclipse.mita.base.types
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
-import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.Variance
+import org.eclipse.xtext.EcoreUtil2
 
 /** 
  * @author Thomas Kutz - Initial contribution and API
+ * @author Simon Wegendt - Some methods
  */
 class TypesUtil {
 	public static final String ID_SEPARATOR = "."
-
+	
+	static def boolean isGeneratedType(AbstractType type) {
+		return type?.userData !== null && type.userData.containsKey("generator");
+	}
+	
 	static def getVarianceInAssignment(EObject obj) {
 		val maybeAssignment = EcoreUtil2.getContainerOfType(obj, AssignmentExpression);
 		if(maybeAssignment !== null) {

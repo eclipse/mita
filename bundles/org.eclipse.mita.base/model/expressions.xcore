@@ -17,6 +17,7 @@ package org.eclipse.mita.base.expressions
 import org.eclipse.emf.ecore.EEnumerator
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.Operation
@@ -271,11 +272,15 @@ class FeatureCall extends ElementReferenceExpression {
 	op String toString() {
 		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
 		
-		var refText = ref?.toString()
+		var refText = if(ref instanceof NamedElement) {
+			ref.name;
+		} else {
+			ref?.toString();	
+		}
 		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
 		refText = refText ?: "<null>"
 
-		arguments.head?.value + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "")
+		return arguments.head?.value + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "");
 	}
 }
 
@@ -283,11 +288,15 @@ class FeatureCallWithoutFeature extends FeatureCall {
 	op String toString() {
 		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
 		
-		var refText = ref?.toString()
+		var refText = if(ref instanceof NamedElement) {
+			ref.name;
+		} else {
+			ref?.toString();	
+		}
 		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
 		refText = refText ?: "<null>"
 		
-		"<auto>." + refText + (if(operationCall) "(" + arguments.join(", ") + ")" else "")
+		return "<auto>." + refText + (if(operationCall) "(" + arguments.join(", ") + ")" else "");
 	}
 }
 
@@ -295,8 +304,9 @@ class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperat
 	refers EObject reference
 	
 	op Expression[] getExpressions() {
-		if (reference instanceof Operation) {
-			return ArgumentSorter.getOrderedExpressions(getArguments(), reference as Operation);
+		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
+		if (ref instanceof Operation) {
+			return ArgumentSorter.getOrderedExpressions(getArguments(), ref);
 		} else {
 			return arguments.map[value];
 		}
@@ -305,7 +315,11 @@ class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperat
 	op String toString() {
 		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
 		
-		var refText = ref?.toString()
+		var refText = if(ref instanceof NamedElement) {
+			ref.name;
+		} else {
+			ref?.toString();	
+		}
 		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
 		refText = refText ?: "<null>"
 		

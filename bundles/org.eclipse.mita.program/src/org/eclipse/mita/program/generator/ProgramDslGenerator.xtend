@@ -186,7 +186,15 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		doType(someProgram);
 		
 		val platform = modelUtils.getPlatform(input, someProgram);
+		
 		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
+		
+		var EObject platformRoot = platform;
+		while(platformRoot.eContainer !== null) {
+			platformRoot = platformRoot.eContainer;
+		}
+		
+		doType(platformRoot)
 		
 		val context = compilationContextProvider.get(compilationUnits, stdlib);
 		
@@ -237,7 +245,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			fsa.produceFile('Makefile', someProgram, codefragment);
 	}
 		
-	def doType(Program program) {
+	def doType(EObject program) {
 		val resource = program.eResource;
 		if(resource instanceof MitaBaseResource) {
 			resource.collectAndSolveTypes(program);

@@ -18,11 +18,22 @@ import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.SystemSpecification
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.mita.platform.ConfigurationItem
+import org.eclipse.mita.base.types.TypedElement
 
 class PlatformConstraintFactory extends BaseConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemSpecification spec) {
 		system.computeConstraintsForChildren(spec);
 		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConfigurationItem configItem) {
+		val result = system._computeConstraints(configItem as TypedElement);
+		if(configItem.defaultValue !== null) {
+			system.computeConstraints(configItem.defaultValue);
+		}
+		
+		return result;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AbstractSystemResource res) {

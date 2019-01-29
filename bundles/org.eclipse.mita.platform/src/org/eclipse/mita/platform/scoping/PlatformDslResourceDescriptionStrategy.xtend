@@ -17,6 +17,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.util.BaseUtils
@@ -47,6 +48,11 @@ class PlatformDslResourceDescriptionStrategy extends BaseResourceDescriptionStra
 		var Map<String, String> map = new HashMap()
 		map.put(EXPORTED, String.valueOf(true))
 		var QualifiedName firstQN = getQualifiedNameProvider().getFullyQualifiedName(obj)
+		if(obj instanceof TypeKind) {
+			if(obj.name.endsWith("ADC_Reference_Voltage")) {
+				print("")
+			}
+		}
 		acceptor.accept(EObjectDescription.create(firstQN, obj, map))
 		var QualifiedName secondQN = typeQualifiedNameProvider.getFullyQualifiedName(obj)
 		if (secondQN !== null && !secondQN.equals(firstQN)) {

@@ -30,6 +30,9 @@ import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class SystemResourceHandlingGenerator {
 
@@ -94,7 +97,7 @@ class SystemResourceHandlingGenerator {
 
 				«IF setup !== null»
 				«FOR signalInstance : setup?.signalInstances»
-				«val signalType = BaseUtils.getType(signalInstance.instanceOf)»
+				«val signalType = BaseUtils.getType(signalInstance).sigInstType2»
 				/**
 				 * Provides read access to «signalInstance.name».
 				 */
@@ -113,6 +116,31 @@ class SystemResourceHandlingGenerator {
 			''')
 			.toHeader(context, '''«component.baseName.toUpperCase»_«name.toUpperCase»_H'''))
 		return cgn;
+	}
+	
+	dispatch def AbstractType getSigInstType(AbstractType type) {
+		return type;
+	}
+	
+	dispatch def AbstractType getSigInstType(FunctionType type) {
+		return type.to.sigInstType2;
+	}
+	
+	dispatch def AbstractType getSigInstType2(AbstractType type) {
+		return type;
+	}
+	dispatch def AbstractType getSigInstType2(FunctionType type) {
+		return type.to.sigInstType3;
+	}
+	
+	dispatch def AbstractType getSigInstType3(AbstractType type) {
+		return type;
+	}
+	dispatch def AbstractType getSigInstType3(TypeConstructorType type) {
+		if(type.name == "siginst" && type.typeArguments.size > 0) {
+			return type.typeArguments.head;
+		}
+		return type;
 	}
 	
 	def generateImplementation(CompilationContext context, EObject obj) {
@@ -146,7 +174,7 @@ class SystemResourceHandlingGenerator {
 				
 				«IF setup !== null»
 				«FOR signalInstance : setup?.signalInstances»
-				«val signalType = BaseUtils.getType(signalInstance.instanceOf)»
+				«val signalType = BaseUtils.getType(signalInstance).sigInstType2»
 				/**
 				 * Provides read access to the «signalInstance.name» signal.
 				 */

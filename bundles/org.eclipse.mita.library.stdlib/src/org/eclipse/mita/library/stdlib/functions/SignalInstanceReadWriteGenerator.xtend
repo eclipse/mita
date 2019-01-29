@@ -23,6 +23,9 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
@@ -55,7 +58,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			val value = functionCall.arguments.get(1).value;
 			val variableName = '''_new«firstArg.uniqueIdentifier.toFirstUpper»''';
 			
-			val siginstType = BaseUtils.getType(siginst.instanceOf);
+			val siginstType = BaseUtils.getType(siginst).sigInstTypeArg;
 			
 			return codeFragmentProvider.create('''
 			«typeGenerator.code(siginstType)» «variableName» = «statementGenerator.code(value).noTerminator»;
@@ -66,6 +69,23 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 		} else {
 			return codeFragmentProvider.create('''#error Can only generate code for signal instance read or write''')			
 		}
+	}
+	
+	dispatch def AbstractType getSigInstTypeArg(AbstractType type) {
+		return type;
+	}
+	dispatch def AbstractType getSigInstTypeArg(FunctionType type) {
+		return type.to.sigInstTypeArg2;
+	}
+	
+	dispatch def AbstractType getSigInstTypeArg2(AbstractType type) {
+		return type;
+	}
+	dispatch def AbstractType getSigInstTypeArg2(TypeConstructorType type) {
+		if(type.name == "siginst" && type.typeArguments.size > 0) {
+			return type.typeArguments.head;
+		}
+		return type;
 	}
 	
 }

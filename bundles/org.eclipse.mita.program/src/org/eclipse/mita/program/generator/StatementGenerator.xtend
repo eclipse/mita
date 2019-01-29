@@ -43,30 +43,31 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
-import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
-import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeConstructor
 import org.eclipse.mita.base.types.VirtualFunction
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.NumericType
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Modality
@@ -111,16 +112,11 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
-import org.eclipse.mita.base.types.HasAccessors
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import static extension org.eclipse.mita.program.model.ModelUtils.getRealType;
-import org.eclipse.mita.base.typesystem.types.ProdType
-import org.eclipse.mita.base.typesystem.types.TypeScheme
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.typesystem.types.NumericType
+import static extension org.eclipse.mita.program.model.ModelUtils.getRealType
 
 class StatementGenerator {
 
@@ -456,10 +452,6 @@ class StatementGenerator {
 		'''
 	}
 	
-	def boolean isGeneratedType(AbstractType type) {
-		return type?.userData?.containsKey("generator");
-	}
-
 	@Traced dispatch def IGeneratorNode code(AssignmentExpression stmt) {
 		return '''«stmt.initializationCode.noTerminator»'''
 	}

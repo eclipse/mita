@@ -47,6 +47,8 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.typesystem.types.NumericType
+import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
 
 /**
  * Hierarchically infers the size of a data element.
@@ -204,10 +206,10 @@ class ElementSizeInferrer {
 	protected def ElementSizeInferenceResult inferFromType(EObject obj, AbstractType typ) {
 		val type = typ.origin;
 		// this expression has an immediate value (akin to the StaticValueInferrer)
-		if (type instanceof PrimitiveType || type instanceof ExceptionTypeDeclaration) {
+		if (typ instanceof NumericType || typ.name == "Exception") {
 			// it's a primitive type
 			return new ValidElementSizeInferenceResult(obj, typ, 1);
-		} else if (type instanceof GeneratedType) {
+		} else if (typ.isGeneratedType) {
 			// it's a generated type, so we must load the inferrer
 			var ElementSizeInferrer inferrer = null;
 			
@@ -218,7 +220,7 @@ class ElementSizeInferrer {
 				}
 			}
 			if(instance !== null) {
-				if(instance instanceof FeatureCall) {
+				if(instance instanceof ElementReferenceExpression) {
 					val resourceRef = instance.arguments.head.value;
 					if(resourceRef instanceof ElementReferenceExpression) {
 						var resourceSetup = resourceRef.reference;
@@ -245,7 +247,7 @@ class ElementSizeInferrer {
 				}
 			}
 			
-			val loadedTypeInferrer = loader.loadFromPlugin(type.eResource, type.sizeInferrer);
+			val loadedTypeInferrer = loader.loadFromPlugin(obj.eResource, typ.userData.get("sizeInferrer"));
 			
 			if(loadedTypeInferrer instanceof ElementSizeInferrer) {			
 				inferrer = inferrer.orElse(loadedTypeInferrer);	

@@ -334,7 +334,7 @@ class ConstraintSystem {
 		if(tvp.origin === null) {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
-		if(tvp.name == ("p_63.0")) {
+		if(tvp.targetQID.toString == "I2CMode") {
 			print("")
 		}
 		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
