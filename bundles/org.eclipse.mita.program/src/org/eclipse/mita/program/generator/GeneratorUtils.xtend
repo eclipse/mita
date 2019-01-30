@@ -34,9 +34,13 @@ import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Bus
@@ -61,6 +65,7 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.ProgramCopier
+import org.eclipse.mita.program.generator.internal.UserCodeFileGenerator
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
@@ -68,10 +73,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.mita.base.typesystem.types.SumType
-import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.program.generator.internal.UserCodeFileGenerator
-import org.eclipse.mita.base.types.StructureType
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
@@ -377,33 +378,30 @@ class GeneratorUtils {
 	}
 	
 	dispatch def CodeFragment getEnumName(SumType sumType) {
-		return codeFragmentProvider.create('''«sumType.name»_enum''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType.origin)) + ".h", false);
+		return codeFragmentProvider.create('''«sumType.name»_enum''').addHeaderInclude(sumType);
 	}
 	
 	dispatch def CodeFragment getEnumName(ProdType prodType) {
-		val parentName = prodType.userData.get("parentName");
+		val parentName = prodType.userData.get(BaseConstraintFactory.PARENT_NAME_KEY);
 		if(parentName !== null) {
-			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''');
+			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''').addHeaderInclude(prodType);
 
 		}
 		return codeFragmentProvider.create('''«prodType.name»_e/*WARNING parent null*/''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(prodType.origin)) + ".h", false);
 	}
 	
 	dispatch def CodeFragment getEnumName(org.eclipse.mita.base.types.SumType sumType) {
 		return codeFragmentProvider.create('''«sumType.name»_enum''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType.origin)) + ".h", false);
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType)) + ".h", false);
 	}
 	
 	dispatch def CodeFragment getEnumName(SumAlternative sumAlt) {
 		val parentName = (sumAlt.eContainer.castOrNull(org.eclipse.mita.base.types.SumType))?.name;
 		if(parentName !== null) {
-			return codeFragmentProvider.create('''«parentName»_«sumAlt.name»_e''');
-
+			return codeFragmentProvider.create('''«parentName»_«sumAlt.name»_e''')
+				.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumAlt)) + ".h", false);
 		}
 		return codeFragmentProvider.create('''«sumAlt.name»_e/*WARNING parent null*/''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(prodType.origin)) + ".h", false);
 	}
 	
 
@@ -413,13 +411,12 @@ class GeneratorUtils {
 	
 	
 	dispatch def CodeFragment getStructName(SumType sumType) {
-		return codeFragmentProvider.create('''«sumType.name»''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType.origin)) + ".h", false);
+		return codeFragmentProvider.create('''«sumType.name»''').addHeaderInclude(sumType);
 	}
 	
 	dispatch def CodeFragment getStructName(SumAlternative sumAlternative) {
 		return codeFragmentProvider.create('''«sumAlternative.name»''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumAlternative)) + ".h", false);
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumAlternative)) + ".h", false);
 	}
 	
 	
@@ -432,35 +429,40 @@ class GeneratorUtils {
 
 	dispatch def CodeFragment getStructName(StructureType structureType) {
 		return codeFragmentProvider.create('''«structureType.baseName»''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(structureType)) + ".h", false);
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(structureType)) + ".h", false);
 	}
 
 	dispatch def CodeFragment getStructType(AtomicType singleton) {
 		//singletons don't contain actual data
-		return codeFragmentProvider.create('''void''');
+		return codeFragmentProvider.create('''void''').addHeaderInclude(singleton);
 	}
 	dispatch def CodeFragment getStructType(ProdType productType) {
-		return codeFragmentProvider.create('''«productType.name»_t''')
-			//.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType.origin)) + ".h", false);
+		return codeFragmentProvider.create('''«productType.name»_t''').addHeaderInclude(productType);
 	}
 	dispatch def CodeFragment getStructType(SumType sumType) {
-		return codeFragmentProvider.create('''«sumType.name»_t''')
-			//.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType.origin)) + ".h", false);		
+		return codeFragmentProvider.create('''«sumType.name»_t''').addHeaderInclude(sumType);	
 	}
 	dispatch def CodeFragment getStructType(TypeConstructorType type) {
-		return codeFragmentProvider.create('''«type.name»_t''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(type.origin)) + ".h", false);	
+		return codeFragmentProvider.create('''«type.name»_t''').addHeaderInclude(type);
+	}
+	
+	def CodeFragment addHeaderInclude(CodeFragment fragment, AbstractType type) {
+		val definingResourceName = type.userData.get(BaseConstraintFactory.DEFINING_RESOURCE_KEY);
+		if(definingResourceName !== null) {
+			fragment.addHeader(UserCodeFileGenerator.getResourceTypesName(definingResourceName) + ".h", false);
+		}
+		return fragment;
 	}
 	
 	dispatch def CodeFragment getStructType(Singleton singleton) {
 		//singletons don't contain actual data
 		return codeFragmentProvider.create('''void''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(singleton)) + ".h", false);
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(singleton)) + ".h", false);
 	}
 	dispatch def CodeFragment getStructType(AnonymousProductType productType) {
 		if(productType.typeSpecifiers.length > 1) {
 			return codeFragmentProvider.create('''«productType.baseName»_t''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
+				.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
 		}
 		else {
 			// we have only one type specifier, so we shorten to an alias
@@ -469,15 +471,15 @@ class GeneratorUtils {
 	}
 	dispatch def CodeFragment getStructType(NamedProductType productType) {
 		return codeFragmentProvider.create('''«productType.baseName»_t''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
 	}
 	dispatch def CodeFragment getStructType(org.eclipse.mita.base.types.SumType sumType) {
 		return codeFragmentProvider.create('''«sumType.baseName»_t''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumType)) + ".h", false);
 	}
 	dispatch def CodeFragment getStructType(StructureType productType) {
 		return codeFragmentProvider.create('''«productType.baseName»_t''')
-		//	.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
+			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
 	}
 	
 	def dispatch String getBaseName(Sensor sensor) {

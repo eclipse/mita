@@ -17,6 +17,7 @@ import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 /** 
  * @author Thomas Kutz - Initial contribution and API
@@ -26,7 +27,7 @@ class TypesUtil {
 	public static final String ID_SEPARATOR = "."
 	
 	static def boolean isGeneratedType(AbstractType type) {
-		return type?.userData !== null && type.userData.containsKey("generator");
+		return type?.userData !== null && type.userData.containsKey(BaseConstraintFactory.GENERATOR_KEY);
 	}
 	
 	static def getVarianceInAssignment(EObject obj) {

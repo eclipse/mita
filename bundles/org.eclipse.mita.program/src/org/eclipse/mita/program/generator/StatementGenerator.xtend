@@ -117,6 +117,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.model.ModelUtils.getRealType
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 class StatementGenerator {
 
@@ -329,7 +330,7 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, VirtualFunction fun, Iterable<Argument> arguments) {
 		'''NOT IMPLEMENTED: «fun.eClass»''';
 	}
-	
+
 	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, SumSubTypeConstructor cons, Iterable<Argument> arguments) {
 		val eConstructedType = cons.eContainer;
 		val constructedType = BaseUtils.getType(eConstructedType);
@@ -351,7 +352,7 @@ class StatementGenerator {
 			// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
 			val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null
 			
-			val hasAccessors = constructedType.realType instanceof TypeConstructorType;
+			val hasAccessors = constructedType.realType.hasNamedMembers;
 			
 			return '''
 			«IF needCast»(«sumType.structType») «ENDIF»{
@@ -372,6 +373,11 @@ class StatementGenerator {
 			'''
 		}
 		return '''BROKEN MODEL''';
+	}
+	
+	def boolean hasNamedMembers(AbstractType type) {
+		val eClass = type.userData.get(BaseConstraintFactory.ECLASS_KEY);
+		return #["NamedProductType", "StructureType"].findFirst[it == eClass] !== null;
 	}
 	
 	@Traced dispatch def IGeneratorNode code(ElementReferenceExpression stmt) {
@@ -849,7 +855,7 @@ class StatementGenerator {
 		val productType = BaseUtils.getType(isDeconstructionCase.productType);
 
 		val member = accessor(productType, stmt.productMember, ".", "").apply(idx);
-		val hasAccessors = productType.realType instanceof TypeConstructorType;
+		val hasAccessors = productType.realType.hasNamedMembers;
 		
 		return '''«varType.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«IF hasAccessors»«member»«ENDIF»;'''
 

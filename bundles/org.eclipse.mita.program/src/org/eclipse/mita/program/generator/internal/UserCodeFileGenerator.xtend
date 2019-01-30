@@ -107,11 +107,20 @@ class UserCodeFileGenerator {
 	
 	static def String getResourceBaseName(PackageAssociation program) {
 		val resource = program.origin.eResource;
-		return resource.URI.segments.last.replace('.' + resource.URI.fileExtension, '');
+		return resource.URI.segments.last.getResourceBaseName;
 	}
 	
+	static def String getResourceBaseName(String programFileName) {
+		// replace from last dot until end <-> remove file extension
+		return programFileName.replaceFirst('\\.[^\\.]+$', '');
+	}
+
 	static def String getResourceTypesName(PackageAssociation program) {
 		getResourceBaseName(program) + 'Types';
+	}	
+	
+	static def String getResourceTypesName(String programFileName) {
+		getResourceBaseName(programFileName) + 'Types';
 	}
 	
 	protected def getContextIncludes(CompilationContext context, Program program) {

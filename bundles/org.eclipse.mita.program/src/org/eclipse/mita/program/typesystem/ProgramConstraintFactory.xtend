@@ -169,7 +169,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, GeneratedFunctionDefinition fundef) {
 		val result = computeTypeForOperation(system, fundef);
-		result.userData.put("generator", fundef.generator);
+		result.userData.put(GENERATOR_KEY, fundef.generator);
 		return system.associate(result);
 	}
 	

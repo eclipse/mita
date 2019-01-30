@@ -103,6 +103,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected boolean isLinking;
 	
+	public static final String GENERATOR_KEY = "generator";
+	public static final String SIZE_INFERRER_KEY = "sizeInferrer";
+	public static final String PARENT_NAME_KEY = "parentName";
+	public static final String ECLASS_KEY = "eClass";
+	public static final String DEFINING_RESOURCE_KEY = "definingResource";
+	
 	override ConstraintSystem create(EObject context) {		
 		val result = constraintSystemProvider.get();
 		result.computeConstraints(context);
@@ -617,6 +623,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		 */
 		val result = new ProdType(structType, new AtomicType(structType), types);
 		system.typeTable.put(QualifiedName.create(structType.name), result);
+		result.userData.put(DEFINING_RESOURCE_KEY, structType.eResource.URI.lastSegment);
 		return result;
 	}
 	
@@ -626,6 +633,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		].force;
 		val result = new org.eclipse.mita.base.typesystem.types.SumType(sumType, new AtomicType(sumType), subTypes);
 		system.typeTable.put(QualifiedName.create(sumType.name), result);
+		result.userData.put(DEFINING_RESOURCE_KEY, sumType.eResource.URI.lastSegment);
 		return result;	
 	}
 		
@@ -647,8 +655,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 			
 			system.typeTable.put(QualifiedName.create(sumTypeName, sumAlt.name), prodType);
 			
-			prodType.userData.put("parentName", sumTypeName);
-			prodType.userData.put("eClass", sumAlt.eClass.name);
+			prodType.userData.put(PARENT_NAME_KEY, sumTypeName);
+			prodType.userData.put(ECLASS_KEY, sumAlt.eClass.name);
+			prodType.userData.put(DEFINING_RESOURCE_KEY, sumAlt.eResource.URI.lastSegment);
 			
 			return prodType;	
 		}
@@ -671,9 +680,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		system.typeTable.put(QualifiedName.create(genType.name), result);
 		
-		result.userData.put("generator", genType.generator)
+		result.userData.put(GENERATOR_KEY, genType.generator)
 		if(genType.sizeInferrer !== null) {
-			result.userData.put("sizeInferrer", genType.sizeInferrer)
+			result.userData.put(SIZE_INFERRER_KEY, genType.sizeInferrer)
 		}
 		
 		return result;

@@ -34,6 +34,7 @@ import org.eclipse.mita.program.generator.internal.IResourceGraph
 import org.eclipse.mita.program.generator.internal.ResourceGraphBuilder
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.mita.base.types.TypesUtil
 
 class CompilationContext {
 	protected Iterable<Program> units;
@@ -141,7 +142,7 @@ class CompilationContext {
 			(program.eAllContents.filter(PresentTypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
 				it -> BaseUtils.getType(it)
 			].filter[
-				it.value?.freeVars?.empty && it.value?.userData?.containsKey("generator")
+				it.value?.freeVars?.empty && TypesUtil.isGeneratedType(it.value)
 			].map[it.value].toIterable
 		].groupBy[it.toString].entrySet.map[it.value.head];
 	}

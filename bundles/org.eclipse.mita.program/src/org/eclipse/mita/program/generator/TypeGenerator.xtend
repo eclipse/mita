@@ -14,7 +14,6 @@
 package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
-import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.FloatingType
@@ -23,6 +22,7 @@ import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
+import org.eclipse.mita.base.typesystem.types.SumType
 
 /**
  * Facade for generating types.
@@ -60,7 +60,7 @@ class TypeGenerator implements IGenerator {
 			return type.typeArguments.head.code;
 		}
 	}
-	protected dispatch def CodeFragment code(SumType sumType, TypeSpecifier typeSpec) {
+	public dispatch def CodeFragment code(SumType sumType) {
 		return codeFragmentProvider.create('''«sumType.structType»''');
 	}
 	
@@ -82,7 +82,7 @@ class TypeGenerator implements IGenerator {
 //		return generatorRegistry.getGenerator(type)?.generateTypeSpecifier(typeSpec, type);
 //	}
 		
-	public dispatch def CodeFragment code(SumType type) {
+	public dispatch def CodeFragment code(org.eclipse.mita.base.types.SumType type) {
 		// TODO: find defining resource and header
 		return codeFragmentProvider.create('''«type.structType»''');
 	}

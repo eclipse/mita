@@ -49,6 +49,7 @@ import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.base.typesystem.types.NumericType
 import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 /**
  * Hierarchically infers the size of a data element.
@@ -247,7 +248,7 @@ class ElementSizeInferrer {
 				}
 			}
 			
-			val loadedTypeInferrer = loader.loadFromPlugin(obj.eResource, typ.userData.get("sizeInferrer"));
+			val loadedTypeInferrer = loader.loadFromPlugin(obj.eResource, typ.userData.get(BaseConstraintFactory.SIZE_INFERRER_KEY));
 			
 			if(loadedTypeInferrer instanceof ElementSizeInferrer) {			
 				inferrer = inferrer.orElse(loadedTypeInferrer);	

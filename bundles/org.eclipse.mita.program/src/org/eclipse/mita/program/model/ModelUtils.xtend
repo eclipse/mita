@@ -59,6 +59,7 @@ import org.eclipse.xtext.resource.IContainer
 import org.eclipse.mita.base.types.PackageAssociation
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 class ModelUtils {
 
@@ -140,7 +141,7 @@ class ModelUtils {
 	}
 	
 	static def dispatch AbstractType getRealType(ProdType sumConstructor) {
-		if(sumConstructor.userData.get("eClass") == "AnonymousProductType") {
+		if(sumConstructor.userData.get(BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
 			val children = sumConstructor.typeArguments;
 			if(children.length == 1) {
 				return children.head.realType;

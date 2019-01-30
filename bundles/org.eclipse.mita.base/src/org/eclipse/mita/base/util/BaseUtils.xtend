@@ -148,7 +148,9 @@ class BaseUtils {
 	} 
 			
 	def static void main(String[] args) {
-		println(transpose(#[#[1,2,3], #[4,5,6]]));
+		for(s: #["a.b", "a.b.c"]) {
+			println(s.replaceFirst('\\.[^\\.]+$', ''));
+		}
 	}
 	
 	def static <T> ArrayList<T> force(Iterable<T> list) {
