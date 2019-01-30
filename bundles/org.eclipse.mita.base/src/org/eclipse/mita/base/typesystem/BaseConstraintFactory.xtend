@@ -763,9 +763,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypedElement element) {
-		if(element instanceof SumSubTypeConstructor) {
-			print("");
-		}
 		return system.associate(system.computeConstraints(element.typeSpecifier), element);
 	}
 	

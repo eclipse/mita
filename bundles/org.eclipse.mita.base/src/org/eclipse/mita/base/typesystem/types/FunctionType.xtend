@@ -34,9 +34,6 @@ class FunctionType extends TypeConstructorType {
 	
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArgs) {
 		super(origin, type, typeArgs);
-		if(type === null) {
-			print("")
-		}
 	}
 	
 	def AbstractType getFrom() {

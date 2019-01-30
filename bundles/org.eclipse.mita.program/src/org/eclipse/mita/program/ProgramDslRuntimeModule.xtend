@@ -102,11 +102,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 	override Class<? extends IValueConverterService> bindIValueConverterService() {
 		return ExpressionsValueConverterService
 	}
-	
-	override Class<? extends ProgramDslValidator> bindProgramDslValidator() {
-		return ProgramDslValidator
-	}
-	
+		
 	override bindILinker() {
 		return MitaLinker
 	}

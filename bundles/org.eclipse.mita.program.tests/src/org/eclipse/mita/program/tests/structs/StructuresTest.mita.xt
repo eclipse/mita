@@ -8,7 +8,7 @@ END_SETUP */
 package test;
 import platforms.unittest;
 
-// Structures are custom, user-defined reference types for organizing data
+// Structures are custom, user-defined value types for organizing data
 struct Foo {
 	var bar : uint32;
 	var foo : bool;
@@ -50,7 +50,6 @@ function structTest() : void {
 	inst = Foo(bar=1);
 	/* XPECT errors ---
 		"Duplicate assignment to parameter 'bar'." at "bar=3"
-		"Wrong number of arguments, expected [uint32, bool] ." at "Foo(bar=1, foo=false, bar=3)"
 	--- */
 	inst = Foo(bar=1, foo=false, bar=3);
 	// We error on wrong type of arguments

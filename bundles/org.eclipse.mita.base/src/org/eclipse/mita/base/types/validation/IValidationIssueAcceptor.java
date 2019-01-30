@@ -55,9 +55,6 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(message.equals("<auto>.HelloWorld(<null>=prim»s»\"Chris\") (:: HelloWorld(f_120)) has a different type than msg (:: f_131.0)")) {
-				System.out.print("");
-			}
 		}
 		
 		public ValidationIssue(String message, EObject target) {
@@ -75,9 +72,6 @@ public interface IValidationIssueAcceptor {
 			this.target = target;
 			this.issueCode = issueCode;
 			this.feature = feature;
-			if(message.equals("<auto>.HelloWorld(<null>=prim»s»\"Chris\") (:: HelloWorld(f_120)) has a different type than msg (:: f_131.0)")) {
-				System.out.print("");
-			}
 		}
 
 		public Severity getSeverity() {

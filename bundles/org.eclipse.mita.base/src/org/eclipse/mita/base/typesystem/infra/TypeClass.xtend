@@ -26,9 +26,6 @@ class TypeClass {
 		this.instances = new HashMap(instances);
 		this.mostSpecificGeneralization = mostSpecificGeneralization;
 		hasNoFreeVars = instances.keySet.forall[it.hasNoFreeVars]
-		if(this.toString.trim == "	f_19.3 = ".trim()) {
-			print("")
-		}
 	}
 	new(Iterable<Pair<AbstractType, EObject>> instances) {
 		this(instances.toMap([it.key], [it.value]));
@@ -51,9 +48,6 @@ class TypeClass {
 	}
 	
 	def replace(Substitution sub) {
-		if(sub.substitutions.keySet.exists[it.name == "f_560.6"]) {
-			print("");
-		}
 		if(this.hasNoFreeVars) {
 			return this;
 		}

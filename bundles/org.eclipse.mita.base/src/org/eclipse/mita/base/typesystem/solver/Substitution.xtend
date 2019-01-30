@@ -51,9 +51,6 @@ class Substitution {
 		newContent.content = content;
 		val resultSub = newContent.apply(this);
 		this.content = resultSub.content;
-		if(!content.values.filter(BottomType).empty) {
-			print("")
-		}
 		//this.checkConsistency();
 	}
 	def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
@@ -81,7 +78,6 @@ class Substitution {
 		val typeVars = content.keySet.map[toString].toSet;
 		freeTypeVars.retainAll(typeVars);
 		if(!freeTypeVars.empty) {
-			print("")
 			return false;
 		}
 		return true;
@@ -118,9 +114,6 @@ class Substitution {
 	def applyToGraph(ConstraintSystem system, DebugTimer debugTimer) {
 		debugTimer.start("typeClasses")
 		system.typeClasses.replaceAll[qn, tc | 
-			if(qn.toString == "Personal") {
-				print("");
-			}
 			tc.replace(this)
 		];
 		debugTimer.stop("typeClasses")

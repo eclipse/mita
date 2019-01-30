@@ -177,9 +177,6 @@ class MitaBaseResource extends LazyLinkingResource {
 			//.map[GZipper.decompress(it)]
 			.force;
 		timer.stop("resourceDescriptions");
-		if(obj.eResource.URI.lastSegment == "application.mita") {
-			print("")
-		}
 		timer.start("deserialize");
 		val allConstraintSystems = jsons
 			.map[ constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [ 

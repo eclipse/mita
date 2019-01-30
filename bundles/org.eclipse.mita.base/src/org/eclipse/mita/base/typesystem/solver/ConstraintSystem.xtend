@@ -334,9 +334,6 @@ class ConstraintSystem {
 		if(tvp.origin === null) {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
-		if(tvp.targetQID.toString == "I2CMode") {
-			print("")
-		}
 		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
 			return #[getTypeVariable(tvp.origin.eGet(tvp.reference) as EObject)];
 		}
@@ -351,9 +348,6 @@ class ConstraintSystem {
 					origin = EcoreUtil.resolve(origin, resource);
 				}
 			}
-		}
-		if(origin.toString == "self") {
-			print("");
 		}
 		val scope = scopeProvider.getScope(origin, tvp.reference);
 		val scopeElements = scope.getElements(tvp.targetQID).toList;

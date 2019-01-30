@@ -48,11 +48,6 @@ class PlatformDslResourceDescriptionStrategy extends BaseResourceDescriptionStra
 		var Map<String, String> map = new HashMap()
 		map.put(EXPORTED, String.valueOf(true))
 		var QualifiedName firstQN = getQualifiedNameProvider().getFullyQualifiedName(obj)
-		if(obj instanceof TypeKind) {
-			if(obj.name.endsWith("ADC_Reference_Voltage")) {
-				print("")
-			}
-		}
 		acceptor.accept(EObjectDescription.create(firstQN, obj, map))
 		var QualifiedName secondQN = typeQualifiedNameProvider.getFullyQualifiedName(obj)
 		if (secondQN !== null && !secondQN.equals(firstQN)) {

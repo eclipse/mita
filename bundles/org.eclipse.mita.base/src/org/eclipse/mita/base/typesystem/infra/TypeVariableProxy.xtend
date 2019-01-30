@@ -31,17 +31,11 @@ class TypeVariableProxy extends TypeVariable {
 		this.reference = reference;
 		this.targetQID = targetQID;
 		this.isLinkingProxy = isLinkingProxy;
-		if(targetQID.toString == "") {
-			print("")
-		}
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy) {
 		this(origin, name, reference, targetQID);
 		this.ambiguityResolutionStrategy = ambiguityResolutionStrategy;
-		if(origin === null) {
-			print("")
-		}
 	}
 	
 	new(EObject origin, String name, EReference reference) {

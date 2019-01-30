@@ -661,9 +661,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
-			if(v.toString == "f_131.0") {
-				print("");
-			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
 			val supremum = graph.getSupremum(system, predecessors);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);
@@ -674,7 +671,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			if(!predecessors.empty) {
 				if(supremumIsValid) {
 					if(supremum instanceof BottomType) {
-						print("");
 						supremum.message = "Couldn't find a good supertype for " + predecessors.join(" and ")
 					}
 					// assign-sup
@@ -697,7 +693,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			else if(!successors.empty) {
 				if(infimumIsValid) {
 					if(infimum instanceof BottomType) {
-						print("");
 						graph.getBaseTypeSuccecessors(vIdx);
 						graph.getInfimum(system, successors);
 			

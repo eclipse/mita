@@ -50,6 +50,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.base.typesystem.types.NumericType
 import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.types.ProdType
 
 /**
  * Hierarchically infers the size of a data element.
@@ -205,7 +206,6 @@ class ElementSizeInferrer {
 		
 
 	protected def ElementSizeInferenceResult inferFromType(EObject obj, AbstractType typ) {
-		val type = typ.origin;
 		// this expression has an immediate value (akin to the StaticValueInferrer)
 		if (typ instanceof NumericType || typ.name == "Exception") {
 			// it's a primitive type
@@ -263,26 +263,26 @@ class ElementSizeInferrer {
 				[|
 					return finalInferrer.infer(obj);
 				], [|
-					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type»".''')
+					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«typ»".''')
 				])
 			}
-		} else if (type instanceof StructureType) {
+		} else if (typ instanceof ProdType) {
 			// it's a struct, let's build our children, but mark the type first
-			return PreventRecursion.preventRecursion(type, [
+			return PreventRecursion.preventRecursion(typ, [
 				val result = new ValidElementSizeInferenceResult(obj, typ, 1);
-				result.children.addAll(type.parameters.map[x|x.infer]);
+				result.children.addAll(typ.typeArguments.map[x|inferFromType(obj, x)]);
 				return result;
 			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
+				return newInvalidResult(obj, '''Type "«typ.name»" is recursive. Cannot infer size.''')
 			]);
 			
-		} else if (type instanceof SumType) {
-			return PreventRecursion.preventRecursion(type, [
-				val childs = type.alternatives.map[it.infer];
+		} else if (typ instanceof org.eclipse.mita.base.typesystem.types.SumType) {
+			return PreventRecursion.preventRecursion(typ, [
+				val childs = typ.typeArguments.map[inferFromType(obj, it)];
 				val result = if(childs.filter(InvalidElementSizeInferenceResult).empty) {
 					 new ValidElementSizeInferenceResult(obj, typ, 1);
 				} else {
-					new InvalidElementSizeInferenceResult(obj, typ, '''Cannot infer size of ""«obj.class.simpleName»" of type"«type»".''');
+					new InvalidElementSizeInferenceResult(obj, typ, '''Cannot infer size of ""«obj.class.simpleName»" of type"«typ»".''');
 				}
 				
 				val maxChild = childs.filter(ValidElementSizeInferenceResult).maxBy[it.byteCount];
@@ -293,55 +293,16 @@ class ElementSizeInferrer {
 					
 				return result;
 			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
+				return newInvalidResult(obj, '''Type "«typ.name»" is recursive. Cannot infer size.''')
 			]);
 			
 			
 			
-		} else if (type instanceof NamedProductType) {
-			// it's a struct, let's build our children, but mark the type first
-			return PreventRecursion.preventRecursion(type, [
-				val childs = type.parameters.map[x|x.infer];
-				val result = new ValidElementSizeInferenceResult(obj, typ, 1);
-				result.children.addAll(childs);
-				
-				return result;
-			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
-			]);
-			
-			
-			
-		} else if (type instanceof AnonymousProductType) {
-			// it's a struct, let's build our children, but mark the type first
-			return PreventRecursion.preventRecursion(type, [
-				val childs = type.typeSpecifiers.map[x|inferFromType(obj, BaseUtils.getType(x))];
-				val result = new ValidElementSizeInferenceResult(obj, typ, 1);
-				result.children.addAll(childs);
-				
-				return result;
-			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
-			]);
-			
-		}	else if (type instanceof ComplexType) {
-			// it's a struct, let's build our children, but mark the type first
-			return PreventRecursion.preventRecursion(type, [
-				val result = new ValidElementSizeInferenceResult(obj, typ, 1);
-				result.children.addAll(type.features.map[x|x.infer]);
-
-				return result;
-			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
-			]);
-			
-			
-			
-		} else if (type === null) {
+		} else if (typ === null) {
 			// if type is null we have different problems than size inference
 			return newValidResult(obj, 0)
 		}
-		return newInvalidResult(obj, "Unable to infer size from type " + type.toString);
+		return newInvalidResult(obj, "Unable to infer size from type " + typ.toString);
 	}
 	
 	/**

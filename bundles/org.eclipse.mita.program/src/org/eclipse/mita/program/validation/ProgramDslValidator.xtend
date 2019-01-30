@@ -14,9 +14,10 @@
 package org.eclipse.mita.program.validation
 
 import com.google.inject.Inject
+import java.util.HashSet
+import java.util.Set
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.emf.ecore.xml.type.internal.DataValue.TypeValidator
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
@@ -64,13 +65,13 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
-import org.eclipse.mita.program.scoping.ExtensionMethodHelper
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
+import org.eclipse.xtext.validation.EValidatorRegistrar
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -144,11 +145,8 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	public static val String MUST_BE_USED_IMMEDIATELY_CODE = "must_be_used_immediately";
 	
 	public static val String SIGINST_MODALITY_CANT_BE_FUNC_PARAM_MSG = "Signal instances and modalities cannot be passed as parameters.";
-	
-	@Inject extension ExtensionMethodHelper
 
 	@Inject ITypeSystem typeSystem
-	@Inject TypeValidator validator
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
@@ -377,6 +375,21 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	def checkTypesAreNotNestedGeneratedTypes(VariableDeclaration declaration) {
 		if(EcoreUtil2.getContainerOfType(declaration, SystemResourceSetup) !== null) return;
 		checkTypesAreNotNestedGeneratedTypes(declaration, BaseUtils.getType(declaration));
+	}
+	@Check(CheckType.NORMAL)
+	def checkParametersAreAssignedOnlyOnce(ElementReferenceExpression functionCall) {
+		if(functionCall.isOperationCall) {
+			val arguments = functionCall.arguments;
+			val Set<String> usedParams = new HashSet();
+			arguments.filter[it.parameter !== null].forEach[
+				if(usedParams.contains(it.parameter.name)) {
+					error("Duplicate assignment to parameter " + it.parameter.name + ".", it, null, 0);
+				}
+				else {
+					usedParams.add(it.parameter.name);
+				}
+			]
+		}
 	}
 	
 	@Check(CheckType.NORMAL)

@@ -3,13 +3,31 @@
  */
 package org.eclipse.mita.base.validation
 
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 
 /**
  * This class contains custom validation rules. 
  *
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#validation
  */
-class TypeDslValidator extends AbstractTypeDslValidator {
+class TypeDslValidator extends AbstractTypeDslValidator implements IValidationIssueAcceptor {
+	
+	override accept(ValidationIssue issue) {
+		
+		switch (issue.getSeverity()) {
+			case ERROR:{
+				error(issue.getMessage(), null, issue.getIssueCode()) 
+			}
+			case WARNING:{
+				warning(issue.getMessage(), null, issue.getIssueCode()) 
+			}
+			case INFO:{
+				info(issue.getMessage(), null, issue.getIssueCode()) 	
+			}
+		}
+
+	}
 	
 //	public static val INVALID_NAME = 'invalidName'
 //
@@ -21,5 +39,4 @@ class TypeDslValidator extends AbstractTypeDslValidator {
 //					INVALID_NAME)
 //		}
 //	}
-	
 }

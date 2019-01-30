@@ -17,9 +17,6 @@ class PlatformLinker extends MitaTypeLinker {
 	}
 	
 	override ensureIsLinked(EObject obj, INode node, CrossReference ref, Set<EReference> handledReferences, IDiagnosticProducer producer) {	
-		if(node?.text == "BMA280") {
-			print("")
-		}
 		super.ensureIsLinked(obj, node, ref, handledReferences, producer)
 	}
 	
