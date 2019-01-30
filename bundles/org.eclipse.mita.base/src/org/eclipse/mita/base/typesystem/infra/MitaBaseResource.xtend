@@ -244,13 +244,14 @@ class MitaBaseResource extends LazyLinkingResource {
 //					]
 					resource.latestSolution = solution;
 					resource.cancelIndicator.canceled = true;
-					resource.errors += solution.issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[
+					val issues = solution.issues.groupBy[it.message->it.target].values.map[it.head];
+					resource.errors += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]
-					resource.warnings += solution.issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].map[
+					resource.warnings += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]
-					resource.warnings += solution.issues.filter[it.target !== null].toSet.filter[it.severity == Severity.INFO].map[
+					resource.warnings += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.INFO].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]
 				}

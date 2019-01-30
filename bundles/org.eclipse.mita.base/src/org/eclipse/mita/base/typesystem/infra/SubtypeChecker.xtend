@@ -119,7 +119,7 @@ class SubtypeChecker {
 	}
 	
 	protected def SubtypeCheckResult checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
-		return (bSub <= bTop).subtypeMsgFromBoolean('''STR:«BaseUtils.lineNumber»: «top.name» is too small for «sub.name»''');
+		return (bSub <= bTop).subtypeMsgFromBoolean('''«top.name» is too small for «sub.name»''');
 	}
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, FloatingType sub, FloatingType top) {
@@ -130,7 +130,7 @@ class SubtypeChecker {
 		val int bSub = switch(sub.signedness) {
 			case Signed: {
 				if(top.signedness != Signedness.Signed) {
-					return SubtypeCheckResult.invalid('''STR:«BaseUtils.lineNumber»: Incompatible signedness between «top.name» and «sub.name»''');
+					return SubtypeCheckResult.invalid('''Incompatible signedness between «top.name» and «sub.name»''');
 				}
 				sub.widthInBytes;
 			}
@@ -159,7 +159,7 @@ class SubtypeChecker {
 			
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, BottomType sub, AbstractType sup) {
 		// ⊥ is subtype of everything
-		return SubtypeCheckResult.valid;
+		return new SubtypeCheckResult(#[sub.message], #[]);
 	}
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, SumType sub, SumType top) {
@@ -174,11 +174,11 @@ class SubtypeChecker {
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, ProdType sub, ProdType top) {
 		if(sub.typeArguments.length != top.typeArguments.length) {
-			return SubtypeCheckResult.invalid('''STR:«BaseUtils.lineNumber»: «sub.name» and «top.name» differ in the number of type arguments''')
+			return SubtypeCheckResult.invalid('''«sub» and «top» differ in the number of type arguments''')
 		}
 		val result = sub.typeArguments.zip(top.typeArguments).map[isSubtypeOf(s, context, it.key, it.value)].fold(SubtypeCheckResult.valid, [scr1, scr2 | scr1.orElse(scr2)])
 		if(result.invalid) {
-			return SubtypeCheckResult.invalid(#['''STR:«BaseUtils.lineNumber»: «sub.name» isn't structurally a subtype of «top.name»'''] + result.messages);
+			return SubtypeCheckResult.invalid(#['''«sub.name» isn't structurally a subtype of «top.name»'''] + result.messages);
 		}
 		return result;
 	}

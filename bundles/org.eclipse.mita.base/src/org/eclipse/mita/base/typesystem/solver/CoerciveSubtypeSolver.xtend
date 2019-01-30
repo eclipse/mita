@@ -421,7 +421,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance + subtypeCheckResult.constraints.size);
 					}
 					
-					return new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)] + mbUnification.issues, typ, fun, distance);
+					return new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)], typ, fun, distance);
 				}
 
 				return new TypeClassConstraintResolutionResult(null, #[], #[new ValidationIssue(constraint.errorMessage, '''«constraint.errorMessage» -> «typ» is not a function type''')], typ, fun, distance);
@@ -443,6 +443,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				val sub = result.sideEffectSubstitution;
 				result.sideEffectConstraints.forEach[system.addConstraint(it)];
 				return constraint.onResolve(system, sub, result.function, result.functionType);
+			}
+			// nice error messages here
+			if(typeClass.instances.size == 1) {
+				return SimplificationResult.failure(processedResults.head.issues)
 			}
 		}
 		return SimplificationResult.failure(#[

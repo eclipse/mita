@@ -30,9 +30,9 @@ function structTest() : void {
 	inst2.bar == 0; // true
 	
 	// We error on wrong number of arguments
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(1)"
+	// XPECT errors --> "Foo_args(xint8) and Foo_args(uint32, bool) differ in the number of type arguments" at "Foo"
 	inst = Foo(1);
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(1, false, 3)"
+	// XPECT errors --> "Foo_args(xint8, bool, xint8) and Foo_args(uint32, bool) differ in the number of type arguments" at "Foo"
 	inst = Foo(1, false, 3);
 	// We error on wrong type of arguments
 	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'." at "\"AHHHH!\""
@@ -44,9 +44,9 @@ function structTest() : void {
 	// But named parameters should validate just the same
 	
 	// We error on wrong number of arguments
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(foo=1)"
+	// XPECT errors --> "Foo_args(bool) and Foo_args(uint32, bool) differ in the number of type arguments" at "Foo"
 	inst = Foo(foo=1);
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(bar=1)"
+	// XPECT errors --> "Foo_args(uint32) and Foo_args(uint32, bool) differ in the number of type arguments" at "Foo"
 	inst = Foo(bar=1);
 	/* XPECT errors ---
 		"Duplicate assignment to parameter 'bar'." at "bar=3"
@@ -54,6 +54,10 @@ function structTest() : void {
 	--- */
 	inst = Foo(bar=1, foo=false, bar=3);
 	// We error on wrong type of arguments
-	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'." at ""AHHHH!""
+	/* XPECT errors ---
+		"Foo isn't structurally a subtype of Foo_args" at "Foo"
+		"STR:1->1: string is not a subtype of bool" at "Foo"
+		"prim»s»"AHHHH!" (:: string) not compatible with foo (:: bool)" at "foo="AHHHH!""
+	--- */
 	inst = Foo(bar=1, foo="AHHHH!");
 }
