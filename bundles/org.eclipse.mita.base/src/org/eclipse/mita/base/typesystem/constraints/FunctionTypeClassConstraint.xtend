@@ -58,7 +58,6 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		if(op !== null && functionReference !== null && !functionCall.eIsProxy) {
 			BaseUtils.ignoreChange(functionCall, [functionCall.eSet(functionReference, op)]);
 		}
-		val nc = constraintSystemProvider.get(); 
 		if(at instanceof FunctionType) {
 			val newConstraint = switch(returnTypeVariance) {
 				case Covariant: {
@@ -73,8 +72,8 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 					new EqualityConstraint(returnTypeTV, at.to, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not equal to %2$s'''));
 				}
 			}
-			nc.addConstraint(newConstraint);
-			return SimplificationResult.success(ConstraintSystem.combine(#[nc, cs]), sub)
+			cs.addConstraint(newConstraint);
+			return SimplificationResult.success(cs, sub)
 		}
 		else { 
 			return SimplificationResult.failure(_errorMessage)
