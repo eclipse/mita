@@ -38,7 +38,7 @@ class ResourceGraphImpl<T> implements IResourceGraph<T> {
 		return nodes;
 	}
 	
-	override getNodesInTopolicalOrder() {
+	override getNodesInTopologicalOrder() {
 		return if(isDag) nodes else #[];
 	}
 	

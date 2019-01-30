@@ -52,6 +52,7 @@ class SumType extends TypeConstructorType {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
 		val newSType = new SumType(origin, type, newTypeVars);
 		s.add(tv, newSType);
+		newSType.userData = userData;
 	}
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';

@@ -45,7 +45,7 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
-		if(this.toString == "vec2d(int32, int32)") {
+		if(this.toString == "vec1d(f_143)") {
 			print("");
 		}
 	}
@@ -74,6 +74,7 @@ class TypeConstructorType extends AbstractType {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
 		val newCType = new TypeConstructorType(origin, type, newTypeVars);
 		s.add(tv, newCType);
+		newCType.userData = userData;
 	}
 		
 	override toString() {

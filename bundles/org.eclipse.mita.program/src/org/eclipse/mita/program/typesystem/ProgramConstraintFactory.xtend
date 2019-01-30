@@ -68,12 +68,19 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.program.CoercionExpression
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
 		println('''Computing constraints «program.eResource.URI.lastSegment» (rss «program.eResource.resourceSet.hashCode»)''');
 		system.computeConstraintsForChildren(program);
 		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, CoercionExpression expr) {
+		// this is a type cast, but unchecked since its post transformation and should already be fine
+		system.computeConstraints(expr.value);
+		return system.associate(expr.typeSpecifier as AbstractType, expr);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ModalityAccess access) {
@@ -265,21 +272,22 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val explicitType = if(vardecl.typeSpecifier instanceof PresentTypeSpecifier) system._computeConstraints(vardecl as TypedElement);
 		val inferredType = if(vardecl.initialization !== null) system.computeConstraints(vardecl.initialization);
 		
-		if(explicitType !== null && inferredType !== null) {
+		val resultType = if(explicitType !== null && inferredType !== null) {
 			system.addConstraint(new SubtypeConstraint(
 				inferredType, explicitType, 
 				new ValidationIssue(Severity.ERROR, '''«vardecl.initialization» (:: %s) cannot be assigned to variables of type «vardecl.typeSpecifier» (:: %s)''', vardecl, null, "")
 			));
-			return system.associate(explicitType, vardecl);
+			explicitType
 		} else if(explicitType !== null) {
-			return system.associate(explicitType, vardecl);
+			explicitType
 		} else if(inferredType !== null) {
 			val varDeclTypeVar = system.getTypeVariable(vardecl);
 			system.addConstraint(new SubtypeConstraint(inferredType, varDeclTypeVar, new ValidationIssue('''«vardecl.initialization» (:: %s) has a different type than «vardecl.name» (:: %s)''', vardecl.initialization)));
-			return varDeclTypeVar;
+			varDeclTypeVar;
 		} else {
-			return system.getTypeVariable(vardecl);
+			system.getTypeVariable(vardecl);
 		}
+		return system.associate(resultType, vardecl);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, WhereIsStatement stmt) {

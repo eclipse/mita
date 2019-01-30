@@ -118,6 +118,7 @@ import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.model.ModelUtils.getRealType
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.program.CoercionExpression
 
 class StatementGenerator {
 
@@ -166,7 +167,7 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(DoubleLiteral stmt) {
-		'''«stmt.value»f'''
+		'''«stmt.value»'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(BoolLiteral stmt) {
@@ -281,7 +282,28 @@ class StatementGenerator {
 		}
 		''';
 	}
+	
+	@Traced dispatch def IGeneratorNode code(CoercionExpression expr) {
+		val coercedType = BaseUtils.getType(expr);
+		val expressionType = BaseUtils.getType(expr.value);
+		if(coercedType instanceof org.eclipse.mita.base.typesystem.types.SumType) {
+			if(!(expressionType instanceof org.eclipse.mita.base.typesystem.types.SumType)) {
+				val altAccessor = expressionType.nameInStruct;
+				val needCast = EcoreUtil2.getContainerOfType(expr, ProgramBlock) !== null;
+				val expressionTypeIsSingleton = expressionType.userData.get(BaseConstraintFactory.ECLASS_KEY) == "Singleton"
+				return '''
+					(«IF needCast»(«coercedType.structType») «ENDIF»{
+						.tag = «expressionType.enumName»«IF !(expressionTypeIsSingleton)», ««« there is no other field for singletons
 
+						.data.«altAccessor» = «expr.value.code»
+})«ENDIF»«««nice indentation issues here
+
+				'''
+			}
+		}
+		return '''((«(expr.typeSpecifier as AbstractType).ctype») «expr.value.code»)'''
+	}
+	
 	@Traced dispatch def IGeneratorNode code(FeatureCall stmt) {
 		if (stmt.operationCall) {
 			val feature = stmt.reference;
@@ -332,44 +354,42 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, SumSubTypeConstructor cons, Iterable<Argument> arguments) {
-		val eConstructedType = cons.eContainer;
-		val constructedType = BaseUtils.getType(eConstructedType);
+		val eConstructingType = cons.eContainer;
+		val constructingType = BaseUtils.getType(eConstructingType);
+		val constructedType = BaseUtils.getType(callSite);
 		if(cons.eContainer instanceof SumAlternative) {
-			val altAccessor = constructedType.nameInStruct;
-			val eSumType = eConstructedType.eContainer;
+			val altAccessor = constructingType.nameInStruct;
+			val eSumType = eConstructingType.eContainer;
 			val sumType = BaseUtils.getType(eSumType);
-			val dataType = if(constructedType instanceof AnonymousProductType) {
-				if(constructedType.typeSpecifiers.length == 1) {
-					BaseUtils.getType(constructedType.typeSpecifiers.head).ctype;
-				}
-				else {
-					constructedType.structType
-				}
-			}
-			else {
-				constructedType.structType
-			}
+			val dataType = constructingType.realType.ctype
 			// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
 			val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null
 			
-			val hasAccessors = constructedType.realType.hasNamedMembers;
+			val hasAccessors = constructingType.realType.hasNamedMembers;
+			
+			val returnTypeIsSumType = constructedType instanceof org.eclipse.mita.base.typesystem.types.SumType;
+			
+			val constructedStruct = codeFragmentProvider.create('''
+			«IF returnTypeIsSumType || needCast»(«dataType»)«ENDIF» {
+				«FOR i_arg: arguments.tail.indexed»
+				«IF hasAccessors»«accessor(constructingType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
+				«ENDFOR»	
+			}
+			''')
 			
 			return '''
-			«IF needCast»(«sumType.structType») «ENDIF»{
-				.tag = «constructedType.enumName»«IF !(constructedType instanceof Singleton)», ««« there is no other field for singletons
-
-				««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
-
-
-				.data.«altAccessor» = («dataType») {
-					«FOR i_arg: arguments.tail.indexed»
-					«IF hasAccessors»«accessor(constructedType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
-					«ENDFOR»	
-				}
-				«ELSE»
-				
-				«ENDIF»
-			}
+			«IF returnTypeIsSumType»
+				«IF needCast»(«sumType.structType») «ENDIF»{
+					.tag = «constructingType.enumName»«IF !(constructingType instanceof Singleton)», ««« there is no other field for singletons
+	
+					««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
+	
+	
+					.data.«altAccessor» = «constructedStruct»
+				}«ENDIF»
+			«ELSE»
+				«constructedStruct»
+			«ENDIF»
 			'''
 		}
 		return '''BROKEN MODEL''';
@@ -946,7 +966,7 @@ class StatementGenerator {
 		typedef struct {
 			«definition.enumName» tag;
 			union {
-				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«BaseUtils.getType(alternative).ctype»«ELSE»«alternative.structType»«ENDIF» «alternative.nameInStruct»;
+				«FOR alternative: nonSingletonAlternatives»«BaseUtils.getType(alternative).ctype» «alternative.nameInStruct»;
 			«ENDFOR»
 			} data;
 		} «definition.structType»;

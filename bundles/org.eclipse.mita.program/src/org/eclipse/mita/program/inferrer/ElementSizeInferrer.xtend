@@ -222,7 +222,7 @@ class ElementSizeInferrer {
 			}
 			if(instance !== null) {
 				if(instance instanceof ElementReferenceExpression) {
-					val resourceRef = instance.arguments.head.value;
+					val resourceRef = instance.arguments.head?.value;
 					if(resourceRef instanceof ElementReferenceExpression) {
 						var resourceSetup = resourceRef.reference;
 						var Object loadedInferrer = null;

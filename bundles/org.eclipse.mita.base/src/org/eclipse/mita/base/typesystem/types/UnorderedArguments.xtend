@@ -47,5 +47,6 @@ class UnorderedArguments extends TypeConstructorType {
 		val newParamAndValueTypes = argParamNamesAndValueTypes.map[ it.key -> system.newTypeVariable(it.value.origin) as AbstractType ].force;
 		val newType = new UnorderedArguments(origin, type, newParamAndValueTypes);
 		s.add(tv, newType);
+		newType.userData = userData;
 	}
 }

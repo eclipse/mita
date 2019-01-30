@@ -117,7 +117,11 @@ class CompilationContext {
 	
 	def hasTimeEvents() {
 		assertInited();
-		return units.exists[unit | unit.eventHandlers.exists[e| e.event instanceof TimeIntervalEvent ] ]
+		return units.exists[unit | 
+			unit.eventHandlers.exists[e| 
+				e.event instanceof TimeIntervalEvent
+			]
+		]
 	}
 	
 	def hasGlobalVariables() {

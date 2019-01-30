@@ -110,7 +110,9 @@ class StringGenerator extends AbstractTypeGenerator {
 				left.code.noTerminator;
 			}
 			
+			var createdBuffer = true;
 			val prelude_rightCode = if(right instanceof ElementReferenceExpression) {
+				createdBuffer = false;
 				codeFragmentProvider.create('''''') -> codeFragmentProvider.create('''«right.code.noTerminator»''')
 			}
 			else if(right instanceof PrimitiveValueExpression) {
@@ -130,19 +132,24 @@ class StringGenerator extends AbstractTypeGenerator {
 				}) -> codeFragmentProvider.create('''«bufName»''')
 			}
 
-			val rightSizeVar = if(right instanceof ElementReferenceExpression) {
+			val rightSize = if(right instanceof ElementReferenceExpression) {
 				if(right.operationCall) {
 					codeFragmentProvider.create('''ERROR: Couldn't infer size!''')
 				}
-				codeFragmentProvider.create('''«prelude_rightCode.value»_buf''');
+				if(createdBuffer) {
+					codeFragmentProvider.create('''sizeof(«prelude_rightCode.value»_buf)''');
+				}
+				else {
+					codeFragmentProvider.create('''strlen(«prelude_rightCode.value»)''');
+				}
 			} else {
-				codeFragmentProvider.create('''«prelude_rightCode.value»''')
+				codeFragmentProvider.create('''sizeof(«prelude_rightCode.value»)''')
 			}
 
 			if(operator == AssignmentOperator.ASSIGN) {
 				codeFragmentProvider.create('''
 				«prelude_rightCode.key»
-				memcpy(«leftCode», «prelude_rightCode.value», sizeof(«rightSizeVar»));
+				memcpy(«leftCode», «prelude_rightCode.value», «rightSize»);
 				''')
 				.addHeader('string.h', true);
 			} else if(operator == AssignmentOperator.ADD_ASSIGN) {
@@ -247,14 +254,14 @@ class StringGenerator extends AbstractTypeGenerator {
 				if(sub !== null) {
 					val type = BaseUtils.getType(sub);
 					var typePattern = switch(type?.name) {
-						case 'uint32': '%" PRIu32 "'
-						case 'uint16': '%" PRIu16 "'
-						case 'uint8':  '%" PRIu8 "'
-						case 'int32':  '%" PRId32 "'
-						case 'int16':  '%" PRId16 "'
-						case 'int8':   '%" PRId8 "'
-						case 'float':  '%.' + DOUBLE_PRECISION + 'g'
-						case 'double': '%.' + DOUBLE_PRECISION + 'g'
+						case 'u32': '%" PRIu32 "'
+						case 'u16': '%" PRIu16 "'
+						case 'u8':  '%" PRIu8 "'
+						case 'i32':  '%" PRId32 "'
+						case 'i16':  '%" PRId16 "'
+						case 'i8':   '%" PRId8 "'
+						case 'f32':  '%.' + DOUBLE_PRECISION + 'g'
+						case 'f64': '%.' + DOUBLE_PRECISION + 'g'
 						case 'bool':   '%d'
 						case 'string': '%s'
 						default: 'UNKNOWN'

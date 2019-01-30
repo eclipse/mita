@@ -31,11 +31,10 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 class ResourceGraphBuilder {
-	
-	@Inject
-	protected ITypeSystemInferrer typeSystemInferrer
 	
 	protected final Set<Object> nodes = new HashSet();
 	
@@ -64,7 +63,7 @@ class ResourceGraphBuilder {
 	protected dispatch def Iterable<EObject> doComputeDependencies(AbstractSystemResource resource) {
 		return resource
 			.configurationItems
-			.filter[ typeSystemInferrer.infer(it)?.type instanceof AbstractSystemResource ]
+			.filter[ BaseUtils.getType(it).userData.get(BaseConstraintFactory.ECLASS_KEY) == "AbstractSystemResource" ]
 			.filter(EObject)
 			.toList;
 	}

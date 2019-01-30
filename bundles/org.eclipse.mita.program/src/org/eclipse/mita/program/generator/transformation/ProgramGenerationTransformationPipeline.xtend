@@ -20,6 +20,7 @@ import org.eclipse.mita.base.types.Expression
 
 class ProgramGenerationTransformationPipeline implements ITransformationPipelineInfoProvider {
 	
+	@Inject CoerceTypesStage coerceTypesStage
 	@Inject AddExceptionVariableStage addExceptionVariableStage
 	@Inject EscapeWhitespaceInStringStage escapeWhitespaceInStringStage
 	@Inject UnravelModalityAccessStage unravelModalityAccessStage
@@ -60,6 +61,7 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 
 	protected def getOrderedStages() {
 		return #[
+			coerceTypesStage,
 			addExceptionVariableStage,
 			escapeWhitespaceInStringStage,
 			unravelModalityAccessStage,

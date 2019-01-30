@@ -410,21 +410,21 @@ class GeneratorUtils {
 	}
 	
 	
-	dispatch def CodeFragment getStructName(SumType sumType) {
+	dispatch def CodeFragment getNameInStruct(SumType sumType) {
 		return codeFragmentProvider.create('''«sumType.name»''').addHeaderInclude(sumType);
 	}
 	
-	dispatch def CodeFragment getStructName(SumAlternative sumAlternative) {
+	dispatch def CodeFragment getNameInStruct(SumAlternative sumAlternative) {
 		return codeFragmentProvider.create('''«sumAlternative.name»''')
 			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(sumAlternative)) + ".h", false);
 	}
 	
 	
 	dispatch def CodeFragment getNameInStruct(ProdType prodType) {
-		return codeFragmentProvider.create('''«prodType.name»''');
+		return codeFragmentProvider.create('''«prodType.name»''').addHeaderInclude(prodType);
 	}
 	dispatch def CodeFragment getNameInStruct(EObject obj) {
-		return codeFragmentProvider.create('''ERROR: getStructName''');
+		return codeFragmentProvider.create('''ERROR: getNameInStruct''');
 	}
 
 	dispatch def CodeFragment getStructName(StructureType structureType) {

@@ -37,6 +37,7 @@ import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.program.model.ModelUtils 
 
@@ -374,6 +375,10 @@ class LoopBreakerStatement extends AbstractStatement {
 }
 class ArrayRuntimeCheckStatement extends AbstractStatement {
 	refers ArrayAccessExpression access
+}
+class CoercionExpression extends Expression {
+	contains Expression value
+	Object typeSpecifier
 }
 
 

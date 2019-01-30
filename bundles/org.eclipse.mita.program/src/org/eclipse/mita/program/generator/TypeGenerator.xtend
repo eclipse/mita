@@ -23,6 +23,7 @@ import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 /**
  * Facade for generating types.
@@ -53,11 +54,11 @@ class TypeGenerator implements IGenerator {
 	}
 	public dispatch def CodeFragment code(ProdType type) {
 		// if we have multiple members, we have an actual struct, otherwise we are just an alias
-		if(type.typeArguments.length > 1) {
-			return codeFragmentProvider.create('''«type.structType»''');	
+		if(type.typeArguments.length == 1 && type.userData.get(BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
+			return type.typeArguments.head.code;
 		}
 		else {
-			return type.typeArguments.head.code;
+			return codeFragmentProvider.create('''«type.structType»''');	
 		}
 	}
 	public dispatch def CodeFragment code(SumType sumType) {

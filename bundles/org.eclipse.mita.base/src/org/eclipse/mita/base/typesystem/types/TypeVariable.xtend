@@ -56,7 +56,7 @@ class TypeVariable extends AbstractType {
 	}
 	
 	override replace(Substitution sub) {
-		sub.substitutions.getOrDefault(this, this);
+		sub.substitutions.getOrDefault(this, this) => [it.origin = this.origin];
 	}
 	
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {

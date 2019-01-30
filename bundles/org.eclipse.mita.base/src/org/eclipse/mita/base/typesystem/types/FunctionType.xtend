@@ -67,6 +67,7 @@ class FunctionType extends TypeConstructorType {
 	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newFType = new FunctionType(origin, type, system.newTypeVariable(from.origin), system.newTypeVariable(to.origin));
 		s.add(tv, newFType);
+		newFType.userData = userData;
 	}
 	
 	override toGraphviz() {

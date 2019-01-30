@@ -16,7 +16,7 @@ abstract class AbstractType {
 		return system.newTypeVariable(null);
 	} 
 	
-	protected final transient EObject origin;
+	protected transient EObject origin;
 	protected final String name;
 	protected Map<String, String> userData = new HashMap();
 	
@@ -25,6 +25,11 @@ abstract class AbstractType {
 	abstract def Tree<AbstractType> quote();
 	abstract def Tree<AbstractType> quoteLike(Tree<AbstractType> structure);
 	abstract def AbstractType unquote(Iterable<Tree<AbstractType>> children);
+	
+	protected new(EObject origin, String name) {
+		this.origin = origin;
+		this.name = name;
+	}
 		
 	override boolean equals(Object other) {
 		if (this === other)

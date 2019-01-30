@@ -211,22 +211,37 @@ class MitaBaseResource extends LazyLinkingResource {
 			println("report for:" + resource.URI.lastSegment + "\n" + timer.toString);
 			if(solution !== null) {
 				if(resource instanceof MitaBaseResource) {
-					solution.solution.substitutions.entrySet.forEach[
-						var origin = it.key.origin;
-						if(origin !== null && origin.eIsProxy) {
-							origin = resource.resourceSet.getEObject((origin as BasicEObjectImpl).eProxyURI, false);
-						}
-						
-						if(origin !== null) {
-							val type = it.value;
-							// we had the object loaded anyways, so we can set the type
-							TypeAdapter.set(origin, type);
-							
+					solution.constraints.symbolTable.entrySet.forEach[
+						val uri = it.key;
+						if(uri.trimFragment == resource.URI) {							
+							val tv = it.value;
+							val type = solution.solution.substitutions.getOrDefault(tv, tv);
+							val origin = resource.resourceSet.getEObject(uri, false);
+							if(origin !== null) {
+								// we had the object loaded anyways, so we can set the type
+								TypeAdapter.set(origin, type);
+							}
 							if(type instanceof BottomType) {
-								solution.issues += new ValidationIssue(type.message, resolveProxy(resource, type.origin) ?: obj)
+								solution.issues += new ValidationIssue(type.message, origin)
 							}
 						}
 					]
+//					solution.solution.substitutions.entrySet.forEach[
+//						var origin = it.key.origin;
+//						if(origin !== null && origin.eIsProxy) {
+//							origin = resource.resourceSet.getEObject((origin as BasicEObjectImpl).eProxyURI, false);
+//						}
+//						
+//						if(origin !== null) {
+//							val type = it.value;
+//							// we had the object loaded anyways, so we can set the type
+//							TypeAdapter.set(origin, type);
+//							
+//							if(type instanceof BottomType) {
+//								solution.issues += new ValidationIssue(type.message, resolveProxy(resource, type.origin) ?: obj)
+//							}
+//						}
+//					]
 					resource.latestSolution = solution;
 					resource.cancelIndicator.canceled = true;
 					resource.errors += solution.issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[

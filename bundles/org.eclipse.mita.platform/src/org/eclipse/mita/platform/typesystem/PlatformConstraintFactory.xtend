@@ -42,6 +42,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		val result = new AtomicType(res, res.name);
 		system.typeTable.put(QualifiedName.create(res.name), result);
 		result.userData.put(GENERATOR_KEY, res.generator);
+		result.userData.put(ECLASS_KEY, res.eClass.name);
 		return system.associate(result, res);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemResourceAlias alias) {
@@ -51,6 +52,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		system.associate(aliasKind);
 		system.typeTable.put(QualifiedName.create(alias.name), delegateType);
 		system.typeTable.put(QualifiedName.create(alias.typeKind.toString), aliasKind);
+		delegateType.userData.put(ECLASS_KEY, alias.eClass.name);
 		return system.associate(delegateType, alias);
 	}
 	
