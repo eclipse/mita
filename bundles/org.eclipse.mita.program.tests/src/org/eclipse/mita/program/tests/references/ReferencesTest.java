@@ -14,26 +14,22 @@
 package org.eclipse.mita.program.tests.references;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.mita.program.inferrer.ElementSizeInferrer;
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult;
+import org.eclipse.mita.program.tests.util.AbstractXpectTest;
 import org.junit.runner.RunWith;
 import org.xpect.expectation.IStringExpectation;
 import org.xpect.expectation.StringExpectation;
 import org.xpect.runner.Xpect;
 import org.xpect.runner.XpectRunner;
 import org.xpect.xtext.lib.setup.ThisOffset;
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer;
 
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer;
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult;
-import org.eclipse.mita.program.tests.util.AbstractXpectTest;
 import com.google.inject.Inject;
 
 @RunWith(XpectRunner.class)
 public class ReferencesTest extends AbstractXpectTest {
 	@Inject
-	private ElementSizeInferrer elementSizeInferrer;
-	@Inject
-	protected ITypeSystemInferrer typeInferrer;
-	
+	private ElementSizeInferrer elementSizeInferrer;	
 	
 	@Xpect
 	public void inferredSize(@StringExpectation IStringExpectation expectation, @ThisOffset EObject expr) {

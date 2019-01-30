@@ -27,19 +27,19 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.TypesFactory
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
+import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
@@ -56,10 +56,8 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.resource.IContainer
-import org.eclipse.mita.base.types.PackageAssociation
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
-import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 class ModelUtils {
 
@@ -177,18 +175,17 @@ class ModelUtils {
 		return EcoreUtil2.getContainerOfType(obj, PackageAssociation);
 	}
 	
-	static def boolean containsAbstractType(InferenceResult ir) {
-		return containsTypeBy(true, [t | t.abstract], ir);
-	}
-	
-	static def boolean containsTypeBy(boolean onNull, Predicate<Type> pred, InferenceResult ir) {
+	static def boolean containsTypeBy(boolean onNull, Predicate<AbstractType> pred, AbstractType ir) {
 		if(ir === null) {
 			return onNull;
 		}
-		if(pred.test(ir.type)) {
+		if(pred.test(ir)) {
 			return true;
 		}
-		ir.bindings.fold(false, [b, x | b || containsTypeBy(onNull, pred, x)])
+		if(ir instanceof TypeConstructorType) {
+			return ir.typeArguments.fold(false, [b, x | b || containsTypeBy(onNull, pred, x)])
+		}
+		return false;
 	}
 	
 	static def boolean containsAbstractType(PresentTypeSpecifier ts) {
@@ -222,17 +219,6 @@ class ModelUtils {
 			}
 		}
 		return false;
-	}
-
-	def static PresentTypeSpecifier toSpecifier(InferenceResult inference) {
-		if (inference === null) {
-			return null;
-		} else {
-			val result = TypesFactory.eINSTANCE.createPresentTypeSpecifier;
-			result.type = inference.type;
-			result.typeArguments.addAll(inference.bindings.map[x|x.toSpecifier]);
-			return result;
-		}
 	}
 
 	static def String typeSpecifierIdentifier(PresentTypeSpecifier x) {
@@ -286,15 +272,23 @@ class ModelUtils {
 		BaseUtils.zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(equalityCheck, tss.key, tss.value)])
 	}
 	
-	def static boolean typeInferenceResultEqualsWith((Type, Type) => Boolean equalityCheck, InferenceResult ir1, Object o) {
-		if(!(o instanceof InferenceResult)) {
+	def static boolean typeInferenceResultEqualsWith((AbstractType, AbstractType) => Boolean equalityCheck, AbstractType ir1, Object o) {
+		if(!(o instanceof AbstractType)) {
 			return false;
 		}
-		val ir2 = o as InferenceResult;
-		if(!equalityCheck.apply(ir1.type, ir2.type) || ir1.bindings.length != ir2.bindings.length) {
+		val ir2 = o as AbstractType;
+		if(!equalityCheck.apply(ir1, ir2)) {
 			return false;
 		}
-		BaseUtils.zip(ir1.bindings, ir2.bindings).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
+		if(ir1 instanceof TypeConstructorType) {
+			if(ir2 instanceof TypeConstructorType) {
+				if(ir1.typeArguments.length != ir2.typeArguments.length) {
+					return false;
+				}
+				BaseUtils.zip(ir1.typeArguments, ir2.typeArguments).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
+			}
+		}
+		return ir1.class == ir2.class;
 	}
 	
 	
@@ -323,14 +317,15 @@ class ModelUtils {
 		return if(node === null) null else NodeModelUtils.getTokenText(node);
 	}
 
-	static def boolean isPrimitiveType(PresentTypeSpecifier typeSpec) {
-		val type = typeSpec?.type;
-		return if (type instanceof PrimitiveType) {
-			true
-		} else if (type instanceof GeneratedType && type.name == 'optional') {
-			typeSpec.typeArguments.forall[x|x.isPrimitiveType]
-		} else {
-			false
+	static def boolean isPrimitiveType(AbstractType type) {
+		if (type instanceof AbstractBaseType) {
+			return true;
+		} else if (type instanceof TypeConstructorType) {
+			if(type.name == 'optional') {
+				return type.typeArguments.forall[x|x.isPrimitiveType]
+			}
 		}
+		return false;
+		
 	}	
 }

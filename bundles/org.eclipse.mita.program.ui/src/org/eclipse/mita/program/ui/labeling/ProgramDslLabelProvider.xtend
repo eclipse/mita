@@ -18,6 +18,7 @@ package org.eclipse.mita.program.ui.labeling
 
 import com.google.inject.Inject
 import java.net.URL
+import org.apache.commons.lang.StringEscapeUtils
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
 import org.eclipse.jface.resource.ImageDescriptor
@@ -36,7 +37,7 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Sensor
@@ -50,7 +51,6 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
-import org.apache.commons.lang.StringEscapeUtils
 
 /**
  * Provides labels for EObjects.
@@ -164,8 +164,8 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
 	}
 
-	def text(InferenceResult ir) {
-		'''«ir.type.name»«IF ir.bindings.empty === false»<«FOR t: ir.bindings SEPARATOR(", ")»«t.getText()»«ENDFOR»>«ENDIF»'''
+	def text(AbstractType ir) {
+		'''«ir.toString»'''
 	}
 
 	def text(ExceptionTypeDeclaration it) {

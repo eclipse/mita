@@ -16,9 +16,8 @@ package org.eclipse.mita.platform.xdk110.connectivity
 import com.google.inject.Inject
 import java.net.URL
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Enumerator
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
@@ -30,11 +29,7 @@ import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 
-class RestClientGenerator extends AbstractSystemResourceGenerator {
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
-	
+class RestClientGenerator extends AbstractSystemResourceGenerator {	
 	@Inject
 	protected extension GeneratorUtils
 	

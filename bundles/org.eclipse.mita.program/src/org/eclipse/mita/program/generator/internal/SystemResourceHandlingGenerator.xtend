@@ -16,7 +16,9 @@ package org.eclipse.mita.program.generator.internal
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceEvent
@@ -30,9 +32,6 @@ import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.FunctionType
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class SystemResourceHandlingGenerator {
 
@@ -50,9 +49,6 @@ class SystemResourceHandlingGenerator {
     
     @Inject
     protected TypeGenerator typeGenerator
-    
-    @Inject
-	protected ITypeSystemInferrer typeInferrer
 	
 	@Inject
 	protected extension ProgramDslTraceExtensions

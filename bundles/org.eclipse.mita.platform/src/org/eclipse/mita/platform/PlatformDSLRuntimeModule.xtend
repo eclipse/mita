@@ -15,14 +15,12 @@ package org.eclipse.mita.platform
 
 import com.google.inject.Binder
 import com.google.inject.name.Names
-import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaContainerManager
 import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
@@ -49,7 +47,6 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 	override configure(Binder binder) {
 		super.configure(binder)
 		binder.bind(ITypeSystem).toInstance(MitaTypeSystem.getInstance())
-		binder.bind(ITypeSystemInferrer).to(ExpressionsTypeInferrer)
 		binder.bind(IDefaultResourceDescriptionStrategy).to(PlatformDslResourceDescriptionStrategy)
 		binder.bind(DefaultRuntimeModule).annotatedWith(Names.named("injectingModule")).toInstance(this)
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);

@@ -31,7 +31,7 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramPackage
@@ -56,8 +56,6 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 	ILabelProvider labelProvider;
 	@Inject
 	IScopeProvider scopeProvider;
-	@Inject
-	protected ITypeSystemInferrer typeInferrer;
 	@Inject 
 	protected extension ImportHelper
 	@Inject 
@@ -121,7 +119,7 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 				if (candidate.EObjectOrProxy.eIsProxy) {
 					return candidate.getUserData(ProgramDslResourceDescriptionStrategy.TYPE);
 				} else {
-					return typeInferrer.infer(candidate.EObjectOrProxy)?.type?.name;
+					return BaseUtils.getType(candidate.EObjectOrProxy)?.name;
 				}
 			}
 		};

@@ -15,13 +15,14 @@ package org.eclipse.mita.program.generator.transformation
 
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.ProgramBlock
@@ -52,8 +53,8 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 					}
 				}
 				
-				val inferenceResult = typeInferrer.infer(ref);
-				if(inferenceResult?.type?.name == 'void') {
+				val inferenceResult = BaseUtils.getType(ref);
+				if(inferenceResult?.name == 'void') {
 					// don't unravel void function calls
 					return false;
 				}

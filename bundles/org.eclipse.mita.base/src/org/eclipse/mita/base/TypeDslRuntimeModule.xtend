@@ -18,7 +18,6 @@ package org.eclipse.mita.base
 
 import com.google.inject.Binder
 import com.google.inject.name.Names
-import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
@@ -26,7 +25,6 @@ import org.eclipse.mita.base.scoping.MitaContainerManager
 import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.BaseSymbolFactory
@@ -52,10 +50,6 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 
 	override Class<? extends IGlobalScopeProvider> bindIGlobalScopeProvider() {
 		return TypesGlobalScopeProvider
-	}
-
-	def Class<? extends ITypeSystemInferrer> bindITypeSystemInferrer() {
-		return ExpressionsTypeInferrer
 	}
 	
 	override Class<? extends IValueConverterService> bindIValueConverterService() {

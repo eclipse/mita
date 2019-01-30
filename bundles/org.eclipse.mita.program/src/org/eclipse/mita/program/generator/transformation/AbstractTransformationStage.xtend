@@ -13,26 +13,22 @@
 
 package org.eclipse.mita.program.generator.transformation
 
+import com.google.inject.Inject
+import java.util.LinkedList
+import java.util.List
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.internal.ProgramCopier
-import com.google.inject.Inject
-import java.util.LinkedList
-import java.util.List
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 abstract class AbstractTransformationStage {
 	
 	@Inject 
 	protected extension ProgramCopier copier
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
 	
 	@Inject
 	protected ITypeSystem typeSystem

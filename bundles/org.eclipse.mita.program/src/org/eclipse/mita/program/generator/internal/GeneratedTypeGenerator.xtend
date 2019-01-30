@@ -15,7 +15,6 @@ package org.eclipse.mita.program.generator.internal
 
 import com.google.inject.Inject
 import java.util.List
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
