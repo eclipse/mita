@@ -244,8 +244,86 @@ platform Arduino {
 ```
 Changes in your runtime workspace are also reflected in your developer workspace. This means you can switch between the two whatever fits better. Usually, it is best to write the platform definition in the runtime workspace because of the language features you get from the platform editor. However, writing code generators makes sense in the developer workspace as you will often refer to already existing Mita generators.
 
-Now that you have setup your delevoping environment, let's start writing your first platform definition.
-
 ### Walkthrough Arduino Platform
+
+Now that you have setup your delevoping environment, let's start writing your first platform definition. As a first step, we will define that our Arduino board comes with two buttons which emit events when they get pressed or released. Please recall, a platform is a collection of system resources accompanied by type definitions. System resources can be of the kind `sensor`, `connectivity`, `io` and `bus`. A button falls into the `sensor` category. Sensors can specify modalities and events. Modalities define the state of a sensor, they can be read in a Mita program. In the button case, it is a boolean that defines whether the button is currently pressed or not. Events are used in Mita as triggers in `every {..}` code blocks. A button sends an even when it gets pressed, or released. Hence, our button definition looks as follows:
+```
+sensor Button {
+	generator ""
+	modality is_pressed : bool
+	event pressed
+	event released
+}
+```
+Ignore the `generator` part for now. We will cover that soon.
+
+Now that we have defined what a button is capable of, we can express that our platform consists of two of them. For this, we create an `alias` for each button and export them in the platform resource:
+
+```
+alias button_one for Button
+alias button_two for Button
+
+platform Arduino {
+	module ""
+	has button_one
+	has button_two
+}
+```
+
+Putting both parts together, our first version of the Arduino platform is defined as:
+```
+package platforms.arduino;
+
+sensor Button {
+	generator ""
+	modality is_pressed : bool
+	event pressed
+	event released
+}
+
+alias button_one for Button
+alias button_two for Button
+
+platform Arduino {
+	module ""
+	has button_one
+	has button_two
+}
+```
+Before we can test our first platform definition we need to register the new platform so that it can be imported in a Mita application. To register the platform create a new file _plugin.xml_ in your platform project and paste the following contribution:
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.mita.library.extension.type_library">
+      <Library
+            description="Arduino Platform Definition"
+            id="platforms.arduino"
+            module="org.eclipse.mita.platform.arduino.platform.ArduinoPlatformGeneratorModule"
+            name="Arduino Platform Definition"
+            optional="true"
+            version="1.0.0">
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.platform.arduino/platform/arduino.platform">
+         </ResourceURI>
+      </Library>
+   </extension>
+</plugin>
+```
+This piece of XML code registers the platform defined in the _arduino.platform_ file (see ResourceURI) under the ID `platforms.arduino`.
+As XML is static, we need to restart the runtime IDE in order to load the new extension.
+
+At this point, your new Arduino platform should be visible by any Mita application. We can test by creating a Mita application file with _File -> New -> Other.._ and select _Mita -> Mita Application File_. As platform choose _platforms.arduino_ and click on _Finish_. In the newly created application file we can now type:
+```
+package my.pkg;
+
+import platforms.arduino;
+
+every button_one.pressed {
+  println("Hello World");
+}
+```
+You can ignore the error in the first line, they are related to code generation which obviously does not work yet, as we did not contribute any code generators yet. You can press `ctrl` and click on `pressed` to directly jump into the event definition in _arduino.platform_.
 
 ### Building Blocks
