@@ -13,14 +13,17 @@
 
 package org.eclipse.mita.program.validation
 
-import org.eclipse.mita.program.Program
 import com.google.inject.Inject
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.program.Program
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.types.ProdType
 
 class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 
@@ -51,7 +54,15 @@ class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 	}
 
 	def protected overridingName(Operation op) {
-		'''«op.name»_«FOR param : op.parameters.filter[!optional] SEPARATOR '_'»«param.typeSpecifier?.toString»«ENDFOR»'''.toString
+		val type = BaseUtils.getType(op);
+		if(type instanceof FunctionType) {
+			val args = type.from;
+			if(args instanceof ProdType) {
+				return '''«op.name»_«FOR param : args.typeArguments SEPARATOR '_'»«param»«ENDFOR»'''.toString			
+			}
+		}
+		// all functions should have type (FunctionType(ProdType, t)). If not just don't validate, the user's got enough issues already.
+		return Math.random.toString
 	}
 
 	@Check(CheckType.FAST)

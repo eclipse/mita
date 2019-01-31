@@ -62,7 +62,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 	
 	@Check
 	def checkDeconstructorsHaveCorrectNumberOfArguments(IsDeconstructionCase deconstructionCase) {
-		val realType = deconstructionCase.productType.realType;
+		val realType = deconstructionCase.productType?.realType;
 		// named deconstruction fields already are OK due to scoping
 		if(deconstructionCase.anonymous) {
 			// check that we deconstruct at most as many fields as realType has

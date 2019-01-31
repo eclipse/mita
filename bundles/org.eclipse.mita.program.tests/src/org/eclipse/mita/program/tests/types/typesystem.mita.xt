@@ -27,23 +27,29 @@ struct mData {
 alt anyVec {
 	vec0d | vec1d: {x: int32} | vec2d: {x: int32, y: string}
 }   
- 
+
+//XPECT inferredType --> id_args(optional<int32>) → optional<int32>
 fn id(x: int32?): int32? {
 	return x;
 }
-    
+
+//XPECT inferredType --> id_args(int32) → int32    
 fn id(x: int32): int32 {
 	return x;  
 }      
-  
+//XPECT inferredType --> id_args(string) → string
+//XPECT errors --> "Could not infer the size of the function's return." at "id"
 fn id(x: string): string {
 	return x;
 }   
 
+//XPECT inferredType --> id2_args(int32, int8) → int32
 fn id2(x: int32, y: int8): int32 {
 	return x;  
 }      
   
+//XPECT inferredType --> id2_args(string, int8) → string
+//XPECT errors --> "Could not infer the size of the function's return." at "id2"
 fn id2(x: string, y: int8): string {
 	return x;
 }
@@ -57,31 +63,43 @@ every 100 milliseconds {
 }
 
 every 100 milliseconds { 
-	// XPECT warnings --> "<auto>.vec1d([self: ∗anyVec, x: int32])(prim»i»10) has type ∗anyVec(vec0d | vec1d | vec2d)" at ".vec1d(10)"
+	// XPECT warnings --> "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, string))" at ".vec1d(10)"
 	let c = .vec1d(10); 
 	let d = c.x(); 
 	let e = "asdf";     
-	let f = 8;        
+	let f = 8;
+	// XPECT errors --> "Cannot determine size of element: Unable to infer size from nothing" at "g"
 	let g: string = id(e);          
 	let h = id(f); 
+	// XPECT errors --> "Cannot determine size of element: Unable to infer size from nothing" at "h2"
 	let h2 = id2(y=0, x=e);
 	let h3 = id2(y=0, x=f);    
 	let m = C_Magnetometer_read();
+	/* XPECT errors ---
+		"Cannot determine size of element: Cannot infer size of "VariableDeclarationImpl" of type "reference<reference<int32>>"." at "asdf"
+		"Types with references must be initialized" at "let asdf: &&int32;"
+	--- */
 	let asdf: &&int32;    
 	let wert: int32?;
+	// XPECT errors --> "Cannot determine size of element: Object does not have a size" at "foo"
 	let foo: modality<uint16>;   
 	let bar: uint32? = 10;
 	let barp: uint16? = 10;
-	let bar2 = bar; 
+	let bar2 = bar;
+	// XPECT errors --> "Nested generated types are not supported yet." at "let bar3 = &bar2;"
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
+	/* XPECT errors ---
+		"Cannot determine size of element: Unable to infer size from type modality01_args(MySensor) → modality<uint32>" at "a"
+		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
+	--- */
 	let a: modality<uint32> = MySensor.modality01; 
 	let asdfgasd = true && false;
 	let a2 = f == (10 as int32); 
 	/* XPECT warnings ---
-	 	 "<auto>.vec1d([self: ∗anyVec, x: int32])(prim»i»10) has type ∗anyVec(vec0d | vec1d | vec2d)" at ".vec1d(10)"
-	 	 "<auto>.vec0d([self: ∗anyVec])() has type ∗anyVec(vec0d | vec1d | vec2d)" at ".vec0d"
-	 * --- */
+	 	 "<auto>.vec0d() has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, string))" at ".vec0d"
+	 	 "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, string))" at ".vec1d(10)"
+	 --- */
 	let a3 = true? .vec0d: .vec1d(10);
 	where(a3) {  
 		is(anyVec.vec0d) { 
@@ -90,16 +108,22 @@ every 100 milliseconds {
 		is(anyVec.vec1d -> x) {
 			 
 		} 
+		// XPECT errors --> "Cannot determine size of element: Cannot infer size of initialization" at "a1"
 		is(anyVec.vec2d -> a1=vec2d.y, b1=vec2d.x) {
  
 		}
+		// XPECT errors --> "Cannot determine size of element: Cannot infer size of initialization" at "a1"
 		is(anyVec.vec2d -> a1=vec2d.y) {
 		 
 		} 
+		// XPECT errors --> "Cannot determine size of element: Cannot infer size of initialization" at "b2"
 		is(anyVec.vec2d -> a1, b2) {
 		
 		}
-		//XPECT errors --> "MGU128: vec2d(f_588.0, f_589.0) and vec2d(f_591.0) differ in their number of arguments" at "is(anyVec.vec2d -> a1) { 		  		}"
+		/*XPECT errors ---
+			"Cannot determine size of element: Unable to infer size from type f_591.0" at "a1"
+			"vec2d(int32, string) and vec2d(f_591.0) don't fit together" at "is(anyVec.vec2d -> a1) { 		  		}"
+		--- */
 		is(anyVec.vec2d -> a1) {
 		 
 		}
@@ -108,6 +132,7 @@ every 100 milliseconds {
 		} 
 	}
 	/* XPECT errors ---
+		"f (:: f_394.0) and g don't share a common type" at "f"
 		"f (:: xint8) and g don't share a common type" at "f"
 		"f and g (:: string) don't share a common type" at "g"
 	 --- */
@@ -119,21 +144,28 @@ every 100 milliseconds {
 fn <T> foo2() {
 	let bar: optional<T>; 
 	let bar2 =  bar;
+	// XPECT errors --> "Nested generated types are not supported yet." at "let bar3 = &bar2;"
 	let bar3 = &bar2;
 	let bar4 = *bar3; 
 	/* XPECT errors ---
-		"Function con cannot be used here" at "new array<int32>(10, 20)"
-		"con_args(xint8, xint8) not instance of con\n	∀[f_0.2].con_args(uint32) → array<f_0.2> = con<T>([size: uint32 (static: true)])\n" at "new array<int32>(10, 20)"
+		"Function con_array cannot be used here: arguments don't fit (con_array_args(f_9, f_10) != con_array_args(uint32))" at "new array<int32>(10, 20)"
+		"con_array_args(f_9, f_10) and con_array_args(uint32) differ in their type arguments" at "new array<int32>(10, 20)"
+		"con_array_args(xint8, xint8) and con_array_args(uint32) differ in the number of type arguments" at "new array<int32>(10, 20)"
 	--- */
 	let bar5 = new array<int32>(10, 20);
 	let bar6 = new array<int32>(10);
 	/* XPECT errors ---
-		"Function con cannot be used here" at "new array<int32>()"
-		"con_args() not instance of con\n	∀[f_0.2].con_args(uint32) → array<f_0.2> = con<T>([size: uint32 (static: true)])\n" at "new array<int32>()"
+		"Cannot determine size of element: size missing" at "new array<int32>()"
+		"con_array_args() and con_array_args(uint32) differ in the number of type arguments" at "new array<int32>()"
 	--- */
 	let bar7 = new array<int32>();
 	let bar8 = new array<int32>(size=10);
-	// XPECT errors --> "Scope doesn't contain foo for Argument.parameter on foo=prim»i»10" at "foo=10"
+	/* XPECT errors ---
+		"Function con_array cannot be used here" at "new array<int32>(foo=10)"
+		"Scope doesn't contain foo for Argument.parameter on foo=prim»i»10" at "foo=10"
+		"Too few arguments" at "new array<int32>(foo=10)"
+		"prim»i»10 (:: xint8) not compatible with foo (:: ⊥ (Scope doesn't contain foo for Argument.parameter on foo=prim»i»10))" at "foo=10"
+	--- */
 	let bar9 = new array<int32>(foo=10);
 	return;  
 } 

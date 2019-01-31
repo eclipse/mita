@@ -352,7 +352,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			val vars = deconCase.deconstructors.map[system.computeConstraints(it) as AbstractType].force;
 			val varsType = new ProdType(deconCase, new AtomicType(null, prodTypeName), vars);
 	
-			system.addConstraint(new EqualityConstraint(deconType, varsType, new ValidationIssue(Severity.ERROR, '''Couldn't resolve types''', deconCase, null, "")));
+			system.addConstraint(new EqualityConstraint(deconType, varsType, new ValidationIssue(Severity.ERROR, '''%s and %s don't fit together''', deconCase, null, "")));
 		}
 		system.addConstraint(new SubtypeConstraint(deconType, matchVariable, 
 			new ValidationIssue(Severity.ERROR, '''«prodTypeName» (:: %s) not subtype of %s''', deconCase, feature, "")

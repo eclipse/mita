@@ -36,7 +36,9 @@ public interface IValidationIssueAcceptor {
 		private String issueCode;
 		private transient EObject target;
 		private EStructuralFeature feature;
-
+		
+		private static final String test = "f (:: f_394.0) and g don't share a common type";
+		
 		public ValidationIssue(Severity severity, String message, String issueCode) {
 			this(severity, message, null, null, issueCode);
 		}
@@ -55,7 +57,7 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(message.equals("Function con_SomeGenType cannot be used here: %s, %s")) {
+			if(message.equals(test)) {
 				System.out.print("");
 			}
 		}
@@ -75,7 +77,7 @@ public interface IValidationIssueAcceptor {
 			this.target = target;
 			this.issueCode = issueCode;
 			this.feature = feature;
-			if(message.equals("Function con_SomeGenType cannot be used here: %s, %s")) {
+			if(message.equals(test)) {
 				System.out.print("");
 			}
 		}

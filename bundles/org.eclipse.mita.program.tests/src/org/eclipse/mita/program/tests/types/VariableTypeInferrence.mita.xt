@@ -16,10 +16,10 @@ function variableInference() : void {
 } 
 
 function variableInferenceExpression() : void {
-	//XPECT inferredType --> xint8
-	var x = 10;
-	//XPECT inferredType --> uint16
-	var z: uint16 = (x * 3) + 10;
+	//XPECT inferredType --> int8
+	var x: int8 = 10;
+	//XPECT inferredType --> int16
+	var z: int16 = (x * 3) + 10;
 }
 
 function variableInferenceOperationCall() : void {
@@ -62,7 +62,7 @@ function variableInferenceFloat() {
 	//XPECT inferredType --> xint8
 	var x  = 10;
 	//XPECT inferredType --> f32
-	var z : float = x;
+	var z : float = x as float;
 	//XPECT inferredType --> f32
 	var y = 10.0f; 
 }
@@ -71,7 +71,7 @@ function variableInferenceDouble() {
 	//XPECT inferredType --> xint8
 	var x = 10;
 	//XPECT inferredType --> f64
-	var z : double = x;
+	var z : double = x as double;
 	// XPECT inferredType --> f64
 	var y = 10.0d; 
 }
@@ -119,6 +119,7 @@ function noCommonType() {
 	var x : int32 = 10;
 	var y : uint32 = 10;
 	/* XPECT errors --- 
+		"Cannot determine size of element: Unable to infer size from type f_329.0" at "+"
 		"Function __PLUS__ cannot be used here" at "x + y"
 		"__PLUS___args(int32, uint32) not instance of __PLUS__\n	__PLUS___args(f32, f32) → f32 = __PLUS__([x: float, y: float])\n	__PLUS___args(f64, f64) → f64 = __PLUS__([x: double, y: double])\n	__PLUS___args(int16, int16) → int16 = __PLUS__([x: int16, y: int16])\n	__PLUS___args(int32, int32) → int32 = __PLUS__([x: int32, y: int32])\n	__PLUS___args(int8, int8) → int8 = __PLUS__([x: int8, y: int8])\n	__PLUS___args(uint16, uint16) → uint16 = __PLUS__([x: uint16, y: uint16])\n	__PLUS___args(uint32, uint32) → uint32 = __PLUS__([x: uint32, y: uint32])\n	__PLUS___args(uint8, uint8) → uint8 = __PLUS__([x: uint8, y: uint8])\n" at "x + y"
 		--- */

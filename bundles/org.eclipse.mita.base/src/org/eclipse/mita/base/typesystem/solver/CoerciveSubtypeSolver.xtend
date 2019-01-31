@@ -553,6 +553,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return system._doSimplify(substitution, typeResolutionOrigin, constraint, sub as TypeConstructorType, top as TypeConstructorType);
 	}
 	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, ProdType sub, UnorderedArguments top) {
+		// do nothing, it's really hard to do anything here since we don't know the names of sub's args
+		// TODO introduce a NamedProdType which carries this information
+		return SimplificationResult.success(system, Substitution.EMPTY);
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, UnorderedArguments sub, ProdType top) {
+		// do nothing, it's really hard to do anything here since we don't know the names of top's args	
+		// TODO introduce a NamedProdType which carries this information
+		return SimplificationResult.success(system, Substitution.EMPTY);
+	}
+	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
 		if(sub.typeArguments.length !== top.typeArguments.length) {
 			return SimplificationResult.failure(#[new ValidationIssue(constraint.errorMessage, '''«sub» and «top» differ in their type arguments'''), constraint.errorMessage]);
