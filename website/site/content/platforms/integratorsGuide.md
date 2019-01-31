@@ -200,7 +200,51 @@ User event handlers are translated by core Mita. To inject them into your event 
 
 ## Hands On
 
+Now that we have learned about the building blocks of platform definitions, let's put everything together and create a simple platform for the Arduino board. The next chapters will demonstrate how to setup your working environment and walk you through the development of a new platform definition.
+
 ### Technical Setup
+
+First of all, we need to setup our development environment. The easiest way is to use the Eclipse Installer with our setup file. This will automatically download an Eclipse, clone this repository and import all projects into your workspace. The whole process is described in our [contribution guide](contributing.md#set-up-your-developer-workspace).
+
+Once you have your mita development workspace running, you can create a new project in which you are going to define your platform:
+- Go to _File -> New -> Project.._ and select _Plug-in Development -> Plug-in Project_. 
+- Click _Next>_ and specify a project name. In this example we choose _org.eclipse.mita.platform.arduino_. 
+- Click _Finish_.
+
+In the new project, create a folder _platform_ and a file _platform/arduino.platform_. Open the file _arduino.platform_ and insert the following code snippet:
+
+```
+package platforms.arduino;
+
+platform Arduino {
+
+}
+```
+
+We will walk through the contents soon, but first of all let's make a further change to our development environment. You probably noticed that the platform file is opened as a plain text file. This is not very convenient as you will not get any content proposals or validation upon editing. To change this, there are two ways. (1) Install the latest Mita release into your development IDE or (2) start a runtime environment and import your platform project into your runtime workspace. Since at time of writing this guide there is no official Mita release yet, we will show you how to go the second way:
+- In your development IDE, click _Run -> Run Configurations.._. The _Run Configurations_ dialog will appear.
+- In the _Run Configurations_ dialog, right-click on _Eclipse Application_ and select _New_.
+- Give the new run configuration a name, e.g. _Mita Runtime_.
+- Press _Run_.
+
+The run configuration starts a new Eclipse instance in which all the plugins from your development workspace are installed. In this runtime instance, you can import the platform project we just created:
+- On first startup, you will probably see a welcome page. Close the _Welcome_ tab.
+- Go to _File -> Import.._ and select _General -> Existing Project into Workspace_. Click _Next >_
+- Click on the top right _Browse..._ button to select the project you created above. If you do not know where this project is located on your file system, go back to your developer IDE, right-click on the project and select _Properties_. From the _Properties_ dialog you can copy the project location and paste it into the _Import_ dialog in your runtime IDE.
+- Make sure the option _Copy projects into workspace_ is *not* enabled. In that way you can work on the same files from your developer and runtime workspace.
+- Click _Finish_
+
+Your plaform project is now imported into your runtime workspace. Open the _arduino.platform_ file. You should now see syntax highlighting. In particular, you should see an error marker on line 5, saying that the parameter _module_ is missing. Let's fix that by adding _module ""_ to the platform definition: 
+```
+package platforms.arduino;
+
+platform Arduino {
+  module ""
+}
+```
+Changes in your runtime workspace are also reflected in your developer workspace. This means you can switch between the two whatever fits better. Usually, it is best to write the platform definition in the runtime workspace because of the language features you get from the platform editor. However, writing code generators makes sense in the developer workspace as you will often refer to already existing Mita generators.
+
+Now that you have setup your delevoping environment, let's start writing your first platform definition.
 
 ### Walkthrough Arduino Platform
 
