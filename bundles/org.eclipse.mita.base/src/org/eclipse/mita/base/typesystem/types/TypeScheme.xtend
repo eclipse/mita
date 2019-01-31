@@ -3,14 +3,13 @@ package org.eclipse.mita.base.typesystem.types
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.infra.Tree
 
 @EqualsHashCode
 @Accessors
@@ -22,6 +21,9 @@ class TypeScheme extends AbstractType {
 		super(origin, on.name);
 		this.vars = vars;
 		this.on = on;
+		if(this.toString == "∀[f_0.8].SomeGenType<f_0.8>") {
+			print("")
+		}
 	}
 	
 	override Tree<AbstractType> quote() {
@@ -53,7 +55,7 @@ class TypeScheme extends AbstractType {
 		return on.freeVars.filter(TypeVariable).reject[vars.contains(it)];
 	}
 	
-	override instantiate(ConstraintSystem system) {
+	def instantiate(ConstraintSystem system) {
 		val newVars = new ArrayList<TypeVariable>();
 		val newOn = vars.fold(on, [term, boundVar | 
 			val freeVar = system.newTypeVariable(null);
@@ -88,11 +90,11 @@ class TypeScheme extends AbstractType {
 	}
 	
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
-		return new TypeScheme(origin, vars.map[replaceProxies(system, resolve) as TypeVariable].force, on.replaceProxies(system, resolve))
+		return new TypeScheme(origin, vars.map[replaceProxies(system, resolve) as TypeVariable].force, on.replaceProxies(system, resolve));
 	}
 	
 	override modifyNames(String suffix) {
-		return new TypeScheme(origin, vars.map[modifyNames(suffix) as TypeVariable].force, on.modifyNames(suffix))
+		return new TypeScheme(origin, vars.map[modifyNames(suffix) as TypeVariable].force, on.modifyNames(suffix));
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {

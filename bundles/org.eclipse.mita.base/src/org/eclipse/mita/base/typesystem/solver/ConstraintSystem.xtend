@@ -16,10 +16,11 @@ import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
@@ -27,8 +28,8 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 @Accessors
 class ConstraintSystem {
@@ -41,6 +42,28 @@ class ConstraintSystem {
 	protected List<AbstractTypeConstraint> nonAtomicConstraints = new ArrayList();
 	protected Graph<AbstractType> explicitSubtypeRelations;
 	protected Map<Integer, AbstractType> explicitSubtypeRelationsTypeSource = new HashMap();
+	protected Map<String, Map<String, String>> userData = new HashMap();
+	
+	private def Map<String, String> internGetUserData(String key) {
+		userData.computeIfAbsent(key, [new HashMap()]);
+	}
+		
+	dispatch def Map<String, String> doGetUserData(TypeConstructorType t) {
+		return getUserData(t.type);
+	}
+	dispatch def Map<String, String> doGetUserData(AbstractType t) {
+		return internGetUserData(t.name);
+	}
+	def getUserData(AbstractType t) {
+		return t?.doGetUserData;
+	}
+	def getUserData(AbstractType t, String key) {
+		return t?.doGetUserData?.get(key);
+	}
+	
+	def void putUserData(AbstractType typeKey, String key, String value) {
+		getUserData(typeKey)?.put(key, value);
+	}
 	
 	def getConstraints() {
 		return atomicConstraints + nonAtomicConstraints;
@@ -112,6 +135,7 @@ class ConstraintSystem {
 		symbolTable.putAll(other.symbolTable);
 		typeTable.putAll(other.typeTable);
 		typeClasses.putAll(other.typeClasses);
+		userData.putAll(other.userData.entrySet.toMap([it.key], [new HashMap(it.value)]));
 		other.explicitSubtypeRelations.copyTo(explicitSubtypeRelations);
 		explicitSubtypeRelationsTypeSource = new HashMap(other.explicitSubtypeRelationsTypeSource);
 	}
@@ -291,6 +315,7 @@ class ConstraintSystem {
 					]
 				]
 			]
+			r.userData.putAll(t.userData.entrySet.toMap([it.key], [new HashMap(it.value)]));
 			return r;
 		]);
 		result.constraintSystemProvider = csp;

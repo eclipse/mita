@@ -104,7 +104,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 
 		val outerType = BaseUtils.getType(varRef);
 		
-		if (outerType.name == "reference" && isRefRef.second) {
+		if (outerType?.name == "reference" && isRefRef.second) {
 			error(CANT_ASSIGN_TO_REFERENCES_THAT_WERE_PASSED_IN, source, null);
 		}
 		return;

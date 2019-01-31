@@ -40,14 +40,14 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 * Produces a code fragment with the actual type specifier
 	 */
 	def CodeFragment generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)»''')
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)»''')
 	}
 	
 	/**
 	 * Produces a variable declaration for a variable of a generated type
 	 */
 	def CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»;''')
+		codeFragmentProvider.create('''«typeGenerator.code(stmt, type)» «stmt.name»;''')
 	}
 	
 	/**
@@ -83,7 +83,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces header definitions, called per different instance of type arguments.
 	 */
-	def CodeFragment generateHeader(AbstractType type) {
+	def CodeFragment generateHeader(EObject context, AbstractType type) {
 		return CodeFragment.EMPTY;
 	}
 }

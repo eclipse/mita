@@ -146,7 +146,7 @@ class CompilationContext {
 			(program.eAllContents.filter(PresentTypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
 				it -> BaseUtils.getType(it)
 			].filter[
-				it.value?.freeVars?.empty && TypesUtil.isGeneratedType(it.value)
+				it.value?.freeVars?.empty && TypesUtil.isGeneratedType(program.eResource, it.value)
 			].map[it.value].toIterable
 		].groupBy[it.toString].entrySet.map[it.value.head];
 	}

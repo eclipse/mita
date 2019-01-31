@@ -14,16 +14,19 @@
 package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.base.typesystem.types.SumType
-import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.types.GeneratedType
+
+import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
 
 /**
  * Facade for generating types.
@@ -42,34 +45,31 @@ class TypeGenerator implements IGenerator {
 	@Inject
 	protected extension GeneratorUtils
 
-	public dispatch def CodeFragment code(Void type) {	
-		CodeFragment.EMPTY
-	}
 	
-	public dispatch def CodeFragment code(AtomicType type) {
+	public dispatch def CodeFragment code(EObject context, AtomicType type) {
 		if(type.name == "string") {
 			return codeFragmentProvider.create('''char*''');
 		}
-		return codeFragmentProvider.create('''«type.structType»''');
+		return codeFragmentProvider.create('''«type.getStructType(context)»''');
 	}
-	public dispatch def CodeFragment code(ProdType type) {
+	public dispatch def CodeFragment code(EObject context, ProdType type) {
 		// if we have multiple members, we have an actual struct, otherwise we are just an alias
-		if(type.typeArguments.length == 1 && type.userData.get(BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
-			return type.typeArguments.head.code;
+		if(type.typeArguments.length == 1 && context.eResource.constraintSystem.getUserData(type, BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
+			return code(context, type.typeArguments.head);
 		}
 		else {
-			return codeFragmentProvider.create('''«type.structType»''');	
+			return codeFragmentProvider.create('''«type.getStructType(context)»''');	
 		}
 	}
-	public dispatch def CodeFragment code(SumType sumType) {
-		return codeFragmentProvider.create('''«sumType.structType»''');
+	public dispatch def CodeFragment code(EObject context, SumType sumType) {
+		return codeFragmentProvider.create('''«sumType.getStructType(context)»''');
 	}
 	
-	public dispatch def CodeFragment code(FunctionType type) {
-		return codeFragmentProvider.create('''«type.to.code» (*«type.name»)(«type.from.code»)''')
+	public dispatch def CodeFragment code(EObject context, FunctionType type) {
+		return codeFragmentProvider.create('''«code(context, type.to)» (*«type.name»)(«code(context, type.from)»)''')
 	}
 	
-	public dispatch def CodeFragment code(TypeConstructorType type) {
+	public dispatch def CodeFragment code(EObject context, TypeConstructorType type) {
 		return codeFragmentProvider.create('''«type.name»''')
 	}
 	
@@ -79,22 +79,17 @@ class TypeGenerator implements IGenerator {
 //	}
 	
 // TODO types need a flag/generator
-//	public dispatch def CodeFragment code(GeneratedType type, AbstractType typeSpec) {
+//	public dispatch def CodeFragment code(GeneratedType type) {
 //		return generatorRegistry.getGenerator(type)?.generateTypeSpecifier(typeSpec, type);
 //	}
-		
-	public dispatch def CodeFragment code(org.eclipse.mita.base.types.SumType type) {
-		// TODO: find defining resource and header
-		return codeFragmentProvider.create('''«type.structType»''');
-	}
 	
-	public dispatch def CodeFragment code(IntegerType type) {
+	public dispatch def CodeFragment code(EObject context, IntegerType type) {
 		var result = codeFragmentProvider.create('''«type.CName»''')
 		return result;
 	}
 	
-	public dispatch def CodeFragment code(FloatingType type) {
+	public dispatch def CodeFragment code(EObject context, FloatingType type) {
 		var result = codeFragmentProvider.create('''«type.CName»''')
 		return result;
-	}	
+	} 	
 }

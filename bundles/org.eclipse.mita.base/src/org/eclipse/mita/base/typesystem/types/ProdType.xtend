@@ -51,7 +51,6 @@ class ProdType extends TypeConstructorType {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
 		val newPType = new ProdType(origin, type, newTypeVars);
 		s.add(tv, newPType);
-		newPType.userData = userData;
 	}
 	
 	override toGraphviz() {
@@ -62,7 +61,7 @@ class ProdType extends TypeConstructorType {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		val newType = type.map(f);
 		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new ProdType(origin, newType, newTypeArgs) => [it.userData = this.userData];
+			return new ProdType(origin, newType, newTypeArgs);
 		}
 		return this;
 	}

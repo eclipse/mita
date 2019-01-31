@@ -51,6 +51,7 @@ import org.eclipse.mita.base.typesystem.types.NumericType
 import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.types.TypesUtil
 
 /**
  * Hierarchically infers the size of a data element.
@@ -210,7 +211,7 @@ class ElementSizeInferrer {
 		if (typ instanceof NumericType || typ.name == "Exception") {
 			// it's a primitive type
 			return new ValidElementSizeInferenceResult(obj, typ, 1);
-		} else if (typ.isGeneratedType) {
+		} else if (isGeneratedType(obj, typ)) {
 			// it's a generated type, so we must load the inferrer
 			var ElementSizeInferrer inferrer = null;
 			
@@ -248,7 +249,7 @@ class ElementSizeInferrer {
 				}
 			}
 			
-			val loadedTypeInferrer = loader.loadFromPlugin(obj.eResource, typ.userData.get(BaseConstraintFactory.SIZE_INFERRER_KEY));
+			val loadedTypeInferrer = loader.loadFromPlugin(obj.eResource, TypesUtil.getConstraintSystem(obj.eResource).getUserData(typ, BaseConstraintFactory.SIZE_INFERRER_KEY));
 			
 			if(loadedTypeInferrer instanceof ElementSizeInferrer) {			
 				inferrer = inferrer.orElse(loadedTypeInferrer);	

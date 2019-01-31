@@ -46,7 +46,6 @@ import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeKind
@@ -60,8 +59,6 @@ import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -75,6 +72,8 @@ import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -194,12 +193,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return new ProdType(null, new AtomicType(function, function.name + "_args"), parmTypes);
 	}
 	
-	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, String functionName, Iterable<Expression> expression) {
+	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, EObject origin, String functionName, Iterable<Expression> expression) {
 		val argTypes = expression.map[system.computeConstraints(it) as AbstractType].force();
-		return system.computeArgumentConstraintsWithTypes(functionName, argTypes);
+		return system.computeArgumentConstraintsWithTypes(origin, functionName, argTypes);
 	}
-	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, String functionName, Iterable<AbstractType> argTypes) {
-		return new ProdType(null, new AtomicType(null, functionName + "_args"), argTypes);
+	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, EObject origin, String functionName, Iterable<AbstractType> argTypes) {
+		return new ProdType(origin, new AtomicType(null, functionName + "_args"), argTypes);
 	}
 	
 	protected def Pair<AbstractType, AbstractType> computeTypesInArgument(ConstraintSystem system, Argument arg) {
@@ -285,7 +284,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				else {
 					argumentParamTypesAndValueTypes
 				}
-				new UnorderedArguments(null, new AtomicType(null, txt + "_args"), withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
+				new UnorderedArguments(varOrFun, new AtomicType(null, txt + "_args"), withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
 			} else {
 				val argTypes = varOrFun.arguments.map[system.computeConstraints(it) as AbstractType];
 				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {
@@ -294,7 +293,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				else {
 					argTypes;
 				}
-				system.computeArgumentConstraintsWithTypes(txt, args.force);
+				system.computeArgumentConstraintsWithTypes(varOrFun, txt, args.force);
 			}
 			
 			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argType, candidates);
@@ -315,7 +314,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<TypeVariable> candidates) {
-		return computeConstraintsForFunctionCall(system, functionCall, functionReference, functionName, system.computeArgumentConstraints(functionName, argExprs), candidates);
+		return computeConstraintsForFunctionCall(system, functionCall, functionReference, functionName, system.computeArgumentConstraints(functionCall, functionName, argExprs), candidates);
 	}
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, AbstractType argumentType, List<TypeVariable> candidates) {
 		if(candidates === null || candidates.empty) {
@@ -623,7 +622,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		 */
 		val result = new ProdType(structType, new AtomicType(structType), types);
 		system.typeTable.put(QualifiedName.create(structType.name), result);
-		result.userData.put(DEFINING_RESOURCE_KEY, structType.eResource.URI.lastSegment);
+		system.putUserData(result, DEFINING_RESOURCE_KEY, structType.eResource.URI.lastSegment);
 		return result;
 	}
 	
@@ -633,7 +632,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		].force;
 		val result = new org.eclipse.mita.base.typesystem.types.SumType(sumType, new AtomicType(sumType), subTypes);
 		system.typeTable.put(QualifiedName.create(sumType.name), result);
-		result.userData.put(DEFINING_RESOURCE_KEY, sumType.eResource.URI.lastSegment);
+		system.putUserData(result, DEFINING_RESOURCE_KEY, sumType.eResource.URI.lastSegment);
 		return result;	
 	}
 		
@@ -655,9 +654,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 			
 			system.typeTable.put(QualifiedName.create(sumTypeName, sumAlt.name), prodType);
 			
-			prodType.userData.put(PARENT_NAME_KEY, sumTypeName);
-			prodType.userData.put(ECLASS_KEY, sumAlt.eClass.name);
-			prodType.userData.put(DEFINING_RESOURCE_KEY, sumAlt.eResource.URI.lastSegment);
+			system.putUserData(prodType, PARENT_NAME_KEY, sumTypeName);
+			system.putUserData(prodType, ECLASS_KEY, sumAlt.eClass.name);
+			system.putUserData(prodType, DEFINING_RESOURCE_KEY, sumAlt.eResource.URI.lastSegment);
 			
 			return prodType;	
 		}
@@ -680,9 +679,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		system.typeTable.put(QualifiedName.create(genType.name), result);
 		
-		result.userData.put(GENERATOR_KEY, genType.generator)
+		system.putUserData(result, GENERATOR_KEY, genType.generator)
 		if(genType.sizeInferrer !== null) {
-			result.userData.put(SIZE_INFERRER_KEY, genType.sizeInferrer)
+			system.putUserData(result, SIZE_INFERRER_KEY, genType.sizeInferrer)
 		}
 		
 		return result;

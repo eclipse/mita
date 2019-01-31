@@ -51,7 +51,7 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»«IF stmt.initialization !== null» = «stmt.initialization.code»«ENDIF»;''')
+		codeFragmentProvider.create('''«typeGenerator.code(stmt, type)» «stmt.name»«IF stmt.initialization !== null» = «stmt.initialization.code»«ENDIF»;''')
 	}
 	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
 		val leftCode = if(left instanceof VariableDeclaration) {

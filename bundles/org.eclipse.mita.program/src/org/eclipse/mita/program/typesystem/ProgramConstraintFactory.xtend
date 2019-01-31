@@ -9,6 +9,7 @@ import org.eclipse.mita.base.expressions.PostFixOperator
 import org.eclipse.mita.base.expressions.PostFixUnaryExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
@@ -19,8 +20,6 @@ import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -30,10 +29,13 @@ import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.CoercionExpression
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
@@ -68,7 +70,6 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.program.CoercionExpression
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -176,7 +177,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, GeneratedFunctionDefinition fundef) {
 		val result = computeTypeForOperation(system, fundef);
-		result.userData.put(GENERATOR_KEY, fundef.generator);
+		system.putUserData(result, GENERATOR_KEY, fundef.generator);
 		return system.associate(result);
 	}
 	
@@ -265,6 +266,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {
 		system.computeConstraints(function.body);
+		if(function.eAllContents.filter(ReturnStatement).empty && function.typeSpecifier instanceof NullTypeSpecifier) {
+			// explicitly set return type to void since there is nothing to infer this from.
+			// otherwise the return type would stay unbound.
+			val voidType = typeRegistry.getTypeModelObjectProxy(system, function, StdlibTypeRegistry.voidTypeQID);
+			system.associate(voidType, function.typeSpecifier);
+		}
 		return system._computeConstraints(function as Operation);
 	}
 	
@@ -436,7 +443,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		}
 		else {
 			val args = newInstanceExpression.arguments.map[system.computeConstraints(it) as AbstractType];
-			system.computeArgumentConstraintsWithTypes("con", args.force);
+			system.computeArgumentConstraintsWithTypes(newInstanceExpression, "con", args.force);
 		}
 		system.computeConstraintsForFunctionCall(newInstanceExpression, null, "con", argType, #[functionTypeVar]);
 		return system.associate(returnType, newInstanceExpression);

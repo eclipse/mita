@@ -58,6 +58,7 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.resource.IContainer
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import org.eclipse.mita.base.types.TypesUtil
 
 class ModelUtils {
 
@@ -119,30 +120,30 @@ class ModelUtils {
 		Optional.absent;
 	}
 	
-	static dispatch def Optional<List<String>> getAccessorParameterNames(ProdType struct) {
-		val rt = struct.realType;
+	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject context, ProdType struct) {
+		val rt = getRealType(context, struct);
 		if(rt instanceof ProdType) {
 			return Optional.of(rt.typeArguments.map[it.name]);
 		}
 		return Optional.of(#[rt.name]);
 	}
-	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject obj) {
+	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject context, Object obj) {
 		Optional.absent;
 	}
-	static dispatch def Optional<List<String>> getAccessorParameterNames(Void obj) {
+	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject context, Void obj) {
 		Optional.absent;
 	}
 	
 	
-	static def dispatch AbstractType getRealType(AbstractType t) {
+	static def dispatch AbstractType getRealType(EObject context, AbstractType t) {
 		return t;
 	}
 	
-	static def dispatch AbstractType getRealType(ProdType sumConstructor) {
-		if(sumConstructor.userData.get(BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
+	static def dispatch AbstractType getRealType(EObject context, ProdType sumConstructor) {
+		if(TypesUtil.getConstraintSystem(context.eResource).getUserData(sumConstructor, BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
 			val children = sumConstructor.typeArguments;
 			if(children.length == 1) {
-				return children.head.realType;
+				return getRealType(context, children.head);
 			}
 		}
 		return sumConstructor;

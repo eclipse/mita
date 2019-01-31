@@ -1,6 +1,5 @@
 package org.eclipse.mita.base.typesystem.types
 
-import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
@@ -45,7 +44,7 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
-		if(this.toString == "vec1d(f_143)") {
+		if(this.toString == "con_args(f_69)") {
 			print("");
 		}
 	}
@@ -74,7 +73,6 @@ class TypeConstructorType extends AbstractType {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
 		val newCType = new TypeConstructorType(origin, type, newTypeVars);
 		s.add(tv, newCType);
-		newCType.userData = userData;
 	}
 		
 	override toString() {
@@ -93,7 +91,7 @@ class TypeConstructorType extends AbstractType {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		val newType = type.map(f);
 		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new TypeConstructorType(origin, newType, newTypeArgs) => [it.userData = this.userData];
+			return new TypeConstructorType(origin, newType, newTypeArgs);
 		}
 		return this;
 	}

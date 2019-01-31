@@ -41,7 +41,7 @@ fn takesUint8(x : uint8): uint8 {
 }
 
 fn intRangeChecks() {
-	// XPECT errors ---> "Value is out of range. Must be 0 <= x <= 255." at "-1"
+	// XPECT errors ---> "Cyclic dependencies could not be resolved: uint8 -> uint16 -> uint8" at "takesUint8(-1)"
 	takesUint8(-1);
 	
 	// XPECT errors ---> "-prim»i»1 (:: int8) cannot be assigned to variables of type uint8 (:: uint8)" at "let x : uint8 = -1;"
@@ -132,7 +132,7 @@ function testVariables() : void {
 		"Incompatible types bool and uint32." at "new SomeGenType<uint32>(true)"
 		"Incompatible types bool and uint32." at "var x6 = new SomeGenType<uint32>(true);"
 	--- */
-//	var x6 = new SomeGenType<uint32>(true); // TODO: will be fixed in next SCT release
+	var x6 = new SomeGenType<uint32>(true); // TODO: will be fixed in next SCT release
 		
 	// Types are types. The type of an expression can be had withtypeof. Explicit type references can be made with the type keyword
 //	var foo : Type = typeof(1 + 1); // TODO: wouldn't it be more readable to write "foo : typeof(1+1)"?
@@ -159,5 +159,6 @@ struct Name {
 }
 
 function useRecursiveTypeDef() {
+	// XPECT errors --> "Cannot determine size of element: Unable to infer size from type f_3.0" at "myStruct"
     var myStruct : Name;
 }

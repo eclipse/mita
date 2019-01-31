@@ -52,7 +52,6 @@ class SumType extends TypeConstructorType {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
 		val newSType = new SumType(origin, type, newTypeVars);
 		s.add(tv, newSType);
-		newSType.userData = userData;
 	}
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
@@ -62,7 +61,7 @@ class SumType extends TypeConstructorType {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		val newType = type.map(f);
 		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new SumType(origin, newType, newTypeArgs) => [it.userData = this.userData];	
+			return new SumType(origin, newType, newTypeArgs);	
 		}
 		return this;
 	}

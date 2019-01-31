@@ -4,11 +4,10 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import java.util.Set
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy.AmbiguityResolutionStrategy
 import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.diagnostics.Severity
-
 
 final class SerializedConstraintSystem {
 	public List<SerializedAbstractTypeConstraint> constraints = new ArrayList;
@@ -17,6 +16,7 @@ final class SerializedConstraintSystem {
 	public Map<String, Object> typeClasses;
 	public SerializedAbstractTypeGraph explicitSubtypeRelations;
 	public Map<Integer, Object> explicitSubtypeRelationsTypeSource;
+	public Map<String, Map<String, String>> userData;
 }
 
 final class SerializedAbstractTypeGraph {    
@@ -45,7 +45,6 @@ final class SerializedTypeClassProxy {
 abstract class SerializedAbstractType {
 	public String origin;
 	public String name;
-	public Map<String, String> userData;
 }
 
 abstract class SerializedAbstractBaseType extends SerializedAbstractType {

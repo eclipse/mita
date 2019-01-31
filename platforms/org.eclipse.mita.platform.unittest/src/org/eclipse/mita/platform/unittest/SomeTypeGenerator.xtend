@@ -40,11 +40,11 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 	
 	
 	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code((type as TypeConstructorType).typeArguments.head)» «stmt.name»;''');
+		codeFragmentProvider.create('''«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.head)» «stmt.name»;''');
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''«typeGenerator.code((type as TypeConstructorType).typeArguments.head)»''')
+		codeFragmentProvider.create('''«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.head)»''')
 	}
 	
 	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {

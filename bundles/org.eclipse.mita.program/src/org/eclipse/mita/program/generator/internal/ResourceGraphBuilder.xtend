@@ -32,6 +32,7 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.mita.base.types.TypesUtil
 
 class ResourceGraphBuilder {
 	
@@ -62,7 +63,7 @@ class ResourceGraphBuilder {
 	protected dispatch def Iterable<EObject> doComputeDependencies(AbstractSystemResource resource) {
 		return resource
 			.configurationItems
-			.filter[ BaseUtils.getType(it).userData.get(BaseConstraintFactory.ECLASS_KEY) == "AbstractSystemResource" ]
+			.filter[ TypesUtil.getConstraintSystem(resource.eResource).getUserData(BaseUtils.getType(it), BaseConstraintFactory.ECLASS_KEY) == "AbstractSystemResource" ]
 			.filter(EObject)
 			.toList;
 	}

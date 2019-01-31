@@ -117,11 +117,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		for(tcc: currentSystem.constraints.filter(FunctionTypeClassConstraint).force) {
 			val typeClass = currentSystem.typeClasses.get(tcc.instanceOfQN);
 			if(typeClass.mostSpecificGeneralization !== null) {
-				val funTypeInstance = typeClass.mostSpecificGeneralization.instantiate(currentSystem).value;
+				val msg = typeClass.mostSpecificGeneralization;
+				val funTypeInstance = if(msg instanceof TypeScheme) {
+					msg.instantiate(currentSystem).value;	
+				} 
+				else {
+					msg;
+				}
 				if(funTypeInstance instanceof FunctionType) {
 					val typeThatShouldBeInstance = tcc.typ;
-					currentSystem.addConstraint(new SubtypeConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''CSS: 118''', null)));
-					currentSystem.addConstraint(new EqualityConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''CSS: 124''', null)));
+					currentSystem.addConstraint(new SubtypeConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''Function «tcc.instanceOfQN» cannot be used here: arguments don't fit (%s != %s)''', typeThatShouldBeInstance.origin)));
+					currentSystem.addConstraint(new EqualityConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''Function «tcc.instanceOfQN» cannot be used here: return type incompatible (%s != %s)''', tcc.returnTypeTV.origin)));
 				}
 			}
 		}
@@ -297,12 +303,16 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ExplicitInstanceConstraint constraint) {
-		val instance = constraint.typeScheme.instantiate(system);
-		val instanceType = instance.value
-		val resultSystem = system.plus(
-			new EqualityConstraint(constraint.instance, instanceType, constraint.errorMessage)
-		)
-		return SimplificationResult.success(resultSystem, Substitution.EMPTY);
+		val ts = constraint.typeScheme;
+		if(ts instanceof TypeScheme) {
+			val instance = ts.instantiate(system);
+			val instanceType = instance.value
+			val resultSystem = system.plus(
+				new EqualityConstraint(constraint.instance, instanceType, constraint.errorMessage)
+			)
+			return SimplificationResult.success(resultSystem, Substitution.EMPTY);	
+		}
+		return SimplificationResult.failure(new ValidationIssue('''«ts» is not a generic type''', ts.origin));
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, JavaClassInstanceConstraint constraint) {
 		if(constraint.javaClass.isInstance(constraint.what)) {
@@ -353,7 +363,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				if(!mbDefaultParameterValues.empty && mbDefaultParameterValues.forall[it.defaultValue !== null]) {
 					val defaultParameterTypes = mbDefaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
 					val args = assignedArgs + defaultParameterTypes;
-					return new ProdType(refType.origin, refType.type, args) => [it.userData.putAll(refType.userData)];
+					return new ProdType(refType.origin, refType.type, args);
 				}
 			}	
 		}
@@ -391,7 +401,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						if(sortedArgs.exists[it.value === null]) {
 							return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Too few arguments''')], typ, fun, distance);
 						}
-						new ProdType(refType.origin, new AtomicType(fun, fun.name), sortedArgs.map[it.value]) => [it.userData.putAll(refType.userData)];
+						new ProdType(refType.origin, new AtomicType(fun, fun.name), sortedArgs.map[it.value]);
 					}
 					else {
 						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Can't use named parameters for non-operations''')], typ, fun, distance);
@@ -632,7 +642,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			else {
 				finalState.success = false;
-				val msg = '''CSS: Cyclic dependencies could not be resolved: «cycle.map[it.key.value + " -> "].join("")» -> «cycle.head.key.value»''';
+				val bottomTypeInCycle = cycle.map[it.key.value].filter(BottomType).head;
+				val msg = if(bottomTypeInCycle !== null) {
+					bottomTypeInCycle.message
+				} else {
+					'''Cyclic dependencies could not be resolved: «cycle.map[it.key.value].join(" -> ")» -> «cycle.head.key.value»''';	
+				}
 				finalState.nonUnifiable += cycleNodes.flatMap[g.nodeSourceConstraints.getOrDefault(it.key, emptySet)];
 				return g.addNode(new BottomType(null, msg));
 			}
@@ -661,6 +676,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
+			if(v.toString == "f_70.0") {
+				print("")
+			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
 			val supremum = graph.getSupremum(system, predecessors);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);
@@ -671,7 +689,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			if(!predecessors.empty) {
 				if(supremumIsValid) {
 					if(supremum instanceof BottomType) {
-						supremum.message = "Couldn't find a good supertype for " + predecessors.join(" and ")
+						val predecessorsBottomType = predecessors.filter(BottomType).head
+						supremum.message = predecessorsBottomType?.message ?: ("Couldn't find a good supertype for " + predecessors.join(" and "))
 					}
 					// assign-sup
 					graph.replace(v, supremum);
@@ -695,8 +714,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					if(infimum instanceof BottomType) {
 						graph.getBaseTypeSuccecessors(vIdx);
 						graph.getInfimum(system, successors);
-			
-						infimum.message = "Couldn't find a good subtype for " + successors.join(" and ")
+						val successorsBottomType = successors.filter(BottomType).head
+						infimum.message = successorsBottomType?.message ?: ("Couldn't find a good subtype for " + successors.join(" and "))
 					}
 					// assign-inf
 					graph.replace(v, infimum);

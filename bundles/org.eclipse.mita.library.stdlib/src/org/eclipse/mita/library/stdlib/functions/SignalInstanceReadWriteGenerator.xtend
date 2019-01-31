@@ -61,7 +61,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			val siginstType = BaseUtils.getType(siginst).sigInstTypeArg;
 			
 			return codeFragmentProvider.create('''
-			«typeGenerator.code(siginstType)» «variableName» = «statementGenerator.code(value).noTerminator»;
+			«typeGenerator.code(functionCall, siginstType)» «variableName» = «statementGenerator.code(value).noTerminator»;
 			exception = «siginst.writeAccessName»(&«variableName»);
 			«generateExceptionHandler(functionCall, 'exception')»
 			''')

@@ -75,6 +75,7 @@ import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.base.types.TypesUtil
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -377,15 +378,14 @@ class GeneratorUtils {
 		return null
 	}
 	
-	dispatch def CodeFragment getEnumName(SumType sumType) {
-		return codeFragmentProvider.create('''«sumType.name»_enum''').addHeaderInclude(sumType);
+	dispatch def CodeFragment getEnumName(SumType sumType, EObject context) {
+		return codeFragmentProvider.create('''«sumType.name»_enum''').addHeaderInclude(context, sumType);
 	}
 	
-	dispatch def CodeFragment getEnumName(ProdType prodType) {
-		val parentName = prodType.userData.get(BaseConstraintFactory.PARENT_NAME_KEY);
+	dispatch def CodeFragment getEnumName(ProdType prodType, EObject context) {
+		val parentName = TypesUtil.getConstraintSystem(context.eResource).getUserData(prodType, BaseConstraintFactory.PARENT_NAME_KEY);
 		if(parentName !== null) {
-			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''').addHeaderInclude(prodType);
-
+			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''').addHeaderInclude(context, prodType);
 		}
 		return codeFragmentProvider.create('''«prodType.name»_e/*WARNING parent null*/''')
 	}
@@ -408,10 +408,13 @@ class GeneratorUtils {
 	dispatch def CodeFragment getEnumName(EObject obj) {
 		return codeFragmentProvider.create('''ERROR: getEnumName''');
 	}
+	dispatch def CodeFragment getEnumName(AbstractType t, EObject obj) {
+		return codeFragmentProvider.create('''ERROR: getEnumName''');
+	}
+
 	
-	
-	dispatch def CodeFragment getNameInStruct(SumType sumType) {
-		return codeFragmentProvider.create('''«sumType.name»''').addHeaderInclude(sumType);
+	dispatch def CodeFragment getNameInStruct(SumType sumType, EObject context) {
+		return codeFragmentProvider.create('''«sumType.name»''').addHeaderInclude(context, sumType);
 	}
 	
 	dispatch def CodeFragment getNameInStruct(SumAlternative sumAlternative) {
@@ -420,10 +423,13 @@ class GeneratorUtils {
 	}
 	
 	
-	dispatch def CodeFragment getNameInStruct(ProdType prodType) {
-		return codeFragmentProvider.create('''«prodType.name»''').addHeaderInclude(prodType);
+	dispatch def CodeFragment getNameInStruct(ProdType prodType, EObject context) {
+		return codeFragmentProvider.create('''«prodType.name»''').addHeaderInclude(context, prodType);
 	}
 	dispatch def CodeFragment getNameInStruct(EObject obj) {
+		return codeFragmentProvider.create('''ERROR: getNameInStruct''');
+	}
+	dispatch def CodeFragment getNameInStruct(AbstractType t, EObject obj) {
 		return codeFragmentProvider.create('''ERROR: getNameInStruct''');
 	}
 
@@ -432,22 +438,22 @@ class GeneratorUtils {
 			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(structureType)) + ".h", false);
 	}
 
-	dispatch def CodeFragment getStructType(AtomicType singleton) {
+	dispatch def CodeFragment getStructType(AtomicType singleton, EObject context) {
 		//singletons don't contain actual data
-		return codeFragmentProvider.create('''void''').addHeaderInclude(singleton);
+		return codeFragmentProvider.create('''void''').addHeaderInclude(context, singleton);
 	}
-	dispatch def CodeFragment getStructType(ProdType productType) {
-		return codeFragmentProvider.create('''«productType.name»_t''').addHeaderInclude(productType);
+	dispatch def CodeFragment getStructType(ProdType productType, EObject context) {
+		return codeFragmentProvider.create('''«productType.name»_t''').addHeaderInclude(context, productType);
 	}
-	dispatch def CodeFragment getStructType(SumType sumType) {
-		return codeFragmentProvider.create('''«sumType.name»_t''').addHeaderInclude(sumType);	
+	dispatch def CodeFragment getStructType(SumType sumType, EObject context) {
+		return codeFragmentProvider.create('''«sumType.name»_t''').addHeaderInclude(context, sumType);	
 	}
-	dispatch def CodeFragment getStructType(TypeConstructorType type) {
-		return codeFragmentProvider.create('''«type.name»_t''').addHeaderInclude(type);
+	dispatch def CodeFragment getStructType(TypeConstructorType type, EObject context) {
+		return codeFragmentProvider.create('''«type.name»_t''').addHeaderInclude(context, type);
 	}
 	
-	def CodeFragment addHeaderInclude(CodeFragment fragment, AbstractType type) {
-		val definingResourceName = type.userData.get(BaseConstraintFactory.DEFINING_RESOURCE_KEY);
+	def CodeFragment addHeaderInclude(CodeFragment fragment, EObject context, AbstractType type) {
+		val definingResourceName = TypesUtil.getConstraintSystem(context.eResource).getUserData(type, BaseConstraintFactory.DEFINING_RESOURCE_KEY);
 		if(definingResourceName !== null) {
 			fragment.addHeader(UserCodeFileGenerator.getResourceTypesName(definingResourceName) + ".h", false);
 		}
@@ -480,6 +486,9 @@ class GeneratorUtils {
 	dispatch def CodeFragment getStructType(StructureType productType) {
 		return codeFragmentProvider.create('''«productType.baseName»_t''')
 			.addHeader(UserCodeFileGenerator.getResourceTypesName(ModelUtils.getPackageAssociation(productType)) + ".h", false);
+	}
+	dispatch def CodeFragment getStructType(EObject obj) {
+		return codeFragmentProvider.create('''ERROR: getStructType''')
 	}
 	
 	def dispatch String getBaseName(Sensor sensor) {

@@ -1,4 +1,4 @@
-package org.eclipse.mita.base.typesystem.infra
+package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference

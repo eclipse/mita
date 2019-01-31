@@ -1,6 +1,5 @@
 package org.eclipse.mita.base.typesystem.serialization
 
-import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
@@ -10,9 +9,12 @@ import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import com.google.inject.Inject
 import com.google.inject.Provider
+import io.protostuff.LinkedBuffer
+import io.protostuff.ProtostuffIOUtil
 import io.protostuff.Schema
 import io.protostuff.runtime.RuntimeSchema
 import java.lang.reflect.Type
+import java.util.HashMap
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
@@ -33,7 +35,6 @@ import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
-import org.eclipse.mita.base.typesystem.infra.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -48,14 +49,12 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.util.GZipper
-import io.protostuff.ProtostuffIOUtil
-import io.protostuff.LinkedBuffer
 
 class SerializationAdapter {
 	
@@ -69,10 +68,6 @@ class SerializationAdapter {
 	def ConstraintSystem deserializeConstraintSystemFromJSON(String json, (URI)=>EObject objectResolver) {
 		val Schema<SerializedConstraintSystem> schema = RuntimeSchema.getSchema(SerializedConstraintSystem);
 		this.objectResolver = objectResolver ?: [URI uri| this.toEObjectProxy(uri) ];
-//		val serialized = new GsonBuilder()
-//    		.registerTypeHierarchyAdapter(SerializedObject, new MitaJsonSerializer())
-//    		.create()
-//    		.fromJson(json, SerializedObject)
 		val bytes = json.getBytes("ISO-8859-1");
 		val serialized = schema.newMessage();
 		ProtostuffIOUtil.mergeFrom(bytes, serialized, schema);
@@ -121,6 +116,7 @@ class SerializationAdapter {
 		result.explicitSubtypeRelationsTypeSource = obj.explicitSubtypeRelationsTypeSource.entrySet.toMap(
 			[it.key], [it.value.fromValueObject as AbstractType]
 		)
+		result.userData = new HashMap(obj.userData.entrySet.toMap([it.key], [new HashMap(it.value)]));
 		return result;
 	}
 	
@@ -133,12 +129,7 @@ class SerializationAdapter {
 			computeReverseMap();
 		]
 	}
-	
-	protected def AbstractType copyUserData(AbstractType at, SerializedAbstractType st) {
-		at.userData.putAll(st.userData);
-		return at;
-	}
-	
+		
 	protected dispatch def TypeClass fromValueObject(SerializedTypeClass obj) {
 		new TypeClass(obj.instances.entrySet.map[
 			it.key.fromValueObject as AbstractType -> it.value.resolveEObject(true)
@@ -179,27 +170,27 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {
-		return new AtomicType(obj.origin.resolveEObject(), obj.name).copyUserData(obj);
+		return new AtomicType(obj.origin.resolveEObject(), obj.name);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedBaseKind obj) {
-		return new BaseKind(obj.origin.resolveEObject(), obj.name, obj.kindOf.fromValueObject() as AbstractType).copyUserData(obj);
+		return new BaseKind(obj.origin.resolveEObject(), obj.name, obj.kindOf.fromValueObject() as AbstractType);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedBottomType obj) {
-		return new BottomType(obj.origin.resolveEObject(), obj.message).copyUserData(obj);
+		return new BottomType(obj.origin.resolveEObject(), obj.message);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFloatingType obj) {
-		return new FloatingType(obj.origin.resolveEObject(), obj.widthInBytes).copyUserData(obj);
+		return new FloatingType(obj.origin.resolveEObject(), obj.widthInBytes);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedIntegerType obj) {
-		return new IntegerType(obj.origin.resolveEObject(), obj.widthInBytes, obj.signedness).copyUserData(obj);
+		return new IntegerType(obj.origin.resolveEObject(), obj.widthInBytes, obj.signedness);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeHole obj) {
-		return new TypeHole(obj.origin.resolveEObject(), obj.name).copyUserData(obj);
+		return new TypeHole(obj.origin.resolveEObject(), obj.name);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFunctionType obj) {
@@ -207,40 +198,40 @@ class SerializationAdapter {
 			obj.origin.resolveEObject(),
 			obj.type.fromValueObject as AbstractType,
 			obj.typeArguments.fromSerializedTypes()
-		).copyUserData(obj);
+		);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedUnorderedArguments obj) {
-		return new UnorderedArguments(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes())).copyUserData(obj);
+		return new UnorderedArguments(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
-		return new ProdType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes()).copyUserData(obj);
+		return new ProdType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
-		return new SumType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes()).copyUserData(obj);
+		return new SumType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeConstructorType obj) {
-		return new TypeConstructorType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes()).copyUserData(obj);
+		return new TypeConstructorType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeScheme obj) {
-		return new TypeScheme(obj.origin.resolveEObject(), obj.vars.map[ it.fromValueObject() as TypeVariable ].toList(), obj.on.fromValueObject() as AbstractType).copyUserData(obj);
+		return new TypeScheme(obj.origin.resolveEObject(), obj.vars.map[ it.fromValueObject() as TypeVariable ].toList(), obj.on.fromValueObject() as AbstractType);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariable obj) {
 		val origin = obj.origin.resolveEObject();
-		return new TypeVariable(origin, obj.name).copyUserData(obj);
+		return new TypeVariable(origin, obj.name);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
 		// we resolve the origin of TypeVarProxies because we pass them to the scope later
 		val resolve = obj.reference.eReferenceName != "type";
 		val origin = obj.origin.resolveEObject(resolve);
-		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy).copyUserData(obj);
+		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy);
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
@@ -331,6 +322,7 @@ class SerializationAdapter {
 			explicitSubtypeRelationsTypeSource = obj.explicitSubtypeRelationsTypeSource.entrySet.toMap(
 				[it.key], [it.value.toValueObject as SerializedAbstractType]
 			)
+			userData = new HashMap(obj.userData.entrySet.toMap([it.key], [new HashMap(it.value)]));
 		]
 	}
 	
@@ -404,7 +396,6 @@ class SerializationAdapter {
 	protected dispatch def Object fill(SerializedAbstractType ctxt, AbstractType obj) {
 		ctxt.name = obj.name;
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
-		ctxt.userData = obj.userData;
 		return ctxt;
 	}
 		

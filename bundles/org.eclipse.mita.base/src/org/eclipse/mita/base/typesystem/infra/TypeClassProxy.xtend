@@ -7,6 +7,7 @@ import org.eclipse.emf.ecore.impl.EObjectImpl
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force

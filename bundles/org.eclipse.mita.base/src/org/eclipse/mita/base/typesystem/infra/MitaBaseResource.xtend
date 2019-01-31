@@ -241,7 +241,7 @@ class MitaBaseResource extends LazyLinkingResource {
 //					]
 					resource.latestSolution = solution;
 					resource.cancelIndicator.canceled = true;
-					val issues = solution.issues.groupBy[it.message->it.target].values.map[it.head];
+					val issues = solution.issues.groupBy[it.message->(if(it.target?.eIsProxy) {(it.target as EObjectImpl).eProxyURI} else {it.target})].values.map[it.head];
 					resource.errors += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]

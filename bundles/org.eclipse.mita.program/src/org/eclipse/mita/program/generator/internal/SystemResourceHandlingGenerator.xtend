@@ -97,13 +97,13 @@ class SystemResourceHandlingGenerator {
 				/**
 				 * Provides read access to «signalInstance.name».
 				 */
-				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result);
+				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(obj, signalType)»* result);
 
 				«IF signalInstance.writeable»
 				/**
 				 * Provides write access to «signalInstance.name».
 				 */
-				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(signalType)»* result);
+				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(obj, signalType)»* result);
 				«ENDIF»
 				«ENDFOR»
 				«ENDIF»
@@ -174,7 +174,7 @@ class SystemResourceHandlingGenerator {
 				/**
 				 * Provides read access to the «signalInstance.name» signal.
 				 */
-				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result)
+				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(obj, signalType)»* result)
 				{
 					«internalGenerator?.generateSignalInstanceGetter(signalInstance, 'result')»
 					
@@ -185,7 +185,7 @@ class SystemResourceHandlingGenerator {
 				/**
 				 * Provides write access to the «signalInstance.name» signal.
 				 */
-				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(signalType)»* value)
+				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(obj, signalType)»* value)
 				{
 					«internalGenerator?.generateSignalInstanceSetter(signalInstance, 'value')»
 					

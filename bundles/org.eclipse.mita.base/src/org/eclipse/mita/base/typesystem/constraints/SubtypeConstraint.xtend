@@ -31,6 +31,9 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		
 		subType = sub;
 		superType = top;
+		if(this.toString == "con_args(f_0) ⩽ con_args(uint32, int16)") {
+			print("")
+		}
 	}
 	
 	override getErrorMessage() {

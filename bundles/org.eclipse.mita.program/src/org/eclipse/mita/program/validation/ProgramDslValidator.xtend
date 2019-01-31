@@ -152,7 +152,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject ModelUtils modelUtils
 		
 	@Check(CheckType.NORMAL)
-	def checkElementSizeInference(VariableDeclaration variable) {
+	def checkElementSizeInference(VariableDeclaration variable) {[|
 		if(EcoreUtil2.getContainerOfType(variable, SystemResourceSetup) !== null) return;
 		
 		val sizeInferenceResult = elementSizeInferrer.infer(variable);
@@ -172,7 +172,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					invalidObj?.eClass?.EAllAttributes?.head)		
 			}
 		}
-	}
+	].apply()}
 	
 	@Check(CheckType.NORMAL)
 	def checkSiginstOrModalityIsUsedImediately(FeatureCall featureCall) {
@@ -294,14 +294,14 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	// Forbid returning structs/generics etc. (allow void, primitive) (via validator), until implemented.
 	@Check(CheckType.NORMAL)
 	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {
-		val operationType = BaseUtils.getType(op);
+		val operationType = BaseUtils.getType(op.typeSpecifier);
 		if(!(op instanceof GeneratedFunctionDefinition) && (op instanceof AtomicType && op.name == "void") || ModelUtils.isPrimitiveType(operationType)) {
 			return;
 		}
 		
 		// TODO: At the moment we allow too much. Reduce this to strings/arrays/structs and implement the rules described
 		//       in #120.
-		val opSize = elementSizeInferrer.infer(op);
+		val opSize = elementSizeInferrer.infer(op.typeSpecifier);
 		if(!(opSize instanceof ValidElementSizeInferenceResult)) {
 			error(SIZE_INFERENCE_FAILED_FOR_RETURN, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 			return;
@@ -416,7 +416,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		var containsReferenceTypesNext = containsReferenceTypes;
 
 		val subTypes = if(type instanceof TypeConstructorType) {
-			if(TypesUtil.isGeneratedType(type)) {
+			if(TypesUtil.isGeneratedType(obj, type)) {
 				if(type.name == "reference") {
 					if(hasGeneratedTypeNext) {
 						error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
@@ -529,7 +529,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 		
 		val retType = BaseUtils.getType(funDef);
-		if(TypesUtil.isGeneratedType(retType) && retType.name == "optional") {
+		if(TypesUtil.isGeneratedType(stmt, retType) && retType.name == "optional") {
 			if(stmt.value instanceof PrimitiveValueExpression) {
 				error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "returns"), stmt, null);
 			}

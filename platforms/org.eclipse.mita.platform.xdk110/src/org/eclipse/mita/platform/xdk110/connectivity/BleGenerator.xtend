@@ -143,7 +143,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static Att16BitCharacteristicAttribute «baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute;
 		static uint8_t «baseName»«signalInstance.name.toFirstUpper»UuidValue[ATTPDU_SIZEOF_128_BIT_UUID] = { «signalInstance.characteristicUuid» };
 		static AttUuid «baseName»«signalInstance.name.toFirstUpper»Uuid;
-		static «typeGenerator.code((BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.head)» «baseName»«signalInstance.name.toFirstUpper»Value;
+		static «typeGenerator.code(setup, (BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.head)» «baseName»«signalInstance.name.toFirstUpper»Value;
 		static AttAttribute «baseName»«signalInstance.name.toFirstUpper»Attribute;
 		«ENDFOR»
 
@@ -445,8 +445,8 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		}
 		else
 		{
-			memcpy(&«baseName»«signalInstance.name.toFirstUpper»Value, «resultName», sizeof(«typeGenerator.code(retType)»));
-			retcode = «component.baseName»_SendData((uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(retType)»), (void*)«baseName»_«signalInstance.name»,1000);
+			memcpy(&«baseName»«signalInstance.name.toFirstUpper»Value, «resultName», sizeof(«typeGenerator.code(signalInstance, retType)»));
+			retcode = «component.baseName»_SendData((uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(signalInstance, retType)»), (void*)«baseName»_«signalInstance.name»,1000);
 		}
 		return retcode;
 		''')
@@ -463,7 +463,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 			return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 		}
 		
-		memcpy(«resultName», &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(retType)»));
+		memcpy(«resultName», &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(signalInstance, retType)»));
 		''')
 		.addHeader('string.h', true)
 	}

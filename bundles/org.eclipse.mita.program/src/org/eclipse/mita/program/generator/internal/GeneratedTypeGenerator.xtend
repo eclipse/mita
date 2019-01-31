@@ -44,7 +44,7 @@ class GeneratedTypeGenerator {
 			«"\n"»«««explicit newline
 
 			«FOR type_generator : generatorsWithTypeSpecs SEPARATOR("\n")»
-			«type_generator.value.generateHeader(type_generator.key)»
+			«type_generator.value.generateHeader(context.allUnits.head, type_generator.key)»
 			«ENDFOR»
 		''').addHeader(userTypeFiles.map[new IncludePath(it, false)])
 		.toHeader(context, 'MITA_GENERATED_TYPES_H')

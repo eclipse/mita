@@ -159,7 +159,7 @@ class SubtypeChecker {
 			
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, BottomType sub, AbstractType sup) {
 		// ⊥ is subtype of everything
-		return new SubtypeCheckResult(#[sub.message], #[]);
+		return new SubtypeCheckResult(#[], #[]);
 	}
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, SumType sub, SumType top) {

@@ -55,11 +55,11 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''optional_«typeGenerator.code((type as TypeConstructorType).typeArguments.head)»''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
 	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»;''')
+		codeFragmentProvider.create('''«typeGenerator.code(stmt, type)» «stmt.name»;''')
 	}
 	
 	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
@@ -165,12 +165,12 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		''')
 	}
 	
-	override CodeFragment generateHeader(AbstractType type) {
+	override CodeFragment generateHeader(EObject context, AbstractType type) {
 		codeFragmentProvider.create('''
 		typedef struct { 
-			«typeGenerator.code((type as TypeConstructorType).typeArguments.head)» «OPTIONAL_DATA_MEMBER»;
+			«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.head)» «OPTIONAL_DATA_MEMBER»;
 			«ENUM_NAME» «OPTIONAL_FLAG_MEMBER»;
-		} «typeGenerator.code(type)»;
+		} «typeGenerator.code(context, type)»;
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
