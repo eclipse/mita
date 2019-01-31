@@ -198,11 +198,7 @@ class SubtypeChecker {
 	}
 	
 	protected def SubtypeCheckResult subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {
-		val ln = BaseUtils.lineNumberOf(1);
-		return isSuperType.subtypeMsgFromBoolean(sub, top, ln);
-	}
-	protected def SubtypeCheckResult subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top, int ln) {
-		return isSuperType.subtypeMsgFromBoolean('''STR:«BaseUtils.lineNumber»->«ln»: «sub» is not a subtype of «top»''')
+		return isSuperType.subtypeMsgFromBoolean('''«sub» is not a subtype of «top»''')
 	}
 	protected def SubtypeCheckResult subtypeMsgFromBoolean(boolean isSuperType, String msg) {
 		if(!isSuperType) {

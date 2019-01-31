@@ -34,10 +34,12 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
@@ -58,7 +60,7 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.resource.IContainer
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
-import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.program.generator.GeneratorUtils
 
 class ModelUtils {
 
@@ -318,12 +320,15 @@ class ModelUtils {
 		return if(node === null) null else NodeModelUtils.getTokenText(node);
 	}
 
-	static def boolean isPrimitiveType(AbstractType type) {
+	static def boolean isPrimitiveType(AbstractType type, EObject context) {
+		if (type instanceof AtomicType) {
+			return !TypesUtil.isGeneratedType(context, type);
+		}
 		if (type instanceof AbstractBaseType) {
 			return true;
 		} else if (type instanceof TypeConstructorType) {
 			if(type.name == 'optional') {
-				return type.typeArguments.forall[x|x.isPrimitiveType]
+				return type.typeArguments.forall[x|x.isPrimitiveType(context)]
 			}
 		}
 		return false;

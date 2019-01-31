@@ -180,11 +180,14 @@ class StringSizeInferrer extends ElementSizeInferrer {
 			var typeLengthInBytes = switch(type?.name) {
 				case 'uint32': 10
 				case 'uint16':  5
-				case 'uint8':   3
-				case 'int32':  11
-				case 'int16':   6
-				case 'int8':    4
-				case 'bool':    1
+				case 'uint8' :  3
+				case 'int32' : 11
+				case 'int16' :  6
+				case 'int8'  :  4
+				case 'xint32': 11
+				case 'xint16':  6
+				case 'xint8' :  4
+				case 'bool'  :  1
 				// https://stackoverflow.com/a/1934253
 				case 'double': StringGenerator.DOUBLE_PRECISION + 1 + 1 + 5 + 1
 				case 'float':  StringGenerator.DOUBLE_PRECISION + 1 + 1 + 5 + 1

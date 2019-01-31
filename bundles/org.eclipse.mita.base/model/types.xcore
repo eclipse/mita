@@ -391,6 +391,16 @@ class GeneratedType extends ComplexType, GeneratedElement, Exportable {
 class GeneratedTypeConstructor extends Operation, GeneratedObject {
 	contains transient PresentTypeSpecifier generatedTypeSpecifier
 	
+	op String getName() {
+		val generatedType = if(eContainer instanceof GeneratedType) {
+			eContainer as GeneratedType;
+		} 
+		else {
+			null;
+		}
+		return "con_" + generatedType?.name
+	}
+	
 	op TypeParameter[] getTypeParameters() {
 		return (eContainer as GeneratedType).typeParameters;
 	}

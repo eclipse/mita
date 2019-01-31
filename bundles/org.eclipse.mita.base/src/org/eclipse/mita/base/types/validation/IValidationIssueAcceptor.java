@@ -55,7 +55,7 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(message.equals("Function con cannot be used here: arguments don't fit (con_args(f_1) != con_args(uint32, int16))")) {
+			if(message.equals("Function con_SomeGenType cannot be used here: %s, %s")) {
 				System.out.print("");
 			}
 		}
@@ -75,7 +75,7 @@ public interface IValidationIssueAcceptor {
 			this.target = target;
 			this.issueCode = issueCode;
 			this.feature = feature;
-			if(message.equals("Function con cannot be used here: arguments don't fit (con_args(f_1) != con_args(uint32, int16))")) {
+			if(message.equals("Function con_SomeGenType cannot be used here: %s, %s")) {
 				System.out.print("");
 			}
 		}

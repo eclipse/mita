@@ -52,6 +52,7 @@ import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.program.model.ModelUtils
 
 /**
  * Hierarchically infers the size of a data element.
@@ -208,7 +209,7 @@ class ElementSizeInferrer {
 
 	protected def ElementSizeInferenceResult inferFromType(EObject obj, AbstractType typ) {
 		// this expression has an immediate value (akin to the StaticValueInferrer)
-		if (typ instanceof NumericType || typ.name == "Exception") {
+		if (ModelUtils.isPrimitiveType(typ, obj) || typ.name == "Exception") {
 			// it's a primitive type
 			return new ValidElementSizeInferenceResult(obj, typ, 1);
 		} else if (isGeneratedType(obj, typ)) {

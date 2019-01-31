@@ -398,7 +398,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				]	
 			]
 		}
-		system.addConstraint(new FunctionTypeClassConstraint(issue, fromTV, typeClassQN, functionCall, functionReference, toTV, varianceOfResultVar, constraintSystemProvider));
+		system.addConstraint(new FunctionTypeClassConstraint(new ValidationIssue(issue, '''Function «functionName» cannot be used here'''), fromTV, typeClassQN, functionCall, functionReference, toTV, varianceOfResultVar, constraintSystemProvider));
 		
 		
 		// B

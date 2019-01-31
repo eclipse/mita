@@ -44,7 +44,7 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
-		if(this.toString == "con_args(f_69)") {
+		if(this.toString == "con_SomeGenType_args(f_0)") {
 			print("");
 		}
 	}

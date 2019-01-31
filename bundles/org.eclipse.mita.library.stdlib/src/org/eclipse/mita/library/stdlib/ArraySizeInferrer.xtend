@@ -48,7 +48,8 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			val result = if(staticSizeValue === null) {
 				newInvalidResult(obj.reference, "Cannot infer static value");
 			} else {
-				new ValidElementSizeInferenceResult(obj, parentType, staticSizeValue as Integer);
+				// lets assume that no one constructs arrays bigger than Integer.MAX_VALUE
+				new ValidElementSizeInferenceResult(obj, parentType, (staticSizeValue as Long).longValue as int);
 			}
 			
 			/**

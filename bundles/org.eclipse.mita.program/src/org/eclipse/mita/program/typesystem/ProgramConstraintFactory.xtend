@@ -230,7 +230,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			system.addConstraint(new SubtypeConstraint(
 				exprType, 
 				varRefType, 
-				new ValidationIssue(Severity.ERROR, '''«ae.expression» (:: %s) cannot be assigned to «ae.varRef» (:: %s)''', ae, null, "")
+				new ValidationIssue(Severity.ERROR, '''Assignment operator '=' may only be applied on compatible types, not on %2$s and %1$s.''', ae, null, "")
 			));
 		}
 		else if(#[AssignmentOperator.AND_ASSIGN, AssignmentOperator.XOR_ASSIGN, AssignmentOperator.OR_ASSIGN].contains(ae.operator)) {
@@ -282,7 +282,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val resultType = if(explicitType !== null && inferredType !== null) {
 			system.addConstraint(new SubtypeConstraint(
 				inferredType, explicitType, 
-				new ValidationIssue(Severity.ERROR, '''«vardecl.initialization» (:: %s) cannot be assigned to variables of type «vardecl.typeSpecifier» (:: %s)''', vardecl, null, "")
+				new ValidationIssue(Severity.ERROR, '''Assignment operator '=' may only be applied on compatible types, not on %2$s and %1$s.''', vardecl, null, "")
 			));
 			explicitType
 		} else if(explicitType !== null) {
@@ -420,11 +420,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		// see computeConstraints(ConstraintSystem, ElementReferenceExpression) for a more detailed explanation
 		val returnType = system.computeConstraints(newInstanceExpression.type);
 		val typeName = BaseUtils.getText(newInstanceExpression.type, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		val functionTypeVar = system.newTypeVariableProxy(newInstanceExpression, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, QualifiedName.create(typeName, "con"));
+		val constructorName = "con_" + typeName;
+		val functionTypeVar = system.newTypeVariableProxy(newInstanceExpression, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, QualifiedName.create(typeName, constructorName));
 		val argumentParamsAndValues = newInstanceExpression.arguments.map[
 			BaseUtils.getText(it, ExpressionsPackage.eINSTANCE.argument_Parameter) -> (it -> it.value)
 		].force
-		val argType = if(argumentParamsAndValues.size > 1 && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
+		val argType = if(argumentParamsAndValues.size > 0 && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
 			val List<UnorderedArgsInformation> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
 				val arg = it.value.key;
 				val aValue = it.value.value;
@@ -439,13 +440,13 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			argumentParamTypesAndValueTypes.forEach[
 				system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
 			]
-			new UnorderedArguments(null, new AtomicType(null, "con_args"), argumentParamTypesAndValueTypes.map[it.nameOfReferencedObject -> it.expressionType]);
+			new UnorderedArguments(null, new AtomicType(null, constructorName + "_args"), argumentParamTypesAndValueTypes.map[it.nameOfReferencedObject -> it.expressionType]);
 		}
 		else {
 			val args = newInstanceExpression.arguments.map[system.computeConstraints(it) as AbstractType];
-			system.computeArgumentConstraintsWithTypes(newInstanceExpression, "con", args.force);
+			system.computeArgumentConstraintsWithTypes(newInstanceExpression, constructorName, args.force);
 		}
-		system.computeConstraintsForFunctionCall(newInstanceExpression, null, "con", argType, #[functionTypeVar]);
+		system.computeConstraintsForFunctionCall(newInstanceExpression, null, constructorName, argType, #[functionTypeVar]);
 		return system.associate(returnType, newInstanceExpression);
 	}
 	

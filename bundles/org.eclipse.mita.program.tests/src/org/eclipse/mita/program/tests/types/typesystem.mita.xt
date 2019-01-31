@@ -90,10 +90,10 @@ every 100 milliseconds {
 		is(anyVec.vec1d -> x) {
 			 
 		} 
-		is(anyVec.vec2d -> a1=y, b1=x) {
+		is(anyVec.vec2d -> a1=vec2d.y, b1=vec2d.x) {
  
 		}
-		is(anyVec.vec2d -> a1=y) {
+		is(anyVec.vec2d -> a1=vec2d.y) {
 		 
 		} 
 		is(anyVec.vec2d -> a1, b2) {
@@ -109,24 +109,6 @@ every 100 milliseconds {
 	}
 	/* XPECT errors ---
 		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f and g (:: string) don't share a common type" at "g"
-		"f and g (:: string) don't share a common type" at "g"
-		"f and g (:: string) don't share a common type" at "g"
-		"f and g (:: string) don't share a common type" at "g"
-		"f and g (:: string) don't share a common type" at "g"
-		"f and g (:: string) don't share a common type" at "g"
-		"f and g (:: string) don't share a common type" at "g"
-		"f and g (:: string) don't share a common type" at "g"
-		"f and g (:: string) don't share a common type" at "g"
 		"f and g (:: string) don't share a common type" at "g"
 	 --- */
 	let a4 = f == g;

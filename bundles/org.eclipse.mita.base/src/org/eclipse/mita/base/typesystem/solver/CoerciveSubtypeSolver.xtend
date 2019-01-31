@@ -117,6 +117,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		for(tcc: currentSystem.constraints.filter(FunctionTypeClassConstraint).force) {
 			val typeClass = currentSystem.typeClasses.get(tcc.instanceOfQN);
 			if(typeClass.mostSpecificGeneralization !== null) {
+				val instancesHaveDefaultArgs = typeClass.instances.values.filter(Operation).exists[
+					it.parameters.filter(ParameterWithDefaultValue).exists[it.defaultValue !== null]
+				]
 				val msg = typeClass.mostSpecificGeneralization;
 				val funTypeInstance = if(msg instanceof TypeScheme) {
 					msg.instantiate(currentSystem).value;	
@@ -126,7 +129,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				}
 				if(funTypeInstance instanceof FunctionType) {
 					val typeThatShouldBeInstance = tcc.typ;
-					currentSystem.addConstraint(new SubtypeConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''Function «tcc.instanceOfQN» cannot be used here: arguments don't fit (%s != %s)''', typeThatShouldBeInstance.origin)));
+					if(!instancesHaveDefaultArgs) {
+						// for now don't introduce a constraint if any instance has default args since then it's really hard to do predictions on types passed in
+						currentSystem.addConstraint(new SubtypeConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''Function «tcc.instanceOfQN» cannot be used here: arguments don't fit (%s != %s)''', typeThatShouldBeInstance.origin)));
+					}
 					currentSystem.addConstraint(new EqualityConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''Function «tcc.instanceOfQN» cannot be used here: return type incompatible (%s != %s)''', tcc.returnTypeTV.origin)));
 				}
 			}
