@@ -293,7 +293,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	
 	// Forbid returning structs/generics etc. (allow void, primitive) (via validator), until implemented.
 	@Check(CheckType.NORMAL)
-	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {
+	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {[|
 		val operationType = BaseUtils.getType(op.typeSpecifier);
 		if(!(op instanceof GeneratedFunctionDefinition) && (op instanceof AtomicType && op.name == "void") || ModelUtils.isPrimitiveType(operationType, op)) {
 			return;
@@ -301,13 +301,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		
 		// TODO: At the moment we allow too much. Reduce this to strings/arrays/structs and implement the rules described
 		//       in #120.
-		val opSize = elementSizeInferrer.infer(op.typeSpecifier);
+		val opSize = elementSizeInferrer.infer(op);
 		if(!(opSize instanceof ValidElementSizeInferenceResult)) {
 			error(SIZE_INFERENCE_FAILED_FOR_RETURN, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 			return;
 		}
 		warning(FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
-	}
+	].apply()}
 	
 	@Check(CheckType.NORMAL)
 	def checkVariableDeclaration(VariableDeclaration varDecl){

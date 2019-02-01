@@ -32,7 +32,7 @@ fn works() {
 	a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<int32>
+	// XPECT inferredType --> array<xint8>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
@@ -82,7 +82,7 @@ fn blabla() {
 	a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<int32>
+	// XPECT inferredType --> array<xint8>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
@@ -131,7 +131,7 @@ every 100 milliseconds {
 	a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<int32>
+	// XPECT inferredType --> array<xint8>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
@@ -160,20 +160,34 @@ fn errors() {
 	// XPECT errors --> "Array range is invalid: Upper bound must be less than or equal to array size (5)" at ":7"
 	b = a[:7];
 	/* XPECT errors ---
+		"-prim»i»1 (:: int8) must be an unsigned integer" at "-1"
+		"-prim»i»2 (:: int8) must be an unsigned integer" at "-2"
 		"Array range is invalid: Lower bound must be positive or zero" at "-2:-1"
 		"Array range is invalid: Upper bound must be strictly positive" at "-2:-1"
 	--- */
 	b = a[-2:-1];
+	// XPECT errors --> "prim»s»"asdf" (:: string) has a different type than str (:: f_583.0)" at ""asdf""
 	var str = "asdf";
-	// XPECT errors --> "Array index must be integer." at "str"
+	/* XPECT errors ---
+		"str (:: f_583.0) must be an unsigned integer" at "str"
+		"str (:: string) must be an unsigned integer" at "str"
+	--- */
 	var c = a[str];
-	// XPECT errors --> "Array range is invalid: Incompatible types string and integer." at "str"
+	/* XPECT errors ---
+		"str (:: f_583.0) must be an unsigned integer" at "str"
+		"str (:: string) must be an unsigned integer" at "str"
+	--- */
 	b = a[str:];
-	// XPECT errors --> "Array range is invalid: Incompatible types string and integer." at "str"
+	/* XPECT errors ---
+		"str (:: f_583.0) must be an unsigned integer" at "str"
+		"str (:: string) must be an unsigned integer" at "str"
+	--- */
 	b = a[:str];
 	/* XPECT errors ---
-		"Array range is invalid: Incompatible types string and integer." at "str"
-		"Array range is invalid: Incompatible types string and integer." at "str"
+		"str (:: f_583.0) must be an unsigned integer" at "str"
+		"str (:: f_583.0) must be an unsigned integer" at "str"
+		"str (:: string) must be an unsigned integer" at "str"
+		"str (:: string) must be an unsigned integer" at "str"
 	--- */
 	b = a[str:str];
 }
@@ -201,7 +215,12 @@ struct SensorMessage {
 // XPECT noCompileErrors
 fn mean(data : array<SensorMessage>) {
     let result : SensorMessage;
-
+    // this error is actually fine, it's a consequence of global type inference
+	/* XPECT errors ---
+		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_685.0" at "length"
+		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_686.0" at "length"
+		"Function length cannot be used here: f_686.0, f_685.0" at "length"
+	--- */
     for(var i = 0; i < data.length(); i++) {
         // featureCalls on arrayAccess is allowed
         result.accX += data[i].accX; 

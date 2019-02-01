@@ -37,7 +37,8 @@ public interface IValidationIssueAcceptor {
 		private transient EObject target;
 		private EStructuralFeature feature;
 		
-		private static final String test = "Function con_stdlib.array cannot be used here";
+		private static boolean dontTest = true;
+		private static final String test = "Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_685.0";
 		
 		public ValidationIssue(Severity severity, String message, String issueCode) {
 			this(severity, message, null, null, issueCode);
@@ -57,7 +58,7 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(message.equals(test)) {
+			if(!dontTest && message.equals(test)) {
 				System.out.print("");
 			}
 		}
@@ -77,7 +78,7 @@ public interface IValidationIssueAcceptor {
 			this.target = target;
 			this.issueCode = issueCode;
 			this.feature = feature;
-			if(message.equals(test)) {
+			if(!dontTest && message.equals(test)) {
 				System.out.print("");
 			}
 		}

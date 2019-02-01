@@ -15,6 +15,9 @@ class TypeVariable extends AbstractType {
 	
 	new(EObject origin, String name) {
 		super(origin, name)
+		if(this.toString.startsWith("f_685")) {
+			print("");
+		}
 	}
 	
 	override quote() {
