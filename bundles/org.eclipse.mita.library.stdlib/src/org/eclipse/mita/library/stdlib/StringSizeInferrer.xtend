@@ -178,19 +178,19 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		for(subexpr : expr.content) {
 			val type = BaseUtils.getType(subexpr);
 			var typeLengthInBytes = switch(type?.name) {
-				case 'uint32': 10
-				case 'uint16':  5
-				case 'uint8' :  3
-				case 'int32' : 11
-				case 'int16' :  6
-				case 'int8'  :  4
-				case 'xint32': 11
-				case 'xint16':  6
-				case 'xint8' :  4
-				case 'bool'  :  1
+				case 'uint32': 10L
+				case 'uint16':  5L
+				case 'uint8' :  3L
+				case 'int32' : 11L
+				case 'int16' :  6L
+				case 'int8'  :  4L
+				case 'xint32': 11L
+				case 'xint16':  6L
+				case 'xint8' :  4L
+				case 'bool'  :  1L
 				// https://stackoverflow.com/a/1934253
-				case 'double': StringGenerator.DOUBLE_PRECISION + 1 + 1 + 5 + 1
-				case 'float':  StringGenerator.DOUBLE_PRECISION + 1 + 1 + 5 + 1
+				case 'double': StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+				case 'float':  StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
 				case 'string':    {
 					val stringSize = super.infer(subexpr);
 					if(stringSize instanceof ValidElementSizeInferenceResult) {
@@ -221,12 +221,12 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		newInvalidResult(expr, "Cannot infer string length");
 	}
 	
-	protected def int sumTextParts(InterpolatedStringExpression expr) {
+	protected def long sumTextParts(InterpolatedStringExpression expr) {
 		val texts = StringGenerator.getOriginalTexts(expr)
 		if (texts.nullOrEmpty) {
 			0
 		} else {
-			texts.map[x | x.length ].reduce[x1, x2| x1 + x2 ];
+			texts.map[x | x.length as long ].reduce[x1, x2| x1 + x2 ];
 		}
 	}
 	

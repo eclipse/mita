@@ -120,15 +120,15 @@ class ElementSizeInferrer {
 		if(accessor instanceof ValueRange) {
 			val maxResult = obj.owner.infer;
 			if(maxResult instanceof ValidElementSizeInferenceResult) {
-				var elementCount = maxResult.elementCount;
+				var long elementCount = maxResult.elementCount;
 				
 				if(accessor.lowerBound !== null) {
 					val lowerBound = StaticValueInferrer.infer(accessor.lowerBound, [x|]);
-					elementCount -= (lowerBound as Integer)?:0;
+					elementCount -= (lowerBound as Long) ?: Long.valueOf(0);
 				}	
 				if(accessor.upperBound !== null) {
 					val upperBound = StaticValueInferrer.infer(accessor.upperBound, [x|]);
-					elementCount -= maxResult.elementCount - ((upperBound as Integer)?:0);
+					elementCount -= maxResult.elementCount - ((upperBound as Long) ?: Long.valueOf(0));
 				}
 				
 				val result = new ValidElementSizeInferenceResult(maxResult.root, maxResult.typeOf, elementCount);
@@ -209,7 +209,7 @@ class ElementSizeInferrer {
 
 	protected def ElementSizeInferenceResult inferFromType(EObject obj, AbstractType typ) {
 		// this expression has an immediate value (akin to the StaticValueInferrer)
-		if (ModelUtils.isPrimitiveType(typ, obj) || typ.name == "Exception") {
+		if (ModelUtils.isPrimitiveType(typ, obj) || typ?.name == "Exception") {
 			// it's a primitive type
 			return new ValidElementSizeInferenceResult(obj, typ, 1);
 		} else if (isGeneratedType(obj, typ)) {
@@ -311,7 +311,7 @@ class ElementSizeInferrer {
 	 * Produces a valid size inference of the root object. This method assumes that the type
 	 * we're reporting a multiple of (size parameter) is the result of typeInferer.infer(root). 
 	 */
-	protected def newValidResult(EObject root, int size) {
+	protected def newValidResult(EObject root, long size) {
 		val type = BaseUtils.getType(root);
 		return new ValidElementSizeInferenceResult(root, type, size);
 	}
@@ -412,9 +412,9 @@ abstract class ElementSizeInferenceResult {
 
 class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 	
-	val int elementCount;
+	val long elementCount;
 	
-	new(EObject root, AbstractType typeOf, int elementCount) {
+	new(EObject root, AbstractType typeOf, long elementCount) {
 		super(root, typeOf);
 		this.elementCount = elementCount;
 	}
@@ -422,7 +422,7 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 	/**
 	 * The number of elements of this type we require.
 	 */
-	def int getElementCount() {
+	def long getElementCount() {
 		return elementCount;
 	}
 	
@@ -439,7 +439,7 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 		return result;
 	}
 	
-	def Integer getByteCount() {
+	def long getByteCount() {
 		val type = if(typeOf instanceof PresentTypeSpecifier) { 
 			(typeOf as PresentTypeSpecifier).type;
 		}
@@ -504,7 +504,7 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 		ownSize + elementCount * children
 			.filter[x | x instanceof ValidElementSizeInferenceResult]
 			.map[x | (x as ValidElementSizeInferenceResult).byteCount]
-			.fold(0, [x, y | x + y]);
+			.fold(0L, [x, y | x + y]);
 	}
 	
 	override orElse(() => ElementSizeInferenceResult esirProvider) {

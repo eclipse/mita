@@ -30,7 +30,7 @@ function expressions() : void {
 	// bit-shift right: >>
 	// logical negation (bool only): !
 	let foo = 1 + 1;
-	(foo * 2) / 3.0;
+	(foo * 2) as double / 3.0;
 	// All expressions have a type. This type can be void
 //	// TODO: what is the semantic here, is it like "instanceof" in Java, i.e. super type hierarchy is checked, or is it a double equality check
 //	typeof(1 + 2) == type(uint32_t); // true

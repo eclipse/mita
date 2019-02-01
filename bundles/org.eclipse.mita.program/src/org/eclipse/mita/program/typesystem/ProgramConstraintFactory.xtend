@@ -36,6 +36,7 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.CoercionExpression
+import org.eclipse.mita.program.ConditionalStatement
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
@@ -70,6 +71,7 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.program.ForEachStatement
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -213,7 +215,31 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 				new ValidationIssue(Severity.ERROR, '''Conditions must be of type bool, is of type %2$s''', ifElse.condition, null, "")
 			))
 		]
-		system.computeConstraintsForChildren(ifElse);
+		val blocks = #[ifElse.then, ifElse.^else].filterNull + ifElse.elseIf.map[it.then];
+		blocks.forEach[
+			system.computeConstraints(it);
+		]
+		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ForEachStatement stmt) {
+		// typing for(a in as) {...}:
+		// assert a :: array<t>
+		// - get \T. array<T> (arrayType)
+		// - type a :: t (innerType)
+		// - make constraints to assert array<t> (nestInType)
+		// compute typeof a (refType)
+		// assert a = array<t>
+		// compute constraints for body
+		// return null
+		val arrayType = typeRegistry.getTypeModelObjectProxy(system, stmt, StdlibTypeRegistry.arrayTypeQID);
+		val innerType = system.getTypeVariable(stmt.iterator);
+		val supposedExpressionArrayType = nestInType(system, stmt, innerType, arrayType, "array");
+		
+		val refType = system.computeConstraints(stmt.iterable);
+		system.addConstraint(new EqualityConstraint(refType, supposedExpressionArrayType, new ValidationIssue(Severity.ERROR, '''«stmt.iterable» (:: %s) must be of type array<...>''', stmt.iterable)));
+
+		system.computeConstraints(stmt.body);
 		return null;
 	}
 	

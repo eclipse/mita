@@ -32,7 +32,7 @@ function testIfFail(){
 // XPECT noCompileErrors
 function testLoopsSuccess() : void {
 	// Traditional for loops are supported
-	for(var i = 0; i < 10; i=i+1) { 
+	for(var i: uint8 = 0; i < 10; i=i+1) { 
 		var x = i;
 	}
 	

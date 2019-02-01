@@ -45,7 +45,7 @@ import org.eclipse.xtext.generator.trace.node.NewLineNode
 
 class StringGenerator extends AbstractTypeGenerator {
 	
-	static public val DOUBLE_PRECISION = 6;
+	static public val DOUBLE_PRECISION = 6L;
 	
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
@@ -66,7 +66,7 @@ class StringGenerator extends AbstractTypeGenerator {
 	protected extension GeneratorUtils
 	
 	
-	private static def Integer getFixedSize(EObject stmt, ElementSizeInferrer sizeInferrer) {
+	private static def long getFixedSize(EObject stmt, ElementSizeInferrer sizeInferrer) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
 			inference.elementCount;

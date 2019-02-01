@@ -33,7 +33,7 @@ public class ReferencesTest extends AbstractXpectTest {
 	
 	@Xpect
 	public void inferredSize(@StringExpectation IStringExpectation expectation, @ThisOffset EObject expr) {
-		expectation.assertEquals(((ValidElementSizeInferenceResult) elementSizeInferrer.infer(expr)).getByteCount().toString());
+		expectation.assertEquals(Long.toString(((ValidElementSizeInferenceResult) elementSizeInferrer.infer(expr)).getByteCount()));
 	}
 	
 }

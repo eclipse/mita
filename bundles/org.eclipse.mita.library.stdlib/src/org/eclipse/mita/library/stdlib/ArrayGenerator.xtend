@@ -62,7 +62,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	protected TypeGenerator typeGenerator
 		
 		
-	private static def Integer getArraySize(VariableDeclaration stmt, ElementSizeInferrer sizeInferrer) {
+	private static def long getArraySize(VariableDeclaration stmt, ElementSizeInferrer sizeInferrer) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
 			inference.elementCount;
@@ -70,7 +70,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			return -1;
 		}
 	}
-	private static def Integer getArraySize(NewInstanceExpression stmt, ElementSizeInferrer sizeInferrer) {
+	private static def long getArraySize(NewInstanceExpression stmt, ElementSizeInferrer sizeInferrer) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
 			inference.elementCount;
@@ -215,8 +215,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val sizeResRight = sizeInferrer.infer(right);
 		
 		// if we can infer the sizes, we might be able to know that we don't need a new buffer to copy the data
-		var newElementCount = -1;
-		var oldElementCount = -1;
+		var long newElementCount = -1;
+		var long oldElementCount = -1;
 		val staticSize = sizeResLeft.valid && sizeResRight.valid;
 		if(staticSize) {
 			oldElementCount = (sizeResLeft as ValidElementSizeInferenceResult).elementCount;

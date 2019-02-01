@@ -12,6 +12,7 @@ import org.eclipse.mita.base.expressions.AdditiveOperator
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.BinaryExpression
+import org.eclipse.mita.base.expressions.BinaryLiteral
 import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.ConditionalExpression
 import org.eclipse.mita.base.expressions.DoubleLiteral
@@ -20,6 +21,7 @@ import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.FloatLiteral
+import org.eclipse.mita.base.expressions.HexLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.LogicalOperator
 import org.eclipse.mita.base.expressions.MultiplicativeOperator
@@ -783,6 +785,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 					return system.associate(computeConstraints(system, operand, -value.value), expr);
 				}
 				println('''BCF: Unhandled operator: «expr.operator»''')	
+			}
+			else if(value instanceof DoubleLiteral || value instanceof FloatLiteral) {
+				return system.associate(system.computeConstraints(operand), expr);
 			}
 		}
 		println('''BCF: Unhandled operand: «operand?.eClass.name»''')
