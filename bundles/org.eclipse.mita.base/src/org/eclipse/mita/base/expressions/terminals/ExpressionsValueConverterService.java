@@ -58,12 +58,12 @@ public class ExpressionsValueConverterService extends DefaultTerminalConverters 
 	}
 	
 	@ValueConverter(rule = HEX)
-	public IValueConverter<Integer> HEX() {
+	public IValueConverter<Long> HEX() {
 		return hexConverter;
 	}
 	
 	@ValueConverter(rule = BINARY)
-	public IValueConverter<Integer> BINARY() {
+	public IValueConverter<Long> BINARY() {
 		return binaryConverter;
 	}
 	
