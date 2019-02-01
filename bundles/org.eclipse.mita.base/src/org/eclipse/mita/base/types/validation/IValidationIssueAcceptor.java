@@ -37,7 +37,7 @@ public interface IValidationIssueAcceptor {
 		private transient EObject target;
 		private EStructuralFeature feature;
 		
-		private static final String test = "f (:: f_394.0) and g don't share a common type";
+		private static final String test = "Function con_stdlib.array cannot be used here";
 		
 		public ValidationIssue(Severity severity, String message, String issueCode) {
 			this(severity, message, null, null, issueCode);

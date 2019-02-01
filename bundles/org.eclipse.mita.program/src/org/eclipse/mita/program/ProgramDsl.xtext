@@ -166,7 +166,11 @@ ReferenceExpression returns program::ReferenceExpression hidden():
 ;
 
 NewInstanceExpression returns program::NewInstanceExpression:
-	'new' type=TypeSpecifier '(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
+	'new' type=UnqualifiedPresentTypeSpecifier '(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
+;
+
+UnqualifiedPresentTypeSpecifier returns types::PresentTypeSpecifier:
+	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))?
 ;
 
 InterpolatedStringExpression returns program::InterpolatedStringExpression hidden(): 

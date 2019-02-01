@@ -187,6 +187,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			right
 		}
 		
+		val isNewInstance = right instanceof NewInstanceExpression;
+		
 		val codeRightExpr = codeFragmentProvider.create('''«statementGenerator.code(rightRef).noTerminator»''');
 		val rightExprIsValueLit = right instanceof PrimitiveValueExpression;
 		val rightValueLit = if(right instanceof PrimitiveValueExpression) {
@@ -293,7 +295,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		«dataLeft» = «reallocBufferName»;
 		«ENDIF»
 		«ENDIF»
-		«IF !rightExprIsValueLit»
+		«IF !isNewInstance && !rightExprIsValueLit»
 		// «varNameLeft» = «codeRightExpr»
 		memcpy(«dataLeft», «dataRight», «typeSize» * «newLengthExpr»);
 		««« we had to create a new buffer, but we mustn't pass it out

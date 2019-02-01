@@ -27,6 +27,8 @@ import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.base.types.GeneratedType
 
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
+import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.program.model.ModelUtils
 
 /**
  * Facade for generating types.
@@ -47,8 +49,11 @@ class TypeGenerator implements IGenerator {
 
 	
 	public dispatch def CodeFragment code(EObject context, AtomicType type) {
-		if(type.name == "string") {
-			return codeFragmentProvider.create('''char*''');
+		if(TypesUtil.isGeneratedType(context, type)) {
+			val generator = generatorRegistry.getGenerator(context.eResource, type);
+			if(generator instanceof AbstractTypeGenerator) {
+				return generator.generateTypeSpecifier(type, context);
+			}
 		}
 		return codeFragmentProvider.create('''«type.getStructType(context)»''');
 	}
@@ -70,6 +75,12 @@ class TypeGenerator implements IGenerator {
 	}
 	
 	public dispatch def CodeFragment code(EObject context, TypeConstructorType type) {
+		if(TypesUtil.isGeneratedType(context, type)) {
+			val generator = generatorRegistry.getGenerator(context.eResource, type);
+			if(generator instanceof AbstractTypeGenerator) {
+				return generator.generateTypeSpecifier(type, context);
+			}
+		}
 		return codeFragmentProvider.create('''«type.name»''')
 	}
 	
