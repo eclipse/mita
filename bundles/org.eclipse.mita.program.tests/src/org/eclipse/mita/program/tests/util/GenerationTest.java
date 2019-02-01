@@ -47,6 +47,7 @@ import org.eclipse.mita.base.expressions.FeatureCall;
 import org.eclipse.mita.base.types.ImportStatement;
 import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Type;
+import org.eclipse.mita.base.util.CopySourceAdapter;
 import org.eclipse.mita.program.Program;
 import org.eclipse.mita.program.ProgramFactory;
 import org.eclipse.mita.program.ThrowExceptionStatement;
@@ -150,17 +151,24 @@ public class GenerationTest {
 		}
 	}
 
+	private void linkOrigin(EObject copy, EObject origin) {
+		copy.eAdapters().add(new CopySourceAdapter(origin));
+	}
+	
 	private Resource createProgram(EObject contextObject) {
-		Copier c = new Copier();
+		Copier copier = new Copier();
 		Program originalProgram = (Program) getRootContainer(contextObject);
-		c.copy(originalProgram);
-		c.copyReferences();
+		copier.copy(originalProgram);
+		copier.copyReferences();
+		copier.forEach((o, c) -> {
+			 linkOrigin(c, o);
+		}); 
 
 		Program program = ProgramFactory.eINSTANCE.createProgram();
 		program.setName("unittest");
 
 		for (ImportStatement i : originalProgram.getImports()) {
-			addToContainingFeature(program, i, c.get(i));
+			addToContainingFeature(program, i, copier.get(i));
 		}
 
 		// Add all references from the snippet under test
@@ -172,7 +180,7 @@ public class GenerationTest {
 				EObject referencedObject = ref.getReference();
 				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(referencedObject))
 						&& !EcoreUtil.isAncestor(contextObject, referencedObject)) {
-					addToContainingFeature(program, referencedObject, c.get(referencedObject));
+					addToContainingFeature(program, referencedObject, copier.get(referencedObject));
 				}
 			}
 			if (next instanceof FeatureCall) {
@@ -181,26 +189,26 @@ public class GenerationTest {
 					EObject featureObject = feature.getReference();
 					if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(featureObject))
 							&& !EcoreUtil.isAncestor(contextObject, featureObject)) {
-						addToContainingFeature(program, featureObject, c.get(featureObject));
+						addToContainingFeature(program, featureObject, copier.get(featureObject));
 					}
 				}
 			}
 			if (next instanceof PresentTypeSpecifier) {
 				Type type = ((PresentTypeSpecifier) next).getType();
 				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(type))) {
-					program.getTypes().add((Type) c.get(type));
+					program.getTypes().add((Type) copier.get(type));
 				}
 			}
 
 			if (next instanceof ThrowExceptionStatement) {
 				Type type = ((ThrowExceptionStatement) next).getExceptionType();
 				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(type))) {
-					program.getTypes().add((Type) c.get(type));
+					program.getTypes().add((Type) copier.get(type));
 				}
 			}
 		}
 		// Add snippet under test
-		addToContainingFeature(program, contextObject, c.get(contextObject));
+		addToContainingFeature(program, contextObject, copier.get(contextObject));
 
 		ResourceSet set = resourceSetProvider.get();
 		Resource resource = set.createResource(URI.createPlatformResourceURI("unittestprj/application.mita", true));
