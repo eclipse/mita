@@ -337,5 +337,50 @@ every button_one.pressed {
 }
 ```
 
-### Writing platform code generators
+### Contributing platform code generators
 
+Code generators build the core of your platform implementation. When contributing a platform you need to provide a couple of resource-independant code generators as well as one code generator per system resource of your platform definition.
+
+The standard code generators are bound in a platform generator module. The module is registered in the `module` part of your platform definition. To create a platform generator module, right-click on the _src_ folder in the _my.arduino.platform_ project and create a new Xtend file. Give the module a name, such as _MyArduinoPlatformGeneratorModule_ and click on _Finish_. As a starting point, define the following bindings in your module:
+```
+class MyArduinoPlatformGeneratorModule extends EmptyPlatformGeneratorModule {
+
+  override bindIPlatformEventLoopGenerator() {
+    MyArduinoEventLoopGenerator
+  }
+  override bindIPlatformExceptionGenerator() {
+    MyArduinoExceptionGenerator
+  }
+  override bindIPlatformStartupGenerator() {
+    MyArduinoStartupGenerator
+  }
+}
+```
+For this to compile you need to add the following dependencies to your _MANIFEST.MF_ file:
+- org.eclipse.mita.program,
+- com.google.guava,
+- org.eclipse.xtext.xbase.lib,
+- org.eclipse.xtend.lib,
+- org.eclipse.xtend.lib.macro
+
+Additionally, you need to create the three code generators _MyArduinoEventLoopGenerator_, _MyArduinoExceptionGenerator_ and _MyArduinoStartupGenerator_. As an initial starting point, you can copy the contents from the generators defined in the _org.eclipse.mita.platform.arduino_ plugin. Next, you need to register the module in the platform definition:
+```
+platform Arduino {
+  module "my.arduino.platform.MyArduinoPlatformGeneratorModule"
+  has button_one
+  has button_two
+}
+```
+
+Besides standard platform generators you need to contribute a code generator per system resource. In this example, this means you need to provide a code generator for the Arduino buttons. Resource generators are registered with the `generator` parameter in the platform definition:
+```
+sensor Button {
+  generator "my.arduino.platform.MyArduinoButtonGenerator"
+  modality is_pressed : bool
+  event pressed
+  event released
+}
+```
+The detailed contents of the code generators is out of the scope of this guide. For a starting point, please refer to the code generators in the _org.eclipse.mita.platform.arduino_ plugin.
+
+Once you have filled your code generators with something useful, you can test them easily by touching the Mita application file. Code is generated automatically on every save action into the _src-gen_ folder of the application project. Please note, you might need to restart your runtime environment to reflect all the changes in the platform definition file.
