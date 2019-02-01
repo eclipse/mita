@@ -2,8 +2,8 @@
 
 Eclipse Mita is a new programming language for the embedded IoT.
 It targets developers who are new to embedded software development, specifically those who come from a cloud background.
-As developer Mita feels like a modern programming language (in the vein of TypeScript), but translates to C code which compiles to native code running directly on the embedded hardware.
-Combining declarative confiuration, powerful language features with code generation enables projects to scale their deployment over quantity - from the first prototype to shipping thousands of devices.
+As a developer Mita feels like a modern programming language (in the vein of TypeScript), but translates to C code which compiles to native code running directly on the embedded hardware.
+Combining declarative configuration, powerful language features with code generation enables projects to scale their deployment over quantity - from the first prototype to shipping thousands of devices.
 
 ## Getting started
 At the moment Mita is meant to be integrated into the development environments of device vendors.
