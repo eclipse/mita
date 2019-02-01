@@ -476,26 +476,26 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val lengthOfArray = if(lengthOfArrayIR instanceof ValidElementSizeInferenceResult) {
 			lengthOfArrayIR.elementCount;
 		}
-		val lowerBound = StaticValueInferrer.infer(range.lowerBound, [x|])?:0
+		val lowerBound = StaticValueInferrer.infer(range.lowerBound, [x|])?:0L
 		val upperBound = StaticValueInferrer.infer(range.upperBound, [x|])?:lengthOfArray
-		
-		if((lowerBound as Integer) < 0) {
+				
+		if((lowerBound as Long) < 0) {
 			errorFun2.apply("Lower bound must be positive or zero");
 		}
 		
 		if(upperBound !== null) {
 			val size = elementSizeInferrer.infer(expr);
 			if(size.valid) {
-				if((upperBound as Integer) > (size as ValidElementSizeInferenceResult).elementCount) {
+				if((upperBound as Long) > (size as ValidElementSizeInferenceResult).elementCount) {
 					errorFun2.apply(String.format("Upper bound must be less than or equal to array size (%s)", (size as ValidElementSizeInferenceResult).elementCount));
 				}
-				else if((upperBound as Integer) <= 0) {
+				else if((upperBound as Long) <= 0) {
 					errorFun2.apply("Upper bound must be strictly positive");
 				}
 			}
 		}
 		if(lowerBound !== null && upperBound !== null) {
-			if(lowerBound as Integer >= upperBound as Integer) {
+			if(lowerBound as Long >= upperBound as Long) {
 				errorFun2.apply("Lower bound must be smaller than upper bound");
 			}
 		}

@@ -43,6 +43,9 @@ class TypeConstructorType extends AbstractType {
 		if(this.typeArguments.contains(null)) {
 			throw new NullPointerException;
 		}
+		if(this.toString.startsWith("array<f_479>")) {
+			print("")
+		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
 
 	}

@@ -270,6 +270,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				debugTimer.stop("atomicity");
 				
 				debugTimer.start(constraint.class.simpleName);
+				if(constraint.toString == "array<f_447.0> ⩽ f_479.0") {
+					print("")
+				}
 				val simplification = doSimplify(resultSystem, resultSub, typeResolutionOrigin, constraint);
 				debugTimer.stop(constraint.class.simpleName);
 				

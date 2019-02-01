@@ -419,19 +419,37 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// assert idx is unsigned integer (s <= u32)
 		// return t
 		val arrayType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.arrayTypeQID);
-		val innerType = system.getTypeVariable(expr);
-		val supposedExpressionArrayType = nestInType(system, expr, innerType, arrayType, "array");
-		
-		val refType = system.computeConstraints(expr.owner);
-		system.addConstraint(new EqualityConstraint(refType, supposedExpressionArrayType, new ValidationIssue(Severity.ERROR, '''«expr.owner» (:: %s) must be of type array<...>''', expr.owner)));
 		val accessor = expr.arraySelector;
 		val accessorType = system.computeConstraints(accessor);
+
+		val refType = system.computeConstraints(expr.owner);
+
+		val selfType = if(accessor instanceof ValueRange) {
+			system.associate(refType, expr);
+			refType;
+		}
+		else {
+			val innerType = system.getTypeVariable(expr);
+			innerType;
+		}
+		
+		val innerType = if(accessor instanceof ValueRange) {
+			system.newTypeVariable(expr);
+		}
+		else {
+			system.getTypeVariable(expr);
+		}
+		
+
+		val supposedExpressionArrayType = nestInType(system, expr, innerType, arrayType, "array");
+		system.addConstraint(new EqualityConstraint(refType, supposedExpressionArrayType, new ValidationIssue(Severity.ERROR, '''«expr.owner» (:: %s) must be of type array<...>''', expr.owner)));
+		
 		
 		// here we could link to a builtin/generated function to facilitate easier code generation. For now just assert uintxx.
 		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u32TypeQID);
 		system.addConstraint(new SubtypeConstraint(accessorType, uint32Type, new ValidationIssue(Severity.ERROR, '''«accessor» (:: %s) must be an unsigned integer''', accessor)));	
 				
-		return innerType;
+		return selfType;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ValueRange vr) {

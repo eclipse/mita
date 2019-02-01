@@ -128,13 +128,13 @@ class StaticValueInferrer {
 		
 	static dispatch def Object infer(NumericalUnaryExpression expression, (EObject) => void inferenceBlockerAcceptor) {
 		val inner = expression.operand.infer(inferenceBlockerAcceptor);
-		if(inner === null || !(inner instanceof Integer || inner instanceof Float)) {
+		if(inner === null || !(inner instanceof Long || inner instanceof Float)) {
 			return null;
 		}
 		val op = expression.operator;
 		switch(op) {
 			case NEGATIVE:
-				if(inner instanceof Integer) {
+				if(inner instanceof Long) {
 					return (-1) * inner;	
 				} else if(inner instanceof Float) {
 					return (-1) * inner;	
