@@ -234,7 +234,7 @@ The run configuration starts a new Eclipse instance in which all the plugins fro
 - Make sure the option _Copy projects into workspace_ is *not* enabled. In that way you can work on the same files from your development and runtime workspace.
 - Click _Finish_.
 
-Your plaform project is now imported into your runtime workspace. Open the _myarduino.platform_ file. You should now see syntax highlighting. In particular, you should see an error marker on line 5, saying that the parameter _module_ is missing. Let's fix that by adding `module ""` to the platform definition: 
+Your plaform project is now imported into your runtime workspace. Open the _myarduino.platform_ file. On the first time, a dialog asking you to apply the Xtext nature will pop up. Close that dialog by pressing _Yes_. You should now see syntax highlighting. In particular, you should see an error marker on line 5, saying that the parameter _module_ is missing. Let's fix that by adding `module ""` to the platform definition: 
 ```
 package platforms.myarduino;
 
@@ -264,18 +264,19 @@ The next step is to register the new platform so that it can be imported in a Mi
    </extension>
 </plugin>
 ```
-This piece of XML code registers the platform defined in the _myarduino.platform_ file (see ResourceURI) under the ID `platforms.myarduino`.
+This piece of XML code registers the platform defined in the _myarduino.platform_ file (see ResourceURI) under the ID `platforms.myarduino`. In case your _MANIFEST.MF_ file contains an error now, open that file, click on the error marker and select the proposed solution. Save that file. Your project should have no errors.
+
 As XML is static, we need to restart the runtime IDE in order to load the new extension.
 
-After a restart, your new Arduino platform should be visible by any Mita application. We can test this by creating a Mita application file with _File -> New -> Other.._ and select _Mita -> Mita Application File_. As platform choose your new platform _platforms.myarduino_ and click on _Finish_. The newly created file should have the following contents:
+After a restart, your new Arduino platform should be visible by any Mita application. We can test this by creating a new Mita application:
+- Create a new C project with _File -> New -> Project.. -> C/C++ -> C Project_. Name it _my.arduino.app_ and click _Finish_.
+- In the new project, create a Mita application file with _File -> New -> Other.._ and select _Mita -> Mita Application File_. The _Platform_ drop-down should now contain an entry for your platform: _platforms.myarduino_. Select it and click on _Finish_. The newly created file should have the following contents:
 ```
 package my.pkg;
 
 import platforms.myarduino;
 ```
-Of course, this application does not do anything yet. However, we can check that your new platform definition is properly linked with your application by pressing the `[ctrl]` key and clicking on the import statement. A hyperlink should be created that opens your platform definition file.
-
-Please note, at this point your application file might contain an error due to missing code generator contributions. Please ignore this error for now. We will cover code generation soon.
+Of course, this application does not do anything yet. Please note, at this point your application file might contain an error due to missing code generator contributions. Please ignore this error for now. We will cover code generation soon.
 
 ### Writing a platform definition
 
@@ -325,6 +326,16 @@ platform Arduino {
 	has button_two
 }
 ```
+You can test this directly by adding some code to your Mita application in _my.arduino.app/application.mita_:
+```
+package my.pkg;
 
+import platforms.myarduino;
+
+every button_one.pressed {
+  println("Hello World");
+}
+```
 
 ### Writing platform code generators
+
