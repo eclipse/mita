@@ -204,24 +204,24 @@ Now that we have learned about the building blocks of platform definitions, let'
 
 ### Technical Setup
 
-First of all, we need to setup our development environment. The easiest way is to use the Eclipse Installer with our setup file. This will automatically download an Eclipse, clone this repository and import all projects into your workspace. The whole process is described in our [contribution guide](contributing.md#set-up-your-developer-workspace).
+First of all, we need to setup our development environment. The easiest way is to use the Eclipse Installer with our setup file. This will automatically download an Eclipse IDE, clone the Mita repository and import all projects into your workspace. The whole process is described in our [contribution guide](contributing.md#set-up-your-developer-workspace).
 
 Once you have your mita development workspace running, you can create a new project in which you are going to define your platform:
 - Go to _File -> New -> Project.._ and select _Plug-in Development -> Plug-in Project_. 
-- Click _Next>_ and specify a project name. In this example we choose _org.eclipse.mita.platform.arduino_. 
+- Click _Next >_ and specify a project name. In this example we choose _my.arduino.platform_. 
 - Click _Finish_.
 
-In the new project, create a folder _platform_ and a file _platform/arduino.platform_. Open the file _arduino.platform_ and insert the following code snippet:
+In the new project, create a new file with the ending _.platform_, such as _myarduino.platform_. Open the file _myarduino.platform_ and insert the following code snippet:
 
 ```
-package platforms.arduino;
+package platforms.myarduino;
 
 platform Arduino {
 
 }
 ```
 
-We will walk through the contents soon, but first of all let's make a further change to our development environment. You probably noticed that the platform file is opened as a plain text file. This is not very convenient as you will not get any content proposals or validation upon editing. To change this, there are two ways. (1) Install the latest Mita release into your development IDE or (2) start a runtime environment and import your platform project into your runtime workspace. Since at time of writing this guide there is no official Mita release yet, we will show you how to go the second way:
+We will define some proper contents soon, but first of all let's make a further change to our development environment. You probably noticed that the platform file is opened as a plain text file. This is not very convenient as you will not get any content proposals or validation upon editing. To change this, there are two ways: (1) Install the latest Mita release into your development IDE or (2) start a runtime environment and import your platform project into your runtime workspace. Since at time of writing this guide there is no official Mita release yet, we will show you how to go with the second way:
 - In your development IDE, click _Run -> Run Configurations.._. The _Run Configurations_ dialog will appear.
 - In the _Run Configurations_ dialog, right-click on _Eclipse Application_ and select _New_.
 - Give the new run configuration a name, e.g. _Mita Runtime_.
@@ -229,14 +229,14 @@ We will walk through the contents soon, but first of all let's make a further ch
 
 The run configuration starts a new Eclipse instance in which all the plugins from your development workspace are installed. In this runtime instance, you can import the platform project we just created:
 - On first startup, you will probably see a welcome page. Close the _Welcome_ tab.
-- Go to _File -> Import.._ and select _General -> Existing Project into Workspace_. Click _Next >_
-- Click on the top right _Browse..._ button to select the project you created above. If you do not know where this project is located on your file system, go back to your developer IDE, right-click on the project and select _Properties_. From the _Properties_ dialog you can copy the project location and paste it into the _Import_ dialog in your runtime IDE.
-- Make sure the option _Copy projects into workspace_ is *not* enabled. In that way you can work on the same files from your developer and runtime workspace.
-- Click _Finish_
+- Go to _File -> Import.._ and select _General -> Existing Project into Workspace_. Click _Next >_.
+- Click on the top right _Browse..._ button to select the project you created above. If you do not know where this project is located on your file system, go back to your development IDE, right-click on the project and select _Properties_. From the _Properties_ dialog you can copy the project location and paste it into the _Import_ dialog in your runtime IDE.
+- Make sure the option _Copy projects into workspace_ is *not* enabled. In that way you can work on the same files from your development and runtime workspace.
+- Click _Finish_.
 
-Your plaform project is now imported into your runtime workspace. Open the _arduino.platform_ file. You should now see syntax highlighting. In particular, you should see an error marker on line 5, saying that the parameter _module_ is missing. Let's fix that by adding _module ""_ to the platform definition: 
+Your plaform project is now imported into your runtime workspace. Open the _myarduino.platform_ file. You should now see syntax highlighting. In particular, you should see an error marker on line 5, saying that the parameter _module_ is missing. Let's fix that by adding `module ""` to the platform definition: 
 ```
-package platforms.arduino;
+package platforms.myarduino;
 
 platform Arduino {
   module ""
@@ -244,9 +244,44 @@ platform Arduino {
 ```
 Changes in your runtime workspace are also reflected in your developer workspace. This means you can switch between the two whatever fits better. Usually, it is best to write the platform definition in the runtime workspace because of the language features you get from the platform editor. However, writing code generators makes sense in the developer workspace as you will often refer to already existing Mita generators.
 
-### Walkthrough Arduino Platform
+The next step is to register the new platform so that it can be imported in a Mita application. To register the platform create a new file _plugin.xml_ in your platform project and paste the following contribution:
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.mita.library.extension.type_library">
+      <Library
+            description="Arduino Platform Definition"
+            id="platforms.myarduino"
+            name="Arduino Platform Definition"
+            optional="true"
+            version="1.0.0">
+         <ResourceURI
+               uri="platform:/plugin/my.arduino.platform/myarduino.platform">
+         </ResourceURI>
+      </Library>
+   </extension>
+</plugin>
+```
+This piece of XML code registers the platform defined in the _myarduino.platform_ file (see ResourceURI) under the ID `platforms.myarduino`.
+As XML is static, we need to restart the runtime IDE in order to load the new extension.
 
-Now that you have setup your delevoping environment, let's start writing your first platform definition. As a first step, we will define that our Arduino board comes with two buttons which emit events when they get pressed or released. Please recall, a platform is a collection of system resources accompanied by type definitions. System resources can be of the kind `sensor`, `connectivity`, `io` and `bus`. A button falls into the `sensor` category. Sensors can specify modalities and events. Modalities define the state of a sensor, they can be read in a Mita program. In the button case, it is a boolean that defines whether the button is currently pressed or not. Events are used in Mita as triggers in `every {..}` code blocks. A button sends an even when it gets pressed, or released. Hence, our button definition looks as follows:
+After a restart, your new Arduino platform should be visible by any Mita application. We can test this by creating a Mita application file with _File -> New -> Other.._ and select _Mita -> Mita Application File_. As platform choose your new platform _platforms.myarduino_ and click on _Finish_. The newly created file should have the following contents:
+```
+package my.pkg;
+
+import platforms.myarduino;
+```
+Of course, this application does not do anything yet. However, we can check that your new platform definition is properly linked with your application by pressing the `[ctrl]` key and clicking on the import statement. A hyperlink should be created that opens your platform definition file.
+
+Please note, at this point your application file might contain an error due to missing code generator contributions. Please ignore this error for now. We will cover code generation soon.
+
+### Writing a platform definition
+
+Now that you have set up your development environment, let's start writing your first platform definition. As a first step, we will define that our Arduino board comes with two buttons which emit events when they get pressed or released. Please recall, a platform is a collection of system resources accompanied by type definitions. System resources can be of the kind `sensor`, `connectivity`, `io` and `bus`. 
+
+A button falls into the `sensor` category. Sensors can specify modalities and events. Modalities define the state of a sensor, they can be read out in a Mita program. In the button case, it is a boolean that defines whether the button is currently pressed or not. Events are used in Mita as triggers in `every {..}` code blocks. A button sends an event when it gets pressed, or released. Hence, our button definition looks as follows:
 ```
 sensor Button {
 	generator ""
@@ -257,7 +292,7 @@ sensor Button {
 ```
 Ignore the `generator` part for now. We will cover that soon.
 
-Now that we have defined what a button is capable of, we can express that our platform consists of two of them. For this, we create an `alias` for each button and export them in the platform resource:
+Now that we have defined what a button is capable of, we can express that our platform consists of two of them. For this, we create an `alias` for each button and export it in the platform resource:
 
 ```
 alias button_one for Button
@@ -272,7 +307,7 @@ platform Arduino {
 
 Putting both parts together, our first version of the Arduino platform is defined as:
 ```
-package platforms.arduino;
+package platforms.myarduino;
 
 sensor Button {
 	generator ""
@@ -290,40 +325,6 @@ platform Arduino {
 	has button_two
 }
 ```
-Before we can test our first platform definition we need to register the new platform so that it can be imported in a Mita application. To register the platform create a new file _plugin.xml_ in your platform project and paste the following contribution:
-```
-<?xml version="1.0" encoding="UTF-8"?>
-<?eclipse version="3.4"?>
-<plugin>
-   <extension
-         point="org.eclipse.mita.library.extension.type_library">
-      <Library
-            description="Arduino Platform Definition"
-            id="platforms.arduino"
-            module="org.eclipse.mita.platform.arduino.platform.ArduinoPlatformGeneratorModule"
-            name="Arduino Platform Definition"
-            optional="true"
-            version="1.0.0">
-         <ResourceURI
-               uri="platform:/plugin/org.eclipse.mita.platform.arduino/platform/arduino.platform">
-         </ResourceURI>
-      </Library>
-   </extension>
-</plugin>
-```
-This piece of XML code registers the platform defined in the _arduino.platform_ file (see ResourceURI) under the ID `platforms.arduino`.
-As XML is static, we need to restart the runtime IDE in order to load the new extension.
 
-At this point, your new Arduino platform should be visible by any Mita application. We can test by creating a Mita application file with _File -> New -> Other.._ and select _Mita -> Mita Application File_. As platform choose _platforms.arduino_ and click on _Finish_. In the newly created application file we can now type:
-```
-package my.pkg;
 
-import platforms.arduino;
-
-every button_one.pressed {
-  println("Hello World");
-}
-```
-You can ignore the error in the first line, they are related to code generation which obviously does not work yet, as we did not contribute any code generators yet. You can press `ctrl` and click on `pressed` to directly jump into the event definition in _arduino.platform_.
-
-### Building Blocks
+### Writing platform code generators
