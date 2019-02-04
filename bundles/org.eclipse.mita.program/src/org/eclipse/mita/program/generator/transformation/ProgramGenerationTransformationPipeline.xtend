@@ -30,6 +30,7 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 	@Inject PrepareArrayRuntimeChecksStage prepareArrayRuntimeChecksStage
 	@Inject UnravelLiteralArraysStage unravelLiteralArrayReturnStage
 	@Inject EnforceOperatorPrecedenceStage enforceOperatorPrecedenceStage
+	@Inject UnravelFunctionCallsStage unravelFunctionCallsStage
 
 	def transform(Program program) {
 		val stages = getOrderedStages();
@@ -70,7 +71,8 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 			prepareLoopForFunctionUnvravelingStage,
 			prepareArrayRuntimeChecksStage,
 			unravelLiteralArrayReturnStage,
-			enforceOperatorPrecedenceStage
+			enforceOperatorPrecedenceStage,
+			unravelFunctionCallsStage
 		].sortBy[ x | x.order ];
 	}
 

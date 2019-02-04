@@ -440,8 +440,12 @@ class GeneratorUtils {
 	}
 
 	dispatch def CodeFragment getStructType(AtomicType singleton, EObject context) {
-		//singletons don't contain actual data
-		return codeFragmentProvider.create('''void''').addHeaderInclude(context, singleton);
+		if(TypesUtil.getConstraintSystem(context.eResource).getUserData(singleton, BaseConstraintFactory.ECLASS_KEY) == "Singleton") {
+			//singletons don't contain actual data
+			return codeFragmentProvider.create('''void''').addHeaderInclude(context, singleton);
+		}
+		// otherwise this is something like "bool" 
+		return codeFragmentProvider.create('''«singleton.name»''');
 	}
 	dispatch def CodeFragment getStructType(ProdType productType, EObject context) {
 		return codeFragmentProvider.create('''«productType.name»_t''').addHeaderInclude(context, productType);

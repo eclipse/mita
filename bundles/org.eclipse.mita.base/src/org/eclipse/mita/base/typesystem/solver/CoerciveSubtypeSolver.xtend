@@ -167,7 +167,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			if(!solution.issues.empty) {
 				issues += solution.issues;
-				if(solution?.constraints?.constraints.nullOrEmpty || solution?.solution?.content?.entrySet.nullOrEmpty) {
+				if(solution?.constraintSystem?.constraints.nullOrEmpty || solution?.solution?.content?.entrySet.nullOrEmpty) {
 					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, issues);
 				}
 			}
@@ -176,7 +176,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			debugTimer.stop("solveSubtypeConstraints." + (i + 2));
 			
 			debugTimer.start("substitute." + (i + 2));
-			currentSystem = currentSubstitution.apply(result.constraints);
+			currentSystem = currentSubstitution.apply(result.constraintSystem);
 			debugTimer.stop("substitute." + (i + 2));
 		}
 		debugTimer.stop("solveloop")

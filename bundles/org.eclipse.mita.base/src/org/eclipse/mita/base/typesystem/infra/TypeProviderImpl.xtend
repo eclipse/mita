@@ -11,7 +11,7 @@ class TypeProviderImpl implements ITypeProvider {
 		val resourceSet = obj.eResource.resourceSet;
 		if(resourceSet instanceof MitaResourceSet) {
 			val solution = resourceSet.latestSolution;
-			val system = solution?.constraints;
+			val system = solution?.getConstraintSystem;
 			val typeVar = system?.getTypeVariable(obj);
 			val result = solution?.solution?.apply(typeVar);
 			if(!(result instanceof TypeVariable)) {
