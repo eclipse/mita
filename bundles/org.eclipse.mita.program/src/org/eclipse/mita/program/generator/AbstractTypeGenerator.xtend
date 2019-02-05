@@ -58,11 +58,10 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Checks if this type supports a particular expression within its type hierarchy
 	 */
-	def boolean checkExpressionSupport(AbstractType type, AssignmentOperator operator, AbstractType otherType) {
-		val obj = type.origin ?: otherType.origin;
-		val resource = obj.eResource;
+	def boolean checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
+		val resource = context.eResource;
 		val cs = if(resource instanceof MitaBaseResource) resource.latestSolution.getConstraintSystem;
-		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(cs, type.origin, otherType, type);
+		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(cs, context, otherType, type);
 	}
 	
 	/**

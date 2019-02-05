@@ -30,9 +30,6 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		super(errorMessage);
 		this.instance = instance;
 		this.typeScheme = typeScheme;
-		if(this.toString == "SomeGenType<uint32> ⩽ ∀[f_0.8].SomeGenType<f_0.8>") {
-			print("")
-		}
 	}
 		
 	override getActiveVars() {

@@ -105,7 +105,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		// if we assigned for example a: int32? = 1, right has integer, left has optional<int32>. so we check if left.args.head ~ right. Also we short-circuit none and some and supply a default value.
 		val initWithImmediate = initIsGeneratedFunction 
 		|| right === null 
-		|| (!(firstTypeArgOrigin instanceof GeneratedType) && firstTypeArgType.checkExpressionSupport(AssignmentOperator.ASSIGN, initType));
+		|| (!(firstTypeArgOrigin instanceof GeneratedType) && (left ?: right).checkExpressionSupport(firstTypeArgType, AssignmentOperator.ASSIGN, initType));
 		
 		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, null)») ''');
 		

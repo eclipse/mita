@@ -46,7 +46,7 @@ export generated fn <T> length(self : array<T>) : uint32 generator "org.eclipse.
 // * 
 // * A list is an ordered collection of elements which offers random read/write access.
 // */
-//type ringbuffer<T> subtype-of iterable {
+//type ringbuffer<T> {
 //	property size : uint32
 //}
 //
@@ -56,7 +56,7 @@ export generated fn <T> length(self : array<T>) : uint32 generator "org.eclipse.
 // * A stack is an ordered collection of elements where elements can be placed on top
 // * or removed from the top of the stack.
 // */
-//type stack<T> subtype-of iterable {
+//type stack<T> {
 //	property size : uint32
 //}
 

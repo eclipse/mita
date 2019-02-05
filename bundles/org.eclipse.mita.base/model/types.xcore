@@ -64,7 +64,7 @@ abstract class Type extends PackageMember {
 		return this;
 	}
 	
-	refers Type[] superTypes
+	//refers Type[] superTypes
 	contains TypeConstraint[] constraint
 	contains TypeKind typeKind opposite kindOf
 	
@@ -144,7 +144,7 @@ class StructuralParameter extends Parameter {
 			return st;
 		}
 	}
-	contains transient TypeAccessor accessor
+	contains TypeAccessor accessor
 }
 
 class TypeConstructor extends VirtualFunction {
@@ -240,9 +240,9 @@ class ComplexType extends Type, GenericElement {
 		if (tpe === null || visited.contains(tpe))
 			return;
 		if (tpe instanceof ComplexType) {
-			for (Type superType : tpe.getSuperTypes()) {
-				collectFeatures(superType, features, visited);
-			}
+//			for (Type superType : tpe.getSuperTypes()) {
+//				collectFeatures(superType, features, visited);
+//			}
 			features.addAll(tpe.getFeatures());
 		}
 		visited.add(tpe);
@@ -250,7 +250,7 @@ class ComplexType extends Type, GenericElement {
 }
 class StructuralType extends ComplexType {
 	contains StructuralParameter[] parameters
-	contains transient TypeConstructor constructor
+	contains TypeConstructor constructor
 }
 
 class GenericElement extends NamedElement {
@@ -462,15 +462,10 @@ class SumAlternative extends StructuralType, GeneratedObject, HasAccessors {
 		return this;
 	}
 	
-	op Type[] getSuperTypes() {
-		generateMembers();
-		return super.superTypes
-	}
-	
 	op void generateMembers() {
-		if (!super.superTypes.contains(sumType)) {
-			super.superTypes.add(sumType);
-		}
+//		if (!super.superTypes.contains(sumType)) {
+//			super.superTypes.add(sumType);
+//		}
 	}
 }
 class Singleton extends SumAlternative {

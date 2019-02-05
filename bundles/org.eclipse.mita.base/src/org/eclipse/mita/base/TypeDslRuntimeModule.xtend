@@ -19,6 +19,7 @@ package org.eclipse.mita.base
 import com.google.inject.Binder
 import com.google.inject.name.Names
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
+import org.eclipse.mita.base.scoping.BaseImportScopeProvider
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaContainerManager
@@ -34,6 +35,8 @@ import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.linking.lazy.LazyURIEncoder
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
+import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 
 class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 
@@ -66,5 +69,12 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 	
 	override configureUseIndexFragmentsForLazyLinking(Binder binder) {
 		binder.bind(boolean).annotatedWith(Names.named(LazyURIEncoder.USE_INDEXED_FRAGMENTS_BINDING)).toInstance(false);
+	}
+	
+	override configureIScopeProviderDelegate(Binder binder) {
+		binder.bind(IScopeProvider)
+                .annotatedWith(Names
+                        .named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
+                .to(BaseImportScopeProvider);
 	}
 }

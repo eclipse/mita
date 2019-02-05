@@ -28,6 +28,9 @@ import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.VirtualFunction
+import org.eclipse.mita.base.types.GeneratedTypeConstructor
+import org.eclipse.mita.base.types.TypeConstructor
 
 class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	
@@ -64,11 +67,16 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 					return false;
 				}
 				
+				if(ref instanceof VirtualFunction) {
+					if(ref instanceof TypeConstructor && !(ref instanceof GeneratedTypeConstructor)) {
+						return false;
+					}
+					return true;
+				}
 				return true;
 			}
 			
-			return (ref instanceof ComplexType && !(ref instanceof SumType || ref instanceof StructureType)) 
-				|| ref instanceof GeneratedType
+			return false;
 		}
 		
 		return false;

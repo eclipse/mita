@@ -120,6 +120,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.model.ModelUtils.getRealType
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
+import org.eclipse.mita.base.types.TypesUtil
 
 class StatementGenerator {
 
@@ -357,7 +358,17 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, SumSubTypeConstructor cons, Iterable<Argument> arguments) {
 		val eConstructingType = cons.eContainer;
 		val constructingType = BaseUtils.getType(eConstructingType);
-		val constructedType = BaseUtils.getType(callSite);
+		// the result destination of this expression has type of either the constructor or its parent sum type.
+		// if this expression is part of a return statement then the sum type would be inferred at the function definition.
+		// TODO handle nested sum types via coercions.
+		val EObject expressionDestination = if(EcoreUtil2.getContainerOfType(callSite, ReturnStatement) !== null) {
+			EcoreUtil2.getContainerOfType(callSite, Operation)?.typeSpecifier;
+		} 
+		else {
+			// things like assignments etc.
+			EcoreUtil2.getContainerOfType(callSite, AbstractStatement);	
+		}
+		val constructedType = BaseUtils.getType(expressionDestination);
 		if(cons.eContainer instanceof SumAlternative) {
 			val altAccessor = constructingType.getNameInStruct(callSite);
 			val eSumType = eConstructingType.eContainer;
@@ -370,6 +381,10 @@ class StatementGenerator {
 			
 			val returnTypeIsSumType = constructedType instanceof org.eclipse.mita.base.typesystem.types.SumType;
 			
+			val constructingTypeIsSingleton = TypesUtil
+				 .getConstraintSystem(callSite.eResource)
+				?.getUserData(constructingType, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
+			
 			val constructedStruct = codeFragmentProvider.create('''
 			«IF returnTypeIsSumType || needCast»(«dataType»)«ENDIF» {
 				«FOR i_arg: arguments.tail.indexed»
@@ -381,13 +396,12 @@ class StatementGenerator {
 			return '''
 			«IF returnTypeIsSumType»
 				«IF needCast»(«sumType.getStructType(callSite)») «ENDIF»{
-					.tag = «constructingType.getEnumName(callSite)»«IF !(constructingType instanceof Singleton)», ««« there is no other field for singletons
+					.tag = «constructingType.getEnumName(callSite)»«IF !(constructingTypeIsSingleton)», ««« there is no other field for singletons
 	
 					««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
 	
-	
-					.data.«altAccessor» = «constructedStruct»
-				}«ENDIF»
+					.data.«altAccessor» = «constructedStruct»«ENDIF»
+				}
 			«ELSE»
 				«constructedStruct»
 			«ENDIF»
@@ -492,7 +506,7 @@ class StatementGenerator {
 		val type = BaseUtils.getType(stmt);
 		if (isGeneratedType(stmt.eResource, type)) {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
-			if (generator !== null && generator.checkExpressionSupport(type, null, null)) {
+			if (generator !== null && generator.checkExpressionSupport(stmt, type, null, null)) {
 				return '''«generator.generateExpression(type, stmt, null, null)»''';
 			} else {
 				throw new CoreException(
@@ -1006,6 +1020,24 @@ class StatementGenerator {
 	}
 
 	private def getCtype(AbstractType type, EObject context) {
-		if(type instanceof TypeVariable) codeFragmentProvider.create('''void*''') else typeGenerator.code(context, type);
+		val result = if(type instanceof TypeVariable) {
+			codeFragmentProvider.create('''void*''') 
+		} 
+		else {
+			typeGenerator.code(context, type);	
+		}
+		val includeHeader = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.INCLUDE_HEADER_KEY);
+		val userIncludeStr = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.INCLUDE_IS_USER_INCLUDE_KEY);
+		val userInclude = if(!userIncludeStr.nullOrEmpty) {
+			Boolean.getBoolean(userIncludeStr);
+		}
+		else {
+			false;
+		}
+		if(includeHeader !== null) {
+			result.addHeader(includeHeader, userInclude);
+		}
+		return result;
+		
 	}
 }

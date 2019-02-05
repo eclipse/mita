@@ -109,6 +109,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 	public static final String PARENT_NAME_KEY = "parentName";
 	public static final String ECLASS_KEY = "eClass";
 	public static final String DEFINING_RESOURCE_KEY = "definingResource";
+	public static final String INCLUDE_HEADER_KEY = "includeHeader";
+	public static final String INCLUDE_IS_USER_INCLUDE_KEY = "includeIsUserInclude";
 	
 	override ConstraintSystem create(EObject context) {		
 		val result = constraintSystemProvider.get();
@@ -613,6 +615,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, NativeType type) {
 		val nativeType = typeRegistry.translateNativeType(type);
 		system.typeTable.put(QualifiedName.create(type.name), nativeType);
+		if(!type.header.nullOrEmpty) {
+			system.putUserData(nativeType, INCLUDE_HEADER_KEY, type.header);
+			system.putUserData(nativeType, INCLUDE_IS_USER_INCLUDE_KEY, "false");
+		}
 		return nativeType;
 	}
 	
@@ -693,7 +699,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.computeConstraints(it)
 		].force;
 
-		system.computeConstraints(genType.constructor);			
+		system.computeConstraints(genType.constructor);
 		val result = if(typeParameters.empty) {
 			new AtomicType(genType, genType.name);
 		}

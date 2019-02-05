@@ -39,6 +39,7 @@ import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.PreventRecursion
@@ -71,7 +72,6 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import org.eclipse.xtext.validation.EValidatorRegistrar
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -150,7 +150,17 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
-		
+	
+	@Check(CheckType.NORMAL)
+	def checkFunctionsReturnSomething(FunctionDefinition funDef) {
+		val returnType = BaseUtils.getType(funDef.typeSpecifier);
+		if(returnType !== null && returnType.name != "void") {
+			if(funDef.eAllContents.filter(ReturnStatement).empty) {
+				error(String.format(MISSING_RETURN_VALUE_MSG, returnType), funDef, TypesPackage.eINSTANCE.namedElement_Name, MISSING_RETURN_VALUE_CODE);
+			}
+		}
+	}
+	
 	@Check(CheckType.NORMAL)
 	def checkElementSizeInference(VariableDeclaration variable) {[|
 		if(EcoreUtil2.getContainerOfType(variable, SystemResourceSetup) !== null) return;
@@ -528,7 +538,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			return;
 		}
 		
-		val retType = BaseUtils.getType(funDef);
+		val retType = BaseUtils.getType(funDef.typeSpecifier);
 		if(TypesUtil.isGeneratedType(stmt, retType) && retType.name == "optional") {
 			if(stmt.value instanceof PrimitiveValueExpression) {
 				error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "returns"), stmt, null);

@@ -150,6 +150,9 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			return false;
 		}
 		val QualifiedName qualifiedName = nameProvider.getFullyQualifiedName(eObject)
+		if(qualifiedName?.toString?.contains("Bw_523")) {
+			print("")
+		}
 		if (qualifiedName === null) {
 			nameProvider.getFullyQualifiedName(eObject)
 			return false;

@@ -8,12 +8,15 @@ import java.util.Map
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
-import org.eclipse.emf.ecore.impl.BasicEObjectImpl
+import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.impl.EObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
+import org.eclipse.mita.base.types.NullTypeSpecifier
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
@@ -22,7 +25,6 @@ import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.DebugTimer
-import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource
@@ -219,7 +221,20 @@ class MitaBaseResource extends LazyLinkingResource {
 								TypeAdapter.set(origin, type);
 							}
 							if(type instanceof BottomType) {
-								solution.issues += new ValidationIssue(type.message, origin)
+								val Pair<EObject, EStructuralFeature> errorSource = if(origin !== null && origin.eResource == obj.eResource) {
+									if(origin instanceof NullTypeSpecifier) {
+										origin.eContainer -> null;
+									}
+									else {
+										origin -> null;
+									}
+								}
+								else if(obj instanceof PackageAssociation) {
+									obj as EObject -> TypesPackage.eINSTANCE.packageAssociation_Name as EStructuralFeature;
+								}
+								if(errorSource !== null) {
+									solution.issues += new ValidationIssue(Severity.ERROR, type.message, errorSource.key, errorSource.value, "");
+								}
 							}
 						}
 					]
@@ -228,7 +243,7 @@ class MitaBaseResource extends LazyLinkingResource {
 					resource.cancelIndicator.canceled = true;
 					val issues = solution.issues.groupBy[it.message->(if(it.target?.eIsProxy) {(it.target as EObjectImpl).eProxyURI} else {it.target})].values.map[it.head];
 					resource.errors += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[
-						if(it.message == "Function con_SomeGenType cannot be used here: %s, %s") {
+						if(it.message == "Function Range_2G cannot be used here") {
 							print("")
 						}
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);

@@ -21,7 +21,7 @@ import org.eclipse.mita.program.generator.AbstractTypeGenerator
 
 class VirtualTypeGenerator extends AbstractTypeGenerator {
 	
-	override checkExpressionSupport(AbstractType type, AssignmentOperator operator, AbstractType otherType) {
+	override checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
 		return false;
 	}
 	

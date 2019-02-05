@@ -14,12 +14,21 @@ fn foo11() {
 	return 17;
 }
 fn callsFoo11() {
-	// XPECT inferredType --> xint8
+	// this error is because of a lot of type problems that lead to problems infering a common type for "foo11()". 
+	// It would have to be a subtype of things like optional<int32>, xint8, void, float and bottom(), which is very hard to be.
+	// If you look at ReturnTest.mita.xt you can see that type inference actually works here if you eliminate some of the more glaring errors.
+	// XPECT errors --> "Function foo11 cannot be used here: f_194.0, xint8" at "foo11"
 	let x = foo11();
-} 
+}
 
 fn callFoo11() {
 	var i : int32 = foo11();
+	/* XPECT errors ---
+		"Assignment operator '=' may only be applied on compatible types, not on bool and f_216.0." at "var b : bool = foo11();"
+		"Function foo11 cannot be used here: f_216.0, f_215.0" at "foo11"
+		"Function foo11 cannot be used here: f_216.0, xint8" at "foo11"
+	--- */
+	var b : bool = foo11();
 }
 
 // for multiple return statements, the common type is inferred
@@ -34,10 +43,10 @@ fn foo12() {
 fn callFoo12() {
 	var d : double = foo12();
 	/* XPECT errors ---
-		"Function foo12 cannot be used here: Return type incompatible: f64 is not subtype of f_242.0" at "foo12"
-		"Function foo12 cannot be used here: Return type incompatible: f_215.0 is not subtype of f_242.0" at "foo12"
-		"Function foo12 cannot be used here: f_243.0, f_242.0" at "foo12"
-		"Function foo12 cannot be used here: int32, f_242.0" at "foo12"
+		"Function foo12 cannot be used here: Return type incompatible: f64 is not subtype of ⊥ (Cyclic dependencies could not be resolved: xint8 -> int32 -> xint8)" at "foo12"
+		"Function foo12 cannot be used here: Return type incompatible: f_225.0 is not subtype of f_252.0" at "foo12"
+		"Function foo12 cannot be used here: f_253.0, f_252.0" at "foo12"
+		"Function foo12 cannot be used here: int32, ⊥ (Cyclic dependencies could not be resolved: xint8 -> int32 -> xint8)" at "foo12"
 	--- */
 	var j : int32 = foo12();
 }
@@ -45,6 +54,42 @@ fn callFoo12() {
 // XPECT errors --> "The operation must return a value of type bool." at "noRet"
 fn noRet() : bool {}
 
+fn incompatibleReturnTypes() : int32 {
+	if (true) {
+		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of int32" at "return "";"
+		return "";
+	} else {
+		return 18;
+	}
+	// XPECT errors --> "Can't return prim»b»true (:: bool) since it's not of a subtype of int32" at "return true;"
+	return true;
+}
+
+// XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "impossibleInference"
+fn impossibleInference() {
+	if (true) {
+		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of f_287.0" at "return "";"
+		return "";
+	}
+	// XPECT errors --> "Can't return prim»b»true (:: bool) since it's not of a subtype of f_287.0" at "return true;"
+	return true;
+}
+
+fn returnInVoid() : void {
+	if(true) {
+		return;
+	} else {
+		// XPECT errors --> "Can't return prim»i»1 (:: xint8) since it's not of a subtype of void" at "return 1;"
+		return 1;
+	}
+}
+
+fn returnWithoutValudInNoVoidFunction() : uint32 {
+	if(true) {
+		// XPECT errors --> "Can't return  (:: void) since it's not of a subtype of uint32" at "return;"
+		return;
+	}
+}
 
 struct vec2d_t {
     var x: int32;
@@ -166,30 +211,4 @@ fn returnOptional5(): int32? {
 	return some(1);
 }
 
-//XPECT noCompileErrors
-fn testComplexReturns() {
-  var x1  = returnStruct1();
-  var x2  = returnStruct2();
-  var x3  = returnSumType0();
-  var x4  = returnSumType1();
-  var x5  = returnSumType2();
-  var x6  = returnSumType3();
-  var x7  = returnSumType4();
-  var x8  = returnSumType5();
-  var x9  = returnSumType6();
-  var x10 = returnSumType7();
-  var x11 = returnSumType8();
-  var x12 = returnSumType9();
-  var x13 = returnArray1();
-  var x14 = returnArray2();
-  var x15 = returnString1();
-  var x16 = returnString2();
-  var x17 = returnOptional0();
-  var x18 = returnOptional1();
-  var x19 = returnOptional2();
-  // this isn't implemented yet, but explicitly so
-  //var x20 = returnOptional3();
-  var x21 = returnOptional4();
-  var x22 = returnOptional5();
-}
 

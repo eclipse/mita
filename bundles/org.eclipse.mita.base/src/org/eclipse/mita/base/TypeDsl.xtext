@@ -74,7 +74,7 @@ ExceptionTypeDeclaration:
 GeneratedType returns GeneratedType:
 	{GeneratedType} 
 	(exported?='export')?
-	'generated' 'type' name=ID ('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')? ('subtype-of' superTypes+=[ComplexType|QID])?
+	'generated' 'type' name=ID ('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')?
 		'generator' generator=STRING
 		'size-inferrer' sizeInferrer=STRING
 		('validator' validator=STRING)?

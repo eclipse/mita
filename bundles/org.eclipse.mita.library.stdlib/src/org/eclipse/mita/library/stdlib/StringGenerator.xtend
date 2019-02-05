@@ -75,7 +75,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override checkExpressionSupport(AbstractType type, AssignmentOperator operator, AbstractType otherType) {
+	override checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
 		var result = false;
 
 		// inline expression support

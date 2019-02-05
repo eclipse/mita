@@ -108,7 +108,7 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 
 	protected IScope addTypeSystemScope(Resource context, EReference reference, IScope superScope) {
 		superScope = new TypeSystemAwareScope(superScope, typeSystem, qualifiedNameProvider,
-				reference.getEReferenceType(), reference == TypesPackage.Literals.TYPE__SUPER_TYPES);
+				reference.getEReferenceType(), false);
 		return superScope;
 	}
 }

@@ -14,25 +14,31 @@
 package org.eclipse.mita.program.scoping
 
 import com.google.inject.Inject
+import java.util.List
+import org.eclipse.emf.common.util.URI
+import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.scoping.BaseImportScopeProvider
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.IContainer
+import org.eclipse.xtext.resource.IEObjectDescription
+import org.eclipse.xtext.resource.ISelectable
 import org.eclipse.xtext.scoping.IScope
+import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
-import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
+import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.scoping.impl.MultimapBasedSelectable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.xtext.scoping.Scopes
-import org.eclipse.mita.base.expressions.ExpressionsPackage
 
-class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProvider {
+class ProgramDslImportScopeProvider extends BaseImportScopeProvider {
 
 	@Inject
 	ResourceDescriptionsProvider resourceDescriptionsProvider;
@@ -80,6 +86,5 @@ class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProv
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		val exportedObjects = visibleContainers.map[x|x.exportedObjects].flatten().force();
 		return new MultimapBasedSelectable(exportedObjects);
-	}
-
+	}	
 }

@@ -43,10 +43,11 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.emf.ecore.util.EcoreUtil.Copier;
 import org.eclipse.mita.base.expressions.ElementReferenceExpression;
-import org.eclipse.mita.base.expressions.FeatureCall;
 import org.eclipse.mita.base.types.ImportStatement;
 import org.eclipse.mita.base.types.PresentTypeSpecifier;
+import org.eclipse.mita.base.types.SumAlternative;
 import org.eclipse.mita.base.types.Type;
+import org.eclipse.mita.base.types.TypeKind;
 import org.eclipse.mita.base.util.CopySourceAdapter;
 import org.eclipse.mita.program.Program;
 import org.eclipse.mita.program.ProgramFactory;
@@ -90,7 +91,7 @@ public class GenerationTest {
 
 	@Inject
 	ExternalCommandExecutor exec;
-	
+
 	@Inject
 	GeneratorUtils genUtils;
 
@@ -99,22 +100,27 @@ public class GenerationTest {
 		if ("true".equals(System.getenv("DISABLE_NO_COMPILE_ERRORS"))) {
 			return;
 		}
-		try {
-			IProject project = helper.createEmptyTestProject();
-			Resource resource = createProgram(contextObject);
-			project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+		new Runnable() {
+			public void run() {
+				try {
 
-			resource.save(Collections.emptyMap());
+					IProject project = helper.createEmptyTestProject();
+					Resource resource = createProgram(contextObject);
+					project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 
-			project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
+					resource.save(Collections.emptyMap());
 
-			assertGeneratedCodeExists(project, resource);
+					project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
 
-			compile(project);
-		} catch (CoreException | IOException e) {
-			e.printStackTrace();
-			Assert.fail("Error in test setup: " + e.getMessage());
-		}
+					assertGeneratedCodeExists(project, resource);
+
+					compile(project);
+				} catch (CoreException | IOException e) {
+					e.printStackTrace();
+					Assert.fail("Error in test setup: " + e.getMessage());
+				}
+			}
+		}.run();
 	}
 
 	private void assertGeneratedCodeExists(IProject project, Resource resource) {
@@ -126,8 +132,7 @@ public class GenerationTest {
 
 	private void compile(IProject project) throws CoreException {
 		try {
-			exec.execute(Collections.singletonList("make"),
-					new File(project.getFolder("src-gen").getLocationURI()));
+			exec.execute(Collections.singletonList("make"), new File(project.getFolder("src-gen").getLocationURI()));
 		} catch (Exception e) {
 			String code = getGeneratedSource(project);
 			Assert.fail(e.getMessage() + "\n\n Generated Code:\n" + code);
@@ -154,15 +159,15 @@ public class GenerationTest {
 	private void linkOrigin(EObject copy, EObject origin) {
 		copy.eAdapters().add(new CopySourceAdapter(origin));
 	}
-	
+
 	private Resource createProgram(EObject contextObject) {
 		Copier copier = new Copier();
 		Program originalProgram = (Program) getRootContainer(contextObject);
 		copier.copy(originalProgram);
 		copier.copyReferences();
 		copier.forEach((o, c) -> {
-			 linkOrigin(c, o);
-		}); 
+			linkOrigin(c, o);
+		});
 
 		Program program = ProgramFactory.eINSTANCE.createProgram();
 		program.setName("unittest");
@@ -170,7 +175,24 @@ public class GenerationTest {
 		for (ImportStatement i : originalProgram.getImports()) {
 			addToContainingFeature(program, i, copier.get(i));
 		}
+		
+		copyReferences(contextObject, copier, program);
+		
+		ResourceSet set = resourceSetProvider.get();
+		Resource resource = set.createResource(URI.createPlatformResourceURI("unittestprj/application.mita", true));
+		resource.getContents().add(program);
+		((LazyLinkingResource) resource).resolveLazyCrossReferences(CancelIndicator.NullImpl);
 
+		return resource;
+	}
+	
+	private boolean copyObject(EObject t) {
+		return !(
+			   t instanceof SumAlternative	
+			|| t instanceof TypeKind);
+	}
+	
+	private void copyReferences(EObject contextObject, Copier copier, Program program) {		
 		// Add all references from the snippet under test
 		TreeIterator<EObject> eAllContents = contextObject.eAllContents();
 		while (eAllContents.hasNext()) {
@@ -180,22 +202,12 @@ public class GenerationTest {
 				EObject referencedObject = ref.getReference();
 				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(referencedObject))
 						&& !EcoreUtil.isAncestor(contextObject, referencedObject)) {
-					addToContainingFeature(program, referencedObject, copier.get(referencedObject));
-				}
-			}
-			if (next instanceof FeatureCall) {
-				FeatureCall feature = (FeatureCall) next;
-				if (feature.isOperationCall()) {
-					EObject featureObject = feature.getReference();
-					if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(featureObject))
-							&& !EcoreUtil.isAncestor(contextObject, featureObject)) {
-						addToContainingFeature(program, featureObject, copier.get(featureObject));
-					}
+					copyReferences(referencedObject, copier, program);
 				}
 			}
 			if (next instanceof PresentTypeSpecifier) {
 				Type type = ((PresentTypeSpecifier) next).getType();
-				if (EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(type))) {
+				if (copyObject(type) && EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(type))) {
 					program.getTypes().add((Type) copier.get(type));
 				}
 			}
@@ -207,16 +219,15 @@ public class GenerationTest {
 				}
 			}
 		}
-		// Add snippet under test
-		addToContainingFeature(program, contextObject, copier.get(contextObject));
-
-		ResourceSet set = resourceSetProvider.get();
-		Resource resource = set.createResource(URI.createPlatformResourceURI("unittestprj/application.mita", true));
-		resource.getContents().add(program);
-		((LazyLinkingResource) resource).resolveLazyCrossReferences(CancelIndicator.NullImpl);
-
-		return resource;
+		
+		// SumAlternatives are added by their parent
+		if(copyObject(contextObject)) {
+			// Add snippet under test
+			addToContainingFeature(program, contextObject, copier.get(contextObject));
+		}
 	}
+		
+		
 
 	private void addToContainingFeature(Program program, EObject original, EObject copy) {
 		EStructuralFeature containingFeature = original.eContainingFeature();

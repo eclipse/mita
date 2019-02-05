@@ -209,17 +209,6 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	}
 
 	@Check
-	public void checkTypeNotExtendsItself(ComplexType type) {
-		EList<Type> superTypes = type.getSuperTypes();
-		for (Type superType : superTypes) {
-			if (superType.equals(type)) {
-				error(String.format(ERROR_CYCLE_DETECTED_MSG, type.getName()), type,
-						TypesPackage.Literals.TYPE__SUPER_TYPES, ERROR_CYCLE_DETECTED_CODE);
-			}
-		}
-	}
-
-	@Check
 	public void checkDuplicateParameterAssignment(ArgumentExpression exp) {
 		Set<Parameter> assignedParameters = new HashSet<>();
 		EList<Argument> arguments = exp.getArguments();

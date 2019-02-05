@@ -441,7 +441,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				if(context.isOperationCall && context.arguments.size > 0) {
 					val owner = context.arguments.head.value;
 					
-					val ownerText = NodeModelUtils.findNodesForFeature(owner, ref)?.head?.text ?: "";
+					val ownerText = BaseUtils.getText(owner, ref) ?: "";
 					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
 					new ImportScope(#[normalizer], superScope, null, null, false);
 					

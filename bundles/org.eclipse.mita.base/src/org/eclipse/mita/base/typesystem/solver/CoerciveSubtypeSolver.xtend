@@ -270,9 +270,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				debugTimer.stop("atomicity");
 				
 				debugTimer.start(constraint.class.simpleName);
-				if(constraint.toString == "array<f_447.0> ⩽ f_479.0") {
-					print("")
-				}
 				val simplification = doSimplify(resultSystem, resultSub, typeResolutionOrigin, constraint);
 				debugTimer.stop(constraint.class.simpleName);
 				
@@ -696,9 +693,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
-			if(v.toString == "f_70.0") {
-				print("")
-			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
 			val supremum = graph.getSupremum(system, predecessors);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);

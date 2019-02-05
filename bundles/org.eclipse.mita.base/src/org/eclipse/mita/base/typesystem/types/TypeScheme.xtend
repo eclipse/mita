@@ -21,9 +21,6 @@ class TypeScheme extends AbstractType {
 		super(origin, on.name);
 		this.vars = vars;
 		this.on = on;
-		if(this.toString == "∀[f_0.8].SomeGenType<f_0.8>") {
-			print("")
-		}
 	}
 	
 	override Tree<AbstractType> quote() {

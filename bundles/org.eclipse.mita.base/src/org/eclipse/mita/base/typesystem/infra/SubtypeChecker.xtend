@@ -48,7 +48,11 @@ class SubtypeChecker {
 	}
 	
 	public static def isExplicitSubtypeOf(Graph<AbstractType> explicitRelations, AbstractType sub, AbstractType top) {
-		return explicitRelations.reverseMap.get(sub)
+		val nodeIdxs = explicitRelations.reverseMap.get(sub);
+		if(nodeIdxs === null) {
+			return false;
+		}
+		return nodeIdxs
 			.flatMap[explicitRelations.outgoing.get(it)]
 			.map[explicitRelations.nodeIndex.get(it)]
 			.exists[it == top]

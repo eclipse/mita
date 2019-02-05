@@ -38,7 +38,7 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean dontTest = true;
-		private static final String test = "Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_685.0";
+		private static final String test = "Function Range_2G cannot be used here";
 		
 		public ValidationIssue(Severity severity, String message, String issueCode) {
 			this(severity, message, null, null, issueCode);
