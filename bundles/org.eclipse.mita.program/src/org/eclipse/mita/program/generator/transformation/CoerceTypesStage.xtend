@@ -28,7 +28,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 			val resource = ProgramCopier.getOrigin(obj).eResource;
 			if(resource instanceof MitaBaseResource) {
 				val typingSolution = resource.latestSolution;
-				val subtypeConstraints = typingSolution?.constraints.constraints?.filter(SubtypeConstraint);
+				val subtypeConstraints = typingSolution?.getConstraintSystem?.constraints?.filter(SubtypeConstraint);
 				subtypeConstraints.forEach[
 					if(it.subType != it.superType) {
 						// coerce subtype to supertype

@@ -447,8 +447,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		// here we could link to a builtin/generated function to facilitate easier code generation. For now just assert uintxx.
 		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u32TypeQID);
-		system.addConstraint(new SubtypeConstraint(accessorType, uint32Type, new ValidationIssue(Severity.ERROR, '''«accessor» (:: %s) must be an unsigned integer''', accessor)));	
-				
+		system.addConstraint(new SubtypeConstraint(accessorType, uint32Type, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
+		// also fix the sign with "at least u8". This helps usage like var i=0; i+=1; x[i];
+		val uint8Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u8TypeQID);
+		system.addConstraint(new SubtypeConstraint(uint8Type, accessorType, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
 		return selfType;
 	}
 	
@@ -456,10 +458,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// assert that all values are unsigned integer (<= u32)
 		// returns u32
 		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, vr, StdlibTypeRegistry.u32TypeQID);
+		val commonType = system.getTypeVariable(vr);
 		#[vr.lowerBound, vr.upperBound].filterNull.forEach[
-			system.addConstraint(new SubtypeConstraint(system.computeConstraints(it), uint32Type, new ValidationIssue(Severity.ERROR, '''«it» (:: %s) must be an unsigned integer''', it)));
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(it), commonType, new ValidationIssue('''«it» (:: %s) must be an unsigned integer''', it)));
 		]
-		return system.associate(uint32Type, vr);
+		system.addConstraint(new SubtypeConstraint(commonType, uint32Type, new ValidationIssue('''All values in «vr» (:: %s) must be unsigned integers''', vr)));
+		return commonType;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeCastExpression expr) {
@@ -708,8 +712,17 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, ExceptionTypeDeclaration genType) {
-		val result = new AtomicType(genType, "Exception");
+		val result = new AtomicType(genType);
 		system.typeTable.put(QualifiedName.create(genType.name), result);
+		if(genType.name == "Exception") {
+			val i = system.explicitSubtypeRelations.addNode(result);
+			system.explicitSubtypeRelationsTypeSource.put(i, result);	
+		}
+		else {
+			val exceptionBaseType = new AtomicType(null, "Exception");
+			val i1_i2 = system.explicitSubtypeRelations.addEdge(result, exceptionBaseType);
+			system.explicitSubtypeRelationsTypeSource.put(i1_i2.key, result);
+		}
 		return result;
 	}
 	

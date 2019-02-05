@@ -72,6 +72,9 @@ import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.program.ForEachStatement
+import org.eclipse.mita.program.ThrowExceptionStatement
+import org.eclipse.mita.program.TryStatement
+import org.eclipse.mita.program.CatchStatement
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -250,7 +253,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae) {
-		if(ae.operator == AssignmentOperator.ASSIGN) {
+		val resultType = if(ae.operator == AssignmentOperator.ASSIGN) {
 			val exprType = system.computeConstraints(ae.expression);
 			val varRefType = system.computeConstraints(ae.varRef);
 			system.addConstraint(new SubtypeConstraint(
@@ -258,6 +261,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 				varRefType, 
 				new ValidationIssue(Severity.ERROR, '''Assignment operator '=' may only be applied on compatible types, not on %2$s and %1$s.''', ae, null, "")
 			));
+			varRefType;
 		}
 		else if(#[AssignmentOperator.AND_ASSIGN, AssignmentOperator.XOR_ASSIGN, AssignmentOperator.OR_ASSIGN].contains(ae.operator)) {
 			val exprType = system.computeConstraints(ae.expression);
@@ -265,6 +269,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			val boolType = typeRegistry.getTypeModelObjectProxy(system, ae, StdlibTypeRegistry.boolTypeQID);
 			system.addConstraint(new EqualityConstraint(boolType, exprType, new ValidationIssue(Severity.ERROR, '''«ae.expression» (:: %s) must be of type bool''', ae.expression)));
 			system.addConstraint(new EqualityConstraint(varRefType, exprType, new ValidationIssue(Severity.ERROR, '''«ae.varRef» (:: %s) must be of type bool''', ae.expression)));
+			boolType;
 		}
 		else {
 			var opQID = switch(ae.operator) {
@@ -283,10 +288,39 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			}
 			computeConstraintsForBuiltinOperation(system, ae.varRef, opQID, #[ae.varRef, ae.expression]);
 		}
-		return null;
+		return system.associate(resultType, ae);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ExpressionStatement se) {
 		system.computeConstraintsForChildren(se);
+		return null;
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ThrowExceptionStatement stmt) {
+		val reference = ProgramPackage.eINSTANCE.throwExceptionStatement_ExceptionType;
+		val exceptionType = system.getTypeVariableProxy(stmt, reference);
+		val exceptionBaseType = typeRegistry.getTypeModelObjectProxy(system, stmt, StdlibTypeRegistry.exceptionBaseTypeQID);
+		system.addConstraint(new SubtypeConstraint(exceptionType, exceptionBaseType, 
+			new ValidationIssue(Severity.ERROR, '''Thrown object is not an exception''', stmt, reference, "")));
+		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TryStatement stmt) {
+		system.computeConstraints(stmt.^try);
+		stmt.catchStatements.forEach[system.computeConstraints(it)];
+		if(stmt.^finally !== null) {
+			system.computeConstraints(stmt.^finally);
+		}
+		return null;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, CatchStatement stmt) {
+		system.computeConstraints(stmt.body);
+		
+		val reference = ProgramPackage.eINSTANCE.catchStatement_ExceptionType;
+		val exceptionType = system.getTypeVariableProxy(stmt, reference);
+		val exceptionBaseType = typeRegistry.getTypeModelObjectProxy(system, stmt, StdlibTypeRegistry.exceptionBaseTypeQID);
+		system.addConstraint(new SubtypeConstraint(exceptionType, exceptionBaseType, 
+			new ValidationIssue(Severity.ERROR, '''Caught object is not an exception''', stmt, reference, "")));
+		
 		return null;
 	}
 

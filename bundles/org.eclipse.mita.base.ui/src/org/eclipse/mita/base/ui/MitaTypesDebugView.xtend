@@ -220,7 +220,7 @@ class MitaTypesDebugView extends ViewPart {
     protected def selectConstraints(Iterable<EObject> objects) {
     	if(constraintSolution === null) return;
     	
-    	val input = constraintSolution.constraints?.constraints;
+    	val input = constraintSolution.getConstraintSystem?.constraints;
     	if(input === null) {
     		return;
     	}
@@ -237,7 +237,7 @@ class MitaTypesDebugView extends ViewPart {
     	
     	val substitution = constraintSolution.solution;
     	val input = constraintSolution.solution?.substitutions?.keySet;
-    	val system = constraintSolution.constraints;
+    	val system = constraintSolution.constraintSystem;
     	if(input === null) {
     		return;
     	}

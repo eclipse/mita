@@ -31,7 +31,7 @@ class TypesUtil {
 	public static final String ID_SEPARATOR = "."
 	
 	static def boolean isGeneratedType(Resource res, AbstractType type) {
-		return res.constraintSolution?.constraints?.getUserData(type)?.containsKey(BaseConstraintFactory.GENERATOR_KEY);
+		return res.constraintSolution?.getConstraintSystem?.getUserData(type)?.containsKey(BaseConstraintFactory.GENERATOR_KEY);
 	}
 	static def boolean isGeneratedType(EObject context, AbstractType type) {
 		return context.eResource.isGeneratedType(type);
@@ -44,7 +44,7 @@ class TypesUtil {
 		return null;
 	}
 	static def ConstraintSystem getConstraintSystem(Resource res) {
-		return res.constraintSolution?.constraints;
+		return res.constraintSolution?.getConstraintSystem;
 	}
 	
 	static def getVarianceInAssignment(EObject obj) {

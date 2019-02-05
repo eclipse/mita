@@ -82,10 +82,10 @@ class ExpressionUtils {
 		val sortedArgs = getSortedArguments(op.parameters, expr.arguments);
 		
 		var argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
-		// for extension methods the first arg is on the left side
+		// for extension methods the first arg is called "self"
 		if(expr instanceof FeatureCall) {
 			if(expr.operationCall) {
-				if(argIndex == 0) {
+				if(name == "self") {
 					return expr.arguments.head.value;
 				}
 				argIndex--;	
