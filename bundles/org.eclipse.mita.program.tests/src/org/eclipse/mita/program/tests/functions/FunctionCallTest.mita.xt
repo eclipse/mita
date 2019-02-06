@@ -38,5 +38,5 @@ native unchecked fn abs(x : double) : double header "math.h";
 
 // XPEXCT noCompileErrors
 every 1 second {
-	let x = abs(20);
+	let x = abs(20.0);
 }

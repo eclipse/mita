@@ -28,6 +28,9 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		val pType = BaseUtils.getType(parent.getOrigin);
 		if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
 			val coercion = ProgramFactory.eINSTANCE.createCoercionExpression;
+			if(pType === null) {
+				return;
+			}
 			coercion.typeSpecifier = pType;
 			 if(e instanceof Argument) {
 				val inner = e.value;

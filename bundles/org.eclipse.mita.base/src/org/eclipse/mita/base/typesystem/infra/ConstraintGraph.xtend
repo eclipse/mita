@@ -93,6 +93,8 @@ class ConstraintGraph extends Graph<AbstractType> {
 		
 	def <T extends AbstractType> getInfimum(ConstraintSystem system, Iterable<T> ts) {
 		val tsWithSubTypes = ts.map[subtypeChecker.getSubTypes(system, it, typeResolutionOrigin).toSet].force;
+		// since we are checking with MGU here some types might be equal to others except for some free variables the MGU unifies.
+		// however we do need to actually use those substitutions after checking for intersection.
 		val typeSubstitutions = new HashMap<AbstractType, Substitution>();
 		val tsIntersection = tsWithSubTypes.reduce[s1, s2| s1.reject[t1 | !s2.exists[t2 | 
 			val unification = mguComputer.compute(null, t1, t2)

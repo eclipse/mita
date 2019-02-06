@@ -11,22 +11,33 @@ import platforms.unittest;
 
 // functions can have an optional return type, if no return type is specified, it is inferred from return statements
 fn foo11() {
+	/* XPECT errors ---
+		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of bool" at "return 17;"
+		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of f_184.0" at "return 17;"
+	--- */
 	return 17;
 }
 fn callsFoo11() {
 	// this error is because of a lot of type problems that lead to problems infering a common type for "foo11()". 
 	// It would have to be a subtype of things like optional<int32>, xint8, void, float and bottom(), which is very hard to be.
 	// If you look at ReturnTest.mita.xt you can see that type inference actually works here if you eliminate some of the more glaring errors.
-	// XPECT errors --> "Function foo11 cannot be used here: f_194.0, xint8" at "foo11"
+	/* XPECT errors ---
+		"Function foo11 cannot be used here: Return type incompatible: bool is not subtype of xint8" at "foo11"
+		"Function foo11 cannot be used here: Return type incompatible: f_184.0 is not subtype of f_191.0" at "foo11"
+	--- */
 	let x = foo11();
 }
 
 fn callFoo11() {
+	/* XPECT errors ---
+		"Function foo11 cannot be used here: Return type incompatible: bool is not subtype of xint8" at "foo11"
+		"Function foo11 cannot be used here: Return type incompatible: f_184.0 is not subtype of f_205.0" at "foo11"
+	--- */
 	var i : int32 = foo11();
 	/* XPECT errors ---
 		"Assignment operator '=' may only be applied on compatible types, not on bool and f_216.0." at "var b : bool = foo11();"
-		"Function foo11 cannot be used here: f_216.0, f_215.0" at "foo11"
-		"Function foo11 cannot be used here: f_216.0, xint8" at "foo11"
+		"Function foo11 cannot be used here: Return type incompatible: f_184.0 is not subtype of f_215.0" at "foo11"
+		"Function foo11 cannot be used here: f_215.0, f_216.0" at "foo11"
 	--- */
 	var b : bool = foo11();
 }
@@ -43,10 +54,10 @@ fn foo12() {
 fn callFoo12() {
 	var d : double = foo12();
 	/* XPECT errors ---
-		"Function foo12 cannot be used here: Return type incompatible: f64 is not subtype of ⊥ (Cyclic dependencies could not be resolved: xint8 -> int32 -> xint8)" at "foo12"
+		"Assignment operator '=' may only be applied on compatible types, not on int32 and f64." at "var j : int32 = foo12();"
+		"Assignment operator '=' may only be applied on compatible types, not on int32 and f_253.0." at "var j : int32 = foo12();"
 		"Function foo12 cannot be used here: Return type incompatible: f_225.0 is not subtype of f_252.0" at "foo12"
-		"Function foo12 cannot be used here: f_253.0, f_252.0" at "foo12"
-		"Function foo12 cannot be used here: int32, ⊥ (Cyclic dependencies could not be resolved: xint8 -> int32 -> xint8)" at "foo12"
+		"Function foo12 cannot be used here: f_252.0, f_253.0" at "foo12"
 	--- */
 	var j : int32 = foo12();
 }
@@ -61,7 +72,9 @@ fn incompatibleReturnTypes() : int32 {
 	} else {
 		return 18;
 	}
-	// XPECT errors --> "Can't return prim»b»true (:: bool) since it's not of a subtype of int32" at "return true;"
+	/* XPECT errors ---
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of int32" at "return true;"
+	--- */
 	return true;
 }
 
@@ -71,7 +84,10 @@ fn impossibleInference() {
 		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of f_287.0" at "return "";"
 		return "";
 	}
-	// XPECT errors --> "Can't return prim»b»true (:: bool) since it's not of a subtype of f_287.0" at "return true;"
+	/* XPECT errors ---
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of f_287.0" at "return true;"
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of string" at "return true;"
+	--- */
 	return true;
 }
 
