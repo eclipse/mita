@@ -25,6 +25,7 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import org.eclipse.mita.program.generator.AbstractTypeGenerator
 
 class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 	
@@ -41,7 +42,7 @@ class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 		if(!(funType instanceof TypeConstructorType)) {
 			return CodeFragment.EMPTY;
 		}
-		val optGen = registry.getGenerator(funType as GeneratedType);
+		val optGen = registry.getGenerator(functionCall.eResource, funType) as AbstractTypeGenerator;
 				
 		codeFragmentProvider.create('''
 			«IF resultVariableName === null»

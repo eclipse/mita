@@ -9,11 +9,11 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 class AtomicType extends AbstractBaseType {
 		
 	new(EObject origin, String name) {
-		super(origin, name)
+		super(origin, name.replaceFirst("^stdlib\\.", ""))
 	}
 	
 	new(NamedElement origin) {
-		super(origin, origin.name);
+		this(origin, origin.name);
 	}
 	
 	override replace(TypeVariable from, AbstractType with) {

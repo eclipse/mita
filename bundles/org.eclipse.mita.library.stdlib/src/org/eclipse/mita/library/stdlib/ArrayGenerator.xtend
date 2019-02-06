@@ -43,6 +43,7 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import org.eclipse.mita.program.CoercionExpression
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -96,36 +97,41 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	
 	override CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
+		val _init = stmt.initialization;
+		val init = if(_init instanceof CoercionExpression) {
+			_init.value;
+		}
+		else (_init);
 		val size = stmt.getArraySize(sizeInferrer);
 		// if we are top-level, we must do initialization if there is any
 		val topLevel = (EcoreUtil2.getContainerOfType(stmt, FunctionDefinition) === null) && (EcoreUtil2.getContainerOfType(stmt, EventHandlerDeclaration) === null);
 		val occurrence = getOccurrence(stmt);
-		val initWithValueLiteral = stmt.initialization !== null 
-			&& stmt.initialization instanceof PrimitiveValueExpression 
-			&& (stmt.initialization as PrimitiveValueExpression).value instanceof ArrayLiteral
+		val initWithValueLiteral = init !== null 
+			&& init instanceof PrimitiveValueExpression 
+			&& (init as PrimitiveValueExpression).value instanceof ArrayLiteral
 		
 		
-		val operationCallInit = (!topLevel) && stmt.initialization !== null 
-			&& stmt.initialization.isOperationCall;
+		val operationCallInit = (!topLevel) && init !== null 
+			&& init.isOperationCall;
 		
-		val otherInit = stmt.initialization !== null 
+		val otherInit = init !== null 
 			&& !initWithValueLiteral
 			&& !operationCallInit
 		
 		val cf = codeFragmentProvider.create('''
 		«IF size > 0»
 		// buffer for «stmt.name»
-		«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.head)» data_«stmt.name»_«occurrence»[«size»]«IF initWithValueLiteral» = «statementGenerator.code(stmt.initialization)»«ENDIF»;
+		«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.head)» data_«stmt.name»_«occurrence»[«size»]«IF initWithValueLiteral» = «statementGenerator.code(init)»«ENDIF»;
 		«ELSE»
 		// WARNING: Couldn't infer size!
 		«ENDIF»
 		// var «stmt.name»: array<«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.head)»>
-		«typeGenerator.code(stmt, type)» «stmt.name»«IF topLevel || stmt.initialization !== null» = {
+		«typeGenerator.code(stmt, type)» «stmt.name»«IF topLevel || init !== null» = {
 			.data = data_«stmt.name»_«occurrence»,
 			.length = «size»
 		}«ENDIF»;
 		«IF !topLevel && otherInit»
-		«generateExpression(type, stmt, AssignmentOperator.ASSIGN, stmt.initialization)»
+		«generateExpression(type, stmt, AssignmentOperator.ASSIGN, init)»
 		«ENDIF»
 		''').addHeader('MitaGeneratedTypes.h', false);
 		return cf;
@@ -161,7 +167,13 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	
 
-	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
+	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject _right) {
+		val right = if(_right instanceof CoercionExpression) {
+			_right.value;
+		}
+		else {
+			_right;
+		}
 		if(right === null) {
 			return codeFragmentProvider.create('''''');
 		}
@@ -330,5 +342,14 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			false
 		}
 		
-	}	
+	}
+	
+	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
+		val inner = expr.value;
+		if(inner instanceof ArrayLiteral) {
+			return codeFragmentProvider.create('''«inner.code»''');
+		}
+		return codeFragmentProvider.create('''CANT COERCE «inner.eClass.name»''');
+	}
+	
 }

@@ -8,16 +8,16 @@ import java.util.Map
 import java.util.Set
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
-import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class ConstraintGraphProvider implements Provider<ConstraintGraph> {
 	
@@ -93,8 +93,26 @@ class ConstraintGraph extends Graph<AbstractType> {
 		
 	def <T extends AbstractType> getInfimum(ConstraintSystem system, Iterable<T> ts) {
 		val tsWithSubTypes = ts.map[subtypeChecker.getSubTypes(system, it, typeResolutionOrigin).toSet].force;
-		val tsIntersection = tsWithSubTypes.reduce[s1, s2| s1.reject[t1 | !s2.exists[t2 | mguComputer.compute(null, t1, t2).valid]].toSet] ?: #[].toSet;
-		return tsIntersection.findFirst[candidate | tsIntersection.forall[l | subtypeChecker.isSubType(system, typeResolutionOrigin, l, candidate)]];
+		val typeSubstitutions = new HashMap<AbstractType, Substitution>();
+		val tsIntersection = tsWithSubTypes.reduce[s1, s2| s1.reject[t1 | !s2.exists[t2 | 
+			val unification = mguComputer.compute(null, t1, t2)
+			if(unification.valid) {
+				if(!unification.substitution.substitutions.empty) {
+					if(!typeSubstitutions.containsKey(t1)) {
+						typeSubstitutions.put(t1, unification.substitution);
+					}
+					else {
+						typeSubstitutions.put(t1, unification.substitution.apply(typeSubstitutions.get(t1)));
+					}
+				}
+				return true;
+			}
+			return false;
+		]].toSet]?.map[it.replace(typeSubstitutions.getOrDefault(it, Substitution.EMPTY))]?.toSet ?: #[].toSet;
+		return tsIntersection.findFirst[candidate | tsIntersection.forall[l | 
+			val str = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, l, candidate);
+			return str.valid && str.constraints.empty
+		]];
 	}
 
 	override nodeToString(Integer i) {

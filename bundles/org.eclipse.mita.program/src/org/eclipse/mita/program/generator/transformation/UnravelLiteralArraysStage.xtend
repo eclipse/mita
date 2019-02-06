@@ -20,13 +20,17 @@ import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.program.CoercionExpression
 
 class UnravelLiteralArraysStage extends AbstractUnravelingStage {
 	
 	override protected needsUnraveling(Expression expression) {
 		if(expression instanceof PrimitiveValueExpression) {
 			if(expression.value instanceof ArrayLiteral) {
-				val container = expression.eContainer;
+				var container = expression.eContainer;
+				while(container instanceof CoercionExpression) {
+					container = container.eContainer;
+				}
 				return container instanceof ReturnStatement || container instanceof Argument || container instanceof FeatureCall
 			}
 		}

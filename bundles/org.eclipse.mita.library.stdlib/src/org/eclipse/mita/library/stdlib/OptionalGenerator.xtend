@@ -22,8 +22,10 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.program.CoercionExpression
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
@@ -31,6 +33,7 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
+import org.eclipse.xtext.EcoreUtil2
 
 class OptionalGenerator extends AbstractTypeGenerator {
 	
@@ -172,6 +175,20 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			«ENUM_NAME» «OPTIONAL_FLAG_MEMBER»;
 		} «typeGenerator.code(context, type)»;
 		''').addHeader('MitaGeneratedTypes.h', false);
+	}
+	
+	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
+		// this should be a coercion 1 -> some(1).
+		if(from instanceof TypeConstructorType) {
+			print("")
+		}
+		val needCast = EcoreUtil2.getContainerOfType(expr, ProgramBlock) !== null;
+		return codeFragmentProvider.create('''
+			«IF needCast»(«generateTypeSpecifier(to, expr)»)«ENDIF» {
+				.data = «expr.value.code»,
+				.flag = Some
+			}
+		''');
 	}
 	
 	

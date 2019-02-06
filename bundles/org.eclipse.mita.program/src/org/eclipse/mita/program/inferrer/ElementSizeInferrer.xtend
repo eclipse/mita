@@ -53,6 +53,7 @@ import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.CoercionExpression
 
 /**
  * Hierarchically infers the size of a data element.
@@ -88,6 +89,10 @@ class ElementSizeInferrer {
 		else {
 			return i1?:i2;
 		}
+	}
+	
+	protected def dispatch ElementSizeInferenceResult doInfer(CoercionExpression expr) {
+		return expr.value.infer;
 	}
 
 	protected def dispatch ElementSizeInferenceResult doInfer(FunctionDefinition obj) {

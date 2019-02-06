@@ -44,7 +44,9 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
-
+		if(this.toString == "vec2d_t(f_70, f_71)") {
+			print("")
+		}
 	}
 	
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {

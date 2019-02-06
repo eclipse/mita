@@ -44,6 +44,7 @@ import org.eclipse.xtext.util.IAcceptor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.types.PackageAssociation
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -86,6 +87,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			constraintFactory.setIsLinking(true);
 			constraintFactory.getTypeRegistry().setIsLinking(true);
 			val constraints = constraintFactory.create(eObject);
+			val packageName = (eObject as PackageAssociation).name
 			
 //			val csCopy = new ConstraintSystem(constraints);
 //			val simplification = coerciveSubtypeSolver.simplify(csCopy, Substitution.EMPTY, eObject);

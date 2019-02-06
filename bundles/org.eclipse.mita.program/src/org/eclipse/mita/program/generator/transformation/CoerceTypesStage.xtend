@@ -1,21 +1,15 @@
 package org.eclipse.mita.program.generator.transformation
 
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.impl.EObjectImpl
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.TypesFactory
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ProgramFactory
-import org.eclipse.mita.program.generator.internal.ProgramCopier
+import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.xtext.EcoreUtil2
+
+import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
@@ -23,73 +17,41 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		return ORDER_VERY_EARLY;
 	}
 	
-	override protected _doTransform(EObject obj) {
-		if(obj.eContainer === null) {
-			val resource = ProgramCopier.getOrigin(obj).eResource;
-			if(resource instanceof MitaBaseResource) {
-				val typingSolution = resource.latestSolution;
-				val subtypeConstraints = typingSolution?.getConstraintSystem?.constraints?.filter(SubtypeConstraint);
-				subtypeConstraints.forEach[
-					if(it.subType != it.superType) {
-						// coerce subtype to supertype
-						val originExpression = it.subType.origin;
-						val origin = originExpression.resolveProxyInSameResource(resource);
-						if(origin !== null) {
-							val expr = EcoreUtil2.getContainerOfType(origin, Expression);
-							if(expr instanceof Argument) {
-								// TODO
-							}
-							else if(expr instanceof Expression) {
-//								val coercedType = it.superType.createTypeSpecifier;
-//								if(coercedType !== null) {
-									val coercion = ProgramFactory.eINSTANCE.createCoercionExpression; 
-									expr.replaceWith(coercion)
-									coercion.value = expr;
-									coercion.typeSpecifier = it.superType;
-//								}
-							}
-						}
-					}
-				]
-					
-			} 
+	dispatch def doTransform(Expression e) {
+		e.transformChildren;
+		if(e instanceof Argument) {
+			// todo
+			return;
 		}
-	}
-	
-	def PresentTypeSpecifier createTypeSpecifier(AbstractType type) {
-		val origin = type.origin;
-		if(origin instanceof Type) {
-			return TypesFactory.eINSTANCE.createPresentTypeSpecifier => [ts |
-				ts.type = origin;
-				ts.typeArguments += createTypeSpecifierTypeArgs(type);
-			]
-		}
-	}
-	
-	def Iterable<PresentTypeSpecifier> createTypeSpecifierTypeArgs(AbstractType type) {
-		// only exactly typeConstructorTypes are types that have type args
-		if(type.class == TypeConstructorType) {
-			return (type as TypeConstructorType).typeArguments.map[createTypeSpecifier];
-		}
-		return #[];
-	}
-	
-	def EObject resolveProxyInSameResource(EObject origin, Resource resource) {
-		if(origin.eIsProxy) {
-			val origin2 = if(origin instanceof EObjectImpl) {
-				origin;
+		val eType = BaseUtils.getType(e.getOrigin);
+		val parent = e.eContainer;
+		val pType = BaseUtils.getType(parent.getOrigin);
+		if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
+			val coercion = ProgramFactory.eINSTANCE.createCoercionExpression;
+			coercion.typeSpecifier = pType;
+			 if(e instanceof Argument) {
+				val inner = e.value;
+				e.value = coercion;
+				coercion.value = inner;
 			}
-			val objUri = resource.URI;
-			val targetUri = origin2?.eProxyURI.trimFragment;
-			if(objUri != targetUri) {
-				return null;
+			else {
+				e.replaceWith(coercion)
+				coercion.value = e;
 			}
-			return EcoreUtil.resolve(origin, resource);
 		}
-		if(origin.eResource != resource) {
-			return null;
-		}
-		return origin;
 	}
 	
+	dispatch def doTransform(ReturnStatement stmt) {
+		stmt.transformChildren;
+		val expr = stmt.value;
+		val eType = BaseUtils.getType(expr.getOrigin);
+		val parent = EcoreUtil2.getContainerOfType(stmt, Operation);
+		val pType = BaseUtils.getType(parent.typeSpecifier.getOrigin);
+		if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
+			val coercion = ProgramFactory.eINSTANCE.createCoercionExpression; 
+			expr.replaceWith(coercion)
+			coercion.value = expr;
+			coercion.typeSpecifier = pType;
+		}
+	}	
 }

@@ -25,6 +25,9 @@ abstract class AbstractType {
 	protected new(EObject origin, String name) {
 		this.origin = origin;
 		this.name = name;
+		if(name.startsWith("stdlib.")) {
+			print("");
+		}
 	}
 		
 	override boolean equals(Object other) {

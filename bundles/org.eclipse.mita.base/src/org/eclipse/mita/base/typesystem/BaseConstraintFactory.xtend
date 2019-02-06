@@ -250,7 +250,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 						
 		// if isFunctionCall --> delegate. 
 		val refType = if(isFunctionCall) {
-			val txt = BaseUtils.getText(varOrFun, featureToResolve) ?: "null";
+			val txt = BaseUtils.getText(varOrFun, featureToResolve);
 			val candidates = system.resolveReferenceToTypes(varOrFun, featureToResolve);	
 			if(candidates.empty) {
 				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
@@ -363,14 +363,14 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// b
 		val resultType = system.newTypeVariable(null);
 		// a -> B >: A -> B
-		system.addConstraint(new SubtypeConstraint(fromTV, argumentType, issue));
+		system.addConstraint(new SubtypeConstraint(argumentType, fromTV, issue));
 		val varianceOfResultVar = TypesUtil.getVarianceInAssignment(functionCall);
 		switch(varianceOfResultVar) {
 			case Covariant: {
-				system.addConstraint(new SubtypeConstraint(resultType, toTV, issue));
+				system.addConstraint(new SubtypeConstraint(toTV, resultType, issue));
 			}
 			case Contravariant: {
-				system.addConstraint(new SubtypeConstraint(toTV, resultType, issue));
+				system.addConstraint(new SubtypeConstraint(resultType, toTV, issue));
 			}
 			case Invariant: {
 				system.addConstraint(new EqualityConstraint(toTV, resultType, issue));
@@ -701,7 +701,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 
 		system.computeConstraints(genType.constructor);
 		val result = if(typeParameters.empty) {
-			new AtomicType(genType, genType.name);
+			new AtomicType(genType);
 		}
 		else {
 			new TypeScheme(genType, typeArgs, new TypeConstructorType(genType, new AtomicType(genType), typeArgs.map[it as AbstractType].force));

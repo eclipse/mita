@@ -81,8 +81,10 @@ class StdlibTypeRegistry {
 		if(isLinking) {
 			return null;
 		}
-		val scope = cache.get("SCOPE_TYPE", context.eResource, [|scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)]);
-		val obj = cache.get(qn, context.eResource, [|scope.getSingleElement(qn)?.EObjectOrProxy]);
+		val obj = cache.get(qn, context.eResource, [|
+			val scope = cache.get("SCOPE_TYPE", context.eResource, [|scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)]);
+			scope.getSingleElement(qn)?.EObjectOrProxy
+		]);
 		return obj;
 	}
 	def getTypeModelObjectProxy(ConstraintSystem system, EObject context, QualifiedName qn) {

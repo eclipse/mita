@@ -17,4 +17,8 @@ class TypeAdapter extends AdapterImpl {
 		return obj?.eAdapters?.filter(TypeAdapter)?.head?.type;
 	}
 	
+	public override toString() {
+		return '''TypeAdapter: «type»''';
+	}
+	
 }

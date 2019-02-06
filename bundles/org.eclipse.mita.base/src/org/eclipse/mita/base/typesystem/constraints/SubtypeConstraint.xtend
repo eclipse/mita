@@ -31,6 +31,12 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		
 		subType = sub;
 		superType = top;
+		if(subType === null || superType === null) {
+			throw new NullPointerException;
+		}
+		if(this.toString == "f64 ⩽ f32") {
+			print("")
+		}
 	}
 	
 	override getErrorMessage() {

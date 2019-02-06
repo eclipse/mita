@@ -22,6 +22,7 @@ import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.program.CoercionExpression
 
 /**
  * Interface for type generators.
@@ -77,6 +78,12 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 */
 	def CodeFragment generateHeader() {
 		return CodeFragment.EMPTY;
+	}
+	
+	def CodeFragment generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
+		return codeFragmentProvider.create('''
+		ERROR: CANT COERCE FROM «from» to «to» (expr.eClass = «expr.eClass.name»). THIS IS MOST LIKELY A BUG IN THE COMPILER, PLEASE REPORT
+		''')
 	}
 	
 	/**

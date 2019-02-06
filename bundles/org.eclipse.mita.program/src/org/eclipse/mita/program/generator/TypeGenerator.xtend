@@ -15,6 +15,7 @@ package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.FloatingType
@@ -24,11 +25,8 @@ import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.base.types.GeneratedType
 
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
-import org.eclipse.mita.base.types.TypesUtil
-import org.eclipse.mita.program.model.ModelUtils
 
 /**
  * Facade for generating types.

@@ -274,10 +274,12 @@ class ConstraintSystem {
 	}
 	
 	def plus(AbstractTypeConstraint constraint) {
-		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
-		result.constraintSystemProvider = result.constraintSystemProvider ?: constraintSystemProvider;
-		result.addConstraint(constraint);
-		return ConstraintSystem.combine(#[this, result]);
+//		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
+//		result.constraintSystemProvider = result.constraintSystemProvider ?: constraintSystemProvider;
+//		result.addConstraint(constraint);
+//		return ConstraintSystem.combine(#[this, result]);
+		this.addConstraint(constraint);
+		return this;
 	}
 	
 	def static combine(Iterable<ConstraintSystem> systems) {
@@ -380,6 +382,7 @@ class ConstraintSystem {
 		val replacementObjects = scopeElements.map[EObjectOrProxy].force.toSet;
 		if(replacementObjects.empty) { 
 			scopeProvider.getScope(origin, tvp.reference);
+			scope.getElements(tvp.targetQID).force;
 			return #[new BottomType(origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
 		}
 		

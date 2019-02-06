@@ -90,7 +90,7 @@ class MostGenericUnifierComputer {
 		if(!unificationResult.valid) {
 			return unificationResult
 		}
-		return UnificationResult.success(s1.apply(s2).apply(unificationResult.substitution));
+		return UnificationResult.success(s2.apply(s1).apply(unificationResult.substitution));
 	}
 	
 	def UnificationResult compute(ValidationIssue issue, AbstractType t1, AbstractType t2) {

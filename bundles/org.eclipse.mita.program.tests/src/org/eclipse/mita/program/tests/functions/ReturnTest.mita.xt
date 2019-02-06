@@ -33,13 +33,6 @@ fn foo12() {
 
 fn callFoo12() {
 	var d : double = foo12();
-	/* XPECT errors ---
-		"Function foo12 cannot be used here: Return type incompatible: f64 is not subtype of f_242.0" at "foo12"
-		"Function foo12 cannot be used here: Return type incompatible: f_215.0 is not subtype of f_242.0" at "foo12"
-		"Function foo12 cannot be used here: f_243.0, f_242.0" at "foo12"
-		"Function foo12 cannot be used here: int32, f_242.0" at "foo12"
-	--- */
-	var j : int32 = foo12();
 }
 
 // XPECT errors --> "The operation must return a value of type bool." at "noRet"

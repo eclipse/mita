@@ -43,7 +43,9 @@ class GeneratedTypeGenerator {
 			«ENDFOR»
 			«"\n"»«««explicit newline
 
-			«FOR type_generator : generatorsWithTypeSpecs SEPARATOR("\n")»
+			«FOR type_generator : generatorsWithTypeSpecs.groupBy[
+				it.value.generateTypeSpecifier(it.key, context.allUnits.head).toString
+			].values.map[it.head] SEPARATOR("\n")»
 			«type_generator.value.generateHeader(context.allUnits.head, type_generator.key)»
 			«ENDFOR»
 		''').addHeader(userTypeFiles.map[new IncludePath(it, false)])

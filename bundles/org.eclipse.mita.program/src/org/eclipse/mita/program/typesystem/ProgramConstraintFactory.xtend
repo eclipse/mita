@@ -84,9 +84,11 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, CoercionExpression expr) {
-		// this is a type cast, but unchecked since its post transformation and should already be fine
-		system.computeConstraints(expr.value);
-		return system.associate(expr.typeSpecifier as AbstractType, expr);
+		// coercions are upcasts
+		val innerType = system.computeConstraints(expr.value);
+		val outerType = expr.typeSpecifier as AbstractType;
+		system.addConstraint(new SubtypeConstraint(innerType, outerType, new ValidationIssue("PCF:90", expr)));
+		return system.associate(outerType, expr);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ModalityAccess access) {

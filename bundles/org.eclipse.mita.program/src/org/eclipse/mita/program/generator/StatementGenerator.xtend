@@ -121,6 +121,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.model.ModelUtils.getRealType
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
 import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class StatementGenerator {
 
@@ -288,20 +289,35 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode code(CoercionExpression expr) {
 		val coercedType = BaseUtils.getType(expr);
 		val expressionType = BaseUtils.getType(expr.value);
+		if(coercedType == expressionType) {
+			// inserting this coercion seems to have fixed some subtypes to be equal.
+			// since they are both equal just return expr.value.code.
+			return '''«expr.value.code»''';
+		}
 		if(coercedType instanceof org.eclipse.mita.base.typesystem.types.SumType) {
 			if(!(expressionType instanceof org.eclipse.mita.base.typesystem.types.SumType)) {
 				val altAccessor = expressionType.getNameInStruct(expr);
 				val needCast = EcoreUtil2.getContainerOfType(expr, ProgramBlock) !== null;
 				val expressionTypeIsSingleton = expr.eResource.constraintSystem.getUserData(expressionType, BaseConstraintFactory.ECLASS_KEY) == "Singleton"
 				return '''
-					(«IF needCast»(«coercedType.getStructType(expr)») «ENDIF»{
-						.tag = «expressionType.getEnumName(expr)»«IF !(expressionTypeIsSingleton)», ««« there is no other field for singletons
+				(«IF needCast»(«coercedType.getStructType(expr)») «ENDIF»{
+					.tag = «expressionType.getEnumName(expr)»«IF !(expressionTypeIsSingleton)», ««« there is no other field for singletons
 
-						.data.«altAccessor» = «expr.value.code»
-})«ENDIF»«««nice indentation issues here
+					.data.«altAccessor» = «expr.value.code»
+				«ENDIF»
+				
+				})
 
 				'''
 			}
+		}
+		if(TypesUtil.isGeneratedType(expr, coercedType)) {
+			val generator = registry.getGenerator(expr.eResource, coercedType) as AbstractTypeGenerator;
+			return '''«generator.generateCoercion(expr, expressionType, coercedType)»''';
+		}
+		if(coercedType instanceof TypeConstructorType) {
+			// can't really cast these. This should only happen for literals.
+			return '''«expr.value.code»''';
 		}
 		return '''((«(expr.typeSpecifier as AbstractType).getCtype(expr)») «expr.value.code»)'''
 	}
@@ -369,7 +385,13 @@ class StatementGenerator {
 			EcoreUtil2.getContainerOfType(callSite, AbstractStatement);	
 		}
 		val constructedType = BaseUtils.getType(expressionDestination);
-		if(cons.eContainer instanceof SumAlternative) {
+		val realConstructedType = getRealType(callSite, constructingType);
+		if(realConstructedType !== constructingType) {
+			// we embed some other type. 
+			// since the user needs to construct this explicitly we can just call code on the argument which constructs the real type.
+			return '''«arguments.tail.head.code»''';
+		}
+		if(eConstructingType instanceof SumAlternative) {
 			val altAccessor = constructingType.getNameInStruct(callSite);
 			val eSumType = eConstructingType.eContainer;
 			val sumType = BaseUtils.getType(eSumType);
@@ -377,7 +399,7 @@ class StatementGenerator {
 			// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
 			val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null
 			
-			val hasAccessors = hasNamedMembers(callSite, getRealType(callSite, constructingType));
+			val hasAccessors = hasNamedMembers(callSite, realConstructedType);
 			
 			val returnTypeIsSumType = constructedType instanceof org.eclipse.mita.base.typesystem.types.SumType;
 			
@@ -388,23 +410,13 @@ class StatementGenerator {
 			val constructedStruct = codeFragmentProvider.create('''
 			«IF returnTypeIsSumType || needCast»(«dataType»)«ENDIF» {
 				«FOR i_arg: arguments.tail.indexed»
-				«IF hasAccessors»«accessor(callSite, constructingType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
+				«IF hasAccessors»«accessor(callSite, eConstructingType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
 				«ENDFOR»	
 			}
 			''')
 			
 			return '''
-			«IF returnTypeIsSumType»
-				«IF needCast»(«sumType.getStructType(callSite)») «ENDIF»{
-					.tag = «constructingType.getEnumName(callSite)»«IF !(constructingTypeIsSingleton)», ««« there is no other field for singletons
-	
-					««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
-	
-					.data.«altAccessor» = «constructedStruct»«ENDIF»
-				}
-			«ELSE»
-				«constructedStruct»
-			«ENDIF»
+			«constructedStruct»
 			'''
 		}
 		return '''BROKEN MODEL''';
@@ -868,14 +880,14 @@ class StatementGenerator {
 		'''
 	}
 	
-	def Function<Integer, String> accessor(EObject context, AbstractType productType, Parameter preferred, String prefix, String suffix) {
+	def Function<Integer, String> accessor(EObject context, SumAlternative productType, Parameter preferred, String prefix, String suffix) {
 		[idx | 
 			if(preferred !== null) {
 				'''«prefix»«preferred.name»«suffix»'''	
 			}
 			else {
-				ModelUtils.getAccessorParameterNames(context, productType)
-					.transform[parameters | '''«prefix»«parameters.get(idx)»«suffix»''']
+				ModelUtils.getAccessorParameters(productType)
+					.transform[parameters | '''«prefix»«parameters.get(idx).baseName»«suffix»''']
 					.or('''«prefix»_«idx»«suffix»''')
 			} ]
 	}
@@ -889,7 +901,7 @@ class StatementGenerator {
 		val idx = isDeconstructionCase.deconstructors.indexOf(stmt);
 		val productType = BaseUtils.getType(isDeconstructionCase.productType);
 
-		val member = accessor(stmt, productType, stmt.productMember, ".", "").apply(idx);
+		val member = accessor(stmt, isDeconstructionCase.productType, stmt.productMember, ".", "").apply(idx);
 		val hasAccessors = hasNamedMembers(stmt, getRealType(stmt, productType));
 		
 		return '''«varType.getCtype(stmt)» «stmt.name» = «where.matchElement.code».data.«altAccessor»«IF hasAccessors»«member»«ENDIF»;'''

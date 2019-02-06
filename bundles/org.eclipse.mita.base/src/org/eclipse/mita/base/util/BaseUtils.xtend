@@ -10,6 +10,8 @@ import java.util.NoSuchElementException
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
@@ -17,7 +19,24 @@ import org.eclipse.xtext.util.OnChangeEvictingCache
 
 class BaseUtils {
 	def static getText(EObject obj, EStructuralFeature feature) {
-		return NodeModelUtils.findNodesForFeature(obj.computeOrigin, feature)?.head?.text?.trim;
+		val setProperty = if(obj.eClass.EAllStructuralFeatures.contains(feature)) {
+			obj.eGet(feature, false);
+		}
+		val setPropertyName = if(setProperty !== null) {
+			if(setProperty instanceof TypeKind) {
+				setProperty.kindOf?.name;
+			}
+			else if(setProperty instanceof NamedElement) {
+				setProperty.name;
+			}
+			else if(setProperty instanceof EObject) {
+				NodeModelUtils.findNodesForFeature(setProperty, null)?.head?.text?.trim;
+			}
+			else {
+				setProperty.toString();
+			}
+		}
+		return setPropertyName ?: NodeModelUtils.findNodesForFeature(obj.computeOrigin, feature)?.head?.text?.trim;
 	}
 	
 	def static <T> T castOrNull(Object o, Class<T> clazz) {

@@ -123,15 +123,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				val msg = typeClass.mostSpecificGeneralization;
 				val funTypeInstance = if(msg instanceof TypeScheme) {
 					msg.instantiate(currentSystem).value;	
-				} 
-				else {
-					msg;
 				}
 				if(funTypeInstance instanceof FunctionType) {
 					val typeThatShouldBeInstance = tcc.typ;
 					if(!instancesHaveDefaultArgs) {
 						// for now don't introduce a constraint if any instance has default args since then it's really hard to do predictions on types passed in
-						currentSystem.addConstraint(new SubtypeConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''Function «tcc.instanceOfQN» cannot be used here: arguments don't fit (%s != %s)''', typeThatShouldBeInstance.origin)));
+						currentSystem.addConstraint(new EqualityConstraint(typeThatShouldBeInstance, funTypeInstance.from, new ValidationIssue('''Function «tcc.instanceOfQN» cannot be used here: arguments don't fit (%s != %s)''', typeThatShouldBeInstance.origin)));
 					}
 					currentSystem.addConstraint(new EqualityConstraint(funTypeInstance.to, tcc.returnTypeTV, new ValidationIssue('''Function «tcc.instanceOfQN» cannot be used here: return type incompatible (%s != %s)''', tcc.returnTypeTV.origin)));
 				}
@@ -258,9 +255,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			while(resultSystem.hasNonAtomicConstraints()) {
 				debugTimer.start("constraints");
 				val constraintOutdated = resultSystem.takeOneNonAtomic();
+				if(constraintOutdated.toString == "f_267.0 ⩽ vec2d_t(int32, int32)") {
+					print("");
+				}
 				val constraint = constraintOutdated.replace(resultSub);
 				debugTimer.stop("constraints");
-
+				
 				debugTimer.start("atomicity");
 				if(constraint.isAtomic(resultSystem)) {
 					constraintOutdated.isAtomic(resultSystem);
@@ -648,8 +648,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val mgu = mguComputer.compute(cycle.map[it.key.value -> it.value.value]); 
 			if(mgu.valid) {
 				val newTypes = mgu.substitution.applyToTypes(cycleNodes.map[it.value]);
-				finalState.s = finalState.s.apply(mgu.substitution);
-				finalState.unifiedConstraints += cycleNodes.flatMap[g.nodeSourceConstraints.get(it.key)];
+				finalState.s = mgu.substitution.apply(finalState.s);
+				finalState.unifiedConstraints += cycleNodes.flatMap[
+					g.nodeSourceConstraints.get(it.key) ?: #[];
+				];
 				val newType = newTypes.head;
 				val newTypeIdx = g.addNode(newType);
 				cycleNodes.map[it.key].toSet.forEach[ idx |
@@ -693,6 +695,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
+			if(v.toString == "f_598.0") {
+				print("")
+			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
 			val supremum = graph.getSupremum(system, predecessors);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);
