@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Can't return prim»d»4.0 (:: f64) since it's not of a subtype of f32";
+			return "Function length cannot be used here: f_651.0, f_652.0";
 		}
 		
 		public ValidationIssue(Severity severity, String message, String issueCode) {
@@ -65,9 +65,6 @@ public interface IValidationIssueAcceptor {
 			if(shouldTest() && message.equals(getTestString())) {
 				System.out.print("");
 			}
-			if(shouldTest() && message.endsWith("since it's not of a subtype of f32")) {
-				System.out.print("");
-			}
 		}
 		
 		public ValidationIssue(String message, EObject target) {
@@ -86,9 +83,6 @@ public interface IValidationIssueAcceptor {
 			this.issueCode = issueCode;
 			this.feature = feature;
 			if(shouldTest() && message.equals(getTestString())) {
-				System.out.print("");
-			}
-			if(shouldTest() && message.endsWith("since it's not of a subtype of f32")) {
 				System.out.print("");
 			}
 		}

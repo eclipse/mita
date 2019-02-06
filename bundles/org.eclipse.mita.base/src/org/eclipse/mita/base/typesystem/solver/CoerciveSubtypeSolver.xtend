@@ -695,7 +695,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
-			if(v.toString == "f_598.0") {
+			if(v.toString == "f_651.0") {
 				print("")
 			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);

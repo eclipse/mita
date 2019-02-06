@@ -451,8 +451,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u32TypeQID);
 		system.addConstraint(new SubtypeConstraint(accessorType, uint32Type, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
 		// also fix the sign with "at least u8". This helps usage like var i=0; i+=1; x[i];
-		val uint8Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u8TypeQID);
-		system.addConstraint(new SubtypeConstraint(uint8Type, accessorType, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
+//		val uint8Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u8TypeQID);
+//		system.addConstraint(new SubtypeConstraint(uint8Type, accessorType, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
 		return selfType;
 	}
 	

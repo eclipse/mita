@@ -76,7 +76,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 	}
 	
 	def <T extends AbstractType> getSupremum(ConstraintSystem system, Iterable<T> ts) {
-		val tsWithSuperTypes = ts.filter[!(it instanceof BottomType)].map[
+		val tsWithSuperTypes = ts.toSet.filter[!(it instanceof BottomType)].map[
 			subtypeChecker.getSuperTypes(constraintSystem, it, typeResolutionOrigin).toSet
 		].force
 		val tsIntersection = tsWithSuperTypes.reduce[s1, s2| 
