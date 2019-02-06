@@ -322,7 +322,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.NORMAL)
 	def checkVariableDeclaration(VariableDeclaration varDecl){
 		val varType = BaseUtils.getType(varDecl);
-		if(varType.name == "void") {
+		if(varType?.name == "void") {
 			error(VOID_VARIABLE_TYPE, varDecl, null);
 		}
 	}

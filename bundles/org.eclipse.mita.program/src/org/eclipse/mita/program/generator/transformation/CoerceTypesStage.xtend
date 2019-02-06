@@ -10,6 +10,8 @@ import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.xtext.EcoreUtil2
 
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
+import org.eclipse.mita.base.expressions.PostFixUnaryExpression
+import org.eclipse.mita.base.expressions.UnaryExpression
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
@@ -18,28 +20,29 @@ class CoerceTypesStage extends AbstractTransformationStage {
 	}
 	
 	dispatch def doTransform(Expression e) {
-		e.transformChildren;
-		if(e instanceof Argument) {
-			// todo
-			return;
-		}
-		val eType = BaseUtils.getType(e.getOrigin);
-		val parent = e.eContainer;
+		var exp = e;
+		exp.transformChildren;
+		var eType = BaseUtils.getType(exp.getOrigin);
+		var parent = exp.eContainer;
 		val pType = BaseUtils.getType(parent.getOrigin);
+		if(parent instanceof PostFixUnaryExpression) {
+			exp = parent;
+			parent = parent.eContainer;
+		}
 		if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
 			val coercion = ProgramFactory.eINSTANCE.createCoercionExpression;
 			if(pType === null) {
 				return;
 			}
 			coercion.typeSpecifier = pType;
-			 if(e instanceof Argument) {
-				val inner = e.value;
-				e.value = coercion;
+			 if(exp instanceof Argument) {
+				val inner = exp.value;
+				exp.value = coercion;
 				coercion.value = inner;
 			}
 			else {
-				e.replaceWith(coercion)
-				coercion.value = e;
+				exp.replaceWith(coercion)
+				coercion.value = exp;
 			}
 		}
 	}

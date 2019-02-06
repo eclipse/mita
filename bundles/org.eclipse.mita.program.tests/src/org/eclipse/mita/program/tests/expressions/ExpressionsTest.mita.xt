@@ -15,7 +15,8 @@ function expressions() : void {
 	let b = 0b01; // binary uint32_t literal
 	let c = 1; // uint32_t literal
 	let d = -1; // int32_t literal
-	let e = -1.0; // float literal
+	let e = -1.0; // double literal
+	let f = -1.0f; // float literal
 //	let f = 1.0e4; // float literal
 	let g = "1"; // string literal
 	let h = '1'; // string literal
