@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
@@ -24,6 +25,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrerMessages
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ComplexType
@@ -75,7 +77,6 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import org.eclipse.mita.base.expressions.Argument
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -96,6 +97,8 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	public static val String VOID_OP_CANNOT_RETURN_VALUE_MSG = "Void operations cannot return a value.";
 	public static val String VOID_OP_CANNOT_RETURN_VALUE_CODE = "void_op_cannot_return_value";
+	
+	public static final String VOID_VARIABLE_TYPE = "Void is an invalid type for variables";
 
 	public static val String MISSING_RETURN_VALUE_MSG = "The operation must return a value of type %s.";
 	public static val String MISSING_RETURN_VALUE_CODE = "missing_return_value";
@@ -352,10 +355,12 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		for (ReturnStatement rs : returnStatements) {
 			val rsType = inferrer.infer(rs, this);
 			if(rsType === null) {
-				error(String.format(INCOMPATIBLE_RETURN_TYPE_MSG, 'void', operationType), rs, null);
+				error(String.format(INCOMPATIBLE_RETURN_TYPE_MSG, 'void', operationType), rs, ProgramPackage.eINSTANCE.returnStatement_Value);
 			} else {
 				validator.assertAssignable(operationType, rsType,
-					String.format(INCOMPATIBLE_RETURN_TYPE_MSG, rsType, operationType), [issue | error(issue.getMessage, rs, null)])				
+					String.format(INCOMPATIBLE_RETURN_TYPE_MSG, rsType, operationType), [issue | 
+						error(issue.getMessage, rs, ProgramPackage.eINSTANCE.returnStatement_Value)
+					])				
 			}
 			
 		}
@@ -394,6 +399,15 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		assertIsBoolean(condition)
 	}
 	
+	@Check(CheckType.NORMAL)
+	def checkVariableDeclaration(VariableDeclaration it){
+		var result1 = inferrer.infer(it)
+		var result2 = inferrer.infer(typeSystem.getType(ITypeSystem.VOID))
+		if(result1.type.equals(result2.type)) {
+			error(VOID_VARIABLE_TYPE, it, null);
+		}
+	}
+	
 	def protected assertIsBoolean(Expression exp) {
 		var result1 = inferrer.infer(exp)
 		var result2 = inferrer.infer(typeSystem.getType(ProgramDslTypeInferrer.BOOL_LITERAL_TYPE))
@@ -417,16 +431,17 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					return;
 				}
 				
-				for(var i = 0; i < ref.parameters.length; i++) {
-					val sField = ref.parameters.get(i);
-					val sArg = exp.arguments.get(i).value;
+				val parmsToArgs = ModelUtils.getSortedArgumentsAsMap(ref.parameters, exp.arguments);				
+				parmsToArgs.entrySet.forEach[parm_arg | 
+					val sField = parm_arg.key;
+					val sArg = parm_arg.value.value;
 					val t1 = inferrer.infer(sField, this);
 					val t2 = inferrer.infer(sArg, this);
 					validator.assertAssignable(t1, t2,
 						
 					// message says t2 can't be assigned to t1, --> invert in format
 					String.format(INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
-				}
+				]
 			}
 		}
 	}
@@ -568,6 +583,9 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					else if(alt instanceof AnonymousProductType) {
 						alt.typeSpecifiers.map[infer]
 					}
+					else {
+						#[]
+					}
 				]
 			}
 		}
@@ -603,7 +621,9 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val item = expr.owner;
 		val sizeInfRes = elementSizeInferrer.infer(item);
 		
-		expr.arraySelector?.assertIsInteger(ARRAY_INDEX_MUST_BE_INTEGER);
+		if(!(expr.arraySelector instanceof ValueRange)) {
+			expr.arraySelector?.assertIsInteger(ARRAY_INDEX_MUST_BE_INTEGER);
+		}	
 		
 		val staticVal = StaticValueInferrer.infer(expr.arraySelector, [x|]);
 		val isInferred = (sizeInfRes instanceof ValidElementSizeInferenceResult) && staticVal instanceof Integer;
@@ -685,7 +705,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val retType = inferrer.infer(funDef);
 		if(retType.type instanceof GeneratedType && retType.type.name == "optional") {
 			val returnedValueType = inferrer.infer(stmt.value);
-			if(ModelUtils.typeInferenceResultEqualsWith([t1, t2 | typeSystem.haveCommonType(t1, t2)], retType.bindings.head, returnedValueType)) {
+			if(stmt.value instanceof PrimitiveValueExpression) {
 				error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "returns"), stmt, null);
 			}
 		}

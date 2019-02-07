@@ -14,10 +14,13 @@
 package org.eclipse.mita.program.generator.internal
 
 import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
@@ -29,6 +32,7 @@ import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.xtext.EcoreUtil2
+import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin;
 
 class UserCodeFileGenerator { 
 	
@@ -58,28 +62,36 @@ class UserCodeFileGenerator {
 			«FOR function : program.functionDefinitions.filter(FunctionDefinition)»
 			«statementGenerator.header(function)»
 			«ENDFOR»
-			«exceptionGenerator.exceptionType» initGlobalVariables();
+			«exceptionGenerator.exceptionType» «program.globalInitName»();
 		''')
 		.addHeader(program.getResourceTypesName + '.h', false)
 		.toHeader(context, program.resourceBaseName.toUpperCase + '_H');
 	}
 	
 	def generateTypes(CompilationContext context, Program program) {
+		return generateTypes(context, program, program.types);
+	}
+
+	def generateTypes(CompilationContext context, SystemSpecification platform) {
+		return generateTypes(context, platform, platform.types);
+	}
+	
+	def generateTypes(CompilationContext context, PackageAssociation rootElement, Iterable<? extends EObject> types) {
 		return codeFragmentProvider.create('''
-		«FOR struct : program.types.filter(StructureType)»
+		«FOR struct : types.filter(StructureType)»
 		«statementGenerator.header(struct)»
 		«ENDFOR»
 
-		«FOR enumType : program.types.filter(EnumerationType)»
+		«FOR enumType : types.filter(EnumerationType)»
 		«statementGenerator.header(enumType)»
 		«ENDFOR»
 		
-		«FOR sumType : program.types.filter(SumType)»
+		«FOR sumType : types.filter(SumType)»
 		«statementGenerator.header(sumType)»
 		«ENDFOR»
-		''').toHeader(context, program.getResourceTypesName.toUpperCase + '_H');
+		''').toHeader(context, rootElement.getResourceTypesName.toUpperCase + '_H');
 	}
-
+	
 	def generateImplementation(CompilationContext context, Program program) {
 		// Start code generation session
 		return codeFragmentProvider.create('''
@@ -93,12 +105,12 @@ class UserCodeFileGenerator {
 		.toImplementation(context);
 	}
 	
-	def String getResourceBaseName(Program program) {
+	static def String getResourceBaseName(PackageAssociation program) {
 		val resource = program.origin.eResource;
 		return resource.URI.segments.last.replace('.' + resource.URI.fileExtension, '');
 	}
 	
-	def String getResourceTypesName(Program program) {
+	static def String getResourceTypesName(PackageAssociation program) {
 		getResourceBaseName(program) + 'Types';
 	}
 	
@@ -127,7 +139,7 @@ class UserCodeFileGenerator {
 		«statementGenerator.code(variable)»
 		«ENDFOR»
 		
-		«exceptionGenerator.exceptionType» initGlobalVariables() {
+		«exceptionGenerator.exceptionType» «program.globalInitName»() {
 			«exceptionGenerator.exceptionType» exception = «exceptionGenerator.noExceptionStatement»;
 			
 			«FOR variable : program.globalVariables»

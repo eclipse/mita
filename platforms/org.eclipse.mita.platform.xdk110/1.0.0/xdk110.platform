@@ -163,7 +163,7 @@ enum BMI160_Bandwidth
 }
 
 /**enum values to represent Range supported by the Gyroscope */
-enum BMI160_Range
+enum BMI160_BMG160_Range
 {   /** set to 0.0625 deg/s in 125 deg/s range */
     Range_125s, 
     /** set to 0.125 deg/s in 250 deg/s range */
@@ -193,7 +193,7 @@ sensor Gyroscope_BMI160 {
 	/**
 	 * The range the BMI160 should measure in.
 	 */
-	configuration-item range : BMI160_Range = BMI160_Range.Range_2000s
+	configuration-item range : BMI160_BMG160_Range = BMI160_BMG160_Range.Range_2000s
 	
 	/**
 	 * The X axis of the BMI160
@@ -232,20 +232,6 @@ enum BMG160_Bandwidth
     Bw_523Hz 
 }
 
-enum BMG160_Range
-{                
-	/** set to 0.0625 deg/s in 125 deg/s range */
-    Range_125s,  
-    /** set to 0.125 deg/s in 250 deg/s range */
-    Range_250s,  
-    /** set to 0.25 deg/s in 500 deg/s range */
-    Range_500s,  
-    /** set to 0.5 deg/s in 1000 deg/s range */
-    Range_1000s, 
-    /** set to 1 deg/s in 2000 deg/s range */
-    Range_2000s
-}
-
 /**
  * The BMG160 is an ultra-small, digital 3-axis angular rate sensor with a measurement range up to 2000°/s 
  * and a digital resolution of 16 bit for consumer electronics applications.
@@ -261,7 +247,7 @@ sensor Gyroscope_BMG160 {
 	/**
 	 * The range the BMG160 should measure in.
 	 */
-	configuration-item range : BMG160_Range = BMG160_Range.Range_2000s
+	configuration-item range : BMI160_BMG160_Range = BMI160_BMG160_Range.Range_2000s
 	
 	/**
 	 * The X axis of the BMG160
@@ -285,6 +271,25 @@ sensor Gyroscope_BMG160 {
 //sensor BMM150 {
 //	generator ""
 //}
+
+sensor noise_sensor {
+	generator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorGenerator"
+	validator "org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator"
+	
+	/**
+	 * The sampling frequency in Hertz.
+	 */
+	configuration-item samplingFrequency: uint32 = 2560
+	/**
+	 * The timeout to wait for when getting noise in milliseconds.
+	 */
+	configuration-item timeout: uint32 = 100
+	
+	/**
+	 * The noise the microphone of the XDK measures. This is unitless and needs to be calibrated in code yourself if you want absolute values. 
+	 */
+	modality noise: float
+}
 
 enum BME280_PowerMode {
 	/**
@@ -357,13 +362,7 @@ sensor BME280 {
 	/**
 	 * The relative humidity as percentage
 	 */
-	modality humidity : float
-	
-	/**
-	 * The relative humidity as percentage in Q22.10 integer format.
-	 * Divide this value by 1024 to get the percentage.
-	 */
-	modality humidity_fixed_point : uint32
+	modality humidity : uint32
 	
 }
 
@@ -685,6 +684,37 @@ alt IpConfiguration {
 	}
 }
 
+enum LoRaMessageConfirmation {
+	Confirmed, Unconfirmed
+}
+
+alt CayennePayload {
+	  DigitalInput: uint8
+	| DigitalOutput: uint8
+	| AnalogInput: int16
+	| AnalogOutput: int16
+	| IlluminanceSensor: uint16
+	| PresenceSensor: uint8
+	| TemperatureSensor: int16
+	| HumiditySensor: uint8
+	| Accelerometer: int16, int16, int16
+	| Barometer: uint16
+	| Gyrometer: int16, int16, int16
+	| GpsLocation: {Latitude: int32, Longitude: int32, Altitude: int32}
+}
+
+connectivity named-singleton LoRa {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.LoraGenerator"
+    validator "org.eclipse.mita.platform.xdk110.connectivity.LoraValidator"
+
+	required configuration-item loraAppKey: array<uint8>
+	required configuration-item loraAppEui: array<uint8>
+	configuration-item loraDeviceEui: array<uint8>
+	
+	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Confirmed): array<uint8>
+	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Confirmed): array<CayennePayload>
+}
+
 /**
  * Specifies the connection to a wireless wide-area network, also refered to as WiFi. 
  */
@@ -721,6 +751,10 @@ alt MqttAuthentication {
 	None | Login: {username: string, password: string}
 }
 
+alt MqttWill {
+	NoWill | LastWill: {topic: string, message: string, qos: uint8} 
+}
+
 /**
  * MQTT (Message Queuing Telemetry Transport) is an ISO standard (ISO/IEC PRF 20922) publish-subscribe-based messaging protocol.
  * This MQTT connectivity requires WLAN to be setup as well. 
@@ -741,11 +775,23 @@ connectivity many MQTT {
 	required configuration-item url : string
 	
 	/**
+	 * A time server to use to get the current time. This is needed to allow certificate validation for MQTTS.
+	 */
+	configuration-item sntpServer: string = "pool.ntp.org:123"
+	
+	/**
+	 * The path to the server's public certificate to use for authentication. PEM format. Absolute or relative to the project root.
+	 */
+	configuration-item certificatePath: string
+	
+	/**
 	 * The client identifier (here: clientID) is a identifier of each MQTT client
      * connecting to a MQTT broker. It needs to be unique for the broker to
      * know the state of the client. 
 	 */
 	required configuration-item clientId : string
+	
+	configuration-item lastWill: MqttWill = NoWill()
 	
 	configuration-item authentication: MqttAuthentication = None()
 	
@@ -769,6 +815,46 @@ connectivity many MQTT {
 	 */
 	signal topic(name : string, qos : uint32 = 0) : string
 	
+}
+
+alt HonoAuthentication {
+	Authenticated: { username: string, password: string }
+	| Unauthenticated: { tenant: string, deviceId: string }
+}
+
+connectivity many HonoMqtt {
+	generator "org.eclipse.mita.platform.xdk110.connectivity.HonoGenerator"
+    validator "org.eclipse.mita.platform.xdk110.connectivity.MqttValidator"
+	
+	/**
+	 * The underlying transport connectivity we use to send the data out. In the future we might also
+	 * support LoRa here.
+	 */
+	required configuration-item transport : WLAN
+	
+	/**
+	 * The URL pointing to the MQTT broker, for example: mqtt://does-not.exist:8000
+	 */
+	required configuration-item url : string
+	
+	/**
+	 * The client identifier (here: clientID) is a identifier of each MQTT client
+     * connecting to a MQTT broker. It needs to be unique for the broker to
+     * know the state of the client. 
+	 */
+	required configuration-item clientId : string
+	
+	required configuration-item authentication: HonoAuthentication
+	
+	/**
+	 * Publishes a Hono telemetry message 
+	 */
+	signal telemetry(qos: uint32 = 0) : string
+	
+	/**
+	 * Publishes a Hono event. 
+	 */
+	signal ^event() : string
 }
 
 /**
@@ -927,6 +1013,25 @@ bus named-singleton GPIO {
 	signal digitalOut(pin : GPIOPin, initialValue : bool = false) : bool
 }
 
+export exception EndOfFileException;
+
+io named-singleton SDCard {
+	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
+	sizeInferrer "org.eclipse.mita.platform.xdk110.io.SDCardSizeInferrer"
+
+	signal resumingBinaryRead(filePath: string, blockSize: uint32) : array<uint8>
+	signal appendingBinaryWrite(filePath: string) : array<uint8>
+
+	signal resumingTextRead(filePath: string, blockSize: uint32) : string
+	signal appendingTextWrite(filePath: string) : string
+
+	signal rewindingBinaryRead(filePath: string, fileSize: uint32) : array<uint8>
+	signal rewindingBinaryWrite(filePath: string) : array<uint8>
+
+	signal rewindingTextRead(filePath: string, fileSize: uint32) : string
+	signal rewindingTextWrite(filePath: string) : string
+}
+
 
 alias environment for BME280
 alias accelerometer for BMA280
@@ -947,6 +1052,7 @@ platform XDK110 {
 	has light
 	has button_one
 	has button_two
+	has noise_sensor
 	
 	has Gyroscope_BMI160
 	has Gyroscope_BMG160
@@ -958,9 +1064,22 @@ platform XDK110 {
 	has LED
 	has WLAN
 	has MQTT
+	has HonoMqtt
 	has HttpRestClient
+	has LoRa
 	
+	has SDCard
+
 	configuration-item applicationName : string = "EclipseMitaApplication"
+	/**
+	 * Enabling this powers the 2.5V and 3.3V external power on the extension bus. 
+	 */
+	configuration-item powerExternalDevices: bool = false
+	/**
+	 * Configure the XDK to wait some time in milliseconds before setting up and enabling resources.
+	 * This is especially useful to view debug output.
+	 */
+	configuration-item startupDelay: uint32 = 0
 	
 	event startup
 }

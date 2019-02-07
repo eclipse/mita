@@ -13,6 +13,15 @@
 
 package org.eclipse.mita.library.stdlib
 
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.program.AbstractLoopStatement
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
@@ -24,16 +33,7 @@ import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.expressions.StringLiteral
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class StringSizeInferrer extends ElementSizeInferrer {
 	
@@ -62,9 +62,21 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		/*
 		 * Find initial size
 		 */
+		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
+		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
+		val initialization = variable.initialization ?: (
+			referencesToVariable
+				.map[it.eContainer]
+				.filter(AssignmentExpression)
+				.filter[ae |
+					val left = ae.varRef; 
+					left instanceof ElementReferenceExpression && (left as ElementReferenceExpression).reference === variable 
+				]
+				.map[it.expression]
+				.head
+		)
 		var stringHasFixedSize = false;
-		val initialLength = if(variable.initialization !== null) {
-			val initialization = variable.initialization;
+		val initialLength = if(initialization !== null) {
 			if(initialization instanceof NewInstanceExpression) {
 				stringHasFixedSize = true;
 				initialization.inferFixedSize();
@@ -82,8 +94,6 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		/*
 		 * Strategy is to find all places where this variable is modified and try to infer the length there.
 		 */		
-		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
-		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
 		val modifyingExpressions = referencesToVariable.map[ref | 
 			val refContainer = ref.eContainer;
 			

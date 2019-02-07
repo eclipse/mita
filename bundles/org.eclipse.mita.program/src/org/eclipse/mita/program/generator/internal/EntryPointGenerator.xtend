@@ -79,7 +79,7 @@ class EntryPointGenerator {
 			baseIncludes.add(new IncludePath(systemResource.fileBasename + '.h', false));
 		}
 		for(program : context.allUnits.filter[containsCodeRelevantContent]) {
-			baseIncludes.add(new IncludePath(userCodeGenerator.getResourceBaseName(program) + '.h', false))
+			baseIncludes.add(new IncludePath(UserCodeFileGenerator.getResourceBaseName(program) + '.h', false))
 		}
 		
 		// and produce code
@@ -89,16 +89,12 @@ class EntryPointGenerator {
 				«startupGenerator.generateMain(context)»
 			}
 			
-			«exceptionType» Mita_initialize(void)
+			«exceptionType» Mita_initialize(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
 			{
+				«eventLoopGenerator.generateEventLoopHandlerPreamble(context, null)»
 				«exceptionType» exception = NO_EXCEPTION;
-
-				«IF context.hasTimeEvents»
-
-				// setup time
-				exception = SetupTime();
-				«"Time".generateLoggingExceptionHandler("setup")»
-				«ENDIF»
+				
+				«eventLoopGenerator.generateSetupPreamble(context)»
 			
 				«IF !allResourcesUsed.empty»
 				// setup resources
@@ -107,10 +103,13 @@ class EntryPointGenerator {
 				«resource.baseName.generateLoggingExceptionHandler("setup")»
 				
 				«ENDFOR»
+
+				«IF context.hasTimeEvents»
+
+				// setup time
+				exception = SetupTime();
+				«"Time".generateLoggingExceptionHandler("setup")»
 				«ENDIF»
-				«IF context.hasGlobalVariables»
-				exception = initGlobalVariables();
-				«"InitGlobalVars".generateLoggingExceptionHandler("setup")»
 				«ENDIF»
 				return exception;
 			}
@@ -119,6 +118,8 @@ class EntryPointGenerator {
 			{
 				«eventLoopGenerator.generateEventLoopHandlerPreamble(context, null)»
 				«exceptionType» exception = NO_EXCEPTION;
+				
+				«eventLoopGenerator.generateEnablePreamble(context)»
 
 				«IF context.hasTimeEvents»
 				exception = EnableTime();
@@ -129,12 +130,17 @@ class EntryPointGenerator {
 				exception = «resource.enableName»();
 				«resource.baseName.generateLoggingExceptionHandler("enable")»
 				«ENDFOR»
-
+				«FOR program: context.allUnits»
+				«IF !program.globalVariables.empty»
+				exception = «program.globalInitName»();
+				«program.globalInitName.generateLoggingExceptionHandler("do")»
+				«ENDIF»
+				«ENDFOR»
 				return NO_EXCEPTION;
 			}
 		''')
 		.setPreamble('''
-			static «exceptionType» Mita_initialize(void);
+			static «exceptionType» Mita_initialize(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»);
 			static «exceptionType» Mita_goLive(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»);
 		''')
 		.addHeader(baseIncludes)
@@ -158,18 +164,6 @@ class EntryPointGenerator {
 		.toHeader(context, 'Mita_EVENTS_H');
 	}
 	
-	protected def generateLoggingExceptionHandler(String resourceName, String action) {
-		codeFragmentProvider.create('''
-		if(exception == NO_EXCEPTION)
-		{
-			«loggingGenerator.generateLogStatement(IPlatformLoggingGenerator.LogLevel.Info, action + " " + resourceName + " succeeded")»
-		}
-		else
-		{
-			«loggingGenerator.generateLogStatement(IPlatformLoggingGenerator.LogLevel.Error, "failed to " + action + " " + resourceName)»
-			return exception;
-		}
-		''')
-	}
+	
 	
 }

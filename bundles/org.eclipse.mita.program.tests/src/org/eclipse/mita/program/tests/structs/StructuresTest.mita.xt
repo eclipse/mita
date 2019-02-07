@@ -37,4 +37,23 @@ function structTest() : void {
 	// We error on wrong type of arguments
 	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'." at "\"AHHHH!\""
 	inst = Foo(1, "AHHHH!");
+	
+	// we can use named parameters to swap argument order
+	inst = Foo(foo=true, bar=1);
+	inst = Foo(bar=1, foo=true);
+	// But named parameters should validate just the same
+	
+	// We error on wrong number of arguments
+	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(foo=1)"
+	inst = Foo(foo=1);
+	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(bar=1)"
+	inst = Foo(bar=1);
+	/* XPECT errors ---
+		"Duplicate assignment to parameter 'bar'." at "bar=3"
+		"Wrong number of arguments, expected [uint32, bool] ." at "Foo(bar=1, foo=false, bar=3)"
+	--- */
+	inst = Foo(bar=1, foo=false, bar=3);
+	// We error on wrong type of arguments
+	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'." at ""AHHHH!""
+	inst = Foo(bar=1, foo="AHHHH!");
 }
