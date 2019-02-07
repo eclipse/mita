@@ -31,6 +31,9 @@ class TypeVariableProxy extends TypeVariable {
 		this.reference = reference;
 		this.targetQID = targetQID;
 		this.isLinkingProxy = isLinkingProxy;
+		if(name.startsWith("p_1127") && targetQID.toString == "T") {
+			print("");
+		}
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy) {

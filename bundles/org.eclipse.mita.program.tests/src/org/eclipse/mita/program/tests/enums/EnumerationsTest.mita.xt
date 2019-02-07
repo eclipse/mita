@@ -21,6 +21,7 @@ setup my_sensor00 {
 }
 
 // XPECT noCompileErrors
+// XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "enumOp"
 function enumOp(p1 : Foo) : Foo {
 	return p1;
 }

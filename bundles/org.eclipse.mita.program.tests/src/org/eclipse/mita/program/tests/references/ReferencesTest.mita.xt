@@ -28,6 +28,7 @@ struct Foo {
 	var foo3 : &&&uint32;
 }
 
+// XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "testError"
 fn testError(x1: Foo, x2: &Foo, x3: &&Foo, y1: uint32, y2: &uint32, y3: &&uint32): void {
 	// XPECT errors --> "Can not copy function parameters that are or contain references of references." at "let t1_1 = x1;"
 	let t1_1 = x1;

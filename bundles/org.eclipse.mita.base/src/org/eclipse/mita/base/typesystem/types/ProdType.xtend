@@ -44,7 +44,7 @@ class ProdType extends TypeConstructorType {
 	}
 		
 	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		return new SubtypeConstraint(tau, sigma, new ValidationIssue(Severity.ERROR, '''«tau» is not subtype of «sigma»''', ""));
+		return new SubtypeConstraint(tau, sigma, new ValidationIssue('''%s is not subtype of %s''', tau.origin ?: sigma.origin));
 	}
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {

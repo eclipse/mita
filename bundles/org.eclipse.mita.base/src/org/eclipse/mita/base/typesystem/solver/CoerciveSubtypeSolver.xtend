@@ -586,13 +586,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeVariable sub, TypeConstructorType top) {
 		// expand-l:   a <= Ct1...tn
 		val expansion = substitutionProvider.get() => [top.expand(system, it, sub)];
-		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage));
+		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint._errorMessage));
 		return SimplificationResult.success(newSystem, expansion);
 	} 
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeVariable top) {
 		// expand-r:   Ct1...tn <= a
 		val expansion = substitutionProvider.get() => [sub.expand(system, it, top)];
-		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage));
+		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint._errorMessage));
 		return SimplificationResult.success(newSystem, expansion);
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, AbstractBaseType sub, AbstractBaseType top) { 
@@ -625,7 +625,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeScheme sub, AbstractType top) {
 		val vars_instance = sub.instantiate(system)
-		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top, constraint.errorMessage));
+		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top, constraint._errorMessage));
 		return SimplificationResult.success(newSystem, Substitution.EMPTY);
 	}
 	

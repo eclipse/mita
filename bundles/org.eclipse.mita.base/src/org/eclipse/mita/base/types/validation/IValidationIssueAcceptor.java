@@ -41,7 +41,10 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Function length cannot be used here: f_651.0, f_652.0";
+			return "int8 is not subtype of f_0";
+		}
+		private static void singleBreakpoint() {
+			System.out.print("");
 		}
 		
 		public ValidationIssue(Severity severity, String message, String issueCode) {
@@ -63,7 +66,7 @@ public interface IValidationIssueAcceptor {
 				this.feature = null;
 			}
 			if(shouldTest() && message.equals(getTestString())) {
-				System.out.print("");
+				singleBreakpoint();
 			}
 		}
 		
@@ -83,7 +86,7 @@ public interface IValidationIssueAcceptor {
 			this.issueCode = issueCode;
 			this.feature = feature;
 			if(shouldTest() && message.equals(getTestString())) {
-				System.out.print("");
+				singleBreakpoint();
 			}
 		}
 

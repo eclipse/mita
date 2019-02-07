@@ -13,7 +13,7 @@ function variableMutabilityTest() : void {
 	var foo: uint8 = 1;
 	foo = 2;
 	
-	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int32 and bool." at "foo = true"
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and bool." at "foo = true"
 	foo = true;
 	
 	// Immutable variables are declared with the let keyword
@@ -63,10 +63,16 @@ function voidIsInvalidForVariableDeclarations() : void {
 function withParams(param : bool) {}
 
 function parameterScoping() {
-	// XPECT errors --> "Couldn't resolve reference to EObject 'param'." at "param"
+	/* XPECT errors ---
+		"Scope doesn't contain param for ElementReferenceExpression.reference on param" at "param"
+		"Scope doesn't contain param for ElementReferenceExpression.reference on param" at "var operationParamRef = param;"
+	--- */
 	var operationParamRef = param;
 	
-	// XPECT errors --> "Couldn't resolve reference to EObject 'p01'." at "p01"
+	/* XPECT errors ---
+		"Scope doesn't contain p01 for ElementReferenceExpression.reference on p01" at "p01"
+		"Scope doesn't contain p01 for ElementReferenceExpression.reference on p01" at "var vciParamRef = p01;"
+	--- */
 	var vciParamRef = p01;
 }
 

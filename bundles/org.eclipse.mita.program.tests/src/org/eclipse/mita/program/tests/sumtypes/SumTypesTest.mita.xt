@@ -27,7 +27,7 @@ alt anyVec {
 	| vec4d: int32, int32, int32, int32
 }
 
-//xpect warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "incVecs"
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "incVecs"
 fn incVecs(a: anyVec) {
 	// 4*int32 + 1 = 4*4 + 1 = 17
 	// XPECT inferredSize --> 17

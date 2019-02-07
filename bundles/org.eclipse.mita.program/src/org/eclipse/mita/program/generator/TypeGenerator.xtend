@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
@@ -45,7 +46,9 @@ class TypeGenerator implements IGenerator {
 	@Inject
 	protected extension GeneratorUtils
 
-	
+	public dispatch def CodeFragment code(EObject context, AbstractType type) {
+		return codeFragmentProvider.create('''NOT IMPLEMENTED FOR «type.class.name»''')
+	}
 	public dispatch def CodeFragment code(EObject context, AtomicType type) {
 		if(TypesUtil.isGeneratedType(context, type)) {
 			val generator = generatorRegistry.getGenerator(context.eResource, type);

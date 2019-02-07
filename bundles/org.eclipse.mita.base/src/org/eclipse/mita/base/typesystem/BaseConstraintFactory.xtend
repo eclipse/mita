@@ -102,8 +102,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 	@Inject
 	protected IScopeProvider scopeProvider;
 	
-	protected boolean isLinking;
-	
 	public static final String GENERATOR_KEY = "generator";
 	public static final String SIZE_INFERRER_KEY = "sizeInferrer";
 	public static final String PARENT_NAME_KEY = "parentName";
@@ -118,28 +116,16 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return result;
 	}
 	
-	override setIsLinking(boolean isLinking) {
-		this.isLinking = isLinking;
-	}
 	override getTypeRegistry() {
 		return typeRegistry;
 	}
 	
 	protected def TypeVariable resolveReferenceToSingleAndGetType(ConstraintSystem system, EObject origin, EReference featureToResolve) {
-		if(isLinking) {
-			return system.getTypeVariableProxy(origin, featureToResolve);
-		}
-		val obj = resolveReferenceToSingleAndLink(origin, featureToResolve);
-		return system.getTypeVariable(obj);
+		return system.getTypeVariableProxy(origin, featureToResolve);
 	}
 	
 	protected def List<TypeVariable> resolveReferenceToTypes(ConstraintSystem system, EObject origin, EReference featureToResolve) {
-		if(isLinking) {
-			return #[system.getTypeVariableProxy(origin, featureToResolve)];
-		}
-		else {
-			return resolveReference(origin, featureToResolve).map[system.getTypeVariable(it)].force;
-		}
+		return #[system.getTypeVariableProxy(origin, featureToResolve)];
 	}
 	
 	protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {

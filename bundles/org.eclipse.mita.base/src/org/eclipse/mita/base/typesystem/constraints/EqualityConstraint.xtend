@@ -16,8 +16,8 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		super(source);
 		this.left = left;
 		this.right = right;
-		if(this.toString == "int32 ≡ xint8") {
-			print("")
+		if(left === null || right === null) {
+			throw new NullPointerException;
 		}
 	}
 	
