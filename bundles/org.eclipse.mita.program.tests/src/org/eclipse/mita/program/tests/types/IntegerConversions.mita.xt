@@ -41,13 +41,13 @@ fn takesUint8(x : uint8): uint8 {
 }
 
 fn intRangeChecks() {
-	/* XPECT errors ----
+	/* XPECT errors ---
 		"Function takesUint8 cannot be used here: uint8, xint8" at "takesUint8"
 		"int8 is not subtype of uint8" at "1"
 	--- */
 	takesUint8(-1);
 	
-	// XPECT errors ---> "Assignment operator '=' may only be applied on compatible types, not on uint8 and int8." at "let x : uint8 = -1;"
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and int8." at "let x : uint8 = -1;"
 	let x : uint8 = -1;
 }
 
