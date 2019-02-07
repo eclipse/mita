@@ -69,8 +69,7 @@ class ServalPALGenerator extends AbstractSystemResourceGenerator {
 					
 					if(RETCODE_OK == retcode)
 					{
-						ServalPalWiFi_StateChangeInfo_T stateChangeInfo = { SERVALPALWIFI_OPEN, NULL };
-						retcode = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_STATE_CHANGE, &stateChangeInfo);
+						retcode = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_CONNECTED, NULL);
 					}
 
 					if(RETCODE_OK != retcode)

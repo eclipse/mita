@@ -24,34 +24,44 @@ import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
+import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.generator.GeneratorUtils
 
 class WlanGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 	
+	@Inject
+	protected extension GeneratorUtils
+	
 	@Inject(optional=true)
 	protected IPlatformLoggingGenerator loggingGenerator
 	
 	override generateSetup() {
 		CodeFragment.EMPTY;
+		
 	}
 	
 	@Inject
 	protected extension StatementGenerator statementGenerator
 			
 	override generateEnable() {
+		val baseName = (setup ?: component).baseName;
+		
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
 		val result = codeFragmentProvider.create('''
 		
+				
 		Retcode_T retcode = RETCODE_OK;
 
 		/* The order of calls is important here. WlanConnect_init initializes the CC3100 and prepares
 		 * its future use. Calls to NetworkConfig_ fail if WlanConnect_Init was not called beforehand.
 		 */
 
-		retcode = WlanConnect_Init();
+		retcode = WlanConnect_Init(«baseName»_StatusCallback);
 
 		if(RETCODE_OK != retcode)
 		{
@@ -89,7 +99,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 				 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
 				 * a callback instead of NULL. */
 				«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to open network: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
-				retcode = WlanConnect_Open((WlanConnect_SSID_T) NETWORK_SSID, NULL);
+				retcode = WlanConnect_Open((WlanConnect_SSID_T) NETWORK_SSID, true);
 				if(RETCODE_OK != retcode)
 				{
 					return retcode;
@@ -100,7 +110,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 				 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
 				 * a callback instead of NULL. */
 				«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to personal network: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
-				retcode = WlanConnect_WPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_PassPhrase_T) NETWORK_PSK, NULL);
+				retcode = WlanConnect_WPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_PassPhrase_T) NETWORK_PSK, true);
 				if(RETCODE_OK != retcode)
 				{
 					return retcode;
@@ -128,7 +138,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 				 * WlanConnect_EnterpriseWPA function will return only once a connection to the WLAN has been established,
 				 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
 				 * a callback instead of NULL. */
-				retcode = WlanConnect_EnterpriseWPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_Username_T) NETWORK_USERNAME, (WlanConnect_PassPhrase_T) NETWORK_PASSWORD, NULL);
+				retcode = WlanConnect_EnterpriseWPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_Username_T) NETWORK_USERNAME, (WlanConnect_PassPhrase_T) NETWORK_PASSWORD, true);
 				if(RETCODE_OK != retcode)
 				{
 					return retcode;
@@ -168,6 +178,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		
 		return RETCODE_OK;
 		''')
+		
 		.setPreamble('''
 		#define NETWORK_SSID  "«configuration.getString("ssid")»"
 		«IF auth instanceof SumTypeRepr»
@@ -180,6 +191,9 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		«ELSE»
 			ERROR: INVALID CONFIGURATION: authentication
 		«ENDIF»
+		
+		«setup.buildServiceCallback(eventHandler)»
+		
 		''')
 		.addHeader('XdkCommonInfo.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
@@ -188,12 +202,29 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
+		
 		if(auth instanceof SumTypeRepr) {
 			if(auth.name == "Enterprise") {
 				result.addHeader('WLANHostPgm.h', true, IncludePath.HIGH_PRIORITY)		
 			}
 		}
-		return result
+		
+		return result		
 	}
 	
+	private def CodeFragment buildServiceCallback(SystemResourceSetup component, Iterable<EventHandlerDeclaration> declarations) {
+						val baseName = component.baseName
+				
+				codeFragmentProvider.create('''
+				static void «baseName»_StatusCallback(WlanConnect_Status_T connectStatus)
+				{
+					BCDS_UNUSED(connectStatus);
+				}
+				
+				''')
+			}
+			
+	
 }
+
+
