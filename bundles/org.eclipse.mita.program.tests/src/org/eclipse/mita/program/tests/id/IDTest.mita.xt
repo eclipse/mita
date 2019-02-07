@@ -78,9 +78,9 @@ fn variableScopesFail(){
 		var myVarIf : bool = true;
 	}
 	/* XPECT errors ---
-		"Assignment operator '=' may only be applied on compatible types, not on ⊥ (Scope doesn't contain myVarIf for ElementReferenceExpression.reference on myVarIf) and bool." at "myVarIf = false"
-		"Scope doesn't contain myVarIf for ElementReferenceExpression.reference on myVarIf" at "myVarIf"
-		"Scope doesn't contain myVarIf for ElementReferenceExpression.reference on myVarIf" at "myVarIf = false"
+		"Assignment operator '=' may only be applied on compatible types, not on ⊥ (Couldn't resolve reference to EObject 'myVarIf'.) and bool." at "myVarIf = false"
+		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf"
+		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf = false"
 	--- */
 	myVarIf = false;   
 }
@@ -94,9 +94,9 @@ fn variableScopesShadowing(){
         
 fn variableDeclarationAfterReference(){
 	/* XPECT errors ---
-		"Assignment operator '=' may only be applied on compatible types, not on ⊥ (Scope doesn't contain myVar2 for ElementReferenceExpression.reference on myVar2) and xint8." at "myVar2 = 10"
-		"Scope doesn't contain myVar2 for ElementReferenceExpression.reference on myVar2" at "myVar2"
-		"Scope doesn't contain myVar2 for ElementReferenceExpression.reference on myVar2" at "myVar2 = 10"
+		"Assignment operator '=' may only be applied on compatible types, not on ⊥ (Couldn't resolve reference to EObject 'myVar2'.) and xint8." at "myVar2 = 10"
+		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2"
+		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2 = 10"
 	--- */
 	myVar2 = 10;          
 	var myVar2 = 5;    

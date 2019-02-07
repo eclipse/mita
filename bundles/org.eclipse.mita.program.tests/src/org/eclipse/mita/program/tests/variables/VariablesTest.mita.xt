@@ -64,14 +64,14 @@ function withParams(param : bool) {}
 
 function parameterScoping() {
 	/* XPECT errors ---
-		"Scope doesn't contain param for ElementReferenceExpression.reference on param" at "param"
-		"Scope doesn't contain param for ElementReferenceExpression.reference on param" at "var operationParamRef = param;"
+		"Couldn't resolve reference to EObject 'param'." at "param"
+		"Couldn't resolve reference to EObject 'param'." at "var operationParamRef = param;"
 	--- */
 	var operationParamRef = param;
 	
 	/* XPECT errors ---
-		"Scope doesn't contain p01 for ElementReferenceExpression.reference on p01" at "p01"
-		"Scope doesn't contain p01 for ElementReferenceExpression.reference on p01" at "var vciParamRef = p01;"
+		"Couldn't resolve reference to EObject 'p01'." at "p01"
+		"Couldn't resolve reference to EObject 'p01'." at "var vciParamRef = p01;"
 	--- */
 	var vciParamRef = p01;
 }
