@@ -31,6 +31,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.types.GeneratedTypeConstructor
 import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.mita.program.NewInstanceExpression
 
 class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	
@@ -42,6 +43,9 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 		// The statement generator can recover for direct initialization (x = foo()), so we don't unravel here.
 		// this might lead to invalid code, since unraveling fixes nested expressions like foo() && bar(), however unraveling leads to just as invalid code.
 		if(EcoreUtil2.getContainerOfType(expression, ProgramBlock) === null) {
+			return false;
+		}
+		if(expression instanceof NewInstanceExpression) {
 			return false;
 		}
 		if(expression instanceof ElementReferenceExpression) {

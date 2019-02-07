@@ -72,6 +72,7 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
+import org.eclipse.mita.base.types.Expression
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -146,10 +147,27 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	
 	public static val String SIGINST_MODALITY_CANT_BE_FUNC_PARAM_MSG = "Signal instances and modalities cannot be passed as parameters.";
 
+	public static val String ERROR_ASSIGNMENT_TO_CONST_CODE = "AssignmentToConst";
+	public static val String ERROR_ASSIGNMENT_TO_CONST_MSG = "Assignment to constant not allowed.";
+
 	@Inject ITypeSystem typeSystem
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
+	
+	@Check(CheckType.FAST) 
+	def void checkAssignmentToFinalVariable(AssignmentExpression exp) {
+		val Expression varRef = exp.getVarRef()
+		val EObject referencedObject = if (varRef instanceof ElementReferenceExpression) {
+			varRef.reference
+		}
+		if (referencedObject instanceof Property) {
+			if (referencedObject.isConst()) {
+				error(ERROR_ASSIGNMENT_TO_CONST_MSG, ExpressionsPackage.Literals.ASSIGNMENT_EXPRESSION__VAR_REF,
+					ERROR_ASSIGNMENT_TO_CONST_CODE)
+			}
+		}
+	}
 	
 	@Check(CheckType.NORMAL)
 	def checkFunctionsReturnSomething(FunctionDefinition funDef) {
