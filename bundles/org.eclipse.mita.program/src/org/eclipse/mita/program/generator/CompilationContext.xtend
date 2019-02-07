@@ -137,7 +137,7 @@ class CompilationContext {
 			program.eAllContents.filter(TryStatement).flatMap[x | x.catchStatements.map[it.exceptionType].iterator].toIterable
 		];
 		val platformExceptions = platform.eResource.allContents.filter(ExceptionTypeDeclaration).toIterable();
-		return (unitAndStdlibExceptions + platformExceptions).groupBy[it.name].entrySet.map[it.value.head];
+		return (unitAndStdlibExceptions + platformExceptions).filterNull.groupBy[it.name].entrySet.map[it.value.head];
 	}
 		
 	def getAllGeneratedTypesUsed() {

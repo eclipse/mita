@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "int8 is not subtype of f_0";
+			return "Thrown object is not an exception";
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");

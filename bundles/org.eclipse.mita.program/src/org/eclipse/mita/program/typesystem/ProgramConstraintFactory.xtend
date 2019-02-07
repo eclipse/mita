@@ -302,6 +302,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val exceptionBaseType = typeRegistry.getTypeModelObjectProxy(system, stmt, StdlibTypeRegistry.exceptionBaseTypeQID);
 		system.addConstraint(new SubtypeConstraint(exceptionType, exceptionBaseType, 
 			new ValidationIssue(Severity.ERROR, '''Thrown object is not an exception''', stmt, reference, "")));
+		system.associate(exceptionType, stmt);
 		return null;
 	}
 	
@@ -322,7 +323,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val exceptionBaseType = typeRegistry.getTypeModelObjectProxy(system, stmt, StdlibTypeRegistry.exceptionBaseTypeQID);
 		system.addConstraint(new SubtypeConstraint(exceptionType, exceptionBaseType, 
 			new ValidationIssue(Severity.ERROR, '''Caught object is not an exception''', stmt, reference, "")));
-		
+		system.associate(exceptionType, stmt);
 		return null;
 	}
 

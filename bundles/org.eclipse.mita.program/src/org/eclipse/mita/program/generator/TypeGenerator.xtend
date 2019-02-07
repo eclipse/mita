@@ -49,6 +49,9 @@ class TypeGenerator implements IGenerator {
 	public dispatch def CodeFragment code(EObject context, AbstractType type) {
 		return codeFragmentProvider.create('''NOT IMPLEMENTED FOR «type.class.name»''')
 	}
+	public dispatch def CodeFragment code(EObject context, Void type) {
+		return codeFragmentProvider.create('''NOT IMPLEMENTED FOR NULL''')
+	}
 	public dispatch def CodeFragment code(EObject context, AtomicType type) {
 		if(TypesUtil.isGeneratedType(context, type)) {
 			val generator = generatorRegistry.getGenerator(context.eResource, type);

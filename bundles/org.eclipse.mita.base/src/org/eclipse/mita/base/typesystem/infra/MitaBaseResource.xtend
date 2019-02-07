@@ -223,10 +223,10 @@ class MitaBaseResource extends LazyLinkingResource {
 							if(type instanceof BottomType) {
 								val Pair<EObject, EStructuralFeature> errorSource = if(origin !== null && origin.eResource == obj.eResource) {
 									if(origin instanceof NullTypeSpecifier) {
-										origin.eContainer -> null;
+										origin.eContainer -> type.feature;
 									}
 									else {
-										origin -> null;
+										origin -> type.feature;
 									}
 								}
 								else if(obj instanceof PackageAssociation) {
@@ -243,9 +243,6 @@ class MitaBaseResource extends LazyLinkingResource {
 					resource.cancelIndicator.canceled = true;
 					val issues = solution.issues.groupBy[it.message->(if(it.target?.eIsProxy) {(it.target as EObjectImpl).eProxyURI} else {it.target})].values.map[it.head];
 					resource.errors += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[
-						if(it.message == "Function Range_2G cannot be used here") {
-							print("")
-						}
 						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
 					]
 					resource.warnings += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].map[

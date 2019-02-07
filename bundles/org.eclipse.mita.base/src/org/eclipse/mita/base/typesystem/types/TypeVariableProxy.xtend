@@ -12,6 +12,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.util.BaseUtils
 
 @EqualsHashCode
 @Accessors
@@ -31,7 +32,7 @@ class TypeVariableProxy extends TypeVariable {
 		this.reference = reference;
 		this.targetQID = targetQID;
 		this.isLinkingProxy = isLinkingProxy;
-		if(name.startsWith("p_1127") && targetQID.toString == "T") {
+		if(targetQID.toString.nullOrEmpty) {
 			print("");
 		}
 	}
@@ -59,7 +60,7 @@ class TypeVariableProxy extends TypeVariable {
 			}
 		} 
 		
-		val qname = (maybeQname ?: QualifiedName.create(NodeModelUtils.findNodesForFeature(origin, reference)?.head?.text?.trim?.split("\\.")));
+		val qname = (maybeQname ?: QualifiedName.create(BaseUtils.getText(origin, reference)?.split("\\.")));
 		return qname;
 	}
 	
