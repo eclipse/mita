@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Function ReadWrite cannot be used here";
+			return "∗MySensor is not subtype of MySensor";
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");

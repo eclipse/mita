@@ -419,6 +419,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		val exclusion = 
 //			PlatformPackage.Literals.SENSOR.isSuperTypeOf(x.EClass) ||
 //			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x.EClass) ||
+			PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass) ||
 			TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x.EClass) ||
 			TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass) ||
 			TypesPackage.Literals.TYPE_PARAMETER.isSuperTypeOf(x.EClass); // exclude gloabal type parameters, local ones are added in TypeReferenceScope

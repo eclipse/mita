@@ -90,7 +90,7 @@ every 100 milliseconds {
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
 	/* XPECT errors ---
-		"Cannot determine size of element: Unable to infer size from type modality01_args(MySensor) → modality<uint32>" at "a"
+		"Cannot determine size of element: Unable to infer size from type modality01_args(∗MySensor) → modality<uint32>" at "a"
 		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
 	--- */
 	let a: modality<uint32> = MySensor.modality01; 
@@ -132,7 +132,7 @@ every 100 milliseconds {
 		} 
 	}
 	/* XPECT errors ---
-		"f (:: f_394.0) and g don't share a common type" at "f"
+		"f (:: f_23) and g don't share a common type" at "f"
 		"f (:: xint8) and g don't share a common type" at "f"
 		"f and g (:: string) don't share a common type" at "g"
 	 --- */
@@ -149,7 +149,6 @@ fn <T> foo2() {
 	let bar4 = *bar3; 
 	/* XPECT errors ---
 		"Function con_array cannot be used here: arguments don't fit (con_array_args(f_9, f_10) != con_array_args(uint32))" at "new array<int32>(10, 20)"
-		"con_array_args(f_9, f_10) and con_array_args(uint32) differ in their type arguments" at "new array<int32>(10, 20)"
 		"con_array_args(xint8, xint8) and con_array_args(uint32) differ in the number of type arguments" at "new array<int32>(10, 20)"
 	--- */
 	let bar5 = new array<int32>(10, 20);
@@ -161,10 +160,10 @@ fn <T> foo2() {
 	let bar7 = new array<int32>();
 	let bar8 = new array<int32>(size=10);
 	/* XPECT errors ---
+		"Couldn't resolve reference to Parameter 'foo'." at "foo"
 		"Function con_array cannot be used here" at "new array<int32>(foo=10)"
-		"Scope doesn't contain foo for Argument.parameter on foo=prim»i»10" at "foo=10"
 		"Too few arguments" at "new array<int32>(foo=10)"
-		"prim»i»10 (:: xint8) not compatible with foo (:: ⊥ (Scope doesn't contain foo for Argument.parameter on foo=prim»i»10))" at "foo=10"
+		"prim»i»10 (:: xint8) not compatible with foo (:: ⊥ (Couldn't resolve reference to Parameter 'foo'.))" at "foo=10"
 	--- */
 	let bar9 = new array<int32>(foo=10);
 	return;  

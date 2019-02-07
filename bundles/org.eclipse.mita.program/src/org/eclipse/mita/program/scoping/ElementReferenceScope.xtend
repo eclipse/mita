@@ -45,7 +45,6 @@ class ElementReferenceScope extends AbstractScope {
 	EObject context
 
 	new(IScope outer, EObject context) {
-		//super(unqualifySumTypeConstructors(outer), false)
 		super(outer, false);
 		this.context = context
 	}
@@ -54,13 +53,6 @@ class ElementReferenceScope extends AbstractScope {
 		return false;
 	}
 	
-//	static def IScope unqualifySumTypeConstructors(IScope scope) {
-//		val foo = scope.allElements;
-//		val sumTypes = scope.allElements.filter[(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(it.EClass))]
-//		var s = new ImportScope(sumTypes.map[new ImportNormalizer(it.qualifiedName, true, false)].toList, scope, null, TypesPackage.Literals.NAMED_PRODUCT_TYPE, false);
-//		return s;
-//	}
-
 	override protected getAllLocalElements() {
 		var result = newArrayList()
 		result.addFunctionParameter(context);
@@ -69,19 +61,13 @@ class ElementReferenceScope extends AbstractScope {
 		result.addForEachLoopIterator(context)
 		result.addGlobalVariables(context)
 		result.addDeconstructorVariables(context)
-		//result.addStructureTypes(context)
 		result.addStructureAccessors(context)
-		//result.addSumTypes(context)
 		Scopes.scopedElementsFor(result, [obj | 
 			if(obj instanceof TypeKind) {
 				return QualifiedName.create(obj.name.substring(1));
 			}
 			return QualifiedName.wrapper(SimpleAttributeResolver.NAME_RESOLVER).apply(obj)
 		])
-	}
-	
-	def addSumTypes(ArrayList<EObject> result, EObject context) {
-		result += context.getContainerOfType(PackageAssociation).types.filter(SumType).map[it.typeKind]
 	}
 	
 	def addDeconstructorVariables(ArrayList<EObject> result, EObject context) {
@@ -94,14 +80,7 @@ class ElementReferenceScope extends AbstractScope {
 			result += assignmentDeconstructor.assignmentVariable
 		}
 	}
-	
-	def addStructureTypes(ArrayList<EObject> result, EObject object) {
-	    /* Here we just add the structures defined in the same program/compilation
-	     * unit. The outer scope will provide structures defined elsewhere.
-	     */
-		result += object.getContainerOfType(PackageAssociation).types.filter(StructureType)
-	}
-	
+		
 	def addStructureAccessors(ArrayList<EObject> result, EObject object) {
 		result += object.getContainerOfType(PackageAssociation).types.allContents.filter(TypeAccessor).toIterable;
 	}

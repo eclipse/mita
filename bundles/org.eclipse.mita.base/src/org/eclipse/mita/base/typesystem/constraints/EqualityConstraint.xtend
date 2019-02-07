@@ -19,6 +19,9 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null) {
 			throw new NullPointerException;
 		}
+		if(this.toString == "f_186 ≡ modality01_args(f_142) → modality<f_183>") {
+			print("")
+		}
 	}
 	
 	override getErrorMessage() {
