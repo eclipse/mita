@@ -16,29 +16,24 @@
  */
 package org.eclipse.mita.platform.scoping
 
+import com.google.common.base.Predicate
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.scoping.TypeKindNormalizer
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.EnumerationType
-import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.platform.ConfigurationItem
-import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.platform.PlatformPackage
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.FilteringScope
-import org.eclipse.xtext.resource.IEObjectDescription
-import org.eclipse.mita.platform.PlatformPackage
-import org.eclipse.mita.base.types.TypesPackage
-import com.google.common.base.Predicate
-import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
-import org.eclipse.xtext.naming.QualifiedName
-import java.util.Collections
 import org.eclipse.xtext.scoping.impl.ImportScope
-import org.eclipse.mita.base.scoping.TypeKindNormalizer
 
 /**
  * This class contains custom scoping description.

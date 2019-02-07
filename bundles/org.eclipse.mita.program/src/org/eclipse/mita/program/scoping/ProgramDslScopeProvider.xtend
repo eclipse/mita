@@ -23,13 +23,15 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
+import org.eclipse.mita.base.scoping.TypeKindNormalizer
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
@@ -67,7 +69,6 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
-import org.eclipse.mita.base.scoping.TypeKindNormalizer
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -437,7 +438,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			return new FilteringScope(scope, globalElementFilterInSetup);
 		} else {
 			val superScope = new FilteringScope(delegate.getScope(context, ref), globalElementFilter);
-			val scope = (if(context instanceof ElementReferenceExpression) {
+			val scope = (
+			if(context instanceof FeatureCallWithoutFeature) {
+				val normalizer = new ImportNormalizer(QualifiedName.create("<auto>"), true, false);
+				new ImportScope(#[normalizer], superScope, null, null, false);
+			} else if(context instanceof ElementReferenceExpression) {
 				if(context.isOperationCall && context.arguments.size > 0) {
 					val owner = context.arguments.head.value;
 					

@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Thrown object is not an exception";
+			return "Function ReadWrite cannot be used here";
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");
