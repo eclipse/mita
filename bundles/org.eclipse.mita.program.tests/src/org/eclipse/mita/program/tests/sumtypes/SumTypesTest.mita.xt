@@ -184,7 +184,6 @@ fn incVecs(a: anyVec) {
     	}
     	/* XPECT errors ---
     	    "Cannot determine size of element: Unable to infer size from type f_135" at "y"
-    	    "f_135 is not subtype of bool" at "y = vec2d.y"
     	    "let y( vec2d.y) (:: f_135) not compatible with vec2d.y (:: int32)" at "y = vec2d.y"
     	--- */
     	is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
@@ -193,13 +192,11 @@ fn incVecs(a: anyVec) {
         	b = badVec2d(1, true);
         	var bVec: badVec2d;
         	/* XPECT errors ---
-        	    "Incompatible types: 'int32' can't be converted to 'bool'." at "y"
-        		"Incompatible types: 'int32' can't be converted to 'int16'." at "x"
+        	"Incompatible types: f_135 is not subtype of bool." at "badVec2d"
         	--- */
         	bVec = badVec2d(x, y);
         	/* XPECT errors ---
-        	    "Incompatible types: 'int32' can't be converted to 'bool'." at "y"
-        		"Incompatible types: 'int32' can't be converted to 'int16'." at "x"
+        	"y (:: f_135) not compatible with y (:: bool)" at "y = y"
         	--- */
         	bVec = badVec2d(x = x, y = y);
         }

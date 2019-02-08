@@ -69,6 +69,7 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
+import org.eclipse.emf.ecore.EClass
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -369,66 +370,69 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		]);
 	}
 
-	val Predicate<IEObjectDescription> globalElementFilter = [ x |
-		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass)) ||
-			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
+	public static val Predicate<EClass> globalElementFilter = [ x |
+		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x)) ||
+			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x));
 
 		val exclusion = 
-			(PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
-			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
+			(PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x)) 
 
 		inclusion && !exclusion;
 	]
 	
-		val Predicate<IEObjectDescription> globalElementFilterInSetup = [ x |
-		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass)) ||
-			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
+	public static val Predicate<EClass> globalElementFilterInSetup = [ x |
+		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x)) ||
+			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x));
 
 		val exclusion = 
-			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
-			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x)) 
 
 		inclusion && !exclusion;
 	]
 
-	val Predicate<IEObjectDescription> globalTypeFilter = [ x |
-		val inclusion = TypesPackage.Literals.TYPE.isSuperTypeOf(x.EClass);
+	public static val Predicate<EClass> globalTypeFilter = [ x |
+		val inclusion = TypesPackage.Literals.TYPE.isSuperTypeOf(x);
 
 		val exclusion = 
-//			PlatformPackage.Literals.SENSOR.isSuperTypeOf(x.EClass) ||
-//			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x.EClass) ||
-			PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass) ||
-			TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x.EClass) ||
-			TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass) ||
-			TypesPackage.Literals.TYPE_PARAMETER.isSuperTypeOf(x.EClass); // exclude gloabal type parameters, local ones are added in TypeReferenceScope
+			PlatformPackage.Literals.SENSOR.isSuperTypeOf(x) ||
+			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x) ||
+			PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x) ||
+			TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x) ||
+			TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x) ||
+			TypesPackage.Literals.TYPE_PARAMETER.isSuperTypeOf(x); // exclude global type parameters, local ones are added in TypeReferenceScope
 		inclusion && !exclusion;
 	]
 
 	def scope_TypeSpecifier_type(EObject context, EReference ref) {
 		val parentScope = delegate.getScope(context, ref)
-		return new TypeReferenceScope(new FilteringScope(parentScope, globalTypeFilter), context);
+		return new TypeReferenceScope(new FilteringScope(parentScope, [globalTypeFilter.apply(it.EClass)]), context);
+	}
+	def scope_PresentTypeSpecifier_type(EObject context, EReference ref) {
+		return scope_TypeSpecifier_type(context, ref);
 	}
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
@@ -436,9 +440,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return if (setup !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
 			val scope = scopeInSetupBlock(context, ref);
-			return new FilteringScope(scope, globalElementFilterInSetup);
+			return new FilteringScope(scope, [globalElementFilterInSetup.apply(it.EClass)]);
 		} else {
-			val superScope = new FilteringScope(delegate.getScope(context, ref), globalElementFilter);
+			val superScope = new FilteringScope(delegate.getScope(context, ref), [globalElementFilter.apply(it.EClass)]);
 			val scope = (
 			if(context instanceof FeatureCallWithoutFeature) {
 				val normalizer = new ImportNormalizer(QualifiedName.create("<auto>"), true, false);

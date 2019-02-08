@@ -110,7 +110,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		|| right === null 
 		|| (!(firstTypeArgOrigin instanceof GeneratedType) && (left ?: right).checkExpressionSupport(firstTypeArgType, AssignmentOperator.ASSIGN, initType));
 		
-		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, null)») ''');
+		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, left ?: right)») ''');
 		
 		val init = if(initWithImmediate) {
 			codeFragmentProvider.create('''

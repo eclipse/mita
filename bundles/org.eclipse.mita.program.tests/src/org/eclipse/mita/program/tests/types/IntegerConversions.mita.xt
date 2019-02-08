@@ -43,7 +43,7 @@ fn takesUint8(x : uint8): uint8 {
 fn intRangeChecks() {
 	/* XPECT errors ---
 		"Function takesUint8 cannot be used here: uint8, xint8" at "takesUint8"
-		"int8 is not subtype of uint8" at "1"
+		"Incompatible types: int8 is not subtype of uint8." at "takesUint8"
 	--- */
 	takesUint8(-1);
 	
@@ -150,6 +150,7 @@ function testVariables() : void {
 }
 
 /* XPECT errors ---
+		"Couldn't resolve reference to Type 'Name'." at "Name"
 		"Types are recursive: [f_3.0, Name(f_3.0)]" at "Name"
 		"Types are recursive: [f_3.0, Name(f_3.0)]" at "struct Name { var x : Name; }"
 	--- */

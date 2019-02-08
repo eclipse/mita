@@ -588,7 +588,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val tIdx = i_t1t2.key;
 			val tSub = i_t1t2.value.key;
 			val tTop = i_t1t2.value.value;
-			system.addConstraint(sub.getVariance(tIdx, tSub, tTop));
+			system.addConstraint(sub.getVariance(constraint.errorMessage, tIdx, tSub, tTop));
 		]
 		
 		return SimplificationResult.success(system, Substitution.EMPTY);

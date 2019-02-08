@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "∗MySensor is not subtype of MySensor";
+			return "bool is not subtype of optional<int32>";
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");

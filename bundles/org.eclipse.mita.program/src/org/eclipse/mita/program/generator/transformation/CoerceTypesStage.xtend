@@ -17,13 +17,23 @@ import static extension org.eclipse.mita.program.generator.internal.ProgramCopie
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.emf.ecore.EObject
 import java.util.ArrayList
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.base.expressions.util.ArgumentSorter
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
 	@Inject IConstraintFactory constraintFactory
+	@Inject GeneratorUtils generatorUtils
 	
 	override getOrder() {
 		return ORDER_VERY_EARLY;
+	}
+	
+	def explicitlyConvertAll(EObject obj) {
+		return #[Argument, ReturnStatement].exists[it.isAssignableFrom(obj.class)]
 	}
 	
 	override transform(ITransformationPipelineInfoProvider pipeline, Program program) {
@@ -38,9 +48,40 @@ class CoerceTypesStage extends AbstractTransformationStage {
 			}
 		]
 		
-		program.eAllContents.filter(ReturnStatement).forEach[it.doTransform];
+		program.eAllContents.filter[explicitlyConvertAll].forEach[it.doTransform];
 		
 		return program;
+	}
+		
+	dispatch def doTransform(Argument a) {
+		val functionCall = a.eContainer;
+		if(functionCall instanceof ElementReferenceExpression) {
+			val function = functionCall.reference;
+			if(function instanceof Operation) {
+				val parameters = if(functionCall instanceof FeatureCallWithoutFeature) {
+					function.parameters.tail;
+				}
+				else {
+					function.parameters;	
+				}
+				val argIndex = ModelUtils.getSortedArguments(parameters, functionCall.arguments).toList.indexOf(a);
+				val parameter = parameters.get(argIndex);
+				val pType = BaseUtils.getType(parameter.getOrigin);
+				val eType = BaseUtils.getType(a.getOrigin);
+				
+				if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
+					val coercion = ProgramFactory.eINSTANCE.createCoercionExpression;
+					if(pType === null) {
+						return;
+					}
+					coercion.typeSpecifier = pType;
+					val inner = a.value;
+					a.value = coercion;
+					coercion.value = inner;
+					
+				}
+			}
+		}
 	}
 	
 	dispatch def doTransform(Expression e) {

@@ -51,13 +51,13 @@ class FunctionType extends TypeConstructorType {
 		return #[from, to];
 	}
 	
-	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
+	override getVariance(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
 		if(typeArgumentIdx == 1) {
-			return new SubtypeConstraint(tau, sigma, new ValidationIssue(Severity.ERROR, '''«tau» is not subtype of «sigma»''', ""));
+			return new SubtypeConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
 		}
 		else {
 			// function arguments are contravariant
-			return new SubtypeConstraint(sigma, tau, new ValidationIssue(Severity.ERROR, '''«sigma» is not subtype of «tau»''', ""));
+			return new SubtypeConstraint(sigma, tau, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
 		}
 	}
 	

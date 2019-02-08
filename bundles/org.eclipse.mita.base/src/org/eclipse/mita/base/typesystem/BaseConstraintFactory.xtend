@@ -179,8 +179,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
-		val parmTypes = parms.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		return new ProdType(null, new AtomicType(function, function.name + "_args"), parmTypes);
+		val parmTypes = parms.map[
+			system.computeConstraints(it)
+		].filterNull.map[it as AbstractType].force();
+		return new ProdType(function, new AtomicType(function, function.name + "_args"), parmTypes);
 	}
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, EObject origin, String functionName, Iterable<Expression> expression) {
@@ -188,7 +190,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.computeArgumentConstraintsWithTypes(origin, functionName, argTypes);
 	}
 	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, EObject origin, String functionName, Iterable<AbstractType> argTypes) {
-		return new ProdType(origin, new AtomicType(null, functionName + "_args"), argTypes);
+		return new ProdType(origin, new AtomicType(origin, functionName + "_args"), argTypes);
 	}
 	
 	protected def Pair<AbstractType, AbstractType> computeTypesInArgument(ConstraintSystem system, Argument arg) {
@@ -589,11 +591,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected def AbstractType translateTypeDeclaration(ConstraintSystem system, EObject obj) {
 		val typeTrans = system.doTranslateTypeDeclaration(obj);
 		system.associate(typeTrans, obj);
+		system.putUserData(typeTrans, ECLASS_KEY, obj.eClass.name);
 		if(obj instanceof Type) {
 			if(obj.typeKind !== null) {
 				system.computeConstraints(obj.typeKind);
 			}
 		}
+		
 		system.computeConstraintsForChildren(obj);
 		return typeTrans;
 	}
@@ -671,7 +675,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.typeTable.put(QualifiedName.create(sumTypeName, sumAlt.name), prodType);
 			
 			system.putUserData(prodType, PARENT_NAME_KEY, sumTypeName);
-			system.putUserData(prodType, ECLASS_KEY, sumAlt.eClass.name);
 			system.putUserData(prodType, DEFINING_RESOURCE_KEY, sumAlt.eResource.URI.lastSegment);
 			
 			return prodType;	

@@ -28,24 +28,30 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.GenericElement
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
-import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Modality
+import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.EventHandlerDeclaration
@@ -72,7 +78,8 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.platform.Sensor
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -154,6 +161,35 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
+	
+	@Check(CheckType.FAST) 
+	def void checkValidTypesForPresentTypeSpecifier(PresentTypeSpecifier ts) {
+		if(EcoreUtil2.getContainerOfType(ts, SystemResourceSetup) === null) {
+			val typeRef = TypesPackage.eINSTANCE.presentTypeSpecifier_Type;
+			val type = BaseUtils.getType(ts);
+			val eClassName = TypesUtil.getConstraintSystem(ts.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY);
+			if(#[ExceptionTypeDeclaration, Sensor, Connectivity].map[it.simpleName].contains(eClassName)) {
+				error('''Cannot use «eClassName» as type here''', ts, typeRef);
+			}
+			if(eClassName == TypeParameter.simpleName) {
+				var Iterable<AbstractType> typeParameterTypes = #[];
+				var EObject prev = ts;
+				var container = EcoreUtil2.getContainerOfType(ts, GenericElement);
+				while(container !== null && container !== prev) {
+					typeParameterTypes = typeParameterTypes + container.typeParameters.map[BaseUtils.getType(it)];
+					prev = container;
+					container = EcoreUtil2.getContainerOfType(ts, GenericElement);
+				}
+				if(!typeParameterTypes.exists[it == type]) {
+					error('''Couldn't resolve reference to Type '«BaseUtils.getText(ts, typeRef)»'.''', ts, typeRef);
+				} 	
+			}
+			// otherwise we didn't get a type for this
+			else if(type instanceof TypeVariable) {
+				error('''Couldn't resolve reference to Type '«BaseUtils.getText(ts, typeRef)»'.''', ts, typeRef);
+			}
+		}
+	}
 	
 	@Check(CheckType.FAST) 
 	def void checkAssignmentToFinalVariable(AssignmentExpression exp) {
@@ -529,38 +565,38 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 	}
 	
-	@Check(CheckType.NORMAL)
-	def noUpcastingToOptionalsInFunctionArguments(ElementReferenceExpression eref) {
-		val typesAndArgs = ExpressionUtils.getFunctionCallArguments(eref);
-		if(typesAndArgs === null) return;
-		
-		typesAndArgs.forEach[ts_arg | 
-			val ts = ts_arg.key;
-			if(ts instanceof PresentTypeSpecifier) {
-				if(ts.type instanceof GeneratedType && ts.type.name == "optional") {
-					val arg = ts_arg.value;
-					//TODO
-					val argType = BaseUtils.getType(arg.value);
-					if(ModelUtils.typeSpecifierEqualsWith([t1, t2 | typeSystem.haveCommonType(t1, t2)], ts.typeArguments.head, argType)) {
-						error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "function calls"), arg, null);
-					}
-				}	
-			}
-		]
-	}
+//	@Check(CheckType.NORMAL)
+//	def noUpcastingToOptionalsInFunctionArguments(ElementReferenceExpression eref) {
+//		val typesAndArgs = ExpressionUtils.getFunctionCallArguments(eref);
+//		if(typesAndArgs === null) return;
+//		
+//		typesAndArgs.forEach[ts_arg | 
+//			val ts = ts_arg.key;
+//			if(ts instanceof PresentTypeSpecifier) {
+//				if(ts.type instanceof GeneratedType && ts.type.name == "optional") {
+//					val arg = ts_arg.value;
+//					//TODO
+//					val argType = BaseUtils.getType(arg.value);
+//					if(ModelUtils.typeSpecifierEqualsWith([t1, t2 | typeSystem.haveCommonType(t1, t2)], ts.typeArguments.head, argType)) {
+//						error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "function calls"), arg, null);
+//					}
+//				}	
+//			}
+//		]
+//	}
 	
-	@Check(CheckType.NORMAL)
-	def noUpcastingToOptionalsInReturns(ReturnStatement stmt) {
-		val funDef = EcoreUtil2.getContainerOfType(stmt, FunctionDefinition);
-		if(funDef === null) {
-			return;
-		}
-		
-		val retType = BaseUtils.getType(funDef.typeSpecifier);
-		if(TypesUtil.isGeneratedType(stmt, retType) && retType.name == "optional") {
-			if(stmt.value instanceof PrimitiveValueExpression) {
-				error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "returns"), stmt, null);
-			}
-		}
-	} 
+//	@Check(CheckType.NORMAL)
+//	def noUpcastingToOptionalsInReturns(ReturnStatement stmt) {
+//		val funDef = EcoreUtil2.getContainerOfType(stmt, FunctionDefinition);
+//		if(funDef === null) {
+//			return;
+//		}
+//		
+//		val retType = BaseUtils.getType(funDef.typeSpecifier);
+//		if(TypesUtil.isGeneratedType(stmt, retType) && retType.name == "optional") {
+//			if(stmt.value instanceof PrimitiveValueExpression) {
+//				error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "returns"), stmt, null);
+//			}
+//		}
+//	} 
 }

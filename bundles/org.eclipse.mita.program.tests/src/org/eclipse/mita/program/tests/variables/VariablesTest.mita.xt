@@ -38,16 +38,25 @@ fn printf(i:uint32) : void {}
 exception FooException;
 
 function typesAvailableInVarDec() : void {
-	// XPECT errors --> "Couldn't resolve reference to Type 'FooException'." at "FooException"
+	// XPECT errors --> "Cannot use ExceptionTypeDeclaration as type here" at "FooException"
 	var withException : FooException;
 	
-	// XPECT errors --> "Couldn't resolve reference to Type 'MySensor'." at "MySensor"
+	/* XPECT errors ---
+		"Cannot determine size of element: Type has no size inferrer" at "withSensor"
+		"Cannot use Sensor as type here" at "MySensor"
+	--- */
 	var withSensor : MySensor;
 	
-	// XPECT errors --> "Couldn't resolve reference to Type 'MyConnectivity'." at "MyConnectivity"
+	/* XPECT errors ---
+		"Cannot determine size of element: Type has no size inferrer" at "withConnectivity"
+		"Cannot use Connectivity as type here" at "MyConnectivity"
+	--- */
 	var withConnectivity : MyConnectivity;
 	
-	// XPECT errors --> "Couldn't resolve reference to Type 'array.T'." at "array.T"
+	/* XPECT errors ---
+		"Cannot determine size of element: Unable to infer size from type f_41" at "withTypeParameter"
+		"Couldn't resolve reference to Type 'array.T'." at "array.T"
+	--- */
 	var withTypeParameter : array.T;
 }
 

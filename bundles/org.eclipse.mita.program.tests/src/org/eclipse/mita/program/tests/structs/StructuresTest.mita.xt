@@ -38,10 +38,11 @@ function structTest() : void {
 	/* XPECT errors ---
 		"Foo_args(xint8, bool, xint8) and Foo_args(uint32, bool) differ in the number of type arguments" at "Foo"
 		"Function Foo cannot be used here: arguments don't fit (Foo_args(f_9, f_10, f_11) != Foo_args(uint32, bool))" at "Foo(1, false, 3)"
+		"Incompatible types: bool is not subtype of f_10." at "Foo"
 	--- */
 	inst = Foo(1, false, 3);
 	// We error on wrong type of arguments
-	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'." at "\"AHHHH!\""
+	// XPECT errors --> "Incompatible types: string is not subtype of bool." at "Foo"
 	inst = Foo(1, "AHHHH!");
 	
 	// we can use named parameters to swap argument order
@@ -53,6 +54,7 @@ function structTest() : void {
 	/* XPECT errors ---
 		"Foo_args(bool) and Foo_args(uint32, bool) differ in the number of type arguments" at "Foo"
 		"Function Foo cannot be used here: arguments don't fit (Foo_args(f_18) != Foo_args(uint32, bool))" at "Foo(foo=1)"
+		"Incompatible types: bool is not subtype of f_18." at "Foo"
 	--- */
 	inst = Foo(foo=1);
 	/* XPECT errors ---

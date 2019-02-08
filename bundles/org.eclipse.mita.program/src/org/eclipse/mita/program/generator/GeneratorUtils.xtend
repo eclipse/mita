@@ -458,7 +458,7 @@ class GeneratorUtils {
 	}
 	
 	def CodeFragment addHeaderInclude(CodeFragment fragment, EObject context, AbstractType type) {
-		val definingResourceName = TypesUtil.getConstraintSystem(context.eResource).getUserData(type, BaseConstraintFactory.DEFINING_RESOURCE_KEY);
+		val definingResourceName = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.DEFINING_RESOURCE_KEY);
 		if(definingResourceName !== null) {
 			fragment.addHeader(UserCodeFileGenerator.getResourceTypesName(definingResourceName) + ".h", false);
 		}
