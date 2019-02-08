@@ -28,6 +28,7 @@ import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
+import org.eclipse.mita.base.typesystem.types.AbstractType
 
 class ArraySizeInferrer extends ElementSizeInferrer {
 	
@@ -35,7 +36,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
     protected ITypeSystem registry;
 	
 	
-	override protected dispatch doInfer(NewInstanceExpression obj) {
+	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
 		val parentType = BaseUtils.getType(obj.eContainer);
 		
 		val rawSizeValue = ExpressionUtils.getArgumentValue(obj.reference as Operation, obj, 'size');
@@ -62,7 +63,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 		}
 	}
 	
-	def protected dispatch doInfer(ArrayLiteral obj) {
+	def protected dispatch doInfer(ArrayLiteral obj, AbstractType type) {
 		val parentType = BaseUtils.getType(obj.eContainer);
 		
 		val typeOfChildren = (parentType as TypeConstructorType).typeArguments.head;
@@ -78,7 +79,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 		return result;			
 	}
 	
-	override protected dispatch doInfer(ElementReferenceExpression obj) {
+	override protected dispatch doInfer(ElementReferenceExpression obj, AbstractType type) {
 		if(obj.arrayAccess && obj.arraySelector.head instanceof ValueRange) {
 			val valRange = (obj as ElementReferenceExpression).arraySelector.head as ValueRange;
 			
@@ -96,7 +97,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			result.children.add(obj.inferFromType(typeOfChildren));
 			return result;
 		} else {
-			return super._doInfer(obj);
+			return super._doInfer(obj, type);
 		}
 	}
 	

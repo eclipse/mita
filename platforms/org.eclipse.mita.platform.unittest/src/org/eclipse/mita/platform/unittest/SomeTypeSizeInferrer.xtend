@@ -13,19 +13,20 @@
 
 package org.eclipse.mita.platform.unittest
 
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.mita.base.typesystem.types.BottomType
 
 class SomeTypeSizeInferrer extends ElementSizeInferrer {
 	
-	override protected dispatch doInfer(NewInstanceExpression obj) {
+	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
 		val parentType = BaseUtils.getType(obj.eContainer);
 
 		if(parentType instanceof TypeVariable || parentType instanceof BottomType) {
@@ -39,7 +40,7 @@ class SomeTypeSizeInferrer extends ElementSizeInferrer {
 		}
 	}
 		
-	override protected dispatch doInfer(VariableDeclaration obj) {
+	override protected dispatch doInfer(VariableDeclaration obj, AbstractType type) {
 		return newValidResult(obj, 0);
 	}
 	

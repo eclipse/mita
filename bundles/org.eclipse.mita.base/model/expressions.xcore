@@ -155,11 +155,17 @@ class AssignmentExpression extends Expression {
 	contains Expression varRef
 	AssignmentOperator operator
 	contains Expression expression
+	op String toString() {
+		return varRef.toString + " = " + expression.toString
+	}
 }
 class ConditionalExpression extends Expression {
 	contains Expression condition
 	contains Expression trueCase
 	contains Expression falseCase
+	op String toString() {
+		return condition + " ? " + trueCase + " : " + falseCase;	
+	}
 }
 class LogicalOrExpression extends BinaryExpression {
 	op EEnumerator getOperator() {
@@ -260,11 +266,17 @@ abstract class ArrayAccessOrOperationCallExpression {
 class ArrayAccessExpression extends Expression {
 	contains Expression owner
 	contains Expression arraySelector
+	op String toString() {
+		return owner + "[" + arraySelector + "]"
+	}
 }
 
 class ValueRange extends Expression {
 	contains Expression lowerBound
 	contains Expression upperBound
+	op String toString() {
+		return (lowerBound?.toString ?: "") + ":" + (upperBound?.toString ?: "")
+	}
 }
 
 class FeatureCall extends ElementReferenceExpression {

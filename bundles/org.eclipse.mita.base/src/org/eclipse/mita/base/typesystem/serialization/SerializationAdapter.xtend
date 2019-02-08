@@ -396,6 +396,9 @@ class SerializationAdapter {
 	protected dispatch def Object fill(SerializedAbstractType ctxt, AbstractType obj) {
 		ctxt.name = obj.name;
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
+		if(ctxt.origin == "platform:/resource/EclipseMitaApplication/application.mita#//@functionDefinitions.0/@body/@content.1/@body/@content.3/@expression/@expression") {
+			print("");
+		}
 		return ctxt;
 	}
 		

@@ -28,12 +28,11 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class OptionalSizeInferrer extends ElementSizeInferrer {
 	
-	override protected dispatch doInfer(VariableDeclaration obj) {
+	override protected dispatch doInfer(VariableDeclaration obj, AbstractType type) {
 		val result = obj.initialization?.infer;
 		if(result instanceof ValidElementSizeInferenceResult) { 
 			return result;	
 		}
-		val type = BaseUtils.getType(obj);
 		if(type instanceof TypeConstructorType) {
 			val inner = type.typeArguments.head;
 			if(type !== null) {
@@ -44,7 +43,7 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 		 
 	}
 	
-	override protected dispatch doInfer(ElementReferenceExpression obj) {
+	override protected dispatch doInfer(ElementReferenceExpression obj, AbstractType type) {
 		if(obj.operationCall) {
 			val refFun = obj.reference;
 			val refType = BaseUtils.getType(refFun);
@@ -57,7 +56,7 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 		return super.infer(obj.reference)
 	}
 	
-	override protected dispatch doInfer(PrimitiveValueExpression obj) {
+	override protected dispatch doInfer(PrimitiveValueExpression obj, AbstractType type) {
 		val parentType = BaseUtils.getType(obj.eContainer);
 		if(parentType === null) {
 			return new InvalidElementSizeInferenceResult(obj, parentType, "parent type unknown");
@@ -66,7 +65,7 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 		}
 	}
 	
-	override protected inferFromType(EObject obj, AbstractType type) {
+	override protected dispatch doInferFromType(EObject obj, AbstractType type) {
 		if(type !== null) {
 			val res = new ValidElementSizeInferenceResult(obj, type, 1);
 			return res;

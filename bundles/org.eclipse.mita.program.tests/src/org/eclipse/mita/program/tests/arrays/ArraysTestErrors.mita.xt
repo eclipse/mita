@@ -14,7 +14,11 @@ var foo = new array<uint8>(size = 10);
 // Arrays can be initialized with brackets
 var foo2: array<uint8> = [1, 2, 3, 4, 5];
 
-// XPECT errors --> "Array does not have a unique type (uint32 and bool are incompatible)." at "baz"
+/* XPECT errors ---
+	"f_90 (:: xint8) doesn't share a common type with the other members of this array literal" at "1"
+	"f_91 (:: xint8) doesn't share a common type with the other members of this array literal" at "2"
+	"f_93 (:: bool) doesn't share a common type with the other members of this array literal" at "true"
+--- */
 var baz = [1, 2, true];
 
 // XPECT noCompileErrors
@@ -48,9 +52,8 @@ fn works() {
     // It happens because of lines like line 168 (b = a[-2:-1];), negative indices create a graph  uint32 -> f_685.0 <- int8.
     // With those lines disabled in ArraysTest.mita.xt no errors occur. 
 	/* XPECT errors ---
-		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_685.0" at "length"
-		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_686.0" at "length"
-		"Function length cannot be used here: f_686.0, f_685.0" at "length"
+		"Function length cannot be used here: uint32, f_265.0" at "length"
+		"v1.length() (:: f_265.0) has a different type than l (:: f_267.0)" at "v1.length()"
 	--- */
 	var l = v1.length();
 	
@@ -169,32 +172,41 @@ fn errors() {
 	/* XPECT errors ---
 		"-prim»i»1 (:: int8) must be an unsigned integer" at "-1"
 		"-prim»i»2 (:: int8) must be an unsigned integer" at "-2"
+		"-prim»i»2:-prim»i»1 (:: f_594.0) must be an unsigned integer" at "-2:-1"
+		"-prim»i»2:-prim»i»1 (:: int8) must be an unsigned integer" at "-2:-1"
+		"All values in -prim»i»2:-prim»i»1 (:: f_594.0) must be unsigned integers" at "-2:-1"
+		"All values in -prim»i»2:-prim»i»1 (:: int8) must be unsigned integers" at "-2:-1"
 		"Array range is invalid: Lower bound must be positive or zero" at "-2:-1"
 		"Array range is invalid: Upper bound must be strictly positive" at "-2:-1"
 	--- */
 	b = a[-2:-1];
-	// XPECT errors --> "prim»s»"asdf" (:: string) has a different type than str (:: f_583.0)" at ""asdf""
+	/* XPECT errors ---
+		"prim»s»"asdf" (:: string) has a different type than str (:: f_613.0)" at ""asdf""
+		"prim»s»"asdf" (:: string) has a different type than str (:: uint32)" at ""asdf""
+	--- */
 	var str = "asdf";
 	/* XPECT errors ---
-		"str (:: f_583.0) must be an unsigned integer" at "str"
+		"str (:: f_613.0) must be an unsigned integer" at "str"
 		"str (:: string) must be an unsigned integer" at "str"
 	--- */
 	var c = a[str];
 	/* XPECT errors ---
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
+		"All values in str: (:: f_625.0) must be unsigned integers" at "str:"
+		"str (:: f_613.0) must be an unsigned integer" at "str"
+		"str: (:: f_625.0) must be an unsigned integer" at "str:"
 	--- */
 	b = a[str:];
 	/* XPECT errors ---
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
+		":str (:: f_639.0) must be an unsigned integer" at ":str"
+		"All values in :str (:: f_639.0) must be unsigned integers" at ":str"
+		"str (:: f_613.0) must be an unsigned integer" at "str"
 	--- */
 	b = a[:str];
 	/* XPECT errors ---
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
+		"All values in str:str (:: f_653.0) must be unsigned integers" at "str:str"
+		"str (:: f_613.0) must be an unsigned integer" at "str"
+		"str (:: f_613.0) must be an unsigned integer" at "str"
+		"str:str (:: f_653.0) must be an unsigned integer" at "str:str"
 	--- */
 	b = a[str:str];
 }

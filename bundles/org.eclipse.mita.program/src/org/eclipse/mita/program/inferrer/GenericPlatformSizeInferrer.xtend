@@ -1,13 +1,12 @@
 package org.eclipse.mita.program.inferrer
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 
@@ -29,7 +28,7 @@ class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 		if(instance !== null && method !== null) {
 			if(method instanceof GeneratedFunctionDefinition) {
 				if(method.name != "read") {
-					return newInvalidResult(obj, "Can't infer for non-read method");
+					return newInvalidResult(obj as EObject, "Can't infer for non-read method");
 				}
 				if(instance instanceof FeatureCall) {
 					val signal = instance.reference;
@@ -37,7 +36,7 @@ class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 						val lengthArg = ModelUtils.getArgumentValue(signal, signal.lengthParameterName);
 						if(lengthArg !== null) {
 							val maxLength = StaticValueInferrer.infer(lengthArg, [ ]);
-							return newValidResult(obj, maxLength as Integer);	
+							return newValidResult(obj as EObject, maxLength as Long);	
 						}
 					}
 				}

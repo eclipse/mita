@@ -1,33 +1,34 @@
 package org.eclipse.mita.program.generator.transformation
 
 import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.PostFixUnaryExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.emf.ecore.EObject
-import java.util.ArrayList
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.base.expressions.util.ArgumentSorter
-import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
-import org.eclipse.mita.base.types.TypesFactory
+import org.eclipse.mita.program.generator.internal.ProgramCopier
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
 	@Inject IConstraintFactory constraintFactory
 	@Inject GeneratorUtils generatorUtils
+	@Inject IScopeProvider scopeProvider
+	@Inject ProgramCopier copier
 	
 	override getOrder() {
 		return ORDER_VERY_EARLY;
@@ -39,13 +40,24 @@ class CoerceTypesStage extends AbstractTransformationStage {
 	
 	override transform(ITransformationPipelineInfoProvider pipeline, Program program) {
 		constraintFactory.typeRegistry.isLinking = true;
-		val constraints = constraintFactory.create(program).constraints.filter(SubtypeConstraint);
-				
+		// we create a copy here because 
+		// - we want all subtype constraints to get coercions
+		// - we want the actual objects, not typevarproxies with bad origins 
+		//	 (for example if you look up uint32 you get a TVP with origin of where you're looking instead of uint32)
+		// - resolving proxies links and we don't want that, since we only compute constraints for program instead of its imports, too
+		// - after transforming the model has changed but it won't compute new resource descriptions leading to bad constraints in the cache
+		val pcopy = copier.copy(program);
+		copier.linkOrigin(pcopy, program);
+		var cs = constraintFactory.create(pcopy);
+		cs = cs.replaceProxies(program.eResource, scopeProvider);
+		val constraints = cs.constraints.filter(SubtypeConstraint);
+		
+		
 		constraints.forEach[c |
-			var sub = c.subType.origin;
-			var top = c.superType.origin;
+			var sub = c.subType.origin.origin;
+			var top = c.superType.origin.origin;
 			if(sub !== null && top !== null && sub.eContainer === top) {
-				doTransform(sub);				
+				doTransform(sub);
 			}
 		]
 		

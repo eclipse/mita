@@ -77,6 +77,8 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
+import org.eclipse.mita.base.types.CoercionExpression
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -158,6 +160,22 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
+	
+	@Check(CheckType.NORMAL)
+	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {
+		val item = expr.owner;
+		val sizeInfRes = elementSizeInferrer.infer(item);
+				
+		val staticVal = StaticValueInferrer.infer(expr.arraySelector, [x|]);
+		val isInferred = (sizeInfRes instanceof ValidElementSizeInferenceResult) && staticVal instanceof Long;
+		if(isInferred) {
+			val idx = staticVal as Long;
+			val len = (sizeInfRes as ValidElementSizeInferenceResult).elementCount;
+			if(idx < 0 || len <= idx) {
+				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ExpressionsPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
+			}
+		}
+	}
 	
 	@Check(CheckType.FAST) 
 	def void checkValidTypesForPresentTypeSpecifier(PresentTypeSpecifier ts) {
@@ -395,6 +413,9 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		var EObject innerExpr = varRef;
 		var nested = true;
 		while(nested) {
+			if(innerExpr instanceof CoercionExpression) {
+				innerExpr = innerExpr.value
+			}
 			if(innerExpr instanceof FeatureCall) {
 				if(!innerExpr.operationCall) {
 					innerExpr = innerExpr.reference;	
@@ -541,7 +562,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	def arrayRangeChecks(ValueRange range) {
 		val errorFun1 = [String s | error(s, range, null)];
 		val errorFun2 = [String s | error(String.format(ARRAY_RANGE_INVALID, s), range, null)];
-		val expr = (range.eContainer as ArrayAccessExpression).owner;
+		val expr = EcoreUtil2.getContainerOfType(range, ArrayAccessExpression).owner;
 		
 		val lengthOfArrayIR = elementSizeInferrer.infer(expr);
 		val lengthOfArray = if(lengthOfArrayIR instanceof ValidElementSizeInferenceResult) {

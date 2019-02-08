@@ -23,6 +23,7 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.AbstractLoopStatement
 import org.eclipse.mita.program.InterpolatedStringExpression
@@ -38,19 +39,19 @@ import org.eclipse.xtext.EcoreUtil2
 
 class StringSizeInferrer extends ElementSizeInferrer {
 	
-	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression) {
+	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression, AbstractType type) {
 		expression.inferContainerIfVariableDeclaration[ expression.isolatedDoInfer ]
 	}
 	
-	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression) {
+	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression, AbstractType type) {
 		expression.inferContainerIfVariableDeclaration[ expression.isolatedDoInfer ]
 	}
 
-	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringExpression expr) {
+	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringExpression expr, AbstractType type) {
 		expr.inferContainerIfVariableDeclaration[ expr.isolatedDoInfer ]
 	}
 	
-	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr) {
+	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr, AbstractType type) {
 		expr.inferContainerIfVariableDeclaration[ expr.inferFixedSize ]
 	}
 	
@@ -59,7 +60,7 @@ class StringSizeInferrer extends ElementSizeInferrer {
 	 * 
 	 * @return the max length of the string or -1 if the length could not be infered.
 	 */
-	protected dispatch override ElementSizeInferenceResult doInfer(VariableDeclaration variable) {
+	protected dispatch override ElementSizeInferenceResult doInfer(VariableDeclaration variable, AbstractType type) {
 		/*
 		 * Find initial size
 		 */

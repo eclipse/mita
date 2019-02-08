@@ -74,6 +74,7 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.program.ArrayRuntimeCheckStatement
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -81,7 +82,10 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		system.computeConstraintsForChildren(program);
 		return null;
 	}
-	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayRuntimeCheckStatement expr) {
+		// nothing to do, this is just a convenience for the compiler
+		return null;
+	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, CoercionExpression expr) {
 		// coercions are upcasts
 		val innerType = system.computeConstraints(expr.value);

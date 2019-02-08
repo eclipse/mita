@@ -76,12 +76,11 @@ every 100 milliseconds {
 	let h3 = id2(y=0, x=f);    
 	let m = C_Magnetometer_read();
 	/* XPECT errors ---
-		"Cannot determine size of element: Cannot infer size of "VariableDeclarationImpl" of type "reference<reference<int32>>"." at "asdf"
 		"Types with references must be initialized" at "let asdf: &&int32;"
 	--- */
 	let asdf: &&int32;    
 	let wert: int32?;
-	// XPECT errors --> "Cannot determine size of element: Object does not have a size" at "foo"
+	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "VariableDeclarationImpl" of type "modality<uint16>"." at "foo"
 	let foo: modality<uint16>;   
 	let bar: uint32? = 10;
 	let barp: uint16? = 10;
