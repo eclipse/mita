@@ -45,17 +45,20 @@ function testEnumOperationCallWithLiteral() : void {
 }
 
 function testEnumUsageFail() : void {
-	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on Foo and integer." at "var f5 : Foo = 10;"
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on Foo(Bar() | Baz() | Bla()) and xint8." at "var f5 : Foo = 10;"
 	var f5 : Foo = 10;
 	
 	// XPECT errors --> "Couldn't resolve reference to EObject 'Bar'." at "Bar"
 	var f6 : Foo = Bar;
 	
-	// XPECT errors --> "Couldn't resolve reference to EObject 'Bar'." at "Bar"
+	/* XPECT errors ---
+		"Couldn't resolve reference to EObject 'Bar'." at "Bar"
+		"Couldn't resolve reference to EObject 'Bar'." at "Bar"
+	--- */
 	var f7 = enumOp(Bar);
 	
 	/* XPECT errors ---
-		"Incompatible types integer and Foo." at "enumOp(10)"
+		"Incompatible types: xint8 is not subtype of Foo(Bar() | Baz() | Bla())." at "enumOp"
 	--- */
 	var f8 = enumOp(10);
 }

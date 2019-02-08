@@ -44,7 +44,7 @@ function stringTestSuccess() : void {
 	// Strings can be interpolated
 	let bla = 42;
 	let greeting = "good sir";
-	// XPECT inferredStringLength --> string::37
+	// XPECT inferredStringLength --> string::30
 	let baz = `my variable: ${bla} and ${greeting}`;
 	
 	let x10 = `${bla}`;
@@ -62,7 +62,7 @@ function stringTestSuccess() : void {
 }
 
 function stringTestFail() : void {
-// XPECT inferredStringLength --> INVALID:Cannot infer string length in loops@string {}
+// XPECT inferredStringLength --> INVALID:Cannot infer string length in loops@ {}
 	var foo = "hello world";
 	for(var i: uint16 = 0; i < someExternalFunction(); i=i++) { //TODO: Increment Operator i++
 		// XPECT errors --> "Cannot determine size of element: Cannot infer string length in loops" at "+="

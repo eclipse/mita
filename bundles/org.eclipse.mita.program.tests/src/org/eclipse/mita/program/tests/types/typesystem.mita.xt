@@ -25,7 +25,7 @@ struct mData {
 }     
    
 alt anyVec {
-	vec0d | vec1d: {x: int32} | vec2d: {x: int32, y: string}
+	vec0d | vec1d: {x: int32} | vec2d: {x: int32, y: bool?}
 }   
 
 //XPECT inferredType --> id_args(optional<int32>) → optional<int32>
@@ -63,7 +63,7 @@ every 100 milliseconds {
 }
 
 every 100 milliseconds { 
-	// XPECT warnings --> "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, string))" at ".vec1d(10)"
+	// XPECT warnings --> "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec1d(10)"
 	let c = .vec1d(10); 
 	let d = c.x(); 
 	let e = "asdf";     
@@ -90,15 +90,14 @@ every 100 milliseconds {
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
 	/* XPECT errors ---
-		"Cannot determine size of element: Unable to infer size from type modality01_args(∗MySensor) → modality<uint32>" at "a"
 		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
 	--- */
 	let a: modality<uint32> = MySensor.modality01; 
 	let asdfgasd = true && false;
 	let a2 = f == (10 as int32); 
 	/* XPECT warnings ---
-	 	 "<auto>.vec0d() has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, string))" at ".vec0d"
-	 	 "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, string))" at ".vec1d(10)"
+	 	 "<auto>.vec0d() has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec0d"
+	 	 "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec1d(10)"
 	 --- */
 	let a3 = true? .vec0d: .vec1d(10);
 	where(a3) {  
@@ -108,21 +107,18 @@ every 100 milliseconds {
 		is(anyVec.vec1d -> x) {
 			 
 		} 
-		// XPECT errors --> "Cannot determine size of element: Cannot infer size of initialization" at "a1"
 		is(anyVec.vec2d -> a1=vec2d.y, b1=vec2d.x) {
  
 		}
-		// XPECT errors --> "Cannot determine size of element: Cannot infer size of initialization" at "a1"
 		is(anyVec.vec2d -> a1=vec2d.y) {
 		 
 		} 
-		// XPECT errors --> "Cannot determine size of element: Cannot infer size of initialization" at "b2"
 		is(anyVec.vec2d -> a1, b2) {
 		
 		}
 		/*XPECT errors ---
-			"Cannot determine size of element: Unable to infer size from type f_591.0" at "a1"
-			"vec2d(int32, string) and vec2d(f_591.0) don't fit together" at "is(anyVec.vec2d -> a1) { 		  		}"
+			"Cannot determine size of element: Unable to infer size from type f_605.0" at "a1"
+			"vec2d(int32, optional<bool>) and vec2d(f_605.0) don't fit together" at "is(anyVec.vec2d -> a1) { 		  		}"
 		--- */
 		is(anyVec.vec2d -> a1) {
 		 

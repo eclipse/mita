@@ -21,20 +21,15 @@ import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
-import org.eclipse.mita.base.types.AnonymousProductType
-import org.eclipse.mita.base.types.ComplexType
-import org.eclipse.mita.base.types.EnumerationType
-import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.PrimitiveType
-import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.mita.platform.AbstractSystemResource
@@ -45,15 +40,12 @@ import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.typesystem.types.NumericType
-import static extension org.eclipse.mita.base.types.TypesUtil.isGeneratedType
-import org.eclipse.mita.base.typesystem.BaseConstraintFactory
-import org.eclipse.mita.base.typesystem.types.ProdType
-import org.eclipse.mita.base.types.TypesUtil
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.program.CoercionExpression
+
+import static org.eclipse.mita.base.types.TypesUtil.*
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 
 /**
  * Hierarchically infers the size of a data element.
@@ -121,7 +113,7 @@ class ElementSizeInferrer {
 	}
 	
 	protected def dispatch ElementSizeInferenceResult doInfer(ArrayAccessExpression obj) {
-		val accessor = obj.arraySelector;
+		val accessor = obj.arraySelector.ignoreCoercions;
 		if(accessor instanceof ValueRange) {
 			val maxResult = obj.owner.infer;
 			if(maxResult instanceof ValidElementSizeInferenceResult) {
@@ -268,7 +260,7 @@ class ElementSizeInferrer {
 				
 				return PreventRecursion.preventRecursion(obj, 
 				[|
-					return finalInferrer.infer(obj);
+					return finalInferrer.inferFromType(obj, typ);
 				], [|
 					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«typ»".''')
 				])
@@ -277,15 +269,19 @@ class ElementSizeInferrer {
 			// it's a struct, let's build our children, but mark the type first
 			return PreventRecursion.preventRecursion(typ, [
 				val result = new ValidElementSizeInferenceResult(obj, typ, 1);
-				result.children.addAll(typ.typeArguments.map[x|inferFromType(obj, x)]);
+				result.children.addAll(typ.typeArguments.map[x|
+					inferFromType(obj, x)
+				]);
 				return result;
 			], [|
 				return newInvalidResult(obj, '''Type "«typ.name»" is recursive. Cannot infer size.''')
 			]);
 			
-		} else if (typ instanceof org.eclipse.mita.base.typesystem.types.SumType) {
+		} else if (typ instanceof SumType) {
 			return PreventRecursion.preventRecursion(typ, [
-				val childs = typ.typeArguments.map[inferFromType(obj, it)];
+				val childs = typ.typeArguments.map[
+					inferFromType(obj, it)
+				];
 				val result = if(childs.filter(InvalidElementSizeInferenceResult).empty) {
 					 new ValidElementSizeInferenceResult(obj, typ, 1);
 				} else {

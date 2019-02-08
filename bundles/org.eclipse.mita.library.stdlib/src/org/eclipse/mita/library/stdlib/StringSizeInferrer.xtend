@@ -249,7 +249,7 @@ class StringSizeInferrer extends ElementSizeInferrer {
 	protected def inferFixedSize(NewInstanceExpression initialization) {
 		val rawSizeValue = ExpressionUtils.getArgumentValue(initialization.reference as Operation, initialization, 'size');
 		val staticSizeValue = StaticValueInferrer.infer(rawSizeValue, [x |]);
-		return if(staticSizeValue instanceof Integer) {
+		return if(staticSizeValue instanceof Long) {
 			newValidResult(initialization, staticSizeValue);
 		} else {
 			newInvalidResult(initialization, "No explicit maximum string size was given");

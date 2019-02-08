@@ -21,6 +21,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -43,7 +44,7 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
-import org.eclipse.mita.program.CoercionExpression
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -97,11 +98,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	
 	override CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		val _init = stmt.initialization;
-		val init = if(_init instanceof CoercionExpression) {
-			_init.value;
-		}
-		else (_init);
+		val init = stmt.initialization.ignoreCoercions;
 		val size = stmt.getArraySize(sizeInferrer);
 		// if we are top-level, we must do initialization if there is any
 		val topLevel = (EcoreUtil2.getContainerOfType(stmt, FunctionDefinition) === null) && (EcoreUtil2.getContainerOfType(stmt, EventHandlerDeclaration) === null);
@@ -168,12 +165,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 
 	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject _right) {
-		val right = if(_right instanceof CoercionExpression) {
-			_right.value;
-		}
-		else {
-			_right;
-		}
+		val right = _right.ignoreCoercions;
 		if(right === null) {
 			return codeFragmentProvider.create('''''');
 		}

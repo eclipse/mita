@@ -380,13 +380,13 @@ class GeneratorUtils {
 	}
 	
 	dispatch def CodeFragment getEnumName(SumType sumType, EObject context) {
-		return codeFragmentProvider.create('''«sumType.name»_enum''').addHeaderInclude(context, sumType);
+		return codeFragmentProvider.create('''«sumType.name»_enum''').addHeaderIncludes(context, sumType);
 	}
 	
 	dispatch def CodeFragment getEnumName(ProdType prodType, EObject context) {
 		val parentName = TypesUtil.getConstraintSystem(context.eResource).getUserData(prodType, BaseConstraintFactory.PARENT_NAME_KEY);
 		if(parentName !== null) {
-			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''').addHeaderInclude(context, prodType);
+			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''').addHeaderIncludes(context, prodType);
 		}
 		return codeFragmentProvider.create('''«prodType.name»_e/*WARNING parent null*/''')
 	}
@@ -415,7 +415,7 @@ class GeneratorUtils {
 
 	
 	dispatch def CodeFragment getNameInStruct(SumType sumType, EObject context) {
-		return codeFragmentProvider.create('''«sumType.name»''').addHeaderInclude(context, sumType);
+		return codeFragmentProvider.create('''«sumType.name»''').addHeaderIncludes(context, sumType);
 	}
 	
 	dispatch def CodeFragment getNameInStruct(SumAlternative sumAlternative) {
@@ -425,7 +425,7 @@ class GeneratorUtils {
 	
 	
 	dispatch def CodeFragment getNameInStruct(ProdType prodType, EObject context) {
-		return codeFragmentProvider.create('''«prodType.name»''').addHeaderInclude(context, prodType);
+		return codeFragmentProvider.create('''«prodType.name»''').addHeaderIncludes(context, prodType);
 	}
 	dispatch def CodeFragment getNameInStruct(EObject obj) {
 		return codeFragmentProvider.create('''ERROR: getNameInStruct''');
@@ -442,25 +442,37 @@ class GeneratorUtils {
 	dispatch def CodeFragment getStructType(AtomicType singleton, EObject context) {
 		if(TypesUtil.getConstraintSystem(context.eResource).getUserData(singleton, BaseConstraintFactory.ECLASS_KEY) == "Singleton") {
 			//singletons don't contain actual data
-			return codeFragmentProvider.create('''void''').addHeaderInclude(context, singleton);
+			return codeFragmentProvider.create('''void''').addHeaderIncludes(context, singleton);
 		}
 		// otherwise this is something like "bool" 
-		return codeFragmentProvider.create('''«singleton.name»''');
+		return codeFragmentProvider.create('''«singleton.name»''').addHeaderIncludes(context, singleton);
 	}
 	dispatch def CodeFragment getStructType(ProdType productType, EObject context) {
-		return codeFragmentProvider.create('''«productType.name»_t''').addHeaderInclude(context, productType);
+		return codeFragmentProvider.create('''«productType.name»_t''').addHeaderIncludes(context, productType);
 	}
 	dispatch def CodeFragment getStructType(SumType sumType, EObject context) {
-		return codeFragmentProvider.create('''«sumType.name»_t''').addHeaderInclude(context, sumType);	
+		return codeFragmentProvider.create('''«sumType.name»_t''').addHeaderIncludes(context, sumType);	
 	}
 	dispatch def CodeFragment getStructType(TypeConstructorType type, EObject context) {
-		return codeFragmentProvider.create('''«type.name»_t''').addHeaderInclude(context, type);
+		return codeFragmentProvider.create('''«type.name»_t''').addHeaderIncludes(context, type);
 	}
 	
-	def CodeFragment addHeaderInclude(CodeFragment fragment, EObject context, AbstractType type) {
-		val definingResourceName = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.DEFINING_RESOURCE_KEY);
+	def CodeFragment addHeaderIncludes(CodeFragment fragment, EObject context, AbstractType type) {
+		val constraintSystem = TypesUtil.getConstraintSystem(context.eResource);
+		if(constraintSystem === null) {
+			return fragment;
+		}
+		val definingResourceName = constraintSystem.getUserData(type, BaseConstraintFactory.DEFINING_RESOURCE_KEY);
 		if(definingResourceName !== null) {
 			fragment.addHeader(UserCodeFileGenerator.getResourceTypesName(definingResourceName) + ".h", false);
+		}
+		val additionalInclude = constraintSystem.getUserData(type, BaseConstraintFactory.INCLUDE_HEADER_KEY);
+		val additionalIncludeIsUserIncludeStr = constraintSystem.getUserData(type, BaseConstraintFactory.INCLUDE_IS_USER_INCLUDE_KEY);
+		val additionalIncludeIsUserInclude = if(!additionalIncludeIsUserIncludeStr.nullOrEmpty) {
+			Boolean.getBoolean(additionalIncludeIsUserIncludeStr);
+		}
+		if(additionalInclude !== null) {
+			fragment.addHeader(additionalInclude, additionalIncludeIsUserInclude);
 		}
 		return fragment;
 	}

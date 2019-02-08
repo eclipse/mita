@@ -15,7 +15,7 @@ var foo = new array<uint8>(size = 10);
 var foo2: array<uint8> = [1, 2, 3, 4, 5];
 
 // XPECT errors --> "Array does not have a unique type (uint32 and bool are incompatible)." at "baz"
-//var baz = [1, 2, true];
+var baz = [1, 2, true];
 
 // XPECT noCompileErrors
 fn works() {
@@ -160,29 +160,6 @@ fn errors() {
 	// XPECT errors --> "Array range is invalid: Upper bound must be less than or equal to array size (5)" at ":7"
 	b = a[:7];
 	// XPECT errors --> "prim»s»"asdf" (:: string) has a different type than str (:: f_583.0)" at ""asdf""
-	var str = "asdf";
-	/* XPECT errors ---
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
-	--- */
-	var c = a[str];
-	/* XPECT errors ---
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
-	--- */
-	b = a[str:];
-	/* XPECT errors ---
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
-	--- */
-	b = a[:str];
-	/* XPECT errors ---
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: f_583.0) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
-		"str (:: string) must be an unsigned integer" at "str"
-	--- */
-	b = a[str:str];
 }
 
 // XPECT noCompileErrors

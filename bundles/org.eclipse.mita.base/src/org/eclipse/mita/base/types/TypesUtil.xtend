@@ -30,6 +30,16 @@ import org.eclipse.xtext.EcoreUtil2
 class TypesUtil {
 	public static final String ID_SEPARATOR = "."
 	
+	public static dispatch def EObject ignoreCoercions(EObject obj) {
+		return obj;
+	}
+	public static dispatch def EObject ignoreCoercions(CoercionExpression expr) {
+		return expr.value.ignoreCoercions;
+	}
+	public static dispatch def EObject ignoreCoercions(Void v) {
+		return null;
+	}
+	
 	static def boolean isGeneratedType(Resource res, AbstractType type) {
 		return res.constraintSolution?.getConstraintSystem?.getUserData(type)?.containsKey(BaseConstraintFactory.GENERATOR_KEY);
 	}

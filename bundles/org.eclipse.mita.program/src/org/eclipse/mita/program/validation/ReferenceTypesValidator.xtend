@@ -20,13 +20,15 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -119,7 +121,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	@Check
 	def forbiddenReferenceReturn(ReturnStatement stmt) {
 		val funDecl = EcoreUtil2.getContainerOfType(stmt, FunctionDefinition);
-		val funDeclTypeIR = BaseUtils.getType(funDecl);
+		val funDeclTypeIR = BaseUtils.getType(funDecl.typeSpecifier);
 		if(hasReferenceInType(funDeclTypeIR)) {
 			error(FORBIDDEN_RETURN, stmt, null);
 		}
@@ -127,7 +129,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	
 	@Check
 	def forbiddenReferenceReturn(FunctionDefinition funDecl) {
-		val funDeclTypeIR = BaseUtils.getType(funDecl);
+		val funDeclTypeIR = BaseUtils.getType(funDecl.typeSpecifier);
 		if(hasReferenceInType(funDeclTypeIR)) {
 			error(FORBIDDEN_RETURN, funDecl, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 		}
@@ -149,17 +151,14 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	dispatch def void checkNoFunCall(ArrayAccessExpression a, EObject source) {
 		a.owner.checkNoFunCall(source);
 	}
-	dispatch def void checkNoFunCall(FeatureCall a, EObject source) {
-		if(a.operationCall) {
-			error(CANT_REFERENCE_FUNCTION_RESULTS, source, null);
-		}
-		a.arguments.head.value.checkNoFunCall(source);
-	}
 	dispatch def void checkNoFunCall(ElementReferenceExpression a, EObject source) {
-		if(a.operationCall) {
+		if(a.operationCall && !(a.reference instanceof VirtualFunction)) {
 			error(CANT_REFERENCE_FUNCTION_RESULTS, source, null);
 		}
 		a.reference.checkNoFunCall(source);
+	}
+	dispatch def void checkNoFunCall(CoercionExpression e, EObject source) {
+		e.value.checkNoFunCall(source);
 	}
 	dispatch def void checkNoFunCall(EObject e, EObject source) {
 	}
@@ -211,6 +210,9 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		})
 	}
 	
+	dispatch def Triple<Integer, Boolean, List<EObject>> innerMostReferences(CoercionExpression e) {
+		e.value.innerMostReferences;
+	}
 	dispatch def Triple<Integer, Boolean, List<EObject>> innerMostReferences(DereferenceExpression e) {
 		if(e.expression === null) {
 			return Tuples.create(0, false, #[e as EObject]);
@@ -219,19 +221,18 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		Tuples.create(ce.first + 1, ce.second, ce.third);
 	}
 	
-	dispatch def Triple<Integer, Boolean, List<EObject>> innerMostReferences(FeatureCall e) {
-		if(e.operationCall) {
-			Tuples.create(0, false, #[e as EObject]);
+	dispatch def Triple<Integer, Boolean, List<EObject>> innerMostReferences(ElementReferenceExpression e) {
+		if(e.operationCall && !(e.reference instanceof VirtualFunction)) {
+			return Tuples.create(0, false, #[e as EObject]);
 		}
-		else {
+		else if(e.reference instanceof TypeAccessor) {
 			val t1 = e.reference.innerMostReferences;
 			val t2 = e.arguments.head.value.innerMostReferences;
-			Tuples.create(t1.first + t2.first, t1.second || t2.second, (t1.third + t2.third).toList)
+			return Tuples.create(t1.first + t2.first, t1.second || t2.second, (t1.third + t2.third).toList)
 		}
-	}
-	
-	dispatch def Triple<Integer, Boolean, List<EObject>> innerMostReferences(ElementReferenceExpression e) {
-		e.reference.innerMostReferences;
+		else {
+			return e.reference.innerMostReferences;
+		}
 	}
 	
 	dispatch def Triple<Integer, Boolean, List<EObject>> innerMostReferences(FunctionParameterDeclaration fpd) {

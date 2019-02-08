@@ -376,10 +376,6 @@ class LoopBreakerStatement extends AbstractStatement {
 class ArrayRuntimeCheckStatement extends AbstractStatement {
 	refers ArrayAccessExpression access
 }
-class CoercionExpression extends Expression {
-	contains Expression value
-	Object typeSpecifier
-}
 
 
 

@@ -13,14 +13,13 @@
 
 package org.eclipse.mita.program.generator.transformation
 
-import org.eclipse.mita.program.generator.transformation.AbstractUnravelingStage
-import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.program.ReturnStatement
-import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.program.CoercionExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.ReturnStatement
 
 class UnravelLiteralArraysStage extends AbstractUnravelingStage {
 	

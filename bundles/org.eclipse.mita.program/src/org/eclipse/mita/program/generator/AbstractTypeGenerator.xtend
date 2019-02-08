@@ -16,13 +16,12 @@ package org.eclipse.mita.program.generator
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.mita.program.CoercionExpression
 
 /**
  * Interface for type generators.

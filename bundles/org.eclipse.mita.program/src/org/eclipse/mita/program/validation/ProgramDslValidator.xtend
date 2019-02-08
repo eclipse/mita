@@ -25,9 +25,7 @@ import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
-import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
@@ -45,13 +43,14 @@ import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Modality
-import org.eclipse.mita.platform.Signal
+import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.EventHandlerDeclaration
@@ -78,8 +77,6 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import org.eclipse.mita.platform.Sensor
-import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -186,6 +183,16 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			}
 			// otherwise we didn't get a type for this
 			else if(type instanceof TypeVariable) {
+				val resolvedReference = ts.eGet(TypesPackage.eINSTANCE.presentTypeSpecifier_Type, false);
+				if(resolvedReference instanceof EObject) {
+					val genericElement = EcoreUtil2.getContainerOfType(resolvedReference, GenericElement);
+					if(genericElement !== null) {
+						if(EcoreUtil2.isAncestor(genericElement, ts)) {
+							// ts refers a type variable declared in a parent.
+							return;
+						}
+					}
+				}
 				error('''Couldn't resolve reference to Type '«BaseUtils.getText(ts, typeRef)»'.''', ts, typeRef);
 			}
 		}

@@ -542,3 +542,9 @@ class Property extends Declaration {
 class Event extends Declaration {
 	
 }
+
+class CoercionExpression extends Expression {
+	contains Expression value
+	Object typeSpecifier
+}
+

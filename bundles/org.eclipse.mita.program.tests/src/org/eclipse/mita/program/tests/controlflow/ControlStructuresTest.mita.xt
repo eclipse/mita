@@ -80,10 +80,10 @@ function testLoopsSuccess() : void {
 function testLoopsFail() {
 	var x : int32 = 10;
 
-	// XPECT errors --> "Cannot unify bool and int32" at "x"
+	// XPECT errors --> "Types bool and int32 are not the same." at "x"
 	while(x) { }
 	
-	// XPECT errors --> "Cannot unify bool and int32" at "x"
+	// XPECT errors --> "Types bool and int32 are not the same." at "x"
 	do { } while(x)
 	
 }
@@ -96,7 +96,7 @@ function testConditionalSuccess() {
 
 function testConditionalFail() {
 	/* XPECT errors ---
-		"Cannot unify xint8 and bool" at "5"
+		"Types xint8 and bool are not the same." at "5"
 	--- */
 	var x  = 5 ? 5 : 1;
 }

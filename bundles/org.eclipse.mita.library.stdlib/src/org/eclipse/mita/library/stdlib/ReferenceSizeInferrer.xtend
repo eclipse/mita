@@ -13,19 +13,22 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 class ReferenceSizeInferrer extends ElementSizeInferrer {
 	
-	@Inject
-	protected StdlibTypeRegistry typeRegistry;
-	
-	protected override dispatch doInfer(EObject obj) {
-		return new ValidElementSizeInferenceResult(obj, typeRegistry.getIntegerTypes(obj).findFirst[it.name == "int32"], 1);
-	}
-	
+	override inferFromType(EObject obj, AbstractType type) {
+		if(type instanceof TypeConstructorType) {
+			if(type.name == "reference") {
+				val result = new ValidElementSizeInferenceResult(obj, type, 1);
+				return result;
+			}
+		}
+		
+		return super.inferFromType(obj, type);
+	}	
 }

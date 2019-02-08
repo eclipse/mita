@@ -19,7 +19,6 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.DoubleLiteral
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
@@ -28,20 +27,20 @@ import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.VariableDeclaration
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
-import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
-import org.eclipse.mita.base.types.SumSubTypeConstructor
 
 /**
  * Infers the value of an expression at compile time.
@@ -68,6 +67,9 @@ class StaticValueInferrer {
 			typ.name + "." + name + "(" + properties.entrySet.map[name_expr | name_expr.key + " = " StaticValueInferrer.infer(name_expr.value, [])].join(", ") + ")"
 		}
 		
+	}
+	static dispatch def Object infer(CoercionExpression expr, (EObject) => void inferenceBlockerAcceptor) {
+		return expr.value.infer(inferenceBlockerAcceptor);
 	}
 	
 	static dispatch def Object infer(SumSubTypeConstructor constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {

@@ -7,6 +7,7 @@ import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.PostFixOperator
 import org.eclipse.mita.base.expressions.PostFixUnaryExpression
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.NullTypeSpecifier
@@ -35,14 +36,14 @@ import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.mita.program.ArrayLiteral
-import org.eclipse.mita.program.CoercionExpression
-import org.eclipse.mita.program.ConditionalStatement
+import org.eclipse.mita.program.CatchStatement
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
 import org.eclipse.mita.program.ExpressionStatement
+import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.GeneratedFunctionDefinition
@@ -63,6 +64,8 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SignalInstanceReadAccess
 import org.eclipse.mita.program.SignalInstanceWriteAccess
 import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.ThrowExceptionStatement
+import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.mita.program.WhileStatement
@@ -71,10 +74,6 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.program.ForEachStatement
-import org.eclipse.mita.program.ThrowExceptionStatement
-import org.eclipse.mita.program.TryStatement
-import org.eclipse.mita.program.CatchStatement
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {

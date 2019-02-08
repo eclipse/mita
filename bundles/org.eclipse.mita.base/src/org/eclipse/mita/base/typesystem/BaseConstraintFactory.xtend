@@ -12,7 +12,6 @@ import org.eclipse.mita.base.expressions.AdditiveOperator
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.BinaryExpression
-import org.eclipse.mita.base.expressions.BinaryLiteral
 import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.ConditionalExpression
 import org.eclipse.mita.base.expressions.DoubleLiteral
@@ -21,7 +20,6 @@ import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.FloatLiteral
-import org.eclipse.mita.base.expressions.HexLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.LogicalOperator
 import org.eclipse.mita.base.expressions.MultiplicativeOperator
@@ -86,6 +84,7 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.scoping.IScopeProvider
 
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class BaseConstraintFactory implements IConstraintFactory {
@@ -409,7 +408,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// assert idx is unsigned integer (s <= u32)
 		// return t
 		val arrayType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.arrayTypeQID);
-		val accessor = expr.arraySelector;
+		val accessor = expr.arraySelector.ignoreCoercions;
 		val accessorType = system.computeConstraints(accessor);
 
 		val refType = system.computeConstraints(expr.owner);
@@ -629,7 +628,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(containerName !== null) {
 			system.typeTable.put(QualifiedName.create(containerName, type.name), tv);
 		}
-		return tv;
+		return system.associate(tv);
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {

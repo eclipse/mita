@@ -47,6 +47,7 @@ import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
@@ -58,15 +59,16 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
@@ -74,7 +76,6 @@ import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ArrayRuntimeCheckStatement
-import org.eclipse.mita.program.CoercionExpression
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
@@ -115,13 +116,11 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 
 import static org.eclipse.mita.base.types.TypesUtil.*
+import static org.eclipse.mita.program.model.ModelUtils.*
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import static extension org.eclipse.mita.program.model.ModelUtils.getRealType
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
-import org.eclipse.mita.base.types.TypesUtil
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class StatementGenerator {
 
@@ -614,8 +613,14 @@ class StatementGenerator {
 		// «platformGenerator.typeGenerator.code(stmt.typeSpecifier)»
 		val initialization = stmt.initialization;
 		val type = BaseUtils.getType(stmt);
-	
 		var result = stmt.trace;
+		
+		val typeIsSingleton = TypesUtil.getConstraintSystem(stmt.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
+		if(typeIsSingleton) {
+			// singletons have no representation in C for now since they are just some tag in enums with empty data.
+			return result;
+		}
+		
 		
 		var initializationDone = false;
 		

@@ -15,7 +15,7 @@ var foo = new array<uint8>(size = 10);
 var foo2: array<uint8> = [1, 2, 3, 4, 5];
 
 // XPECT errors --> "Array does not have a unique type (uint32 and bool are incompatible)." at "baz"
-//var baz = [1, 2, true];
+var baz = [1, 2, true];
 
 // XPECT noCompileErrors
 fn works() {
@@ -44,7 +44,14 @@ fn works() {
 	var v4 = v1[:];
 	// XPECT inferredLength --> 2
 	var v5 = v1[1:3];
-	
+	// this error is actually fine, it's a consequence of global type inference. 
+    // It happens because of lines like line 168 (b = a[-2:-1];), negative indices create a graph  uint32 -> f_685.0 <- int8.
+    // With those lines disabled in ArraysTest.mita.xt no errors occur. 
+	/* XPECT errors ---
+		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_685.0" at "length"
+		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_686.0" at "length"
+		"Function length cannot be used here: f_686.0, f_685.0" at "length"
+	--- */
 	var l = v1.length();
 	
 	// this should result in no errors
@@ -216,8 +223,8 @@ struct SensorMessage {
 fn mean(data : array<SensorMessage>) {
     let result : SensorMessage;
     // this error is actually fine, it's a consequence of global type inference. 
-    // It happens because of line 168 (b = a[-2:-1];), negative indices create a graph  uint32 -> f_685.0 <- int8.
-    // With that line disabled in ArraysTest.mita.xt no errors occur. 
+    // It happens because of lines like line 168 (b = a[-2:-1];), negative indices create a graph  uint32 -> f_685.0 <- int8.
+    // With those lines disabled in ArraysTest.mita.xt no errors occur. 
 	/* XPECT errors ---
 		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_685.0" at "length"
 		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of f_686.0" at "length"

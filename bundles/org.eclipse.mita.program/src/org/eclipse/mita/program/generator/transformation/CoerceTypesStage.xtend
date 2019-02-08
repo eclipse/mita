@@ -22,6 +22,7 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.base.expressions.util.ArgumentSorter
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
+import org.eclipse.mita.base.types.TypesFactory
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
@@ -70,7 +71,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 				val eType = BaseUtils.getType(a.getOrigin);
 				
 				if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
-					val coercion = ProgramFactory.eINSTANCE.createCoercionExpression;
+					val coercion = TypesFactory.eINSTANCE.createCoercionExpression;
 					if(pType === null) {
 						return;
 					}
@@ -94,7 +95,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 			parent = parent.eContainer;
 		}
 		if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
-			val coercion = ProgramFactory.eINSTANCE.createCoercionExpression;
+			val coercion = TypesFactory.eINSTANCE.createCoercionExpression;
 			if(pType === null) {
 				return;
 			}
@@ -117,7 +118,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		val parent = EcoreUtil2.getContainerOfType(stmt, Operation);
 		val pType = BaseUtils.getType(parent.typeSpecifier.getOrigin);
 		if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
-			val coercion = ProgramFactory.eINSTANCE.createCoercionExpression; 
+			val coercion = TypesFactory.eINSTANCE.createCoercionExpression; 
 			expr.replaceWith(coercion)
 			coercion.value = expr;
 			coercion.typeSpecifier = pType;
