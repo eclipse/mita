@@ -67,7 +67,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		
 		val systemResource = modality.eContainer as AbstractSystemResource;
 		
-		val resultType = new FunctionType(modality, new AtomicType(modality, modality.name), new ProdType(null, new AtomicType(modality, modality.name + "_args"), #[system.getTypeVariable(systemResource)]), modalityWithType);
+		val resultType = new FunctionType(modality, new AtomicType(modality, modality.name), new ProdType(null, new AtomicType(modality, modality.name + "_args"), #[system.getTypeVariable(systemResource.typeKind)]), modalityWithType);
 		return system.associate(resultType);
 	}
 	

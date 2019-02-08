@@ -8,7 +8,4 @@ public interface IConstraintFactory {
 	public StdlibTypeRegistry getTypeRegistry();
 
 	ConstraintSystem create(EObject context);
-	
-	void setIsLinking(boolean isLinking);
-	
 }

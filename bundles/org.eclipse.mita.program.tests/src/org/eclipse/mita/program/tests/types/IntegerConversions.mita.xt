@@ -41,10 +41,13 @@ fn takesUint8(x : uint8): uint8 {
 }
 
 fn intRangeChecks() {
-	// XPECT errors ---> "Cyclic dependencies could not be resolved: uint8 -> uint16 -> uint8" at "takesUint8(-1)"
+	/* XPECT errors ---
+		"Function takesUint8 cannot be used here: uint8, xint8" at "takesUint8"
+		"Incompatible types: int8 is not subtype of uint8." at "takesUint8"
+	--- */
 	takesUint8(-1);
 	
-	// XPECT errors ---> "Assignment operator '=' may only be applied on compatible types, not on uint8 and int8." at "let x : uint8 = -1;"
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and int8." at "let x : uint8 = -1;"
 	let x : uint8 = -1;
 }
 
@@ -147,6 +150,7 @@ function testVariables() : void {
 }
 
 /* XPECT errors ---
+		"Couldn't resolve reference to Type 'Name'." at "Name"
 		"Types are recursive: [f_3.0, Name(f_3.0)]" at "Name"
 		"Types are recursive: [f_3.0, Name(f_3.0)]" at "struct Name { var x : Name; }"
 	--- */

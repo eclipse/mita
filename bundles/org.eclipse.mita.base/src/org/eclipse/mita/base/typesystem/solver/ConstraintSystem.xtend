@@ -383,7 +383,7 @@ class ConstraintSystem {
 		if(replacementObjects.empty) { 
 			scopeProvider.getScope(origin, tvp.reference);
 			scope.getElements(tvp.targetQID).force;
-			return #[new BottomType(origin, '''Scope doesn't contain «tvp.targetQID» for «tvp.reference.EContainingClass.name».«tvp.reference.name» on «tvp.origin»''')];
+			return #[new BottomType(origin, '''Couldn't resolve reference to «tvp.reference.EReferenceType.name» '«tvp.targetQID»'.''', tvp.reference)];
 		}
 		
 		

@@ -149,7 +149,6 @@ fn returnOptional2(): int32? {
 	return res;
 }
 fn returnOptional3(): int32? {
-//XPECT errors --> "Implicit construction of optionals in returns is not yet supported. Please use 'optional.some' instead." at "return 1;"
 	return 1;
 }
 fn returnOptional4(): int32? {

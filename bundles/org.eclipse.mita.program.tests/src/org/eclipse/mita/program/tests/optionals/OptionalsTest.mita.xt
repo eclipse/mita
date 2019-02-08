@@ -52,7 +52,6 @@ function testOptionalOfOptionalError() {
 }
 
 function testOptionalReturn() : optional<bool> {
-	//XPECT errors --> "Implicit construction of optionals in returns is not yet supported. Please use 'optional.some' instead." at "return true;"
 	return true;
 }
 
@@ -65,10 +64,7 @@ function testOptionalReturn2() : optional<bool> {
 function testOptionalsFail(){
 	var notOptional : uint32; 
 	var optional : uint32?; 
-	/*XPECT errors ---
-		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "10"
-		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "42"
-	--- */
+	
 	functionWithOptionals(42, 10);
 	/*XPECT errors ---
 		"Nested generated types are not supported yet." at "optional<int32?>"
@@ -79,29 +75,29 @@ function testOptionalsFail(){
 	notOptional = optional;
 	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional<uint32> and bool." at "optional = true"
 	optional = true;
-	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional and bool." at "var optional3 : uint16? = true;"
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional<uint16> and bool." at "var optional3 : uint16? = true;"
 	var optional3 : uint16? = true;
-	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional and bool." at "var optional4 : optional<uint32> = true;"
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional<uint32> and bool." at "var optional4 : optional<uint32> = true;"
 	var optional4 : optional<uint32> = true;
-	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on optional<optional<int32>> and optional<uint32>." at "optionalOfOptional = optional"
+	// XPECT errors --> "Types uint32 and optional<int32> are not the same." at "optionalOfOptional = optional"
 	optionalOfOptional = optional;
-	// XPECT errors --> "Incompatible types optional<uint32> and int32." at "functionWithNonOptionals(optional)"
+	/* XPECT errors ---
+		"functionWithNonOptionals_args isn't structurally a subtype of functionWithNonOptionals_args" at "functionWithNonOptionals"
+		"optional<uint32> is not a subtype of int32" at "functionWithNonOptionals"
+	--- */
 	functionWithNonOptionals(optional);
 	/*XPECT errors ---
-		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "10"
-		"Incompatible types bool and optional<int32>." at "functionWithOptionals(true, 10)"
+		"Incompatible types: bool is not subtype of optional<int32>." at "functionWithOptionals"
 	--- */
 	functionWithOptionals(true, 10);
 	/*XPECT errors ---
-		"Incompatible types double and optional<int32>." at "functionWithOptionals(4.2, 10)"
-		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "10"
-		"Implicit construction of optionals in function calls is not yet supported. Please use 'optional.some' instead." at "4.2"
+		"Incompatible types: f64 is not subtype of optional<int32>." at "functionWithOptionals"
 	--- */
 	functionWithOptionals(4.2, 10);
 }
 function testOptionalReturnFail() :bool {
 	var x : bool? = false;
-	//XPECT errors --> "The return type 'optional<bool>' is not compatible with the operation's type 'bool'." at "x"
+	//XPECT errors --> "Can't return x (:: optional<bool>) since it's not of a subtype of bool" at "return x;"
 	return x;
 }
 

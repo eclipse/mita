@@ -84,7 +84,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 				]
 			
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
-			constraintFactory.setIsLinking(true);
 			constraintFactory.getTypeRegistry().setIsLinking(true);
 			val constraints = constraintFactory.create(eObject);
 			val packageName = (eObject as PackageAssociation).name

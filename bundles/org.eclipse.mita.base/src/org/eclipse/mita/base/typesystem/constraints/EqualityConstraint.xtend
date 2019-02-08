@@ -16,7 +16,10 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		super(source);
 		this.left = left;
 		this.right = right;
-		if(this.toString == "int32 ≡ xint8") {
+		if(left === null || right === null) {
+			throw new NullPointerException;
+		}
+		if(this.toString == "f_186 ≡ modality01_args(f_142) → modality<f_183>") {
 			print("")
 		}
 	}

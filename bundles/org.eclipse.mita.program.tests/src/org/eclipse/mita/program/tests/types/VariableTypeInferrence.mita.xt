@@ -119,9 +119,9 @@ function noCommonType() {
 	var x : int32 = 10;
 	var y : uint32 = 10;
 	/* XPECT errors --- 
-		"Cannot determine size of element: Unable to infer size from type f_329.0" at "+"
+		"Cannot determine size of element: Unable to infer size from type f_326.0" at "+"
 		"Function __PLUS__ cannot be used here" at "x + y"
-		"__PLUS___args(int32, uint32) not instance of __PLUS__\n	__PLUS___args(f32, f32) → f32 = __PLUS__([x: float, y: float])\n	__PLUS___args(f64, f64) → f64 = __PLUS__([x: double, y: double])\n	__PLUS___args(int16, int16) → int16 = __PLUS__([x: int16, y: int16])\n	__PLUS___args(int32, int32) → int32 = __PLUS__([x: int32, y: int32])\n	__PLUS___args(int8, int8) → int8 = __PLUS__([x: int8, y: int8])\n	__PLUS___args(uint16, uint16) → uint16 = __PLUS__([x: uint16, y: uint16])\n	__PLUS___args(uint32, uint32) → uint32 = __PLUS__([x: uint32, y: uint32])\n	__PLUS___args(uint8, uint8) → uint8 = __PLUS__([x: uint8, y: uint8])\n" at "x + y"
+		"__PLUS___args(int32, uint32) not instance of __PLUS__\r\n	__PLUS___args(f32, f32) → f32 = __PLUS__([x: float, y: float])\r\n	__PLUS___args(f64, f64) → f64 = __PLUS__([x: double, y: double])\r\n	__PLUS___args(int16, int16) → int16 = __PLUS__([x: int16, y: int16])\r\n	__PLUS___args(int32, int32) → int32 = __PLUS__([x: int32, y: int32])\r\n	__PLUS___args(int8, int8) → int8 = __PLUS__([x: int8, y: int8])\r\n	__PLUS___args(string, string) → string = __PLUS__([x: string, y: string])\r\n	__PLUS___args(uint16, uint16) → uint16 = __PLUS__([x: uint16, y: uint16])\r\n	__PLUS___args(uint32, uint32) → uint32 = __PLUS__([x: uint32, y: uint32])\r\n	__PLUS___args(uint8, uint8) → uint8 = __PLUS__([x: uint8, y: uint8])\r\n" at "x + y"
 		--- */
 	var z = x + y;  
 }

@@ -24,6 +24,7 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class OptionalSizeInferrer extends ElementSizeInferrer {
 	
@@ -32,11 +33,11 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 		if(result instanceof ValidElementSizeInferenceResult) { 
 			return result;	
 		}
-		val typeSpecifier = obj.typeSpecifier;
-		if(typeSpecifier instanceof PresentTypeSpecifier) {
-			val type = typeSpecifier.typeArguments?.get(0);
+		val type = BaseUtils.getType(obj);
+		if(type instanceof TypeConstructorType) {
+			val inner = type.typeArguments.head;
 			if(type !== null) {
-				return new ValidElementSizeInferenceResult(obj, BaseUtils.getType(type), 1);	
+				return new ValidElementSizeInferenceResult(obj, inner, 1);	
 			}	
 		}
 		return newInvalidResult(obj, "Cannot infer size for this optional, since I can't infer the type of it");

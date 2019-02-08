@@ -27,6 +27,9 @@ class TypeClass {
 		this.instances = new HashMap(instances);
 		this.mostSpecificGeneralization = mostSpecificGeneralization;
 		hasNoFreeVars = instances.keySet.forall[it.hasNoFreeVars]
+		if(this.toString.startsWith("modality01")) {
+			print("")
+		}
 	}
 	new(Iterable<Pair<AbstractType, EObject>> instances) {
 		this(instances.toMap([it.key], [it.value]));

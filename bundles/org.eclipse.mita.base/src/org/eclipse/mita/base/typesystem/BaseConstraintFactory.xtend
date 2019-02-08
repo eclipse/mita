@@ -102,8 +102,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 	@Inject
 	protected IScopeProvider scopeProvider;
 	
-	protected boolean isLinking;
-	
 	public static final String GENERATOR_KEY = "generator";
 	public static final String SIZE_INFERRER_KEY = "sizeInferrer";
 	public static final String PARENT_NAME_KEY = "parentName";
@@ -118,28 +116,16 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return result;
 	}
 	
-	override setIsLinking(boolean isLinking) {
-		this.isLinking = isLinking;
-	}
 	override getTypeRegistry() {
 		return typeRegistry;
 	}
 	
 	protected def TypeVariable resolveReferenceToSingleAndGetType(ConstraintSystem system, EObject origin, EReference featureToResolve) {
-		if(isLinking) {
-			return system.getTypeVariableProxy(origin, featureToResolve);
-		}
-		val obj = resolveReferenceToSingleAndLink(origin, featureToResolve);
-		return system.getTypeVariable(obj);
+		return system.getTypeVariableProxy(origin, featureToResolve);
 	}
 	
 	protected def List<TypeVariable> resolveReferenceToTypes(ConstraintSystem system, EObject origin, EReference featureToResolve) {
-		if(isLinking) {
-			return #[system.getTypeVariableProxy(origin, featureToResolve)];
-		}
-		else {
-			return resolveReference(origin, featureToResolve).map[system.getTypeVariable(it)].force;
-		}
+		return #[system.getTypeVariableProxy(origin, featureToResolve)];
 	}
 	
 	protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
@@ -193,8 +179,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 
 	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
-		val parmTypes = parms.map[system.computeConstraints(it)].filterNull.map[it as AbstractType].force();
-		return new ProdType(null, new AtomicType(function, function.name + "_args"), parmTypes);
+		val parmTypes = parms.map[
+			system.computeConstraints(it)
+		].filterNull.map[it as AbstractType].force();
+		return new ProdType(function, new AtomicType(function, function.name + "_args"), parmTypes);
 	}
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, EObject origin, String functionName, Iterable<Expression> expression) {
@@ -202,7 +190,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.computeArgumentConstraintsWithTypes(origin, functionName, argTypes);
 	}
 	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, EObject origin, String functionName, Iterable<AbstractType> argTypes) {
-		return new ProdType(origin, new AtomicType(null, functionName + "_args"), argTypes);
+		return new ProdType(origin, new AtomicType(origin, functionName + "_args"), argTypes);
 	}
 	
 	protected def Pair<AbstractType, AbstractType> computeTypesInArgument(ConstraintSystem system, Argument arg) {
@@ -451,8 +439,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u32TypeQID);
 		system.addConstraint(new SubtypeConstraint(accessorType, uint32Type, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
 		// also fix the sign with "at least u8". This helps usage like var i=0; i+=1; x[i];
-		val uint8Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u8TypeQID);
-		system.addConstraint(new SubtypeConstraint(uint8Type, accessorType, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
+//		val uint8Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u8TypeQID);
+//		system.addConstraint(new SubtypeConstraint(uint8Type, accessorType, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
 		return selfType;
 	}
 	
@@ -603,11 +591,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected def AbstractType translateTypeDeclaration(ConstraintSystem system, EObject obj) {
 		val typeTrans = system.doTranslateTypeDeclaration(obj);
 		system.associate(typeTrans, obj);
+		system.putUserData(typeTrans, ECLASS_KEY, obj.eClass.name);
 		if(obj instanceof Type) {
 			if(obj.typeKind !== null) {
 				system.computeConstraints(obj.typeKind);
 			}
 		}
+		
 		system.computeConstraintsForChildren(obj);
 		return typeTrans;
 	}
@@ -685,7 +675,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.typeTable.put(QualifiedName.create(sumTypeName, sumAlt.name), prodType);
 			
 			system.putUserData(prodType, PARENT_NAME_KEY, sumTypeName);
-			system.putUserData(prodType, ECLASS_KEY, sumAlt.eClass.name);
 			system.putUserData(prodType, DEFINING_RESOURCE_KEY, sumAlt.eResource.URI.lastSegment);
 			
 			return prodType;	

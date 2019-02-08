@@ -168,9 +168,9 @@ setup bluetoothA : MyConnectivity {
  	/* XPECT scope at vci00 ---
  	    vci00, vci01, vci02, vci03, vci04
  	--- */
- 	var boolC : bool = vci00(p01=true, p02=CFG_VAL_1);
+ 	var boolC = vci00(p01=true, p02=CFG_VAL_1);
  	
- 	var boolD : bool = vci00(true, CFG_VAL_1);
+ 	var boolD = vci00(true, CFG_VAL_1);
  	
  	// XPECT errors --> "Incompatible types string and uint32." at "vci01("wrong")"
  	var boolC2 = vci01("wrong"); // compile-error: The types int16 and string compatible
@@ -178,7 +178,7 @@ setup bluetoothA : MyConnectivity {
 	/*  XPECT errors ---
  	    "Assignment operator '=' may only be applied on compatible types, not on string and uint16." at "var boolC3 : string = vci01(17);"
  	--- */
- 	var boolC3 : string = vci01(17); // compile-error: The types string and uint16 are not compatible
+ 	var boolC3 = vci01(17); // compile-error: The types string and uint16 are not compatible
 } 
 
 // XPECT errors --> "This system resource must only be setup once" at "MySingletonConnectivity"

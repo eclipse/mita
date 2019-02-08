@@ -163,6 +163,9 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	}
 	dispatch def void checkNoFunCall(EObject e, EObject source) {
 	}
+	dispatch def void checkNoFunCall(Void e, EObject source) {
+		throw new NullPointerException;
+	}
 	
 	
 	dispatch def void checkRHS1(EObject source, ReferenceExpression e) {

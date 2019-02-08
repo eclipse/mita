@@ -23,6 +23,7 @@ import org.eclipse.mita.base.types.GenericElement
 import static extension org.eclipse.xtext.EcoreUtil2.*
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.program.Program
+import org.eclipse.xtext.resource.IEObjectDescription
 
 class TypeReferenceScope extends AbstractScope {
 	
@@ -43,15 +44,18 @@ class TypeReferenceScope extends AbstractScope {
 	def void addLocalTypes(ArrayList<EObject> result) {
 		val program = EcoreUtil2.getContainerOfType(context, Program);
 		if(program !== null) {
-			result += program.types; 
+			result += program.types.filter[ProgramDslScopeProvider.globalTypeFilter.apply(it.eClass)]; 
 		}
 	}
 	
 	def void addTypeParameter(ArrayList<EObject> result, EObject object) {
-		val container = object.getContainerOfType(GenericElement)
-		if (container !== null) {
+		var prev = object;
+		var container = object.getContainerOfType(GenericElement);
+		while (container !== null && container !== prev) {
 			result.addTypeParameter(if(object === container) container.eContainer else container);
 			result += container.typeParameters
+			prev = container;
+			container = object.getContainerOfType(GenericElement)
 		}
 	}
 	

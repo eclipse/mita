@@ -41,6 +41,7 @@ import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
+import org.eclipse.mita.base.scoping.BaseQualifiedNameProvider
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 
@@ -63,6 +64,10 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		TypesGlobalScopeProvider
 	}
 	
+	override bindIQualifiedNameProvider() {
+		return BaseQualifiedNameProvider
+	}
+		
 	override configureIScopeProviderDelegate(Binder binder) {
 		binder.bind(IScopeProvider)
                 .annotatedWith(Names

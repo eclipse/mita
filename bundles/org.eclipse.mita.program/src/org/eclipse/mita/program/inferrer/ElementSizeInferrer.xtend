@@ -291,12 +291,8 @@ class ElementSizeInferrer {
 				} else {
 					new InvalidElementSizeInferenceResult(obj, typ, '''Cannot infer size of ""«obj.class.simpleName»" of type"«typ»".''');
 				}
-				
-				val maxChild = childs.filter(ValidElementSizeInferenceResult).maxBy[it.byteCount];
-				val invalidChilds = childs.filter(InvalidElementSizeInferenceResult);
-				
-				result.children.add(maxChild);
-				result.children += invalidChilds;
+								
+				result.children += childs;
 					
 				return result;
 			], [|
@@ -443,75 +439,7 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 		}
 		return result;
 	}
-	
-	def long getByteCount() {
-		val type = if(typeOf instanceof PresentTypeSpecifier) { 
-			(typeOf as PresentTypeSpecifier).type;
-		}
-		val ownSize = (
-			if(type instanceof EnumerationType) {
-				// enums are uint16
-				elementCount * 2;
-			}
-			else if(type instanceof PrimitiveType) {
-				elementCount * switch (type.name) {
-					case "int64": {
-						4;
-					}
-					case "uint64": {
-						4;
-					}
-					case "int32": {
-						4;
-					}
-					case "uint32": {
-						4;
-					}
-					case "int16": {
-						2;
-					}
-					case "uint16": {
-						2;
-					}
-					case "int8": {
-						1;
-					}
-					case "uint8": {
-						1;
-					}
-					case "float": {
-						2;
-					}
-					case "double": {
-						4;
-					}
-					case "long double": {
-						8;
-					}
-					case "bool": {
-						1;
-					}
-					default: {
-						throw new Exception("Unknown type: " + type.name);
-					}
-				}
-			} 
-			else if(type instanceof StructureType) {
-				0;
-			}
-			else if(type instanceof SumType) {
-				1;
-			}
-			else {
-				0;
-			}
-		)
-		ownSize + elementCount * children
-			.filter[x | x instanceof ValidElementSizeInferenceResult]
-			.map[x | (x as ValidElementSizeInferenceResult).byteCount]
-			.fold(0L, [x, y | x + y]);
-	}
-	
+		
 	override orElse(() => ElementSizeInferenceResult esirProvider) {
 		return this;
 	}

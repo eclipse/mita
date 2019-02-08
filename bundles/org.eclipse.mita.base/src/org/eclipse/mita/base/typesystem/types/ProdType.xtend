@@ -43,8 +43,8 @@ class ProdType extends TypeConstructorType {
 		(name ?: "") + "(" + typeArguments.join(", ") + ")"
 	}
 		
-	override getVariance(int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		return new SubtypeConstraint(tau, sigma, new ValidationIssue(Severity.ERROR, '''«tau» is not subtype of «sigma»''', ""));
+	override getVariance(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
+		return new SubtypeConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
 	}
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {

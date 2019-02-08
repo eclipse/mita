@@ -78,8 +78,9 @@ fn variableScopesFail(){
 		var myVarIf : bool = true;
 	}
 	/* XPECT errors ---
+		"Assignment operator '=' may only be applied on compatible types, not on ⊥ (Couldn't resolve reference to EObject 'myVarIf'.) and bool." at "myVarIf = false"
 		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf"
-		"The left-hand side of an assignment must be a variable." at "myVarIf"
+		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf = false"
 	--- */
 	myVarIf = false;   
 }
@@ -93,8 +94,9 @@ fn variableScopesShadowing(){
         
 fn variableDeclarationAfterReference(){
 	/* XPECT errors ---
+		"Assignment operator '=' may only be applied on compatible types, not on ⊥ (Couldn't resolve reference to EObject 'myVar2'.) and xint8." at "myVar2 = 10"
 		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2"
-		"The left-hand side of an assignment must be a variable." at "myVar2"
+		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2 = 10"
 	--- */
 	myVar2 = 10;          
 	var myVar2 = 5;    

@@ -41,7 +41,10 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Can't return prim»d»4.0 (:: f64) since it's not of a subtype of f32";
+			return "bool is not subtype of optional<int32>";
+		}
+		private static void singleBreakpoint() {
+			System.out.print("");
 		}
 		
 		public ValidationIssue(Severity severity, String message, String issueCode) {
@@ -63,10 +66,7 @@ public interface IValidationIssueAcceptor {
 				this.feature = null;
 			}
 			if(shouldTest() && message.equals(getTestString())) {
-				System.out.print("");
-			}
-			if(shouldTest() && message.endsWith("since it's not of a subtype of f32")) {
-				System.out.print("");
+				singleBreakpoint();
 			}
 		}
 		
@@ -86,10 +86,7 @@ public interface IValidationIssueAcceptor {
 			this.issueCode = issueCode;
 			this.feature = feature;
 			if(shouldTest() && message.equals(getTestString())) {
-				System.out.print("");
-			}
-			if(shouldTest() && message.endsWith("since it's not of a subtype of f32")) {
-				System.out.print("");
+				singleBreakpoint();
 			}
 		}
 

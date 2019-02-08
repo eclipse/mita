@@ -112,7 +112,19 @@ class SubtypeChecker {
 		}).force;
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
-		return #[t, new BottomType(null, "")];
+		val g = s.explicitSubtypeRelations;
+		val idxs = g.reverseMap.get(t.superTypeGraphHandle) ?: #[];
+		val explicitSubTypes = #[t] + idxs.flatMap[
+			val keys = g.walk(g.incoming, new HashSet(), it) [i, v | i -> v];
+			return keys.map[key_typeName | 
+				val realType = s.explicitSubtypeRelationsTypeSource.get(key_typeName.key) ?: key_typeName.value
+				if(realType.name != key_typeName.value.name) {
+					throw new CoreException(new Status(IStatus.ERROR, "org.eclipse.mita.base", "Bad reverse lookup!"));
+				}
+				return realType;
+			];
+		].force;
+		return explicitSubTypes + #[t, new BottomType(null, "")];
 	}
 	dispatch def getSubTypes(ConstraintSystem s, Object t, EObject typeResolveOrigin) {
 		return #[];

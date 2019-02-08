@@ -520,6 +520,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return system.doSimplify(substitution, typeResolutionOrigin, constraint, t2, t1);
 	}
 	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, ProdType sub, UnorderedArguments top) {
+		// do nothing, it's really hard to do anything here since we don't know the names of sub's args
+		// TODO introduce a NamedProdType which carries this information
+		return SimplificationResult.success(system, Substitution.EMPTY);
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, UnorderedArguments sub, ProdType top) {
+		// do nothing, it's really hard to do anything here since we don't know the names of top's args	
+		// TODO introduce a NamedProdType which carries this information
+		return SimplificationResult.success(system, Substitution.EMPTY);
+	}
+	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, TypeConstructorType t1, TypeConstructorType t2) {
 		if(t1.class != t2.class || t1.typeArguments.size != t2.typeArguments.size) {
 			return SimplificationResult.failure(constraint.errorMessage);
@@ -577,7 +588,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val tIdx = i_t1t2.key;
 			val tSub = i_t1t2.value.key;
 			val tTop = i_t1t2.value.value;
-			system.addConstraint(sub.getVariance(tIdx, tSub, tTop));
+			system.addConstraint(sub.getVariance(constraint.errorMessage, tIdx, tSub, tTop));
 		]
 		
 		return SimplificationResult.success(system, Substitution.EMPTY);
@@ -586,13 +597,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeVariable sub, TypeConstructorType top) {
 		// expand-l:   a <= Ct1...tn
 		val expansion = substitutionProvider.get() => [top.expand(system, it, sub)];
-		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage));
+		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint._errorMessage));
 		return SimplificationResult.success(newSystem, expansion);
 	} 
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeVariable top) {
 		// expand-r:   Ct1...tn <= a
 		val expansion = substitutionProvider.get() => [sub.expand(system, it, top)];
-		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint.errorMessage));
+		val newSystem = system.plus(new SubtypeConstraint(sub, top, constraint._errorMessage));
 		return SimplificationResult.success(newSystem, expansion);
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, AbstractBaseType sub, AbstractBaseType top) { 
@@ -625,7 +636,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeScheme sub, AbstractType top) {
 		val vars_instance = sub.instantiate(system)
-		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top, constraint.errorMessage));
+		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top, constraint._errorMessage));
 		return SimplificationResult.success(newSystem, Substitution.EMPTY);
 	}
 	
@@ -695,7 +706,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
-			if(v.toString == "f_598.0") {
+			if(v.toString == "f_651.0") {
 				print("")
 			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
