@@ -188,9 +188,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		«ELSE»
 			ERROR: INVALID CONFIGURATION: authentication
 		«ENDIF»
-		
 		«setup.buildServiceCallback(eventHandler)»
-		
 		''')
 		.addHeader('XdkCommonInfo.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
