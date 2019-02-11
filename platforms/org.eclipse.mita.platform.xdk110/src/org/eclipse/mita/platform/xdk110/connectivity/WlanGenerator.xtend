@@ -47,8 +47,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	protected extension StatementGenerator statementGenerator
 			
 	override generateEnable() {
-		val baseName = (setup ?: component).baseName;
-		
+	
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
 		val result = codeFragmentProvider.create('''
@@ -187,7 +186,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		«ELSE»
 			ERROR: INVALID CONFIGURATION: authentication
 		«ENDIF»
-		«setup.buildServiceCallback(eventHandler)»
+		«setup.buildStatusCallback(eventHandler)»
 		
 		''')
 		.addHeader('XdkCommonInfo.h', true, IncludePath.HIGH_PRIORITY)
@@ -209,7 +208,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		}
 		return result
 	}
-	private def CodeFragment buildServiceCallback(SystemResourceSetup component, Iterable<EventHandlerDeclaration> declarations) {
+	private def CodeFragment buildStatusCallback(SystemResourceSetup component, Iterable<EventHandlerDeclaration> declarations) {
 						val baseName = component.baseName
 				
 				codeFragmentProvider.create('''
