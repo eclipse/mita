@@ -46,7 +46,6 @@ class ServalPALGenerator {
 			{
 				exception = ServalPal_Initialize(&ServalPALCmdProcessorHandle);
 			}
-			
 			if (RETCODE_OK == exception)
 			{
 				exception = ServalPalWiFi_Init();
@@ -69,8 +68,7 @@ class ServalPALGenerator {
 
 				if(RETCODE_OK == exception)
 				{
-					ServalPalWiFi_StateChangeInfo_T stateChangeInfo = { SERVALPALWIFI_OPEN, NULL };
-					exception = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_STATE_CHANGE, &stateChangeInfo);
+					exception = ServalPalWiFi_NotifyWiFiEvent(SERVALPALWIFI_CONNECTED, NULL);
 				}
 
 				if(RETCODE_OK != exception)
