@@ -18,12 +18,15 @@ import java.util.HashMap
 import java.util.Map
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.program.model.ModelUtils
 
 class LedGenerator extends AbstractSystemResourceGenerator {
 
@@ -36,11 +39,10 @@ class LedGenerator extends AbstractSystemResourceGenerator {
 		context.signalInstances.forEach[vciv | 
 			val color = #[vciv.initialization]
 				.filter(ElementReferenceExpression)
-				.map[x | x.arguments.findFirst[a | a.parameter?.name == 'color']?.value ]
-				.filter(ElementReferenceExpression)
-				.map[x | x.reference ]
+				.map[x | ModelUtils.getArgumentValue(x.reference as Operation, x, "color") ]
+				.map[ StaticValueInferrer.infer(it, []) ]
 				.filter(Enumerator)
-				.map[x | x.name ]
+				.map[it.name]
 				.head;
 				
 			result.put(vciv, color);

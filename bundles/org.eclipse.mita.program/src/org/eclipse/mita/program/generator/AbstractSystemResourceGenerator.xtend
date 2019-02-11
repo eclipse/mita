@@ -20,6 +20,7 @@ import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.xtext.generator.IFileSystemAccess2
 
 /**
  * Base interface for Mita component generators.
@@ -106,6 +107,9 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 		return CodeFragment.EMPTY;
 	}
 	
+	public def Iterable<String> generateAdditionalFiles(IFileSystemAccess2 fsa) {
+		return #[];
+	}
 	
 	/**
 	 * Generates code which prepares the subsequent access to a sensor modality. The

@@ -242,8 +242,13 @@ public class ExpressionsTypeInferrer extends AbstractTypeSystemInferrer implemen
 	public InferenceResult doInfer(ElementReferenceExpression e) {
 		if (e.isOperationCall()) {
 			if (e.getReference() != null && !e.getReference().eIsProxy()) {
-				return inferOperation(e, (Operation) e.getReference(),
-						Maps.<TypeParameter, InferenceResult>newHashMap());
+				if(e.getReference() instanceof Operation) {
+					return inferOperation(e, (Operation) e.getReference(),
+							Maps.<TypeParameter, InferenceResult>newHashMap());
+				}
+				else {
+					return inferTypeDispatch(e.getReference());
+				}
 			} else {
 				return getAnyType();
 			}
@@ -371,7 +376,6 @@ public class ExpressionsTypeInferrer extends AbstractTypeSystemInferrer implemen
 
 	public InferenceResult doInfer(Property p) {
 		InferenceResult type = inferTypeDispatch(p.getTypeSpecifier());
-		assertNotType(type, VARIABLE_VOID_TYPE, getResultFor(VOID));
 		return type;
 	}
 

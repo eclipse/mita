@@ -14,6 +14,7 @@ import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity;
 
 import com.google.common.base.Predicate;
@@ -35,12 +36,13 @@ public interface IValidationIssueAcceptor {
 		private String message;
 		private String issueCode;
 		private EObject target;
+		private EStructuralFeature feature;
 
 		public ValidationIssue(Severity severity, String message, String issueCode) {
-			this(severity, message, null, issueCode);
+			this(severity, message, null, null, issueCode);
 		}
 
-		public ValidationIssue(Severity severity, String message, EObject target, String issueCode) {
+		public ValidationIssue(Severity severity, String message, EObject target, EStructuralFeature feature, String issueCode) {
 			Assert.isNotNull(message);
 			Assert.isNotNull(issueCode);
 			Assert.isNotNull(severity);
@@ -48,6 +50,7 @@ public interface IValidationIssueAcceptor {
 			this.message = message;
 			this.target = target;
 			this.issueCode = issueCode;
+			this.feature = feature;
 		}
 
 		public Severity getSeverity() {
@@ -57,7 +60,7 @@ public interface IValidationIssueAcceptor {
 		public void setSeverity(Severity severity) {
 			this.severity = severity;
 		}
-
+		
 		public String getMessage() {
 			return message;
 		}
@@ -72,6 +75,14 @@ public interface IValidationIssueAcceptor {
 
 		public void setTarget(EObject target) {
 			this.target = target;
+		}
+		
+		public EStructuralFeature getFeature() {
+			return feature;
+		}
+
+		public void setFeature(EStructuralFeature feature) {
+			this.feature = feature;
 		}
 
 		public String getIssueCode() {

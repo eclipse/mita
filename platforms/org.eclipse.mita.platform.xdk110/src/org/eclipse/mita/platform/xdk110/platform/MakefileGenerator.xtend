@@ -30,6 +30,9 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 		val appName = StaticValueInferrer.infer(
 			setups?.findFirst[it.type.name == "XDK110"]?.getConfigurationItemValue("applicationName"), []
 		)?: "EclipseMitaApplication"
+		val isSecure = (StaticValueInferrer.infer(
+			setups?.findFirst[it.type.name == "MQTT"]?.getConfigurationItemValue("url"), []
+		) as String ?: "").startsWith("mqtts");
 		return codeFragmentProvider.create('''
 		# This makefile triggers the targets in the application.mk
 		
@@ -48,6 +51,17 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 		#and if any addition flags required then add that flags only in the below macro 
 		#export BCDS_CFLAGS_COMMON = 
 		
+		«IF isSecure»
+		export SERVAL_TLS_MBEDTLS=1
+		export SERVAL_ENABLE_TLS_CLIENT=1
+		export SERVAL_ENABLE_TLS_ECC=1
+		export SERVAL_ENABLE_TLS_PSK=0
+		export SERVAL_MAX_NUM_MESSAGES=8
+		export SERVAL_MAX_SIZE_APP_PACKET=900
+		export SERVAL_ENABLE_TLS=1
+		
+		export XDK_MBEDTLS_PARSE_INFO=0
+		«ENDIF»
 		
 		#List all the application header file under variable BCDS_XDK_INCLUDES 
 		export BCDS_XDK_INCLUDES = \
@@ -58,6 +72,7 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 			-I$(BCDS_APP_SOURCE_DIR)/base \
 			-I$(BCDS_BASE_DIR)/xdk110/Common/include \
 			-I$(BCDS_BASE_DIR)/xdk110/Common/certs/XDKDummy \
+			-I$(BCDS_BASE_DIR)/xdk110/Common/source/Private/ServalStack/src/TLS_MbedTLS \
 			-I$(BCDS_BASE_DIR)/xdk110/Common/source \
 			-I$(BCDS_BASE_DIR)/xdk110/Common/source/Connectivity
 			

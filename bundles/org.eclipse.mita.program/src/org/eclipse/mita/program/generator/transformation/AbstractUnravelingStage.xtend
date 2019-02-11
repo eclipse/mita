@@ -13,16 +13,18 @@
 
 package org.eclipse.mita.program.generator.transformation
 
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.program.AbstractStatement
+import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
-import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.program.generator.internal.ProgramCopier
 
 abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 	
@@ -103,7 +105,7 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 	 */
 	protected def Expression createInitialization(Expression expression) {
 		val copy = EcoreUtil2.copy(expression);
-		copier.linkOrigin(copy, copier.getOrigin(expression));
+		copier.linkOrigin(copy, ProgramCopier.getOrigin(expression));
 		return copy;
 	}
 	
@@ -139,7 +141,7 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 	
 	protected def findOriginalContext(EObject unravelingObject) {
 		var originalContext = unravelingObject.eContainer;
-		while(originalContext.eContainer !== null && !(originalContext.eContainer instanceof ProgramBlock)) {
+		while(originalContext.eContainer !== null && !(originalContext.eContainer instanceof ProgramBlock)  && !(originalContext.eContainer instanceof Program)) {
 			originalContext = originalContext.eContainer;
 		}
 		return originalContext;

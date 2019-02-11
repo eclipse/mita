@@ -19,8 +19,8 @@ import java.util.Map;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.mita.base.scoping.TypeDSLResourceDescriptionStrategy;
-import org.eclipse.mita.base.types.StructureType;
 import org.eclipse.mita.base.types.SumAlternative;
+import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.platform.AbstractSystemResource;
 import org.eclipse.mita.platform.Platform;
@@ -60,8 +60,7 @@ public class PlatformDslResourceDescriptionStrategy extends TypeDSLResourceDescr
 			return false;
 		} else if(eObject instanceof Platform) {
 			return createPlatformDescription((Platform) eObject, acceptor);
-		} else if( (eObject instanceof StructureType) 
-				|| (eObject instanceof SumAlternative) 
+		} else if( (eObject instanceof Type) 
 				|| (eObject.eContainer() instanceof SumAlternative && !(eObject instanceof TypeSpecifier))) {
 			export(eObject, acceptor);
 			return true;

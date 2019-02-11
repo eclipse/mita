@@ -16,7 +16,7 @@ fn accessWithoutRead() {
 	var x1 = my_sensor00.modality00;
 }
 
-// XPECT errors ---> "Signal instances and modalities cannot be passed as parameters" at "modality<uint32>"
+// XPECT errors ---> "Signal instances and modalities cannot be passed as parameters." at "modality<uint32>"
 fn functionWithModalityParameter(p : modality<uint32>) { 
 }
 
