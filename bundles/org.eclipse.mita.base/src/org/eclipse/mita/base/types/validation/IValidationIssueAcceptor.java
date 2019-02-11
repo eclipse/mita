@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Types siginst and modality are not the same.";
+			return "con_string is not a subtype of con_string_args";
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");

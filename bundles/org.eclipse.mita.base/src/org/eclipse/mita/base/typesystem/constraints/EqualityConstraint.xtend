@@ -19,9 +19,6 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null) {
 			throw new NullPointerException;
 		}
-		if(this.toString == "read_args(f_11) ≡ read_args(f_180<f_183>)") {
-			print("")
-		}
 	}
 	
 	override getErrorMessage() {

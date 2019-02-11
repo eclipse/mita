@@ -18,7 +18,6 @@ package org.eclipse.mita.program
 
 import com.google.inject.Binder
 import com.google.inject.name.Names
-import org.eclipse.emf.ecore.xml.type.internal.DataValue.TypeValidator
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
 import org.eclipse.mita.base.scoping.BaseQualifiedNameProvider
 import org.eclipse.mita.base.scoping.ILibraryProvider
@@ -46,8 +45,6 @@ import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.mita.program.typesystem.ProgramConstraintFactory
 import org.eclipse.mita.program.typesystem.ProgramLinker
-import org.eclipse.mita.program.validation.ProgramDslTypeValidator
-import org.eclipse.mita.program.validation.ProgramDslValidator
 import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.formatting.IFormatter
 import org.eclipse.xtext.generator.trace.node.GeneratorNodeProcessor

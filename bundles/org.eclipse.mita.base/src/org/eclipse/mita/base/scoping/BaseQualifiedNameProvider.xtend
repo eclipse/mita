@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.scoping
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.VirtualFunction
@@ -17,6 +18,16 @@ class BaseQualifiedNameProvider extends DefaultDeclarativeQualifiedNameProvider 
 	}
 	dispatch def QualifiedName doGetFullyQualifiedName(VirtualFunction f) {
 		return getFullyQualifiedName(f.eContainer);
+	}
+	
+	dispatch def QualifiedName doGetFullyQualifiedName(Parameter p) {
+		val parent = p.eContainer;
+		val parentQID = parent.fullyQualifiedName;
+		if(parentQID === null) {
+			return QualifiedName.create(p.name);
+		}
+		return parentQID.append(p.name);
+		
 	}
 		
 	protected dispatch def QualifiedName doGetFullyQualifiedName(TypeKind t) {

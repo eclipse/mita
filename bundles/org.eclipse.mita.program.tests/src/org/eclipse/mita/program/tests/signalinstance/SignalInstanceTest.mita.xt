@@ -9,7 +9,8 @@ package test;
 import platforms.unittest; 
 
 setup connectivity : MyConnectivity {
-	var signal_instance00 = vci00(p01=true, p02=CFG_VAL_1);
+	// XPECT infos --> "" at ""
+	var signal_instance00 = vci00(p01=true, p02=.CFG_VAL_1);
 	var signal_instance01 = vci01(20);
 	var signal_instance03 = vci03(5);
 	var signal_instance04 = vci04(6);
@@ -28,6 +29,7 @@ fn functionWithSiginstParameter(p : siginst<uint32>) {
 }
 
 // XPECT errors ---> "Could not infer the size of the function's return." at "functionReturningSiginst"
+// XPECT warnings --> "" at ""
 fn functionReturningSiginst() : siginst<bool> {
 	// XPECT errors --> "Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
 	return connectivity.signal_instance00;

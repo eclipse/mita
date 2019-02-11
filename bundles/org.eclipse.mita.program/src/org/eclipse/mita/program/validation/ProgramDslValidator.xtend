@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
@@ -26,6 +27,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
@@ -72,13 +74,13 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
-import org.eclipse.mita.base.types.CoercionExpression
+import static org.eclipse.mita.base.typesystem.infra.MitaBaseResource.*
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -160,6 +162,25 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
+	
+	@Check(CheckType.FAST)
+	def attachTypingIssues(Program program) {
+		val resource = program.eResource;
+		val solution = TypesUtil.getConstraintSolution(resource);
+		if(solution === null) {
+			return;
+		}
+		val issues = solution.issues.groupBy[it.message->(if(it.target?.eIsProxy) {(it.target as BasicEObjectImpl).eProxyURI} else {it.target})].values.map[it.head];
+		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].forEach[
+			error(it.message, resolveProxy(resource, it.target) ?: program, it.feature, 0, it.issueCode, #[]);
+		]
+		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].forEach[
+			warning(it.message, resolveProxy(resource, it.target) ?: program, it.feature, 0, it.issueCode, #[]);
+		]
+		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.INFO].forEach[
+			info(it.message, resolveProxy(resource, it.target) ?: program, it.feature, 0, it.issueCode, #[]);
+		]
+	}
 	
 	@Check(CheckType.NORMAL)
 	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {

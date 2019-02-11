@@ -20,4 +20,19 @@ class TypeQualifiedNameProvider extends BaseQualifiedNameProvider {
 		
 		return autoQID.append(sumAlt.name);
 	}
+	
+	dispatch def doGetFullyQualifiedName(SumAlternative sumAlt) {
+		val sumType = sumAlt.eContainer;
+		val pkg = sumType.eContainer;
+		
+		val baseQID = pkg?.fullyQualifiedName;
+		val autoQID = if(baseQID === null) {
+			QualifiedName.create("<auto>");
+		}
+		else {
+			baseQID.append("<auto>");
+		}
+		
+		return autoQID.append(sumAlt.name);
+	}
 }

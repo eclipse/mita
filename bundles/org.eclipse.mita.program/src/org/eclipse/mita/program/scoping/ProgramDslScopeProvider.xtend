@@ -517,11 +517,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	dispatch def IScope scopeInSetupBlock(Argument context, EReference reference) {
-			val originalScope = getDelegate().getScope(context, reference);
+		val originalScope = getDelegate().getScope(context, reference);
 
 		if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 			if (context.parameter !== null) {
-				val itemType = BaseUtils.getType(context.parameter)?.origin;
+				val itemType = BaseUtils.getType(context.parameter);
 				if (itemType instanceof EnumerationType) {
 					// unqualified resolving of enumeration values
 					return filteredEnumeratorScope(originalScope, itemType);
@@ -544,13 +544,30 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				val erefTxt = BaseUtils.getText(container, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 				val systemResourceSetup = EcoreUtil2.getContainerOfType(container.eContainer, SystemResourceSetup);
 				val systemResourceTxt = BaseUtils.getText(systemResourceSetup, ProgramPackage.eINSTANCE.systemResourceSetup_Type);
-				val normalizer = #[new ImportNormalizer(QualifiedName.create(systemResourceTxt, erefTxt), true, false)]
-				return new ImportScope(normalizer, originalScope, null, TypesPackage.eINSTANCE.parameter, false);
+				val normalizers = newArrayList(#[new ImportNormalizer(QualifiedName.create(systemResourceTxt, erefTxt), true, false)]);
+				val mbSumTypeConstructor = if(container instanceof FeatureCallWithoutFeature) {
+					"<auto>"
+				} else {
+					if(container.arguments.size > 0) {
+						val firstArg = container.arguments.head;
+						if(firstArg !== context) {
+							val value = firstArg.value;
+							if(value instanceof ElementReferenceExpression) {
+								BaseUtils.getText(value, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+							}
+						}
+					}
+				}
+				if(!mbSumTypeConstructor.nullOrEmpty) {
+					normalizers.add(new ImportNormalizer(QualifiedName.create(mbSumTypeConstructor, erefTxt), true, false))
+				}
+				return new ImportScope(normalizers, originalScope, null, TypesPackage.eINSTANCE.parameter, false);
 			}
 			return ModelUtils.getAccessorParameters(container.reference)
 				.transform[parameters | Scopes.scopeFor(parameters)]
 				.or(originalScope)		
 		}
+		return originalScope;
 	}
 
 	dispatch def IScope scopeInSetupBlock(ElementReferenceExpression context, EReference reference) {

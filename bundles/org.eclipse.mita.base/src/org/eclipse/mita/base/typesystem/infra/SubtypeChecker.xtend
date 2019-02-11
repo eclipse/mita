@@ -192,7 +192,7 @@ class SubtypeChecker {
 		if(sub.typeArguments.length != top.typeArguments.length) {
 			return SubtypeCheckResult.invalid('''«sub» and «top» differ in the number of type arguments''')
 		}
-		val result = sub.typeArguments.zip(top.typeArguments).map[isSubtypeOf(s, context, it.key, it.value)].fold(SubtypeCheckResult.valid, [scr1, scr2 | scr1.orElse(scr2)])
+		val result = sub.typeArguments.tail.zip(top.typeArguments.tail).map[isSubtypeOf(s, context, it.key, it.value)].fold(SubtypeCheckResult.valid, [scr1, scr2 | scr1.orElse(scr2)])
 		if(result.invalid) {
 			return SubtypeCheckResult.invalid(#['''«sub.name» isn't structurally a subtype of «top.name»'''] + result.messages);
 		}
