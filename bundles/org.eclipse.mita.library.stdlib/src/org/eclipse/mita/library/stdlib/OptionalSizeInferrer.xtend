@@ -34,7 +34,7 @@ class OptionalSizeInferrer extends ElementSizeInferrer {
 			return result;	
 		}
 		if(type instanceof TypeConstructorType) {
-			val inner = type.typeArguments.head;
+			val inner = type.typeArguments.tail.head;
 			if(type !== null) {
 				return new ValidElementSizeInferenceResult(obj, inner, 1);	
 			}	

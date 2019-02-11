@@ -137,7 +137,7 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def TypeClassProxy fromValueObject(SerializedTypeClassProxy obj) {
-		new TypeClassProxy(obj.toResolve.fromValueObject as TypeVariableProxy);
+		new TypeClassProxy(obj.toResolve.map[it.fromValueObject as TypeVariableProxy]);
 	}
 	
 	protected dispatch def JavaClassInstanceConstraint fromValueObject(SerializedJavaClassInstanceConstraint obj) {
@@ -196,26 +196,25 @@ class SerializationAdapter {
 	protected dispatch def AbstractType fromValueObject(SerializedFunctionType obj) {
 		return new FunctionType(
 			obj.origin.resolveEObject(),
-			obj.type.fromValueObject as AbstractType,
 			obj.typeArguments.fromSerializedTypes()
 		);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedUnorderedArguments obj) {
-		return new UnorderedArguments(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
+		return new UnorderedArguments(obj.origin.resolveEObject(), obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
-		return new ProdType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
+		return new ProdType(obj.origin.resolveEObject(), obj.typeArguments.fromSerializedTypes());
 	}
 	
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
-		return new SumType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
+		return new SumType(obj.origin.resolveEObject(), obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeConstructorType obj) {
-		return new TypeConstructorType(obj.origin.resolveEObject(), obj.type.fromValueObject as AbstractType, obj.typeArguments.fromSerializedTypes());
+		return new TypeConstructorType(obj.origin.resolveEObject(), obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeScheme obj) {
@@ -389,7 +388,7 @@ class SerializationAdapter {
 	
 	protected dispatch def SerializedTypeClassProxy toValueObject(TypeClassProxy obj) {
 		new SerializedTypeClassProxy => [
-			toResolve = obj.toResolve.toValueObject as SerializedTypeVariableProxy
+			toResolve = obj.toResolve.map[it.toValueObject as SerializedTypeVariableProxy];
 		]
 	}
 	
@@ -444,7 +443,6 @@ class SerializationAdapter {
 	
 	protected dispatch def Object fill(SerializedCompoundType ctxt, TypeConstructorType obj) {
 		_fill(ctxt as SerializedAbstractType, obj as AbstractType);
-		ctxt.type = obj.type.toValueObject as SerializedAbstractType
 		ctxt.typeArguments = obj.typeArguments.map[ it.toValueObject as SerializedAbstractType ].toList
 		return ctxt
 	}

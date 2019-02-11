@@ -34,7 +34,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		if(subType === null || superType === null) {
 			throw new NullPointerException;
 		}
-		if(this.toString == "f_89 ⩽ p_94") {
+		if(this.toString == "f_65.0 ⩽ f_11") {
 			print("")
 		}
 	}
@@ -74,7 +74,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	// for example t1 and t2 are sum type constructors. Then previously this was tv <= t2, now it's t1 <= t2. Then someone else already did what this constraint would have done. 
 	dispatch def boolean typesAreCommon(TypeConstructorType type1, TypeConstructorType type2) {
-		return type1.class == type2.class && type1.type.name == type2.type.name
+		return type1.class == type2.class //&& type1.typeArguments.head.name == type2.typeArguments.head.name
 	}
 		
 	dispatch def boolean hasSubtypes(ConstraintSystem system, AbstractType type) {
@@ -83,10 +83,10 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return !explicitSuperTypes.empty;
 	}
 	dispatch def boolean hasSubtypes(ConstraintSystem system, TypeConstructorType type) {
-		return type.type.name == "optional" || system._hasSubtypes(type as AbstractType);
+		return type.typeArguments.head.name == "optional" || system._hasSubtypes(type as AbstractType);
 	}
 	dispatch def boolean hasSubtypes(ConstraintSystem system, SumType type) {
-		return !type.typeArguments.empty || system._hasSubtypes(type as AbstractType);
+		return !type.typeArguments.tail.empty || system._hasSubtypes(type as AbstractType);
 	}
 	
 	def canHaveSuperTypes(ConstraintSystem system, AbstractType type) {

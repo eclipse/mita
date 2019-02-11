@@ -209,6 +209,21 @@ class MitaBaseResource extends LazyLinkingResource {
 			timer.stop("solve");
 			println("report for:" + resource.URI.lastSegment + "\n" + timer.toString);
 			if(solution !== null) {
+				solution.constraintSystem.coercions.entrySet.filter[
+					val resourceUri = it.key.trimFragment;
+					return resourceUri == resource.URI;
+				].forEach[
+					val coercedObj = resource.resourceSet.getEObject(it.key, false);
+					if(coercedObj !== null) {
+						var adapter = obj.eAdapters.filter(CoercionAdapter).head;
+						if(adapter === null) {
+							adapter = new CoercionAdapter;
+							obj.eAdapters.add(adapter);
+						} 
+						adapter.type = it.value;
+					}
+				] 
+				
 				if(resource instanceof MitaBaseResource) {
 					solution.constraintSystem.symbolTable.entrySet.forEach[
 						val uri = it.key;

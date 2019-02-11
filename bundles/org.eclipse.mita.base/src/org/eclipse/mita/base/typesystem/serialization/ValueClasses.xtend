@@ -39,7 +39,7 @@ final class SerializedTypeClass {
 }
 
 final class SerializedTypeClassProxy {
-	public SerializedTypeVariableProxy toResolve;
+	public List<SerializedTypeVariableProxy> toResolve;
 }
 
 abstract class SerializedAbstractType {
@@ -81,7 +81,6 @@ final class SerializedIntegerType extends SerializedNumericType {
 }
 
 abstract class SerializedCompoundType extends SerializedAbstractType {
-	public SerializedAbstractType type;
 	public List<SerializedAbstractType> typeArguments = new ArrayList;
 }
 

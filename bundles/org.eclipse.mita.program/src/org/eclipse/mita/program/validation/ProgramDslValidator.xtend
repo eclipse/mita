@@ -264,13 +264,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	].apply()}
 	
 	@Check(CheckType.NORMAL)
-	def checkSiginstOrModalityIsUsedImediately(FeatureCall featureCall) {
+	def checkSiginstOrModalityIsUsedImediately(ElementReferenceExpression featureCall) {[|
 		val isSiginst = featureCall.reference instanceof SignalInstance;
 		val isModality = featureCall.reference instanceof Modality;
 		if(!(isSiginst || isModality)) return;
 
 		val container = featureCall.eContainer;
-		if (container instanceof FeatureCall) {
+		if (container instanceof ElementReferenceExpression) {
 			if (container.reference instanceof GeneratedFunctionDefinition) {
 				return
 			}
@@ -291,7 +291,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					"Signal instances", '''Add .read() or .write() after «featureName»''')
 			}
 		error(msg, featureCall, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE, MUST_BE_USED_IMMEDIATELY_CODE);
-	}
+	].apply()}
 
 	@Check(CheckType.NORMAL)
 	def checkSetup_platformValidator(SystemResourceSetup setup) {
@@ -529,7 +529,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					hasGeneratedTypeNext = true;
 				}
 			}
-			type.typeArguments;
+			type.typeArguments.tail;
 		}
 		else {
 			#[];

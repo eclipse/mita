@@ -63,8 +63,8 @@ class TypeGenerator implements IGenerator {
 	}
 	public dispatch def CodeFragment code(EObject context, ProdType type) {
 		// if we have multiple members, we have an actual struct, otherwise we are just an alias
-		if(type.typeArguments.length == 1 && context.eResource.constraintSystem.getUserData(type, BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
-			return code(context, type.typeArguments.head);
+		if(type.typeArguments.tail.length == 1 && context.eResource.constraintSystem.getUserData(type, BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
+			return code(context, type.typeArguments.tail.head);
 		}
 		else {
 			return codeFragmentProvider.create('''«type.getStructType(context)»''');	

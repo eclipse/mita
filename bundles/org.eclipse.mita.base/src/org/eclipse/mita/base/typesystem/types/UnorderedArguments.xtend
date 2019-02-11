@@ -22,11 +22,15 @@ class UnorderedArguments extends TypeConstructorType {
 		this.argParamNamesAndValueTypes += argTypes;
 	}
 	
+	new(EObject origin, Iterable<Pair<String, AbstractType>> argTypes) {
+		super(origin, argTypes.map[it.value].force)
+		this.argParamNamesAndValueTypes += argTypes;
+	}
+	
 	override map((AbstractType)=>AbstractType f) {
 		val newArgs = argParamNamesAndValueTypes.map[it.key -> it.value.map(f)].force;
-		val newType = type.map(f);
-		if(type !== newType || argParamNamesAndValueTypes.zip(newArgs).exists[it.key.value !== it.value.value]) {
-			return new UnorderedArguments(origin, newType, newArgs);	
+		if(argParamNamesAndValueTypes.zip(newArgs).exists[it.key.value !== it.value.value]) {
+			return new UnorderedArguments(origin, newArgs);	
 		}
 		return this;
 	}
@@ -45,7 +49,7 @@ class UnorderedArguments extends TypeConstructorType {
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newParamAndValueTypes = argParamNamesAndValueTypes.map[ it.key -> system.newTypeVariable(it.value.origin) as AbstractType ].force;
-		val newType = new UnorderedArguments(origin, type, newParamAndValueTypes);
+		val newType = new UnorderedArguments(origin, newParamAndValueTypes);
 		s.add(tv, newType);
 	}
 }

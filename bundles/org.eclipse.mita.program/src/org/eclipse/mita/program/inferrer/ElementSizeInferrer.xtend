@@ -276,7 +276,7 @@ class ElementSizeInferrer {
 		// it's a struct, let's build our children, but mark the type first
 		return PreventRecursion.preventRecursion(this.class.simpleName -> type, [
 			val result = new ValidElementSizeInferenceResult(context, type, 1);
-			result.children.addAll(type.typeArguments.map[x|
+			result.children.addAll(type.typeArguments.tail.map[x|
 				inferFromType(context, x)
 			]);
 			return result;
@@ -287,7 +287,7 @@ class ElementSizeInferrer {
 	
 	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject context, SumType type) {
 		return PreventRecursion.preventRecursion(this.class.simpleName -> type, [
-			val childs = type.typeArguments.map[
+			val childs = type.typeArguments.tail.map[
 				doInferFromType(context, it)
 			];
 			val result = if(childs.filter(InvalidElementSizeInferenceResult).empty) {

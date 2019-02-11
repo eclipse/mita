@@ -33,7 +33,7 @@ class SomeTypeSizeInferrer extends ElementSizeInferrer {
 			return new InvalidElementSizeInferenceResult(obj, parentType, "parent type unknown: " + parentType);
 		} else {
 			val staticSizeValue = 1;
-			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.head;
+			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
 			val result = new ValidElementSizeInferenceResult(obj, parentType, staticSizeValue as Integer);
 			result.children.add(super.inferFromType(typeOfChildren.origin, typeOfChildren));
 			return result;

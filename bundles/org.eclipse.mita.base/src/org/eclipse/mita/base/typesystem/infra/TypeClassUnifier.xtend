@@ -68,7 +68,28 @@ class TypeClassUnifier {
 			intersection.retainAll(s2);
 			return intersection as Set<Iterable<Integer>>;
 		]);
-		return new TypeClass(typeClass.instances, new TypeScheme(null, commonPaths.map[commonType.get(it) as TypeVariable].toSet.force, commonType.node.unquote(commonType.children)));
+		val commonTypeTerm = commonType.node.unquote(commonType.children);
+		/* if we wanted to be correct we would only quantify the following type variables:
+		 * 	commonPaths.map[commonType.get(it) as TypeVariable].toSet.force
+		 * (those that are bound by all typeschemes)
+		 * However we would get the following problem:
+		 * Consider the type class read (siginst and modality). It has two instances:
+		 *	read :: \T. modality<T> -> T
+		 *	read :: \T. siginst<T> -> T
+		 * Quantifying with only common type vars would give us:
+		 *	\r: (r instanceof read): (r instanceof \T. a<T> -> T)
+		 * Now we have two instances: one for siginst and one for modality. 
+		 * We would get the following constraints (when blindly instantiating):
+		 * 	read(modality<b>) -> c ≡ a<d> -> d
+		 * 	read(siginst<e>) -> f ≡ a<g> -> g
+		 * Which would eventually solve to
+		 * 	siginst ≡ a
+		 * 	modality ≡ a
+		 * Which is obviously incorrect, since siginst /= modality.
+		 * Therefore we would need to replace a with a' and a''. 
+		 * However that is equivalent to just quantifying over *all* free vars in the typescheme and instantiating as normally.
+		 */
+		return new TypeClass(typeClass.instances, new TypeScheme(null, commonTypeTerm.freeVars.force, commonTypeTerm));
 	}
 	
 	def Tree<AbstractType> unifyTypeClassInstancesTypes(ConstraintSystem system, AbstractType commonTypeStructure, Iterable<AbstractType> instances) {

@@ -39,7 +39,7 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		if(type instanceof TypeConstructorType) {
-			val realType = type.typeArguments.get(0);
+			val realType = type.typeArguments.tail.head;
 			val result = super.generateTypeSpecifier(realType, context);
 			result.children.add(codeFragmentProvider.create('''*'''));
 			return result;			

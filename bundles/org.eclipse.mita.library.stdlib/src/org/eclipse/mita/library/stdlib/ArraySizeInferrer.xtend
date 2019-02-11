@@ -57,7 +57,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			 * TODO: at the moment we don't have array/struct literals. As such the size inference for arrays
 			 * is limited to primitive types, because the size of generated types is determined during initialization.
 			 */
-			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.head;
+			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
 			result.children.add(obj.inferFromType(typeOfChildren));
 			return result;
 		}
@@ -66,7 +66,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 	def protected dispatch doInfer(ArrayLiteral obj, AbstractType type) {
 		val parentType = BaseUtils.getType(obj.eContainer);
 		
-		val typeOfChildren = (parentType as TypeConstructorType).typeArguments.head;
+		val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
 		
 		val result = new ValidElementSizeInferenceResult(obj, parentType, obj.values.length);
 		 
@@ -84,7 +84,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			val valRange = (obj as ElementReferenceExpression).arraySelector.head as ValueRange;
 			
 			val parentType = BaseUtils.getType(obj);
-			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.head;
+			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
 			
 			val lowerBound = StaticValueInferrer.infer(valRange.lowerBound, [x |]);
 			val upperBound = StaticValueInferrer.infer(valRange.upperBound, [x |]);

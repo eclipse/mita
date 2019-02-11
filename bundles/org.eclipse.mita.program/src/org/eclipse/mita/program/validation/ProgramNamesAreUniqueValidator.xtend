@@ -58,7 +58,7 @@ class ProgramNamesAreUniqueValidator extends AbstractDeclarativeValidator {
 		if(type instanceof FunctionType) {
 			val args = type.from;
 			if(args instanceof ProdType) {
-				return '''«op.name»_«FOR param : args.typeArguments SEPARATOR '_'»«param»«ENDFOR»'''.toString			
+				return '''«op.name»_«FOR param : args.typeArguments.tail SEPARATOR '_'»«param»«ENDFOR»'''.toString			
 			}
 		}
 		// all functions should have type (FunctionType(ProdType, t)). If not just don't validate, the user's got enough issues already.

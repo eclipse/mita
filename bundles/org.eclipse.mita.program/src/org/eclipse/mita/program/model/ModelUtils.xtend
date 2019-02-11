@@ -125,7 +125,7 @@ class ModelUtils {
 	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject context, ProdType struct) {
 		val rt = getRealType(context, struct);
 		if(rt instanceof ProdType) {
-			return Optional.of(rt.typeArguments.map[it.name]);
+			return Optional.of(rt.typeArguments.tail.map[it.name].toList);
 		}
 		return Optional.of(#[rt.name]);
 	}
@@ -143,7 +143,7 @@ class ModelUtils {
 	
 	static def dispatch AbstractType getRealType(EObject context, ProdType sumConstructor) {
 		if(TypesUtil.getConstraintSystem(context.eResource).getUserData(sumConstructor, BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
-			val children = sumConstructor.typeArguments;
+			val children = sumConstructor.typeArguments.tail;
 			if(children.length == 1) {
 				return getRealType(context, children.head);
 			}
@@ -186,7 +186,7 @@ class ModelUtils {
 			return true;
 		}
 		if(ir instanceof TypeConstructorType) {
-			return ir.typeArguments.fold(false, [b, x | b || containsTypeBy(onNull, pred, x)])
+			return ir.typeArguments.tail.fold(false, [b, x | b || containsTypeBy(onNull, pred, x)])
 		}
 		return false;
 	}
@@ -288,7 +288,7 @@ class ModelUtils {
 				if(ir1.typeArguments.length != ir2.typeArguments.length) {
 					return false;
 				}
-				BaseUtils.zip(ir1.typeArguments, ir2.typeArguments).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
+				BaseUtils.zip(ir1.typeArguments.tail, ir2.typeArguments.tail).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
 			}
 		}
 		return ir1.class == ir2.class;
@@ -328,7 +328,7 @@ class ModelUtils {
 			return true;
 		} else if (type instanceof TypeConstructorType) {
 			if(type.name == 'optional') {
-				return type.typeArguments.forall[x|x.isPrimitiveType(context)]
+				return type.typeArguments.tail.forall[x|x.isPrimitiveType(context)]
 			}
 		}
 		return false;

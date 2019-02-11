@@ -437,7 +437,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
-		return if (setup !== null) {
+		if (setup !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
 			val scope = scopeInSetupBlock(context, ref);
 			return new FilteringScope(scope, [globalElementFilterInSetup.apply(it.EClass)]);
@@ -458,7 +458,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				}
 			}) ?: superScope;
 			val typeKindNormalizer = new TypeKindNormalizer();
-			new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
+			return new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
 		}
 	}
 

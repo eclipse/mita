@@ -25,13 +25,16 @@ class ProdType extends TypeConstructorType {
 			return system.newTypeVariable(null);
 		}
 		// else transpose the instances' type args (so we have a list of all the first args, all the second args, etc.), then unify each of those
-		return new ProdType(null, TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as TypeConstructorType].map[it.type]),
+		return new ProdType(null,
 			BaseUtils.transpose(instances.map[it as ProdType].map[it.typeArguments])
 			.map[TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, it)]
 			.force
 		)
 	}
 	
+	new(EObject origin, Iterable<AbstractType> typeArguments) {
+		super(origin, typeArguments)
+	}
 	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
 		super(origin, type, typeArguments);
 	}
@@ -40,16 +43,16 @@ class ProdType extends TypeConstructorType {
 	}
 			
 	override toString() {
-		(name ?: "") + "(" + typeArguments.join(", ") + ")"
+		(name ?: "") + "(" + typeArguments.tail.join(", ") + ")"
 	}
 		
-	override getVariance(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
+	override getVarianceForArgs(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
 		return new SubtypeConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
 	}
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newPType = new ProdType(origin, type, newTypeVars);
+		val newPType = new ProdType(origin, newTypeVars);
 		s.add(tv, newPType);
 	}
 	
@@ -59,15 +62,14 @@ class ProdType extends TypeConstructorType {
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		val newType = type.map(f);
-		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new ProdType(origin, newType, newTypeArgs);
+		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
+			return new ProdType(origin, newTypeArgs);
 		}
 		return this;
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new ProdType(origin, children.head.node.unquote(children.head.children), children.tail.map[it.node.unquote(it.children)].force);
+		return new ProdType(origin, children.map[it.node.unquote(it.children)].force);
 	}
 	
 }

@@ -19,7 +19,6 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 @Accessors
 class TypeConstructorType extends AbstractType {
 	protected static Integer instanceCount = 0;
-	protected val AbstractType type;
 	protected val List<AbstractType> typeArguments;
 	private transient val List<TypeVariable> _freeVars;
 	
@@ -29,16 +28,19 @@ class TypeConstructorType extends AbstractType {
 			return system.newTypeVariable(null);
 		}
 		// else transpose the instances' type args (so we have a list of all the first args, all the second args, etc.), then unify each of those
-		return new TypeConstructorType(null, TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as TypeConstructorType].map[it.type]),
+		return new TypeConstructorType(null, 
 			BaseUtils.transpose(instances.map[it as TypeConstructorType].map[it.typeArguments])
 				.map[TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, it)]
 				.force
 		)
 	}
 	
-	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
-		super(origin, type.name);
-		this.type = type;
+//	def getType() {
+//		return typeArguments.head;
+//	}
+	
+	new(EObject origin, Iterable<AbstractType> typeArguments) {
+		super(origin, typeArguments.head.name);
 		this.typeArguments = typeArguments.force;
 		if(this.typeArguments.contains(null)) {
 			throw new NullPointerException;
@@ -49,34 +51,44 @@ class TypeConstructorType extends AbstractType {
 		}
 	}
 	
+	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
+		this(origin,  #[type] + typeArguments);
+	}
+	
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
-		this(origin, type, typeArguments.force);
+		this(origin, #[type] + typeArguments);
 	}
 		
 	override Tree<AbstractType> quote() {
 		val result = new Tree<AbstractType>(this);
-		result.children += type.quote();
 		result.children += typeArguments.map[it.quote()];
 		return result;
 	}
 	
 	override quoteLike(Tree<AbstractType> structure) {
 		val result = new Tree<AbstractType>(this);
-		result.children += (#[type] + typeArguments).zip(structure.children).map[it.key.quoteLike(it.value)]
+		result.children += typeArguments.zip(structure.children).map[it.key.quoteLike(it.value)]
 		return result;
 	}
 	
 	def AbstractTypeConstraint getVariance(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
+		if(typeArgumentIdx > 0) {
+			return getVarianceForArgs(issue, typeArgumentIdx, tau, sigma);
+		}
 		return new EqualityConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not %2$s.'''));
 	}
+	protected def AbstractTypeConstraint getVarianceForArgs(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
+		return new EqualityConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not %2$s.'''));
+	}
+	
 	def void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newCType = new TypeConstructorType(origin, type, newTypeVars);
+		val newCType = new TypeConstructorType(origin, newTypeVars);
 		s.add(tv, newCType);
 	}
 		
 	override toString() {
-		return '''«super.toString»«IF !typeArguments.empty»<«typeArguments.join(", ")»>«ENDIF»'''
+		return '''«super.toString»«IF !typeArguments.tail.empty»<«typeArguments.tail.join(", ")»>«ENDIF»'''
 	}
 	
 	override getFreeVars() {
@@ -89,15 +101,14 @@ class TypeConstructorType extends AbstractType {
 		
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		val newType = type.map(f);
-		if(type !== newType || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new TypeConstructorType(origin, newType, newTypeArgs);
+		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
+			return new TypeConstructorType(origin, newTypeArgs);
 		}
 		return this;
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new TypeConstructorType(origin, children.head.node.unquote(children.head.children), children.tail.map[it.node.unquote(it.children)].force);
+		return new TypeConstructorType(origin, children.map[it.node.unquote(it.children)].force);
 	}
 	
 	override boolean equals(Object obj) {
@@ -114,14 +125,6 @@ class TypeConstructorType extends AbstractType {
 			return false
 		}
 		var TypeConstructorType other = (obj as TypeConstructorType)
-		if (this.type === null) {
-			if(other.type !== null) {
-				return false
-			}
-		} 
-		else if(!this.type.equals(other.type)) { 
-			return false
-		}
 		if (this.typeArguments === null) {
 			if(other.typeArguments !== null) {
 				return false
@@ -138,7 +141,6 @@ class TypeConstructorType extends AbstractType {
 	@Pure override int hashCode() {
 		val int prime = 31
 		var int result = super.hashCode()
-		result = prime * result + (if((this.type === null)) 0 else this.type.hashCode() )
 		result = prime * result + (if((this.typeArguments === null)) 0 else this.typeArguments.hashCode() )
 		return result
 	}

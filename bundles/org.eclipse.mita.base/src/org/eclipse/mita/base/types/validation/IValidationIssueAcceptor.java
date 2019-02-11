@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "bool is not subtype of optional<int32>";
+			return "Types siginst and modality are not the same.";
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");
