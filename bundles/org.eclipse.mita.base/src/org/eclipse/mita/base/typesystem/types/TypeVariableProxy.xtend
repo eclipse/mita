@@ -86,8 +86,8 @@ class TypeVariableProxy extends TypeVariable {
 		return f.apply(this);
 	}
 	
-	override modifyNames(String suffix) {
-		return new TypeVariableProxy(origin, name + suffix, reference, targetQID) => [
+	override modifyNames((String) => String converter) {
+		return new TypeVariableProxy(origin, converter.apply(name), reference, targetQID) => [
 			it.ambiguityResolutionStrategy = this.ambiguityResolutionStrategy;
 		];
 	}

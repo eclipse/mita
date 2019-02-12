@@ -82,8 +82,8 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 		return type;
 	}
 	dispatch def AbstractType getSigInstTypeArg2(TypeConstructorType type) {
-		if(type.name == "siginst" && type.typeArguments.size > 0) {
-			return type.typeArguments.head;
+		if(type.name == "siginst" && type.typeArguments.tail.size > 0) {
+			return type.typeArguments.tail.head;
 		}
 		return type;
 	}

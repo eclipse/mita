@@ -86,6 +86,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.NamedElement
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -167,6 +168,23 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return result;
 	}
 	
+	// if you want to give each function call argument type a different name you can change this. 
+	// In Mita this is a bit difficult since you would get the following constraints for signals/signal instances:
+	//	signal x(...) <-> x_inst_args(...)
+	//	var y = x(...) <-> y_inst_args(...)
+	//	x_inst_args(...) = y_inst_args(...)
+	//	x_inst_args = y_inst_args
+	// this could be solved by taking the argName from Eref.eContainer if it (the container) is a sigInst. 
+	// However this introduces a lot of codeu dupliation for probably not much improved correctness, 
+	// since a program would have to be quite strange to equate argument types with anything else.
+	// This might change in the future if a need arises.
+	static dispatch def String argName(NamedElement obj) {
+		return obj.name.argName;
+	}
+	static dispatch def String argName(String s) {
+		return "__args";
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
 		println('''BCF: computeConstraints is not implemented for «context.eClass.name»''');
 		system.computeConstraintsForChildren(context);
@@ -181,7 +199,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val parmTypes = parms.map[
 			system.computeConstraints(it)
 		].filterNull.map[it as AbstractType].force();
-		return new ProdType(function, new AtomicType(function, function.name + "_args"), parmTypes);
+		return new ProdType(function, new AtomicType(function, function.argName), parmTypes);
 	}
 	
 	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, EObject origin, String functionName, Iterable<Expression> expression) {
@@ -189,7 +207,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.computeArgumentConstraintsWithTypes(origin, functionName, argTypes);
 	}
 	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, EObject origin, String functionName, Iterable<AbstractType> argTypes) {
-		return new ProdType(origin, new AtomicType(origin, functionName + "_args"), argTypes);
+		return new ProdType(origin, new AtomicType(origin, functionName.argName), argTypes);
 	}
 	
 	protected def Pair<AbstractType, AbstractType> computeTypesInArgument(ConstraintSystem system, Argument arg) {
@@ -275,7 +293,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				else {
 					argumentParamTypesAndValueTypes
 				}
-				new UnorderedArguments(varOrFun, new AtomicType(null, txt + "_args"), withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
+				new UnorderedArguments(varOrFun, new AtomicType(null, txt.argName), withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
 			} else {
 				val argTypes = varOrFun.arguments.map[system.computeConstraints(it) as AbstractType];
 				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {

@@ -143,7 +143,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 			return true;
 		}
 		if(type instanceof TypeConstructorType) {
-			return type.typeArguments.fold(false, [b, i | b || i.hasReferenceInType])			
+			return type.typeArguments.tail.fold(false, [b, i | b || i.hasReferenceInType])			
 		}
 		return false;
 	}
@@ -191,7 +191,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		}
 		else {
 			0
-		} + s.typeArguments.map[it.maxRefCount].max;
+		} + s.typeArguments.tail.map[it.maxRefCount].max;
 	}
 	dispatch def Integer maxRefCount(Object o) {
 		0;

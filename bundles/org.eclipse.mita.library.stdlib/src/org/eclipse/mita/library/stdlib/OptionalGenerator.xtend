@@ -58,7 +58,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.head)»''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
 	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
@@ -101,7 +101,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		
 		val initValueIsNone = right === null || (initIsGeneratedFunction && initAsGeneratedFunction.name == "none");
 		
-		val firstTypeArgType = (varType as TypeConstructorType).typeArguments.head;
+		val firstTypeArgType = (varType as TypeConstructorType).typeArguments.tail.head;
 		val firstTypeArgOrigin = firstTypeArgType.origin;
 
 		
@@ -171,7 +171,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
 		codeFragmentProvider.create('''
 		typedef struct { 
-			«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.head)» «OPTIONAL_DATA_MEMBER»;
+			«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)» «OPTIONAL_DATA_MEMBER»;
 			«ENUM_NAME» «OPTIONAL_FLAG_MEMBER»;
 		} «typeGenerator.code(context, type)»;
 		''').addHeader('MitaGeneratedTypes.h', false);

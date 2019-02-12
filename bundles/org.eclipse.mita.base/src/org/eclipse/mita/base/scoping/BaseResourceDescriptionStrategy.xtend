@@ -45,6 +45,7 @@ import org.eclipse.xtext.util.IAcceptor
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -77,6 +78,17 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		}
 		
 		if (eObject.eContainer() === null) {
+			// constraint generation assumes a valid model. In an invalid model things might be null we don't check
+			// for example if a user writes &&x the parser constructs:
+			// BinaryExpression(DOUBLE_AND, null, x)
+			// and we don't handle that. 
+			val resource = eObject.eResource;
+			if(resource instanceof ResourceImpl) {
+				val errors = resource.errors;
+				if(!errors.nullOrEmpty) {
+					return;
+				}
+			}
 			eObject.eAllContents
 				.filter(GeneratedObject)
 				.forEach[

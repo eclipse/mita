@@ -22,6 +22,8 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
 import org.eclipse.mita.program.generator.internal.ProgramCopier
+import org.eclipse.mita.base.typesystem.infra.CoercionAdapter
+import org.eclipse.mita.base.types.TypesUtil
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
@@ -35,7 +37,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 	}
 	
 	def explicitlyConvertAll(EObject obj) {
-		return #[Argument, ReturnStatement].exists[it.isAssignableFrom(obj.class)]
+		return obj.origin.eAdapters.filter(CoercionAdapter).head !== null || #[Argument, ReturnStatement].exists[it.isAssignableFrom(obj.class)]
 	}
 	
 	override transform(ITransformationPipelineInfoProvider pipeline, Program program) {
@@ -50,13 +52,14 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		copier.linkOrigin(pcopy, program);
 		var cs = constraintFactory.create(pcopy);
 		cs = cs.replaceProxies(program.eResource, scopeProvider);
-		val constraints = cs.constraints.filter(SubtypeConstraint);
+		val constraints = cs?.constraints?.filter(SubtypeConstraint);
 		
 		
-		constraints.forEach[c |
+		constraints?.forEach[c |
 			var sub = c.subType.origin.origin;
 			var top = c.superType.origin.origin;
-			if(sub !== null && top !== null && sub.eContainer === top) {
+			// don't convert twice
+			if(sub !== null && top !== null && sub.eContainer === top && !sub.explicitlyConvertAll) {
 				doTransform(sub);
 			}
 		]

@@ -1,6 +1,7 @@
 package org.eclipse.mita.base.typesystem.infra
 
 import java.util.Collections
+import java.util.List
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.EObjectImpl
@@ -14,11 +15,11 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 @Accessors
 class TypeClassProxy extends TypeClass {
-	val TypeVariableProxy toResolve;
+	val List<TypeVariableProxy> toResolve;
 	
-	new(TypeVariableProxy toResolve) {
+	new(Iterable<TypeVariableProxy> toResolve) {
 		super(Collections.EMPTY_MAP);
-		this.toResolve = toResolve;
+		this.toResolve = newArrayList(toResolve);
 	}
 	
 	override replace(Substitution sub) {
@@ -29,12 +30,12 @@ class TypeClassProxy extends TypeClass {
 		return this;
 	}
 	
-	override TypeClass modifyNames(String suffix) {
-		return new TypeClassProxy(toResolve.modifyNames(suffix) as TypeVariableProxy);
+	override TypeClass modifyNames((String) => String converter) {
+		return new TypeClassProxy(toResolve.map[it.modifyNames(converter) as TypeVariableProxy]);
 	}
 	
 	override replaceProxies((TypeVariableProxy) => Iterable<AbstractType> typeVariableResolver, (URI) => EObject objectResolver) {
-		val elements = typeVariableResolver.apply(toResolve).toList;
+		val elements = toResolve.flatMap[typeVariableResolver.apply(it)].toList;
 		return new TypeClass(elements.map[tv |
 			val origin = tv.origin; 
 			tv -> if(origin?.eIsProxy) { 

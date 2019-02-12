@@ -9,7 +9,7 @@ import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.EStructuralFeature
-import org.eclipse.emf.ecore.impl.EObjectImpl
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
@@ -36,7 +36,6 @@ import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.util.Triple
-import org.eclipse.xtext.validation.EObjectDiagnosticImpl
 import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
@@ -143,7 +142,7 @@ class MitaBaseResource extends LazyLinkingResource {
 	
 	public static def resolveProxy(Resource resource, EObject obj) {
 		(if(obj !== null && obj.eIsProxy) {
-			if(obj instanceof EObjectImpl) {
+			if(obj instanceof BasicEObjectImpl) {
 				val uri = obj.eProxyURI;
 				resource.resourceSet.getEObject(uri, true);
 			}
@@ -209,6 +208,21 @@ class MitaBaseResource extends LazyLinkingResource {
 			timer.stop("solve");
 			println("report for:" + resource.URI.lastSegment + "\n" + timer.toString);
 			if(solution !== null) {
+				solution.constraintSystem.coercions.entrySet.filter[
+					val resourceUri = it.key.trimFragment;
+					return resourceUri == resource.URI;
+				].forEach[
+					val coercedObj = resource.resourceSet.getEObject(it.key, false);
+					if(coercedObj !== null) {
+						var adapter = obj.eAdapters.filter(CoercionAdapter).head;
+						if(adapter === null) {
+							adapter = new CoercionAdapter;
+							obj.eAdapters.add(adapter);
+						} 
+						adapter.type = it.value;
+					}
+				] 
+				
 				if(resource instanceof MitaBaseResource) {
 					solution.constraintSystem.symbolTable.entrySet.forEach[
 						val uri = it.key;
@@ -241,16 +255,6 @@ class MitaBaseResource extends LazyLinkingResource {
 					
 					resource.latestSolution = solution;
 					resource.cancelIndicator.canceled = true;
-					val issues = solution.issues.groupBy[it.message->(if(it.target?.eIsProxy) {(it.target as EObjectImpl).eProxyURI} else {it.target})].values.map[it.head];
-					resource.errors += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].map[
-						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
-					]
-					resource.warnings += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].map[
-						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
-					]
-					resource.warnings += issues.filter[it.target !== null].toSet.filter[it.severity == Severity.INFO].map[
-						new EObjectDiagnosticImpl(it.severity, it.issueCode, it.message, resolveProxy(resource, it.target) ?: obj, it.feature, 0, #[]);
-					]
 				}
 			}
 		}

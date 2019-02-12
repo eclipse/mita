@@ -84,7 +84,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 				!s2.contains(it)
 			].toSet
 		] ?: #[].toSet; // intersection over emptySet is emptySet
-		return tsIntersection.findFirst[candidate | 
+		return tsIntersection.findFirst[candidate |
 			tsIntersection.forall[u | 
 				subtypeChecker.isSubType(system, typeResolutionOrigin, candidate, u)
 			]

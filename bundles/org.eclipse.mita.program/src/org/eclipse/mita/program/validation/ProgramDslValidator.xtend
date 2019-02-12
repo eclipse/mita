@@ -17,6 +17,8 @@ import com.google.inject.Inject
 import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EStructuralFeature
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
@@ -26,6 +28,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
@@ -72,13 +75,13 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
-import org.eclipse.mita.base.types.CoercionExpression
+import static org.eclipse.mita.base.typesystem.infra.MitaBaseResource.*
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -160,6 +163,35 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
+	
+	
+	def featureOrNull(EStructuralFeature ref, EObject object) {
+		if(object === null || ref === null || object.eClass.getEStructuralFeature(ref.getName()) !== ref) {
+			return null;
+		}
+		return ref;
+	}
+	@Check(CheckType.FAST)
+	def attachTypingIssues(Program program) {
+		val resource = program.eResource;
+		val solution = TypesUtil.getConstraintSolution(resource);
+		if(solution === null) {
+			return;
+		}
+		val issues = solution.issues.groupBy[it.message->(if(it.target?.eIsProxy) {(it.target as BasicEObjectImpl).eProxyURI} else {it.target})].values.map[it.head];
+		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].forEach[
+			val obj = resolveProxy(resource, it.target) ?: program;
+			error(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
+		]
+		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].forEach[
+			val obj = resolveProxy(resource, it.target) ?: program;
+			warning(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
+		]
+		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.INFO].forEach[
+			val obj = resolveProxy(resource, it.target) ?: program;
+			info(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
+		]
+	}
 	
 	@Check(CheckType.NORMAL)
 	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {
@@ -264,13 +296,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	].apply()}
 	
 	@Check(CheckType.NORMAL)
-	def checkSiginstOrModalityIsUsedImediately(FeatureCall featureCall) {
+	def checkSiginstOrModalityIsUsedImediately(ElementReferenceExpression featureCall) {[|
 		val isSiginst = featureCall.reference instanceof SignalInstance;
 		val isModality = featureCall.reference instanceof Modality;
 		if(!(isSiginst || isModality)) return;
 
 		val container = featureCall.eContainer;
-		if (container instanceof FeatureCall) {
+		if (container instanceof ElementReferenceExpression) {
 			if (container.reference instanceof GeneratedFunctionDefinition) {
 				return
 			}
@@ -291,7 +323,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					"Signal instances", '''Add .read() or .write() after «featureName»''')
 			}
 		error(msg, featureCall, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE, MUST_BE_USED_IMMEDIATELY_CODE);
-	}
+	].apply()}
 
 	@Check(CheckType.NORMAL)
 	def checkSetup_platformValidator(SystemResourceSetup setup) {
@@ -529,7 +561,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					hasGeneratedTypeNext = true;
 				}
 			}
-			type.typeArguments;
+			type.typeArguments.tail;
 		}
 		else {
 			#[];

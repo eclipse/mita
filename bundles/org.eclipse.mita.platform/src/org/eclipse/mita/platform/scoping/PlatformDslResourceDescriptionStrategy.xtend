@@ -15,9 +15,9 @@ import java.util.Map
 import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
+import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.util.BaseUtils
@@ -66,7 +66,7 @@ class PlatformDslResourceDescriptionStrategy extends BaseResourceDescriptionStra
 			var result = createPlatformDescription(eObject, acceptor);
 			result = super.createEObjectDescriptions(eObject, acceptor) || result;
 			return result;
-		} else if ((eObject instanceof Type) || (eObject.eContainer() instanceof SumAlternative && !(eObject instanceof TypeSpecifier)) || (eObject instanceof VirtualFunction)) {
+		} else if ((eObject instanceof Parameter) || (eObject instanceof Type) || (eObject.eContainer() instanceof SumAlternative && !(eObject instanceof TypeSpecifier)) || (eObject instanceof VirtualFunction)) {
 			export(eObject, acceptor) 
 			return true 
 		} else {

@@ -67,7 +67,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		
 		val systemResource = modality.eContainer as AbstractSystemResource;
 		
-		val resultType = new FunctionType(modality, new AtomicType(modality, modality.name), new ProdType(null, new AtomicType(modality, modality.name + "_args"), #[system.getTypeVariable(systemResource.typeKind)]), modalityWithType);
+		val resultType = new FunctionType(modality, new AtomicType(modality, modality.name), new ProdType(null, new AtomicType(modality, modality.argName), #[system.getTypeVariable(systemResource.typeKind)]), modalityWithType);
 		return system.associate(resultType);
 	}
 	
@@ -86,7 +86,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		val sigInstSetupType = new FunctionType(
 			null, 
 			new AtomicType(sig, sig.name + "_inst"), 
-			new ProdType(null, new AtomicType(sig, sig.name + "_inst_args"), #[system.getTypeVariable(systemResource)]), 
+			new ProdType(null, new AtomicType(sig, (sig.name + "_inst").argName), #[system.getTypeVariable(systemResource)]), 
 			sigInstWithType
 		);
 		
@@ -95,7 +95,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 			new AtomicType(sig, sig.name), 
 			new ProdType(
 				null, 
-				new AtomicType(sig, sig.name + "_args"), 
+				new AtomicType(sig, sig.argName), 
 				sig.parameters.map[system.computeConstraints(it) as AbstractType].force
 			), 
 			sigInstSetupType

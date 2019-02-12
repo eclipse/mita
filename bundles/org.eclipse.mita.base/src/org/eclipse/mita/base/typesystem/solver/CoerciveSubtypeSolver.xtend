@@ -9,9 +9,11 @@ import java.util.Map
 import java.util.Set
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.Status
+import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.ParameterWithDefaultValue
@@ -27,6 +29,7 @@ import org.eclipse.mita.base.typesystem.infra.ConstraintGraph
 import org.eclipse.mita.base.typesystem.infra.ConstraintGraphProvider
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -50,7 +53,7 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 /**
  * Solves coercive subtyping as described in 
@@ -333,14 +336,16 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val Substitution sideEffectSubstitution;
 		val List<AbstractTypeConstraint> sideEffectConstraints = newArrayList;
 		val List<ValidationIssue> issues = newArrayList;
+		val List<Pair<URI, AbstractType>> coercions = newArrayList;
 		val AbstractType functionType;
 		val EObject function;
 		val double distanceToTargetType;
 		
-		new(Substitution sideEffectSubstitution, Iterable<AbstractTypeConstraint> sideEffectConstraints, Iterable<ValidationIssue> issues, AbstractType functionType, EObject function, double distanceToTargetType) {
+		new(Substitution sideEffectSubstitution, Iterable<AbstractTypeConstraint> sideEffectConstraints, Iterable<ValidationIssue> issues, Iterable<Pair<URI, AbstractType>> coercions, AbstractType functionType, EObject function, double distanceToTargetType) {
 			this.sideEffectSubstitution = sideEffectSubstitution;
 			this.sideEffectConstraints += sideEffectConstraints;
 			this.issues += issues;
+			this.coercions += coercions;
 			this.functionType = functionType;
 			this.function = function;
 			this.distanceToTargetType = distanceToTargetType;
@@ -363,13 +368,13 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	protected def handleDefaultParametersInTypeClassResolution(ConstraintSystem system, Substitution substitution, AbstractType refType, Operation fun) {
 		if(refType instanceof ProdType) {
-			val assignedArgs = refType.typeArguments
+			val assignedArgs = refType.typeArguments.tail
 			if(assignedArgs.size < fun.parameters.size) {
 				val mbDefaultParameterValues = fun.parameters.drop(assignedArgs.size).filter(ParameterWithDefaultValue);
 				if(!mbDefaultParameterValues.empty && mbDefaultParameterValues.forall[it.defaultValue !== null]) {
 					val defaultParameterTypes = mbDefaultParameterValues.map[system.getTypeVariable(it)].map[substitution.apply(it)]
 					val args = assignedArgs + defaultParameterTypes;
-					return new ProdType(refType.origin, refType.type, args);
+					return new ProdType(refType.origin, refType.typeArguments.head, args);
 				}
 			}	
 		}
@@ -405,12 +410,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 							]
 						);
 						if(sortedArgs.exists[it.value === null]) {
-							return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Too few arguments''')], typ, fun, distance);
+							return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Too few arguments''')], #[], typ, fun, distance);
 						}
-						new ProdType(refType.origin, new AtomicType(fun, fun.name), sortedArgs.map[it.value]);
+						new ProdType(refType.origin, new AtomicType(fun, BaseConstraintFactory.argName(fun)), sortedArgs.map[it.value]);
 					}
 					else {
-						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Can't use named parameters for non-operations''')], typ, fun, distance);
+						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Can't use named parameters for non-operations''')], #[], typ, fun, distance);
 					}
 				} else {
 					// handle default values
@@ -428,19 +433,30 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				if(typ instanceof FunctionType) {
 					val mbUnification = mguComputer.compute(constraint._errorMessage, prodType, typ.from);
 					if(mbUnification.valid) {
-						return new TypeClassConstraintResolutionResult(mbUnification.substitution, #[], #[], typ, fun, distance);
+						return new TypeClassConstraintResolutionResult(mbUnification.substitution, #[], #[], #[], typ, fun, distance);
 					}
 					
 					val subtypeCheckResult = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, prodType, typ.from);
 					if(!subtypeCheckResult.invalid) {
 						// TODO insert coercion
-						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], typ, fun, distance + subtypeCheckResult.constraints.size);
+						val coercions = (if(prodType instanceof ProdType) {
+							val targetType = typ.from;
+							if(targetType instanceof ProdType) {
+								prodType.typeArguments.tail.zip(targetType.typeArguments.tail).map[
+									val coercedObject = it.key.origin;
+									val coercedType = it.value;
+									EcoreUtil.getURI(coercedObject) -> coercedType;
+								].force;
+							}	
+						}) ?: #[];
+
+						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], coercions, typ, fun, distance + subtypeCheckResult.constraints.size);
 					}
 					
-					return new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)], typ, fun, distance);
+					return new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)], #[], typ, fun, distance);
 				}
 
-				return new TypeClassConstraintResolutionResult(null, #[], #[new ValidationIssue(constraint.errorMessage, '''«constraint.errorMessage» -> «typ» is not a function type''')], typ, fun, distance);
+				return new TypeClassConstraintResolutionResult(null, #[], #[new ValidationIssue(constraint.errorMessage, '''«constraint.errorMessage» -> «typ» is not a function type''')], #[], typ, fun, distance);
 			].toList
 			val processedResultsUnsorted = unificationResults.map[
 				if(!it.valid) {
@@ -448,7 +464,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				}
 				val sub = it.sideEffectSubstitution;
 				val resultType = sub.applyToType(it.functionType);
-				new TypeClassConstraintResolutionResult(sub, it.sideEffectConstraints, #[], resultType, it.function, it.distanceToTargetType + computeDistance(refType, resultType))
+				new TypeClassConstraintResolutionResult(sub, it.sideEffectConstraints, #[], it.coercions, resultType, it.function, it.distanceToTargetType + computeDistance(refType, resultType))
 			].toList
 			val processedResults = processedResultsUnsorted
 				.sortBy[it.distanceToTargetType].toList;
@@ -458,6 +474,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			if(result !== null) {
 				val sub = result.sideEffectSubstitution;
 				result.sideEffectConstraints.forEach[system.addConstraint(it)];
+				system.coercions.putAll(result.coercions.toMap([it.key], [it.value]));
 				return constraint.onResolve(system, sub, result.function, result.functionType);
 			}
 			// nice error messages here
@@ -535,7 +552,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		if(t1.class != t2.class || t1.typeArguments.size != t2.typeArguments.size) {
 			return SimplificationResult.failure(constraint.errorMessage);
 		}
-		system.addConstraint(new EqualityConstraint(t1.type, t2.type, constraint._errorMessage));
 		t1.typeArguments.zip(t2.typeArguments).forEach[
 			system.addConstraint(new EqualityConstraint(it.key, it.value, constraint._errorMessage));
 		]
@@ -723,6 +739,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						supremum.message = predecessorsBottomType?.message ?: ("Couldn't find a good supertype for " + predecessors.join(" and "))
 					}
 					// assign-sup
+					v.origin.coerceTo(system, supremum);
 					graph.replace(v, supremum);
 					resultSub = resultSub.replace(v, supremum)
 					resultSub.add(v, supremum);
@@ -748,6 +765,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						infimum.message = successorsBottomType?.message ?: ("Couldn't find a good subtype for " + successors.join(" and "))
 					}
 					// assign-inf
+					v.origin.coerceTo(system, infimum);
 					graph.replace(v, infimum);
 					resultSub = resultSub.replace(v, infimum) 
 					resultSub.add(v, infimum);
@@ -760,6 +778,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 		}
 		return (graph -> resultSub) -> issues;
+	}
+	
+	
+	
+	def void coerceTo(EObject object, ConstraintSystem system, AbstractType type) {
+		if(object === null) {
+			return;
+		}
+		val uri = EcoreUtil.getURI(object);
+		system.coercions.put(uri, type);
+		
 	}
 	
 	protected def Iterable<AbstractTypeConstraint> unify(ConstraintGraph graph) {
@@ -800,25 +829,5 @@ class SimplificationResult extends UnificationResult {
 		else {
 			""
 		} + "\n" + super.toString()
-	}
-	
-	def SimplificationResult or(SimplificationResult other) {
-		if(this.valid) {
-			if(other.valid) {
-				return new SimplificationResult(this.substitution.apply(other.substitution), null, ConstraintSystem.combine(#[this.system, other.system]))
-			}
-			else {
-				return this;
-			}
-		}
-		else {
-			if(other.valid) {
-				return other;
-			}
-			else {
-				return new SimplificationResult(null, this.issues + other.issues, null);
-			}
-		}
-		
 	}
 }

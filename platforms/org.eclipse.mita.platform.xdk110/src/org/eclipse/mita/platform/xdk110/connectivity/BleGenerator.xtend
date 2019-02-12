@@ -143,7 +143,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static Att16BitCharacteristicAttribute «baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute;
 		static uint8_t «baseName»«signalInstance.name.toFirstUpper»UuidValue[ATTPDU_SIZEOF_128_BIT_UUID] = { «signalInstance.characteristicUuid» };
 		static AttUuid «baseName»«signalInstance.name.toFirstUpper»Uuid;
-		static «typeGenerator.code(setup, (BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.head)» «baseName»«signalInstance.name.toFirstUpper»Value;
+		static «typeGenerator.code(setup, (BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.tail.head)» «baseName»«signalInstance.name.toFirstUpper»Value;
 		static AttAttribute «baseName»«signalInstance.name.toFirstUpper»Attribute;
 		«ENDFOR»
 
@@ -368,7 +368,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	private def getContentLength(SignalInstance value) {
-		val type = (BaseUtils.getType(value) as TypeConstructorType).typeArguments.head;
+		val type = (BaseUtils.getType(value) as TypeConstructorType).typeArguments.tail.head;
 		return switch(type?.name) {
 			case 'bool': 1
 			case 'int32': 4
@@ -434,7 +434,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
 		val retTypeModality = BaseUtils.getType(signalInstance) as TypeConstructorType;
-		val retType = retTypeModality.typeArguments.head;
+		val retType = retTypeModality.typeArguments.tail.head;
 		val baseName = setup.baseName
 		
 		codeFragmentProvider.create('''
@@ -454,7 +454,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
 		val retTypeModality = BaseUtils.getType(signalInstance) as TypeConstructorType;
-		val retType = retTypeModality.typeArguments.head;
+		val retType = retTypeModality.typeArguments.tail.head;
 		val baseName = setup.baseName
 		
 		codeFragmentProvider.create('''

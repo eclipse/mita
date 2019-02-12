@@ -124,7 +124,7 @@ class MostGenericUnifierComputer {
 		if(t1.typeArguments.length != t2.typeArguments.length) {
 			return new UnificationIssue(#[t1, t2], '''Types «t1» and «t2» differ in their number of arguments.''');
 		}
-		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
+		val issues = t1.typeArguments.tail.zip(t2.typeArguments.tail).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
 		].force
 		return ComposedUnificationIssue.fromMultiple(issues);
@@ -134,7 +134,7 @@ class MostGenericUnifierComputer {
 		if(t1.typeArguments.length != t2.typeArguments.length) {
 			return new UnificationIssue(#[t1, t2], '''Types «t1» and «t2» are not the same.''');
 		}
-		val issues = t1.typeArguments.zip(t2.typeArguments).map[t1_t2 |
+		val issues = t1.typeArguments.tail.zip(t2.typeArguments.tail).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value)
 		].force
 		ComposedUnificationIssue.fromMultiple(issues);
@@ -171,7 +171,7 @@ class MostGenericUnifierComputer {
 			return new UnificationIssue(#[t1, t2], '''Types «t1» and «t2» differ in their number of arguments.''')
 		}
 		
-		val issues = (#[t1.type] + t1.typeArguments).zip(#[t2.type] + t2.typeArguments).map[t1_t2 |
+		val issues = (t1.typeArguments).zip(t2.typeArguments).map[t1_t2 |
 			substitution.unify(t1_t2.key, t1_t2.value);
 		].filterNull		
 		// not an issue

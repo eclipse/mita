@@ -70,6 +70,7 @@ import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
 import org.eclipse.emf.ecore.EClass
+import org.eclipse.emf.ecore.EcorePackage
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -437,7 +438,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
-		return if (setup !== null) {
+		if (setup !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
 			val scope = scopeInSetupBlock(context, ref);
 			return new FilteringScope(scope, [globalElementFilterInSetup.apply(it.EClass)]);
@@ -458,7 +459,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				}
 			}) ?: superScope;
 			val typeKindNormalizer = new TypeKindNormalizer();
-			new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
+			return new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
 		}
 	}
 
@@ -517,14 +518,19 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	dispatch def IScope scopeInSetupBlock(Argument context, EReference reference) {
-			val originalScope = getDelegate().getScope(context, reference);
+		val originalScope = getDelegate().getScope(context, reference);
 
 		if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 			if (context.parameter !== null) {
-				val itemType = BaseUtils.getType(context.parameter)?.origin;
+				val itemType = BaseUtils.getType(context.parameter);
 				if (itemType instanceof EnumerationType) {
 					// unqualified resolving of enumeration values
 					return filteredEnumeratorScope(originalScope, itemType);
+				}
+				else {
+					val typeName = BaseUtils.getText(context.parameter.typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+					val normalizer = new ImportNormalizer(QualifiedName.create(typeName), true, false);
+					return new ImportScope(#[normalizer], originalScope, null, EcorePackage.eINSTANCE.EObject, false);
 				}
 			} else {
 				val signal = (context.eContainer() as ElementReferenceExpression).reference
@@ -544,13 +550,30 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				val erefTxt = BaseUtils.getText(container, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 				val systemResourceSetup = EcoreUtil2.getContainerOfType(container.eContainer, SystemResourceSetup);
 				val systemResourceTxt = BaseUtils.getText(systemResourceSetup, ProgramPackage.eINSTANCE.systemResourceSetup_Type);
-				val normalizer = #[new ImportNormalizer(QualifiedName.create(systemResourceTxt, erefTxt), true, false)]
-				return new ImportScope(normalizer, originalScope, null, TypesPackage.eINSTANCE.parameter, false);
+				val normalizers = newArrayList(QualifiedName.create(erefTxt), QualifiedName.create(systemResourceTxt, erefTxt));
+				val mbSumTypeConstructor = if(container instanceof FeatureCallWithoutFeature) {
+					"<auto>"
+				} else {
+					if(container.arguments.size > 0) {
+						val firstArg = container.arguments.head;
+						if(firstArg !== context) {
+							val value = firstArg.value;
+							if(value instanceof ElementReferenceExpression) {
+								BaseUtils.getText(value, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+							}
+						}
+					}
+				}
+				if(!mbSumTypeConstructor.nullOrEmpty) {
+					normalizers.add(QualifiedName.create(mbSumTypeConstructor, erefTxt))
+				}
+				return new ImportScope(normalizers.map[new ImportNormalizer(it, true, false)], originalScope, null, TypesPackage.eINSTANCE.parameter, false);
 			}
 			return ModelUtils.getAccessorParameters(container.reference)
 				.transform[parameters | Scopes.scopeFor(parameters)]
 				.or(originalScope)		
 		}
+		return originalScope;
 	}
 
 	dispatch def IScope scopeInSetupBlock(ElementReferenceExpression context, EReference reference) {

@@ -30,6 +30,9 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.Status
+import org.eclipse.core.runtime.IStatus
 
 @Accessors
 class ConstraintSystem {
@@ -43,13 +46,14 @@ class ConstraintSystem {
 	protected Graph<AbstractType> explicitSubtypeRelations;
 	protected Map<Integer, AbstractType> explicitSubtypeRelationsTypeSource = new HashMap();
 	protected Map<String, Map<String, String>> userData = new HashMap();
+	protected Map<URI, AbstractType> coercions = new HashMap();
 	
 	private def Map<String, String> internGetUserData(String key) {
 		userData.computeIfAbsent(key, [new HashMap()]);
 	}
 		
 	dispatch def Map<String, String> doGetUserData(TypeConstructorType t) {
-		return getUserData(t.type);
+		return getUserData(t.typeArguments.head);
 	}
 	dispatch def Map<String, String> doGetUserData(AbstractType t) {
 		return internGetUserData(t.name);
@@ -138,18 +142,20 @@ class ConstraintSystem {
 		userData.putAll(other.userData.entrySet.toMap([it.key], [new HashMap(it.value)]));
 		other.explicitSubtypeRelations.copyTo(explicitSubtypeRelations);
 		explicitSubtypeRelationsTypeSource = new HashMap(other.explicitSubtypeRelationsTypeSource);
+		coercions.putAll(other.coercions);
 	}
 		
 	def ConstraintSystem modifyNames(String suffix) {
 		val result = new ConstraintSystem(this);
-		result.atomicConstraints.replaceAll([it.modifyNames(suffix)])
-		result.nonAtomicConstraints.replaceAll([it.modifyNames(suffix)])
-		result.symbolTable.replaceAll([k, v | v.modifyNames(suffix) as TypeVariable]);
-		result.typeTable.replaceAll([k, v | v.modifyNames(suffix)]);
-		result.typeClasses.replaceAll([k, v | v.modifyNames(suffix)]);
-		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.modifyNames(suffix)];
+		val converter = [it + suffix];
+		result.atomicConstraints.replaceAll([it.modifyNames(converter)])
+		result.nonAtomicConstraints.replaceAll([it.modifyNames(converter)])
+		result.symbolTable.replaceAll([k, v | v.modifyNames(converter) as TypeVariable]);
+		result.typeTable.replaceAll([k, v | v.modifyNames(converter)]);
+		result.typeClasses.replaceAll([k, v | v.modifyNames(converter)]);
+		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.modifyNames(converter)];
 		result.explicitSubtypeRelations.computeReverseMap();
-		result.explicitSubtypeRelationsTypeSource.replaceAll[k, v | v.modifyNames(suffix)];
+		result.explicitSubtypeRelationsTypeSource.replaceAll[k, v | v.modifyNames(converter)];
 		return result;
 	}
 	
@@ -225,11 +231,18 @@ class ConstraintSystem {
 		return typeClasses.get(qn);
 	}
 	def TypeClass getTypeClassProxy(QualifiedName qn, TypeVariableProxy tvProxy) {
+		var typeClass = typeClasses.get(qn);
 		if(!typeClasses.containsKey(qn)) {
-			val typeClass = new TypeClassProxy(tvProxy);
+			typeClass = new TypeClassProxy(#[]);
 			typeClasses.put(qn, typeClass);
 		}
-		return typeClasses.get(qn);
+		if(typeClass instanceof TypeClassProxy) {
+			typeClass.toResolve.add(tvProxy);
+			return typeClass;
+		}
+		else {
+			throw new CoreException(new Status(IStatus.ERROR, "org.eclipse.mita.base", "Tried to get typeClassProxy when type class was already resolved"));
+		}
 	}
 	
 	override toString() {
@@ -274,10 +287,6 @@ class ConstraintSystem {
 	}
 	
 	def plus(AbstractTypeConstraint constraint) {
-//		val result = constraintSystemProvider?.get() ?: new ConstraintSystem();
-//		result.constraintSystemProvider = result.constraintSystemProvider ?: constraintSystemProvider;
-//		result.addConstraint(constraint);
-//		return ConstraintSystem.combine(#[this, result]);
 		this.addConstraint(constraint);
 		return this;
 	}
@@ -318,6 +327,7 @@ class ConstraintSystem {
 				]
 			]
 			r.userData.putAll(t.userData.entrySet.toMap([it.key], [new HashMap(it.value)]));
+			r.coercions.putAll(t.coercions);
 			return r;
 		]);
 		result.constraintSystemProvider = csp;
@@ -375,6 +385,9 @@ class ConstraintSystem {
 					origin = EcoreUtil.resolve(origin, resource);
 				}
 			}
+		}
+		if(origin.eIsProxy) {
+			return #[new BottomType(origin, '''Couldn't resolve reference to «tvp.reference.EReferenceType.name» '«tvp.targetQID»'.''', tvp.reference)];
 		}
 		val scope = scopeProvider.getScope(origin, tvp.reference);
 		val scopeElements = scope.getElements(tvp.targetQID).toList;

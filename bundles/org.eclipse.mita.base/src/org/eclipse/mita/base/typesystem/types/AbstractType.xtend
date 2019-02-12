@@ -77,8 +77,8 @@ abstract class AbstractType {
 		map[it.replaceProxies(system, resolve)];
 	}
 	
-	def AbstractType modifyNames(String suffix) {
-		map[it.modifyNames(suffix)];
+	def AbstractType modifyNames((String) => String converter) {
+		map[it.modifyNames(converter)];
 	}
 	
 }

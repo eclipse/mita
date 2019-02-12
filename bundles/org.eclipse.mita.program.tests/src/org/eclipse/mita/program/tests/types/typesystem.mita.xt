@@ -63,7 +63,7 @@ every 100 milliseconds {
 }
 
 every 100 milliseconds { 
-	// XPECT warnings --> "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec1d(10)"
+	// XPECT infos --> "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec1d(10)"
 	let c = .vec1d(10); 
 	let d = c.x(); 
 	let e = "asdf";     
@@ -94,7 +94,7 @@ every 100 milliseconds {
 	let a: modality<uint32> = MySensor.modality01; 
 	let asdfgasd = true && false;
 	let a2 = f == (10 as int32); 
-	/* XPECT warnings ---
+	/* XPECT infos ---
 	 	 "<auto>.vec0d() has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec0d"
 	 	 "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec1d(10)"
 	 --- */

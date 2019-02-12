@@ -44,7 +44,7 @@ class SubtypeChecker {
 		return t;
 	}
 	public static dispatch def getSuperTypeGraphHandle(TypeConstructorType t) {
-		return t.type;
+		return t.typeArguments.head;
 	}
 	
 	public static def isExplicitSubtypeOf(Graph<AbstractType> explicitRelations, AbstractType sub, AbstractType top) {
@@ -102,11 +102,11 @@ class SubtypeChecker {
 		return getFloatingTypes(typeResolveOrigin).filter[isSubType(s, typeResolveOrigin, it, t)].force
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(ConstraintSystem s, SumType t, EObject typeResolveOrigin) {
-		return #[t] + t.typeArguments.flatMap[getSubTypes(s, it, typeResolveOrigin)].force;
+		return #[t] + t.typeArguments.tail.flatMap[getSubTypes(s, it, typeResolveOrigin)].force;
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(ConstraintSystem s, TypeConstructorType t, EObject typeResolveOrigin) {
 		return (#[t, new BottomType(null, "")] + if(t.name == "optional") {
-			getSubTypes(s, t.typeArguments.head, typeResolveOrigin);
+			getSubTypes(s, t.typeArguments.tail.head, typeResolveOrigin);
 		} else {
 			#[];
 		}).force;
@@ -183,8 +183,8 @@ class SubtypeChecker {
 	}
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, ProdType sub, SumType top) {
-		val subat = sub.type;
-		val topat = top.type;
+		val subat = sub.superTypeGraphHandle;
+		val topat = top.superTypeGraphHandle;
 		return (isExplicitSubtypeOf(s.explicitSubtypeRelations, subat, topat)).subtypeMsgFromBoolean(sub, top);
 	}
 	
@@ -192,7 +192,7 @@ class SubtypeChecker {
 		if(sub.typeArguments.length != top.typeArguments.length) {
 			return SubtypeCheckResult.invalid('''«sub» and «top» differ in the number of type arguments''')
 		}
-		val result = sub.typeArguments.zip(top.typeArguments).map[isSubtypeOf(s, context, it.key, it.value)].fold(SubtypeCheckResult.valid, [scr1, scr2 | scr1.orElse(scr2)])
+		val result = sub.typeArguments.tail.zip(top.typeArguments.tail).map[isSubtypeOf(s, context, it.key, it.value)].fold(SubtypeCheckResult.valid, [scr1, scr2 | scr1.orElse(scr2)])
 		if(result.invalid) {
 			return SubtypeCheckResult.invalid(#['''«sub.name» isn't structurally a subtype of «top.name»'''] + result.messages);
 		}

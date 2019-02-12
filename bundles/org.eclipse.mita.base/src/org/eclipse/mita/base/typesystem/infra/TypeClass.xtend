@@ -61,8 +61,8 @@ class TypeClass {
 		return this;
 	}
 	
-	def TypeClass modifyNames(String suffix) {
-		return new TypeClass(instances.entrySet.toMap([it.key.modifyNames(suffix)], [it.value]), mostSpecificGeneralization)
+	def TypeClass modifyNames((String) => String converter) {
+		return new TypeClass(instances.entrySet.toMap([it.key.modifyNames(converter)], [it.value]), mostSpecificGeneralization)
 	}
 }
 

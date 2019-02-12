@@ -6,6 +6,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 /**
  * Corresponds to instance relationship 𝜏 ⪯ σ as defined in
@@ -23,7 +24,9 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 	}
 	
 	override getErrorMessage() {
-		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, instance, typeScheme));
+		val formatter = new NicerTypeVariableNamesForErrorMessages;
+		val types = this.modifyNames(formatter) as ExplicitInstanceConstraint;
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.instance, types.typeScheme));
 	}
 	
 	new(AbstractType instance, AbstractType typeScheme, ValidationIssue errorMessage) {

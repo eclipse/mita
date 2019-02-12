@@ -15,6 +15,7 @@ package org.eclipse.mita.platform
 
 import com.google.inject.Binder
 import com.google.inject.name.Names
+import org.eclipse.mita.base.scoping.BaseQualifiedNameProvider
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.scoping.LibraryProviderImpl
 import org.eclipse.mita.base.scoping.MitaContainerManager
@@ -41,7 +42,6 @@ import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
-import org.eclipse.mita.base.scoping.BaseQualifiedNameProvider
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 

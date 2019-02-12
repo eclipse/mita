@@ -5,6 +5,7 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 @Accessors
 @EqualsHashCode
@@ -19,13 +20,15 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null) {
 			throw new NullPointerException;
 		}
-		if(this.toString == "f_186 ≡ modality01_args(f_142) → modality<f_183>") {
+		if(this.toString == "signal_instance00_args ≡ vci00_inst_args") {
 			print("")
 		}
 	}
 	
 	override getErrorMessage() {
-		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, left, right));
+		val formatter = new NicerTypeVariableNamesForErrorMessages;
+		val types = this.modifyNames(formatter) as EqualityConstraint;
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.left, types.right));
 	}
 
 	override toString() {

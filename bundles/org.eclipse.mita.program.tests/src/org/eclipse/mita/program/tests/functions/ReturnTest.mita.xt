@@ -23,7 +23,7 @@ fn callFoo11() {
 }
 
 // for multiple return statements, the common type is inferred
-// XPECT inferredType --> foo12_args() → f64
+// XPECT inferredType --> __args() → f64
 fn foo12() {
 	if (true) {
 		return 17.0f;
@@ -179,8 +179,7 @@ fn testComplexReturns() {
   var x17 = returnOptional0();
   var x18 = returnOptional1();
   var x19 = returnOptional2();
-  // this isn't implemented yet, but explicitly so
-  //var x20 = returnOptional3();
+  var x20 = returnOptional3();
   var x21 = returnOptional4();
   var x22 = returnOptional5();
 }
