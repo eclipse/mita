@@ -27,6 +27,8 @@ import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
+import org.eclipse.mita.program.ProgramPackage
+import org.eclipse.mita.base.util.BaseUtils
 
 class SumTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {
 	
@@ -45,7 +47,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 		
 	@Check(CheckType.FAST)
 	def checkIsDeconstructionCaseHasOnlyOneTypeOfDeconstructor(IsDeconstructionCase deconstructionCase) {
-		val namedConstructor = deconstructionCase.deconstructors.map[it.productMember !== null];
+		val namedConstructor = deconstructionCase.deconstructors.map[!BaseUtils.getText(it, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember).nullOrEmpty];
 		// there must not be both named and anonymous deconstructors
 		if(namedConstructor.containsAll(#[true, false])) {
 			error(CANT_USE_BOTH_NAMED_AND_ANONYMOUS_DECONSTRUCTORS_MSG, deconstructionCase, null);

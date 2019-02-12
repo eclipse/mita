@@ -9,7 +9,7 @@ package test;
 import platforms.unittest; 
 
 setup connectivity : MyConnectivity {
-	// XPECT infos --> "" at ""
+	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
 	var signal_instance00 = vci00(p01=true, p02=.CFG_VAL_1);
 	var signal_instance01 = vci01(20);
 	var signal_instance03 = vci03(5);
@@ -29,7 +29,7 @@ fn functionWithSiginstParameter(p : siginst<uint32>) {
 }
 
 // XPECT errors ---> "Could not infer the size of the function's return." at "functionReturningSiginst"
-// XPECT warnings --> "" at ""
+// XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "functionReturningSiginst"
 fn functionReturningSiginst() : siginst<bool> {
 	// XPECT errors --> "Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
 	return connectivity.signal_instance00;
@@ -39,7 +39,10 @@ fn useSiginstCorrectly() {
 	// The write at line ~81 makes the type system think the return type of signal_instance00 is modality<xint8>. 
 	// However because of type class unification we already know that x1 is of type bool.
 	// Therefore the assignment results in an error.
-	// XPECT errors --> "" at "" 
+	/* XPECT errors ---
+		"Function read cannot be used here: bool, A" at "read"
+		"connectivity.signal_instance00().read() (:: A) has a different type than x1 (:: B)" at "connectivity.signal_instance00.read()"
+	--- */ 
 	// XPECT inferredType ---> bool
 	var x1 = connectivity.signal_instance00.read();
 	
@@ -68,7 +71,10 @@ fn useSiginstCorrectly() {
 	
 	// use as non-extension method call
 	
-	// XPECT errors --> "" at "" 
+	/* XPECT errors ---
+		"Function read cannot be used here: bool, A" at "read"
+		"read(<null>=connectivity.signal_instance00()) (:: A) has a different type than x6 (:: B)" at "read(connectivity.signal_instance00)"
+	--- */ 
 	// XPECT inferredType ---> bool
 	var x6 = read(connectivity.signal_instance00);
 	
@@ -77,8 +83,7 @@ fn useSiginstCorrectly() {
 
 fn stuffSiginstShouldValidate() {
 	/* XPECT errors ---
-		"Could not infer common type for type parameter T from argument types [integer, bool]." at "connectivity.signal_instance00.write(20)"
-		"Incompatible types integer and bool." at "connectivity.signal_instance00.write(20)"
+		"Incompatible types: xint8 is not subtype of bool." at "write"
 	--- */
 	connectivity.signal_instance00.write(20);
 }

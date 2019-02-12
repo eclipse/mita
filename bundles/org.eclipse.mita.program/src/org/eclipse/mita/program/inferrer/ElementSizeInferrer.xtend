@@ -90,7 +90,9 @@ class ElementSizeInferrer {
 
 	protected def dispatch ElementSizeInferenceResult doInfer(FunctionDefinition obj, AbstractType type) {
 		return PreventRecursion.preventRecursion(this.class.simpleName -> obj, [
-			val allReturnSizes = obj.eAllContents.filter(ReturnStatement).map[x | x.infer ].toList();
+			val allReturnSizes = obj.eAllContents.filter(ReturnStatement).map[x | 
+				x.infer
+			].toList();
 			var result = if(allReturnSizes.empty) {
 				obj.inferFromType(type)
 			} else if(allReturnSizes.size == 1) {
@@ -269,7 +271,7 @@ class ElementSizeInferrer {
 	
 	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject context, Void type) {
 		// if type is null we have different problems than size inference
-		return newValidResult(context, 0)
+		return newInvalidResult(context, '''Unable to infer size from nothing''')
 	}
 	
 	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject context, ProdType type) {

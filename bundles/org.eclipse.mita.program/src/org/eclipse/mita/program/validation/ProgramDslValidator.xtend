@@ -421,7 +421,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	// Forbid returning structs/generics etc. (allow void, primitive) (via validator), until implemented.
 	@Check(CheckType.NORMAL)
 	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {[|
-		val operationType = BaseUtils.getType(op.typeSpecifier);
+		val operationType = BaseUtils.getType(op.typeSpecifier); 
 		if(!(op instanceof GeneratedFunctionDefinition) && (op instanceof AtomicType && op.name == "void") || ModelUtils.isPrimitiveType(operationType, op)) {
 			return;
 		}
