@@ -66,8 +66,8 @@ class TypeVariable extends AbstractType {
 		return f.apply(this);
 	}
 
-	override modifyNames(String suffix) {
-		return new TypeVariable(origin, name + suffix)
+	override modifyNames((String) => String converter) {
+		return new TypeVariable(origin, converter.apply(name))
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {

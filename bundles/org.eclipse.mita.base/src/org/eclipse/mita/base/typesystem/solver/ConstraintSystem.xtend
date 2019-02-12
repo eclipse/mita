@@ -147,14 +147,15 @@ class ConstraintSystem {
 		
 	def ConstraintSystem modifyNames(String suffix) {
 		val result = new ConstraintSystem(this);
-		result.atomicConstraints.replaceAll([it.modifyNames(suffix)])
-		result.nonAtomicConstraints.replaceAll([it.modifyNames(suffix)])
-		result.symbolTable.replaceAll([k, v | v.modifyNames(suffix) as TypeVariable]);
-		result.typeTable.replaceAll([k, v | v.modifyNames(suffix)]);
-		result.typeClasses.replaceAll([k, v | v.modifyNames(suffix)]);
-		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.modifyNames(suffix)];
+		val converter = [it + suffix];
+		result.atomicConstraints.replaceAll([it.modifyNames(converter)])
+		result.nonAtomicConstraints.replaceAll([it.modifyNames(converter)])
+		result.symbolTable.replaceAll([k, v | v.modifyNames(converter) as TypeVariable]);
+		result.typeTable.replaceAll([k, v | v.modifyNames(converter)]);
+		result.typeClasses.replaceAll([k, v | v.modifyNames(converter)]);
+		result.explicitSubtypeRelations.nodeIndex.replaceAll[k, v | v.modifyNames(converter)];
 		result.explicitSubtypeRelations.computeReverseMap();
-		result.explicitSubtypeRelationsTypeSource.replaceAll[k, v | v.modifyNames(suffix)];
+		result.explicitSubtypeRelationsTypeSource.replaceAll[k, v | v.modifyNames(converter)];
 		return result;
 	}
 	

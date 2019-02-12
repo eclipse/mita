@@ -56,7 +56,7 @@ abstract class AbstractTypeConstraint {
 		return map[it.replaceProxies(system, resolve)]
 	}
 	
-	def AbstractTypeConstraint modifyNames(String suffix) {
-		return map[it.modifyNames(suffix)]
+	def AbstractTypeConstraint modifyNames((String) => String converter) {
+		return map[it.modifyNames(converter)]
 	}
 }

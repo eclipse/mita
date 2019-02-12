@@ -30,8 +30,8 @@ class TypeClassProxy extends TypeClass {
 		return this;
 	}
 	
-	override TypeClass modifyNames(String suffix) {
-		return new TypeClassProxy(toResolve.map[it.modifyNames(suffix) as TypeVariableProxy]);
+	override TypeClass modifyNames((String) => String converter) {
+		return new TypeClassProxy(toResolve.map[it.modifyNames(converter) as TypeVariableProxy]);
 	}
 	
 	override replaceProxies((TypeVariableProxy) => Iterable<AbstractType> typeVariableResolver, (URI) => EObject objectResolver) {

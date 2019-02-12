@@ -85,8 +85,8 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		return this;
 	}
 	
-	override modifyNames(String suffix) {
-		return new FunctionTypeClassConstraint(_errorMessage, typ.modifyNames(suffix), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(suffix) as TypeVariable, returnTypeVariance, constraintSystemProvider);
+	override modifyNames((String) => String converter) {
+		return new FunctionTypeClassConstraint(_errorMessage, typ.modifyNames(converter), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(converter) as TypeVariable, returnTypeVariance, constraintSystemProvider);
 	}
 	
 	private var CachedBoolean cachedIsAtomic = CachedBoolean.Uncached;

@@ -40,7 +40,7 @@ abstract class AbstractBaseType extends AbstractType {
 		return f.apply(this);
 	}
 	
-	override modifyNames(String suffix) {
+	override modifyNames((String) => String converter) {
 		return this;
 	}
 	

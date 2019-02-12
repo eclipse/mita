@@ -12,8 +12,8 @@ import platforms.unittest;
 // functions can have an optional return type, if no return type is specified, it is inferred from return statements
 fn foo11() {
 	/* XPECT errors ---
+		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of A" at "return 17;"
 		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of bool" at "return 17;"
-		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of f_184.0" at "return 17;"
 	--- */
 	return 17;
 }
@@ -22,8 +22,8 @@ fn callsFoo11() {
 	// It would have to be a subtype of things like optional<int32>, xint8, void, float and bottom(), which is very hard to be.
 	// If you look at ReturnTest.mita.xt you can see that type inference actually works here if you eliminate some of the more glaring errors.
 	/* XPECT errors ---
+		"Function foo11 cannot be used here: Return type incompatible: A is not subtype of B" at "foo11"
 		"Function foo11 cannot be used here: Return type incompatible: bool is not subtype of xint8" at "foo11"
-		"Function foo11 cannot be used here: Return type incompatible: f_184.0 is not subtype of f_191.0" at "foo11"
 	--- */
 	let x = foo11();
 }

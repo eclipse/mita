@@ -90,8 +90,8 @@ class TypeScheme extends AbstractType {
 		return new TypeScheme(origin, vars.map[replaceProxies(system, resolve) as TypeVariable].force, on.replaceProxies(system, resolve));
 	}
 	
-	override modifyNames(String suffix) {
-		return new TypeScheme(origin, vars.map[modifyNames(suffix) as TypeVariable].force, on.modifyNames(suffix));
+	override modifyNames((String) => String converter) {
+		return new TypeScheme(origin, vars.map[modifyNames(converter) as TypeVariable].force, on.modifyNames(converter));
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {

@@ -14,6 +14,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.infra.CachedBoolean
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -40,7 +41,9 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	override getErrorMessage() {
-		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, subType, superType));
+		val formatter = new NicerTypeVariableNamesForErrorMessages;
+		val types = this.modifyNames(formatter) as SubtypeConstraint;
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.subType, types.superType));
 	}
 	
 	override toString() {

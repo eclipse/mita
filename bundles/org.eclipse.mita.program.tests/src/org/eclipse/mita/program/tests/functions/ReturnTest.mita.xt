@@ -23,7 +23,7 @@ fn callFoo11() {
 }
 
 // for multiple return statements, the common type is inferred
-// XPECT inferredType --> foo12_args() → f64
+// XPECT inferredType --> __args() → f64
 fn foo12() {
 	if (true) {
 		return 17.0f;

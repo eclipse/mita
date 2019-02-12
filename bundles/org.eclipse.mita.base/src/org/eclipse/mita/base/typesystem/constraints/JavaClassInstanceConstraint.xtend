@@ -7,6 +7,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 @FinalFieldsConstructor
 @Accessors
@@ -17,7 +18,9 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	protected val Class<?> javaClass;
 	
 	override getErrorMessage() {
-		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, what, javaClass));
+		val formatter = new NicerTypeVariableNamesForErrorMessages;
+		val types = this.modifyNames(formatter) as JavaClassInstanceConstraint;
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.what, types.javaClass));
 	}
 	
 	override getActiveVars() {

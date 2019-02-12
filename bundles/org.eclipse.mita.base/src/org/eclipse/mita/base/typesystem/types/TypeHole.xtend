@@ -13,7 +13,7 @@ class TypeHole extends TypeVariable {
 		return #[];
 	}
 	
-	override modifyNames(String suffix) {
-		return new TypeHole(origin, name + suffix)
+	override modifyNames((String) => String converter) {
+		return new TypeHole(origin, converter.apply(name))
 	}
 }

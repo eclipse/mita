@@ -5,6 +5,7 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 @Accessors
 @EqualsHashCode
@@ -25,7 +26,9 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	}
 	
 	override getErrorMessage() {
-		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, left, right));
+		val formatter = new NicerTypeVariableNamesForErrorMessages;
+		val types = this.modifyNames(formatter) as EqualityConstraint;
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.left, types.right));
 	}
 
 	override toString() {
