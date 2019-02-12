@@ -123,7 +123,7 @@ setup alt7_bad : MyConnectivity {
 	cfg05 = .SomethingNamed(x = 20);
 } 
 setup alt8_bad : MyConnectivity { 
-	/* XPECT errors ---
+	/*XPECT errors ---
 		"Duplicate assignment to parameter x." at "x = 10"
 	--- */
 	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»20, y: bool=prim»b»true, x: int32=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(x = 20, y = true, x = 10)"
@@ -135,7 +135,7 @@ setup alt9_bad : MyConnectivity {
 	cfg05 = .SomeStruct(ConfigStruct());
 }
 setup alt10_bad : MyConnectivity { 
-	/* XPECT errors ---
+	/*XPECT errors ---
 		"Function ConfigStruct cannot be used here: arguments don't fit (__args(A, B) != __args(int32))" at "ConfigStruct(10, 20)"
 		"__args(xint8, xint8) and __args(int32) differ in the number of type arguments" at "ConfigStruct"
 	--- */
@@ -143,12 +143,12 @@ setup alt10_bad : MyConnectivity {
 	cfg05 = .SomeStruct(ConfigStruct(10, 20));
 }
 setup alt12_bad : MyConnectivity { 
-	// XPECT errors --> "'prim»b»true' of type bool can not be assigned to parameter 'config' of type int32." at "true"
+	//XPECT errors --> "'prim»b»true' of type bool can not be assigned to parameter 'config' of type int32." at "true"
 	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = true))"
 	cfg05 = .SomeStruct(ConfigStruct(config = true));
 }
 setup alt14_bad : MyConnectivity { 
-	/* XPECT errors ---
+	/*XPECT errors ---
 		"Duplicate assignment to parameter config." at "config = 20"
 	--- */
 	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»i»10, config: int32=prim»i»20)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = 10, config = 20))"
@@ -204,8 +204,6 @@ setup bluetoothA : MyConnectivity {
  	
  	// XPECT errors --> "Incompatible types: string is not subtype of uint32." at "vci01"
  	var boolC2 = vci01("wrong"); // compile-error: The types int16 and string compatible
-	
- 	var boolC3 = vci01(17); 
 } 
 
 // XPECT errors --> "This system resource must only be setup once" at "MySingletonConnectivity"
@@ -239,6 +237,20 @@ setup withADifferentName : MySingletonConnectivity {
 // 	transport = devNetwork2;
 // } // compile-error: Missing setup for configuration item 'serverName'
 
+// XPECT errors --> "Missing configuration items: rcfg00, rcfg01, rcfg02, rcfg03, rcfg04, rcfg05" at "setup missingReq : MyConnectivityWithRequires {}"
+setup missingReq : MyConnectivityWithRequires {
+
+}
+setup alt11_bad : MyConnectivity { 
+	// XPECT errors --> "Incompatible types: string is not subtype of int32." at "ConfigStruct"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»s»"asdf")) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct("asdf"))"
+	cfg05 = .SomeStruct(ConfigStruct("asdf"));
+}
+setup alt12_bad : MyConnectivity { 
+	//XPECT errors --> "'prim»b»true' of type bool can not be assigned to parameter 'config' of type int32." at "true"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = true))"
+	cfg05 = .SomeStruct(ConfigStruct(config = true));
+}
  
 // VCI can have optional parameters
 setup bluetoothB : MyConnectivity {
@@ -265,7 +277,14 @@ setup bluetoothB : MyConnectivity {
 		"__args isn't structurally a subtype of __args" at "vci02"
 	--- */
 	var vciv2 = vci02(p02 = 0);
-		
+	
+	/* XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "vci02"
+		"bool is not a subtype of int32" at "vci02"
+		"prim»b»true (:: bool) not compatible with p02 (:: int32)" at "p02 = true"
+	--- */
+	var vciv3 = vci02(p01 = 0, p02 = true);
+	
 	// XPECT vciParameters --> p01=1 p02=41
 	var vciv4 = vci02(1, 41);
 

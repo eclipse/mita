@@ -506,7 +506,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			argumentParamTypesAndValueTypes.forEach[
 				system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
 			]
-			new UnorderedArguments(null, new AtomicType(null, constructorName.argName), argumentParamTypesAndValueTypes.map[it.nameOfReferencedObject -> it.expressionType]);
+			new UnorderedArguments(null, constructorName.argName, argumentParamTypesAndValueTypes.map[it.nameOfReferencedObject -> it.expressionType]);
 		}
 		else {
 			val args = newInstanceExpression.arguments.map[system.computeConstraints(it) as AbstractType];

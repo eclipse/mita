@@ -36,6 +36,10 @@ fn functionReturningSiginst() : siginst<bool> {
 }
 
 fn useSiginstCorrectly() {
+	// The write at line ~81 makes the type system think the return type of signal_instance00 is modality<xint8>. 
+	// However because of type class unification we already know that x1 is of type bool.
+	// Therefore the assignment results in an error.
+	// XPECT errors --> "" at "" 
 	// XPECT inferredType ---> bool
 	var x1 = connectivity.signal_instance00.read();
 	
@@ -64,8 +68,17 @@ fn useSiginstCorrectly() {
 	
 	// use as non-extension method call
 	
+	// XPECT errors --> "" at "" 
 	// XPECT inferredType ---> bool
 	var x6 = read(connectivity.signal_instance00);
 	
 	write(connectivity.signal_instance00, true);
+}
+
+fn stuffSiginstShouldValidate() {
+	/* XPECT errors ---
+		"Could not infer common type for type parameter T from argument types [integer, bool]." at "connectivity.signal_instance00.write(20)"
+		"Incompatible types integer and bool." at "connectivity.signal_instance00.write(20)"
+	--- */
+	connectivity.signal_instance00.write(20);
 }

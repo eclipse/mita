@@ -54,7 +54,7 @@ function typesAvailableInVarDec() : void {
 	var withConnectivity : MyConnectivity;
 	
 	/* XPECT errors ---
-		"Cannot determine size of element: Unable to infer size from type f_41" at "withTypeParameter"
+		"Cannot determine size of element: Unable to infer size from type f_75" at "withTypeParameter"
 		"Couldn't resolve reference to Type 'array.T'." at "array.T"
 	--- */
 	var withTypeParameter : array.T;

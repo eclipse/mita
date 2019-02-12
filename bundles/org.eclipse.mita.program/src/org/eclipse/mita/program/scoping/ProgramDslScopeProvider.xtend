@@ -71,6 +71,7 @@ import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
 import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EcorePackage
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -201,6 +202,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			}
 		} 
 		return constructorScope;
+		
+	}
+	
+	def protected dispatch IScope doGetCandidateParameterScope(SumSubTypeConstructor subType, IScope constructorScope) {
+		return subType.eContainer.doGetCandidateParameterScope(constructorScope);
 		
 	}
 	
@@ -608,7 +614,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			}
 		}
 		else {
-			if(ref instanceof SumAlternative) {
+			if(ref instanceof SumSubTypeConstructor) {
 				if(reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 					return doGetCandidateParameterScope(ref, IScope.NULLSCOPE);
 				}

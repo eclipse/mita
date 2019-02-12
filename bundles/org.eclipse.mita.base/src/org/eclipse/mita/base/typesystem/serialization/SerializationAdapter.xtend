@@ -201,7 +201,7 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedUnorderedArguments obj) {
-		return new UnorderedArguments(obj.origin.resolveEObject(), obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
+		return new UnorderedArguments(obj.origin.resolveEObject(), obj.name, obj.parameterNames.zip(obj.valueTypes.fromSerializedTypes()));
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
@@ -489,7 +489,7 @@ class SerializationAdapter {
 	
 	protected dispatch def Object toValueObject(UnorderedArguments obj) {
 		new SerializedUnorderedArguments => [
-			fill(it, obj)
+			_fill(it, obj as AbstractType)
 			it.parameterNames += obj.argParamNamesAndValueTypes.map[it.key];
 			it.valueTypes += obj.argParamNamesAndValueTypes.map[it.value.toValueObject as SerializedAbstractType];
 		]

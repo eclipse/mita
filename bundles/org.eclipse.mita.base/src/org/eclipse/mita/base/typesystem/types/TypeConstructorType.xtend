@@ -46,7 +46,7 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
-		if(this.toString == "vec2d_t(f_70, f_71)") {
+		if(this.toString == "__args(int32)") {
 			print("")
 		}
 	}

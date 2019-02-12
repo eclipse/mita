@@ -82,6 +82,8 @@ import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 import static org.eclipse.mita.base.typesystem.infra.MitaBaseResource.*
+import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -159,6 +161,9 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	public static val String ERROR_ASSIGNMENT_TO_CONST_CODE = "AssignmentToConst";
 	public static val String ERROR_ASSIGNMENT_TO_CONST_MSG = "Assignment to constant not allowed.";
 
+	public static final String ERROR_LEFT_HAND_ASSIGNMENT_CODE = "LeftHandAssignment";
+	public static final String ERROR_LEFT_HAND_ASSIGNMENT_MSG = "The left-hand side of an assignment must be a variable.";
+
 	@Inject ITypeSystem typeSystem
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
@@ -178,18 +183,19 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		if(solution === null) {
 			return;
 		}
-		val issues = solution.issues.groupBy[it.message->(if(it.target?.eIsProxy) {(it.target as BasicEObjectImpl).eProxyURI} else {it.target})].values.map[it.head];
-		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].forEach[
-			val obj = resolveProxy(resource, it.target) ?: program;
-			error(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
+		val issues = solution.issues
+			.map[MitaBaseResource.resolveProxy(program.eResource, it.target) -> it]
+			.filter[it.key !== null]
+			.groupBy[it.value.message->EcoreUtil.getURI(it.key)].values.map[it.head]
+			.filter[it.key.eResource == program.eResource];
+		issues.toSet.filter[it.value.severity == Severity.ERROR].forEach[
+			error(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
 		]
-		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].forEach[
-			val obj = resolveProxy(resource, it.target) ?: program;
-			warning(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
+		issues.toSet.filter[it.value.severity == Severity.WARNING].forEach[
+			warning(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
 		]
-		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.INFO].forEach[
-			val obj = resolveProxy(resource, it.target) ?: program;
-			info(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
+		issues.toSet.filter[it.value.severity == Severity.INFO].forEach[
+			info(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
 		]
 	}
 	
@@ -438,48 +444,6 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 	}
 		
-
-	// allow assignment on struct members, derefs, array index
-	def checkLeftHandAssignment(AssignmentExpression expression) {
-		val varRef = expression.varRef;
-		var EObject innerExpr = varRef;
-		var nested = true;
-		while(nested) {
-			if(innerExpr instanceof CoercionExpression) {
-				innerExpr = innerExpr.value
-			}
-			if(innerExpr instanceof FeatureCall) {
-				if(!innerExpr.operationCall) {
-					innerExpr = innerExpr.reference;	
-				}
-				else {
-					nested = false;
-				}
-			}
-			else if(innerExpr instanceof ElementReferenceExpression) {
-				innerExpr = innerExpr.reference;
-			}
-			else if(innerExpr instanceof DereferenceExpression) {
-				innerExpr = innerExpr.innerReference;
-			}
-			else if(innerExpr instanceof ArrayAccessExpression) {
-				// we can't assign on slices, so we don't unnest here
-				if(innerExpr.arraySelector instanceof ValueRange) {
-					nested = false;
-				}
-				else {
-					innerExpr = innerExpr.owner;	
-				}
-			}
-			else {
-				nested = false;
-			}
-		}
-		if(innerExpr instanceof VariableDeclaration || innerExpr instanceof FunctionParameterDeclaration || innerExpr instanceof Parameter || innerExpr instanceof Property) {
-			return;
-		}
-		
-	}
 	
 	@Check(CheckType.FAST)
 	def checkOptionalParametersInFunctionDeclarations(FunctionParameterDeclaration parameter) {
@@ -625,38 +589,45 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 	}
 	
-//	@Check(CheckType.NORMAL)
-//	def noUpcastingToOptionalsInFunctionArguments(ElementReferenceExpression eref) {
-//		val typesAndArgs = ExpressionUtils.getFunctionCallArguments(eref);
-//		if(typesAndArgs === null) return;
-//		
-//		typesAndArgs.forEach[ts_arg | 
-//			val ts = ts_arg.key;
-//			if(ts instanceof PresentTypeSpecifier) {
-//				if(ts.type instanceof GeneratedType && ts.type.name == "optional") {
-//					val arg = ts_arg.value;
-//					//TODO
-//					val argType = BaseUtils.getType(arg.value);
-//					if(ModelUtils.typeSpecifierEqualsWith([t1, t2 | typeSystem.haveCommonType(t1, t2)], ts.typeArguments.head, argType)) {
-//						error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "function calls"), arg, null);
-//					}
-//				}	
-//			}
-//		]
-//	}
-	
-//	@Check(CheckType.NORMAL)
-//	def noUpcastingToOptionalsInReturns(ReturnStatement stmt) {
-//		val funDef = EcoreUtil2.getContainerOfType(stmt, FunctionDefinition);
-//		if(funDef === null) {
-//			return;
-//		}
-//		
-//		val retType = BaseUtils.getType(funDef.typeSpecifier);
-//		if(TypesUtil.isGeneratedType(stmt, retType) && retType.name == "optional") {
-//			if(stmt.value instanceof PrimitiveValueExpression) {
-//				error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "returns"), stmt, null);
-//			}
-//		}
-//	} 
+	@Check(CheckType.FAST) 
+	def void checkLeftHandAssignment(AssignmentExpression expression) {
+		val varRef = expression.varRef;
+		var EObject innerExpr = varRef;
+		var nested = true;
+		while (nested) {
+			if (innerExpr instanceof ElementReferenceExpression) {
+				if (innerExpr.arguments.size > 0) {
+					innerExpr = innerExpr.arguments.head.value;
+				} else {
+					innerExpr = (innerExpr as ElementReferenceExpression).reference;
+				}
+			} else if (innerExpr instanceof DereferenceExpression) {
+				innerExpr = innerExpr.innerReference;
+			} else if (innerExpr instanceof ArrayAccessExpression) {
+				// we can't assign on slices, so we don't unnest here
+				if (innerExpr.arraySelector instanceof ValueRange) {
+					nested = false;
+				} else {
+					innerExpr = innerExpr.owner;
+				}
+			} else {
+				nested = false;
+			}
+		}
+		if (innerExpr instanceof VariableDeclaration || innerExpr instanceof FunctionParameterDeclaration ||
+			innerExpr instanceof Parameter || innerExpr instanceof Property) {
+			return;
+		}
+		
+		else if (varRef instanceof ElementReferenceExpression) {
+			var EObject referencedObject = ((varRef as ElementReferenceExpression)).getReference()
+			if (!(referencedObject instanceof Property) && !(referencedObject instanceof Parameter)) {
+				error(ERROR_LEFT_HAND_ASSIGNMENT_MSG, ExpressionsPackage.Literals.ASSIGNMENT_EXPRESSION__VAR_REF,
+					ERROR_LEFT_HAND_ASSIGNMENT_CODE)
+			}
+		} else {
+			error(ERROR_LEFT_HAND_ASSIGNMENT_MSG, ExpressionsPackage.Literals.ASSIGNMENT_EXPRESSION__VAR_REF,
+				ERROR_LEFT_HAND_ASSIGNMENT_CODE)
+		}
+	}
 }

@@ -28,27 +28,27 @@ alt anyVec {
 	vec0d | vec1d: {x: int32} | vec2d: {x: int32, y: bool?}
 }   
 
-//XPECT inferredType --> id_args(optional<int32>) → optional<int32>
+//XPECT inferredType --> __args(optional<int32>) → optional<int32>
 fn id(x: int32?): int32? {
 	return x;
 }
 
-//XPECT inferredType --> id_args(int32) → int32    
+//XPECT inferredType --> __args(int32) → int32
 fn id(x: int32): int32 {
 	return x;  
 }      
-//XPECT inferredType --> id_args(string) → string
+//XPECT inferredType --> __args(string) → string
 //XPECT errors --> "Could not infer the size of the function's return." at "id"
 fn id(x: string): string {
 	return x;
 }   
 
-//XPECT inferredType --> id2_args(int32, int8) → int32
+//XPECT inferredType --> __args(int32, int8) → int32
 fn id2(x: int32, y: int8): int32 {
 	return x;  
 }      
   
-//XPECT inferredType --> id2_args(string, int8) → string
+//XPECT inferredType --> __args(string, int8) → string
 //XPECT errors --> "Could not infer the size of the function's return." at "id2"
 fn id2(x: string, y: int8): string {
 	return x;
@@ -117,7 +117,7 @@ every 100 milliseconds {
 		}
 		/*XPECT errors ---
 			"Cannot determine size of element: Unable to infer size from type f_605.0" at "a1"
-			"vec2d(int32, optional<bool>) and vec2d(f_605.0) don't fit together" at "is(anyVec.vec2d -> a1) { 		  		}"
+			"vec2d(int32, optional<bool>) and vec2d(A) don't fit together" at "is(anyVec.vec2d -> a1) { 		  		}"
 		--- */
 		is(anyVec.vec2d -> a1) {
 		 
@@ -127,7 +127,7 @@ every 100 milliseconds {
 		} 
 	}
 	/* XPECT errors ---
-		"f (:: f_23) and g don't share a common type" at "f"
+		"f (:: A) and g don't share a common type" at "f"
 		"f (:: xint8) and g don't share a common type" at "f"
 		"f and g (:: string) don't share a common type" at "g"
 	 --- */
@@ -143,14 +143,14 @@ fn <T> foo2() {
 	let bar3 = &bar2;
 	let bar4 = *bar3; 
 	/* XPECT errors ---
-		"Function con_array cannot be used here: arguments don't fit (con_array_args(f_9, f_10) != con_array_args(uint32))" at "new array<int32>(10, 20)"
-		"con_array_args(xint8, xint8) and con_array_args(uint32) differ in the number of type arguments" at "new array<int32>(10, 20)"
+		"Function con_array cannot be used here: arguments don't fit (__args(A, B) != __args(uint32))" at "new array<int32>(10, 20)"
+		"__args(xint8, xint8) and __args(uint32) differ in the number of type arguments" at "new array<int32>(10, 20)"
 	--- */
 	let bar5 = new array<int32>(10, 20);
 	let bar6 = new array<int32>(10);
 	/* XPECT errors ---
 		"Cannot determine size of element: size missing" at "new array<int32>()"
-		"con_array_args() and con_array_args(uint32) differ in the number of type arguments" at "new array<int32>()"
+		"__args() and __args(uint32) differ in the number of type arguments" at "new array<int32>()"
 	--- */
 	let bar7 = new array<int32>();
 	let bar8 = new array<int32>(size=10);

@@ -116,7 +116,7 @@ function testVariables() : void {
 	var x42 = new SomeGenType<uint32>(10); 
 	var x43 = new SomeGenType<uint32>(10, 10);
 	
-	// XPECT errors --> "con_SomeGenType_args() and con_SomeGenType_args(uint32, int16) differ in the number of type arguments" at "new SomeGenType<uint32>()"
+	// XPECT errors --> "__args() and __args(uint32, int16) differ in the number of type arguments" at "new SomeGenType<uint32>()"
 	var x51 = new SomeGenType<uint32>();
 
 	/* XPECT errors ---
@@ -126,10 +126,10 @@ function testVariables() : void {
 	var x52 = new SomeGenType<uint32>(opt = 18);
 	
 	/* XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "new SomeGenType<uint32>(true)"
 		"bool is not a subtype of uint32" at "new SomeGenType<uint32>(true)"
-		"con_SomeGenType_args isn't structurally a subtype of con_SomeGenType_args" at "new SomeGenType<uint32>(true)"
 	--- */
-	var x6 = new SomeGenType<uint32>(true); // TODO: will be fixed in next SCT release
+	var x6 = new SomeGenType<uint32>(true); 
 		
 	// Types are types. The type of an expression can be had withtypeof. Explicit type references can be made with the type keyword
 //	var foo : Type = typeof(1 + 1); // TODO: wouldn't it be more readable to write "foo : typeof(1+1)"?

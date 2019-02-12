@@ -82,7 +82,7 @@ function testOptionalsFail(){
 	// XPECT errors --> "Types uint32 and optional<int32> are not the same." at "optionalOfOptional = optional"
 	optionalOfOptional = optional;
 	/* XPECT errors ---
-		"functionWithNonOptionals_args isn't structurally a subtype of functionWithNonOptionals_args" at "functionWithNonOptionals"
+		"__args isn't structurally a subtype of __args" at "functionWithNonOptionals"
 		"optional<uint32> is not a subtype of int32" at "functionWithNonOptionals"
 	--- */
 	functionWithNonOptionals(optional);

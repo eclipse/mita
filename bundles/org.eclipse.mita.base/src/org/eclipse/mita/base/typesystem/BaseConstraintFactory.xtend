@@ -216,8 +216,14 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val paramType = if(!paramName.nullOrEmpty) {
 			system.resolveReferenceToSingleAndGetType(arg, feature) as AbstractType;
 		}
+
+		val valueType = system.computeConstraints(arg.value);
+
+		if(paramType !== null) {
+			system.addConstraint(new SubtypeConstraint(valueType, paramType, new ValidationIssue(''''«arg.value»' of type %1$s can not be assigned to parameter '«paramName»' of type %2$s.''', arg.value)))	
+		}		
 		
-		return paramType -> system.computeConstraints(arg.value);
+		return paramType -> valueType;
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument arg) {
@@ -232,7 +238,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		protected val EObject referencingObject;
 		protected val EObject expressionObject;
 		protected val AbstractType referencedType;
-		protected val AbstractType expressionType; 
+		protected val AbstractType expressionType;
+		
+		override toString() {
+			return "(" + #[nameOfReferencedObject, referencingObject, expressionObject, referencedType, expressionType].join(", ") + ")"
+		}
+		
 	} 
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
@@ -262,7 +273,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			}
 			
 			val argumentParamsAndValues = varOrFun.arguments.indexed.map[
-				if(it.key == 0 && varOrFun instanceof FeatureCall) {
+				if(it.key == 0 && varOrFun instanceof FeatureCall && !(varOrFun instanceof FeatureCallWithoutFeature)) {
 					"self" -> (it.value -> it.value.value)
 				}
 				else {
@@ -293,7 +304,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				else {
 					argumentParamTypesAndValueTypes
 				}
-				new UnorderedArguments(varOrFun, new AtomicType(null, txt.argName), withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
+				new UnorderedArguments(varOrFun, txt.argName, withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
 			} else {
 				val argTypes = varOrFun.arguments.map[system.computeConstraints(it) as AbstractType];
 				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {

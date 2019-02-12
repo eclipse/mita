@@ -30,20 +30,20 @@ fn callsFoo11() {
 
 fn callFoo11() {
 	/* XPECT errors ---
+		"Function foo11 cannot be used here: Return type incompatible: A is not subtype of B" at "foo11"
 		"Function foo11 cannot be used here: Return type incompatible: bool is not subtype of xint8" at "foo11"
-		"Function foo11 cannot be used here: Return type incompatible: f_184.0 is not subtype of f_205.0" at "foo11"
 	--- */
 	var i : int32 = foo11();
 	/* XPECT errors ---
-		"Assignment operator '=' may only be applied on compatible types, not on bool and f_216.0." at "var b : bool = foo11();"
-		"Function foo11 cannot be used here: Return type incompatible: f_184.0 is not subtype of f_215.0" at "foo11"
-		"Function foo11 cannot be used here: f_215.0, f_216.0" at "foo11"
+		"Assignment operator '=' may only be applied on compatible types, not on bool and A." at "var b : bool = foo11();"
+		"Function foo11 cannot be used here: A, B" at "foo11"
+		"Function foo11 cannot be used here: Return type incompatible: A is not subtype of B" at "foo11"
 	--- */
 	var b : bool = foo11();
 }
 
 // for multiple return statements, the common type is inferred
-// XPECT inferredType --> foo12_args() → f64
+// XPECT inferredType --> __args() → f64
 fn foo12() {
 	if (true) {
 		return 17.0f;
@@ -54,10 +54,10 @@ fn foo12() {
 fn callFoo12() {
 	var d : double = foo12();
 	/* XPECT errors ---
+		"Assignment operator '=' may only be applied on compatible types, not on int32 and A." at "var j : int32 = foo12();"
 		"Assignment operator '=' may only be applied on compatible types, not on int32 and f64." at "var j : int32 = foo12();"
-		"Assignment operator '=' may only be applied on compatible types, not on int32 and f_253.0." at "var j : int32 = foo12();"
-		"Function foo12 cannot be used here: Return type incompatible: f_225.0 is not subtype of f_252.0" at "foo12"
-		"Function foo12 cannot be used here: f_252.0, f_253.0" at "foo12"
+		"Function foo12 cannot be used here: A, B" at "foo12"
+		"Function foo12 cannot be used here: Return type incompatible: A is not subtype of B" at "foo12"
 	--- */
 	var j : int32 = foo12();
 }
@@ -81,11 +81,11 @@ fn incompatibleReturnTypes() : int32 {
 // XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "impossibleInference"
 fn impossibleInference() {
 	if (true) {
-		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of f_287.0" at "return "";"
+		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of A" at "return "";"
 		return "";
 	}
 	/* XPECT errors ---
-		"Can't return prim»b»true (:: bool) since it's not of a subtype of f_287.0" at "return true;"
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of A" at "return true;"
 		"Can't return prim»b»true (:: bool) since it's not of a subtype of string" at "return true;"
 	--- */
 	return true;

@@ -155,7 +155,9 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		if(a.operationCall && !(a.reference instanceof VirtualFunction)) {
 			error(CANT_REFERENCE_FUNCTION_RESULTS, source, null);
 		}
-		a.reference.checkNoFunCall(source);
+		if(a.reference !== null) {
+			a.reference.checkNoFunCall(source);
+		}
 	}
 	dispatch def void checkNoFunCall(CoercionExpression e, EObject source) {
 		e.value.checkNoFunCall(source);

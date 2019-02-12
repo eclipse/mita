@@ -163,7 +163,6 @@ fn errors() {
 	b = a[6:];
 	// XPECT errors --> "Array range is invalid: Upper bound must be less than or equal to array size (5)" at ":7"
 	b = a[:7];
-	// XPECT errors --> "prim»s»"asdf" (:: string) has a different type than str (:: f_583.0)" at ""asdf""
 }
 
 // XPECT noCompileErrors

@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Types signal_instance00_args and vci00_inst_args are not the same.";
+			return "Function read cannot be used here: bool, A";
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");

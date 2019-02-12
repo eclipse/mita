@@ -397,7 +397,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				val typ = typ_distance.key;
 				val distance = typ_distance.value;
 				// handle named parameters: if _refType is unorderedArgs, sort them
-				val prodType = if(refType instanceof UnorderedArguments) {
+				val equalities_prodType = if(refType instanceof UnorderedArguments) {
 					if(fun instanceof Operation) {
 						val sortedArgs = ExpressionUtils.getSortedArguments(fun.parameters, refType.argParamNamesAndValueTypes, 
 							[it], [it.key], [
@@ -412,7 +412,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						if(sortedArgs.exists[it.value === null]) {
 							return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Too few arguments''')], #[], typ, fun, distance);
 						}
-						new ProdType(refType.origin, new AtomicType(fun, BaseConstraintFactory.argName(fun)), sortedArgs.map[it.value]);
+						sortedArgs.map[
+							val paramName = it.key;
+							val uoaType = refType.argParamNamesAndValueTypes.findFirst[pv | pv.key == paramName].value
+							val assignedType = it.value;
+							if(uoaType === null || assignedType === null) {
+								null
+							}
+							else {
+								new EqualityConstraint(uoaType, assignedType, null) as AbstractTypeConstraint;
+							}
+						].filterNull.force -> new ProdType(refType.origin, new AtomicType(fun, BaseConstraintFactory.argName(fun)), sortedArgs.map[it.value]);
 					}
 					else {
 						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Can't use named parameters for non-operations''')], #[], typ, fun, distance);
@@ -420,12 +430,15 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				} else {
 					// handle default values
 					if(fun instanceof Operation) {
-						system.handleDefaultParametersInTypeClassResolution(substitution, refType, fun);
+						#[] -> system.handleDefaultParametersInTypeClassResolution(substitution, refType, fun);
 					}
 					else {
-						refType;
+						#[] -> refType;
 					}
 				}
+				
+				val equalities = equalities_prodType.key;
+				val prodType = equalities_prodType.value;
 				
 				// two possible ways to be part of this type class:
 				// - via subtype (uint8 < uint32)
@@ -433,7 +446,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				if(typ instanceof FunctionType) {
 					val mbUnification = mguComputer.compute(constraint._errorMessage, prodType, typ.from);
 					if(mbUnification.valid) {
-						return new TypeClassConstraintResolutionResult(mbUnification.substitution, #[], #[], #[], typ, fun, distance);
+						return new TypeClassConstraintResolutionResult(mbUnification.substitution, equalities, #[], #[], typ, fun, distance);
 					}
 					
 					val subtypeCheckResult = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, prodType, typ.from);
@@ -450,7 +463,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 							}	
 						}) ?: #[];
 
-						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, subtypeCheckResult.constraints, #[], coercions, typ, fun, distance + subtypeCheckResult.constraints.size);
+						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, equalities + subtypeCheckResult.constraints, #[], coercions, typ, fun, distance + subtypeCheckResult.constraints.size);
 					}
 					
 					return new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)], #[], typ, fun, distance);
@@ -580,15 +593,23 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return system._doSimplify(substitution, typeResolutionOrigin, constraint, sub as TypeConstructorType, top as TypeConstructorType);
 	}
 	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, ProdType sub, UnorderedArguments top) {
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, AbstractType sub, UnorderedArguments top) {
 		// do nothing, it's really hard to do anything here since we don't know the names of sub's args
 		// TODO introduce a NamedProdType which carries this information
 		return SimplificationResult.success(system, Substitution.EMPTY);
 	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, UnorderedArguments sub, ProdType top) {
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, UnorderedArguments sub, AbstractType top) {
 		// do nothing, it's really hard to do anything here since we don't know the names of top's args	
 		// TODO introduce a NamedProdType which carries this information
 		return SimplificationResult.success(system, Substitution.EMPTY);
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeVariable sub, UnorderedArguments top) {
+		substitution.add(sub, top);
+		return SimplificationResult.success(system, substitution);
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, UnorderedArguments sub, TypeVariable top) {
+		substitution.add(top, sub);
+		return SimplificationResult.success(system, substitution);
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
