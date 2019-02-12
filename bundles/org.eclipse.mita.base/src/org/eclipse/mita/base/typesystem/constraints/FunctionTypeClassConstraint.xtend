@@ -93,7 +93,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		val typeClass = system.typeClasses.get(instanceOfQN);
-		if(true || typeClass.mostSpecificGeneralization === null || typ.freeVars.empty) {	
+		if(false || typeClass.mostSpecificGeneralization === null || typ.freeVars.empty) {	
 			return !typ.freeVars.empty
 		}
 		if(cachedIsAtomic == CachedBoolean.Uncached) {

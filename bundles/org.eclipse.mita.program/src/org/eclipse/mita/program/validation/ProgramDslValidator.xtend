@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.Argument
@@ -163,6 +164,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
 	
+	
+	def featureOrNull(EStructuralFeature ref, EObject object) {
+		if(object === null || ref === null || object.eClass.getEStructuralFeature(ref.getName()) !== ref) {
+			return null;
+		}
+		return ref;
+	}
 	@Check(CheckType.FAST)
 	def attachTypingIssues(Program program) {
 		val resource = program.eResource;
@@ -172,13 +180,16 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 		val issues = solution.issues.groupBy[it.message->(if(it.target?.eIsProxy) {(it.target as BasicEObjectImpl).eProxyURI} else {it.target})].values.map[it.head];
 		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.ERROR].forEach[
-			error(it.message, resolveProxy(resource, it.target) ?: program, it.feature, 0, it.issueCode, #[]);
+			val obj = resolveProxy(resource, it.target) ?: program;
+			error(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
 		]
 		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.WARNING].forEach[
-			warning(it.message, resolveProxy(resource, it.target) ?: program, it.feature, 0, it.issueCode, #[]);
+			val obj = resolveProxy(resource, it.target) ?: program;
+			warning(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
 		]
 		issues.filter[it.target !== null].toSet.filter[it.severity == Severity.INFO].forEach[
-			info(it.message, resolveProxy(resource, it.target) ?: program, it.feature, 0, it.issueCode, #[]);
+			val obj = resolveProxy(resource, it.target) ?: program;
+			info(it.message, obj, it.feature.featureOrNull(obj), 0, it.issueCode, #[]);
 		]
 	}
 	

@@ -19,6 +19,9 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null) {
 			throw new NullPointerException;
 		}
+		if(this.toString == "signal_instance00_args ≡ vci00_inst_args") {
+			print("")
+		}
 	}
 	
 	override getErrorMessage() {

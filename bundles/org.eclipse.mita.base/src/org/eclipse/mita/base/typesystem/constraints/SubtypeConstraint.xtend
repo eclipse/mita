@@ -34,6 +34,9 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		if(subType === null || superType === null) {
 			throw new NullPointerException;
 		}
+		if(this.toString == "signal_instance00_args(f_11) ⩽ vci00_inst_args(MyConnectivity)") {
+			print("")
+		}
 	}
 	
 	override getErrorMessage() {

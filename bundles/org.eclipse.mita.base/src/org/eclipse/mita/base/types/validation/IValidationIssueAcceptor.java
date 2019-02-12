@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "con_string is not a subtype of con_string_args";
+			return "Types signal_instance00_args and vci00_inst_args are not the same.";
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");

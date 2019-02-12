@@ -53,6 +53,7 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 /**
  * Solves coercive subtyping as described in 
@@ -411,7 +412,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						if(sortedArgs.exists[it.value === null]) {
 							return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Too few arguments''')], #[], typ, fun, distance);
 						}
-						new ProdType(refType.origin, new AtomicType(fun, fun.name + "_args"), sortedArgs.map[it.value]);
+						new ProdType(refType.origin, new AtomicType(fun, BaseConstraintFactory.argName(fun)), sortedArgs.map[it.value]);
 					}
 					else {
 						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, #[], #[constraint.errorMessage, new ValidationIssue(constraint._errorMessage, '''Can't use named parameters for non-operations''')], #[], typ, fun, distance);

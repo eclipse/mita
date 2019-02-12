@@ -70,6 +70,7 @@ import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
 import org.eclipse.emf.ecore.EClass
+import org.eclipse.emf.ecore.EcorePackage
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -526,6 +527,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					// unqualified resolving of enumeration values
 					return filteredEnumeratorScope(originalScope, itemType);
 				}
+				else {
+					val typeName = BaseUtils.getText(context.parameter.typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+					val normalizer = new ImportNormalizer(QualifiedName.create(typeName), true, false);
+					return new ImportScope(#[normalizer], originalScope, null, EcorePackage.eINSTANCE.EObject, false);
+				}
 			} else {
 				val signal = (context.eContainer() as ElementReferenceExpression).reference
 				if (signal instanceof Operation) {
@@ -544,7 +550,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				val erefTxt = BaseUtils.getText(container, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 				val systemResourceSetup = EcoreUtil2.getContainerOfType(container.eContainer, SystemResourceSetup);
 				val systemResourceTxt = BaseUtils.getText(systemResourceSetup, ProgramPackage.eINSTANCE.systemResourceSetup_Type);
-				val normalizers = newArrayList(#[new ImportNormalizer(QualifiedName.create(systemResourceTxt, erefTxt), true, false)]);
+				val normalizers = newArrayList(QualifiedName.create(erefTxt), QualifiedName.create(systemResourceTxt, erefTxt));
 				val mbSumTypeConstructor = if(container instanceof FeatureCallWithoutFeature) {
 					"<auto>"
 				} else {
@@ -559,9 +565,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					}
 				}
 				if(!mbSumTypeConstructor.nullOrEmpty) {
-					normalizers.add(new ImportNormalizer(QualifiedName.create(mbSumTypeConstructor, erefTxt), true, false))
+					normalizers.add(QualifiedName.create(mbSumTypeConstructor, erefTxt))
 				}
-				return new ImportScope(normalizers, originalScope, null, TypesPackage.eINSTANCE.parameter, false);
+				return new ImportScope(normalizers.map[new ImportNormalizer(it, true, false)], originalScope, null, TypesPackage.eINSTANCE.parameter, false);
 			}
 			return ModelUtils.getAccessorParameters(container.reference)
 				.transform[parameters | Scopes.scopeFor(parameters)]
