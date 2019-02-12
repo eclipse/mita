@@ -16,7 +16,7 @@ As an IoT developer Mita is most useful to you if it comes integrated in a devic
 More information about the language itself can be found in our [documentation](https://www.eclipse.org/mita/).
 
 ### Getting started as a device vendor/platform integrator
-For Mita to run on a platform/device there is some integration work necessary. Have a look at our platform integrators guide for more details on how to enable Mita for your platform.
+For Mita to run on a platform/device there is some integration work necessary. Have a look at our [platform integrators guide](website/site/content/platforms/integratorsGuide.md) for more details on how to enable Mita for your platform.
 
 ## Developer Resources
 * [Contributing](contributing.md): Learn how to report bugs, setup your workspace and submit your changes.
