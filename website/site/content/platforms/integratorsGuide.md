@@ -35,6 +35,7 @@ System resources can be marked as non-instantiable, singletons (instantiable onc
 If your system resource describes hardware available on the device, e.g. a sensor, this system resource can not be [instantiated](#instantiability) or only once (see below for more details).
 
 System resources contain different things:
+
 - `generator` and `validator` are strings specifying the fully qualified Java class names of your generators and validators.
 - `sizeInferrer` specifies the fully qualified Java class name of an inferer that computes the size of things specified by your platform. You don't need to worry about this unless you build advanced signals or modalities though.
 - `configuration-item`s are things a user can configure once per setup. They can be used to specify sensor ranges, WLAN credentials or backend URLs. You can also use them to express dependencies between resources: for example the XDK's MQTT resource requires a WLAN resource to be set up. You can mark configuration items as `required`.

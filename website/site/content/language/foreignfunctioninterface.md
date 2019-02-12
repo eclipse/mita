@@ -93,7 +93,7 @@ Retcode_T foobarWithRef(int32_t* result, int32_t* ref);
 Retcode_T foobarVoid(void* result, int32_t* ref);
 ```
 
-The `Retcode_T` and `BCDS_*` includes are specific to the [XDK110 platform]({{< ref "platforms/xdk110.md" >}}).
+The `Retcode_T` and `BCDS_*` includes are specific to the [XDK110 platform]({{< ref "/platforms/xdk110.md" >}}).
 Other platforms will use a different type to express error codes.
 
 ## Custom C file include
