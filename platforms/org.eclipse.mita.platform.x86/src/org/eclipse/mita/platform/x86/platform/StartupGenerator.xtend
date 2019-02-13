@@ -31,6 +31,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 	
 	override generateMain(CompilationContext context) {
 		return codeFragmentProvider.create('''
+			disableConsoleEcho();
 			Mita_initialize();
 			Mita_goLive();
 			while(1) {
@@ -54,6 +55,21 @@ class StartupGenerator implements IPlatformStartupGenerator {
 				sleepMs(5);
 			}
 			return 0;
+		''')
+		.setPreamble('''
+		#ifdef __linux__
+		//TODO
+		#endif
+		#ifdef _WIN32
+		#include <windows.h>
+		void disableConsoleEcho(void) {
+			// https://stackoverflow.com/questions/9217908/how-to-disable-echo-in-windows-console
+			HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); 
+		    DWORD mode = 0;
+		    GetConsoleMode(hStdin, &mode);
+		    SetConsoleMode(hStdin, mode & (~ENABLE_ECHO_INPUT));
+		}
+		#endif
 		''')
 		.addHeader('time.h', true)
 		.addHeader('stdio.h', true)

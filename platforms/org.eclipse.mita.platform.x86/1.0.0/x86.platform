@@ -1,8 +1,17 @@
 package platforms.x86;
 
+sensor MovementKeys {
+	generator "org.eclipse.mita.platform.x86.sensors.MovementKeysGenerator"
 
+	modality UP: bool
+	modality DOWN: bool
+	modality LEFT: bool
+	modality RIGHT: bool
+}
 
 platform x86 {
 	module "org.eclipse.mita.platform.x86.platform.X86PlatformGeneratorModule"
 	event startup
+	
+	has MovementKeys
 }
