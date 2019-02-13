@@ -52,15 +52,14 @@ function structTest() : void {
 	
 	// We error on wrong number of arguments
 	/* XPECT errors ---
-		"'prim»i»1' of type xint8 can not be assigned to parameter 'foo' of type bool." at "1"
-		"Function Foo cannot be used here: arguments don't fit (__args(A) != __args(uint32, bool))" at "Foo(foo=1)"
-		"Incompatible types: bool is not subtype of A." at "Foo"
-		"__args(bool) and __args(uint32, bool) differ in the number of type arguments" at "Foo"
+		"Function Foo cannot be used here" at "Foo"
+		"Too few arguments" at "Foo"
+		"prim»i»1 (:: xint8) not compatible with foo (:: bool)" at "foo=1"
 	--- */
 	inst = Foo(foo=1);
 	/* XPECT errors ---
-		"Function Foo cannot be used here: arguments don't fit (__args(A) != __args(uint32, bool))" at "Foo(bar=1)"
-		"__args(uint32) and __args(uint32, bool) differ in the number of type arguments" at "Foo"
+		"Function Foo cannot be used here" at "Foo"
+		"Too few arguments" at "Foo"
 	--- */
 	inst = Foo(bar=1);
 	/* XPECT errors ---

@@ -168,8 +168,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
-	
-	
+		
 	def featureOrNull(EStructuralFeature ref, EObject object) {
 		if(object === null || ref === null || object.eClass.getEStructuralFeature(ref.getName()) !== ref) {
 			return null;

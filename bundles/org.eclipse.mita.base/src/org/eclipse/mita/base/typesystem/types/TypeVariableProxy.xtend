@@ -77,7 +77,7 @@ class TypeVariableProxy extends TypeVariable {
 			switch ambiguityResolutionStrategy {
 				case UseFirst: candidates.head
 				case UseLast: candidates.last
-				case MakeNew: system.newTypeVariable(null)
+				case MakeNew: system.newTypeVariable(this.origin)
 			}
 		}
 	}

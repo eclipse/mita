@@ -214,7 +214,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val feature = ExpressionsPackage.eINSTANCE.argument_Parameter;
 		val paramName = BaseUtils.getText(arg, feature);
 		val paramType = if(!paramName.nullOrEmpty) {
-			system.resolveReferenceToSingleAndGetType(arg, feature) as AbstractType;
+			val tvp = system.resolveReferenceToSingleAndGetType(arg, feature) as AbstractType;
+			if(tvp instanceof TypeVariableProxy) {
+				tvp.ambiguityResolutionStrategy = AmbiguityResolutionStrategy.MakeNew;
+			}
+			tvp;
 		}
 
 		val valueType = system.computeConstraints(arg.value);
@@ -228,7 +232,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument arg) {
 		val ptype_etype = computeTypesInArgument(system, arg);
-		return system.associate(ptype_etype.key ?: ptype_etype.value, arg);
+		val tvs = #[ptype_etype.key, ptype_etype.value]
+			.filterNull
+			.map[system.associate(ptype_etype.key ?: ptype_etype.value, arg)]
+			.force;
+		return tvs.head;
 	}
 	
 	@FinalFieldsConstructor
@@ -281,8 +289,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 				}
 			].force
 			
-			// if size <= 1 then nothing's unordered so we can skip this
-			val argType = if(argumentParamsAndValues.size > 1 && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
+			val requiredArgCountForUnordered = if(varOrFun instanceof FeatureCall && !(varOrFun instanceof FeatureCallWithoutFeature)) {
+				2
+			} else {
+				1
+			}
+			
+			val argType = if(argumentParamsAndValues.size >= requiredArgCountForUnordered && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
 				val List<UnorderedArgsInformation> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
 					val arg = it.value.key;
 					val aValue = it.value.value;

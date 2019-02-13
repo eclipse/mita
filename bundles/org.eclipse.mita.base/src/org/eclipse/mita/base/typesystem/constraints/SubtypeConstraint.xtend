@@ -35,7 +35,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		if(subType === null || superType === null) {
 			throw new NullPointerException;
 		}
-		if(this.toString == "__args(f_294.0, xint8) ⩽ f_300.0") {
+		if(this.toString == "__args(f_114) ⩽ f_115") {
 			print("")
 		}
 	}

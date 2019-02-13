@@ -47,7 +47,7 @@ class Substitution {
 	}
 	
 	def void add(Map<TypeVariable, AbstractType> content) {
-		if(true && content.entrySet.exists[it.key.toString == "f_299.0"]) {
+		if(true && content.entrySet.exists[it.key.toString == "f_13"]) {
 			print("")
 		}
 		val newContent = new Substitution();

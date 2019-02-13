@@ -33,6 +33,7 @@ import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.base.validation.BaseResourceValidator
 import org.eclipse.mita.platform.infra.PlatformLinker
 import org.eclipse.mita.platform.scoping.PlatformDslImportScopeProvider
 import org.eclipse.mita.platform.scoping.PlatformDslResourceDescriptionStrategy
@@ -42,6 +43,7 @@ import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
+import org.eclipse.xtext.validation.IResourceValidator
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 
@@ -51,6 +53,7 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(IDefaultResourceDescriptionStrategy).to(PlatformDslResourceDescriptionStrategy)
 		binder.bind(DefaultRuntimeModule).annotatedWith(Names.named("injectingModule")).toInstance(this)
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
+		binder.bind(IResourceValidator).to(BaseResourceValidator);
 	
 		binder.bind(IConstraintFactory).to(PlatformConstraintFactory);
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);

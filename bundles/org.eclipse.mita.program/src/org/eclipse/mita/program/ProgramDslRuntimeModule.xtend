@@ -55,6 +55,8 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
+import org.eclipse.xtext.validation.IResourceValidator
+import org.eclipse.mita.base.validation.BaseResourceValidator
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -66,6 +68,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(DefaultRuntimeModule).annotatedWith(Names.named("injectingModule")).toInstance(this)
 		binder.bind(GeneratorNodeProcessor).to(ProgramDslGeneratorNodeProcessor);
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
+		binder.bind(IResourceValidator).to(BaseResourceValidator);
 		
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
@@ -74,7 +77,6 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(ProgramLinker);
 	}
-
 	override configureIScopeProviderDelegate(Binder binder) {
 		binder.bind(IScopeProvider).annotatedWith(Names.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE)).to(
 			ProgramDslImportScopeProvider);

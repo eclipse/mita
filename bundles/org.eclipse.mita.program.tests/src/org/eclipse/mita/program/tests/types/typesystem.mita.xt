@@ -89,6 +89,7 @@ every 100 milliseconds {
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
 	/* XPECT errors ---
+		"Cannot determine size of element: Unable to infer size from nothing" at "a"
 		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
 	--- */
 	let a: modality<uint32> = MySensor.modality01; 
