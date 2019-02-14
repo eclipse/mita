@@ -38,7 +38,9 @@ fn id(x: int32): int32 {
 	return x;  
 }      
 //XPECT inferredType --> __args(string) → string
-//XPECT errors --> "Could not infer the size of the function's return." at "id"
+/*XPECT errors ---
+"Could not infer the size of the function's return." at "id"
+--- */
 fn id(x: string): string {
 	return x;
 }   
@@ -49,7 +51,9 @@ fn id2(x: int32, y: int8): int32 {
 }      
   
 //XPECT inferredType --> __args(string, int8) → string
-//XPECT errors --> "Could not infer the size of the function's return." at "id2"
+/*XPECT errors ---
+"Could not infer the size of the function's return." at "id2"
+--- */
 fn id2(x: string, y: int8): string {
 	return x;
 }
@@ -68,10 +72,10 @@ every 100 milliseconds {
 	let d = c.x(); 
 	let e = "asdf";     
 	let f = 8;
-	// XPECT errors --> "Cannot determine size of element: Unable to infer size from nothing" at "g"
+	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "id(e)"
 	let g: string = id(e);          
 	let h = id(f); 
-	// XPECT errors --> "Cannot determine size of element: Unable to infer size from nothing" at "h2"
+	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "id2(y=0, x=e)"
 	let h2 = id2(y=0, x=e);
 	let h3 = id2(y=0, x=f);    
 	let m = C_Magnetometer_read();
@@ -89,7 +93,7 @@ every 100 milliseconds {
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
 	/* XPECT errors ---
-		"Cannot determine size of element: Unable to infer size from nothing" at "a"
+		"Cannot determine size of element: Unable to infer size from type __args(∗MySensor) → modality<uint32>" at "MySensor.modality01"
 		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
 	--- */
 	let a: modality<uint32> = MySensor.modality01; 

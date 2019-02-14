@@ -125,40 +125,40 @@ fn incVecs(a: anyVec) {
         	b = anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2);
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type f_877.0" at "x"
-            "Cannot determine size of element: Unable to infer size from type f_878.0" at "y"
-            "Wrong number of deconstructors, expected 1." at "is(anyVec.vec1d -> x, y) { 		}"
-            "vec1d(int32) and vec1d(A, B) don't fit together" at "is(anyVec.vec1d -> x, y) { 		}"
+            "Cannot determine size of element: Unable to infer size from type A" at "x"
+            "Cannot determine size of element: Unable to infer size from type A" at "y"
+            "Wrong number of deconstructors, expected 1." at "is(anyVec.vec1d -> x, y) {  		}"
+            "vec1d(int32) and vec1d(A, B) don't fit together" at "is(anyVec.vec1d -> x, y) {  		}"
         --- */
         is(anyVec.vec1d -> x, y) {
 		}
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type f_880.0" at "x"
-            "Cannot determine size of element: Unable to infer size from type f_881.0" at "y"
-            "Cannot determine size of element: Unable to infer size from type f_882.0" at "z"
-            "Wrong number of deconstructors, expected 1." at "is(anyVec.vec2d -> x, y, z) {         }"
-            "vec2d(vec2d_t(int32, int32)) and vec2d(A, B, C) don't fit together" at "is(anyVec.vec2d -> x, y, z) {         }"
+            "Cannot determine size of element: Unable to infer size from type A" at "x"
+            "Cannot determine size of element: Unable to infer size from type A" at "y"
+            "Cannot determine size of element: Unable to infer size from type A" at "z"
+            "Wrong number of deconstructors, expected 1." at "is(anyVec.vec2d -> x, y, z) {          }"
+            "vec2d(vec2d_t(int32, int32)) and vec2d(A, B, C) don't fit together" at "is(anyVec.vec2d -> x, y, z) {          }"
         --- */
         is(anyVec.vec2d -> x, y, z) {
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type f_884.0" at "x"
-            "Cannot determine size of element: Unable to infer size from type f_885.0" at "y"
-            "Cannot determine size of element: Unable to infer size from type f_886.0" at "z"
-            "Cannot determine size of element: Unable to infer size from type f_887.0" at "w"
-            "Wrong number of deconstructors, expected 3." at "is(anyVec.vec3d -> x, y, z, w) {         }"
-            "vec3d(int32, int32, int32) and vec3d(A, B, C, D) don't fit together" at "is(anyVec.vec3d -> x, y, z, w) {         }"
+            "Cannot determine size of element: Unable to infer size from type A" at "w"
+            "Cannot determine size of element: Unable to infer size from type A" at "x"
+            "Cannot determine size of element: Unable to infer size from type A" at "y"
+            "Cannot determine size of element: Unable to infer size from type A" at "z"
+            "Wrong number of deconstructors, expected 3." at "is(anyVec.vec3d -> x, y, z, w) {          }"
+            "vec3d(int32, int32, int32) and vec3d(A, B, C, D) don't fit together" at "is(anyVec.vec3d -> x, y, z, w) {          }"
         --- */
         is(anyVec.vec3d -> x, y, z, w) {
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type f_889.0" at "x"
-            "Cannot determine size of element: Unable to infer size from type f_890.0" at "y"
-            "Cannot determine size of element: Unable to infer size from type f_891.0" at "z"
-            "Cannot determine size of element: Unable to infer size from type f_892.0" at "w"
-            "Cannot determine size of element: Unable to infer size from type f_893.0" at "v"
-            "Wrong number of deconstructors, expected 4." at "is(anyVec.vec4d -> x, y, z, w, v) {         }"
-            "vec4d(int32, int32, int32, int32) and vec4d(A, B, C, D, E) don't fit together" at "is(anyVec.vec4d -> x, y, z, w, v) {         }"
+            "Cannot determine size of element: Unable to infer size from type A" at "v"
+            "Cannot determine size of element: Unable to infer size from type A" at "w"
+            "Cannot determine size of element: Unable to infer size from type A" at "x"
+            "Cannot determine size of element: Unable to infer size from type A" at "y"
+            "Cannot determine size of element: Unable to infer size from type A" at "z"
+            "Wrong number of deconstructors, expected 4." at "is(anyVec.vec4d -> x, y, z, w, v) {          }"
+            "vec4d(int32, int32, int32, int32) and vec4d(A, B, C, D, E) don't fit together" at "is(anyVec.vec4d -> x, y, z, w, v) {          }"
         --- */
         is(anyVec.vec4d -> x, y, z, w, v) {
         }
@@ -169,10 +169,10 @@ fn incVecs(a: anyVec) {
     	is(x: anyVec.vec0d) {
     	}
     	/* XPECT errors ---
-    	    "Can't deconstruct singletons" at "is(anyVec.vec0d -> x) {     	}"
-    	    "Cannot determine size of element: Unable to infer size from type f_901.0" at "x"
-    	    "Wrong number of deconstructors, expected 0." at "is(anyVec.vec0d -> x) {     	}"
-    	    "vec0d() and vec0d(A) don't fit together" at "is(anyVec.vec0d -> x) {     	}"
+    	    "Can't deconstruct singletons" at "is(anyVec.vec0d -> x) {      	}"
+    	    "Cannot determine size of element: Unable to infer size from type A" at "x"
+    	    "Wrong number of deconstructors, expected 0." at "is(anyVec.vec0d -> x) {      	}"
+    	    "vec0d() and vec0d(A) don't fit together" at "is(anyVec.vec0d -> x) {      	}"
     	--- */
     	is(anyVec.vec0d -> x) {
     	}
@@ -183,7 +183,7 @@ fn incVecs(a: anyVec) {
     	is(anyVec.vec3d -> x, y = vec3d.y, z) {
     	}
     	/* XPECT errors ---
-    	    "Cannot determine size of element: Unable to infer size from type f_914.0" at "y"
+    	    "Cannot determine size of element: Unable to infer size from type A" at "y"
     	    "let y( vec2d.y) (:: A) not compatible with vec2d.y (:: int32)" at "y = vec2d.y"
     	--- */
     	is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {

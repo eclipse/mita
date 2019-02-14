@@ -287,15 +287,18 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			if(invalidElement.typeOf instanceof PresentTypeSpecifier && (invalidElement.typeOf as PresentTypeSpecifier).type.name == "array") {
 			}
 			else {
-				var invalidObj = if(invalidElement.root?.eResource == variable.eResource) {
+				val invalidObj = if(invalidElement.root?.eResource == variable.eResource) {
 					invalidElement.root
 				} else {
 					variable
 				}
 				
+				val invalidRef = if(invalidObj instanceof VariableDeclaration) {
+					TypesPackage.eINSTANCE.namedElement_Name
+				}
+				
 				error('Cannot determine size of element: ' + (invalidElement as InvalidElementSizeInferenceResult).message,
-					invalidObj,
-					invalidObj?.eClass?.EAllAttributes?.head)		
+					invalidObj, invalidRef)		
 			}
 		}
 	].apply()}

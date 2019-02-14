@@ -13,6 +13,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.base.util.BaseUtils
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 
 @EqualsHashCode
 @Accessors
@@ -69,8 +70,9 @@ class TypeVariableProxy extends TypeVariable {
 	}
 	
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
+		//assertion based on control flow in ConstraintSystem.replaceProxies: this.origin.eIsProxy === false
 		val candidates = resolve.apply(this);
-		return if(candidates.size === 1) {
+		val resultType = if(candidates.size === 1) {
 			candidates.head;
 		}
 		else {
@@ -80,6 +82,18 @@ class TypeVariableProxy extends TypeVariable {
 				case MakeNew: system.newTypeVariable(this.origin)
 			}
 		}
+		
+		if(this.origin.eClass.EReferences.contains(reference)) {			
+			val currentEntry = this.origin.eGet(reference, false).castOrNull(EObject);
+		 	if((currentEntry === null || currentEntry.eIsProxy) && resultType.origin !== null && resultType.origin !== this.origin) {
+		 		val finalOrigin = this.origin;
+				BaseUtils.ignoreChange(this.origin.eResource, [ 
+					finalOrigin.eSet(reference, resultType.origin);
+				]);
+			}
+		}
+		
+		return resultType;
 	}
 	
 	override map((AbstractType)=>AbstractType f) {

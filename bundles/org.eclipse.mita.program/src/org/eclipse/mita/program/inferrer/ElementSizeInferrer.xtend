@@ -46,6 +46,7 @@ import org.eclipse.xtext.EcoreUtil2
 import static org.eclipse.mita.base.types.TypesUtil.*
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import org.eclipse.mita.base.util.PreventRecursion
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 /**
  * Hierarchically infers the size of a data element.
@@ -147,7 +148,8 @@ class ElementSizeInferrer {
 		if (inferredSize instanceof ValidElementSizeInferenceResult) {
 			return inferredSize;
 		}
-		return obj.reference.infer;
+		val result = obj.reference.infer;
+		return result.replaceRoot(obj);
 	}
 
 	protected def dispatch ElementSizeInferenceResult doInfer(ReturnStatement obj, AbstractType type) {
@@ -262,15 +264,16 @@ class ElementSizeInferrer {
 				[|
 					return finalInferrer.infer(obj);
 				], [|
-					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type»".''')
+					val renamer = new NicerTypeVariableNamesForErrorMessages();
+					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type.modifyNames(renamer)»".''')
 				])
 			}
 		}
-		return newInvalidResult(obj, "Unable to infer size from type " + type.toString);
+		val renamer = new NicerTypeVariableNamesForErrorMessages;
+		return newInvalidResult(obj, "Unable to infer size from type " + type.modifyNames(renamer));
 	}
 	
 	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject context, Void type) {
-		// if type is null we have different problems than size inference
 		return newInvalidResult(context, '''Unable to infer size from nothing''')
 	}
 	
@@ -295,7 +298,8 @@ class ElementSizeInferrer {
 			val result = if(childs.filter(InvalidElementSizeInferenceResult).empty) {
 				 new ValidElementSizeInferenceResult(context, type, 1);
 			} else {
-				new InvalidElementSizeInferenceResult(context, type, '''Cannot infer size of ""«context.class.simpleName»" of type"«type»".''');
+				val renamer = new NicerTypeVariableNamesForErrorMessages();
+				new InvalidElementSizeInferenceResult(context, type, '''Cannot infer size of ""«context.class.simpleName»" of type"«type.modifyNames(renamer)»".''');
 			}
 							
 			result.children += childs;
@@ -348,6 +352,8 @@ abstract class ElementSizeInferenceResult {
 		this.typeOf = typeOf;
 		this.children = new LinkedList<ElementSizeInferenceResult>();
 	}
+	
+	abstract def ElementSizeInferenceResult replaceRoot(EObject root);
 	
 	/**
 	 * Checks if this size inference and its children are valid/complete.
@@ -442,6 +448,12 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 		return this;
 	}
 	
+	override replaceRoot(EObject root) {
+		val result = new ValidElementSizeInferenceResult(root, this.typeOf, this.elementCount);
+		result.children += children;
+		return result;
+	}
+	
 }
 
 class InvalidElementSizeInferenceResult extends ElementSizeInferenceResult {
@@ -474,6 +486,12 @@ class InvalidElementSizeInferenceResult extends ElementSizeInferenceResult {
 			esir = new InvalidElementSizeInferenceResult(esir.root, esir.typeOf, message + "\n" + esir.message);
 		}
 		return esir;
+	}
+	
+	override replaceRoot(EObject root) {
+		val result = new InvalidElementSizeInferenceResult(root, this.typeOf, this.message);
+		result.children += children;
+		return result;
 	}
 	
 }

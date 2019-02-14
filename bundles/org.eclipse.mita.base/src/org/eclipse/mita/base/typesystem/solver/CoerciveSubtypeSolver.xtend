@@ -414,7 +414,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 						}
 						sortedArgs.map[
 							val paramName = it.key;
-							val uoaType = refType.argParamNamesAndValueTypes.findFirst[pv | pv.key == paramName].value
+							val uoaType = refType.argParamNamesAndValueTypes.findFirst[pv | pv.key == paramName]?.value
 							val assignedType = it.value;
 							if(uoaType === null || assignedType === null) {
 								null

@@ -398,24 +398,15 @@ class ConstraintSystem {
 			scope.getElements(tvp.targetQID).force;
 			return #[new BottomType(origin, '''Couldn't resolve reference to «tvp.reference.EReferenceType.name» '«tvp.targetQID»'.''', tvp.reference)];
 		}
-		
-		
-		if(origin.eClass.EReferences.contains(tvp.reference)) {			
-			val currentEntry = origin.eGet(tvp.reference, false).castOrNull(EObject);
-		 	if((currentEntry === null || currentEntry.eIsProxy) && replacementObjects.size == 1) {
-		 		val finalOrigin = origin;
-				BaseUtils.ignoreChange(origin.eResource, [ 
-					finalOrigin.eSet(tvp.reference, replacementObjects.head);
-				]);
-			}
-		}
-		
+				
 		return replacementObjects.map[
 			val uri = EcoreUtil.getURI(it);
 			if(!symbolTable.containsKey(uri)) {
 				println('''introducing «uri»!''');
 			}
-			this.getTypeVariable(it) as AbstractType;
+			// explicitly set the origin to the resolved object, since the symbol table only contains proxies!
+			val tvName = this.getTypeVariable(it).name;
+			return new TypeVariable(it, tvName) as AbstractType;
 		].force;
 	}
 	

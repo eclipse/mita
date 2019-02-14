@@ -116,9 +116,8 @@ setup alt6_bad : MyConnectivity {
 } 
 setup alt7_bad : MyConnectivity { 
 	/*XPECT errors ---
-		"Function SomethingNamed cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool))" at ".SomethingNamed(x = 20)"
-		"Incompatible types: int32 is not subtype of A." at "SomethingNamed"
-		"__args(h_240.0, int32) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool) differ in the number of type arguments" at "SomethingNamed"
+		"Function SomethingNamed cannot be used here" at "SomethingNamed"
+		"Too few arguments" at "SomethingNamed"
 	--- */
 	cfg05 = .SomethingNamed(x = 20);
 } 
@@ -143,7 +142,11 @@ setup alt10_bad : MyConnectivity {
 	cfg05 = .SomeStruct(ConfigStruct(10, 20));
 }
 setup alt12_bad : MyConnectivity { 
-	//XPECT errors --> "'prim»b»true' of type bool can not be assigned to parameter 'config' of type int32." at "true"
+	/*XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "ConfigStruct"
+		"bool is not a subtype of int32" at "ConfigStruct"
+		"prim»b»true (:: bool) not compatible with config (:: int32)" at "config = true"
+	--- */
 	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = true))"
 	cfg05 = .SomeStruct(ConfigStruct(config = true));
 }
@@ -247,7 +250,11 @@ setup alt11_bad : MyConnectivity {
 	cfg05 = .SomeStruct(ConfigStruct("asdf"));
 }
 setup alt12_bad : MyConnectivity { 
-	//XPECT errors --> "'prim»b»true' of type bool can not be assigned to parameter 'config' of type int32." at "true"
+	/*XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "ConfigStruct"
+		"bool is not a subtype of int32" at "ConfigStruct"
+		"prim»b»true (:: bool) not compatible with config (:: int32)" at "config = true"
+	--- */
 	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = true))"
 	cfg05 = .SomeStruct(ConfigStruct(config = true));
 }
@@ -255,16 +262,7 @@ setup alt12_bad : MyConnectivity {
 // VCI can have optional parameters
 setup bluetoothB : MyConnectivity {
 	// We do not expect an error as p02 is optional
-	/* Actually we do expect one:
-	 * in line ~201 we wrote vci02("string"). 
-	 * This created the constraint:
-	 * typeof(p01) >= string
-	 * therefore we get ancestors of typeof(p01): [string, int32, xint8]
-	 * line 201, definition, and this call site
-	 * since the type checker doesn't know which of these is bad it errors all three locations. 
-	 */ 
 	// XPECT vciParameters --> p01=0 p02=42
-	// XPECT errors --> "Incompatible types: uint32 is not subtype of A." at "vci02"
 	var vciv0 = vci02(p01 = 0);
 	
 	// We can explicitly set p02
@@ -272,9 +270,8 @@ setup bluetoothB : MyConnectivity {
 	var vciv1 = vci02(p01 = 0, p02 = 0);
 	
 	/* XPECT errors ---
-		"Incompatible signedness between uint32 and int32" at "vci02"
-		"Incompatible types: int32 is not subtype of A." at "vci02"
-		"__args isn't structurally a subtype of __args" at "vci02"
+		"Function vci02 cannot be used here" at "vci02"
+		"Too few arguments" at "vci02"
 	--- */
 	var vciv2 = vci02(p02 = 0);
 	

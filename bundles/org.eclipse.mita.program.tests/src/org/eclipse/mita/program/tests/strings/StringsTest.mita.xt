@@ -65,7 +65,7 @@ function stringTestFail() : void {
 // XPECT inferredStringLength --> INVALID:Cannot infer string length in loops@ {}
 	var foo = "hello world";
 	for(var i: uint16 = 0; i < someExternalFunction(); i=i++) { //TODO: Increment Operator i++
-		// XPECT errors --> "Cannot determine size of element: Cannot infer string length in loops" at "+="
+		// XPECT errors --> "Cannot determine size of element: Cannot infer string length in loops" at "foo += "hello""
 		foo += "hello"; // compiler error: Cannot determine the length of foo. Please set the length explicitly.
 	}
 }
