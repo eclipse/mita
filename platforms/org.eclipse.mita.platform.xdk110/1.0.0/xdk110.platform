@@ -711,8 +711,8 @@ connectivity named-singleton LoRa {
 	required configuration-item loraAppEui: array<uint8>
 	configuration-item loraDeviceEui: array<uint8>
 	
-	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Confirmed): array<uint8>
-	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Confirmed): array<CayennePayload>
+	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8>
+	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload>
 }
 
 /**

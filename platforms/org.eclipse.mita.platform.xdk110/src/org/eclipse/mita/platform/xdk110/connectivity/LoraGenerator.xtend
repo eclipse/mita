@@ -101,6 +101,28 @@ class LoraGenerator extends AbstractSystemResourceGenerator {
 			        Retcode_RaiseError(retcode);
 			    }
 			}
+			«IF setup.signalInstances.exists[it.instanceOf.name == "cayenne"]»
+			// required data structures for cayenne
+			// translation CayennePayload_enum -> cayenne used buffer size in bytes
+			static const uint8_t payloadSizes[] = {
+				3, 3, 4, 4, 4, 3, 4, 3, 8, 4, 8, 11
+			};
+			// translation CayennePayload_enum -> CayenneLPPSerializer_DataType_T
+			static const CayenneLPPSerializer_DataType_T cayenneDataTypes[] = {
+				CAYENNE_LLP_SERIALIZER_DIGITAL_INPUT,
+				CAYENNE_LLP_SERIALIZER_DIGITAL_OUTPUT,
+				CAYENNE_LLP_SERIALIZER_ANALOG_INPUT,
+				CAYENNE_LLP_SERIALIZER_ANALOG_OUTPUT,
+				CAYENNE_LLP_SERIALIZER_ILLUMINANCE_SENSOR,
+				CAYENNE_LLP_SERIALIZER_PRESENCE_SENSOR,
+				CAYENNE_LLP_SERIALIZER_TEMPERATURE_SENSOR,
+				CAYENNE_LLP_SERIALIZER_HUMIDITY_SENSOR,
+				CAYENNE_LLP_SERIALIZER_ACCELEROMETER,
+				CAYENNE_LLP_SERIALIZER_BAROMETER,
+				CAYENNE_LLP_SERIALIZER_GYROMETER,
+				CAYENNE_LLP_SERIALIZER_GPS_LOCATION
+			};
+			«ENDIF»
 			'''
 		)
 		.addHeader("FreeRTOS.h", true, IncludePath.HIGH_PRIORITY)
@@ -343,34 +365,12 @@ class LoraGenerator extends AbstractSystemResourceGenerator {
 						 		break;
 						 }
 						 exception = CayenneLPPSerializer_SingleInstance(&cayenneLPPSerializerInput, &cayenneLPPSerializerOutput);
-						 «generateLoggingExceptionHandler("Cayenne", "conversion")»
 						 cayenneLPPSerializerOutput.BufferPointer += cayenneLPPSerializerOutput.BufferFilledLength;
 					}
 					return «sendName»(«portNum.code», dataBuffer, bufferSize);
 				''')
 				.addHeader("xdk110Types.h", false)
 				.addHeader("XDK_CayenneLPPSerializer.h", true)
-				.setPreamble('''
-				// translation CayennePayload_enum -> cayenne used buffer size in bytes
-				static const uint8_t payloadSizes[] = {
-					3, 3, 4, 4, 4, 3, 4, 3, 8, 4, 8, 11
-				};
-				// translation CayennePayload_enum -> CayenneLPPSerializer_DataType_T
-				static const CayenneLPPSerializer_DataType_T cayenneDataTypes[] = {
-					CAYENNE_LLP_SERIALIZER_DIGITAL_INPUT,
-					CAYENNE_LLP_SERIALIZER_DIGITAL_OUTPUT,
-					CAYENNE_LLP_SERIALIZER_ANALOG_INPUT,
-					CAYENNE_LLP_SERIALIZER_ANALOG_OUTPUT,
-					CAYENNE_LLP_SERIALIZER_ILLUMINANCE_SENSOR,
-					CAYENNE_LLP_SERIALIZER_PRESENCE_SENSOR,
-					CAYENNE_LLP_SERIALIZER_TEMPERATURE_SENSOR,
-					CAYENNE_LLP_SERIALIZER_HUMIDITY_SENSOR,
-					CAYENNE_LLP_SERIALIZER_ACCELEROMETER,
-					CAYENNE_LLP_SERIALIZER_BAROMETER,
-					CAYENNE_LLP_SERIALIZER_GYROMETER,
-					CAYENNE_LLP_SERIALIZER_GPS_LOCATION
-				};
-				''')
 			}
 		}
 		
