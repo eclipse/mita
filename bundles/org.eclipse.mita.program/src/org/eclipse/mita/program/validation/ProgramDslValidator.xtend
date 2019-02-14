@@ -598,7 +598,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		
 		val hasGeneratedTypeNextFinal = hasGeneratedTypeNext;
 		val containsReferenceTypesNextFinal = containsReferenceTypesNext;	
-		subTypes.forEach[
+		subTypes.filterNull.forEach[
 			ModelUtils.preventRecursion(it.type, [| 
 				checkTypesAreNotNestedGeneratedTypes(obj, it, hasGeneratedTypeNextFinal, containsReferenceTypesNextFinal);
 				return null;
