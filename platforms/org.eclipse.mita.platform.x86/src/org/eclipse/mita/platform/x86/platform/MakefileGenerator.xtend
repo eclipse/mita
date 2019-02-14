@@ -28,7 +28,7 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 		export CC=gcc
 		export CCFLAGS=-Wall -std=c99 -D_POSIX_C_SOURCE=199309L -D_DEFAULT_SOURCE
 		export BUILDDIR=./build
-		export SOURCE_INCLUDES = -I. -I./base
+		export SOURCE_INCLUDES = -I. -I./base -I..
 		export SOURCE_DIR=.
 		export SOURCE_FILES = \
 			«sourceFiles.filter[x | x.endsWith('.c') ].map[x | '''$(SOURCE_DIR)/«x»'''].join(' \\\n')»
