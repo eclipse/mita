@@ -11,18 +11,21 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.infra.CoercionAdapter
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
-import org.eclipse.mita.program.generator.internal.ProgramCopier
-import org.eclipse.mita.base.typesystem.infra.CoercionAdapter
 import org.eclipse.mita.base.types.TypesUtil
 
 class CoerceTypesStage extends AbstractTransformationStage {
@@ -31,6 +34,8 @@ class CoerceTypesStage extends AbstractTransformationStage {
 	@Inject GeneratorUtils generatorUtils
 	@Inject IScopeProvider scopeProvider
 	@Inject ProgramCopier copier
+	@Inject MostGenericUnifierComputer mguComputer
+	@Inject SubtypeChecker subtypeChecker
 	
 	override getOrder() {
 		return ORDER_VERY_EARLY;
@@ -54,22 +59,31 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		cs = cs.replaceProxies(program.eResource, scopeProvider);
 		val constraints = cs?.constraints?.filter(SubtypeConstraint);
 		
+		val constraintSystem = TypesUtil.getConstraintSystem(program.origin.eResource);
 		
 		constraints?.forEach[c |
 			var sub = c.subType.origin.origin;
 			var top = c.superType.origin.origin;
 			// don't convert twice
 			if(sub !== null && top !== null && sub.eContainer === top && !sub.explicitlyConvertAll) {
-				doTransform(sub);
+				doTransform(constraintSystem, sub);
 			}
 		]
 		
-		program.eAllContents.filter[explicitlyConvertAll].forEach[it.doTransform];
+		program.eAllContents.filter[explicitlyConvertAll].forEach[doTransform(constraintSystem, it)];
 		
 		return program;
 	}
-		
-	dispatch def doTransform(Argument a) {
+
+	def typesNeedCoercion(ConstraintSystem c, EObject context, AbstractType sub, AbstractType top) {
+		// if MGU is valid then the types are the same up to type vars anyway and we shouldn't coerce
+		// if sub </= top then we can't coerce
+		return sub !== null && top !== null 
+			&& !mguComputer.compute(null, sub, top).valid 
+			&& subtypeChecker.isSubType(c, context.origin, sub, top);
+	}
+
+	dispatch def doTransform(ConstraintSystem c, Argument a) {
 		val functionCall = a.eContainer;
 		if(functionCall instanceof ElementReferenceExpression) {
 			val function = functionCall.reference;
@@ -85,7 +99,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 				val pType = BaseUtils.getType(parameter.getOrigin);
 				val eType = BaseUtils.getType(a.getOrigin);
 				
-				if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
+				if(typesNeedCoercion(c, a, eType, pType)) {
 					val coercion = TypesFactory.eINSTANCE.createCoercionExpression;
 					if(pType === null) {
 						return;
@@ -100,16 +114,16 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		}
 	}
 	
-	dispatch def doTransform(Expression e) {
+	dispatch def doTransform(ConstraintSystem c, Expression e) {
 		var exp = e;
-		var eType = BaseUtils.getType(exp.getOrigin);
 		var parent = exp.eContainer;
+		var eType = BaseUtils.getType(exp.getOrigin);
 		val pType = BaseUtils.getType(parent.getOrigin);
 		if(parent instanceof PostFixUnaryExpression) {
 			exp = parent;
 			parent = parent.eContainer;
 		}
-		if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
+		if(typesNeedCoercion(c, e, eType, pType)) {
 			val coercion = TypesFactory.eINSTANCE.createCoercionExpression;
 			if(pType === null) {
 				return;
@@ -127,12 +141,12 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		}
 	}
 	
-	dispatch def doTransform(ReturnStatement stmt) {
+	dispatch def doTransform(ConstraintSystem c, ReturnStatement stmt) {
 		val expr = stmt.value;
-		val eType = BaseUtils.getType(expr.getOrigin);
 		val parent = EcoreUtil2.getContainerOfType(stmt, Operation);
+		val eType = BaseUtils.getType(expr.getOrigin);
 		val pType = BaseUtils.getType(parent.typeSpecifier.getOrigin);
-		if(!(eType instanceof TypeVariable) && !(pType instanceof TypeVariable) && eType != pType) {
+		if(typesNeedCoercion(c, stmt, eType, pType)) {
 			val coercion = TypesFactory.eINSTANCE.createCoercionExpression; 
 			expr.replaceWith(coercion)
 			coercion.value = expr;

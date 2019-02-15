@@ -156,6 +156,6 @@ function testVariables() : void {
 struct Name { var x : Name; }
 
 function useRecursiveTypeDef() {
-	// XPECT errors --> "Cannot determine size of element: Unable to infer size from type f_3.0" at "myStruct"
+	// XPECT errors --> "Cannot determine size of element: Unable to infer size from type A" at "myStruct"
     var myStruct : Name;
 }

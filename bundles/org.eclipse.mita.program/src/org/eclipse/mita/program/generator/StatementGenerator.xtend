@@ -121,6 +121,7 @@ import static org.eclipse.mita.program.model.ModelUtils.*
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 
 class StatementGenerator {
 
@@ -262,7 +263,7 @@ class StatementGenerator {
 		}
 		
 		val checks = new LinkedList<CodeFragment>();
-		val arraySelector = accessStatement.arraySelector; 
+		val arraySelector = accessStatement.arraySelector.ignoreCoercions; 
 		val arrayLength = '''«variableName».length''';
 		if(arraySelector instanceof ValueRange) {			
 			if(arraySelector.lowerBound !== null) {
@@ -277,11 +278,13 @@ class StatementGenerator {
 		} else {
 			checks += codeFragmentProvider.create('''«arrayLength» <= «arraySelector.code.noTerminator»''');
 		}
-
+		
 		return '''
+		«IF !checks.empty»
 		if(«FOR check: checks SEPARATOR(" || ")»«check»«ENDFOR») {
 			«generateExceptionHandler(stmt, "EXCEPTION_INVALIDRANGEEXCEPTION")»
 		}
+		«ENDIF»
 		''';
 	}
 	

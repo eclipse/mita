@@ -121,7 +121,7 @@ every 100 milliseconds {
 		
 		}
 		/*XPECT errors ---
-			"Cannot determine size of element: Unable to infer size from type f_605.0" at "a1"
+			"Cannot determine size of element: Unable to infer size from type A" at "a1"
 			"vec2d(int32, optional<bool>) and vec2d(A) don't fit together" at "is(anyVec.vec2d -> a1) { 		  		}"
 		--- */
 		is(anyVec.vec2d -> a1) {

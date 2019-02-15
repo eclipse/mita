@@ -38,6 +38,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.emf.ecore.util.EcoreUtil.Copier
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.SumAlternative
@@ -71,7 +72,9 @@ import org.xpect.xtext.lib.setup.ThisResource
 import org.xpect.xtext.lib.setup.XtextStandaloneSetup
 import org.xpect.xtext.lib.setup.XtextWorkspaceSetup
 
-import static org.eclipse.emf.ecore.util.EcoreUtil.getRootContainer;
+import static org.eclipse.emf.ecore.util.EcoreUtil.getRootContainer
+
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 @RunWith(XpectRunner)
 @XpectImport(#[XtextStandaloneSetup, XtextWorkspaceSetup])
@@ -80,6 +83,7 @@ class GenerationTest {
 	@Inject package TestProjectHelper helper
 	@Inject package ExternalCommandExecutor exec
 	@Inject package GeneratorUtils genUtils
+	@Inject ILibraryProvider libraryProvider
 
 	@Xpect(liveExecution=LiveExecutionType.FAST)
 	def void noCompileErrors(@ContextObject EObject contextObject) {
@@ -88,8 +92,9 @@ class GenerationTest {
 		}
 		[|
 			try {
-				var IProject project = helper.createEmptyTestProject()
-				var Resource resource = createProgram(contextObject)
+				val IProject project = helper.createEmptyTestProject()
+				val Resource resource = createProgram(contextObject)
+				
 				project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor())
 				if (resource instanceof MitaBaseResource) {
 					if(resource.latestSolution === null) {
@@ -155,6 +160,12 @@ class GenerationTest {
 	}
 
 	def private Resource createProgram(EObject contextObject) {
+		val ResourceSet set = resourceSetProvider.get()
+		val Resource resource = set.createResource(URI.createPlatformResourceURI("unittestprj/application.mita", true))
+		val libs = libraryProvider.standardLibraries;
+		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
+		val stdlib = stdlibUri.map[set.getResource(it, true)].filterNull.map[it.contents.filter(Program).head].force;
+		
 		var Copier copier = new Copier()
 		var Program originalProgram = (getRootContainer(contextObject) as Program)
 		copier.copy(originalProgram)
@@ -170,9 +181,9 @@ class GenerationTest {
 			addToContainingFeature(program, i, copier.get(i))
 		}
 		copyReferences(contextObject, copier, program)
-		var ResourceSet set = resourceSetProvider.get()
-		var Resource resource = set.createResource(URI.createPlatformResourceURI("unittestprj/application.mita", true))
+		
 		resource.getContents().add(program)
+	
 		((resource as LazyLinkingResource)).resolveLazyCrossReferences(CancelIndicator.NullImpl)
 		return resource
 	}

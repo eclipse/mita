@@ -29,6 +29,7 @@ import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 
 class ArraySizeInferrer extends ElementSizeInferrer {
 	
@@ -80,8 +81,9 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 	}
 	
 	override protected dispatch doInfer(ElementReferenceExpression obj, AbstractType type) {
-		if(obj.arrayAccess && obj.arraySelector.head instanceof ValueRange) {
-			val valRange = (obj as ElementReferenceExpression).arraySelector.head as ValueRange;
+		val arraySelectors = obj.arraySelector.map[it.ignoreCoercions];
+		if(obj.arrayAccess && arraySelectors.head instanceof ValueRange) {
+			val valRange = arraySelectors.head as ValueRange;
 			
 			val parentType = BaseUtils.getType(obj);
 			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;

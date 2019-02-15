@@ -34,7 +34,7 @@ class TypeVariableProxy extends TypeVariable {
 		this.targetQID = targetQID;
 		this.isLinkingProxy = isLinkingProxy;
 		if(targetQID.toString.nullOrEmpty) {
-			print("");
+			throw new IllegalArgumentException("targetQID null or empty");
 		}
 	}
 	

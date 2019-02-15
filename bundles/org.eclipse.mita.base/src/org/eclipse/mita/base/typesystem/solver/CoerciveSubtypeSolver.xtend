@@ -258,9 +258,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			while(resultSystem.hasNonAtomicConstraints()) {
 				debugTimer.start("constraints");
 				val constraintOutdated = resultSystem.takeOneNonAtomic();
-				if(constraintOutdated.toString == "f_267.0 ⩽ vec2d_t(int32, int32)") {
-					print("");
-				}
 				val constraint = constraintOutdated.replace(resultSub);
 				debugTimer.stop("constraints");
 				
@@ -743,9 +740,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val issues = newArrayList;
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
-			if(v.toString == "f_651.0") {
-				print("")
-			}
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
 			val supremum = graph.getSupremum(system, predecessors);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);

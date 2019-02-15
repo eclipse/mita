@@ -42,9 +42,6 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		this.returnTypeTV = returnTypeTV;
 		this.returnTypeVariance = returnTypeVariance;
 		this.constraintSystemProvider = csp;
-		if(this.toString == "__args(int16) :: overloadingTest") {
-			print("");
-		}
 	}
 	
 	new(AbstractType typ, QualifiedName qn, EObject functionCall, EReference functionReference, TypeVariable returnTypeTV, Variance returnTypeVariance, ValidationIssue errorMessage) {
