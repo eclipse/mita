@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.mita.library.extension.type_library">
+      <Library
+            description="x86 Platform Definition"
+            id="platforms.x86"
+            module="org.eclipse.mita.platform.x86.platform.X86PlatformGeneratorModule"
+            name="x86 Platform Definition"
+            optional="true"
+            version="1.0.0">
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.platform.x86/1.0.0/x86.platform">
+         </ResourceURI>
+         <Dependency
+               id="org.eclipse.mita.library.stdlib"></Dependency>
+      </Library>
+   </extension>
+
+</plugin>

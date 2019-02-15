@@ -67,10 +67,10 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 			«ELSEIF ipConfigExpr.name == "Static"»
 				NetworkConfig_IpSettings_T staticIpSettings;
 				staticIpSettings.isDHCP = false;
-				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("ip")?.code», &staticIpSettings.ipV4) != RC_OK) return EXCEPTION_EXCEPTION;
-				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("subnetMask")?.code», &staticIpSettings.ipV4Mask) != RC_OK) return EXCEPTION_EXCEPTION;
-				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("gateway")?.code», &staticIpSettings.ipV4Gateway) != RC_OK) return EXCEPTION_EXCEPTION;
-				if(Ip_convertStringToAddr(«ipConfigExpr.properties.get("dns")?.code», &staticIpSettings.ipV4DnsServer) != RC_OK) return EXCEPTION_EXCEPTION;
+				staticIpSettings.ipV4          = sl_Htonl(XDK_NETWORK_IPV4(«(StaticValueInferrer.infer(ipConfigExpr.properties.get("ip"),         []) as String)?.split("\\.")?.join(", ")»));
+				staticIpSettings.ipV4Mask      = sl_Htonl(XDK_NETWORK_IPV4(«(StaticValueInferrer.infer(ipConfigExpr.properties.get("subnetMask"), []) as String)?.split("\\.")?.join(", ")»));
+				staticIpSettings.ipV4Gateway   = sl_Htonl(XDK_NETWORK_IPV4(«(StaticValueInferrer.infer(ipConfigExpr.properties.get("gateway"),    []) as String)?.split("\\.")?.join(", ")»));
+				staticIpSettings.ipV4DnsServer = sl_Htonl(XDK_NETWORK_IPV4(«(StaticValueInferrer.infer(ipConfigExpr.properties.get("dns"),        []) as String)?.split("\\.")?.join(", ")»));
 				
 				retcode = NetworkConfig_SetIpStatic(staticIpSettings);
 				if (RETCODE_OK != retcode)
@@ -191,6 +191,11 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		if(auth instanceof SumTypeRepr) {
 			if(auth.name == "Enterprise") {
 				result.addHeader('WLANHostPgm.h', true, IncludePath.HIGH_PRIORITY)		
+			}
+		}
+		if(ipConfigExpr instanceof SumTypeRepr) {
+			if(ipConfigExpr.name == "Static") {
+				result.addHeader("XDK_Utils.h", true)
 			}
 		}
 		return result
