@@ -46,7 +46,7 @@ Exception_T Button_Enable(ButtonNumber_T button, void* function, bool pressed) {
 			ButtonOneReleased = function;
 		}
 		cli();
-		attachInterrupt(BUTTON_1, Button1InterruptCallback, CHANGE);
+		attachInterrupt(digitalPinToInterrupt(BUTTON_1), Button1InterruptCallback, CHANGE);
 		sei();
 		return STATUS_OK;
 	}
@@ -57,7 +57,7 @@ Exception_T Button_Enable(ButtonNumber_T button, void* function, bool pressed) {
 			ButtonTwoReleased = function;
 		}
 		cli();
-		attachInterrupt(BUTTON_2, Button2InterruptCallback, CHANGE);
+		attachInterrupt(digitalPinToInterrupt(BUTTON_2), Button2InterruptCallback, CHANGE);
 		sei();
 		return STATUS_OK;
 	}
@@ -75,12 +75,13 @@ ButtonState_T Button_GetState(ButtonNumber_T button){
 }
 
 /**
- * Interrupt Service Routine for button_one. Currently, there is no debounce implemeted. 
+ * Interrupt Service Routine for button_one.
  */
 static void Button1InterruptCallback(void){
 	volatile int oldState = 0;
 	volatile int currentState = 0;
-	oldState = digitalRead(2);
+	oldState = digitalRead(BUTTON_1);
+	delay(10);
 	currentState = digitalRead(BUTTON_1);
 	if (LOW == oldState && LOW == currentState) {
 		ButtonOnePressed(true);
@@ -90,12 +91,13 @@ static void Button1InterruptCallback(void){
 }
 
 /**
- * Interrupt Service Routine for button_two. Currently, there is no debounce implemeted. 
+ * Interrupt Service Routine for button_two. 
  */
 static void Button2InterruptCallback(void){
 	volatile int oldState = 0;
 	volatile int currentState = 0;
-	oldState = digitalRead(3);
+	oldState = digitalRead(BUTTON_2);
+	delay(10);
 	currentState = digitalRead(BUTTON_2);
 	if (LOW == oldState && LOW == currentState) {
 		ButtonTwoPressed(true);
