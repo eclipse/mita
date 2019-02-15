@@ -230,7 +230,7 @@ class SerializationAdapter {
 		// we resolve the origin of TypeVarProxies because we pass them to the scope later
 		val resolve = obj.reference.eReferenceName != "type";
 		val origin = obj.origin.resolveEObject(resolve);
-		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy);
+		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy, obj.isLinkingProxy);
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
@@ -504,6 +504,7 @@ class SerializationAdapter {
 			it.reference = obj.reference?.toValueObject as SerializedEReference;
 			it.targetQID = obj.targetQID.toString;
 			it.ambiguityResolutionStrategy = obj.ambiguityResolutionStrategy;
+			it.isLinkingProxy = obj.isLinkingProxy;
 		]
 	}
 	

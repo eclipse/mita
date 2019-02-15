@@ -38,8 +38,8 @@ class TypeVariableProxy extends TypeVariable {
 		}
 	}
 	
-	new(EObject origin, String name, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy) {
-		this(origin, name, reference, targetQID);
+	new(EObject origin, String name, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy, boolean isLinkingProxy) {
+		this(origin, name, reference, targetQID, isLinkingProxy);
 		this.ambiguityResolutionStrategy = ambiguityResolutionStrategy;
 	}
 	
@@ -101,9 +101,7 @@ class TypeVariableProxy extends TypeVariable {
 	}
 	
 	override modifyNames((String) => String converter) {
-		return new TypeVariableProxy(origin, converter.apply(name), reference, targetQID) => [
-			it.ambiguityResolutionStrategy = this.ambiguityResolutionStrategy;
-		];
+		return new TypeVariableProxy(origin, converter.apply(name), reference, targetQID, ambiguityResolutionStrategy, isLinkingProxy);
 	}
 	
 }

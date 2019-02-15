@@ -243,7 +243,7 @@ fn referencing(): void {
   var a: uint32 = 10;
   // This happens because of global type inference: a couple of lines down var bad1 = **r1 leads to inference of r1 :: ref<ref<t>>. 
   // Then here we try to unify &a :: ref<uint32> and ref<ref<t>>
-  // XPECT errors --> "Types uint32 and reference<A> are not the same." at "&a"
+  // XPECT errors --> "Types uint32 and reference<f_1571.0> are not the same." at "&a"
   var r1 = &a;
   var r2 = &r1;
   var r3 = &r2;

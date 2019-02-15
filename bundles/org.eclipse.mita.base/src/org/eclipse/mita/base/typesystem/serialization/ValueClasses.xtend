@@ -108,6 +108,7 @@ final class SerializedTypeVariableProxy extends SerializedAbstractType {
 	public SerializedEReference reference;
 	public String targetQID;
 	public AmbiguityResolutionStrategy ambiguityResolutionStrategy;
+	public boolean isLinkingProxy;
 }
 
 abstract class SerializedAbstractTypeConstraint {
