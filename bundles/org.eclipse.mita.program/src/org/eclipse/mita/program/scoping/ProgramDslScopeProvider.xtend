@@ -19,8 +19,10 @@ package org.eclipse.mita.program.scoping
 import com.google.common.base.Predicate
 import com.google.inject.Inject
 import java.util.Collections
+import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.emf.ecore.EcorePackage
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
@@ -37,6 +39,7 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
@@ -69,9 +72,7 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
-import org.eclipse.emf.ecore.EClass
-import org.eclipse.emf.ecore.EcorePackage
-import org.eclipse.mita.base.types.SumSubTypeConstructor
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -102,20 +103,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			if (nodes.isEmpty) {
 				return super.scope_Argument_parameter(exp, ref);
 			} else {
-				return exp.getCandidateParameterScope(nodes.head.text, ref)
+				return exp.getCandidateParameterScope(ref)
 			}
-		}
-	}
-
-	override scope_Argument_parameter(FeatureCall fc, EReference ref) {
-		if (EcoreUtil2.getContainerOfType(fc, SystemResourceSetup) !== null) {
-			scopeInSetupBlock(fc, ref);
-		} else {
-			val nodes = NodeModelUtils.findNodesForFeature(fc, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
-			if (nodes.isEmpty) {
-				return IScope.NULLSCOPE
-			}
-			fc.getCandidateParameterScope(nodes.head.text)
 		}
 	}
 
@@ -165,13 +154,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	}
 
-	def protected IScope getCandidateParameterScope(EObject context, String crossRefString) {
+	def protected IScope getCandidateParameterScope(EObject context) {
 		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
-		return getCandidateParameterScope(context, crossRefString, delegate.getScope(context, ref), ref);
+		return getCandidateParameterScope(context, ref);
 	}
 	
-	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, EReference ref) {
-		return getCandidateParameterScope(context, crossRefString, delegate.getScope(context, ref), ref);
+	def protected IScope getCandidateParameterScope(EObject context, EReference ref) {
+		return getCandidateParameterScope(context, getAllImportQualifiers(context), delegate.getScope(context, ref), ref);
 	}
 	
 	def protected IScope getCandidateParameterScope(IScope globalScope, SumType superType, SumAlternative subType, String constructor) {
@@ -217,25 +206,33 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE.EReferenceType, false) as IScope;
 	}
 	
-	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, IScope globalScope, EReference ref) {
-		if (context instanceof FeatureCall) {
-			if (context.arguments.head.value instanceof ElementReferenceExpression) {
-				val owner = context.arguments.head.value as ElementReferenceExpression;
-				val reference = owner.reference;
-				if (reference instanceof SumType) {
-					val feature = context.reference;
-					if(feature instanceof SumAlternative) {
-						return getCandidateParameterScope(globalScope, reference, feature, crossRefString);
-					}
-					
-				}
-			}
+	dispatch def protected QualifiedName getImportQualifier(ElementReferenceExpression obj) {
+		val baseQN = obj.arguments.head?.value.importQualifier;
+		val txt = BaseUtils.getText(obj, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+		return baseQN.append(txt);
+	}
+	dispatch def protected QualifiedName getImportQualifier(EObject obj) {
+		return QualifiedName.EMPTY;
+	}
+	dispatch def protected QualifiedName getImportQualifier(Void obj) {
+		return QualifiedName.EMPTY;
+	}
+	
+	def Iterable<QualifiedName> getAllImportQualifiers(EObject obj) {
+		var qn = obj.importQualifier;
+		val result = newArrayList;
+		while(!qn.empty) {
+			result.add(qn);
+			qn = qn.skipFirst(1);
 		}
+		return result;
+	}
+	
+	def protected IScope getCandidateParameterScope(EObject context, Iterable<QualifiedName> importNormalizerQNs, IScope globalScope, EReference ref) {
 		// import by name, for named parameters of structs and functions
-		val qualifiedLinkName = fqnConverter.toQualifiedName(crossRefString)
 		val scopeDequalified = new ImportScope(
-			#[new ImportNormalizer(qualifiedLinkName, true, false)],
-			new FilteringScope(globalScope, [it.name.startsWith(qualifiedLinkName)]),
+			importNormalizerQNs.map[new ImportNormalizer(it, true, false)].force,
+			globalScope,
 			null,
 			ref.EReferenceType,
 			false

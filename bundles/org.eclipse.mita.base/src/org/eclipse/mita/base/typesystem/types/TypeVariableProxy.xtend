@@ -34,7 +34,7 @@ class TypeVariableProxy extends TypeVariable {
 		this.targetQID = targetQID;
 		this.isLinkingProxy = isLinkingProxy;
 		if(targetQID.toString.nullOrEmpty) {
-			throw new IllegalArgumentException("targetQID null or empty");
+			//throw new IllegalArgumentException("targetQID null or empty");
 		}
 	}
 	
@@ -66,7 +66,7 @@ class TypeVariableProxy extends TypeVariable {
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName qualifiedName) {
-		this(origin, name, reference, qualifiedName, false);
+		this(origin, name, reference, qualifiedName, true);
 	}
 	
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {

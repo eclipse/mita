@@ -27,6 +27,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
 import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.expressions.AssignmentExpression
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
@@ -42,7 +43,8 @@ class CoerceTypesStage extends AbstractTransformationStage {
 	}
 	
 	def explicitlyConvertAll(EObject obj) {
-		return obj.origin.eAdapters.filter(CoercionAdapter).head !== null || #[Argument, ReturnStatement].exists[it.isAssignableFrom(obj.class)]
+		return obj.origin.eAdapters.filter(CoercionAdapter).head !== null 
+			|| #[AssignmentExpression, Argument, ReturnStatement].exists[it.isAssignableFrom(obj.class)]
 	}
 	
 	override transform(ITransformationPipelineInfoProvider pipeline, Program program) {
@@ -75,6 +77,27 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		return program;
 	}
 
+	def standardCoercionCreation(ConstraintSystem c, Expression e, EObject parent) {
+		var eType = BaseUtils.getType(e.getOrigin);
+		val pType = BaseUtils.getType(parent.getOrigin);
+		if(typesNeedCoercion(c, e, eType, pType)) {
+			val coercion = TypesFactory.eINSTANCE.createCoercionExpression;
+			if(pType === null) {
+				return;
+			}
+			coercion.typeSpecifier = pType;
+			 if(e instanceof Argument) {
+				val inner = e.value;
+				e.value = coercion;
+				coercion.value = inner;
+			}
+			else {
+				e.replaceWith(coercion)
+				coercion.value = e;
+			}
+		}
+	}
+
 	def typesNeedCoercion(ConstraintSystem c, EObject context, AbstractType sub, AbstractType top) {
 		// if MGU is valid then the types are the same up to type vars anyway and we shouldn't coerce
 		// if sub </= top then we can't coerce
@@ -83,7 +106,21 @@ class CoerceTypesStage extends AbstractTransformationStage {
 			&& subtypeChecker.isSubType(c, context.origin, sub, top);
 	}
 
-	dispatch def doTransform(ConstraintSystem c, Argument a) {
+	dispatch def void doTransform(ConstraintSystem c, AssignmentExpression a) {
+		switch a.operator {
+			case ASSIGN: {
+				val e = a.expression;
+				val parent = a.varRef;
+				standardCoercionCreation(c, e, parent);
+			}
+			default: {
+				// do nothing, types have to be the same on left and on right
+			}
+		}
+		return;
+	}
+
+	dispatch def void doTransform(ConstraintSystem c, Argument a) {
 		val functionCall = a.eContainer;
 		if(functionCall instanceof ElementReferenceExpression) {
 			val function = functionCall.reference;
@@ -114,47 +151,23 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		}
 	}
 	
-	dispatch def doTransform(ConstraintSystem c, Expression e) {
+	dispatch def void doTransform(ConstraintSystem c, Expression e) {
 		var exp = e;
 		var parent = exp.eContainer;
-		var eType = BaseUtils.getType(exp.getOrigin);
-		val pType = BaseUtils.getType(parent.getOrigin);
 		if(parent instanceof PostFixUnaryExpression) {
 			exp = parent;
 			parent = parent.eContainer;
 		}
-		if(typesNeedCoercion(c, e, eType, pType)) {
-			val coercion = TypesFactory.eINSTANCE.createCoercionExpression;
-			if(pType === null) {
-				return;
-			}
-			coercion.typeSpecifier = pType;
-			 if(exp instanceof Argument) {
-				val inner = exp.value;
-				exp.value = coercion;
-				coercion.value = inner;
-			}
-			else {
-				exp.replaceWith(coercion)
-				coercion.value = exp;
-			}
-		}
+		standardCoercionCreation(c, exp, parent);
 	}
 	
-	dispatch def doTransform(ConstraintSystem c, ReturnStatement stmt) {
+	dispatch def void doTransform(ConstraintSystem c, ReturnStatement stmt) {
 		val expr = stmt.value;
 		val parent = EcoreUtil2.getContainerOfType(stmt, Operation);
-		val eType = BaseUtils.getType(expr.getOrigin);
-		val pType = BaseUtils.getType(parent.typeSpecifier.getOrigin);
-		if(typesNeedCoercion(c, stmt, eType, pType)) {
-			val coercion = TypesFactory.eINSTANCE.createCoercionExpression; 
-			expr.replaceWith(coercion)
-			coercion.value = expr;
-			coercion.typeSpecifier = pType;
-		}
+		standardCoercionCreation(c, expr, parent.typeSpecifier);
 	}
 	
-	override protected _doTransform(EObject obj) {
+	override protected void _doTransform(EObject obj) {
 		return;
 	}
 	

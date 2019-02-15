@@ -45,11 +45,6 @@ class TypeDslScopeProvider extends AbstractDeclarativeScopeProvider {
 		return if(parameters !== null) Scopes.scopeFor(parameters) else IScope.NULLSCOPE;
 	}
 
-	def scope_Argument_parameter(FeatureCall fc, EReference ref) {
-		var parameters = fc?.operation?.parameters
-		return if(parameters !== null) Scopes.scopeFor(parameters) else IScope.NULLSCOPE;
-	}
-
 	def dispatch getOperation(ElementReferenceExpression it) {
 		return if (reference instanceof Operation)
 			reference as Operation

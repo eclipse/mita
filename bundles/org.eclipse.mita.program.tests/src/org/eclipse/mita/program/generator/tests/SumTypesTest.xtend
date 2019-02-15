@@ -79,7 +79,7 @@ class SumTypesTest extends AbstractGeneratorTest {
 			
 			let v1 = anyVec.vec0d();
 			let v2 = anyVec.vec1d(1);
-			let v3 = anyVec.vec2d(2, 3);
+			let v3 = anyVec.vec2d(vec2d_t(2, 3));
 			let v4 = anyVec.vec3d(4, 5, 6);
 			let v5 = anyVec.vec4d(7, 8, 9, 10);
 		''');
@@ -105,7 +105,7 @@ class SumTypesTest extends AbstractGeneratorTest {
 			| vec4d: int32, int32, int32, int32
 		}
 		
-		let c1 = anyVec.vec2d(y = 1, x = 0);
+		let c1 = anyVec.vec2d(vec2d_t(y = 1, x = 0));
 		let c2 = anyVec.vec3d(z = 2, y = 1, x = 0);
 		''')
 		ast.assertNoCompileErrors();
@@ -115,20 +115,25 @@ class SumTypesTest extends AbstractGeneratorTest {
 		val c1 = varDecls.findFirst[it.name.toString == "c1"]
 		val c2 = varDecls.findFirst[it.name.toString == "c2"]
 		
-		verifyInit(c1, #{"x" -> "0", "y" -> "1"});
-		verifyInit(c2, #{"x" -> "0", "y" -> "1", "z" -> "2"});
+		verifyInit(c1, #{"x" -> "0", "y" -> "1"}, false);
+		verifyInit(c2, #{"x" -> "0", "y" -> "1", "z" -> "2"}, false);
 	}
 	
-	def void verifyInit(IASTDeclarator varDecl, Map<String, String> inits) {
+	def void verifyInit(IASTDeclarator varDecl, Map<String, String> inits, boolean isSumType) {
 		val init1 = varDecl.initializer as IASTEqualsInitializer
 		val init2 = init1.initializerClause as IASTInitializerList
-		val init3 = init2.clauses.filter(ICASTDesignatedInitializer).findFirst[member | 
-			member.designators.findFirst[
-				val accessor = it as ICASTFieldDesignator;
-				accessor.name.toString == "data"
-			] !== null
-		]
-		val init4 = init3.operand as IASTInitializerList;
+		val init3 = if(isSumType) {
+			init2.clauses.filter(ICASTDesignatedInitializer).findFirst[member | 
+				member.designators.findFirst[
+					val accessor = it as ICASTFieldDesignator;
+					accessor.name.toString == "data"
+				] !== null
+			].operand as IASTInitializerList	
+		}
+		else {
+			init2
+		}
+		val init4 = init3;
 		val init5 = init4.clauses.filter(ICASTDesignatedInitializer)
 		init5.forEach[init|  
 			val nameDesign = init.designators.head as ICASTFieldDesignator
@@ -169,13 +174,13 @@ class SumTypesTest extends AbstractGeneratorTest {
 			    	} 
 			    	   is(x: anyVec.vec1d) {
 			    	   } 
-			    	   is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
+			    	   is(anyVec.vec2d -> v) {
 			    	   }
 			    	   is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
 			    	   }
 			    	   is(anyVec.vec1d -> x) {
 					}
-					      is(anyVec.vec2d -> x, y) {
+					      is(anyVec.vec2d -> v) {
 					      }
 					      is(anyVec.vec3d -> x, y, z) {
 					      }
@@ -221,8 +226,8 @@ class SumTypesTest extends AbstractGeneratorTest {
 				    	   is(anyVec.vec1d -> x) {
 				    	       b = anyVec.vec1d(x + 1);
 				    	   } 
-				    	   is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
-				    	       b = anyVec.vec2d(x = x + 1, y = y + 1);
+				    	   is(anyVec.vec2d -> v) {
+				    	       b = anyVec.vec2d(vec2d_t(x = v.x + 1, y = v.y + 1));
 				    	   }
 				    	   is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
 				    	       b = anyVec.vec3d(x + 1, y + 1, z + 1);

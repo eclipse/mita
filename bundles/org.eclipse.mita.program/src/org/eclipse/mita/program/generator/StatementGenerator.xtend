@@ -215,7 +215,7 @@ class StatementGenerator {
 
 	@Traced dispatch def IGeneratorNode code(BinaryExpression stmt) {
 		// TODO: handle strings and reference types
-		'''«stmt.leftOperand.code.noTerminator» «stmt.operator.literal» «stmt.rightOperand.code.noTerminator»;'''
+		'''«stmt.leftOperand.code.noTerminator» «stmt.operator.literal» «stmt.rightOperand.code.noTerminator»'''
 	}
 
 	dispatch def IGeneratorNode code(ModalityAccess stmt) {
@@ -579,7 +579,7 @@ class StatementGenerator {
 		return initializationCode(expr.varRef, codeFragmentProvider.create('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
 	}
 	def IGeneratorNode initializationCode(EObject target, IGeneratorNode varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
-		val type = BaseUtils.getType(target);
+ 		val type = BaseUtils.getType(target);
 		
 		if (isGeneratedType(target, type)) {
 			val generator = registry.getGenerator(target.eResource, type).castOrNull(AbstractTypeGenerator);
@@ -667,12 +667,12 @@ class StatementGenerator {
 		else {
 			if (stmt.initialization !== null) {
 				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
-			} else if (type instanceof ProdType) {
+			} else if (type instanceof ProdType || type instanceof org.eclipse.mita.base.typesystem.types.SumType) {
 				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = {0};''');
 			} else if (type instanceof NumericType) {
 				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = 0;''');
 			} else {
-				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = WARNING unsupported initialization;''');
+				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = ERROR unsupported initialization;''');
 			}
 			// all of the above did initialization
 			initializationDone = true;

@@ -84,6 +84,7 @@ import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 import static org.eclipse.mita.base.typesystem.infra.MitaBaseResource.*
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -379,7 +380,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	}
 
 	@Check(CheckType.FAST)
-	def checkMixedNamedParameters(ArgumentExpression it) {
+	def checkMixedNamedParameters(ArgumentExpression expr) {
+		val arguments = if(expr instanceof FeatureCall && !(expr instanceof FeatureCallWithoutFeature)) {
+			expr.arguments.tail;
+		}
+		else {
+			expr.arguments;
+		}
 		if (!(arguments.forall[argument|argument.parameter !== null] || arguments.forall [ argument |
 			argument.parameter === null
 		])) {
@@ -407,7 +414,9 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Check(CheckType.FAST)
 	def checkNoModalityOrSiginstParameters(FunctionDefinition op) {
-		val hasModalityOrSiginstParam = op.parameters.findFirst[ it.type.name == 'modality' || it.type.name == 'siginst' ]
+		val hasModalityOrSiginstParam = op.parameters.findFirst[ 
+			it.type?.name == 'modality' || it.type?.name == 'siginst'
+		]
 		if(hasModalityOrSiginstParam !== null) {
 			error(SIGINST_MODALITY_CANT_BE_FUNC_PARAM_MSG, hasModalityOrSiginstParam, TypesPackage.Literals.TYPED_ELEMENT__TYPE_SPECIFIER);
 		}

@@ -31,7 +31,7 @@ class GlobalAndLocalVariables  extends AbstractGeneratorTest {
 		let e = TA.a0(0);
 		let f = TA.a1(0, 1);
 		let g = TA.a2(0);
-		let h = TA.a3(0);  
+		let h = TA.a3(TS(0));  
 		let i = TA.a4(TS(0));
 				
 		every 100 milliseconds {
@@ -42,7 +42,7 @@ class GlobalAndLocalVariables  extends AbstractGeneratorTest {
 			let e = TA.a0(0);
 			let f = TA.a1(0, 1);
 			let g = TA.a2(0);
-			let h = TA.a3(0);
+			let h = TA.a3(TS(0));
 			let i = TA.a4(TS(0));
 		}
 		

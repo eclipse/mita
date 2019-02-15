@@ -32,6 +32,7 @@ import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.types.GeneratedTypeConstructor
 import org.eclipse.mita.base.types.TypeConstructor
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.base.types.TypeAccessor
 
 class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	
@@ -73,6 +74,9 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 				
 				if(ref instanceof VirtualFunction) {
 					if(ref instanceof TypeConstructor && !(ref instanceof GeneratedTypeConstructor)) {
+						return false;
+					}
+					if(ref instanceof TypeAccessor) {
 						return false;
 					}
 					return true;

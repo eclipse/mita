@@ -282,7 +282,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			
 			val argumentParamsAndValues = varOrFun.arguments.indexed.map[
 				if(it.key == 0 && varOrFun instanceof FeatureCall && !(varOrFun instanceof FeatureCallWithoutFeature)) {
-					"self" -> (it.value -> it.value.value)
+					null -> (it.value -> it.value.value)
 				}
 				else {
 					BaseUtils.getText(it.value, ExpressionsPackage.eINSTANCE.argument_Parameter) -> (it.value -> it.value.value)
@@ -300,7 +300,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 					val arg = it.value.key;
 					val aValue = it.value.value;
 					val exprType = system.computeConstraints(aValue) as AbstractType;
-					val paramType = system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;
+					val paramType = if(it.key === null) {
+						system.newTypeVariable(arg);
+					} else {
+						system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;	
+					}
 					if(paramType instanceof TypeVariableProxy) {
 						paramType.ambiguityResolutionStrategy = AmbiguityResolutionStrategy.MakeNew;
 					}

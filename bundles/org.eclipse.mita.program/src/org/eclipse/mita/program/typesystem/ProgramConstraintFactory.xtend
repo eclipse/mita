@@ -296,7 +296,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return system.associate(resultType, ae);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ExpressionStatement se) {
-		system.computeConstraintsForChildren(se);
+		system.associate(system.computeConstraints(se.expression), se);
 		return null;
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ThrowExceptionStatement stmt) {

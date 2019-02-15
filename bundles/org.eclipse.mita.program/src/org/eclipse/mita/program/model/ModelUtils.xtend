@@ -41,6 +41,7 @@ import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
@@ -60,7 +61,6 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.resource.IContainer
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
-import org.eclipse.mita.program.generator.GeneratorUtils
 
 class ModelUtils {
 
@@ -319,7 +319,11 @@ class ModelUtils {
 		val node = NodeModelUtils.getNode(origin);
 		return if(node === null) null else NodeModelUtils.getTokenText(node);
 	}
-
+	
+	static def boolean isStructuralType(AbstractType type, EObject context) {
+		return type instanceof SumType || type instanceof ProdType || type.isPrimitiveType(context)
+	}
+	
 	static def boolean isPrimitiveType(AbstractType type, EObject context) {
 		if (type instanceof AtomicType) {
 			return !TypesUtil.isGeneratedType(context, type);
