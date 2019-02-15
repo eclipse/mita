@@ -14,6 +14,7 @@
 package org.eclipse.mita.program.tests.util;
 
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages;
 import org.eclipse.mita.base.util.BaseUtils;
 import org.junit.runner.RunWith;
 import org.xpect.XpectImport;
@@ -32,7 +33,8 @@ public class TypeInferrerTest {
 	
 	@Xpect
 	public void inferredType(@StringExpectation IStringExpectation expectation, @ThisOffset EObject expr) {
-		expectation.assertEquals(BaseUtils.getType(expr));
+		NicerTypeVariableNamesForErrorMessages renamer = new NicerTypeVariableNamesForErrorMessages();
+		expectation.assertEquals(BaseUtils.getType(expr).modifyNames(renamer));
 	}
 	
 }

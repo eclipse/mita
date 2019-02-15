@@ -33,7 +33,7 @@ class TypeVariableProxy extends TypeVariable {
 		this.reference = reference;
 		this.targetQID = targetQID;
 		this.isLinkingProxy = isLinkingProxy;
-		if(targetQID.toString.nullOrEmpty) {
+		if(targetQID?.toString.nullOrEmpty) {
 			//throw new IllegalArgumentException("targetQID null or empty");
 		}
 	}
@@ -47,7 +47,7 @@ class TypeVariableProxy extends TypeVariable {
 		this(origin, name, reference, TypeVariableProxy.getQName(origin, reference), true);
 	}
 	
-	protected static def getQName(EObject origin, EReference reference) {
+	public static def getQName(EObject origin, EReference reference) {
 		var QualifiedName maybeQname; 
 		if(!origin.eIsProxy) {
 			val obj = origin.eGet(reference, false);

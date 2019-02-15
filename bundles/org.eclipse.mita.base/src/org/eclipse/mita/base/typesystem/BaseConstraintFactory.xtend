@@ -125,7 +125,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def List<TypeVariable> resolveReferenceToTypes(ConstraintSystem system, EObject origin, EReference featureToResolve) {
-		return #[system.getTypeVariableProxy(origin, featureToResolve)];
+		return #[system.getTypeVariableProxy(origin, featureToResolve, false)];
 	}
 	
 	protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
@@ -623,7 +623,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def TypeVariable computeConstraintsForBuiltinOperation(ConstraintSystem system, EObject expr, QualifiedName opQID, List<Expression> operands) {
-		val operations = typeRegistry.getModelObjects(system, expr, opQID, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+		val operations = typeRegistry.getModelObjects(system, expr, opQID, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false);
 		
 		val resultType = system.computeConstraintsForFunctionCall(expr, null, opQID.lastSegment, operands, operations);
 		return system.associate(resultType, expr);

@@ -109,24 +109,34 @@ class ConstraintSystem {
 	}
 	
 	def TypeVariable getTypeVariableProxy(EObject obj, EReference reference) {
-		val ieobject = obj as InternalEObject;
-		val container = ieobject.eInternalContainer();
-		val baseUri = EcoreUtil.getURI(obj);
-		val uriFragment = container.eURIFragmentSegment(reference, ieobject);
-		val uri = obj.eResource.getURI().appendFragment( baseUri + "/" + uriFragment);
-		getOrCreate(obj, uri, [ 
-			new TypeVariableProxy(it, '''p_«instanceCount++»''', reference)
-		]);
+		return getTypeVariableProxy(obj, reference, null);
+	}
+	def TypeVariable getTypeVariableProxy(EObject obj, EReference reference, boolean isLinking) {
+		return getTypeVariableProxy(obj, reference, null, isLinking);
 	}
 	
 	def TypeVariable getTypeVariableProxy(EObject obj, EReference reference, QualifiedName objName) {
+		return getTypeVariableProxy(obj, reference, objName, true);
+	}
+	
+	def TypeVariable getTypeVariableProxy(EObject obj, EReference reference, QualifiedName objName, boolean isLinking) {
 		val ieobject = obj as InternalEObject;
 		val container = ieobject.eInternalContainer();
 		val baseUri = EcoreUtil.getURI(obj);
 		val uriFragment = container.eURIFragmentSegment(reference, ieobject);
-		val uri = obj.eResource.getURI().appendFragment( baseUri + "/" + uriFragment).appendQuery(objName.toString);
+		val baseUri2 = obj.eResource.getURI().appendFragment( baseUri + "/" + uriFragment);
+		val objNameStr = objName?.toString;
+		val uri = if(objNameStr !== null) {
+			baseUri2.appendQuery(objName.toString);	
+		}
+		else {
+			baseUri2;
+		}
 		getOrCreate(obj, uri, [ 
-			new TypeVariableProxy(it, '''p_«instanceCount++»''', reference, objName)
+			if(objName !== null) {
+				return new TypeVariableProxy(it, '''p_«instanceCount++»''', reference, objName, isLinking)
+			}
+			return new TypeVariableProxy(it, '''p_«instanceCount++»''', reference, TypeVariableProxy.getQName(it, reference), isLinking);
 		]);
 	}
 	

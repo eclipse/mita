@@ -95,8 +95,12 @@ class StdlibTypeRegistry {
 	}
 	
 	def getModelObjects(ConstraintSystem system, EObject context, QualifiedName qn, EReference ref) {
+		return getModelObjects(system, context, qn, ref, true);
+	}
+	
+	def getModelObjects(ConstraintSystem system, EObject context, QualifiedName qn, EReference ref, boolean proxyIsLinking) {
 		if(isLinking) {
-			return #[system.getTypeVariableProxy(context, ref, qn)];
+			return #[system.getTypeVariableProxy(context, ref, qn, proxyIsLinking)];
 		}
 		val scope = scopeProvider.getScope(context, ref);
 		val obj = scope.getElements(qn).map[EObjectOrProxy].map[system.getTypeVariable(it)].force;
