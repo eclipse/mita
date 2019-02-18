@@ -4,7 +4,7 @@ import java.util.Collections
 import java.util.List
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.impl.EObjectImpl
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -39,7 +39,7 @@ class TypeClassProxy extends TypeClass {
 		return new TypeClass(elements.map[tv |
 			val origin = tv.origin; 
 			tv -> if(origin?.eIsProxy) { 
-				objectResolver.apply((origin as EObjectImpl).eProxyURI);
+				objectResolver.apply((origin as BasicEObjectImpl).eProxyURI);
 			} else {
 				origin
 			}

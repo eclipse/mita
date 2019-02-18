@@ -81,7 +81,9 @@ class MitaContainerManager extends StateBasedContainerManager {
 	override protected createContainer(String handle, IResourceDescriptions resourceDescriptions) {
 		if(handle == TYPES_CONTAINER_HANDLE) {
 			return new AbstractContainer() {
-				
+				override toString() {
+					return "MitaTypesContainer";
+				}
 				override getResourceDescriptions() {
 					return getTypeDescriptions();
 				}
@@ -89,7 +91,9 @@ class MitaContainerManager extends StateBasedContainerManager {
 			}
 		} else if(handle == STDLIB_CONTAINER_HANDLE) {
 			return new AbstractContainer() {
-				
+				override toString() {
+					return "MitaStdlibsContainer";
+				}
 				override getResourceDescriptions() {
 					return getStdlibDescriptions();
 				}
@@ -97,7 +101,9 @@ class MitaContainerManager extends StateBasedContainerManager {
 			}
 		} else if(handle == DEPENDENCIES_CONTAINER_HANDLE) {
 			return new AbstractContainer() {
-				
+				override toString() {
+					return "MitaDependenciesContainer";
+				}
 				override getResourceDescriptions() {
 					return getDependencyDescriptions();
 				}
