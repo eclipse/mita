@@ -125,15 +125,7 @@ class MitaContainerManager extends StateBasedContainerManager {
 				
 			}
 		} else {
-			val uris = resourceDescriptions.state.getContainedURIs(handle);
-			return new AbstractContainer() {
-				override toString() {
-					return handle + "Container";
-				}
-				override getResourceDescriptions() {
-					return getPackageDescriptions(uris, handle);
-				}				
-			}	
+			return super.createContainer(handle, resourceDescriptions);
 		}
 		
 	}
