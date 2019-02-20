@@ -19,6 +19,7 @@ import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.resource.IResourceDescriptionsProvider
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class ImportHelper {
 
@@ -28,14 +29,20 @@ class ImportHelper {
 	def getVisiblePackages(Resource resource) {
 		// Add Packages from Index
 		val index = resource.resourceSet.getResourceDescriptions
+		val inIndexPackages = index.exportedObjects.filter[ TypesPackage.Literals.PACKAGE_ASSOCIATION.isSuperTypeOf(it.EClass) ].force
+		
 		val resDesc = index.getResourceDescription(resource.URI)
 		val visibleContainers = getVisibleContainers(resDesc, index)
-		val visiblePackages = visibleContainers.map [
-			it.getExportedObjectsByType(TypesPackage.Literals.PACKAGE_ASSOCIATION)
-		].flatten.map[name.toString].toList
+		val visiblePackages = (
+			inIndexPackages + 
+			visibleContainers
+				.map [ it.getExportedObjectsByType(TypesPackage.Literals.PACKAGE_ASSOCIATION) ]
+				.flatten
+			).map[name.toString]
+			.toList
 		// Add Packages from Libraries contributed via extensions
-		visiblePackages += LibraryExtensions.availablePlatforms.map[id]
-		return visiblePackages
+		visiblePackages += LibraryExtensions.availablePlatforms.map[ id ]
+		return visiblePackages.toSet
 	}
 
 }
