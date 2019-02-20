@@ -54,7 +54,7 @@ class ProgramDslImportScopeProvider extends BaseImportScopeProvider {
 	}
 
 	override protected getImplicitImports(boolean ignoreCase) {
-		#[createImportedNamespaceResolver("stdlib.*", ignoreCase), new ImportNormalizer(QualifiedName.create(""), true, ignoreCase)]
+		#[createImportedNamespaceResolver("stdlib.*", ignoreCase)]
 	}
 
 	override protected getLocalElementsScope(IScope parent, EObject context, EReference reference) {
