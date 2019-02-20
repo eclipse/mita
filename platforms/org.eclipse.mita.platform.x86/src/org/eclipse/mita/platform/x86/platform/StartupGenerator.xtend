@@ -58,7 +58,15 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		''')
 		.setPreamble('''
 		#ifdef __linux__
-		//TODO
+		#include <termios.h>
+		#include <unistd.h>
+		void disableConsoleEcho(void) {
+			// https://www.reddit.com/r/C_Programming/comments/64524q/turning_off_echo_in_terminal_using_c/
+			struct termios termInfo;
+			tcgetattr(0, &termInfo);
+			termInfo.c_lflag &= ~ECHO;
+			tcsetattr(0, TCSANOW, &termInfo);
+		}
 		#endif
 		#ifdef _WIN32
 		#include <windows.h>
