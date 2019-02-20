@@ -3,6 +3,7 @@ package org.eclipse.mita.base.scoping
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.mita.base.types.TypeAccessor
 
 class TypeQualifiedNameProvider extends BaseQualifiedNameProvider {
 	dispatch def doGetFullyQualifiedName(SumSubTypeConstructor f) {
@@ -34,5 +35,9 @@ class TypeQualifiedNameProvider extends BaseQualifiedNameProvider {
 		}
 		
 		return autoQID.append(sumAlt.name);
+	}
+	
+	dispatch def doGetFullyQualifiedName(TypeAccessor acc) {
+		return getFullyQualifiedName(acc.eContainer.eContainer.eContainer).append(acc.name);
 	}
 }

@@ -404,9 +404,9 @@ class ConstraintSystem {
 		
 		val replacementObjects = scopeElements.map[EObjectOrProxy].force.toSet;
 		if(replacementObjects.empty) { 
-			// not sure why this is here?
-//			scopeProvider.getScope(origin, tvp.reference);
-//			scope.getElements(tvp.targetQID).force;
+			// redo to allow easier debugging
+			scopeProvider.getScope(origin, tvp.reference);
+			scope.getElements(tvp.targetQID).force;
 			return #[new BottomType(origin, '''Couldn't resolve reference to «tvp.reference.EReferenceType.name» '«tvp.targetQID»'.''', tvp.reference)];
 		}
 				

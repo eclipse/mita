@@ -46,6 +46,9 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force;
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.StructuralType
+import org.eclipse.mita.base.types.StructuralParameter
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -65,6 +68,10 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	protected CoerciveSubtypeSolver coerciveSubtypeSolver;
 	
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
+		val x = EcoreUtil2.getContainerOfType(eObject, StructuralType);
+		if(x !== null && x.name == "ExportedStruct") {
+			print("");
+		}
 		if (eObject instanceof TypedElement) {
 			userData.put(TYPE, getTypeSpecifierType(((eObject as TypedElement)).getTypeSpecifier()))
 		}
@@ -181,6 +188,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	}
 
 	def protected boolean shouldCreateDescription(EObject object) {
-		return true
+		return !(object instanceof StructuralParameter)
 	}
 }

@@ -18,8 +18,8 @@ import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
-import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
@@ -27,8 +27,8 @@ import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.ValueRange
-import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
@@ -37,12 +37,14 @@ import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -81,10 +83,6 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import static org.eclipse.mita.base.typesystem.infra.MitaBaseResource.*
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -626,7 +624,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			}
 		}
 		if (innerExpr instanceof VariableDeclaration || innerExpr instanceof FunctionParameterDeclaration ||
-			innerExpr instanceof Parameter || innerExpr instanceof Property) {
+			innerExpr instanceof TypeAccessor || innerExpr instanceof Property) {
 			return;
 		}
 		
