@@ -1,14 +1,17 @@
 package org.eclipse.mita.base.scoping
 
+import com.google.common.collect.Lists
 import com.google.inject.Inject
 import com.google.inject.Provider
+import com.google.inject.Singleton
+import java.util.HashMap
+import java.util.Map
 import org.eclipse.xtext.resource.IResourceDescription
 import org.eclipse.xtext.resource.IResourceDescriptions
 import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.resource.containers.StateBasedContainerManager
 import org.eclipse.xtext.resource.impl.AbstractContainer
-import com.google.common.collect.Lists
-import com.google.inject.Singleton
+import org.eclipse.emf.common.util.URI
 
 @Singleton
 class MitaContainerManager extends StateBasedContainerManager {
@@ -29,6 +32,7 @@ class MitaContainerManager extends StateBasedContainerManager {
 	protected Iterable<IResourceDescription> typesDescriptions;
 	protected Iterable<IResourceDescription> stdlibDescriptions;
 	protected Iterable<IResourceDescription> dependencyDescriptions;
+	protected Map<String, Iterable<IResourceDescription>> packageDescriptions = new HashMap;
 	
 	protected XtextResourceSet resourceSet;
 	
@@ -78,6 +82,17 @@ class MitaContainerManager extends StateBasedContainerManager {
 		return this.dependencyDescriptions;
 	}
 	
+	protected def getPackageDescriptions(Iterable<URI> uris, String handle) {
+		if(!this.packageDescriptions.containsKey(handle)) {
+			val resourceSet = getResourceSet;
+			this.packageDescriptions.put(handle, uris
+				.map[resourceSet.getResource(it, true)]
+				.map[resourceDescriptionManager.getResourceDescription(it)]
+			);
+		}
+		return this.packageDescriptions.get(handle);
+	}
+	
 	override protected createContainer(String handle, IResourceDescriptions resourceDescriptions) {
 		if(handle == TYPES_CONTAINER_HANDLE) {
 			return new AbstractContainer() {
@@ -110,7 +125,15 @@ class MitaContainerManager extends StateBasedContainerManager {
 				
 			}
 		} else {
-			return super.createContainer(handle, resourceDescriptions);			
+			val uris = resourceDescriptions.state.getContainedURIs(handle);
+			return new AbstractContainer() {
+				override toString() {
+					return handle + "Container";
+				}
+				override getResourceDescriptions() {
+					return getPackageDescriptions(uris, handle);
+				}				
+			}	
 		}
 		
 	}

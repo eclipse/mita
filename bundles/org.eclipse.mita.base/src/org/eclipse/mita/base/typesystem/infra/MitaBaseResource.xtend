@@ -170,7 +170,9 @@ class MitaBaseResource extends LazyLinkingResource {
 		}
 		
 		val exportedObjects = /*thisExportedObjects + */(visibleContainers
-			.flatMap[ it.exportedObjects ].force);
+			.flatMap[ 
+				it.exportedObjects
+			].force);
 		val jsons = exportedObjects
 			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filter[it.value !== null]

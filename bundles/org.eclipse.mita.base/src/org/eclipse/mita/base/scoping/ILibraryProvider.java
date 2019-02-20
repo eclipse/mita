@@ -28,6 +28,5 @@ public interface ILibraryProvider {
 	/**
 	 * @return a list of all libraries known to this system (without the standard libraries)
 	 */
-	public Iterable<URI> getLibraries();
-
+	public Iterable<URI> getLibraries();	
 }
