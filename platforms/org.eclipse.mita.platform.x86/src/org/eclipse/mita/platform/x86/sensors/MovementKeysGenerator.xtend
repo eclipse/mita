@@ -39,12 +39,14 @@ class MovementKeysGenerator extends AbstractSystemResourceGenerator {
 		val varName = generatorUtils.getUniqueIdentifier(accessPreparation);
 		val needCast = EcoreUtil2.getContainerOfType(accessPreparation, ProgramBlock) !== null;
 		
-		return codeFragmentProvider.create('''KeyState «varName» = «IF needCast»(KeyState) «ENDIF»{
+		return codeFragmentProvider.create('''
+		KeyState «varName» = «IF needCast»(KeyState) «ENDIF»{
 			.UP = isPressed('W'),
 			.LEFT = isPressed('A'),
 			.DOWN = isPressed('S'),
 			.RIGHT = isPressed('D')
-		};''')
+		};
+		''')
 	}
 	
 	override generateModalityAccessFor(ModalityAccess modalityAccess) {
