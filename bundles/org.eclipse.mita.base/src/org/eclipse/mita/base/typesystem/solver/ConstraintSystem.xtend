@@ -310,6 +310,7 @@ class ConstraintSystem {
 		val result = systems.fold(csp?.get() ?: new ConstraintSystem(), [r, t|
 			r.instanceCount += t.instanceCount;
 			r.symbolTable.entrySet.filter[t.symbolTable.containsKey(it.key)].forEach[
+				// this most likely means that a resource is loaded twice or some resource descriptions are duplicated
 				println('''duplicate entry: «it.key» -> «it.value»  ||  «t.symbolTable.get(it.key)»''')
 //				r.constraints.add(new EqualityConstraint(it.value, t.symbolTable.get(it.key), "CS:267 (merge)"))
 			]
@@ -413,6 +414,7 @@ class ConstraintSystem {
 		return replacementObjects.map[
 			val uri = EcoreUtil.getURI(it);
 			if(!symbolTable.containsKey(uri)) {
+				// this means that there is an object in scope that we have not seen during constraint generation
 				println('''introducing «uri»!''');
 			}
 			// explicitly set the origin to the resolved object, since the symbol table only contains proxies!

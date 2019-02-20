@@ -28,11 +28,11 @@ import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource
-import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.nodemodel.INode
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.resource.IFragmentProvider
 import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
+import org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.util.Triple
@@ -72,6 +72,19 @@ class MitaBaseResource extends LazyLinkingResource {
 	@Inject
 	protected XtextFragmentProvider fragmentProvider;
 
+	override toString() {
+		val str = URI.toString;
+		val len = str.length();
+		val maxLen = 30;
+		val startIdx = if(len > maxLen) {
+			len - maxLen;
+		}
+		else {
+			0;
+		}
+		return URI.toString.substring(startIdx);
+	}
+
 	override protected doLoad(InputStream inputStream, Map<?, ?> options) throws IOException {
 		super.doLoad(inputStream, options)
 	
@@ -95,7 +108,7 @@ class MitaBaseResource extends LazyLinkingResource {
 			return MitaBaseResource.super.getEObject(fragment);
 		}
 	};
-
+	
 	new() {
 		super();
 		if(this.errors === null) {
@@ -153,6 +166,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		val timer = new DebugTimer(false);
 		// top level element - gather constraints and solve
 		val resource = obj.eResource;
+		val resourceSet = resource.resourceSet;
 		val errors = if(resource instanceof ResourceImpl) {
 			resource.errors;
 		}
@@ -161,22 +175,26 @@ class MitaBaseResource extends LazyLinkingResource {
 		}
 		
 		timer.start("resourceDescriptions");
-		val resourceDescriptions = resourceDescriptionsProvider.get(resource.resourceSet);
+		resourceSet.loadOptions.put(ResourceDescriptionsProvider.NAMED_BUILDER_SCOPE, true);
+		
+		val resourceDescriptions = resourceDescriptionsProvider.getResourceDescriptions(resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
-		
+				
 		val cancelIndicator = if(resource instanceof MitaBaseResource) {
 			resource.mkCancelIndicator();
 		}
 		
-		val exportedObjects = /*thisExportedObjects + */(visibleContainers
+		val exportedObjects = (visibleContainers
 			.flatMap[ 
 				it.exportedObjects
 			].force);
 		val jsons = exportedObjects
 			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
 			.filter[it.value !== null]
-			.map[it.value]
+			.groupBy[it.key]
+			.values
+			.map[it.head.value]
 			//.map[GZipper.decompress(it)]
 			.force;
 		timer.stop("resourceDescriptions");

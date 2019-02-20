@@ -120,6 +120,5 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 	
 	override configureUseIndexFragmentsForLazyLinking(Binder binder) {
 		binder.bind(boolean).annotatedWith(Names.named(LazyURIEncoder.USE_INDEXED_FRAGMENTS_BINDING)).toInstance(false);
-	}
-
+	}	
 }
