@@ -173,6 +173,9 @@ class LoraGenerator extends AbstractSystemResourceGenerator {
 
 					exception = LoRaDevice_SetRadioCodingRate(codingRate);
 					«generateLoggingExceptionHandler("LoRa", "set radio coding rate")»
+					
+					exception = LoRaDevice_SetADR(«configuration.getExpression("adaptiveDataRate").code»);
+					«generateLoggingExceptionHandler("LoRa", "set adaptive data rate")»
 
 					exception = LoRaDevice_SaveConfig();
 					«generateLoggingExceptionHandler("LoRa", "save config")»
