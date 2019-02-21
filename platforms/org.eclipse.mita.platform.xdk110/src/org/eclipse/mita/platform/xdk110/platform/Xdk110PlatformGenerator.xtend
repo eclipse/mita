@@ -106,7 +106,7 @@ class Xdk110PlatformGenerator extends AbstractSystemResourceGenerator {
 			}
 			else {
 				«varName».tag = PowerStatus_Battery_e;
-				«varName».data = 100 * batteryVoltage / 2087.0f;
+				«varName».data.Battery = 100 * batteryVoltage / 2088.0f;
 			}
 		''')
 		.addHeader("xdk110Types.h", false)

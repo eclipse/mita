@@ -181,6 +181,7 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		{
 			*«resultName» = AdcResultBuffer * «refVoltageInMV» / «1 << resolutionBits»;
 		}
+		return exception;
 		''')
 	}
 	
