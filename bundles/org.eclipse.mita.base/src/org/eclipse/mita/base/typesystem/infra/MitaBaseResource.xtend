@@ -71,7 +71,7 @@ class MitaBaseResource extends LazyLinkingResource {
 	
 	@Inject
 	protected XtextFragmentProvider fragmentProvider;
-
+	
 	override toString() {
 		val str = URI.toString;
 		val len = str.length();
@@ -175,10 +175,12 @@ class MitaBaseResource extends LazyLinkingResource {
 		}
 		
 		timer.start("resourceDescriptions");
-		resourceSet.loadOptions.put(ResourceDescriptionsProvider.NAMED_BUILDER_SCOPE, true);
-		
 		val resourceDescriptions = resourceDescriptionsProvider.getResourceDescriptions(resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
+		if (thisResourceDescription === null) {
+			return;
+		}
+		
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 				
 		val cancelIndicator = if(resource instanceof MitaBaseResource) {
