@@ -62,6 +62,7 @@ import org.eclipse.xtext.xbase.lib.Functions.Function1
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 
 /**
  * Generates code from your model files on save.
@@ -121,6 +122,9 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	@Inject
 	protected PluginResourceLoader resourceLoader
 	
+	@Inject
+	Provider<MitaResourceSet> resourceSetProvider;
+	
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		resource.resourceSet.doGenerate(fsa);
@@ -159,7 +163,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val libs = libraryProvider.standardLibraries;
 		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
 		val stdlib = stdlibUri.map[input.getResource(it, true)].filterNull.map[it.contents.filter(Program).head].force;
-	
+		
 		/*
 		 * Steps:
 		 *  1. Copy all programs
@@ -168,6 +172,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		 *  4. Generate shared files
 		 *  5. Generate user code per input model file
 		 */
+		val copyResourceSet = resourceSetProvider.get();
 		val compilationUnits = (resourcesToCompile)
 			.map[x | x.contents.filter(Program).head ]
 			.filterNull
@@ -178,14 +183,13 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 						x.doType();
 					}
 				}
-				val copy = x.copy;
+				val copy = x.copy(copyResourceSet);
 				//BaseUtils.ignoreChange(copy, [
 					transformer.get.transform(copy)
 				//]);
 				return copy;
 			]
 			.toList();
-		
 		
 		val someProgram = compilationUnits.head;
 		

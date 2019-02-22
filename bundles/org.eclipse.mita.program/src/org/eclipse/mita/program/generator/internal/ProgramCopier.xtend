@@ -21,6 +21,7 @@ import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.CopySourceAdapter
 import org.eclipse.mita.program.Program
+import org.eclipse.emf.ecore.resource.ResourceSet
 
 class ProgramCopier {
 	
@@ -28,6 +29,10 @@ class ProgramCopier {
 	Provider<MitaResourceSet> resourceSetProvider;
 	
 	def copy(Program program) {
+		return copy(program, resourceSetProvider.get);
+	}
+	
+	def copy(Program program, ResourceSet set) {
 		val copier = new Copier();
 		val copy = copier.copy(program) as Program;
 		copier.copyReferences();
@@ -35,16 +40,17 @@ class ProgramCopier {
 			o, c | c.linkOrigin(o)
 		]
 		
-		createPseudoResource(program, copy)
+		createPseudoResource(set, program, copy)
 		
 		return copy;
 	}
 	
-	protected def createPseudoResource(Program original, Program copy) {
-		val set = resourceSetProvider.get;
-		val res = set.createResource(original.eResource.URI);
+	protected def createPseudoResource(ResourceSet set, Program original, Program copy) {
+		val uri = original.eResource.URI;
+		val res = set.getResource(uri, false) ?: set.createResource(original.eResource.URI);
+		res.contents.clear();
 		res.contents.add(copy);
-		set.getResource(original.eResource.URI, true);
+		return res;
 	}
 	
 	def void linkOrigin(EObject copy, EObject origin) {
