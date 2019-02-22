@@ -125,6 +125,9 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	@Inject
 	Provider<MitaResourceSet> resourceSetProvider;
 	
+	@Inject
+	ResourceDescriptionsProvider resourceDescriptionsProvider;
+	
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		resource.resourceSet.doGenerate(fsa);
@@ -184,9 +187,9 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 					}
 				}
 				val copy = x.copy(copyResourceSet);
-				//BaseUtils.ignoreChange(copy, [
+				BaseUtils.ignoreChange(copy, [
 					transformer.get.transform(copy)
-				//]);
+				]);
 				return copy;
 			]
 			.toList();
@@ -258,7 +261,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	def doType(EObject program) {
 		val resource = program.eResource;
 		if(resource instanceof MitaBaseResource) {
-			resource.collectAndSolveTypes(program);
+			resource.collectAndSolveTypes([resourceDescriptionsProvider.get(it)], program);
 		}
 	}
 		

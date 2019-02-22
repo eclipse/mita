@@ -386,6 +386,10 @@ class ConstraintSystem {
 			return #[getTypeVariable(tvp.origin.eGet(tvp.reference) as EObject)];
 		}
 		var origin = tvp.origin;
+		val name = tvp.targetQID;
+		if(name.lastSegment == "notExportedInOtherPackage") {
+			print("")
+		}
 		if(tvp.reference.name == "type") {
 			val typeCandidates = typeTable.entrySet.filter[it.key == tvp.targetQID]
 			if(!typeCandidates.empty) {

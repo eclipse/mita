@@ -150,12 +150,14 @@ function testVariables() : void {
 }
 
 /* XPECT errors ---
-		"Types are recursive: [f_3.0, Name(f_3.0)]" at "Name"
-		"Types are recursive: [f_3.0, Name(f_3.0)]" at "struct Name { var x : Name; }"
+		"Types are recursive: [A, Name(A)]" at "struct Name { var x : Name; }"
 	--- */
 struct Name { var x : Name; }
 
 function useRecursiveTypeDef() {
-	// XPECT errors --> "Cannot determine size of element: Unable to infer size from type A" at "myStruct"
+	/* XPECT errors ---
+		"Cannot determine size of element: Unable to infer size from type A" at "myStruct"
+		"Couldn't resolve reference to Type 'Name'." at "Name"
+	--- */
     var myStruct : Name;
 }

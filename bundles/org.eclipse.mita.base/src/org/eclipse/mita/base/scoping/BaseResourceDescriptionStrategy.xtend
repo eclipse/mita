@@ -18,21 +18,20 @@ import com.google.inject.Inject
 import java.util.List
 import java.util.Map
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.types.Exportable
 import org.eclipse.mita.base.types.GeneratedObject
+import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.IConstraintFactory
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.mita.base.util.GZipper
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.INode
@@ -43,12 +42,6 @@ import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.types.PackageAssociation
-import org.eclipse.emf.ecore.resource.impl.ResourceImpl
-import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.types.StructuralType
-import org.eclipse.mita.base.types.StructuralParameter
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -67,23 +60,25 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	@Inject
 	protected CoerciveSubtypeSolver coerciveSubtypeSolver;
 	
+	dispatch def boolean isExported(Exportable obj) {
+		return obj.exported;
+	}
+	dispatch def boolean isExported(SumAlternative obj) {
+		return obj.eContainer.isExported;
+	}
+	dispatch def boolean isExported(GeneratedObject obj) {
+		return obj.eContainer.isExported;
+	}
+	dispatch def boolean isExported(EObject obj) {
+		return true;
+	}
+	
 	def void defineUserData(EObject eObject, Map<String, String> userData) {
-		val x = EcoreUtil2.getContainerOfType(eObject, StructuralType);
-		if(x !== null && x.name == "ExportedStruct") {
-			print("");
-		}
 		if (eObject instanceof TypedElement) {
 			userData.put(TYPE, getTypeSpecifierType(((eObject as TypedElement)).getTypeSpecifier()))
 		}
-		if (eObject instanceof Exportable) {
-			userData.put(EXPORTED, Boolean.toString(eObject.exported));
-		}
-		else if(eObject instanceof SumAlternative) {
-			userData.put(EXPORTED, Boolean.toString((eObject.eContainer as SumType).exported));
-		}
-		else {
-			userData.put(EXPORTED, Boolean.toString(true));
-		}
+		
+		userData.put(EXPORTED, Boolean.toString(eObject.isExported));
 		
 		if (eObject.eContainer() === null) {
 			// constraint generation assumes a valid model. In an invalid model things might be null we don't check
@@ -122,6 +117,18 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 //			
 //			substitution.substitutions.forEach[t1, t2|
 //				simplifiedConstraints.nonAtomicConstraints.add(new EqualityConstraint(t1, t2, new ValidationIssue("Definition", t1.origin ?: t2.origin)))
+//			]
+			constraints.typeTable.entrySet.force.forEach[
+				if(!it.value.origin.isExported) {
+					constraints.typeTable.remove(it.key);
+				}
+			]
+//			constraints.typeClasses.entrySet.force.forEach[tc |
+//				tc.value.instances.entrySet.force.forEach[
+//					if(!it.value.isExported) {
+//						tc.value.instances.remove(it.key);
+//					}
+//				]
 //			]
 			
 			val String json = serializationAdapter.toJSON(constraints);

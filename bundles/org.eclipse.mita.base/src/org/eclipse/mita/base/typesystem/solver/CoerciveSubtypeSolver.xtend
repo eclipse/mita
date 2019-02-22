@@ -54,6 +54,7 @@ import org.eclipse.xtext.util.CancelIndicator
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 /**
  * Solves coercive subtyping as described in 
@@ -281,7 +282,8 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					val returnedSub = simplification.substitution;
 					val witnessesNotWeaklyUnifyable = returnedSub.content.entrySet.filter[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]].flatMap[#[it.key, it.value]].force;
 					if(!witnessesNotWeaklyUnifyable.empty) {
-						issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.toString, it.origin, null, "")]; 
+						val niceRenamer = new NicerTypeVariableNamesForErrorMessages;
+						issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.map[it.modifyNames(niceRenamer)].force.toString, it.origin, null, "")]; 
 						witnessesNotWeaklyUnifyable.filter(TypeVariable).forEach[
 							simplification.substitution.content.remove(it);
 						]

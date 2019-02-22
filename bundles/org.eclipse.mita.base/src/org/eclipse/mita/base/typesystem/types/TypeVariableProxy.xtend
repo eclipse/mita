@@ -36,6 +36,9 @@ class TypeVariableProxy extends TypeVariable {
 		if(targetQID?.toString.nullOrEmpty) {
 			//throw new IllegalArgumentException("targetQID null or empty");
 		}
+		if(origin === null) {
+			throw new NullPointerException
+		}
 	}
 	
 	new(EObject origin, String name, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy, boolean isLinkingProxy) {

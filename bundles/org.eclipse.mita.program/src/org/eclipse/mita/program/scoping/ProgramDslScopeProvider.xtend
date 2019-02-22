@@ -679,9 +679,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 				val scope = scope_ElementReferenceExpression_reference(context, reference);
-				val normalizers = #[new ImportNormalizer(QualifiedName.create("_kinds"), true, false)];
+				//val normalizers = #[new ImportNormalizer(QualifiedName.create("_kinds"), true, false)];
 				//return new ImportScope(normalizers, scope, null, EcorePackage.eINSTANCE.EObject, false);
-				return scope;
+				scope;
 			} else if (reference == ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__ITEM &&
 				context instanceof SystemResourceSetup) {
 				scope_ConfigurationItemValue_item(context as SystemResourceSetup, reference);

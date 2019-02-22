@@ -51,6 +51,7 @@ import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.ThrowExceptionStatement
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource
+import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.nodemodel.ICompositeNode
 import org.eclipse.xtext.nodemodel.ILeafNode
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
@@ -84,6 +85,7 @@ class GenerationTest {
 	@Inject package ExternalCommandExecutor exec
 	@Inject package GeneratorUtils genUtils
 	@Inject ILibraryProvider libraryProvider
+	@Inject ResourceDescriptionsProvider resourceDescriptionsProvider
 
 	@Xpect(liveExecution=LiveExecutionType.FAST)
 	def void noCompileErrors(@ContextObject EObject contextObject) {
@@ -98,7 +100,7 @@ class GenerationTest {
 				project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor())
 				if (resource instanceof MitaBaseResource) {
 					if(resource.latestSolution === null) {
-						resource.collectAndSolveTypes(resource.contents.head);
+						resource.collectAndSolveTypes([resourceDescriptionsProvider.get(it)], resource.contents.head);
 					}
 				}
 				resource.save(Collections.emptyMap())

@@ -11,6 +11,7 @@ import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
@@ -31,6 +32,7 @@ import org.eclipse.xtext.linking.lazy.LazyLinkingResource
 import org.eclipse.xtext.nodemodel.INode
 import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.resource.IFragmentProvider
+import org.eclipse.xtext.resource.IResourceDescriptions
 import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
 import org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider
 import org.eclipse.xtext.scoping.IScopeProvider
@@ -135,7 +137,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		typeLinker.doActuallyClearReferences(model);
 		typeLinker.linkModel(model, diagnosticsConsumer);
 		typeDependentLinker.linkModel(model, diagnosticsConsumer);
-		collectAndSolveTypes(model);
+		collectAndSolveTypes([resourceDescriptionsProvider.getResourceDescriptions(resourceSet)], model);
 
 		super.getEObject(uriFragment, triple)
 	}
@@ -162,7 +164,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		}) ?: obj;
 	}
 	
-	public def collectAndSolveTypes(EObject obj) {
+	public def collectAndSolveTypes((ResourceSet) => IResourceDescriptions resourceDescriptionsProvider, EObject obj) {
 		val timer = new DebugTimer(false);
 		// top level element - gather constraints and solve
 		val resource = obj.eResource;
@@ -175,7 +177,8 @@ class MitaBaseResource extends LazyLinkingResource {
 		}
 		
 		timer.start("resourceDescriptions");
-		val resourceDescriptions = resourceDescriptionsProvider.getResourceDescriptions(resourceSet);
+		//val resourceDescriptions = resourceDescriptionsProvider.getResourceDescriptions(resourceSet);
+		val resourceDescriptions = resourceDescriptionsProvider.apply(resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
 		if (thisResourceDescription === null) {
 			return;

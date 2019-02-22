@@ -18,7 +18,7 @@ setup connectivity : MyConnectivity {
 
 fn accessWithoutReadOrWrite() {
 	/* XPECT errors ---
-		"Cannot determine size of element: Unable to infer size from type __args(bool, MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())) → __args(MyConnectivity) → siginst<bool>" at "connectivity.signal_instance00"
+		"Cannot determine size of element: Unable to infer size from nothing" at "connectivity.signal_instance00"
 		"Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
 	--- */
 	var x1 = connectivity.signal_instance00;

@@ -187,7 +187,7 @@ setup bluetoothA : MyConnectivity {
  	// The fully qualified enumerator in the scope is not a problem. Users can't use it anyways and it will
  	// go away once we import the platforms and do away with the selectable libraries.
  	/* XPECT scope at CFG_VAL_1 ---
- 	    CFG_VAL_1, CFG_VAL_2, CFG_VAL_3
+ 	    CFG_VAL_1
  	--- */
 	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
  	cfg03 = .CFG_VAL_1;

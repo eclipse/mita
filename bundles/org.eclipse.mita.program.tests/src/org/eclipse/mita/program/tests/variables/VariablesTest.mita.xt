@@ -38,7 +38,10 @@ fn printf(i:uint32) : void {}
 exception FooException;
 
 function typesAvailableInVarDec() : void {
-	// XPECT errors --> "Cannot use ExceptionTypeDeclaration as type here" at "FooException"
+	/* XPECT errors ---
+		"Couldn't resolve reference to Type 'FooException'." at "FooException"
+		"Couldn't resolve reference to Type 'FooException'." at "var withException : FooException;"
+	--- */
 	var withException : FooException;
 	
 	/* XPECT errors ---

@@ -33,12 +33,6 @@ class ProgramDslResourceDescriptionStrategy extends BaseResourceDescriptionStrat
 		if (eObject instanceof Operation) {
 			userData.put(OPERATION_PARAM_TYPES, Arrays.toString(getOperationParameterTypes((eObject as Operation))))
 		}
-		if(eObject instanceof TypeConstructor) {
-			val exportableParent = EcoreUtil2.getContainerOfType(eObject, Exportable);
-			if(exportableParent !== null) {
-				userData.put(EXPORTED, Boolean.toString(exportableParent.exported));
-			}
-		}
 		super.defineUserData(eObject, userData)
 	}
 
