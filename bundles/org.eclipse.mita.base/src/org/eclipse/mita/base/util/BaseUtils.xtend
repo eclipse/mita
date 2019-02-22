@@ -7,6 +7,8 @@ import java.util.ArrayList
 import java.util.Deque
 import java.util.Iterator
 import java.util.NoSuchElementException
+import org.eclipse.emf.common.notify.Notification
+import org.eclipse.emf.common.notify.impl.NotificationImpl
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.resource.Resource
@@ -143,6 +145,15 @@ class BaseUtils {
 		}
 		#[xss.map[it.head]] + transpose(xss.map[it.tail]);
 	}
+	
+	def static void notifyChanged(EObject obj) {
+		val resource = obj.eResource;
+		val cacheAdapters = getCacheAdapters(resource);
+		cacheAdapters.forEach[
+			it.notifyChanged(new NotificationImpl(Notification.ADD, obj.computeOrigin, obj))	
+		]
+	}
+	
 		
 	def static void ignoreChange(EObject obj, () => void action) {
 		ignoreChange(obj.eResource, action);

@@ -465,7 +465,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					
 					return new TypeClassConstraintResolutionResult(null, #[], subtypeCheckResult.messages.map[new ValidationIssue(constraint.errorMessage, it)], #[], typ, fun, distance);
 				}
-
+				if(typ instanceof BottomType) {
+					return new TypeClassConstraintResolutionResult(null, #[], #[new ValidationIssue(constraint.errorMessage, typ.message)], #[], typ, fun, distance);
+				}
 				return new TypeClassConstraintResolutionResult(null, #[], #[new ValidationIssue(constraint.errorMessage, '''«constraint.errorMessage» -> «typ» is not a function type''')], #[], typ, fun, distance);
 			].toList
 			val processedResultsUnsorted = unificationResults.map[

@@ -80,7 +80,8 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 		}
 		else if(eObject instanceof SumAlternative) {
 			userData.put(EXPORTED, Boolean.toString((eObject.eContainer as SumType).exported));
-		} else {
+		}
+		else {
 			userData.put(EXPORTED, Boolean.toString(true));
 		}
 		
@@ -124,12 +125,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 //			]
 			
 			val String json = serializationAdapter.toJSON(constraints);
-			val c2 = serializationAdapter.deserializeConstraintSystemFromJSON(json, [ 
-				val res = eObject.eResource.resourceSet.getEObject(it, true);
-				return res;
-//				val resourceOfObj = resource.resourceSet.getResource(it.trimFragment, true);
-//				return fragmentProvider.getEObject(resourceOfObj, it.fragment, fragmentProviderFallback);
-			])
 			userData.put(CONSTRAINTS, json);
 //			val String json = serializationAdapter.toJSON(constraints);
 //			val jsonCompressed = GZipper.compress(json);

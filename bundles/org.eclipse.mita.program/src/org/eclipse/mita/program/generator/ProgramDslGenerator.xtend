@@ -146,9 +146,6 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	}
 	
 	override doGenerate(ResourceSet input, IFileSystemAccess2 fsa, Function1<Resource, Boolean> includeInBuildPredicate) {
-		if(false) {
-			return;
-		}
 		val resourcesToCompile = input
 			.resources
 			.filter(includeInBuildPredicate)
@@ -182,10 +179,13 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 					}
 				}
 				val copy = x.copy;
-				BaseUtils.ignoreChange(copy, [transformer.get.transform(copy)]);
+				//BaseUtils.ignoreChange(copy, [
+					transformer.get.transform(copy)
+				//]);
 				return copy;
 			]
 			.toList();
+		
 		
 		val someProgram = compilationUnits.head;
 		

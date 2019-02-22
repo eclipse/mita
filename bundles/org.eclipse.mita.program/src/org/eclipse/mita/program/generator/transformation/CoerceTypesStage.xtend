@@ -58,7 +58,11 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		val pcopy = copier.copy(program);
 		copier.linkOrigin(pcopy, program);
 		var cs = constraintFactory.create(pcopy);
+		println("----------------------")
+		println("Introducing is ok for a bit.")
 		cs = cs.replaceProxies(program.eResource, scopeProvider);
+		println("Introducing is no longer ok!")
+		println("----------------------")
 		val constraints = cs?.constraints?.filter(SubtypeConstraint);
 		
 		val constraintSystem = TypesUtil.getConstraintSystem(program.origin.eResource);
