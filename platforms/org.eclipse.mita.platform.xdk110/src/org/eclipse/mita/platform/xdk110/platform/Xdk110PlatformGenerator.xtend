@@ -47,6 +47,7 @@ class Xdk110PlatformGenerator extends AbstractSystemResourceGenerator {
 		Retcode_T XDK110_powerStatus_read(PowerStatus* result) {
 			uint16_t batteryVoltage = 0;
 			uint16_t* batteryVoltagePtr = &batteryVoltage;
+			Retcode_T exception = NO_EXCEPTION;
 			
 			«adcGenerator.generateSignalInstanceGetter("XDK110_powerStatus_ADC", 2500, 12, "batteryVoltagePtr")»
 			

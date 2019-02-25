@@ -170,7 +170,6 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 	
 	public def generateSignalInstanceGetter(String configName, int refVoltageInMV, int resolutionBits, String resultName) {
 		return codeFragmentProvider.create('''
-		Retcode_T exception = NO_EXCEPTION;
 		exception = AdcCentral_StartSingle(BSP_Adc_GetHandle(), &«configName»);
 		if(exception != NO_EXCEPTION) return exception;
 		if (pdTRUE != xSemaphoreTake(AdcSampleSemaphore, (TickType_t) pdMS_TO_TICKS(100)))
@@ -181,11 +180,14 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		{
 			*«resultName» = AdcResultBuffer * «refVoltageInMV» / «1 << resolutionBits»;
 		}
-		return exception;
 		''')
 	}
 	
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
-		return generateSignalInstanceGetter(signalInstance.configName, signalInstance.referenceVoltageInMilliVolt, signalInstance.resolutionBits, resultName);
+		return codeFragmentProvider.create('''
+		Retcode_T exception = NO_EXCEPTION;
+		«generateSignalInstanceGetter(signalInstance.configName, signalInstance.referenceVoltageInMilliVolt, signalInstance.resolutionBits, resultName)»
+		return exception;
+		''');
 	}	
 }
