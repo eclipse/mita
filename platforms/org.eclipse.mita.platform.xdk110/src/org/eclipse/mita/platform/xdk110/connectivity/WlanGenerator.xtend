@@ -47,7 +47,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	protected extension StatementGenerator statementGenerator
 			
 	override generateEnable() {
-	
+		val baseName = setup.baseName
 		val ipConfigExpr = StaticValueInferrer.infer(configuration.getExpression("ipConfiguration"), []);
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
 		val result = codeFragmentProvider.create('''
@@ -209,14 +209,14 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		return result
 	}
 	private def CodeFragment buildStatusCallback(SystemResourceSetup component, Iterable<EventHandlerDeclaration> declarations) {
-						val baseName = component.baseName
-				
-				codeFragmentProvider.create('''
-				static void «baseName»_StatusCallback(WlanConnect_Status_T connectStatus)
-				{
-					BCDS_UNUSED(connectStatus);
-				}
-				
-				''')
-			}
+		val baseName = component.baseName
+		
+		codeFragmentProvider.create('''
+		static void «baseName»_StatusCallback(WlanConnect_Status_T connectStatus)
+		{
+			BCDS_UNUSED(connectStatus);
+		}
+		
+		''')
+	}
 }
