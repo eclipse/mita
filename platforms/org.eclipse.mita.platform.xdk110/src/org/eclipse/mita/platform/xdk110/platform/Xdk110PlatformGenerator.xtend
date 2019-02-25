@@ -28,7 +28,6 @@ class Xdk110PlatformGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSetup() {
 		return codeFragmentProvider.create('''
-		«IF needToSetupAdc(this.context)»
 		«adcGenerator.generateSetup(#[new SignalInfo(
 			"XDK110_powerStatus_ADC",
 			"ADC_ACQ_TIME_64",
@@ -36,78 +35,51 @@ class Xdk110PlatformGenerator extends AbstractSystemResourceGenerator {
 			"ADC_REF_2V5",
 			"ADC_RESOLUTION_12BIT"
 		)])»
-		«ENDIF»
 		''')
 	}
 	
 	override generateAdditionalHeaderContent() {
-		return codeFragmentProvider.create('''Retcode_T XDK110_powerStatus_read(uint16_t* result);''')
+		return codeFragmentProvider.create('''Retcode_T XDK110_powerStatus_read(PowerStatus* result);''').addHeader("xdk110Types.h", false);
 	}
 	
 	override generateEnable() {
 		return codeFragmentProvider.create('''''').setPreamble('''
-		«IF needToSetupAdc(this.context)»
-		Retcode_T XDK110_powerStatus_read(uint16_t* result) {
-			«adcGenerator.generateSignalInstanceGetter("XDK110_powerStatus_ADC", 2500, 12, "result")»
+		Retcode_T XDK110_powerStatus_read(PowerStatus* result) {
+			uint16_t batteryVoltage = 0;
+			uint16_t* batteryVoltagePtr = &batteryVoltage;
+			
+			«adcGenerator.generateSignalInstanceGetter("XDK110_powerStatus_ADC", 2500, 12, "batteryVoltagePtr")»
+			
+			«generateExceptionHandler(null, "exception")»
+			
+			// 0% is 3V, internal voltage divider -> 1.5V
+			batteryVoltage -= 1500;
+			
+			// experimentally determined threshold
+			if(batteryVoltage > 600) {
+				result->tag = PowerStatus_Corded_e;
+			}
+			else {
+				result->tag = PowerStatus_Battery_e;
+				result->data.Battery = 100 * batteryVoltage / 587.0f;
+			}
+			return exception;
 		}
-		«ENDIF»
-		''');
+		''')
+		.addHeader("xdk110Types.h", false);
 	}
-	
-	def isPowerStatusUsed(CompilationContext p) {
-		p.allUnits.map[it.eAllContents.filter(ModalityAccess).exists[
-			val m = it.modality;
-			val sysResource = m.eContainer as AbstractSystemResource;
-			m.name == "powerStatus" && sysResource instanceof Platform && sysResource.name == "XDK110"
-		]].exists[it];
-	}
-	
-	def adcIsAlreadySetup(CompilationContext p) {
-		p.allUnits.map[it.setup.exists[it.type?.name == "ADC"]].exists[it];
-	}
-	
-	def needToSetupAdc(CompilationContext p) {
-		return p.isPowerStatusUsed && !p.adcIsAlreadySetup;
-	}
-	
-	// it would be nice if we had access to the compilation context here, but we are called from 
-	// StatementGenerator.code(ModalityAccessPreparation stmt) which configures CompilationContext with null.
-	def Optional<SignalInstance> adcIsSetupAndChannel7IsConfigured(Program p) {
-		val ch7Used = p.setup
-				.filter[it.type?.name == "ADC"]
-				.flatMap[it.signalInstances
-					.map[it -> ModelUtils.getArgumentValue(it, "channel")]]
-				.filter[it.value !== null]
-				.map[it.key -> StaticValueInferrer.infer(it.value, [])]
-				.filter[it.value !== null]
-				.map[
-					val v = it.value; 
-					if(v instanceof Enumerator) {return it.key -> v} else {return null}]
-				.filterNull
-				.filter[it.value.name == "CH7"]
-				.map[it.key]
-		return Optional.fromNullable(ch7Used.head);
-	}
-	
-	def powerStatusReadMethod(Program p) {
-		adcIsSetupAndChannel7IsConfigured(p).transform[it.baseName + "_Read"].or("XDK110_powerStatus_read")
+				
+	def powerStatusReadMethod() {
+		"XDK110_powerStatus_read"
 	}
 	
 	override generateAccessPreparationFor(ModalityAccessPreparation accessPreparation) {
 		val varName = accessPreparation.uniqueIdentifier.toFirstLower;
 		
 		return codeFragmentProvider.create('''
-			uint16_t batteryVoltage = 0;
-			exception = «powerStatusReadMethod(EcoreUtil2.getContainerOfType(accessPreparation, Program))»(&batteryVoltage);
-			«generateExceptionHandler(accessPreparation, "exception")»;
 			PowerStatus «varName»;
-			if(batteryVoltage > 2100) {
-				«varName».tag = PowerStatus_Corded_e;
-			}
-			else {
-				«varName».tag = PowerStatus_Battery_e;
-				«varName».data = 100 * batteryVoltage / 2087.0f;
-			}
+			exception = «powerStatusReadMethod»(&«varName»);
+			«generateExceptionHandler(accessPreparation, "exception")»
 		''')
 		.addHeader("xdk110Types.h", false)
 	}

@@ -54,10 +54,10 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("AdcCentral.h", true)
 		
 		setupCode.preamble = codeFragmentProvider.create('''
-		uint16_t AdcResultBuffer = 0;
-		SemaphoreHandle_t AdcSampleSemaphore = NULL;
+		static uint16_t AdcResultBuffer = 0;
+		static SemaphoreHandle_t AdcSampleSemaphore = NULL;
 		
-		void adcCallback(ADC_T adc, uint16_t* buffer) {
+		static void adcCallback(ADC_T adc, uint16_t* buffer) {
 			BCDS_UNUSED(adc);
 			BCDS_UNUSED(buffer);
 		
