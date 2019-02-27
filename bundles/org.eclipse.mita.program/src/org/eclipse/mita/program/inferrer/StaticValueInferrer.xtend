@@ -34,6 +34,7 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
@@ -163,6 +164,10 @@ class StaticValueInferrer {
 		val upper = expression.upperBound?.infer(inferenceBlockerAcceptor);
 		if(expression.upperBound !== null && upper === null) return null;
 		return #[lower, upper];
+	}
+	
+	static dispatch def Object infer(ConfigurationItemValue configItemValue, (EObject) => void inferenceBlockerAcceptor) {
+		configItemValue.value.infer(inferenceBlockerAcceptor);
 	}
 	
 	static dispatch def Object infer(Void expression, (EObject) => void inferenceBlockerAcceptor) {

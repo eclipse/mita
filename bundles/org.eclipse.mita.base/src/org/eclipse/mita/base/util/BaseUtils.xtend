@@ -25,5 +25,11 @@ class BaseUtils {
 				return zip(xs.iterator, ys.iterator);
 			}			
 		}
-}
+	}
+	def static <T> T castOrNull(Object o, Class<T> clazz) {
+		if(clazz.isInstance(o)) {
+			return clazz.cast(o);
+		}
+		return null;
+	}
 }

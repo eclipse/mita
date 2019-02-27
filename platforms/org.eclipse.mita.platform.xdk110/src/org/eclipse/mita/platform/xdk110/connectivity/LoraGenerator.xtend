@@ -131,17 +131,37 @@ class LoraGenerator extends AbstractSystemResourceGenerator {
 		
 	}
 	
+	protected val defaultValues = #{
+		"EU" -> #{
+			"bandFrequency" -> 868,
+			"rx2Frequency" ->  869525,
+			"rx2DataRate" ->   0,
+			"dataRate" ->      3
+		}, 
+		"US" -> #{
+			"bandFrequency" -> 915,
+			"rx2Frequency" ->  923300,
+			"rx2DataRate" ->   8,
+			"dataRate" ->      3
+		}
+	}
+	
 	override generateEnable() {
 	    val appEui = StaticValueInferrer.infer(configuration.getExpression("loraAppEui"), []);
 		val appKey = StaticValueInferrer.infer(configuration.getExpression("loraAppKey"), []);
 		val deviceEui = StaticValueInferrer.infer(configuration.getExpression("loraDeviceEui"), []);
+		val regionName    = configuration.getEnumerator("region")?.name;
+		val bandFrequency = configuration.getInteger("bandFrequency") ?: defaultValues.get(regionName)?.get("bandFrequency");
+		val rx2Frequency  = configuration.getInteger("rx2Frequency" ) ?: defaultValues.get(regionName)?.get("rx2Frequency" );
+		val rx2DataRate   = configuration.getInteger("rx2DataRate"  ) ?: defaultValues.get(regionName)?.get("rx2DataRate"  );
+		val dataRate      = configuration.getInteger("dataRate"     ) ?: defaultValues.get(regionName)?.get("dataRate"     );
 		if(appEui instanceof List) {
 			if(appKey instanceof List) {
 				return codeFragmentProvider.create('''
 					Retcode_T exception = RETCODE_OK;
-					exception = LoRaDevice_Init(LoRaCallbackFunc, 868);
+					exception = LoRaDevice_Init(LoRaCallbackFunc, «bandFrequency»);
 					«generateLoggingExceptionHandler("LoRa", "device init")»
-					exception = LoRaDevice_SetRxWindow2(0, 869525000);
+					exception = LoRaDevice_SetRxWindow2(«rx2DataRate», «rx2Frequency»000);
 					«generateLoggingExceptionHandler("LoRa", "set rx window")»
 					«IF deviceEui instanceof List»
 					exception = LoRaDevice_SetDevEUI(devEUI);
@@ -206,7 +226,7 @@ class LoraGenerator extends AbstractSystemResourceGenerator {
 					        if (RETCODE_OK == exception)
 					        {
 					            // Set Data Rate to 3 (increase amount of data to send) and send the data via LoRa
-					            exception = LoRa_SetDataRate(3);
+					            exception = LoRa_SetDataRate(«dataRate»);
 					        }
 					        if (RETCODE_OK != exception)
 					        {

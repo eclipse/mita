@@ -707,10 +707,6 @@ enum Region {
 	EU, US
 }
 
-enum LoraBandFrequency {
-	Hz868, Hz433, Hz915
-}
-
 connectivity named-singleton LoRa {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.LoraGenerator"
     validator "org.eclipse.mita.platform.xdk110.connectivity.LoraValidator"
@@ -722,7 +718,7 @@ connectivity named-singleton LoRa {
 	configuration-item loraDeviceEui: array<uint8>
 	configuration-item adaptiveDataRate: bool = true
 	
-	configuration-item bandFrequency: LoraBandFrequency
+	configuration-item bandFrequency: uint16
 	configuration-item rx2Frequency: uint32
 	configuration-item rx2DataRate: uint8
 	configuration-item dataRate: uint8 = 3 
