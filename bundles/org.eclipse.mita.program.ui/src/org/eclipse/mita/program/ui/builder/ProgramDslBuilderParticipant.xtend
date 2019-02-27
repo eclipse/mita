@@ -154,7 +154,7 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 			if (canClean(container, config)) {
 				for (IResource resource : container.members().filter [
 					val path = it.projectRelativePath;
-					return path.toString == "src-gen/Makefile"
+					return path.toString != "src-gen/Makefile"
 				]) {
 					try {
 						if (!config.isKeepLocalHistory()) {
