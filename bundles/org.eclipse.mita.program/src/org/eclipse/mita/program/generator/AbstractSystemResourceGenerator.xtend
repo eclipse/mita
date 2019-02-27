@@ -33,6 +33,8 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 	
+	protected CompilationContext context;
+	
 	/**
 	 * The system resource to generate the setup code for the event handler registered to events of this component.
 	 */
@@ -56,7 +58,8 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	/**
 	 * Prepares this generator for producing code by supplying all contextual information for doing so.
 	 */
-	public def void prepare(AbstractSystemResource component, SystemResourceSetup setup, IComponentConfiguration config, Iterable<EventHandlerDeclaration> eventHandler) {
+	public def void prepare(CompilationContext context, AbstractSystemResource component, SystemResourceSetup setup, IComponentConfiguration config, Iterable<EventHandlerDeclaration> eventHandler) {
+		this.context = context;
 		this.component = component;
 		this.setup = setup;
 		this.configuration = config;
