@@ -13,28 +13,28 @@
 
 package org.eclipse.mita.program.ui.highlighting
 
-import org.eclipse.mita.platform.Modality
-import org.eclipse.mita.program.InterpolatedStringExpression
-import org.eclipse.xtext.ide.editor.syntaxcoloring.IHighlightedPositionAcceptor
-import org.eclipse.xtext.ide.editor.syntaxcoloring.ISemanticHighlightingCalculator
-import org.eclipse.xtext.nodemodel.INode
-import org.eclipse.xtext.resource.XtextResource
-import org.eclipse.xtext.util.CancelIndicator
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.GeneratedFunctionDefinition
+import org.eclipse.mita.program.InterpolatedStringExpression
+import org.eclipse.xtext.ide.editor.syntaxcoloring.DefaultSemanticHighlightingCalculator
+import org.eclipse.xtext.ide.editor.syntaxcoloring.IHighlightedPositionAcceptor
+import org.eclipse.xtext.nodemodel.INode
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.util.CancelIndicator
 
-class ProgramDslSemanticHighlightingCalculator implements ISemanticHighlightingCalculator {
+class ProgramDslSemanticHighlightingCalculator extends DefaultSemanticHighlightingCalculator {
 	
-	override provideHighlightingFor(XtextResource resource, IHighlightedPositionAcceptor acceptor, CancelIndicator indicator) {
-		val root = resource.getParseResult().getRootNode();
-        for(INode node : root.getAsTreeIterable()) {
-        	val element = node.semanticElement;
-        
-        	if(element !== null) {
-	        	highlight(element, node, acceptor);        		
-        	}	
-    	}
+	override boolean highlightElement(EObject object, IHighlightedPositionAcceptor acceptor,
+			CancelIndicator cancelIndicator) {
+		
+		val node = NodeModelUtils.getNode(object);
+		if (node !== null) {
+			highlight(object, node, acceptor)
+		}
+		return false
 	}
 	
 	protected dispatch def highlight(FeatureCall obj, INode node, IHighlightedPositionAcceptor acceptor) {
