@@ -703,14 +703,31 @@ alt CayennePayload {
 	| GpsLocation: {Latitude: int32, Longitude: int32, Altitude: int32}
 }
 
+enum Region {
+	EU, US
+}
+
+enum LoraBandFrequency {
+	Hz868, Hz433, Hz915
+}
+
 connectivity named-singleton LoRa {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.LoraGenerator"
     validator "org.eclipse.mita.platform.xdk110.connectivity.LoraValidator"
 
+	required configuration-item region: Region
 	required configuration-item loraAppKey: array<uint8>
 	required configuration-item loraAppEui: array<uint8>
+	
 	configuration-item loraDeviceEui: array<uint8>
 	configuration-item adaptiveDataRate: bool = true
+	
+	configuration-item bandFrequency: LoraBandFrequency
+	configuration-item rx2Frequency: uint32
+	configuration-item rx2DataRate: uint8
+	configuration-item dataRate: uint8 = 3 
+	
+	
 	
 	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8>
 	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload>
