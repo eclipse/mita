@@ -478,11 +478,6 @@ sensor MAX44009 {
 	modality intensity : uint32
 }
 
-//connectivity UART {
-//	generator ""	
-//}
-//
-
 /**
  * BLE is Bluetooth Low Energy using GATT profiles. 
  * At the moment we only support slave mode where the XDK becomes a device that can be connected to (as compared to connecting to some other device).
@@ -950,6 +945,30 @@ bus many I2C {
 	signal register_int32(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int32
 }
 
+enum UartParity {
+	NoParity,
+	EvenParity,
+	OddParity
+}
+
+enum UartStopbits {
+	Half, 
+	One, 
+	OneAndAHalf, 
+	Two
+}
+
+bus named-singleton UART {
+	generator "org.eclipse.mita.platform.xdk110.buses.UartGenerator"
+	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
+	
+	required configuration-item baudrate: uint32
+	required configuration-item parity: UartParity 
+	required configuration-item stopbits: UartStopbits
+	
+	signal console(length: uint16): string
+}
+
 enum GPIOPin
 {   /** Alternate function shall be Timer0 channel 0 compare operations */
     PA0,  
@@ -1058,6 +1077,7 @@ platform XDK110 {
 	has Gyroscope_BMG160
 	
 	has I2C
+	has UART
 	has GPIO
 	has ADC
 	has BLE
