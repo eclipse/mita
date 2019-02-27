@@ -1041,8 +1041,14 @@ alias button_one for Button
 alias button_two for Button
 alias magnetometer for BMM150
 
+alt PowerStatus {
+	  Battery: float
+	| Corded
+}
+
 platform XDK110 {
 	module "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGeneratorModule"
+	generator "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGenerator"
 	validator "org.eclipse.mita.platform.xdk110.platform.Validation"
 
 	has environment
@@ -1080,6 +1086,8 @@ platform XDK110 {
 	 * This is especially useful to view debug output.
 	 */
 	configuration-item startupDelay: uint32 = 0
+	
+	modality powerStatus: PowerStatus
 	
 	event startup
 }

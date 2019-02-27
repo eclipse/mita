@@ -35,8 +35,8 @@ class PrintGenerator extends AbstractFunctionGenerator {
 			codeFragmentProvider.create('''printf("«stringGenerator.getPattern(firstArg)»«IF addBreaklinePostfix»\n«ENDIF»"«IF !firstArg.content.empty», «FOR arg : firstArg.content SEPARATOR ', '»«generate(arg)»«ENDFOR»«ENDIF»);''')
 				.addHeader('inttypes.h', true);
 		} else {
-			codeFragmentProvider.create('''printf(«FOR arg : function.arguments SEPARATOR ', '»«generate(arg)»«ENDFOR»);«IF addBreaklinePostfix»
-			printf("\n");«ENDIF»''');
+			codeFragmentProvider.create('''printf("%s«IF addBreaklinePostfix»\n«ENDIF»", «function.arguments.head.generate»);
+			''');
 		}
 		
 		return result.addHeader('stdio.h', true);
