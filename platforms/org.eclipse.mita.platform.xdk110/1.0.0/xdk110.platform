@@ -777,7 +777,7 @@ connectivity many MQTT {
 	/**
 	 * A time server to use to get the current time. This is needed to allow certificate validation for MQTTS.
 	 */
-	configuration-item sntpServer: string = "pool.ntp.org:123"
+	configuration-item sntpServer: string = "sntp://pool.ntp.org:123"
 	
 	/**
 	 * The path to the server's public certificate to use for authentication. PEM format. Absolute or relative to the project root.
@@ -840,7 +840,7 @@ connectivity many HonoMqtt {
 	/**
 	 * A time server to use to get the current time. This is needed to allow certificate validation for MQTTS.
 	 */
-	configuration-item sntpServer: string = "pool.ntp.org:123"
+	configuration-item sntpServer: string = "sntp://pool.ntp.org:123"
 	
 	/**
 	 * The client identifier (here: clientID) is a identifier of each MQTT client
