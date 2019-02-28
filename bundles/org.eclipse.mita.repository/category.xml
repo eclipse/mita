@@ -9,7 +9,7 @@
    <feature url="features/org.eclipse.mita.platform.xdk110.feature_0.1.0.qualifier.jar" id="org.eclipse.mita.platform.xdk110.feature" version="0.1.0.qualifier">
       <category name="org.eclipse.mita.platforms.category"/>
    </feature>
-   <feature url="features/org.eclipse.mita.platform.arduino.uno.feature_0.1.0.qualifier.jar" id="org.eclipse.mita.platform.arduino.uno.feature" version="0.1.0.qualifier">
+   <feature url="features/org.eclipse.mita.platform.arduino.feature_0.1.0.qualifier.jar" id="org.eclipse.mita.platform.arduino.feature" version="0.1.0.qualifier">
       <category name="org.eclipse.mita.platforms.category"/>
    </feature>
    <feature url="features/org.eclipse.mita.platform.x86.feature_0.1.0.qualifier.jar" id="org.eclipse.mita.platform.x86.feature" version="0.1.0.qualifier">
