@@ -33,10 +33,11 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemSpecification
-import org.eclipse.mita.platform.Platform
-import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.internal.EntryPointGenerator
@@ -54,15 +55,10 @@ import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
-import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
-import org.eclipse.xtext.resource.IContainer.Manager
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 
 /**
  * Generates code from your model files on save.
@@ -124,10 +120,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	
 	@Inject
 	Provider<MitaResourceSet> resourceSetProvider;
-	
-	@Inject
-	ResourceDescriptionsProvider resourceDescriptionsProvider;
-	
+		
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		resource.resourceSet.doGenerate(fsa);
@@ -261,7 +254,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	def doType(EObject program) {
 		val resource = program.eResource;
 		if(resource instanceof MitaBaseResource) {
-			resource.collectAndSolveTypes([resourceDescriptionsProvider.get(it)], program);
+			resource.collectAndSolveTypes(program);
 		}
 	}
 		

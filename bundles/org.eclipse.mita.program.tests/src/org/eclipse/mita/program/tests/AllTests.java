@@ -51,7 +51,6 @@ import org.eclipse.mita.program.tests.variables.VariablesTest;
 	StringsTest.class, 
 	ArraysTest.class, 
 	StructuresTest.class, 
-	TypesTest.class, 
 	SetupTest.class,
 	EventHandlingTest.class, 
 	PackagesTest.class,

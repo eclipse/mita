@@ -82,6 +82,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		system.computeConstraintsForChildren(program);
 		return null;
 	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayRuntimeCheckStatement expr) {
 		// nothing to do, this is just a convenience for the compiler
 		return null;

@@ -9,15 +9,12 @@ import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.validation.CheckMode
 import org.eclipse.xtext.validation.ResourceValidatorImpl
 
-class BaseResourceValidator extends ResourceValidatorImpl {
-	
-	@Inject
-	ResourceDescriptionsProvider resourceDescriptionsProvider
-	
+class BaseResourceValidator extends ResourceValidatorImpl {	
 	override validate(Resource resource, CheckMode mode, CancelIndicator mon) throws OperationCanceledError {
 		if(resource instanceof MitaBaseResource) {
 			if(resource.latestSolution === null) {
-				resource.collectAndSolveTypes([resourceDescriptionsProvider.getResourceDescriptions(it)], resource.contents.head);
+				
+				resource.collectAndSolveTypes(resource.contents.head);
 			}
 		}
 		

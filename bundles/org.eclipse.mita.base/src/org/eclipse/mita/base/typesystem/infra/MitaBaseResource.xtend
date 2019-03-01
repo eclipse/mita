@@ -137,7 +137,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		typeLinker.doActuallyClearReferences(model);
 		typeLinker.linkModel(model, diagnosticsConsumer);
 		typeDependentLinker.linkModel(model, diagnosticsConsumer);
-		collectAndSolveTypes([resourceDescriptionsProvider.getResourceDescriptions(resourceSet)], model);
+		collectAndSolveTypes(model);
 
 		super.getEObject(uriFragment, triple)
 	}
@@ -164,7 +164,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		}) ?: obj;
 	}
 	
-	public def collectAndSolveTypes((ResourceSet) => IResourceDescriptions resourceDescriptionsProvider, EObject obj) {
+	public def collectAndSolveTypes(EObject obj) {
 		val timer = new DebugTimer(false);
 		// top level element - gather constraints and solve
 		val resource = obj.eResource;
@@ -177,8 +177,10 @@ class MitaBaseResource extends LazyLinkingResource {
 		}
 		
 		timer.start("resourceDescriptions");
-		//val resourceDescriptions = resourceDescriptionsProvider.getResourceDescriptions(resourceSet);
-		val resourceDescriptions = resourceDescriptionsProvider.apply(resourceSet);
+		if(!resourceSet.loadOptions.containsKey(ResourceDescriptionsProvider.NAMED_BUILDER_SCOPE)) {
+			resourceSet.loadOptions.put(ResourceDescriptionsProvider.LIVE_SCOPE, true);
+		}
+		val resourceDescriptions = resourceDescriptionsProvider.getResourceDescriptions(resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);
 		if (thisResourceDescription === null) {
 			return;
@@ -190,12 +192,19 @@ class MitaBaseResource extends LazyLinkingResource {
 			resource.mkCancelIndicator();
 		}
 		
+		val visibleResources = visibleContainers.flatMap[it?.exportedObjects].map[it?.EObjectOrProxy?.eResource].groupBy[it?.URI].keySet.force;
+		
 		val exportedObjects = (visibleContainers
 			.flatMap[ 
 				it.exportedObjects
 			].force);
 		val jsons = exportedObjects
-			.map[ it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS) ]
+			.map[ 
+				if(it.EObjectURI.toString.contains("stdlib_print")) {
+					print("")
+				}
+				it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS)
+			]
 			.filter[it.value !== null]
 			.groupBy[it.key]
 			.values
