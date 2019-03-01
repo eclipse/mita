@@ -52,7 +52,7 @@ class MqttValidator implements IResourceValidator {
 		
 		val urlContentString = urlContent as String;
 		
-		val sntpConfigValue = setup.getConfigurationItemValue("sntpSever");
+		val sntpConfigValue = setup.getConfigurationItemValue("sntpServer");
 		val sntpString = StaticValueInferrer.infer(sntpConfigValue, []);
 		
 		try {
@@ -92,11 +92,14 @@ class MqttValidator implements IResourceValidator {
 		try {
 			if(sntpString instanceof String) {
 				val sntpUrl = new URI(sntpString);	
-				if(!sntpUrl.scheme.nullOrEmpty) {
-					acceptor.acceptError("SNTP must not have a scheme", sntpConfigValue, null, 0, "");
+				if(sntpUrl.scheme != "sntp") {
+					acceptor.acceptError("SNTP must have scheme 'sntp://'", sntpConfigValue, null, 0, "");
 				}
-				if(sntpUrl.path.nullOrEmpty) {
+				if(sntpUrl.host.nullOrEmpty) {
 					acceptor.acceptError("SNTP must have a host", sntpConfigValue, null, 0, "");
+				}
+				if(!sntpUrl.path.nullOrEmpty) {
+					acceptor.acceptError("SNTP must not have a path (" + sntpUrl.path + ")", sntpConfigValue, null, 0, "");
 				}
 			}
 		} catch(MalformedURLException e) {

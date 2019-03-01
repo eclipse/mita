@@ -40,7 +40,36 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	protected IPlatformLoggingGenerator loggingGenerator
 	
 	override generateSetup() {
-		CodeFragment.EMPTY;
+		codeFragmentProvider.create('''
+			Retcode_T exception = RETCODE_OK;
+
+			«IF configuration.getBoolean("isHostPgmEnabled")»
+			exception = WLANHostPgm_Setup();
+			«generateLoggingExceptionHandler("WLAN host programming", "setting up")»
+			«ENDIF»
+			
+			NetworkConfigSemaphore = xSemaphoreCreateBinary();
+			if (NULL == NetworkConfigSemaphore)
+			{
+			    printf("Failed to create Semaphore \r\n");
+			    return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+			}
+			
+			WlanEventSemaphore = xSemaphoreCreateBinary();
+			if (NULL == WlanEventSemaphore)
+			{
+			    vSemaphoreDelete(NetworkConfigSemaphore);
+			    printf("Failed to create Semaphore \r\n");
+			    return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+			}
+			
+			return (exception);
+		''')
+		.setPreamble('''
+			static SemaphoreHandle_t WlanEventSemaphore = NULL;
+			static SemaphoreHandle_t NetworkConfigSemaphore = NULL;
+		''')
+		.addHeader("semphr.h", true);
 	}
 	
 	@Inject
@@ -52,37 +81,30 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
 		val result = codeFragmentProvider.create('''
 		
-		Retcode_T retcode = RETCODE_OK;
+		Retcode_T exception = RETCODE_OK;
 
-		/* The order of calls is important here. WlanConnect_init initializes the CC3100 and prepares
-		 * its future use. Calls to NetworkConfig_ fail if WlanConnect_Init was not called beforehand.
-		 */
-		retcode = WlanConnect_Init(«baseName»_StatusCallback);
-
-		if(RETCODE_OK != retcode)
-		{
-			return retcode;
-		}
+		/* Initialize the Wireless Network Driver */
+		exception = WlanNetworkConnect_Init(«baseName»_WlanConnectStatusCallback);
+		«generateLoggingExceptionHandler("WlanNetworkConnect", "init")»
+		/* Semaphore take to flush the existing queue events without timeout. Hence no need to consider the return value */
+		(void) xSemaphoreTake(WlanEventSemaphore, 0U);
+				
 		«IF ipConfigExpr instanceof SumTypeRepr»
 			«IF ipConfigExpr.name.contains("Dhcp")»
-				retcode = NetworkConfig_SetIpDhcp(NULL);
-				if (RETCODE_OK != retcode)
-				{
-					return retcode;
-				}
+				/* Semaphore take to flush the existing queue events without timeout. Hence no need to consider the return value */
+				(void) xSemaphoreTake(NetworkConfigSemaphore, 0U);
+				exception = WlanNetworkConfig_SetIpDhcp(«baseName»_NetworkIpConfigStatusCallback);
+				«generateLoggingExceptionHandler("DHCP", "setting")»
 			«ELSEIF ipConfigExpr.name == "Static"»
-				NetworkConfig_IpSettings_T staticIpSettings;
+				WlanNetworkConfig_IpSettings_T staticIpSettings;
 				staticIpSettings.isDHCP = false;
 				staticIpSettings.ipV4          = sl_Htonl(XDK_NETWORK_IPV4(«(StaticValueInferrer.infer(ipConfigExpr.properties.get("ip"),         []) as String)?.split("\\.")?.join(", ")»));
 				staticIpSettings.ipV4Mask      = sl_Htonl(XDK_NETWORK_IPV4(«(StaticValueInferrer.infer(ipConfigExpr.properties.get("subnetMask"), []) as String)?.split("\\.")?.join(", ")»));
 				staticIpSettings.ipV4Gateway   = sl_Htonl(XDK_NETWORK_IPV4(«(StaticValueInferrer.infer(ipConfigExpr.properties.get("gateway"),    []) as String)?.split("\\.")?.join(", ")»));
 				staticIpSettings.ipV4DnsServer = sl_Htonl(XDK_NETWORK_IPV4(«(StaticValueInferrer.infer(ipConfigExpr.properties.get("dns"),        []) as String)?.split("\\.")?.join(", ")»));
 				
-				retcode = NetworkConfig_SetIpStatic(staticIpSettings);
-				if (RETCODE_OK != retcode)
-				{
-					return retcode;
-				}
+				exception = WlanNetworkConfig_SetIpStatic(staticIpSettings);
+				«generateLoggingExceptionHandler("static IP", "setting")»
 			«ENDIF»
 		«ELSE»
 			ERROR: INVALID CONFIGURATION: ipConfiguration
@@ -90,35 +112,24 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		
 		«IF auth instanceof SumTypeRepr»
 			«IF auth.name == "None"»
-				/* Passing NULL as onConnection callback (last parameter) makes this a blocking call, i.e. the
-				 * WlanConnect_Open function will return only once a connection to the WLAN has been established,
-				 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
-				 * a callback instead of NULL. */
 				«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to open network: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
-				retcode = WlanConnect_Open((WlanConnect_SSID_T) NETWORK_SSID, true);
-				if(RETCODE_OK != retcode)
+				exception = WlanNetworkConnect_Open((WlanNetworkConnect_SSID_T) NETWORK_SSID);
+				if(RETCODE_OK != exception)
 				{
-					return retcode;
+					return exception;
 				}
 			«ELSEIF auth.name == "Personal"»
-				/* Passing NULL as onConnection callback (last parameter) makes this a blocking call, i.e. the
-				 * WlanConnect_WPA function will return only once a connection to the WLAN has been established,
-				 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
-				 * a callback instead of NULL. */
 				«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to personal network: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
-				retcode = WlanConnect_WPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_PassPhrase_T) NETWORK_PSK, true);
-				if(RETCODE_OK != retcode)
+				exception = WlanNetworkConnect_PersonalWPA((WlanNetworkConnect_SSID_T) NETWORK_SSID, (WlanNetworkConnect_PassPhrase_T) NETWORK_PSK);
+				if(RETCODE_OK != exception)
 				{
-					return retcode;
+					return exception;
 				}
 			«ELSEIF auth.name == "Enterprise"»
 				«IF configuration.getBoolean("isHostPgmEnabled")»
 					«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to enterprise network with host programming: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
-					retcode = WLANHostPgm_Enable();
-					if(RETCODE_OK != retcode)
-					{
-						return retcode;
-					}
+					exception = WLANHostPgm_Enable();
+					«generateLoggingExceptionHandler("WLAN host programming", "enable")»
 				«ELSE»
 					«loggingGenerator.generateLogStatement(LogLevel.Info, "Connecting to enterprise network without host programming: %s", codeFragmentProvider.create('''NETWORK_SSID'''))»
 				«ENDIF»
@@ -130,14 +141,10 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 					return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_WLAN_SL_SET_FAILED);
 				}
 				
-				/* Passing NULL as onConnection callback (last parameter) makes this a blocking call, i.e. the
-				 * WlanConnect_EnterpriseWPA function will return only once a connection to the WLAN has been established,
-				 * or if something went wrong while trying to do so. If you wanted non-blocking behavior, pass
-				 * a callback instead of NULL. */
-				retcode = WlanConnect_EnterpriseWPA((WlanConnect_SSID_T) NETWORK_SSID, (WlanConnect_Username_T) NETWORK_USERNAME, (WlanConnect_PassPhrase_T) NETWORK_PASSWORD, true);
-				if(RETCODE_OK != retcode)
+				exception = WlanNetworkConnect_EnterpriseWPA((WlanNetworkConnect_SSID_T) NETWORK_SSID, (WlanNetworkConnect_Username_T) NETWORK_USERNAME, (WlanNetworkConnect_PassPhrase_T) NETWORK_PASSWORD);
+				if(RETCODE_OK != exception)
 				{
-					return retcode;
+					return exception;
 				}
 				else
 				{
@@ -148,13 +155,26 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 			ERROR: INVALID CONFIGURATION: authentication
 		«ENDIF»
 		
-		
+		«IF ipConfigExpr instanceof SumTypeRepr»
+			«IF ipConfigExpr.name.contains("Dhcp")»
+				if (pdTRUE == xSemaphoreTake(NetworkConfigSemaphore, 200000))
+				{
+				    exception = WlanEventSemaphoreHandle();
+				}
+				else
+				{
+				    exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+				}
+			«ELSEIF ipConfigExpr.name == "Static"»
+				exception = WlanEventSemaphoreHandle();
+			«ENDIF»
+		«ENDIF»
 
-		NetworkConfig_IpSettings_T currentIpSettings;
-		retcode = NetworkConfig_GetIpSettings(&currentIpSettings);
-		if(RETCODE_OK != retcode)
+		WlanNetworkConfig_IpSettings_T currentIpSettings;
+		exception = WlanNetworkConfig_GetIpSettings(&currentIpSettings);
+		if(RETCODE_OK != exception)
 		{
-			return retcode;
+			return exception;
 		}
 		else
 		{
@@ -186,13 +206,41 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		«ELSE»
 			ERROR: INVALID CONFIGURATION: authentication
 		«ENDIF»
-		«setup.buildStatusCallback(eventHandler)»
 		
+		«setup.buildStatusCallbacks()»
+		
+		static Retcode_T WlanEventSemaphoreHandle(void)
+		{
+		    Retcode_T exception = RETCODE_OK;
+		    uint8_t count = 0;
+		    if (pdTRUE == xSemaphoreTake(WlanEventSemaphore, 200000))
+		    {
+		        do
+		        {
+		            if ((WLANNETWORKCONFIG_IPV4_ACQUIRED == WlanNetworkConfig_GetIpStatus()) && (WLANNETWORK_CONNECTED == WlanNetworkConnect_GetStatus()))
+		            {
+		                exception = RETCODE_OK;
+		            }
+		            else
+		            {
+		                vTaskDelay(500);
+		                count++;
+		                exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_WLAN_CONNECT_FAILED);
+		            }
+		        } while ((RETCODE_OK != exception)
+		                && (UINT8_C(5) >= count));
+		    }
+		    else
+		    {
+		        exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+		    }
+		    return exception;
+		}
 		''')
 		.addHeader('XdkCommonInfo.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
-		.addHeader('BCDS_WlanConnect.h', true, IncludePath.HIGH_PRIORITY)
-		.addHeader('BCDS_NetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
+		.addHeader('BCDS_Wlan.h', true, IncludePath.HIGH_PRIORITY)
+		.addHeader('BCDS_WlanNetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
@@ -208,15 +256,20 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		}
 		return result
 	}
-	private def CodeFragment buildStatusCallback(SystemResourceSetup component, Iterable<EventHandlerDeclaration> declarations) {
+	private def CodeFragment buildStatusCallbacks(SystemResourceSetup component) {
 		val baseName = component.baseName
 		
 		codeFragmentProvider.create('''
-		static void «baseName»_StatusCallback(WlanConnect_Status_T connectStatus)
+		static void «baseName»_WlanConnectStatusCallback(WlanNetworkConnect_Status_T connectStatus)
 		{
 			BCDS_UNUSED(connectStatus);
+			(void) xSemaphoreGive(WlanEventSemaphore);
 		}
-		
+		static void «baseName»_NetworkIpConfigStatusCallback(WlanNetworkConfig_IpStatus_T ipStatus)
+		{
+			BCDS_UNUSED(ipStatus);
+			(void) xSemaphoreGive(NetworkConfigSemaphore);
+		}
 		''')
 	}
 }
