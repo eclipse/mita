@@ -100,7 +100,14 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
 			constraintFactory.getTypeRegistry().setIsLinking(true);
-			val constraints = constraintFactory.create(eObject);
+			try {
+				val constraints = constraintFactory.create(eObject);
+			}
+			catch(Exception e) {
+				// something went wrong during constraint generation 
+				// => probably dirty model. just return here.
+				return; 
+			}
 			val packageName = (eObject as PackageAssociation).name
 			
 //			val csCopy = new ConstraintSystem(constraints);
