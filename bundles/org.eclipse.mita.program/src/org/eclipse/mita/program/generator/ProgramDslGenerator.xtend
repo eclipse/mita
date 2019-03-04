@@ -189,7 +189,9 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		
 		val someProgram = compilationUnits.head;
 		
-		doType(someProgram);
+		compilationUnits.forEach[
+			doType(it);			
+		]
 		
 		val platform = modelUtils.getPlatform(input, someProgram);
 		

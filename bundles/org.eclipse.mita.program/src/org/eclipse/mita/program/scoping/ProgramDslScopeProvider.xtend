@@ -98,12 +98,12 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		if (EcoreUtil2.getContainerOfType(exp, SystemResourceSetup) !== null) {
 			scopeInSetupBlock(exp, ref);
 		} else {
-			val nodes = NodeModelUtils.findNodesForFeature(exp,
-				ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
-			if (nodes.isEmpty) {
+			val reference = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
+			val txt = BaseUtils.getText(exp, reference)
+			if (txt.nullOrEmpty) {
 				return super.scope_Argument_parameter(exp, ref);
 			} else {
-				return exp.getCandidateParameterScope(ref)
+				return exp.getCandidateParameterScope(ref);
 			}
 		}
 	}

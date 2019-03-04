@@ -87,7 +87,7 @@ class MitaResourceSetBasedAllContainersState extends FlatResourceSetBasedAllCont
 	protected def getTypeUris() {
 		if(typeUris === null) {
 			typeUris = new HashSet();
-			typeUris.addAll(libraryProvider.standardLibraries.filter[it.lastSegment != "stdlib_types.mita"]);
+			typeUris.addAll(libraryProvider.standardLibraries.filter[it.lastSegment == "stdlib_types.mita"]);
 		}
 		return typeUris;
 	}
@@ -95,7 +95,7 @@ class MitaResourceSetBasedAllContainersState extends FlatResourceSetBasedAllCont
 	protected def getStdlibUris() {
 		if(stdlibUris === null) {
 			stdlibUris = new HashSet();
-			stdlibUris.addAll(libraryProvider.standardLibraries.reject[it.lastSegment != "stdlib_types.mita"]);
+			stdlibUris.addAll(libraryProvider.standardLibraries.filter[it.lastSegment != "stdlib_types.mita"]);
 		}
 		return stdlibUris;
 	}

@@ -153,17 +153,14 @@ class StdlibTypeRegistry {
 	}
 	def Iterable<AbstractType> getIntegerTypes(EObject context) {
 		val typesScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-		return StdlibTypeRegistry.integerTypeQIDs
-			.map[
-				val obj = typesScope.getSingleElement(it)
-				if(obj === null) {
-					scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
-					typesScope.getSingleElement(it);
-				}
-				obj.EObjectOrProxy
-			]
-			.filter(NativeType)
-			.map[translateNativeType(it)].force
+		val cache = new OnChangeEvictingCache();
+		
+		return cache.get("STDLIB_INTEGER_TYPES", context.eResource, [|
+			StdlibTypeRegistry.integerTypeQIDs
+				.map[typesScope.getSingleElement(it)?.EObjectOrProxy]
+				.filter(NativeType)
+				.map[translateNativeType(it)].force
+		]);
 	}
 	
 	def AbstractType translateNativeType(NativeType type) {
