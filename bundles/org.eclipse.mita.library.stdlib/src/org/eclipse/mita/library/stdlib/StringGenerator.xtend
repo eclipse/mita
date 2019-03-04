@@ -254,12 +254,15 @@ class StringGenerator extends AbstractTypeGenerator {
 				if(sub !== null) {
 					val type = BaseUtils.getType(sub);
 					var typePattern = switch(type?.name) {
-						case 'u32': '%" PRIu32 "'
-						case 'u16': '%" PRIu16 "'
-						case 'u8':  '%" PRIu8 "'
-						case 'i32':  '%" PRId32 "'
-						case 'i16':  '%" PRId16 "'
-						case 'i8':   '%" PRId8 "'
+						case 'uint32': '%" PRIu32 "'
+						case 'uint16': '%" PRIu16 "'
+						case 'uint8':  '%" PRIu8 "'
+						case 'int32':  '%" PRId32 "'
+						case 'int16':  '%" PRId16 "'
+						case 'int8':   '%" PRId8 "'
+						case 'xint32':  '%" PRId32 "'
+						case 'xint16':  '%" PRId16 "'
+						case 'xint8':   '%" PRId8 "'
 						case 'f32':  '%.' + DOUBLE_PRECISION + 'g'
 						case 'f64': '%.' + DOUBLE_PRECISION + 'g'
 						case 'bool':   '%d'
