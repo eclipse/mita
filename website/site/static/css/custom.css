@@ -1,3 +1,37 @@
+.copyright {
+  margin-top: 3em;
+  margin-bottom: 1em;
+  overflow: auto;
+}
+
+.copyright a {
+  border-bottom-style: none;
+}
+
+.copyright p {
+  margin-top: 0;
+}
+
+.copyright div.incubation {
+  float: right;
+  width: 11%;
+}
+
+.copyright div.logo {
+  margin-top: 45px;
+	float: right;
+  width: 16%;
+}
+
+.copyright p.notice {
+	margin-top: 60px;
+}
+
+.copyright .quickLinks a {
+  float: left;
+  padding-right: 2em;
+}
+
 .project .logo img {
     background-color: transparent;
     border-radius: 0px;

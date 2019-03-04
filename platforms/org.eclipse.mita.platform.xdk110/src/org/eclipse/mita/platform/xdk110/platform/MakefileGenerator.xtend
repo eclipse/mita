@@ -31,7 +31,7 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 			setups?.findFirst[it.type.name == "XDK110"]?.getConfigurationItemValue("applicationName"), []
 		)?: "EclipseMitaApplication"
 		val isSecure = (StaticValueInferrer.infer(
-			setups?.findFirst[it.type.name == "MQTT"]?.getConfigurationItemValue("url"), []
+			setups?.findFirst[it.type.name == "MQTT" || it.type.name == "HonoMqtt"]?.getConfigurationItemValue("url"), []
 		) as String ?: "").startsWith("mqtts");
 		return codeFragmentProvider.create('''
 		# This makefile triggers the targets in the application.mk
@@ -74,7 +74,8 @@ class MakefileGenerator implements IPlatformMakefileGenerator {
 			-I$(BCDS_BASE_DIR)/xdk110/Common/certs/XDKDummy \
 			-I$(BCDS_BASE_DIR)/xdk110/Common/source/Private/ServalStack/src/TLS_MbedTLS \
 			-I$(BCDS_BASE_DIR)/xdk110/Common/source \
-			-I$(BCDS_BASE_DIR)/xdk110/Common/source/Connectivity
+			-I$(BCDS_BASE_DIR)/xdk110/Common/source/Connectivity \
+			-I$(BCDS_BASE_DIR)/xdk110/Platform/BSP/source
 			
 		#List all the application source file under variable BCDS_XDK_APP_SOURCE_FILES in a similar pattern as below
 		export BCDS_XDK_APP_SOURCE_FILES = \

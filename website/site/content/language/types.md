@@ -13,7 +13,7 @@ menu:
 ---
 
 ## Primitive Types
-We have already seen the [basic data types]({{< ref "basics.md#primitive-data-types" >}}) supported by Mita.
+We have already seen the [basic data types]({{< ref "/language/basics.md#primitive-data-types" >}}) supported by Mita.
 Primitive types are also called _scalar types_ in other languages, as they contain a single value. 
 Complex types on the other hand represent more than a single value, or are defined by the programmer.
 There is one type where that distinction is not as clear as it may sound: strings.
@@ -26,7 +26,7 @@ You as a programmer will have to tell the compiler how much space you would like
 This is not how we think of strings nowadays. 
 In Mita strings are first-class citizens, meaning that they feel like strings on other languages.
 You can simply initialize a variable with them, append them, pass them to a function and return them from one.
-Behind the scenes we use [element size inference]({{< ref "concepts/index.md#element-size-inference" >}}) to try and compute the worst-case length of a string at compile time and allocate enough space.
+Behind the scenes we use [element size inference]({{< ref "/concepts/index.md#element-size-inference" >}}) to try and compute the worst-case length of a string at compile time and allocate enough space.
 
 
 ```TypeScript

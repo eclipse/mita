@@ -48,7 +48,7 @@ fn sum(a : array<int32>) {
 }
 ```
 
-The only exception to that is returning arrays. While we try hard to do [element size inference]({{< ref "concepts/index.md#element-size-inference" >}}), in some cases we fail to correctly infer the size of your array and inform you about it. In that case you need to manually specify the array length:
+The only exception to that is returning arrays. While we try hard to do [element size inference]({{< ref "/concepts/index.md#element-size-inference" >}}), in some cases we fail to correctly infer the size of your array and inform you about it. In that case you need to manually specify the array length:
 
 ```TypeScript
 fn returnsArray(): array<int32> {
@@ -84,4 +84,4 @@ You can leave out the upper or lower bound of the slice, or both.
 
 ## Bounds checks
 
-Whenever you access parts of an array, be it by direct access or slices, we need to do a bounds check. In many cases this doesn't impart any runtime impact, since we can infer the bounds statically. If we can't, we generate bounds checks and throw an `IndexOutOfBoundsException` on failure. See [Exceptions]({{< ref "language/exceptions.md" >}}) for more info.
+Whenever you access parts of an array, be it by direct access or slices, we need to do a bounds check. In many cases this doesn't impart any runtime impact, since we can infer the bounds statically. If we can't, we generate bounds checks and throw an `IndexOutOfBoundsException` on failure. See [Exceptions]({{< ref "/language/exceptions.md" >}}) for more info.

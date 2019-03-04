@@ -92,7 +92,7 @@ Don't worry about using a "wrong value" either. Configuration items are strongly
 {{< /note >}}
 
 ## Signal Instances
-Mita uses the concept of [signals and signal instances]({{< ref "concepts/index.md" >}}) to model input and output of the device.
+Mita uses the concept of [signals and signal instances]({{< ref "/concepts/index.md" >}}) to model input and output of the device.
 Each system resource defines which signals it has available, and what attributes those signals have.
 To learn which signals you can use, have a look at the platform reference or use auto-complete within the `setup` block.
 

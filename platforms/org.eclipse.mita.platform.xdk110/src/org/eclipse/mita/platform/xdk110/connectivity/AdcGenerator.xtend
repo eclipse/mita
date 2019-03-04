@@ -20,10 +20,22 @@ import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 class AdcGenerator extends AbstractSystemResourceGenerator {
 	
-	override generateSetup() {
+	@FinalFieldsConstructor
+	@Accessors
+	static class SignalInfo {
+		val String configName;
+		val String sampleTime;
+		val String channel;
+		val String referenceVoltage;
+		val String resolution;
+	}
+	
+	public def generateSetup(Iterable<SignalInfo> signalInstances) {
 		val setupCode = codeFragmentProvider.create('''
 			Retcode_T exception = RETCODE_OK;
 
@@ -42,10 +54,10 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("AdcCentral.h", true)
 		
 		setupCode.preamble = codeFragmentProvider.create('''
-		uint16_t AdcResultBuffer = 0;
-		SemaphoreHandle_t AdcSampleSemaphore = NULL;
+		static uint16_t AdcResultBuffer = 0;
+		static SemaphoreHandle_t AdcSampleSemaphore = NULL;
 		
-		void adcCallback(ADC_T adc, uint16_t* buffer) {
+		static void adcCallback(ADC_T adc, uint16_t* buffer) {
 			BCDS_UNUSED(adc);
 			BCDS_UNUSED(buffer);
 		
@@ -61,7 +73,7 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 			}
 		}
 		
-		«FOR channel: setup.signalInstances»
+		«FOR channel: signalInstances»
 		AdcCentral_ConfigSingle_T «channel.configName» = {
 			.AcqTime = «channel.sampleTime»,
 			.Appcallback = adcCallback,
@@ -73,8 +85,16 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 
 		«ENDFOR»
 		''')
-		
-		return setupCode;
+	}
+	
+	override generateSetup() {
+		return generateSetup(setup.signalInstances.map[new SignalInfo(
+			it.configName,
+			it.sampleTime,
+			it.channel,
+			it.referenceVoltage,
+			it.resolution
+		)])
 	}
 	
 	def getConfigName(SignalInstance inst) {
@@ -148,10 +168,9 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		''')
 	}
 	
-	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
+	public def generateSignalInstanceGetter(String configName, int refVoltageInMV, int resolutionBits, String resultName) {
 		return codeFragmentProvider.create('''
-		Retcode_T exception = NO_EXCEPTION;
-		exception = AdcCentral_StartSingle(BSP_Adc_GetHandle(), &«signalInstance.configName»);
+		exception = AdcCentral_StartSingle(BSP_Adc_GetHandle(), &«configName»);
 		if(exception != NO_EXCEPTION) return exception;
 		if (pdTRUE != xSemaphoreTake(AdcSampleSemaphore, (TickType_t) pdMS_TO_TICKS(100)))
 		{
@@ -159,8 +178,16 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		}
 		else
 		{
-			*«resultName» = AdcResultBuffer * «signalInstance.referenceVoltageInMilliVolt» / «1 << signalInstance.resolutionBits»;
+			*«resultName» = AdcResultBuffer * «refVoltageInMV» / «1 << resolutionBits»;
 		}
 		''')
+	}
+	
+	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
+		return codeFragmentProvider.create('''
+		Retcode_T exception = NO_EXCEPTION;
+		«generateSignalInstanceGetter(signalInstance.configName, signalInstance.referenceVoltageInMilliVolt, signalInstance.resolutionBits, resultName)»
+		return exception;
+		''');
 	}	
 }

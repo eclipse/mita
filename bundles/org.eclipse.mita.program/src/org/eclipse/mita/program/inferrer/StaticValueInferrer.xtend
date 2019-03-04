@@ -38,6 +38,7 @@ import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.VariableDeclaration
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
@@ -174,6 +175,10 @@ class StaticValueInferrer {
 		val upper = expression.upperBound?.infer(inferenceBlockerAcceptor);
 		if(expression.upperBound !== null && upper === null) return null;
 		return #[lower, upper];
+	}
+	
+	static dispatch def Object infer(ConfigurationItemValue configItemValue, (EObject) => void inferenceBlockerAcceptor) {
+		configItemValue.value.infer(inferenceBlockerAcceptor);
 	}
 	
 	static dispatch def Object infer(Void expression, (EObject) => void inferenceBlockerAcceptor) {

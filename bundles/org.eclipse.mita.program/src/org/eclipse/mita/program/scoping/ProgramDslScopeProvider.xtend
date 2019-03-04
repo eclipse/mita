@@ -45,7 +45,9 @@ import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
@@ -326,7 +328,10 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	dispatch protected def addFeatureScope(Sensor owner, IScope scope) {
-		Scopes.scopeFor(owner.modalities, scope)
+		Scopes.scopeFor(owner.modalities, scope);
+	}
+	dispatch protected def addFeatureScope(Platform owner, IScope scope) {
+		Scopes.scopeFor(owner.modalities, scope);
 	}
 
 	dispatch protected def IScope addFeatureScope(SystemResourceAlias owner, IScope scope) {

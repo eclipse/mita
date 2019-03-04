@@ -237,7 +237,7 @@ class StringGenerator extends AbstractTypeGenerator {
 	}
 	
 	def getPattern(InterpolatedStringExpression expression) {
-		val tokenizedCode = expression.originalTexts;
+		val tokenizedCode = expression.originalTexts.map[it.replaceAll("%", "%%")];
 		
 		var result = "";
 		for(var i = 0; i < tokenizedCode.length; i++) {

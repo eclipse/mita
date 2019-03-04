@@ -703,16 +703,30 @@ alt CayennePayload {
 	| GpsLocation: {Latitude: int32, Longitude: int32, Altitude: int32}
 }
 
+enum Region {
+	EU, US
+}
+
 connectivity named-singleton LoRa {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.LoraGenerator"
     validator "org.eclipse.mita.platform.xdk110.connectivity.LoraValidator"
 
+	required configuration-item region: Region
 	required configuration-item loraAppKey: array<uint8>
 	required configuration-item loraAppEui: array<uint8>
-	configuration-item loraDeviceEui: array<uint8>
 	
-	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Confirmed): array<uint8>
-	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Confirmed): array<CayennePayload>
+	configuration-item loraDeviceEui: array<uint8>
+	configuration-item adaptiveDataRate: bool = true
+	
+	configuration-item bandFrequency: uint16
+	configuration-item rx2Frequency: uint32
+	configuration-item rx2DataRate: uint8
+	configuration-item dataRate: uint8 = 3 
+	
+	
+	
+	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8>
+	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload>
 }
 
 /**
@@ -751,6 +765,10 @@ alt MqttAuthentication {
 	None | Login: {username: string, password: string}
 }
 
+alt MqttWill {
+	NoWill | LastWill: {topic: string, message: string, qos: uint8} 
+}
+
 /**
  * MQTT (Message Queuing Telemetry Transport) is an ISO standard (ISO/IEC PRF 20922) publish-subscribe-based messaging protocol.
  * This MQTT connectivity requires WLAN to be setup as well. 
@@ -773,7 +791,7 @@ connectivity many MQTT {
 	/**
 	 * A time server to use to get the current time. This is needed to allow certificate validation for MQTTS.
 	 */
-	configuration-item sntpServer: string = "pool.ntp.org:123"
+	configuration-item sntpServer: string = "sntp://pool.ntp.org:123"
 	
 	/**
 	 * The path to the server's public certificate to use for authentication. PEM format. Absolute or relative to the project root.
@@ -786,6 +804,8 @@ connectivity many MQTT {
      * know the state of the client. 
 	 */
 	required configuration-item clientId : string
+	
+	configuration-item lastWill: MqttWill = MqttWill.NoWill()
 	
 	configuration-item authentication: MqttAuthentication = MqttAuthentication.None()
 	
@@ -832,11 +852,21 @@ connectivity many HonoMqtt {
 	required configuration-item url : string
 	
 	/**
+	 * A time server to use to get the current time. This is needed to allow certificate validation for MQTTS.
+	 */
+	configuration-item sntpServer: string = "sntp://pool.ntp.org:123"
+	
+	/**
 	 * The client identifier (here: clientID) is a identifier of each MQTT client
      * connecting to a MQTT broker. It needs to be unique for the broker to
      * know the state of the client. 
 	 */
 	required configuration-item clientId : string
+	
+	/**
+	 * The path to the server's public certificate to use for authentication. PEM format. Absolute or relative to the project root.
+	 */
+	configuration-item certificatePath: string
 	
 	required configuration-item authentication: HonoAuthentication
 	
@@ -1035,8 +1065,14 @@ alias button_one for Button
 alias button_two for Button
 alias magnetometer for BMM150
 
+alt PowerStatus {
+	  Battery: float
+	| Corded
+}
+
 platform XDK110 {
 	module "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGeneratorModule"
+	generator "org.eclipse.mita.platform.xdk110.platform.Xdk110PlatformGenerator"
 	validator "org.eclipse.mita.platform.xdk110.platform.Validation"
 
 	has environment
@@ -1074,6 +1110,8 @@ platform XDK110 {
 	 * This is especially useful to view debug output.
 	 */
 	configuration-item startupDelay: uint32 = 0
+	
+	modality powerStatus: PowerStatus
 	
 	event startup
 }

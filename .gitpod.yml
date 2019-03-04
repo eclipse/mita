@@ -1,0 +1,8 @@
+image:
+  file: .Dockerfile.gitpod
+tasks:
+- init: cd website && mvn generate-sources
+  command: cd site/public && npx http-server -p 8080
+ports:
+    - port: 8080
+      onOpen: open-preview

@@ -29,7 +29,7 @@ Fixing a bug or introducing a new feature usually comes with writing a unit test
 Both test suites can be run from within your Eclipse workspace via `right-click -> Run As -> JUnit Plugin Tests`
 
 ## Create Pull Requests
-In order to create a pull request you need a GitHub account as well as an Eclipse account.
+In order to create a pull request you need a GitHub account as well as an Eclipse account. You need to have signed the [ECA](https://www.eclipse.org/legal/ECA.php) before any contribution will be reviewed. If you can't or don't want to sign the ECA we sadly cannot accept your contribution.
 
 1. Create your own fork of this repository.
 2. Switch your git remote origin to reference your fork. You can do this directly in Eclipse: In the properties of the git repository just change the value of remote origin url.

@@ -25,7 +25,6 @@ import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
@@ -41,7 +40,7 @@ import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force;
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -102,6 +101,14 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			constraintFactory.getTypeRegistry().setIsLinking(true);
 			try {
 				val constraints = constraintFactory.create(eObject);
+				constraints.typeTable.entrySet.force.forEach[
+					if(!it.value.origin.isExported) {
+						constraints.typeTable.remove(it.key);
+					}
+				]
+				val String json = serializationAdapter.toJSON(constraints);
+				userData.put(CONSTRAINTS, json);
+//			
 			}
 			catch(Exception e) {
 				// something went wrong during constraint generation 
@@ -125,11 +132,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 //			substitution.substitutions.forEach[t1, t2|
 //				simplifiedConstraints.nonAtomicConstraints.add(new EqualityConstraint(t1, t2, new ValidationIssue("Definition", t1.origin ?: t2.origin)))
 //			]
-			constraints.typeTable.entrySet.force.forEach[
-				if(!it.value.origin.isExported) {
-					constraints.typeTable.remove(it.key);
-				}
-			]
+			
 //			constraints.typeClasses.entrySet.force.forEach[tc |
 //				tc.value.instances.entrySet.force.forEach[
 //					if(!it.value.isExported) {
@@ -138,9 +141,6 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 //				]
 //			]
 			
-			val String json = serializationAdapter.toJSON(constraints);
-			userData.put(CONSTRAINTS, json);
-//			val String json = serializationAdapter.toJSON(constraints);
 //			val jsonCompressed = GZipper.compress(json);
 //			userData.put(CONSTRAINTS, jsonCompressed);
 //			val lenRaw = json.length;

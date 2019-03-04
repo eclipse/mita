@@ -86,11 +86,16 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			sntpUri.port;
 		}
 		
-		codeFragmentProvider.create('''
-		Retcode_T exception = RETCODE_OK;
-		StringDescr_wrap(&username, usernameBuf);
-		StringDescr_wrap(&password, passwordBuf);
+		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
 		
+		val result = codeFragmentProvider.create('''
+		Retcode_T exception = RETCODE_OK;
+		«IF auth instanceof SumTypeRepr»
+			«IF auth.isLogin()»
+				StringDescr_wrap(&username, usernameBuf);
+				StringDescr_wrap(&password, passwordBuf);
+			«ENDIF»
+		«ENDIF»
 
 		«servalpalGenerator.generateSetup(isSecure)»
 		
@@ -179,7 +184,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		
 		«IF isSecure»
 		SNTP_Setup_T sntpSetup = {
-			.ServerUrl = "«sntpUri.path»",
+			.ServerUrl = "«sntpUri.host»",
 			.ServerPort = «sntpPort»
 		};
 		«ENDIF»
@@ -187,11 +192,17 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("Serval_Mqtt.h", true, IncludePath.LOW_PRIORITY)
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("XdkCommonInfo.h", true)
-		.addHeader("BCDS_NetworkConfig.h", true)
+		.addHeader("BCDS_WlanNetworkConfig.h", true)
+		
+		if(isSecure) {
+			result.addHeader("HTTPRestClientSecurity.h", true)
+		}
+		return result;
 	}
 
 	override generateEnable() {
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
+		val lastWill = StaticValueInferrer.infer(configuration.getExpression("lastWill"), []);
 		
 		val brokerUri = new URI(configuration.getString("url"));
 		val isSecure = brokerUri.scheme == "mqtts";
@@ -223,10 +234,11 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		 * Since there is no point in doing a HTTPS communication without a valid time */
 		do
 		{
-			exception = SNTP_GetTimeFromServer(&sntpTimeStampFromServer, 60);
+			exception = SNTP_GetTimeFromServer(&sntpTimeStampFromServer, 1000);
 			if ((RETCODE_OK != exception) || (0UL == sntpTimeStampFromServer))
 			{
 				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT_Enable : SNTP server time was not synchronized. Retrying...")»
+				BSP_Board_Delay(1000);
 			}
 		} while (0UL == sntpTimeStampFromServer);
 
@@ -234,6 +246,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		char timezoneISO8601format[40];
 		TimeStamp_SecsToTm(sntpTimeStampFromServer, &time);
 		TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
+		
+		«loggingGenerator.generateLogStatement(LogLevel.Info, "MQTT_Enable : Getting time successful. Current time is %s", codeFragmentProvider.create('''timezoneISO8601format'''))»
 		
 		BCDS_UNUSED(sntpTimeStampFromServer); /* Copy of sntpTimeStampFromServer will be used be HTTPS for TLS handshake */
 		
@@ -259,7 +273,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 		«generatorUtils.generateExceptionHandler(setup, "exception")»
 		
-		exception = NetworkConfig_GetIpAddress((uint8_t *) MQTT_BROKER_HOST, &brokerIpAddress);
+		exception = WlanNetworkConfig_GetIpAddress((uint8_t *) MQTT_BROKER_HOST, &brokerIpAddress);
 		if(RETCODE_OK != exception) {
 			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to resolve host: %s", codeFragmentProvider.create('''MQTT_BROKER_HOST'''))»
 			return exception;
@@ -278,7 +292,21 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		mqttSession.MQTTVersion = 4;
 		mqttSession.keepAliveInterval = 60;
 		mqttSession.cleanSession = false;
-		mqttSession.will.haveWill = false;
+		«IF lastWill instanceof SumTypeRepr»
+			«IF lastWill.hasLastWill»
+				StringDescr_wrap(&lastWillTopic, lastWillTopicBuf);
+				StringDescr_wrap(&lastWillMessage, lastWillMessageBuf);
+				mqttSession.will.haveWill = true;
+				mqttSession.will.topic = lastWillTopic;
+				mqttSession.will.message = lastWillMessage;
+				mqttSession.will.retained = true;
+				mqttSession.will.qos = «getQosFromInt(StaticValueInferrer.infer(lastWill.properties.get("qos"), []) as Integer)»;
+			«ELSE»
+				mqttSession.will.haveWill = false;
+			«ENDIF»
+		«ELSE»
+			mqttSession.will.haveWill = false;
+		«ENDIF»
 		mqttSession.onMqttEvent = MqttEventHandler;
 		«IF auth instanceof SumTypeRepr»
 			«IF auth.isLogin()»
@@ -311,24 +339,35 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		
 		return exception;
 		''')
+		.addHeader("BCDS_BSP_Board.h", true)
 		.addHeader("XDK_SNTP.h", true)
 		.addHeader("MbedTLSAdapter.h", true)
 		.addHeader("HTTPRestClientSecurity.h", true)
-		.addHeader("time.h", true);
-		if(auth instanceof SumTypeRepr) {
-			if(auth.isLogin()) {
-				val username = auth.properties.get("username")?.code;
-				val password = auth.properties.get("password")?.code;
-				result.setPreamble('''
+		.addHeader("time.h", true)
+		.addHeader("XDK_TimeStamp.h", true)
+		result.setPreamble('''
+		«IF auth instanceof SumTypeRepr»
+			«IF auth.isLogin()»
+				«val username = auth.properties.get("username")»
+				«val password = auth.properties.get("password")»
+				StringDescr_T username;
+				const char* usernameBuf = «username?.code»;
+				
+				StringDescr_T password;
+				const char* passwordBuf = «password?.code»;
+			«ENDIF»
+		«ENDIF»
+		
+		«IF lastWill instanceof SumTypeRepr»
+			«IF lastWill.hasLastWill»
+				StringDescr_T lastWillTopic;
+				const char* lastWillTopicBuf = «lastWill.properties.get("topic")?.code»;
+				StringDescr_T lastWillMessage;
+				const char* lastWillMessageBuf = «lastWill.properties.get("message")?.code»;
+			«ENDIF»
+		«ENDIF»
+		''').addHeader("Serval_StringDescr.h", true);
 
-                StringDescr_T username;
-                const char* usernameBuf = «username»;
-
-                StringDescr_T password;
-                const char* passwordBuf = «password»;
-				''').addHeader("Serval_StringDescr.h", true);
-			}
-		}
 
 		return result;
 
@@ -336,6 +375,10 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	protected def isLogin(SumTypeRepr repr) {
 		return repr.name == "Login"
+	}
+	
+	protected def hasLastWill(SumTypeRepr repr) {
+		return repr.name == "LastWill"
 	}
 
 	override generateAdditionalImplementation() {
@@ -462,16 +505,17 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		''')
 	}
 
+	def getQosFromInt(int qos) {
+		val qosLevel = #[ "MQTT_QOS_AT_MOST_ONE", "MQTT_QOS_AT_LEAST_ONCE", "MQTT_QOS_EXACTLY_ONCE"	];
+		return qosLevel.get(qos);
+	}
+
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
 		CodeFragment.EMPTY
 	}
 
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
-		val qosLevel = #[ "MQTT_QOS_AT_MOST_ONE", "MQTT_QOS_AT_LEAST_ONCE", "MQTT_QOS_EXACTLY_ONCE"	];
-
-		val qosRaw = ModelUtils.getArgumentValue(signalInstance, 'qos');
-		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]);
-		val qos = qosLevel.get(((qosRawValue ?: 0) as Long).longValue as int);
+		val qos = getQosLevel(signalInstance);
 		
 		return codeFragmentProvider.create('''
 			Retcode_T exception = RETCODE_OK;
@@ -521,8 +565,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	protected def int getQosLevel(SignalInstance instance) {
 		val qosRaw = ModelUtils.getArgumentValue(instance, 'qos');
-		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]) as Integer;
-		return Math.min(Math.max(qosRawValue ?: 0, 0), 3);
+		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]) as Long  ?: 0;
+		return Math.min(Math.max(qosRawValue.intValue, 0), 3);
 	}
 
 	protected def String getTopicName(SignalInstance instance) {

@@ -235,7 +235,7 @@ class StatementGenerator {
 		val generator = registry.getGenerator(sensor);
 		
 		// here our generator concept fails us. We are unable to provide all the state to the generator!
-		generator.prepare(sensor, null, null, null);
+		generator.prepare(null, sensor, null, null, null);
 		
 		generator.generateAccessPreparationFor(stmt).addHeader(stmt.systemResource.fileBasename + '.h', false);
 	}

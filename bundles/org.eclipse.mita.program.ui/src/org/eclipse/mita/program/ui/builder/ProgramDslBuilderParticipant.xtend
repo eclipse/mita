@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
- *
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
- *
+ * 
  * Contributors:
  *    Bosch Connected Devices and Solutions GmbH - initial contribution
- *
+ * 
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
@@ -17,20 +17,28 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.List
 import java.util.Map
+import org.eclipse.core.internal.resources.ResourceException
+import org.eclipse.core.resources.IContainer
+import org.eclipse.core.resources.IFile
 import org.eclipse.core.resources.IMarker
+import org.eclipse.core.resources.IProject
+import org.eclipse.core.resources.IResource
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.core.runtime.OperationCanceledException
 import org.eclipse.emf.common.util.URI
+import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.xtext.builder.BuilderParticipant
 import org.eclipse.xtext.builder.EclipseResourceFileSystemAccess2
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.OutputConfiguration
-import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.resource.IResourceDescription
 import org.eclipse.xtext.resource.IResourceDescription.Delta
 import org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider
+import org.eclipse.xtext.resource.IContainer.Manager
+import org.apache.log4j.Logger
 
 class ProgramDslBuilderParticipant extends BuilderParticipant {
 
@@ -72,6 +80,8 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 		}
 
 	}
+	
+	protected final static Logger logger = Logger.getLogger(BuilderParticipant);
 
 	protected ThreadLocal<Boolean> buildSemaphore = new ThreadLocal<Boolean>();
 
@@ -82,7 +92,7 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 	ResourceDescriptionsProvider resourceDescriptionsProvider;
 
 	@Inject
-	IContainer.Manager containerManager;
+	Manager containerManager;
 	
 	@Inject
 	Provider<MitaResourceSet> resourceSetProvider;
@@ -106,7 +116,7 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 			val index = resourceDescriptionsProvider.createResourceDescriptions();
 			val resDesc = index.getResourceDescription(resource.getURI());
 			val visibleContainers = containerManager.getVisibleContainers(resDesc, index);
-			for (IContainer c : visibleContainers) {
+			for (org.eclipse.xtext.resource.IContainer c : visibleContainers) {
 				for (IResourceDescription rd : c.getResourceDescriptions()) {
 					context.getResourceSet().getResource(rd.getURI(), true);
 				}
@@ -122,6 +132,74 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 
 		super.doBuild(deltas, outputConfigurations, generatorMarkers, new NoRebuildBuildContextDecorator(resourceSetProvider.get(), context),
 			access, progressMonitor)
+	}
+
+	def protected void delete(IResource resource, OutputConfiguration config, EclipseResourceFileSystemAccess2 access, IProgressMonitor monitor) {
+		if (monitor.isCanceled()) {
+			throw new OperationCanceledException()
+		}
+		if (resource instanceof IContainer) {
+			var IContainer container = (resource as IContainer)
+			for (IResource child : container.members()) {
+				delete(child, config, access, monitor)
+			}
+			container.delete(IResource.FORCE.bitwiseOr(IResource.KEEP_HISTORY), monitor)
+		} else if (resource instanceof IFile) {
+			var IFile file = (resource as IFile)
+			access.deleteFile(file, config.getName(), monitor)
+		} else {
+			resource.delete(IResource.FORCE.bitwiseOr(IResource.KEEP_HISTORY), monitor)
+		}
+
+	}
+
+	// need to clone the entire method since filtering resources is impossible otherwise unless we want to make 
+	override protected void cleanOutput(IBuildContext ctx, OutputConfiguration config, EclipseResourceFileSystemAccess2 access, IProgressMonitor monitor) throws CoreException {
+		val IProject project = ctx.getBuiltProject()
+		for (IContainer container : getOutputs(project, config)) {
+			if (!container.exists()) {
+				return;
+			}
+			if (canClean(container, config)) {
+				for (IResource resource : container.members().filter [
+					val path = it.projectRelativePath;
+					return path.toString != "src-gen/Makefile"
+				]) {
+					try {
+						if (!config.isKeepLocalHistory()) {
+							resource.delete(IResource.FORCE, monitor)
+						} else if (access === null) {
+							resource.delete(IResource.FORCE.bitwiseOr(IResource.KEEP_HISTORY), monitor)
+						} else {
+							delete(resource, config, access, monitor)
+						}
+					} catch (ResourceException e) {
+						logger.warn('''Couldn't delete «resource.getLocation()». «e.getMessage()»''')
+					}
+
+				}
+			} else if (config.isCleanUpDerivedResources()) {
+				var resources = derivedResourceMarkers.findDerivedResources(container, null).filter [
+					val path = it.projectRelativePath;
+					return path.toString != "src-gen/Makefile"
+				]
+				for (IFile iFile : resources) {
+					if (monitor.isCanceled()) {
+						throw new OperationCanceledException()
+					}
+					try {
+						if (access !== null) {
+							access.deleteFile(iFile, config.getName(), monitor)
+						} else {
+							iFile.delete(true, config.isKeepLocalHistory(), monitor)
+						}
+					} catch (ResourceException e) {
+						logger.warn('''Couldn't delete «iFile.getLocation()». «e.getMessage()»''')
+					}
+
+				}
+			}
+		}
 	}
 
 }

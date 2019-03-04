@@ -32,11 +32,13 @@ PlatformSpecification returns platform::Platform:
 	'platform' name=ID '{' 
 		typeKind=TypeKind
 		'module' module=STRING
+		('generator' generator=STRING)?
 		('validator' validator=STRING)?
 	(
 		('has' resources+=[platform::AbstractSystemResource])
 		| (events += SystemResourceEvent)
 		| (configurationItems += ConfigurationItem)
+		| (modalities += Modality)
 	)* '}'
 ;
 

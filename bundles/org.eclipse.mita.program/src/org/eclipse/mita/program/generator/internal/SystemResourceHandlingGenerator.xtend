@@ -60,7 +60,7 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(context, component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		internalGenerator.generateAdditionalFiles(fsa);
 	}
@@ -72,7 +72,7 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(context, component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		
 		val exceptionType = exceptionGenerator.exceptionType;
@@ -146,7 +146,7 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(context, component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		
 		val exceptionType = exceptionGenerator.exceptionType;
