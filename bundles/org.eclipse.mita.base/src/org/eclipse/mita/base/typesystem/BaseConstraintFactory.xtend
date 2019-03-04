@@ -109,6 +109,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 	public static final String DEFINING_RESOURCE_KEY = "definingResource";
 	public static final String INCLUDE_HEADER_KEY = "includeHeader";
 	public static final String INCLUDE_IS_USER_INCLUDE_KEY = "includeIsUserInclude";
+
+	public static final String FUNCTION_CANNOT_BE_USED_HERE = "FUNCTION_CANNOT_BE_USED_HERE";
 	
 	override ConstraintSystem create(EObject context) {		
 		val result = constraintSystemProvider.get();
@@ -357,7 +359,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(candidates === null || candidates.empty) {
 			return null;
 		}
-		val issue = new ValidationIssue(Severity.ERROR, '''Function «functionName» cannot be used here: %s, %s''', functionCall, functionReference, "");
+		val issue = new ValidationIssue(Severity.ERROR, '''Function «functionName» cannot be used here: %s, %s''', functionCall, functionReference, FUNCTION_CANNOT_BE_USED_HERE);
 		/* This function is pretty complicated. It handles function calls like `f(x)` or `x.f()`.
 		 * We get:
 		 * - an object holding the function call, "f(x)"

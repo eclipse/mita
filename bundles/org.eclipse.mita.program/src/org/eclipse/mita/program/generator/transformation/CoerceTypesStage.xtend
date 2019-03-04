@@ -56,7 +56,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		// - resolving proxies links and we don't want that, since we only compute constraints for program instead of its imports, too
 		// - after transforming the model has changed but it won't compute new resource descriptions leading to bad constraints in the cache
 		val pcopy = copier.copy(program);
-		copier.linkOrigin(pcopy, program);
+		ProgramCopier.linkOrigin(pcopy, program);
 		var cs = constraintFactory.create(pcopy);
 		println("----------------------")
 		println("Introducing is ok for a bit.")

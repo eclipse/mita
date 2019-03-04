@@ -128,11 +128,11 @@ abstract class AbstractTransformationStage {
 	/**
 	 * Replaces an object within its container.
 	 */
-	protected def void replaceWith(EObject target, EObject replacement) {
+	static public def void replaceWith(EObject target, EObject replacement) {
 		val container = target.eContainer;
 		if(container === null) return;
 		
-		replacement.linkOrigin(target);
+		ProgramCopier.linkOrigin(replacement, target);
 		if(target.eContainingFeature.isMany) {
 			val containerList = (container.eGet(target.eContainmentFeature) as List<EObject>);
 			val index = containerList.indexOf(target);

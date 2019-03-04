@@ -15,16 +15,16 @@ package org.eclipse.mita.program.generator.transformation
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.program.generator.internal.ProgramCopier
+import org.eclipse.xtext.EcoreUtil2
 
 abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 	
@@ -105,7 +105,7 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 	 */
 	protected def Expression createInitialization(Expression expression) {
 		val copy = EcoreUtil2.copy(expression);
-		copier.linkOrigin(copy, ProgramCopier.getOrigin(expression));
+		ProgramCopier.linkOrigin(copy, ProgramCopier.getOrigin(expression));
 		return copy;
 	}
 	

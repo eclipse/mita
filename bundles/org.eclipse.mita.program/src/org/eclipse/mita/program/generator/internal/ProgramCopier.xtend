@@ -53,7 +53,7 @@ class ProgramCopier {
 		return res;
 	}
 	
-	def void linkOrigin(EObject copy, EObject origin) {
+	static def void linkOrigin(EObject copy, EObject origin) {
 		copy.eAdapters.add(new CopySourceAdapter(origin));
 	}
 	
