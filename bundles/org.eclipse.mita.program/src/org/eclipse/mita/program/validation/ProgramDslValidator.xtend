@@ -369,7 +369,14 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		if (validatorClassName !== null) {
 			try {
 				val validator = loader.loadFromPlugin(validatorOrigin, validatorClassName) as IResourceValidator;
-				validator.validate(program, context, this);
+				if(validator !== null) {
+					if(validatorOrigin instanceof MitaBaseResource)	{
+						if(validatorOrigin.latestSolution === null) {
+							validatorOrigin.collectAndSolveTypes(validatorOrigin.contents.head);
+						}
+					}				
+					validator.validate(program, context, this);
+				}
 			} catch (Exception e) {
 				// TODO: add this to the error log
 				e.printStackTrace();

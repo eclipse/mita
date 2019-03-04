@@ -134,7 +134,7 @@ class SystemResourceHandlingGenerator {
 	}
 	dispatch def AbstractType getSigInstType3(TypeConstructorType type) {
 		if(type.name == "siginst" && type.typeArguments.tail.size > 0) {
-			return type.typeArguments.head;
+			return type.typeArguments.tail.head;
 		}
 		return type;
 	}

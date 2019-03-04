@@ -19,6 +19,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
+import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin;
 /**
  * Generates code implementing a function call. 
  */
@@ -44,7 +45,7 @@ abstract class AbstractFunctionGenerator implements IGenerator {
 	 * The default implementation returns true here, which means that the function call will be unraveled (unless the function's return type is void).
 	 */
 	def boolean callShouldBeUnraveled(ElementReferenceExpression expression) {
-		val inferenceResult = BaseUtils.getType(expression?.reference);
+		val inferenceResult = BaseUtils.getType(expression?.computeOrigin);
 		if(inferenceResult?.name == 'void') {
 			// don't unravel void function calls
 			return false;
