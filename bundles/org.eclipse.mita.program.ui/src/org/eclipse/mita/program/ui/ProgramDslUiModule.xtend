@@ -14,7 +14,6 @@
 package org.eclipse.mita.program.ui
 
 import com.google.inject.Binder
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.ui.index.MitaWorkspaceProjectsState
 import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
 import org.eclipse.mita.program.generator.ProjectErrorShouldGenerate
@@ -26,7 +25,6 @@ import org.eclipse.mita.program.ui.labeling.ProgramDslEObjectHoverProvider
 import org.eclipse.ui.PlatformUI
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.ide.editor.syntaxcoloring.ISemanticHighlightingCalculator
-import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.ui.LanguageSpecific
 import org.eclipse.xtext.ui.editor.IURIEditorOpener
 import org.eclipse.xtext.ui.editor.contentassist.ContentProposalPriorities
@@ -57,7 +55,6 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 
 	override configure(Binder binder) {
 		super.configure(binder)
-		binder.bind(XtextResourceSet).to(MitaResourceSet)
 	}
 
 	override configureBuilderPreferenceStoreInitializer(Binder binder) {

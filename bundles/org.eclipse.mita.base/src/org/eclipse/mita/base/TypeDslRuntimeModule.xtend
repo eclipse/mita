@@ -28,9 +28,7 @@ import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
-import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
-import org.eclipse.mita.base.typesystem.ISymbolFactory
 import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.linking.lazy.LazyURIEncoder
 import org.eclipse.xtext.resource.IContainer
@@ -44,7 +42,6 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 		super.configure(binder);
 		binder.bind(ITypeSystem).toInstance(MitaTypeSystem.getInstance());
 		binder.bind(IConstraintFactory).to(BaseConstraintFactory);
-		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
 	}
 	
 	def Class<? extends ILibraryProvider> bindILibraryProvider() {

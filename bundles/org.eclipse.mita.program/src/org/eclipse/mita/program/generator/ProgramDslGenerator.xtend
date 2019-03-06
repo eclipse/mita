@@ -34,7 +34,6 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemSpecification
@@ -55,6 +54,7 @@ import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
+import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 
@@ -119,7 +119,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	protected PluginResourceLoader resourceLoader
 	
 	@Inject
-	Provider<MitaResourceSet> resourceSetProvider;
+	Provider<XtextResourceSet> resourceSetProvider;
 		
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {

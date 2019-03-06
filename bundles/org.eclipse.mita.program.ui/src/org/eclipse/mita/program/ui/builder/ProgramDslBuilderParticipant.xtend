@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.List
 import java.util.Map
+import org.apache.log4j.Logger
 import org.eclipse.core.internal.resources.ResourceException
 import org.eclipse.core.resources.IContainer
 import org.eclipse.core.resources.IFile
@@ -28,17 +29,15 @@ import org.eclipse.core.runtime.IProgressMonitor
 import org.eclipse.core.runtime.OperationCanceledException
 import org.eclipse.emf.common.util.URI
 import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
-import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.xtext.builder.BuilderParticipant
 import org.eclipse.xtext.builder.EclipseResourceFileSystemAccess2
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.OutputConfiguration
+import org.eclipse.xtext.resource.IContainer.Manager
 import org.eclipse.xtext.resource.IResourceDescription
 import org.eclipse.xtext.resource.IResourceDescription.Delta
+import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider
-import org.eclipse.xtext.resource.IContainer.Manager
-import org.apache.log4j.Logger
 
 class ProgramDslBuilderParticipant extends BuilderParticipant {
 
@@ -46,9 +45,9 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 
 		final IBuildContext delegate
 
-		MitaResourceSet resourceSet;
+		XtextResourceSet resourceSet;
 
-		new(MitaResourceSet resourceSet, IBuildContext delegate) {
+		new(XtextResourceSet resourceSet, IBuildContext delegate) {
 			this.resourceSet = resourceSet;
 			this.delegate = delegate;
 		}
@@ -95,7 +94,7 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 	Manager containerManager;
 	
 	@Inject
-	Provider<MitaResourceSet> resourceSetProvider;
+	Provider<XtextResourceSet> resourceSetProvider;
 
 	override build(IBuildContext context, IProgressMonitor monitor) throws CoreException {
 		buildSemaphore.set(false);

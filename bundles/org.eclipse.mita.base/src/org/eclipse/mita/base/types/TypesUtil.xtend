@@ -6,6 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributors:
  * committers of YAKINDU - initial API and implementation
+ * Robert Bosch GmbH - move to xtend and modification
  */
 package org.eclipse.mita.base.types
 

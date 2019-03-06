@@ -1,19 +1,29 @@
+/********************************************************************************
+ * Copyright (c) 2018, 2019 Robert Bosch GmbH & TypeFox GmbH
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Robert Bosch GmbH & TypeFox GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.mita.base.util.BaseUtils
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 @EqualsHashCode
 @Accessors
@@ -56,7 +66,7 @@ class TypeVariableProxy extends TypeVariable {
 			val obj = origin.eGet(reference, false);
 			if(obj instanceof NamedElement && obj instanceof EObject && !(obj as EObject).eIsProxy) {
 				if(obj instanceof SumAlternative) {
-					maybeQname = QualifiedName.create((obj.eContainer as SumType).name, obj.name);
+					maybeQname = QualifiedName.create((obj.eContainer as org.eclipse.mita.base.types.SumType).name, obj.name);
 				}
 				else {
 					maybeQname = QualifiedName.create((obj as NamedElement).name);

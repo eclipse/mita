@@ -1,20 +1,32 @@
+/********************************************************************************
+ * Copyright (c) 2018, 2019 Robert Bosch GmbH & TypeFox GmbH
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Robert Bosch GmbH & TypeFox GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
 package org.eclipse.mita.base.typesystem.types
 
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.xtext.diagnostics.Severity
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.infra.Tree
 
 @EqualsHashCode
 @Accessors

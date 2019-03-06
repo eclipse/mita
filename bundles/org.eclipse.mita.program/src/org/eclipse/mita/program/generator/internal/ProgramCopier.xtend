@@ -16,17 +16,17 @@ package org.eclipse.mita.program.generator.internal
 import com.google.inject.Inject
 import com.google.inject.Provider
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.emf.ecore.util.EcoreUtil.Copier
-import org.eclipse.mita.base.typesystem.infra.MitaResourceSet
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.CopySourceAdapter
 import org.eclipse.mita.program.Program
-import org.eclipse.emf.ecore.resource.ResourceSet
+import org.eclipse.xtext.resource.XtextResourceSet
 
 class ProgramCopier {
 	
 	@Inject
-	Provider<MitaResourceSet> resourceSetProvider;
+	Provider<XtextResourceSet> resourceSetProvider;
 	
 	def copy(Program program) {
 		return copy(program, resourceSetProvider.get);

@@ -23,11 +23,7 @@ import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
-import org.eclipse.mita.base.typesystem.BaseSymbolFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
-import org.eclipse.mita.base.typesystem.ISymbolFactory
-import org.eclipse.mita.base.typesystem.infra.DefaultPackageResourceMapper
-import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
@@ -57,8 +53,6 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 	
 		binder.bind(IConstraintFactory).to(PlatformConstraintFactory);
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
-		binder.bind(ISymbolFactory).to(BaseSymbolFactory);
-		binder.bind(IPackageResourceMapper).to(DefaultPackageResourceMapper);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(PlatformLinker);
 	}

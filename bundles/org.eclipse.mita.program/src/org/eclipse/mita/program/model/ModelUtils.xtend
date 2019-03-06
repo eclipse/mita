@@ -36,7 +36,6 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
-import org.eclipse.mita.base.typesystem.infra.IPackageResourceMapper
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -63,10 +62,7 @@ import org.eclipse.xtext.resource.IContainer
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 
 class ModelUtils {
-
-	@Inject protected IPackageResourceMapper packageResourceMapper;
-
-		@Inject
+	@Inject
 	protected IContainer.Manager containerManager;
 	
 	@Inject
