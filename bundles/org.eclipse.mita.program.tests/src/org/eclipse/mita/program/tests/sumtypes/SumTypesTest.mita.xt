@@ -79,8 +79,8 @@ fn incVecs(a: anyVec) {
         	    "Couldn't resolve reference to Parameter 'x'." at "x + 1"
         	    "Couldn't resolve reference to Parameter 'y'." at "y"
         	    "Couldn't resolve reference to Parameter 'y'." at "y + 1"
-        	    "Function __PLUS__ cannot be used here: Return type incompatible: uint16 is not subtype of ⊥ (Couldn't resolve reference to Parameter 'x'.)" at "x + 1"
-        	    "Function __PLUS__ cannot be used here: Return type incompatible: uint16 is not subtype of ⊥ (Couldn't resolve reference to Parameter 'y'.)" at "y + 1"
+        	    "Function __PLUS__ cannot be used here: Return type incompatible: uint32 is not subtype of ⊥ (Couldn't resolve reference to Parameter 'x'.)" at "x + 1"
+        	    "Function __PLUS__ cannot be used here: Return type incompatible: uint32 is not subtype of ⊥ (Couldn't resolve reference to Parameter 'y'.)" at "y + 1"
         	    "Function vec2d cannot be used here" at "vec2d"
         	    "UOA(__args, [x->⊥ (Couldn't resolve reference to Parameter 'x'.), y->⊥ (Couldn't resolve reference to Parameter 'y'.)]) not instance of vec2d\r\n	__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), vec2d_t(int32, int32)) → vec2d(vec2d_t(int32, int32)) = vec2d([self: ∗anyVec, _0: vec2d_t])\r\n	⊥ (Couldn't resolve reference to EObject 'vec2d'.) = vec2d(x=x + prim»i»1, y=y + prim»i»1)\r\n" at "vec2d"
         	--- */
