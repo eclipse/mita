@@ -33,7 +33,7 @@ public class ArraysTest extends AbstractXpectTest {
 	
 	@Xpect
 	public void inferredLength(@StringExpectation IStringExpectation expectation, @ThisOffset EObject expr) {
-		expectation.assertEquals(((Integer) ((ValidElementSizeInferenceResult) elementSizeInferrer.infer(expr))
+		expectation.assertEquals(((Long) ((ValidElementSizeInferenceResult) elementSizeInferrer.infer(expr))
 				.getElementCount())
 				.toString());
 	}

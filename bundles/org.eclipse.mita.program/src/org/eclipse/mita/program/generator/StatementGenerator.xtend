@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.Status
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.BinaryExpression
@@ -30,7 +31,6 @@ import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.ConditionalExpression
 import org.eclipse.mita.base.expressions.DoubleLiteral
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.HexLiteral
@@ -43,25 +43,37 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.EnumerationType
-import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
-import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.TypesFactory
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.TypeAccessor
+import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.types.VirtualFunction
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.NumericType
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.AbstractStatement
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ArrayRuntimeCheckStatement
 import org.eclipse.mita.program.DereferenceExpression
@@ -92,7 +104,6 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SourceCodeComment
 import org.eclipse.mita.program.ThrowExceptionStatement
 import org.eclipse.mita.program.TryStatement
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.mita.program.WhileStatement
@@ -103,13 +114,18 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
-import org.eclipse.mita.base.types.HasAccessors
+
+import static org.eclipse.mita.base.types.TypesUtil.*
+import static org.eclipse.mita.program.model.ModelUtils.*
+
+import static extension org.eclipse.emf.common.util.ECollections.asEList
+import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 
 class StatementGenerator {
 
 	@Inject extension ProgramDslTraceExtensions
-
-	@Inject ITypeSystemInferrer typeInferrer
 	
 	@Inject
 	protected extension GeneratorUtils
@@ -146,7 +162,7 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(HexLiteral stmt) {
-		'''0x«Integer.toHexString(stmt.value)»'''
+		'''0x«Long.toHexString(stmt.value)»'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(FloatLiteral stmt) {
@@ -154,7 +170,7 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(DoubleLiteral stmt) {
-		'''«stmt.value»f'''
+		'''«stmt.value»'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(BoolLiteral stmt) {
@@ -184,10 +200,9 @@ class StatementGenerator {
 		/* TODO: replace this hack with a typecast expression that supports TypeSpecifier
 		 * see https://github.com/Yakindu/statecharts/issues/1779
 		 */
-		val typeSpec = TypesFactory.eINSTANCE.createTypeSpecifier();
-		typeSpec.type = stmt.type;
+		val type = BaseUtils.getType(stmt)
 
-		'''(«typeGenerator.code(typeSpec)») («stmt.operand.code.noTerminator»)'''
+		'''(«typeGenerator.code(stmt, type)») («stmt.operand.code.noTerminator»)'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(PrimitiveValueExpression stmt) {
@@ -200,7 +215,7 @@ class StatementGenerator {
 
 	@Traced dispatch def IGeneratorNode code(BinaryExpression stmt) {
 		// TODO: handle strings and reference types
-		'''«stmt.leftOperand.code.noTerminator» «stmt.operator.literal» «stmt.rightOperand.code.noTerminator»;'''
+		'''«stmt.leftOperand.code.noTerminator» «stmt.operator.literal» «stmt.rightOperand.code.noTerminator»'''
 	}
 
 	dispatch def IGeneratorNode code(ModalityAccess stmt) {
@@ -248,7 +263,7 @@ class StatementGenerator {
 		}
 		
 		val checks = new LinkedList<CodeFragment>();
-		val arraySelector = accessStatement.arraySelector; 
+		val arraySelector = accessStatement.arraySelector.ignoreCoercions; 
 		val arrayLength = '''«variableName».length''';
 		if(arraySelector instanceof ValueRange) {			
 			if(arraySelector.lowerBound !== null) {
@@ -263,88 +278,165 @@ class StatementGenerator {
 		} else {
 			checks += codeFragmentProvider.create('''«arrayLength» <= «arraySelector.code.noTerminator»''');
 		}
-
+		
 		return '''
+		«IF !checks.empty»
 		if(«FOR check: checks SEPARATOR(" || ")»«check»«ENDFOR») {
 			«generateExceptionHandler(stmt, "EXCEPTION_INVALIDRANGEEXCEPTION")»
 		}
+		«ENDIF»
 		''';
 	}
+	
+	@Traced dispatch def IGeneratorNode code(CoercionExpression expr) {
+		val coercedType = BaseUtils.getType(expr);
+		val expressionType = BaseUtils.getType(expr.value);
+		if(coercedType == expressionType) {
+			// inserting this coercion seems to have fixed some subtypes to be equal.
+			// since they are both equal just return expr.value.code.
+			return '''«expr.value.code»''';
+		}
+		if(coercedType instanceof org.eclipse.mita.base.typesystem.types.SumType) {
+			if(!(expressionType instanceof org.eclipse.mita.base.typesystem.types.SumType)) {
+				val altAccessor = expressionType.getNameInStruct(expr);
+				val needCast = EcoreUtil2.getContainerOfType(expr, ProgramBlock) !== null;
+				val expressionTypeIsSingleton = expr.eResource.constraintSystem.getUserData(expressionType, BaseConstraintFactory.ECLASS_KEY) == "Singleton"
+				return '''
+				(«IF needCast»(«coercedType.getStructType(expr)») «ENDIF»{
+					.tag = «expressionType.getEnumName(expr)»«IF !(expressionTypeIsSingleton)», ««« there is no other field for singletons
 
+					.data.«altAccessor» = «expr.value.code»
+				«ENDIF»
+				
+				})
+
+				'''
+			}
+		}
+		if(TypesUtil.isGeneratedType(expr, coercedType)) {
+			val generator = registry.getGenerator(expr.eResource, coercedType) as AbstractTypeGenerator;
+			return '''«generator.generateCoercion(expr, expressionType, coercedType)»''';
+		}
+		if(coercedType instanceof TypeConstructorType) {
+			// can't really cast these. This should only happen for literals.
+			return '''«expr.value.code»''';
+		}
+		return '''((«(expr.typeSpecifier as AbstractType).getCtype(expr)») «expr.value.code»)'''
+	}
+	
 	@Traced dispatch def IGeneratorNode code(FeatureCall stmt) {
 		if (stmt.operationCall) {
-			val feature = stmt.feature;
+			val feature = stmt.reference;
 			if(feature instanceof SumAlternative) {
-				val altAccessor = feature.structName;
-				if(!(stmt.owner instanceof ElementReferenceExpression) 
-				|| !((stmt.owner as ElementReferenceExpression).reference instanceof SumType)) {
-					return '''UNKNOWN ERROR @FeatureCall'''
-				}
-				val sumType = (stmt.owner as ElementReferenceExpression).reference as SumType;
-				val dataType = if(feature instanceof AnonymousProductType) {
-					if(feature.typeSpecifiers.length == 1) {
-						feature.typeSpecifiers.head.ctype;
-					}
-					else {
-						feature.structType
-					}
-				}
-				else {
-					feature.structType
-				}
-				// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
-				val needCast = EcoreUtil2.getContainerOfType(stmt, ProgramBlock) !== null
-				val hasAccessors = feature.realType instanceof HasAccessors;
-				 
-				'''
-				«IF needCast»(«sumType.structName») «ENDIF»{
-					.tag = «feature.enumName»«IF !(feature instanceof Singleton)», ««« there is no other field for singletons
 
-					««« (ref instanceof AnonymousProductType => ref.typeSpecifiers.length > 1)
-
-					.data.«altAccessor» = «IF needCast»(«dataType») «ENDIF»{
-						«FOR i_arg: stmt.arguments.indexed»
-						«IF hasAccessors»«accessor(feature, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < stmt.arguments.length - 1»,«ENDIF»
-						«ENDFOR»
-					}
-					«ELSE»
-					
-					«ENDIF»
-				}
-				'''
 			} else {
 				/* The pogram transformation pipeline rewrites extension methods to regular element reference expressions.
 				 * Thus, we should never get here.
 				 */
-				'''// function calls as feature calls are not supported'''
+				return '''«_code(stmt as ElementReferenceExpression)»'''
 			}
 		} else if (stmt.isArrayAccess) {
-			'''«stmt.owner.code.noTerminator»[«stmt.arraySelector.head.code.noTerminator»];'''
-		} else if (stmt.feature instanceof Modality) {
+			'''«stmt.arguments.head.value.code.noTerminator»[«stmt.arraySelector.head.code.noTerminator»];'''
+		} else if (stmt.reference instanceof Modality) {
 			throw new CoreException(new Status(IStatus.ERROR, null, 'Sensor access should not be a feature call'));
-		} else if (stmt.feature instanceof SignalInstance) {
+		} else if (stmt.reference instanceof SignalInstance) {
 			'''/* Signal instance access should have been rewritten by the compiler. */'''
-		} else if (stmt.feature instanceof VariableDeclaration) {
+		} else if (stmt.reference instanceof VariableDeclaration) {
 			/* This slightly obscure case is for signal read access where the transformation pipeline
 			 * replaces the original feature with the SignalInstanceReadAccess variable declaration.
 			 */
-			val declaration = stmt.feature as VariableDeclaration;
+			val declaration = stmt.reference as VariableDeclaration;
 			'''«declaration.name»'''
-		} else if (stmt.feature instanceof Property) {
-			val _feature = stmt.feature as Property
-			'''«stmt.owner.code.noTerminator».«_feature.name»'''
-		} else if (stmt.feature instanceof Parameter) {
-			val _feature = stmt.feature as Parameter
-			'''«stmt.owner.code.noTerminator».«_feature.name»'''
+		} else if (stmt.reference instanceof Property) {
+			val _feature = stmt.reference as Property
+			'''«stmt.reference.code.noTerminator».«_feature.name»'''
+		} else if (stmt.reference instanceof Parameter) {
+			val _feature = stmt.reference as Parameter
+			'''«stmt.arguments.head.value.code.noTerminator».«_feature.name»'''
 		}
 	}
 
+	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, TypeConstructor cons, Iterable<Argument> arguments) {
+		val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null;
+		val structuralType = cons.eContainer;
+		'''
+		«IF needCast»(«structuralType.structType») «ENDIF»{
+			«FOR i_arg : arguments.indexed SEPARATOR (',\n')»
+			.«IF i_arg.value.parameter !== null»«i_arg.value.parameter.name»«ELSE»«cons.parameters.get(i_arg.key).name»«ENDIF» = «i_arg.value.value.code»
+			«ENDFOR»
+		}'''
+	}
+	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, TypeAccessor accessor, Iterable<Argument> arguments) {
+		'''«arguments.head.code».«accessor.name»'''
+	}
+	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, VirtualFunction fun, Iterable<Argument> arguments) {
+		'''NOT IMPLEMENTED: «fun.eClass»''';
+	}
+
+	@Traced dispatch def IGeneratorNode generateVirtualFunctionCall(EObject callSite, SumSubTypeConstructor cons, Iterable<Argument> arguments) {
+		val eConstructingType = cons.eContainer;
+		val constructingType = BaseUtils.getType(eConstructingType);
+		// the result destination of this expression has type of either the constructor or its parent sum type.
+		// if this expression is part of a return statement then the sum type would be inferred at the function definition.
+		// TODO handle nested sum types via coercions.
+		val EObject expressionDestination = if(EcoreUtil2.getContainerOfType(callSite, ReturnStatement) !== null) {
+			EcoreUtil2.getContainerOfType(callSite, Operation)?.typeSpecifier;
+		} 
+		else {
+			// things like assignments etc.
+			EcoreUtil2.getContainerOfType(callSite, AbstractStatement);	
+		}
+		val constructedType = BaseUtils.getType(expressionDestination);
+		val realConstructedType = getRealType(callSite, constructingType);
+		if(realConstructedType !== constructingType) {
+			// we embed some other type. 
+			// since the user needs to construct this explicitly we can just call code on the argument which constructs the real type.
+			return '''«arguments.tail.head.code»''';
+		}
+		if(eConstructingType instanceof SumAlternative) {
+			val altAccessor = constructingType.getNameInStruct(callSite);
+			val eSumType = eConstructingType.eContainer;
+			val sumType = BaseUtils.getType(eSumType);
+			val dataType = getRealType(callSite, constructingType).getCtype(callSite)
+			// global initialization must not cast, local reassignment must cast, local initialization may cast. Therefore we cast when we are local.
+			val needCast = EcoreUtil2.getContainerOfType(callSite, ProgramBlock) !== null
+			
+			val hasAccessors = hasNamedMembers(callSite, realConstructedType);
+			
+			val returnTypeIsSumType = constructedType instanceof org.eclipse.mita.base.typesystem.types.SumType;
+			
+			val constructingTypeIsSingleton = TypesUtil
+				 .getConstraintSystem(callSite.eResource)
+				?.getUserData(constructingType, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
+			
+			val constructedStruct = codeFragmentProvider.create('''
+			«IF returnTypeIsSumType || needCast»(«dataType»)«ENDIF» {
+				«FOR i_arg: arguments.tail.indexed»
+				«IF hasAccessors»«accessor(callSite, eConstructingType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
+				«ENDFOR»	
+			}
+			''')
+			
+			return '''
+			«constructedStruct»
+			'''
+		}
+		return '''BROKEN MODEL''';
+	}
+	
+	def boolean hasNamedMembers(EObject context, AbstractType type) {
+		val eClass = context.eResource.constraintSystem.getUserData(type, BaseConstraintFactory.ECLASS_KEY);
+		return #["NamedProductType", "StructureType"].findFirst[it == eClass] !== null;
+	}
+	
 	@Traced dispatch def IGeneratorNode code(ElementReferenceExpression stmt) {
 		val ref = stmt.reference
-		val id = ref.baseName
+		val id = ref?.baseName
 
 		if (stmt.operationCall) {
-			if (ref instanceof FunctionDefinition) {
+			if (ref instanceof VirtualFunction) {
+				'''«generateVirtualFunctionCall(stmt, ref, stmt.arguments)»'''
+			} else if (ref instanceof FunctionDefinition) {
 				'''«ref.generateFunctionCall(codeFragmentProvider.create('''NULL''').addHeader("stdlib.h", true), stmt)»'''
 			} else if (ref instanceof GeneratedFunctionDefinition) {
 				'''«registry.getGenerator(ref)?.generate(stmt, null)»''';
@@ -354,16 +446,13 @@ class StatementGenerator {
 				} else {
 					'''«ref.generateNativeFunctionCallUnchecked(stmt)»'''
 				}
-			} else if (ref instanceof StructureType) {
-				val needCast = EcoreUtil2.getContainerOfType(stmt, ProgramBlock) !== null
-				'''
-				«IF needCast»(«ref.baseName») «ENDIF»{
-					«FOR i_arg : stmt.arguments.indexed SEPARATOR (',\n')»
-					.«IF i_arg.value.parameter !== null»«i_arg.value.parameter.name»«ELSE»«ref.parameters.get(i_arg.key).name»«ENDIF» = «i_arg.value.value.code»
-					«ENDFOR»
-				}'''
-			}  else {
+			} else { 
+				if(ref instanceof Modality || ref instanceof SignalInstance) {
+					return '''''';
+				}
+				else {
 				'''!UNKNOWN REF < EOBJECT!''';
+				}
 			}
 		} else if (stmt.isArrayAccess && !(stmt.arraySelector.head instanceof ValueRange)) {
 			
@@ -390,15 +479,13 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode code(ReturnStatement stmt) {
 		val hasValue = stmt.value !== null;
 		var AbstractTypeGenerator _generatedTypeGenerator = null;
-		var TypeSpecifier _resultType = null;
+		var AbstractType _resultType = null;
 		if(hasValue) {
 			val value = stmt.value;
-			val inference = typeInferrer.infer(value);
-			val expressionType = inference?.type;
-			
-			if (expressionType instanceof GeneratedType) {
-				_generatedTypeGenerator = registry.getGenerator(expressionType);
-				_resultType = ModelUtils.toSpecifier(inference);
+			val expressionType = BaseUtils.getType(value);
+			if (isGeneratedType(stmt.eResource, expressionType)) {
+				_generatedTypeGenerator = registry.getGenerator(stmt.eResource, expressionType).castOrNull(AbstractTypeGenerator);
+				_resultType = expressionType;
 			}
 		}
 		val generatedTypeGenerator = _generatedTypeGenerator;
@@ -419,10 +506,9 @@ class StatementGenerator {
 			«ENDIF»
 		'''
 	}
-
+	
 	@Traced dispatch def IGeneratorNode code(AssignmentExpression stmt) {
 		return '''«stmt.initializationCode.noTerminator»'''
-
 	}
 
 	@Traced dispatch def IGeneratorNode code(InterpolatedStringExpression stmt) {
@@ -431,12 +517,11 @@ class StatementGenerator {
 		 * the StringGenerator (i.e. the code generator registered at the generated-type string). Inelegantly, we
 		 * explicitly encode this case anddevolve code generation the registered code generator of the generated-type. 
 		 */
-		val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(stmt));
-		val type = typeSpec?.type;
-		if (type instanceof GeneratedType) {
-			val generator = registry.getGenerator(type);
-			if (generator !== null && generator.checkExpressionSupport(typeSpec, null, null)) {
-				return '''«generator.generateExpression(typeSpec, stmt, null, null)»''';
+		val type = BaseUtils.getType(stmt);
+		if (isGeneratedType(stmt.eResource, type)) {
+			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
+			if (generator !== null && generator.checkExpressionSupport(stmt, type, null, null)) {
+				return '''«generator.generateExpression(type, stmt, null, null)»''';
 			} else {
 				throw new CoreException(
 					new Status(IStatus.ERROR, "org.eclipse.mita.program",
@@ -458,9 +543,14 @@ class StatementGenerator {
 	}
 	
 	
-	def IGeneratorNode generateFunCallStmt(IGeneratorNode variableName, TypeSpecifier inferenceResult, ElementReferenceExpression initialization) {
+
+	def IGeneratorNode generateFunCallStmt(IGeneratorNode variableName, AbstractType type, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
-		if (reference instanceof FunctionDefinition) {
+		if (reference instanceof VirtualFunction) {
+			return codeFragmentProvider.create('''
+				«variableName» = «generateVirtualFunctionCall(initialization, reference, initialization.arguments).noTerminator»;
+			''')
+		} else if (reference instanceof FunctionDefinition) {
 			return codeFragmentProvider.create('''
 				«generateFunctionCall(reference, codeFragmentProvider.create('''&«variableName»'''), initialization).noTerminator»;
 			''')
@@ -481,31 +571,35 @@ class StatementGenerator {
 		}	
 	}
 	
+
 	dispatch def IGeneratorNode initializationCode(VariableDeclaration stmt) {
-		return initializationCode(stmt, stmt.inferType, codeFragmentProvider.create('''«stmt.name»'''), AssignmentOperator.ASSIGN, stmt.initialization, false);
+		return initializationCode(stmt, codeFragmentProvider.create('''«stmt.name»'''), AssignmentOperator.ASSIGN, stmt.initialization, false);
 	}
 	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
-		return initializationCode(expr.varRef, expr.inferType, codeFragmentProvider.create('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
+		return initializationCode(expr.varRef, codeFragmentProvider.create('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
 	}
-	def IGeneratorNode initializationCode(EObject target, TypeSpecifier typeOf, IGeneratorNode varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
-		val type = typeOf?.type;
-		if (type instanceof GeneratedType) {
-			val generator = registry.getGenerator(type);
+	def IGeneratorNode initializationCode(EObject target, IGeneratorNode varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
+ 		val type = BaseUtils.getType(target);
+		
+		if (isGeneratedType(target, type)) {
+			val generator = registry.getGenerator(target.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (initialization instanceof NewInstanceExpression) {
-				return generator.generateNewInstance(typeOf, initialization);
+				return generator.generateNewInstance(type, initialization);
 			} else if (initialization instanceof ArrayAccessExpression) {
-				return generator.generateExpression(typeOf, target, op, initialization);
+				return generator.generateExpression(type, target, op, initialization);
 			} else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
-				return generateFunCallStmt(varName, typeOf, initialization as ElementReferenceExpression);
+				return generateFunCallStmt(varName, type, initialization as ElementReferenceExpression);
 			} else if(initialization instanceof PrimitiveValueExpression) {
 				if(initialization.value instanceof ArrayLiteral) {
 					return CodeFragment.EMPTY;
 				}
+			} else {
+				return generator.generateExpression(type, target, op, initialization);
 			}
-			return generator.generateExpression(typeOf, target, op, initialization);
+			return generator.generateExpression(type, target, op, initialization);
 		} else if (initialization instanceof ElementReferenceExpression) {
 			if(initialization.isOperationCall) {
-				return generateFunCallStmt(varName, typeOf, initialization);	
+				return generateFunCallStmt(varName, type, initialization);	
 			}
 			else {
 				return target.trace('''«varName» «op» «initialization.code.noTerminator»;''');
@@ -521,18 +615,24 @@ class StatementGenerator {
 	dispatch def IGeneratorNode code(VariableDeclaration stmt) {
 		// «platformGenerator.typeGenerator.code(stmt.typeSpecifier)»
 		val initialization = stmt.initialization;
-		val inferenceResult = stmt.inferType;
-		val type = inferenceResult?.type;
-	
+		val type = BaseUtils.getType(stmt);
 		var result = stmt.trace;
+		
+		val typeIsSingleton = TypesUtil.getConstraintSystem(stmt.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
+		if(typeIsSingleton) {
+			// singletons have no representation in C for now since they are just some tag in enums with empty data.
+			return result;
+		}
+		
 		
 		var initializationDone = false;
 		
 		// generate declaration
 		// generated types
-		if (type instanceof GeneratedType) {
-			val generator = registry.getGenerator(type);
-			result.children += generator.generateVariableDeclaration(inferenceResult, stmt);
+
+		if (isGeneratedType(stmt, type)) {
+			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
+			result.children += generator.generateVariableDeclaration(type, stmt);
 			if(type.name == MitaTypeSystem.ARRAY_TYPE && initialization instanceof ArrayLiteral) {
 				initializationDone = true;
 			}
@@ -551,28 +651,28 @@ class StatementGenerator {
 			// Assignment from functions is done by declaring, then passing in a reference
 			if(initialization.operationCall && 
 				// constructors of structural types are done directly
-				!(ref instanceof SumAlternative || ref instanceof StructureType)
+				!(ref instanceof TypeConstructor)
 			) {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
+				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name»;''');
 			} else {
 				// copy assigmnent
 				// since type != generatedType we can copy with assignment
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
+				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
 				initializationDone = true;
 			}
 		// constant assignments and similar get here
 		} else if(initialization instanceof ModalityAccess) {
-			result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name»;''');
+			result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name»;''');
 		} 
 		else {
 			if (stmt.initialization !== null) {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
-			} else if (type instanceof StructureType) {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = {0};''');
-			} else if (type instanceof PrimitiveType) {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = 0;''');
+				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = «stmt.initialization.code.noTerminator»;''');
+			} else if (type instanceof ProdType || type instanceof org.eclipse.mita.base.typesystem.types.SumType) {
+				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = {0};''');
+			} else if (type instanceof NumericType) {
+				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = 0;''');
 			} else {
-				result.children += codeFragmentProvider.create('''«inferenceResult.ctype» «stmt.name» = WARNING unsupported initialization;''');
+				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = ERROR unsupported initialization;''');
 			}
 			// all of the above did initialization
 			initializationDone = true;
@@ -755,12 +855,11 @@ class StatementGenerator {
 	}
 	
 	@Traced dispatch def IGeneratorNode code(IsAssignmentCase stmt) {
-		val varTypeSpec = stmt.assignmentVariable.typeSpecifier;
-		val varType = varTypeSpec.type as SumAlternative;
+		val varType = BaseUtils.getType(stmt.assignmentVariable);
 		val where = stmt.eContainer as WhereIsStatement;
 		'''
-		case «varType.enumName»: {
-			«varTypeSpec.ctype» «stmt.assignmentVariable.name» = «where.matchElement.code».data.«varType.structName»;
+		case «varType.getEnumName(stmt)»: {
+			«varType.getCtype(stmt)» «stmt.assignmentVariable.name» = «where.matchElement.code».data.«varType.getNameInStruct(stmt)»;
 			«stmt.body.code.noBraces»
 			break;
 		}
@@ -789,7 +888,7 @@ class StatementGenerator {
 		'''
 	}
 	
-	def Function<Integer, String> accessor(SumAlternative productType, Parameter preferred, String prefix, String suffix) {
+	def Function<Integer, String> accessor(EObject context, SumAlternative productType, Parameter preferred, String prefix, String suffix) {
 		[idx | 
 			if(preferred !== null) {
 				'''«prefix»«preferred.name»«suffix»'''	
@@ -802,16 +901,19 @@ class StatementGenerator {
 	}
 	
 	@Traced dispatch def IGeneratorNode code(IsDeconstructor stmt) {
-		val varTypeSpec = stmt.inferType;
+		val varType = BaseUtils.getType(stmt);
 		val isDeconstructionCase = stmt.eContainer as IsDeconstructionCase;
 		val isDeconstructionCaseType = isDeconstructionCase.productType;
 		val where = isDeconstructionCase.eContainer as WhereIsStatement;
-		val altAccessor = isDeconstructionCaseType.structName;
+		val altAccessor = isDeconstructionCaseType.nameInStruct;
 		val idx = isDeconstructionCase.deconstructors.indexOf(stmt);
-		val productType = isDeconstructionCase.productType;
-		val hasAccessors = isDeconstructionCaseType.realType instanceof HasAccessors;
-		val member = if(hasAccessors) accessor(productType, stmt.productMember, ".", "").apply(idx);
-		'''«varTypeSpec.ctype» «stmt.name» = «where.matchElement.code».data.«altAccessor»«IF hasAccessors»«member»«ENDIF»;'''
+		val productType = BaseUtils.getType(isDeconstructionCase.productType);
+
+		val member = accessor(stmt, isDeconstructionCase.productType, stmt.productMember, ".", "").apply(idx);
+		val hasAccessors = hasNamedMembers(stmt, getRealType(stmt, productType));
+		
+		return '''«varType.getCtype(stmt)» «stmt.name» = «where.matchElement.code».data.«altAccessor»«IF hasAccessors»«member»«ENDIF»;'''
+
 	}
 	
 	@Traced dispatch def IGeneratorNode code(LoopBreakerStatement stmt) {
@@ -829,8 +931,20 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def header(FunctionDefinition definition) {
-		val resultType = definition.inferType;
-		'''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.ctype»* _result«IF !definition.parameters.empty», «ENDIF»«FOR x : definition.parameters SEPARATOR ', '»«x.inferType.ctype» «x.name»«ENDFOR»);'''
+		// TODO handle type schemes properly
+		// but *basically* a function with type parameters can't do anything with them except pass values through, so we *could* translate to void*
+		// however that's like, java, so ...
+		var _resultType = BaseUtils.getType(definition);
+		if(_resultType instanceof TypeScheme) {
+			_resultType = _resultType.on;
+		}
+		val resultType = _resultType;
+		if(resultType instanceof FunctionType) {
+			return '''«exceptionGenerator.exceptionType» «definition.baseName»(«resultType.to.getCtype(definition)»* _result«IF !definition.parameters.empty», «ENDIF»«FOR x : definition.parameters SEPARATOR ', '»«BaseUtils.getType(x).getCtype(definition)» «x.name»«ENDFOR»);'''
+		}
+		else {
+			return '''!!!NOT A FUNCTION!!!'''
+		}
 	}
 	
 	dispatch def IGeneratorNode header(StructureType definition) {
@@ -838,11 +952,11 @@ class StatementGenerator {
 	}
 	
 	def IGeneratorNode structureTypeCode(StructureType definition) {
-		return structureTypeCodeDecl(definition, definition.parameters, definition.structName);
+		return structureTypeCodeDecl(definition, definition.parameters.map[it as Parameter].asEList, definition.structType);
 	}
 	
 	def IGeneratorNode structureTypeCodeDecl(EObject obj, List<Parameter> parameters, CodeFragment typeName) {
-		return structureTypeCodeReal(obj, parameters.map[new Pair(it.inferType.ctype, it.baseName)], typeName);
+		return structureTypeCodeReal(obj, parameters.map[new Pair(BaseUtils.getType(it).getCtype(obj), it.baseName)], typeName);
 	
 	}
 	@Traced def IGeneratorNode structureTypeCodeReal(EObject obj, List<Pair<CodeFragment, String>> typesAndNames, CodeFragment typeName) {
@@ -867,14 +981,14 @@ class StatementGenerator {
 		
 		'''
 		«FOR alternative: definition.alternatives.filter(NamedProductType)»
-		«structureTypeCodeDecl(alternative, alternative.parameters, alternative.structType)»
+		«structureTypeCodeDecl(alternative, alternative.parameters.map[it as Parameter].asEList, alternative.structType)»
 		«ENDFOR»
 		
 		««« anonymous alternatives get tuple-like accessors (_1, _2, ...)
 		«FOR alternative: definition.alternatives.filter(AnonymousProductType)»
 		««« If we have only one typeSpecifier, we shorten to an alias, so we don't create a struct here 	
 		«IF alternative.typeSpecifiers.length > 1»
-		«structureTypeCodeReal(alternative, alternative.typeSpecifiers.indexed.map[new Pair(it.value.inferType.ctype, '''_«it.key»''')].toList, alternative.structType)»
+		«structureTypeCodeReal(alternative, alternative.typeSpecifiers.indexed.map[new Pair(BaseUtils.getType(it.value).getCtype(definition), '''_«it.key»''')].toList, alternative.structType)»
 		«ENDIF»		
 		«ENDFOR»
 		
@@ -887,10 +1001,10 @@ class StatementGenerator {
 		typedef struct {
 			«definition.enumName» tag;
 			union {
-				«FOR alternative: nonSingletonAlternatives»«IF hasOneMember.apply(alternative)»«(alternative as AnonymousProductType).typeSpecifiers.head.ctype»«ELSE»«alternative.structType»«ENDIF» «alternative.structName»;
+				«FOR alternative: nonSingletonAlternatives»«BaseUtils.getType(alternative).getCtype(definition)» «alternative.nameInStruct»;
 			«ENDFOR»
 			} data;
-		} «definition.structName»;
+		} «definition.structType»;
 		'''
 	}
 
@@ -911,24 +1025,39 @@ class StatementGenerator {
 	
 	@Traced def generateNativeFunctionCallUnchecked(NativeFunctionDefinition op, ArgumentExpression args) {
 		val call = codeFragmentProvider
-			.create('''«op.name»(«FOR arg : ModelUtils.getSortedArguments(op.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»)''')
+			.create('''«op.name»(«FOR arg : ExpressionUtils.getSortedArguments(op.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»)''')
 			.addHeader(op.header, true);
 		return '''«call»'''
 	}
 	
 	@Traced def generateFunctionCall(Operation op, IGeneratorNode firstArg, ArgumentExpression args) {
 		'''
-			exception = «op.baseName»(«IF firstArg !== null»«firstArg.noTerminator»«IF !args.arguments.empty», «ENDIF»«ENDIF»«FOR arg : ModelUtils.getSortedArguments(op.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»);
-			«generateExceptionHandler(args, 'exception')»
+
+		exception = «op.baseName»(«IF firstArg !== null»«firstArg.noTerminator»«IF !args.arguments.empty», «ENDIF»«ENDIF»«FOR arg : ExpressionUtils.getSortedArguments(op.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»);
+		«generateExceptionHandler(args, 'exception')»
 		'''
+
 	}
 
-	private def inferType(EObject expr) {
-		return ModelUtils.toSpecifier(typeInferrer.infer(expr));
+	private def getCtype(AbstractType type, EObject context) {
+		val result = if(type instanceof TypeVariable) {
+			codeFragmentProvider.create('''void*''') 
+		} 
+		else {
+			typeGenerator.code(context, type);	
+		}
+		val includeHeader = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.INCLUDE_HEADER_KEY);
+		val userIncludeStr = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.INCLUDE_IS_USER_INCLUDE_KEY);
+		val userInclude = if(!userIncludeStr.nullOrEmpty) {
+			Boolean.getBoolean(userIncludeStr);
+		}
+		else {
+			false;
+		}
+		if(includeHeader !== null) {
+			result.addHeader(includeHeader, userInclude);
+		}
+		return result;
+		
 	}
-
-	private def getCtype(TypeSpecifier type) {
-		if(type === null) codeFragmentProvider.create('''void*''') else typeGenerator.code(type);
-	}
-
 }

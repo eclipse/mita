@@ -15,7 +15,8 @@ import java.util.List;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue.Severity;
+import org.eclipse.xtend.lib.annotations.EqualsHashCode;
+import org.eclipse.xtext.diagnostics.Severity;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -27,21 +28,54 @@ import com.google.common.collect.Lists;
  */
 public interface IValidationIssueAcceptor {
 
+	@EqualsHashCode
 	public static class ValidationIssue {
-		public static enum Severity {
-			ERROR, WARNING, INFO
-		}
 
 		private Severity severity;
 		private String message;
 		private String issueCode;
-		private EObject target;
+		private transient EObject target;
 		private EStructuralFeature feature;
-
+		
+		private static boolean shouldTest() {
+			return false;
+		}
+		private static String getTestString() {
+			return "Function read cannot be used here: bool, A";
+		}
+		private static void singleBreakpoint() {
+			System.out.print("");
+		}
+		
 		public ValidationIssue(Severity severity, String message, String issueCode) {
 			this(severity, message, null, null, issueCode);
 		}
-
+		
+		public ValidationIssue(ValidationIssue self, String newMessage) {
+			this.message = newMessage;
+			if(self != null) {
+				this.severity = self.severity;
+				this.issueCode = self.issueCode;
+				this.target = self.target;
+				this.feature = self.feature;
+			}
+			else {
+				this.severity = Severity.ERROR;
+				this.issueCode = "";
+				this.target = null;
+				this.feature = null;
+			}
+			if(shouldTest() && message.equals(getTestString())) {
+				singleBreakpoint();
+			}
+		}
+		
+		public ValidationIssue(String message, EObject target) {
+			this(Severity.ERROR, message, target, null, "");
+		}
+		public ValidationIssue(Severity severity, String message, EObject target) {
+			this(severity, message, target, null, "");
+		}
 		public ValidationIssue(Severity severity, String message, EObject target, EStructuralFeature feature, String issueCode) {
 			Assert.isNotNull(message);
 			Assert.isNotNull(issueCode);
@@ -51,6 +85,9 @@ public interface IValidationIssueAcceptor {
 			this.target = target;
 			this.issueCode = issueCode;
 			this.feature = feature;
+			if(shouldTest() && message.equals(getTestString())) {
+				singleBreakpoint();
+			}
 		}
 
 		public Severity getSeverity() {

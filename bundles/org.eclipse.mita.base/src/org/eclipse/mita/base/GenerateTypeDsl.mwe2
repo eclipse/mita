@@ -30,6 +30,10 @@ Workflow {
 			referencedResource = "platform:/resource/org.eclipse.mita.base/model/types.xcore"
 			referencedResource = "platform:/resource/org.eclipse.mita.base/model/expressions.xcore"
 			
+			parserGenerator = {
+				debugGrammar = true
+			}
+			
 			serializer = {
 				generateStub = false
 			}

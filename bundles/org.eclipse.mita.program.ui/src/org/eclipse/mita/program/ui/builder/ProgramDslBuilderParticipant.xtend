@@ -14,8 +14,10 @@
 package org.eclipse.mita.program.ui.builder
 
 import com.google.inject.Inject
+import com.google.inject.Provider
 import java.util.List
 import java.util.Map
+import org.apache.log4j.Logger
 import org.eclipse.core.internal.resources.ResourceException
 import org.eclipse.core.resources.IContainer
 import org.eclipse.core.resources.IFile
@@ -31,19 +33,22 @@ import org.eclipse.xtext.builder.BuilderParticipant
 import org.eclipse.xtext.builder.EclipseResourceFileSystemAccess2
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.OutputConfiguration
+import org.eclipse.xtext.resource.IContainer.Manager
 import org.eclipse.xtext.resource.IResourceDescription
 import org.eclipse.xtext.resource.IResourceDescription.Delta
+import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider
-import org.eclipse.xtext.resource.IContainer.Manager
-import org.apache.log4j.Logger
 
 class ProgramDslBuilderParticipant extends BuilderParticipant {
 
 	private static class NoRebuildBuildContextDecorator implements IBuildContext {
 
-		private final IBuildContext delegate
+		final IBuildContext delegate
 
-		public new(IBuildContext delegate) {
+		XtextResourceSet resourceSet;
+
+		new(XtextResourceSet resourceSet, IBuildContext delegate) {
+			this.resourceSet = resourceSet;
 			this.delegate = delegate;
 		}
 
@@ -60,7 +65,7 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 		}
 
 		override getResourceSet() {
-			return delegate.resourceSet;
+			return resourceSet;
 		}
 
 		override isSourceLevelURI(URI uri) {
@@ -80,13 +85,16 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 	protected ThreadLocal<Boolean> buildSemaphore = new ThreadLocal<Boolean>();
 
 	@Inject(optional=true)
-	private IGeneratorOnResourceSet generator;
+	IGeneratorOnResourceSet generator;
 
 	@Inject
-	private ResourceDescriptionsProvider resourceDescriptionsProvider;
+	ResourceDescriptionsProvider resourceDescriptionsProvider;
 
 	@Inject
-	private Manager containerManager;
+	Manager containerManager;
+	
+	@Inject
+	Provider<XtextResourceSet> resourceSetProvider;
 
 	override build(IBuildContext context, IProgressMonitor monitor) throws CoreException {
 		buildSemaphore.set(false);
@@ -121,7 +129,7 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 		Map<OutputConfiguration, Iterable<IMarker>> generatorMarkers, IBuildContext context,
 		EclipseResourceFileSystemAccess2 access, IProgressMonitor progressMonitor) throws CoreException {
 
-		super.doBuild(deltas, outputConfigurations, generatorMarkers, new NoRebuildBuildContextDecorator(context),
+		super.doBuild(deltas, outputConfigurations, generatorMarkers, new NoRebuildBuildContextDecorator(resourceSetProvider.get(), context),
 			access, progressMonitor)
 	}
 

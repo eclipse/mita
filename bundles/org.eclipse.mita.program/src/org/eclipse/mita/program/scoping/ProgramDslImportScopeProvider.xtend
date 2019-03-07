@@ -14,16 +14,31 @@
 package org.eclipse.mita.program.scoping
 
 import com.google.inject.Inject
+import java.util.List
+import org.eclipse.emf.common.util.URI
+import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.scoping.BaseImportScopeProvider
 import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.IContainer
-import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
+import org.eclipse.xtext.resource.IEObjectDescription
+import org.eclipse.xtext.resource.ISelectable
+import org.eclipse.xtext.scoping.IScope
+import org.eclipse.xtext.scoping.Scopes
+import org.eclipse.xtext.scoping.impl.ImportNormalizer
+import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.scoping.impl.MultimapBasedSelectable
 
-class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProvider {
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+
+class ProgramDslImportScopeProvider extends BaseImportScopeProvider {
 
 	@Inject
 	ResourceDescriptionsProvider resourceDescriptionsProvider;
@@ -31,7 +46,7 @@ class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProv
 	IContainer.Manager containerManager;
 
 	override protected String getImportedNamespace(EObject object) {
-		// PAX imports are always wildcard imports. We do not support fully qualified references. 
+		// Mita imports are always wildcard imports. We do not support fully qualified references. 
 		if (object instanceof ImportStatement) {
 			return object.importedNamespace + ".*"
 		}
@@ -40,6 +55,16 @@ class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProv
 
 	override protected getImplicitImports(boolean ignoreCase) {
 		#[createImportedNamespaceResolver("stdlib.*", ignoreCase)]
+	}
+
+	override protected getLocalElementsScope(IScope parent, EObject context, EReference reference) {
+		if(context instanceof Operation) {
+			if(reference == ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference) {
+				return Scopes.scopeFor(context.parameters, parent);
+			}
+		}
+
+		return super.getLocalElementsScope(parent, context, reference)
 	}
 
 	// Adds the ownPackage as import
@@ -59,8 +84,7 @@ class ProgramDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProv
 			return super.internalGetAllDescriptions(resource);
 		}
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
-		val exportedObjects = visibleContainers.map[x|x.exportedObjects].flatten();
+		val exportedObjects = visibleContainers.map[x|x.exportedObjects].flatten().force();
 		return new MultimapBasedSelectable(exportedObjects);
-	}
-
+	}	
 }

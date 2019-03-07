@@ -17,9 +17,15 @@
 package org.eclipse.mita.program.ui.quickfix
 
 import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.ui.quickfix.TypeDslQuickfixProvider
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
@@ -27,10 +33,12 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.DefaultValueProvider
 import org.eclipse.mita.program.validation.ProgramImportValidator
 import org.eclipse.mita.program.validation.ProgramSetupValidator
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.ui.editor.quickfix.Fix
 import org.eclipse.xtext.ui.editor.quickfix.IssueResolutionAcceptor
 import org.eclipse.xtext.validation.Issue
+import org.eclipse.mita.program.generator.transformation.AbstractTransformationStage
 
 class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 
@@ -42,6 +50,33 @@ class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 		
 	@Inject
 	DefaultValueProvider defaultValueProvider
+
+	@Fix(BaseConstraintFactory.FUNCTION_CANNOT_BE_USED_HERE)
+	def migrateScopeToFeatureCallWithoutFeature(Issue issue, IssueResolutionAcceptor acceptor) {
+		val uri = issue.uriToProblem;
+		if(uri.toString.contains("@setup.")) {
+			acceptor.accept(issue, "Try to migrate to new type system", "In setup blocks enum and sum type constructors can no longer be directly used. Instead you can use a new calling style which is just as easy to use.", "", 
+				[element, context |
+					if(element instanceof ElementReferenceExpression) {
+						if(element instanceof FeatureCall) {
+							return;
+						}
+						val ref = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
+						val referencedElementName = BaseUtils.getText(element, ref);
+						val scope = scopeProvider.getScope(element, ref);
+						val candidates = scope.getElements(QualifiedName.create(referencedElementName));
+						if(candidates.size == 1) {
+							val candidate = candidates.head.EObjectOrProxy;
+							val fcwf = ExpressionsFactory.eINSTANCE.createFeatureCallWithoutFeature;
+							fcwf.reference = candidate;
+							fcwf.arguments += element.arguments;
+							fcwf.operationCall = true;
+							AbstractTransformationStage.replaceWith(element, fcwf);
+						}
+					}	
+				])
+		}
+	}
 
 	@Fix(ProgramImportValidator.MISSING_TARGET_PLATFORM_CODE)
 	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {

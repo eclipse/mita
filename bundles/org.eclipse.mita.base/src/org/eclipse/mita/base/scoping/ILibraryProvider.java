@@ -14,16 +14,19 @@
 package org.eclipse.mita.base.scoping;
 
 import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.Resource;
 
 /**
  * @author Christian Weichel - initial contribution and API
  */
 public interface ILibraryProvider {
-	
-	public Iterable<URI> getDefaultLibraries();
 
-	public Iterable<URI> getImportedLibraries(Resource context);
+	/**
+	 * @return a list of the standard libraries known to this system
+	 */
+	public Iterable<URI> getStandardLibraries();
 	
-	
+	/**
+	 * @return a list of all libraries known to this system (without the standard libraries)
+	 */
+	public Iterable<URI> getLibraries();	
 }

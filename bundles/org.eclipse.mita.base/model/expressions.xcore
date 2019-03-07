@@ -17,29 +17,34 @@ package org.eclipse.mita.base.expressions
 import org.eclipse.emf.ecore.EEnumerator
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.emf.common.util.EList
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.util.ArgumentSorter
-import org.eclipse.emf.common.util.BasicEList
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
-
-class GeneratedTypeParameter extends Parameter {
+class GeneratedTypeParameter extends ParameterWithDefaultValue {
 	boolean ^static
-	contains Expression value
 }
 
-abstract class Expression {
-}
+
 
 abstract class BinaryExpression extends Expression {
 	contains Expression leftOperand
 	op EEnumerator getOperator()
 	contains Expression rightOperand
+	op String toString() {
+		return leftOperand + " " + operator + " " + rightOperand;
+	} 
 }
 abstract class UnaryExpression extends Expression {
 	op EEnumerator getOperator()
 	contains Expression operand
+	op String toString() {
+		return operator.toString + operand.toString
+	}
 }
 abstract class ArgumentExpression extends Expression {
 	op Expression[] getArgs()
@@ -51,22 +56,43 @@ abstract class Literal {
 }
 class BoolLiteral extends Literal {
 	boolean value
+	op String toString() {
+		return "b»" + value
+	}
 }
 class IntLiteral extends Literal {
-	int value
+	long value
+	op String toString() {
+		return "i»" + value
+	}
 }
 class DoubleLiteral extends Literal {
 	double value
+	op String toString() {
+		return "d»" + value
+	}
 }
 class FloatLiteral extends Literal {
 	float value
+	op String toString() {
+		return "f»" + value
+	}
 }
 class HexLiteral extends IntLiteral {
+	op String toString() {
+		return "x»" + Long.toHexString(value)
+	}
 }
 class BinaryLiteral extends IntLiteral {
+	op String toString() {
+		return "b»" + Long.toBinaryString(value)
+	}
 }
 class StringLiteral extends Literal {
 	String value
+	op String toString() {
+		return "s»" + '"' + value + '"'
+	}
 }
 class NullLiteral extends Literal {
 }
@@ -129,90 +155,187 @@ class AssignmentExpression extends Expression {
 	contains Expression varRef
 	AssignmentOperator operator
 	contains Expression expression
+	op String toString() {
+		return varRef.toString + " = " + expression.toString
+	}
 }
 class ConditionalExpression extends Expression {
 	contains Expression condition
 	contains Expression trueCase
 	contains Expression falseCase
+	op String toString() {
+		return condition + " ? " + trueCase + " : " + falseCase;	
+	}
 }
 class LogicalOrExpression extends BinaryExpression {
 	op EEnumerator getOperator() {
 		return LogicalOperator.OR
+	}
+	op String toString() {
+		return super.toString;
 	}
 }
 class LogicalAndExpression extends BinaryExpression { 
 	op EEnumerator getOperator() {
 		return LogicalOperator.AND
 	}
+	op String toString() {
+		return super.toString;
+	}
 }
 class LogicalNotExpression extends UnaryExpression {
 	op EEnumerator getOperator() {
 		return LogicalOperator.NOT
+	}
+	op String toString() {
+		return super.toString;
 	} 
 }
 class BitwiseXorExpression extends BinaryExpression {
 	op EEnumerator getOperator() {
 		return BitwiseOperator.XOR
 	}  
+	op String toString() {
+		return super.toString;
+	}
 }
 class BitwiseOrExpression extends BinaryExpression {
 	op EEnumerator getOperator() {
 		return BitwiseOperator.OR
 	} 
+	op String toString() {
+		return super.toString;
+	}
 }
 class BitwiseAndExpression extends BinaryExpression {
 	op EEnumerator getOperator() {
 		return BitwiseOperator.AND
 	} 
+	op String toString() {
+		return super.toString;
+	}
 }
 class LogicalRelationExpression extends BinaryExpression {
-	RelationalOperator operator 
+	RelationalOperator operator
+	op String toString() {
+		return super.toString;
+	} 
 }
 class ShiftExpression extends BinaryExpression {
 	ShiftOperator operator 
+	op String toString() {
+		return super.toString;
+	}
 }
 class NumericalAddSubtractExpression extends BinaryExpression {
 	AdditiveOperator operator 
+	op String toString() {
+		return super.toString;
+	}
 }
 class NumericalMultiplyDivideExpression extends BinaryExpression {
 	MultiplicativeOperator operator 
+	op String toString() {
+		return super.toString;
+	}
 }
 class NumericalUnaryExpression extends UnaryExpression {
 	UnaryOperator operator 
+	op String toString() {
+		return super.toString;
+	}
 }
 class PostFixUnaryExpression extends UnaryExpression {
 	PostFixOperator operator
+	op String toString() {
+		return operand.toString + operator.toString;
+	}
 }
 
 class PrimitiveValueExpression extends Expression {
 	contains Literal value
+	op String toString() {
+		return "prim»" + value;
+	}
 }
 abstract class ArrayAccessOrOperationCallExpression {
 	boolean operationCall
 	contains Expression[] arraySelector
 	boolean arrayAccess
 }
-class FeatureCall extends ArgumentExpression, ArrayAccessOrOperationCallExpression {
+class ArrayAccessExpression extends Expression {
 	contains Expression owner
-	refers EObject feature
-	
-	op Expression[] getExpressions() {
-		if (feature instanceof Operation) {
-			return ArgumentSorter.getOrderedExpressions(getArguments(), feature as Operation);
-		} else {
-			return new BasicEList<Expression>();
-		}
+	contains Expression arraySelector
+	op String toString() {
+		return owner + "[" + arraySelector + "]"
 	}
 }
+
+class ValueRange extends Expression {
+	contains Expression lowerBound
+	contains Expression upperBound
+	op String toString() {
+		return (lowerBound?.toString ?: "") + ":" + (upperBound?.toString ?: "")
+	}
+}
+
+class FeatureCall extends ElementReferenceExpression {
+	
+	op String toString() {
+		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
+		
+		var refText = if(ref instanceof NamedElement) {
+			ref.name;
+		} else {
+			ref?.toString();	
+		}
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
+		refText = refText ?: "<null>"
+
+		return arguments.head?.value + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "");
+	}
+}
+
+class FeatureCallWithoutFeature extends FeatureCall {
+	op String toString() {
+		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
+		
+		var refText = if(ref instanceof NamedElement) {
+			ref.name;
+		} else {
+			ref?.toString();	
+		}
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
+		refText = refText ?: "<null>"
+		
+		return "<auto>." + refText + (if(operationCall) "(" + arguments.join(", ") + ")" else "");
+	}
+}
+
 class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperationCallExpression {
 	refers EObject reference
 	
 	op Expression[] getExpressions() {
-		if (reference instanceof Operation) {
-			return ArgumentSorter.getOrderedExpressions(getArguments(), reference as Operation);
+		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
+		if (ref instanceof Operation) {
+			return ArgumentSorter.getOrderedExpressions(getArguments(), ref);
 		} else {
-			return new BasicEList<Expression>();
+			return arguments.map[value];
 		}
+	}
+	
+	op String toString() {
+		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
+		
+		var refText = if(ref instanceof NamedElement) {
+			ref.name;
+		} else {
+			ref?.toString();	
+		}
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
+		refText = refText ?: "<null>"
+		
+		return refText + (if(!arguments.empty) "(" + arguments.join(", ") + ")" else "")
 	}
 }
 class ParenthesizedExpression extends Expression {
@@ -221,9 +344,28 @@ class ParenthesizedExpression extends Expression {
 class TypeCastExpression extends Expression {
 	contains Expression operand
 	refers Type ^type
+	op String toString() {
+		val ref = eGet(ExpressionsPackage.eINSTANCE.typeCastExpression_Type, false)
+		
+		var refText = ref?.toString()
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.typeCastExpression_Type).head?.text
+		refText = refText ?: "<null>"
+		
+		return operand + " as " + refText;
+	}
 }
-class Argument {
+class Argument extends Expression {
 	refers Parameter parameter
 	contains Expression value
+	
+	op String toString() {
+		val param = eGet(ExpressionsPackage.eINSTANCE.argument_Parameter, false)
+		
+		var refText = param?.toString()
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.argument_Parameter).head?.text
+		refText = refText ?: "<null>"
+		
+		return (if(refText !== null) refText + "=" else "") + value;
+	}
 }
 

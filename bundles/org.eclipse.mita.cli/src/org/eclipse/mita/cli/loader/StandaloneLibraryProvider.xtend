@@ -13,10 +13,10 @@
 
 package org.eclipse.mita.cli.loader
 
-import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.resource.ResourceSet
-import org.eclipse.mita.cli.commands.CompileToCAdapter
 import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.cli.commands.CompileToCAdapter
 
 /*
  * In a standalone context we cannot register libraries like we do in an Eclipse setting.
@@ -26,23 +26,19 @@ import org.eclipse.mita.base.scoping.ILibraryProvider
 class StandaloneLibraryProvider implements ILibraryProvider {
 	protected ResourceSet resourceSet;
 
-	static private ILibraryProvider instance = new StandaloneLibraryProvider();
+	static ILibraryProvider instance = new StandaloneLibraryProvider();
 	
-	public static def ILibraryProvider getInstance() {
+	static def ILibraryProvider getInstance() {
 		return instance;
 	}
 
 	protected new() { }
 
-	public def init(ResourceSet resourceSet) {
+	def init(ResourceSet resourceSet) {
 		this.resourceSet = resourceSet;
 	}
 
-	override getImportedLibraries(Resource context) {
-		defaultLibraries;
-	}
-	
-	override getDefaultLibraries() {
+	protected def getAllLibraries() {
 		if(resourceSet === null) {
 			return #[]
 		} else {
@@ -56,6 +52,18 @@ class StandaloneLibraryProvider implements ILibraryProvider {
 				.map[ it.URI ];			
 		}
 		
+	}
+	
+	override getLibraries() {
+		return allLibraries.reject[ isStdlib ]
+	}
+	
+	override getStandardLibraries() {
+		return allLibraries.filter[ isStdlib ]
+	}
+	
+	protected def isStdlib(URI uri) {
+		return uri.segments().contains("stdlib");
 	}
 	
 }

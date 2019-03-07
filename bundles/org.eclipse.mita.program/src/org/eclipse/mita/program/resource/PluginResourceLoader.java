@@ -14,6 +14,7 @@
 package org.eclipse.mita.program.resource;
 
 import org.eclipse.core.runtime.Platform;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.osgi.framework.Bundle;
 
@@ -26,11 +27,25 @@ public class PluginResourceLoader {
 	protected Injector injector;
 	
 	public Object loadFromPlugin(Resource resource, String classname) {
-		if (!resource.getURI().isPlatformPlugin() || classname == null || classname.isEmpty()) {
+		if (classname == null || classname.isEmpty()) {
 			// TODO: The resource is not located in a plugin so we can't load the generator class. Handle this.
 			return null;
 		}
-		Bundle plugin = Platform.getBundle(resource.getURI().segment(1));
+		URI platformUri = null;
+		if(resource.getURI().isPlatformPlugin()) {
+			platformUri = resource.getURI();
+		}
+		else {
+			platformUri = URI.createPlatformPluginURI(classname, false);
+		}
+		
+		String pluginName = platformUri.segment(1);
+		Bundle plugin = null;
+		
+		while(plugin == null && pluginName != null) {			
+			plugin = Platform.getBundle(pluginName);
+			pluginName = pluginName.substring(0, pluginName.lastIndexOf('.'));
+		}
 		try {
 			Class<?> clasz = plugin.loadClass(classname);
 			Object newInstance = clasz.newInstance();

@@ -22,7 +22,7 @@ import com.google.inject.Inject
 class MakefileGenerator implements IPlatformMakefileGenerator {
 	
 	@Inject
-	private CodeFragmentProvider codeFragmentProvider 
+	CodeFragmentProvider codeFragmentProvider 
 	
 	override generateMakefile(Iterable<Program> program, List<String> sourceFiles) {
 		return codeFragmentProvider.create('''

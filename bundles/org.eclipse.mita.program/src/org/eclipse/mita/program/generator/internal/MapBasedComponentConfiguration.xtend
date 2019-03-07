@@ -21,7 +21,7 @@ import java.util.HashMap
 import java.util.Map
 import java.util.NoSuchElementException
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.program.SystemResourceSetup
@@ -39,7 +39,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	}
 	
 	
-	private final Map<String, ConfigItemValue> configurationItems;
+	final Map<String, ConfigItemValue> configurationItems;
 	
 	new(AbstractSystemResource resource, CompilationContext context, SystemResourceSetup setup) {
 		configurationItems = new HashMap();
@@ -124,7 +124,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	 */
 	protected static def reduce(Expression expression) {
 		return if(expression instanceof FeatureCall) {
-			expression.feature;
+			expression.reference;
 		} else if(expression instanceof ElementReferenceExpression) {
 			expression.reference;
 		} else if(expression !== null) {

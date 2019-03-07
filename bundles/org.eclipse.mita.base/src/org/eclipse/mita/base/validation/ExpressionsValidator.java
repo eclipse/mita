@@ -22,7 +22,7 @@ import org.eclipse.mita.base.expressions.Argument;
 import org.eclipse.mita.base.expressions.ArgumentExpression;
 import org.eclipse.mita.base.expressions.AssignmentExpression;
 import org.eclipse.mita.base.expressions.ElementReferenceExpression;
-import org.eclipse.mita.base.expressions.Expression;
+import org.eclipse.mita.base.types.Expression;
 import org.eclipse.mita.base.expressions.ExpressionsPackage;
 import org.eclipse.mita.base.expressions.FeatureCall;
 import org.eclipse.mita.base.expressions.PostFixUnaryExpression;
@@ -30,12 +30,11 @@ import org.eclipse.mita.base.types.ComplexType;
 import org.eclipse.mita.base.types.GenericElement;
 import org.eclipse.mita.base.types.Operation;
 import org.eclipse.mita.base.types.Parameter;
+import org.eclipse.mita.base.types.PresentTypeSpecifier;
 import org.eclipse.mita.base.types.Property;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeParameter;
-import org.eclipse.mita.base.types.TypeSpecifier;
 import org.eclipse.mita.base.types.TypesPackage;
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer;
 import org.eclipse.mita.base.types.typesystem.ITypeSystem;
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor;
 import org.eclipse.xtext.validation.Check;
@@ -96,16 +95,14 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	@Inject
 	private GenericsPrettyPrinter printer;
 	@Inject
-	private ITypeSystemInferrer typeInferrer;
-	@Inject
 	private ITypeSystem typeSystem;
 
 	@Check
 	public void checkExpression(Expression expression) {
 		// Only infer root expressions since inferType infers the expression
 		// containment hierarchy
-		if (!(expression.eContainer() instanceof Expression))
-			typeInferrer.infer(expression, this);
+//		if (!(expression.eContainer() instanceof Expression))
+//			typeInferrer.infer(expression, this);
 	}
 
 	public void accept(ValidationIssue issue) {
@@ -118,6 +115,10 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 			break;
 		case INFO:
 			break;
+		case IGNORE:
+			break;
+		default:
+			break;
 		}
 	}
 
@@ -129,8 +130,8 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		}
 	}
 
-	@Check
-	public void checkIsRaw(TypeSpecifier typedElement) {
+	//@Check
+	public void checkIsRaw(PresentTypeSpecifier typedElement) {
 		Type type = typedElement.getType();
 		if (!(type instanceof GenericElement))
 			return;
@@ -138,24 +139,24 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		if (typedElement.getTypeArguments().size() == 0 && typeParameter.size() > 0) {
 			String s1 = typedElement.getType().getName();
 			String s2 = s1 + printer.concatTypeParameter(typeParameter);
-			warning(String.format(WARNING_IS_RAW_MSG, s1, s2), typedElement, TypesPackage.Literals.TYPE_SPECIFIER__TYPE,
+			warning(String.format(WARNING_IS_RAW_MSG, s1, s2), typedElement, TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE,
 					WARNING_IS_RAW_CODE);
 		}
 	}
 
-	@Check
-	public void checkTypedElementNotGeneric(TypeSpecifier typedElement) {
+	//@Check
+	public void checkTypedElementNotGeneric(PresentTypeSpecifier typedElement) {
 		if (typedElement.getTypeArguments().size() > 0 && ((!(typedElement.getType() instanceof GenericElement))
 				|| ((GenericElement) typedElement.getType()).getTypeParameters().size() == 0)) {
 			String s1 = typedElement.getType().getName();
 			String s2 = printer.concatTypeArguments(typedElement.getTypeArguments());
 			error(String.format(ERROR_NOT_GENERIC_MSG, s1, s2), typedElement,
-					TypesPackage.Literals.TYPE_SPECIFIER__TYPE, ERROR_NOT_GENERIC_CODE);
+					TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE, ERROR_NOT_GENERIC_CODE);
 		}
 	}
 
-	@Check
-	public void checkNofArguments(TypeSpecifier typedElement) {
+	//@Check
+	public void checkNofArguments(PresentTypeSpecifier typedElement) {
 		if (!(typedElement.getType() instanceof GenericElement)) {
 			return;
 		}
@@ -166,7 +167,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 			String s1 = type.getName() + printer.concatTypeParameter(typeParameter);
 			String s2 = printer.concatTypeArguments(typedElement.getTypeArguments());
 			error(String.format(ERROR_ARGUMENTED_SPECIFIER_INCORRECT_ARGUMENT_NR_MSG, s1, s2), typedElement,
-					TypesPackage.Literals.TYPE_SPECIFIER__TYPE, ERROR_ARGUMENTED_SPECIFIER_INCORRECT_ARGUMENT_NR_CODE);
+					TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE, ERROR_ARGUMENTED_SPECIFIER_INCORRECT_ARGUMENT_NR_CODE);
 		}
 	}
 
@@ -185,7 +186,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	}
 
 	@Check
-	public void checkTypeParameterBounds(TypeSpecifier typedElement) {
+	public void checkTypeParameterBounds(PresentTypeSpecifier typedElement) {
 		if (!(typedElement.getType() instanceof GenericElement)) {
 			return;
 		}
@@ -197,23 +198,12 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		for (int i = 0; i < typeParameter.size(); i++) {
 			TypeParameter parameter = typeParameter.get(i);
 			if (parameter.getBound() != null) {
-				Type argument = typedElement.getTypeArguments().get(i).getType();
+				Type argument = ((PresentTypeSpecifier) typedElement.getTypeArguments().get(i)).getType();
 				if (!typeSystem.isSuperType(argument, parameter.getBound())) {
 					error(String.format(ERROR_BOUND_MISSMATCH_MSG, argument.getName(), (parameter.getBound()).getName(),
-							type.getName()), typedElement, TypesPackage.Literals.TYPE_SPECIFIER__TYPE_ARGUMENTS, i,
+							type.getName()), typedElement, TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE_ARGUMENTS, i,
 							ERROR_BOUND_MISSMATCH_CODE);
 				}
-			}
-		}
-	}
-
-	@Check
-	public void checkTypeNotExtendsItself(ComplexType type) {
-		EList<Type> superTypes = type.getSuperTypes();
-		for (Type superType : superTypes) {
-			if (superType.equals(type)) {
-				error(String.format(ERROR_CYCLE_DETECTED_MSG, type.getName()), type,
-						TypesPackage.Literals.TYPE__SUPER_TYPES, ERROR_CYCLE_DETECTED_CODE);
 			}
 		}
 	}
@@ -239,7 +229,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 		Expression varRef = exp.getVarRef();
 		EObject referencedObject = null;
 		if (varRef instanceof FeatureCall)
-			referencedObject = ((FeatureCall) varRef).getFeature();
+			referencedObject = ((FeatureCall) varRef).getReference();
 		else if (varRef instanceof ElementReferenceExpression)
 			referencedObject = ((ElementReferenceExpression) varRef).getReference();
 		if (referencedObject instanceof Property) {
@@ -254,7 +244,7 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 	public void checkLeftHandAssignment(final AssignmentExpression expression) {
 		Expression varRef = expression.getVarRef();
 		if (varRef instanceof FeatureCall) {
-			EObject referencedObject = ((FeatureCall) varRef).getFeature();
+			EObject referencedObject = ((FeatureCall) varRef).getReference();
 			if (!(referencedObject instanceof Property)) {
 				error(ERROR_LEFT_HAND_ASSIGNMENT_MSG, ExpressionsPackage.Literals.ASSIGNMENT_EXPRESSION__VAR_REF,
 						ERROR_LEFT_HAND_ASSIGNMENT_CODE);
@@ -274,8 +264,8 @@ public class ExpressionsValidator extends AbstractTypeDslValidator implements IV
 
 	@Check(CheckType.FAST)
 	public void checkOperationArguments_FeatureCall(final FeatureCall call) {
-		if (call.getFeature() instanceof Operation) {
-			Operation operation = (Operation) call.getFeature();
+		if (call.getReference() instanceof Operation) {
+			Operation operation = (Operation) call.getReference();
 			assertOperationArguments(operation, call.getExpressions());
 		}
 	}

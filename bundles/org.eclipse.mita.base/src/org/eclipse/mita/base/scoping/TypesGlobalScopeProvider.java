@@ -13,20 +13,29 @@
 
 package org.eclipse.mita.base.scoping;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.mita.base.types.TypesPackage;
+import org.eclipse.mita.base.types.typesystem.ITypeSystem;
 import org.eclipse.xtext.naming.IQualifiedNameProvider;
 import org.eclipse.xtext.resource.IEObjectDescription;
+import org.eclipse.xtext.resource.IResourceDescription;
+import org.eclipse.xtext.resource.IResourceServiceProvider;
+import org.eclipse.xtext.resource.impl.EObjectDescriptionLookUp;
 import org.eclipse.xtext.scoping.IScope;
 import org.eclipse.xtext.scoping.impl.DefaultGlobalScopeProvider;
 import org.eclipse.xtext.scoping.impl.FilteringScope;
+import org.eclipse.xtext.scoping.impl.SelectableBasedScope;
 import org.eclipse.xtext.scoping.impl.SimpleScope;
-import org.eclipse.mita.base.types.TypesPackage;
-import org.eclipse.mita.base.types.typesystem.ITypeSystem;
 
 import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 
 public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
@@ -35,15 +44,17 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 	private ITypeSystem typeSystem;
 
 	@Inject
-	private LibraryScopeProvider libraryScopeProvider;
+	private ILibraryProvider libraryProvider;
 
 	@Inject
 	private IQualifiedNameProvider qualifiedNameProvider;
+	
+	@Inject
+	private IResourceServiceProvider.Registry serviceProviderRegistry;
 
 	public IScope getScope(Resource context, EReference reference, Predicate<IEObjectDescription> filter) {
 		IScope superScope = super.getScope(context, reference, filter);
 		superScope = addLibraryScope(context, reference, superScope);
-		superScope = addTypeSystemScope(context, reference, superScope);
 		superScope = filterExportable(context, reference, superScope);
 		return superScope;
 	}
@@ -68,9 +79,12 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 			public boolean apply(IEObjectDescription input) {
 				boolean inSamePackage = resourcePackageName != null 
 						&& input.getQualifiedName().toString().startsWith(resourcePackageName);
-				String isExported = input.getUserData(TypeDSLResourceDescriptionStrategy.EXPORTED);
+				String isExported = input.getUserData(BaseResourceDescriptionStrategy.EXPORTED);
 				
 				boolean includeInScope = inSamePackage || isExported == null || "true".equals(isExported);
+				if(input.getName().getLastSegment().equals("NotExportedStruct") && includeInScope) {
+					System.out.print("");
+				}
 				return includeInScope;
 			}
 			
@@ -82,12 +96,22 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 	}
 
 	protected IScope getLibraryScope(Resource context, EReference reference) {
-		return libraryScopeProvider.getScope(context, reference);
+		Iterable<URI> defaultLibraries = Iterables.<URI>concat(libraryProvider.getLibraries());
+		List<IEObjectDescription> descriptions = new ArrayList<>();
+		for(URI uri : defaultLibraries) {
+			// we have previously loaded all libraries into the resource set
+			Resource resource = context.getResourceSet().getResource(uri, false);
+			if(resource != null) {
+				IResourceDescription description = serviceProviderRegistry.getResourceServiceProvider(uri).getResourceDescriptionManager().getResourceDescription(resource);
+				Iterables.addAll(descriptions, description.getExportedObjects());				
+			}
+		}
+		return SelectableBasedScope.createScope(IScope.NULLSCOPE, new EObjectDescriptionLookUp(descriptions), reference.getEReferenceType(), isIgnoreCase(reference));
 	}
 
 	protected IScope addTypeSystemScope(Resource context, EReference reference, IScope superScope) {
 		superScope = new TypeSystemAwareScope(superScope, typeSystem, qualifiedNameProvider,
-				reference.getEReferenceType(), reference == TypesPackage.Literals.TYPE__SUPER_TYPES);
+				reference.getEReferenceType(), false);
 		return superScope;
 	}
 }

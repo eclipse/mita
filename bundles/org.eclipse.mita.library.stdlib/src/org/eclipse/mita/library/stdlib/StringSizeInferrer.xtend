@@ -21,7 +21,10 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.AbstractLoopStatement
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
@@ -32,24 +35,23 @@ import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 
 class StringSizeInferrer extends ElementSizeInferrer {
 	
-	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression) {
+	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression, AbstractType type) {
 		expression.inferContainerIfVariableDeclaration[ expression.isolatedDoInfer ]
 	}
 	
-	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression) {
+	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression, AbstractType type) {
 		expression.inferContainerIfVariableDeclaration[ expression.isolatedDoInfer ]
 	}
 
-	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringExpression expr) {
+	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringExpression expr, AbstractType type) {
 		expr.inferContainerIfVariableDeclaration[ expr.isolatedDoInfer ]
 	}
 	
-	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr) {
+	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr, AbstractType type) {
 		expr.inferContainerIfVariableDeclaration[ expr.inferFixedSize ]
 	}
 	
@@ -58,7 +60,7 @@ class StringSizeInferrer extends ElementSizeInferrer {
 	 * 
 	 * @return the max length of the string or -1 if the length could not be infered.
 	 */
-	protected dispatch override ElementSizeInferenceResult doInfer(VariableDeclaration variable) {
+	protected dispatch override ElementSizeInferenceResult doInfer(VariableDeclaration variable, AbstractType type) {
 		/*
 		 * Find initial size
 		 */
@@ -175,18 +177,21 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		
 		// sum expression value part
 		for(subexpr : expr.content) {
-			val type = typeInferrer.infer(subexpr)?.type;
+			val type = BaseUtils.getType(subexpr);
 			var typeLengthInBytes = switch(type?.name) {
-				case 'uint32': 10
-				case 'uint16':  5
-				case 'uint8':   3
-				case 'int32':  11
-				case 'int16':   6
-				case 'int8':    4
-				case 'bool':    1
+				case 'uint32': 10L
+				case 'uint16':  5L
+				case 'uint8' :  3L
+				case 'int32' : 11L
+				case 'int16' :  6L
+				case 'int8'  :  4L
+				case 'xint32': 11L
+				case 'xint16':  6L
+				case 'xint8' :  4L
+				case 'bool'  :  1L
 				// https://stackoverflow.com/a/1934253
-				case 'double': StringGenerator.DOUBLE_PRECISION + 1 + 1 + 5 + 1
-				case 'float':  StringGenerator.DOUBLE_PRECISION + 1 + 1 + 5 + 1
+				case 'double': StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+				case 'float':  StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
 				case 'string':    {
 					val stringSize = super.infer(subexpr);
 					if(stringSize instanceof ValidElementSizeInferenceResult) {
@@ -217,12 +222,12 @@ class StringSizeInferrer extends ElementSizeInferrer {
 		newInvalidResult(expr, "Cannot infer string length");
 	}
 	
-	protected def int sumTextParts(InterpolatedStringExpression expr) {
+	protected def long sumTextParts(InterpolatedStringExpression expr) {
 		val texts = StringGenerator.getOriginalTexts(expr)
 		if (texts.nullOrEmpty) {
 			0
 		} else {
-			texts.map[x | x.length ].reduce[x1, x2| x1 + x2 ];
+			texts.map[x | x.length as long ].reduce[x1, x2| x1 + x2 ];
 		}
 	}
 	
@@ -243,9 +248,9 @@ class StringSizeInferrer extends ElementSizeInferrer {
 	}
 	
 	protected def inferFixedSize(NewInstanceExpression initialization) {
-		val rawSizeValue = ModelUtils.getArgumentValue(initialization.reference as Operation, initialization, 'size');
+		val rawSizeValue = ExpressionUtils.getArgumentValue(initialization.reference as Operation, initialization, 'size');
 		val staticSizeValue = StaticValueInferrer.infer(rawSizeValue, [x |]);
-		return if(staticSizeValue instanceof Integer) {
+		return if(staticSizeValue instanceof Long) {
 			newValidResult(initialization, staticSizeValue);
 		} else {
 			newInvalidResult(initialization, "No explicit maximum string size was given");

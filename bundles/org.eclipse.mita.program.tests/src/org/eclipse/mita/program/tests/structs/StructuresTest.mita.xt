@@ -8,7 +8,7 @@ END_SETUP */
 package test;
 import platforms.unittest;
 
-// Structures are custom, user-defined reference types for organizing data
+// Structures are custom, user-defined value types for organizing data
 struct Foo {
 	var bar : uint32;
 	var foo : bool;
@@ -30,12 +30,19 @@ function structTest() : void {
 	inst2.bar == 0; // true
 	
 	// We error on wrong number of arguments
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(1)"
+	/* XPECT errors ---
+		"Function Foo cannot be used here: arguments don't fit (__args(A) != __args(uint32, bool))" at "Foo(1)"
+		"__args(xint8) and __args(uint32, bool) differ in the number of type arguments" at "Foo"
+	--- */
 	inst = Foo(1);
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(1, false, 3)"
+	/* XPECT errors ---
+		"Function Foo cannot be used here: arguments don't fit (__args(A, B, C) != __args(uint32, bool))" at "Foo(1, false, 3)"
+		"Incompatible types: bool is not subtype of A." at "Foo"
+		"__args(xint8, bool, xint8) and __args(uint32, bool) differ in the number of type arguments" at "Foo"
+	--- */
 	inst = Foo(1, false, 3);
 	// We error on wrong type of arguments
-	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'." at "\"AHHHH!\""
+	// XPECT errors --> "Incompatible types: string is not subtype of bool." at "Foo"
 	inst = Foo(1, "AHHHH!");
 	
 	// we can use named parameters to swap argument order
@@ -44,16 +51,26 @@ function structTest() : void {
 	// But named parameters should validate just the same
 	
 	// We error on wrong number of arguments
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(foo=1)"
+	/* XPECT errors ---
+		"Function Foo cannot be used here" at "Foo"
+		"Too few arguments" at "Foo"
+		"prim»i»1 (:: xint8) not compatible with foo (:: bool)" at "foo=1"
+	--- */
 	inst = Foo(foo=1);
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, bool] ." at "Foo(bar=1)"
+	/* XPECT errors ---
+		"Function Foo cannot be used here" at "Foo"
+		"Too few arguments" at "Foo"
+	--- */
 	inst = Foo(bar=1);
 	/* XPECT errors ---
-		"Duplicate assignment to parameter 'bar'." at "bar=3"
-		"Wrong number of arguments, expected [uint32, bool] ." at "Foo(bar=1, foo=false, bar=3)"
+		"Duplicate assignment to parameter bar." at "bar=3"
 	--- */
 	inst = Foo(bar=1, foo=false, bar=3);
 	// We error on wrong type of arguments
-	// XPECT errors --> "Incompatible types: 'string' can't be converted to 'bool'." at ""AHHHH!""
+	/* XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "Foo"
+		"prim»s»"AHHHH!" (:: string) not compatible with foo (:: bool)" at "foo="AHHHH!""
+		"string is not a subtype of bool" at "Foo"
+	--- */
 	inst = Foo(bar=1, foo="AHHHH!");
 }

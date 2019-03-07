@@ -19,32 +19,36 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.DoubleLiteral
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
+import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ConfigurationItemValue
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.model.ModelUtils
+
+import static extension org.eclipse.emf.common.util.ECollections.asEList
 
 /**
  * Infers the value of an expression at compile time.
  */
 class StaticValueInferrer {
 	
-	public static class SumTypeRepr {
+	static class SumTypeRepr {
 				
 		public val String name;
 		public val Map<String, Expression> properties;
@@ -65,18 +69,25 @@ class StaticValueInferrer {
 		}
 		
 	}
+	static dispatch def Object infer(CoercionExpression expr, (EObject) => void inferenceBlockerAcceptor) {
+		return expr.value.infer(inferenceBlockerAcceptor);
+	}
+	
+	static dispatch def Object infer(SumSubTypeConstructor constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {
+		return infer(constr.eContainer, expression, inferenceBlockerAcceptor);
+	}
 	static dispatch def Object infer(Singleton constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {
 		val props = new HashMap<String, Expression>(0);
 		return new SumTypeRepr(props, constr, expression);	
 	}
 	static dispatch def Object infer(NamedProductType constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {
-		val propsRaw = ModelUtils.getSortedArgumentsAsMap(constr.parameters, expression.arguments);
+		val propsRaw = ExpressionUtils.getSortedArgumentsAsMap(constr.parameters.map[it as Parameter].asEList, expression.arguments);
 		val props = new HashMap<String, Expression>(propsRaw.size);
 		propsRaw.forEach[p, a | props.put(p.name, a.value)]
 		return new SumTypeRepr(props, constr, expression);
 	}
 	static dispatch def Object infer(AnonymousProductType constr, ElementReferenceExpression expression, (EObject) => void inferenceBlockerAcceptor) {
-		val propsRaw = ModelUtils.getFunctionCallArguments(expression);
+		val propsRaw = ExpressionUtils.getFunctionCallArguments(expression);
 		val argc = propsRaw.size;
 		val props = new HashMap<String, Expression>(argc);
 		val idxs = 1..argc;
@@ -120,13 +131,13 @@ class StaticValueInferrer {
 		
 	static dispatch def Object infer(NumericalUnaryExpression expression, (EObject) => void inferenceBlockerAcceptor) {
 		val inner = expression.operand.infer(inferenceBlockerAcceptor);
-		if(inner === null || !(inner instanceof Integer || inner instanceof Float)) {
+		if(inner === null || !(inner instanceof Long || inner instanceof Float)) {
 			return null;
 		}
 		val op = expression.operator;
 		switch(op) {
 			case NEGATIVE:
-				if(inner instanceof Integer) {
+				if(inner instanceof Long) {
 					return (-1) * inner;	
 				} else if(inner instanceof Float) {
 					return (-1) * inner;	
@@ -174,11 +185,7 @@ class StaticValueInferrer {
 		inferenceBlockerAcceptor.apply(null);
 		return null;
 	}
-	
-	static dispatch def Object infer(FeatureCall expression, (EObject) => void inferenceBlockerAcceptor) {
-		return infer(expression.feature, inferenceBlockerAcceptor);
-	}
-	
+			
 	static dispatch def Object infer(Expression expression, (EObject) => void inferenceBlockerAcceptor) {
 		inferenceBlockerAcceptor.apply(expression);
 		return null;

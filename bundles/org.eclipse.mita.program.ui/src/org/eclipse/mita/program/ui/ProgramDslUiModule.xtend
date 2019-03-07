@@ -13,22 +13,23 @@
 
 package org.eclipse.mita.program.ui
 
+import com.google.inject.Binder
+import org.eclipse.mita.base.ui.index.MitaWorkspaceProjectsState
+import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
+import org.eclipse.mita.program.generator.ProjectErrorShouldGenerate
+import org.eclipse.mita.program.ui.builder.ProgramDslBuilderParticipant
+import org.eclipse.mita.program.ui.contentassist.ProposalPriorityHelper
 import org.eclipse.mita.program.ui.highlighting.ProgramDslHighlightingConfiguration
 import org.eclipse.mita.program.ui.highlighting.ProgramDslSemanticHighlightingCalculator
 import org.eclipse.mita.program.ui.labeling.ProgramDslEObjectHoverProvider
-import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
-import com.google.inject.Binder
 import org.eclipse.ui.PlatformUI
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.ide.editor.syntaxcoloring.ISemanticHighlightingCalculator
 import org.eclipse.xtext.ui.LanguageSpecific
 import org.eclipse.xtext.ui.editor.IURIEditorOpener
+import org.eclipse.xtext.ui.editor.contentassist.ContentProposalPriorities
 import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration
-import org.eclipse.xtext.ui.editor.contentassist.ContentProposalPriorities
-import org.eclipse.mita.program.ui.contentassist.ProposalPriorityHelper
-import org.eclipse.mita.program.ui.builder.ProgramDslBuilderParticipant
-import org.eclipse.mita.program.generator.ProjectErrorShouldGenerate
 
 @FinalFieldsConstructor
 class ProgramDslUiModule extends AbstractProgramDslUiModule {
@@ -37,6 +38,7 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 		if (PlatformUI.isWorkbenchRunning())
 			binder.bind(IURIEditorOpener).annotatedWith(LanguageSpecific).to(LibraryURIEditorOpener);
 		binder.bind(ContentProposalPriorities).to(ProposalPriorityHelper)
+		
 	}
 
 	def Class<? extends IEObjectHoverProvider> bindIEObjectHoverProvider() {
@@ -51,6 +53,14 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 		return ProgramDslSemanticHighlightingCalculator;
 	}
 
+	override configure(Binder binder) {
+		super.configure(binder)
+	}
+
+	override configureBuilderPreferenceStoreInitializer(Binder binder) {
+		super.configureBuilderPreferenceStoreInitializer(binder)
+	}
+
 	override bindIXtextEditorCallback() {
 		return ProgramDslEditorCallback;
 	}
@@ -58,9 +68,13 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 	override bindIXtextBuilderParticipant() {
 		return ProgramDslBuilderParticipant
 	}
-	
+			
 	override bindIShouldGenerate() {
 		return ProjectErrorShouldGenerate
 	}
-
+	
+	override bindIAllContainersState$Provider() {
+		return MitaWorkspaceProjectsState.Provider;
+	}
+	
 }

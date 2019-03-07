@@ -13,20 +13,22 @@
 
 package org.eclipse.mita.program.generator
 
-import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.VariableDeclaration
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.VariableDeclaration
 
 /**
  * Interface for type generators.
  */
 abstract class AbstractTypeGenerator implements IGenerator {
 
-	@Inject ITypeSystem typeSystem
+	@Inject SubtypeChecker subtypeChecker;
 
 	@Inject
 	protected TypeGenerator typeGenerator
@@ -37,34 +39,36 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a code fragment with the actual type specifier
 	 */
-	def CodeFragment generateTypeSpecifier(TypeSpecifier type, EObject context) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)»''')
+	def CodeFragment generateTypeSpecifier(AbstractType type, EObject context) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)»''')
 	}
 	
 	/**
 	 * Produces a variable declaration for a variable of a generated type
 	 */
-	def CodeFragment generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»;''')
+	def CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
+		codeFragmentProvider.create('''«typeGenerator.code(stmt, type)» «stmt.name»;''')
 	}
 	
 	/**
 	 * Produces a new instance of the type
 	 */
-	def CodeFragment generateNewInstance(TypeSpecifier type, NewInstanceExpression expr);
+	def CodeFragment generateNewInstance(AbstractType type, NewInstanceExpression expr);
 
 	/**
 	 * Checks if this type supports a particular expression within its type hierarchy
 	 */
-	def boolean checkExpressionSupport(TypeSpecifier type, AssignmentOperator operator, TypeSpecifier otherType) {
-		return operator == AssignmentOperator.ASSIGN && typeSystem.haveCommonType(type?.type, otherType?.type);
+	def boolean checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
+		val resource = context.eResource;
+		val cs = if(resource instanceof MitaBaseResource) resource.latestSolution.getConstraintSystem;
+		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(cs, context, otherType, type);
 	}
 	
 	/**
 	 * Produces code which implements an assignment operation. This function will only be executed if
 	 * {@link #checkExpressionSupport) returned true for the corresponding types.
 	 */
-	def CodeFragment generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
+	def CodeFragment generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
 		return codeFragmentProvider.create('''«left» «operator.literal» «right»;''');
 	}
 	
@@ -75,10 +79,16 @@ abstract class AbstractTypeGenerator implements IGenerator {
 		return CodeFragment.EMPTY;
 	}
 	
+	def CodeFragment generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
+		return codeFragmentProvider.create('''
+		ERROR: CANT COERCE FROM «from» to «to» (expr.eClass = «expr.eClass.name»). THIS IS MOST LIKELY A BUG IN THE COMPILER, PLEASE REPORT
+		''')
+	}
+	
 	/**
 	 * Produces header definitions, called per different instance of type arguments.
 	 */
-	def CodeFragment generateHeader(TypeSpecifier type) {
+	def CodeFragment generateHeader(EObject context, AbstractType type) {
 		return CodeFragment.EMPTY;
 	}
 }

@@ -1,5 +1,6 @@
 package org.eclipse.mita.platform.xdk110.sensors
 
+import com.google.inject.Inject
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
@@ -7,8 +8,6 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.program.generator.IComponentConfiguration
-import com.google.inject.Inject
 
 class GyroscopeSensorFusionGenerator extends AbstractSystemResourceGenerator {
     

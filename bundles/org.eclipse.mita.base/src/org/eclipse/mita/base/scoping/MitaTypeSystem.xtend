@@ -16,13 +16,11 @@ package org.eclipse.mita.base.scoping
 import com.google.inject.Inject
 import java.util.Collections
 import org.eclipse.emf.common.util.URI
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl
-import org.eclipse.xtext.resource.IEObjectDescription
-import org.eclipse.xtext.resource.IResourceServiceProvider
-import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.typesystem.GenericTypeSystem
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.xtext.resource.IEObjectDescription
+import org.eclipse.xtext.resource.IResourceServiceProvider
 import org.eclipse.xtext.resource.XtextResourceSet
 
 class MitaTypeSystem extends GenericTypeSystem {
@@ -32,7 +30,7 @@ class MitaTypeSystem extends GenericTypeSystem {
 
 	public static val ITERABLE_TYPE = "iterable"
 	public static val REFERENCE_TYPE = "reference";
-	public static val OPTINAL_TYPE = "optional";
+	public static val OPTIONAL_TYPE = "optional";
 	public static val SIGINST_TYPE = "siginst";
 	public static val MODALITY_TYPE = "modality";
 	public static val ARRAY_TYPE = "array";
@@ -41,9 +39,7 @@ class MitaTypeSystem extends GenericTypeSystem {
 	public static val FLOAT_TYPE = "float";
 	public static val BOOL_TYPE = "bool";
 
-	private static var MitaTypeSystem INSTANCE = new MitaTypeSystem()
-
-	private var nativeTypesLoaded = false;
+	static var MitaTypeSystem INSTANCE = new MitaTypeSystem()
 
 	protected new() {
 	}
@@ -61,31 +57,31 @@ class MitaTypeSystem extends GenericTypeSystem {
 		getType(ITypeSystem.STRING).abstract = true
 	}
 
-	override getType(String type) {
-		val result = super.getType(type)
-		if (result === null) {
-			lazyLoadNativeTypes()
-			return super.getType(type)
-		}
-		result
-	}
-
-	override getTypes() {
-		lazyLoadNativeTypes()
-		super.getTypes()
-	}
-
-	protected def lazyLoadNativeTypes() {
-		if (!nativeTypesLoaded) {
-			// Load native types from stdlibs
-			libraryProvider.defaultLibraries.toSet.forEach [
-				exportedTypes.forEach [ type |
-					declareType(type.EObjectOrProxy as Type, (type.EObjectOrProxy as Type).name)
-				]
-			]
-			nativeTypesLoaded = true
-		}
-	}
+//	override getType(String type) {
+//		val result = super.getType(type)
+//		if (result === null) {
+//			lazyLoadNativeTypes()
+//			return super.getType(type)
+//		}
+//		result
+//	}
+//
+//	override getTypes() {
+//		lazyLoadNativeTypes()
+//		super.getTypes()
+//	}
+//
+//	protected def lazyLoadNativeTypes() {
+//		if (!nativeTypesLoaded) {
+//			// Load native types from stdlibs
+//			libraryProvider.defaultLibraries.toSet.forEach [
+//				exportedTypes.forEach [ type |
+//					declareType(type.EObjectOrProxy as Type, (type.EObjectOrProxy as Type).name)
+//				]
+//			]
+//			nativeTypesLoaded = true
+//		}
+//	}
 
 	def Iterable<IEObjectDescription> getExportedTypes(URI libraryUri) {
 		val set = new XtextResourceSet();

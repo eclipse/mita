@@ -17,7 +17,8 @@ import com.google.inject.Inject
 import java.nio.ByteBuffer
 import java.util.List
 import java.util.regex.Pattern
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
@@ -29,11 +30,7 @@ import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 
-class BleGenerator extends AbstractSystemResourceGenerator {
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
-	
+class BleGenerator extends AbstractSystemResourceGenerator {	
 	@Inject
 	protected extension GeneratorUtils
 	
@@ -146,7 +143,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static Att16BitCharacteristicAttribute «baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute;
 		static uint8_t «baseName»«signalInstance.name.toFirstUpper»UuidValue[ATTPDU_SIZEOF_128_BIT_UUID] = { «signalInstance.characteristicUuid» };
 		static AttUuid «baseName»«signalInstance.name.toFirstUpper»Uuid;
-		static «typeGenerator.code(ModelUtils.toSpecifier(typeInferrer.infer(signalInstance)?.bindings?.head))» «baseName»«signalInstance.name.toFirstUpper»Value;
+		static «typeGenerator.code(setup, (BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.tail.head)» «baseName»«signalInstance.name.toFirstUpper»Value;
 		static AttAttribute «baseName»«signalInstance.name.toFirstUpper»Attribute;
 		«ENDFOR»
 
@@ -371,7 +368,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	private def getContentLength(SignalInstance value) {
-		val type = typeInferrer.infer(value)?.bindings?.head?.type;
+		val type = (BaseUtils.getType(value) as TypeConstructorType).typeArguments.tail.head;
 		return switch(type?.name) {
 			case 'bool': 1
 			case 'int32': 4
@@ -436,6 +433,8 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
+		val retTypeModality = BaseUtils.getType(signalInstance) as TypeConstructorType;
+		val retType = retTypeModality.typeArguments.tail.head;
 		val baseName = setup.baseName
 		
 		codeFragmentProvider.create('''
@@ -446,14 +445,16 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		}
 		else
 		{
-			memcpy(&«baseName»«signalInstance.name.toFirstUpper»Value, «resultName», sizeof(«typeGenerator.code(signalInstance.instanceOf.typeSpecifier)»));
-			retcode = «component.baseName»_SendData((uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(signalInstance.instanceOf.typeSpecifier)»), (void*)«baseName»_«signalInstance.name»,1000);
+			memcpy(&«baseName»«signalInstance.name.toFirstUpper»Value, «resultName», sizeof(«typeGenerator.code(signalInstance, retType)»));
+			retcode = «component.baseName»_SendData((uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(signalInstance, retType)»), (void*)«baseName»_«signalInstance.name»,1000);
 		}
 		return retcode;
 		''')
 	}
 	
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
+		val retTypeModality = BaseUtils.getType(signalInstance) as TypeConstructorType;
+		val retType = retTypeModality.typeArguments.tail.head;
 		val baseName = setup.baseName
 		
 		codeFragmentProvider.create('''
@@ -462,7 +463,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 			return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 		}
 		
-		memcpy(«resultName», &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(signalInstance.instanceOf.typeSpecifier)»));
+		memcpy(«resultName», &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(signalInstance, retType)»));
 		''')
 		.addHeader('string.h', true)
 	}

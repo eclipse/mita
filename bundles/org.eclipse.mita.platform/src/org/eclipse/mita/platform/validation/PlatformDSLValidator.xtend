@@ -23,7 +23,6 @@ package org.eclipse.mita.platform.validation
  * See https://www.eclipse.org/Xtext/documentation/303_runtime_concepts.html#validation
  */
 class PlatformDSLValidator extends AbstractPlatformDSLValidator {
-	
 //	public static val INVALID_NAME = 'invalidName'
 //
 //	@Check
