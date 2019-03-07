@@ -910,7 +910,8 @@ class StatementGenerator {
 		val productType = BaseUtils.getType(isDeconstructionCase.productType);
 
 		val member = accessor(stmt, isDeconstructionCase.productType, stmt.productMember, ".", "").apply(idx);
-		val hasAccessors = hasNamedMembers(stmt, getRealType(stmt, productType));
+		val realType = getRealType(stmt, productType);
+		val hasAccessors = (productType instanceof ProdType && (productType as ProdType).typeArguments.size > 2);
 		
 		return '''«varType.getCtype(stmt)» «stmt.name» = «where.matchElement.code».data.«altAccessor»«IF hasAccessors»«member»«ENDIF»;'''
 

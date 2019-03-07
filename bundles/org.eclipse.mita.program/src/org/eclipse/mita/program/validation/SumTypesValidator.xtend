@@ -76,7 +76,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 				#[realType];
 			}
 			if(deconstructionCase.deconstructors.length > fieldsTypes.length) {
-				error(String.format(ERROR_WRONG_NUMBER_OF_DECONSTRUCTORS_MSG, fieldsTypes.length), deconstructionCase, null);
+				error(String.format(ERROR_WRONG_NUMBER_OF_DECONSTRUCTORS_MSG, fieldsTypes.length), deconstructionCase, ProgramPackage.eINSTANCE.isDeconstructionCase_Deconstructors);
 				return;
 			}
 		}

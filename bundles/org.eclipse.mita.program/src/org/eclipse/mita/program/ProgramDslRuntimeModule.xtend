@@ -36,6 +36,7 @@ import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
 import org.eclipse.mita.base.validation.BaseResourceValidator
 import org.eclipse.mita.program.formatting.ProgramDslFormatter
 import org.eclipse.mita.program.generator.ProgramDslGenerator
+import org.eclipse.mita.program.generator.ProgramDslGeneratorNodeProcessor
 import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
@@ -43,6 +44,7 @@ import org.eclipse.mita.program.typesystem.ProgramConstraintFactory
 import org.eclipse.mita.program.typesystem.ProgramLinker
 import org.eclipse.xtext.conversion.IValueConverterService
 import org.eclipse.xtext.formatting.IFormatter
+import org.eclipse.xtext.generator.trace.node.GeneratorNodeProcessor
 import org.eclipse.xtext.linking.lazy.LazyURIEncoder
 import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
@@ -60,6 +62,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IDefaultResourceDescriptionStrategy).to(ProgramDslResourceDescriptionStrategy)
 		binder.bind(boolean).annotatedWith(Names.named(CompositeEValidator.USE_EOBJECT_VALIDATOR)).toInstance(false)
 		binder.bind(DefaultRuntimeModule).annotatedWith(Names.named("injectingModule")).toInstance(this)
+		binder.bind(GeneratorNodeProcessor).to(ProgramDslGeneratorNodeProcessor);
 		binder.bind(ILibraryProvider).to(LibraryProviderImpl);
 		binder.bind(IResourceValidator).to(BaseResourceValidator);
 		

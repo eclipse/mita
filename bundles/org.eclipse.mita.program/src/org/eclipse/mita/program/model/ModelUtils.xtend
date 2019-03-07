@@ -102,10 +102,10 @@ class ModelUtils {
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(AnonymousProductType apt) {
 		val tss = apt.typeSpecifiers;
-		if(tss.length == 1) {
-			val t0 = tss.head.type;
-			return t0.getAccessorParameters;
-		}
+//		if(tss.length == 1) {
+//			val t0 = tss.head.type;
+//			return t0.getAccessorParameters;
+//		}
 		return Optional.absent;
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(NamedProductType npt) {

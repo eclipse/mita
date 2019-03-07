@@ -13,9 +13,6 @@
 
 package org.eclipse.mita.base.util;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.impl.NotificationImpl;
@@ -39,7 +37,6 @@ import org.eclipse.mita.base.types.TypesPackage;
 import org.eclipse.mita.base.types.TypesUtil;
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter;
 import org.eclipse.mita.base.typesystem.types.AbstractType;
-import org.eclipse.mita.base.util.CopySourceAdapter;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.util.OnChangeEvictingCache;
@@ -50,32 +47,41 @@ import org.eclipse.xtext.xbase.lib.IterableExtensions;
 import org.eclipse.xtext.xbase.lib.Pair;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure0;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
 @SuppressWarnings("all")
 public class BaseUtils {
 	public static String getText(final EObject obj, final EStructuralFeature feature) {
-		Object setProperty = null;
-		if (obj.eClass().getEAllStructuralFeatures().contains(feature)) {
-			setProperty = obj.eGet(feature, false);
+		Object _xifexpression = null;
+		boolean _contains = obj.eClass().getEAllStructuralFeatures().contains(feature);
+		if (_contains) {
+			_xifexpression = obj.eGet(feature, false);
 		}
-		String setPropertyName = null;
+		final Object setProperty = _xifexpression;
+		String _xifexpression_1 = null;
 		if ((setProperty != null)) {
+			String _xifexpression_2 = null;
 			if ((setProperty instanceof TypeKind)) {
 				Type _kindOf = ((TypeKind) setProperty).getKindOf();
 				String _name = null;
 				if (_kindOf != null) {
 					_name = _kindOf.getName();
 				}
-				setPropertyName = _name;
+				_xifexpression_2 = _name;
 			} else {
+				String _xifexpression_3 = null;
 				if ((setProperty instanceof NamedElement)) {
-					setPropertyName = ((NamedElement) setProperty).getName();
+					_xifexpression_3 = ((NamedElement) setProperty).getName();
 				} else {
+					String _xifexpression_4 = null;
 					if ((setProperty instanceof EObject)) {
 						List<INode> _findNodesForFeature = NodeModelUtils.findNodesForFeature(((EObject) setProperty),
 								null);
 						INode _head = null;
 						if (_findNodesForFeature != null) {
-							_head = _findNodesForFeature.get(0);
+							_head = IterableExtensions.<INode>head(_findNodesForFeature);
 						}
 						String _text = null;
 						if (_head != null) {
@@ -85,13 +91,17 @@ public class BaseUtils {
 						if (_text != null) {
 							_trim = _text.trim();
 						}
-						setPropertyName = _trim;
+						_xifexpression_4 = _trim;
 					} else {
-						setPropertyName = setProperty.toString();
+						_xifexpression_4 = setProperty.toString();
 					}
+					_xifexpression_3 = _xifexpression_4;
 				}
+				_xifexpression_2 = _xifexpression_3;
 			}
+			_xifexpression_1 = _xifexpression_2;
 		}
+		final String setPropertyName = _xifexpression_1;
 		String _elvis = null;
 		if (setPropertyName != null) {
 			_elvis = setPropertyName;
@@ -413,36 +423,36 @@ public class BaseUtils {
 		}
 		return id.toString();
 	}
-	
+
 	private static void prependNamedElementName(final StringBuilder id, final EObject container) {
-	    Object _eGet = container.eGet(TypesPackage.Literals.NAMED_ELEMENT__NAME);
-	    String name = ((String) _eGet);
-	    if ((name != null)) {
-	      id.insert(0, TypesUtil.ID_SEPARATOR);
-	      id.insert(0, name);
-	    }
-	  }
-	  
-	  private static void prependContainingFeatureName(final StringBuilder id, final EObject container) {
-	    EStructuralFeature feature = container.eContainingFeature();
-	    if ((feature != null)) {
-	      String name = null;
-	      boolean _isMany = feature.isMany();
-	      if (_isMany) {
-	        Object elements = container.eContainer().eGet(feature);
-	        int index = 0;
-	        if ((elements instanceof BasicEList)) {
-	          BasicEList<?> elementList = ((BasicEList<?>) elements);
-	          index = elementList.indexOf(container);
-	        }
-	        String _name = feature.getName();
-	        String _plus = (_name + Integer.valueOf(index));
-	        name = _plus;
-	      } else {
-	        name = feature.getName();
-	      }
-	      id.insert(0, TypesUtil.ID_SEPARATOR);
-	      id.insert(0, name);
-	    }
-	  }
+		Object _eGet = container.eGet(TypesPackage.Literals.NAMED_ELEMENT__NAME);
+		String name = ((String) _eGet);
+		if ((name != null)) {
+			id.insert(0, TypesUtil.ID_SEPARATOR);
+			id.insert(0, name);
+		}
+	}
+
+	private static void prependContainingFeatureName(final StringBuilder id, final EObject container) {
+		EStructuralFeature feature = container.eContainingFeature();
+		if ((feature != null)) {
+			String name = null;
+			boolean _isMany = feature.isMany();
+			if (_isMany) {
+				Object elements = container.eContainer().eGet(feature);
+				int index = 0;
+				if ((elements instanceof BasicEList)) {
+					BasicEList<?> elementList = ((BasicEList<?>) elements);
+					index = elementList.indexOf(container);
+				}
+				String _name = feature.getName();
+				String _plus = (_name + Integer.valueOf(index));
+				name = _plus;
+			} else {
+				name = feature.getName();
+			}
+			id.insert(0, TypesUtil.ID_SEPARATOR);
+			id.insert(0, name);
+		}
+	}
 }
