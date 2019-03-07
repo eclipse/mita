@@ -51,7 +51,7 @@ class SumTypesTest extends AbstractRuntimeTest {
 					    b = anyVec.vec1d(x + 1);
 					} 
 					is(anyVec.vec2d -> v) {
-					    b = anyVec.vec2d(x = v.x + 1, y = v.y + 1);
+					    b = anyVec.vec2d(vec2d_t(x = v.x + 1, y = v.y + 1));
 					}
 					is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
 					    b = anyVec.vec3d(x + 1, y + 1, z + 1);
