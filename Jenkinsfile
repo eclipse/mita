@@ -23,7 +23,7 @@ pipeline {
         stage("build") {
             steps {
                 checkout scm;
-                sh "mvn -U -Pplugins -Pplatforms -P!tests -P!deployment -Psign -f bundles/pom.xml clean install"
+                sh "mvn -Pplugins -Pplatforms -P!tests -P!deployment -Psign -f bundles/pom.xml clean install"
             }
         }
 
