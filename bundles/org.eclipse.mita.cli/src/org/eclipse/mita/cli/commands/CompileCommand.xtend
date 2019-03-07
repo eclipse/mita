@@ -88,7 +88,7 @@ class CompileCommand extends AbstractCommand {
 		val allFilesInClasspath = getAllMitaAndPlatformFilesInClasspath().toList;
 		for(libraryFile : allFilesInClasspath) {
 			println("Loading " + libraryFile);
-			resourceSet.getResource(URI.createURI(libraryFile), true);
+			resourceSet.getResource(URI.createURI(libraryFile.replace("\\", "/")), true);
 		}
 		EcoreUtil.resolveAll(resourceSet);
 		validateResources(resourceSet.resources.filter[ it.URI.toString.endsWith('.platform') ]);

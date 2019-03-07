@@ -63,7 +63,7 @@ class StandaloneLibraryProvider implements ILibraryProvider {
 	}
 	
 	protected def isStdlib(URI uri) {
-		return uri.segments().contains("stdlib");
+		return uri.lastSegment.startsWith("stdlib_");
 	}
 	
 }
