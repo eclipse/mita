@@ -51,7 +51,7 @@ abstract class NamedElement {
 }
 abstract class PackageMember extends NamedElement {
 	derived id String ^id get {
-		return TypesUtil.computeQID(this);
+		return BaseUtils.computeQID(this);
 	}
 }
 class Package extends PackageMember {

@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
 import org.eclipse.emf.common.notify.impl.NotificationImpl;
+import org.eclipse.emf.common.util.BasicEList;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EStructuralFeature;
@@ -34,6 +35,8 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.mita.base.types.NamedElement;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeKind;
+import org.eclipse.mita.base.types.TypesPackage;
+import org.eclipse.mita.base.types.TypesUtil;
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter;
 import org.eclipse.mita.base.typesystem.types.AbstractType;
 import org.eclipse.mita.base.util.CopySourceAdapter;
@@ -68,7 +71,8 @@ public class BaseUtils {
 					setPropertyName = ((NamedElement) setProperty).getName();
 				} else {
 					if ((setProperty instanceof EObject)) {
-						List<INode> _findNodesForFeature = NodeModelUtils.findNodesForFeature(((EObject) setProperty), null);
+						List<INode> _findNodesForFeature = NodeModelUtils.findNodesForFeature(((EObject) setProperty),
+								null);
 						INode _head = null;
 						if (_findNodesForFeature != null) {
 							_head = _findNodesForFeature.get(0);
@@ -379,4 +383,66 @@ public class BaseUtils {
 	public static int lineNumberOf(final int framesAbove) {
 		return framesAbove;
 	}
+
+	public static String computeQID(final NamedElement element) {
+		String _name = element.getName();
+		boolean _tripleEquals = (_name == null);
+		if (_tripleEquals) {
+			return null;
+		}
+		StringBuilder id = new StringBuilder();
+		id.append(element.getName());
+		EObject container = element.eContainer();
+		if ((container != null)) {
+			int _indexOf = container.eContents().indexOf(element);
+			final int idx = (_indexOf + 1);
+			id.append("_");
+			id.append(idx);
+		}
+		while ((container != null)) {
+			{
+				boolean _contains = container.eClass().getEAllStructuralFeatures()
+						.contains(TypesPackage.Literals.NAMED_ELEMENT__NAME);
+				if (_contains) {
+					prependNamedElementName(id, container);
+				} else {
+					prependContainingFeatureName(id, container);
+				}
+				container = container.eContainer();
+			}
+		}
+		return id.toString();
+	}
+	
+	private static void prependNamedElementName(final StringBuilder id, final EObject container) {
+	    Object _eGet = container.eGet(TypesPackage.Literals.NAMED_ELEMENT__NAME);
+	    String name = ((String) _eGet);
+	    if ((name != null)) {
+	      id.insert(0, TypesUtil.ID_SEPARATOR);
+	      id.insert(0, name);
+	    }
+	  }
+	  
+	  private static void prependContainingFeatureName(final StringBuilder id, final EObject container) {
+	    EStructuralFeature feature = container.eContainingFeature();
+	    if ((feature != null)) {
+	      String name = null;
+	      boolean _isMany = feature.isMany();
+	      if (_isMany) {
+	        Object elements = container.eContainer().eGet(feature);
+	        int index = 0;
+	        if ((elements instanceof BasicEList)) {
+	          BasicEList<?> elementList = ((BasicEList<?>) elements);
+	          index = elementList.indexOf(container);
+	        }
+	        String _name = feature.getName();
+	        String _plus = (_name + Integer.valueOf(index));
+	        name = _plus;
+	      } else {
+	        name = feature.getName();
+	      }
+	      id.insert(0, TypesUtil.ID_SEPARATOR);
+	      id.insert(0, name);
+	    }
+	  }
 }
