@@ -12,8 +12,8 @@
 <repository location="http://download.eclipse.org/eclipse/updates/4.7"/>
 </location>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="org.eclipse.xtext.sdk.feature.group" version="2.13.0.v20171020-0920"/>
-<repository location="http://download.eclipse.org/modeling/tmf/xtext/updates/releases/2.13.0"/>
+<unit id="org.eclipse.xtext.sdk.feature.group" version="2.16.0.v20181203-1555"/>
+<repository location="http://download.eclipse.org/modeling/tmf/xtext/updates/releases/2.16.0"/>
 </location>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
 <unit id="org.xpect.sdk.feature.group" version="0.2.0.201706301756"/>
