@@ -38,10 +38,10 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean shouldTest() {
-			return false;
+			return true;
 		}
 		private static String getTestString() {
-			return "org.eclipse.emf.ecore.impl.EObjectImpl";
+			return "Couldn't resolve reference to Type ''";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

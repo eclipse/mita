@@ -19,13 +19,14 @@ import org.eclipse.xtext.service.OperationCanceledError
 import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.validation.CheckMode
 import org.eclipse.xtext.validation.ResourceValidatorImpl
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 class BaseResourceValidator extends ResourceValidatorImpl {	
 	override validate(Resource resource, CheckMode mode, CancelIndicator mon) throws OperationCanceledError {
 		if(resource instanceof MitaBaseResource) {
 			if(resource.latestSolution === null) {
-				
-				resource.collectAndSolveTypes(resource.contents.head);
+				EcoreUtil.resolveAll(resource.contents.head);
+//				resource.collectAndSolveTypes(resource.contents.head);
 			}
 		}
 		
