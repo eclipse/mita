@@ -142,15 +142,8 @@ class MitaBaseResource extends LazyLinkingResource {
 		while (model.eContainer !== null) {
 			model = model.eContainer;
 		}
-
-		val diagnosticsConsumer = new ListBasedDiagnosticConsumer();
-		model.eAllContents.filter(GeneratedObject).forEach [
-			it.generateMembers()
-		]
-		typeLinker.doActuallyClearReferences(model);
-		typeLinker.linkModel(model, diagnosticsConsumer);
-		typeDependentLinker.linkModel(model, diagnosticsConsumer);
-		collectAndSolveTypes(model);
+		
+		generateLinkAndType(model);
 
 		super.getEObject(uriFragment, triple)
 	}
@@ -175,6 +168,17 @@ class MitaBaseResource extends LazyLinkingResource {
 				resource.resourceSet.getEObject(uri, true);
 			}
 		}) ?: obj;
+	}
+
+	public def generateLinkAndType(EObject model) {
+		val diagnosticsConsumer = new ListBasedDiagnosticConsumer();
+		model.eAllContents.filter(GeneratedObject).forEach [
+			it.generateMembers()
+		]
+		typeLinker.doActuallyClearReferences(model);
+		typeLinker.linkModel(model, diagnosticsConsumer);
+		typeDependentLinker.linkModel(model, diagnosticsConsumer);
+		collectAndSolveTypes(model);
 	}
 
 	public def collectAndSolveTypes(EObject obj) {

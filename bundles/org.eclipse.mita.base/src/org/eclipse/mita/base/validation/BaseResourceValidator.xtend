@@ -25,8 +25,9 @@ class BaseResourceValidator extends ResourceValidatorImpl {
 	override validate(Resource resource, CheckMode mode, CancelIndicator mon) throws OperationCanceledError {
 		if(resource instanceof MitaBaseResource) {
 			if(resource.latestSolution === null) {
-				EcoreUtil.resolveAll(resource.contents.head);
-//				resource.collectAndSolveTypes(resource.contents.head);
+				resource.generateLinkAndType(resource.contents.head);
+			}
+			if(resource.latestSolution === null) {
 			}
 		}
 		
