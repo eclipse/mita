@@ -38,7 +38,7 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.scoping.IScopeProvider
 
-import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
+import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.expressions.AssignmentExpression
 
@@ -56,7 +56,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 	}
 	
 	def explicitlyConvertAll(EObject obj) {
-		return obj.origin.eAdapters.filter(CoercionAdapter).head !== null 
+		return obj.computeOrigin.eAdapters.filter(CoercionAdapter).head !== null 
 			|| #[AssignmentExpression, Argument, ReturnStatement].exists[it.isAssignableFrom(obj.class)]
 	}
 	
@@ -78,11 +78,12 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		println("----------------------")
 		val constraints = cs?.constraints?.filter(SubtypeConstraint);
 		
-		val constraintSystem = TypesUtil.getConstraintSystem(program.origin.eResource);
+		val constraintSystem = TypesUtil.getConstraintSystem(program.computeOrigin.eResource);
 		
 		constraints?.forEach[c |
-			var sub = c.subType.origin.origin;
-			var top = c.superType.origin.origin;
+			// we want to resolve only one copySourceAdapter here since that's the program we were passed
+			var sub = c.subType.origin.computeOrigin(false);
+			var top = c.superType.origin.computeOrigin(false);
 			// don't convert twice
 			if(sub !== null && top !== null && sub.eContainer === top && !sub.explicitlyConvertAll) {
 				doTransform(constraintSystem, sub);
@@ -95,8 +96,8 @@ class CoerceTypesStage extends AbstractTransformationStage {
 	}
 
 	def standardCoercionCreation(ConstraintSystem c, Expression e, EObject parent) {
-		var eType = BaseUtils.getType(e.getOrigin);
-		val pType = BaseUtils.getType(parent.getOrigin);
+		var eType = BaseUtils.getType(e.computeOrigin);
+		val pType = BaseUtils.getType(parent.computeOrigin);
 		if(typesNeedCoercion(c, e, eType, pType)) {
 			val coercion = TypesFactory.eINSTANCE.createCoercionExpression;
 			if(pType === null) {
@@ -120,7 +121,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		// if sub </= top then we can't coerce
 		return sub !== null && top !== null 
 			&& !mguComputer.compute(null, sub, top).valid 
-			&& subtypeChecker.isSubType(c, context.origin, sub, top);
+			&& subtypeChecker.isSubType(c, context.computeOrigin, sub, top);
 	}
 
 	dispatch def void doTransform(ConstraintSystem c, AssignmentExpression a) {
@@ -150,8 +151,8 @@ class CoerceTypesStage extends AbstractTransformationStage {
 				}
 				val argIndex = ModelUtils.getSortedArguments(parameters, functionCall.arguments).toList.indexOf(a);
 				val parameter = parameters.get(argIndex);
-				val pType = BaseUtils.getType(parameter.getOrigin);
-				val eType = BaseUtils.getType(a.getOrigin);
+				val pType = BaseUtils.getType(parameter.computeOrigin);
+				val eType = BaseUtils.getType(a.computeOrigin);
 				
 				if(typesNeedCoercion(c, a, eType, pType)) {
 					val coercion = TypesFactory.eINSTANCE.createCoercionExpression;

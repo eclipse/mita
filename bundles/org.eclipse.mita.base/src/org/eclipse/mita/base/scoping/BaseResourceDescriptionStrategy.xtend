@@ -41,6 +41,7 @@ import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.util.BaseUtils
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -91,12 +92,13 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 					return;
 				}
 			}
-			eObject.eAllContents
-				.filter(GeneratedObject)
-				.forEach[
-					it.generateMembers()
-				]
-			
+			BaseUtils.ignoreChange(eObject, [
+				eObject.eAllContents
+					.filter(GeneratedObject)
+					.forEach[
+						it.generateMembers()
+					]
+			]);
 			// we're at the top level element - let's compute constraints and put that in a new EObjectDescription
 			constraintFactory.getTypeRegistry().setIsLinking(true);
 			try {

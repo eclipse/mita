@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import org.eclipse.emf.common.notify.Adapter;
 import org.eclipse.emf.common.notify.Notification;
@@ -309,18 +310,27 @@ public class BaseUtils {
 	public static void ignoreChange(final EObject obj, final Procedure0 action) {
 		BaseUtils.ignoreChange(obj.eResource(), action);
 	}
-
+	
+	public static <T> T ignoreChange(final EObject obj, final Supplier<T> action) {
+		return BaseUtils.ignoreChange(obj.eResource(), action);
+	}
+	
 	public static void ignoreChange(final Resource resource, final Procedure0 action) {
+		BaseUtils.ignoreChange(resource, () -> {action.apply(); return null;});
+	}
+	
+	public static <T> T ignoreChange(final Resource resource, final Supplier<T> action) {
 		final List<OnChangeEvictingCache.CacheAdapter> cacheAdapters = BaseUtils.getCacheAdapters(resource);
 		final Consumer<OnChangeEvictingCache.CacheAdapter> _function = (OnChangeEvictingCache.CacheAdapter it) -> {
 			it.ignoreNotifications();
 		};
 		cacheAdapters.forEach(_function);
-		action.apply();
+		final T result = action.get();
 		final Consumer<OnChangeEvictingCache.CacheAdapter> _function_1 = (OnChangeEvictingCache.CacheAdapter it) -> {
 			it.listenToNotifications();
 		};
 		cacheAdapters.forEach(_function_1);
+		return result;
 	}
 
 	private static List<OnChangeEvictingCache.CacheAdapter> getCacheAdapters(final Resource resource) {
@@ -357,24 +367,26 @@ public class BaseUtils {
 	}
 
 	public static EObject computeOrigin(final EObject obj) {
-		EList<Adapter> _eAdapters = null;
-		if (obj != null) {
-			_eAdapters = obj.eAdapters();
+		return computeOrigin(obj, true);
+	}
+	public static EObject computeOrigin(final EObject obj, boolean recurse) {
+		if(obj == null) {
+			return obj;
 		}
-		Iterable<CopySourceAdapter> _filter = null;
-		if (_eAdapters != null) {
-			_filter = Iterables.<CopySourceAdapter>filter(_eAdapters, CopySourceAdapter.class);
-		}
-		CopySourceAdapter _head = null;
-		if (_filter != null) {
-			_head = IterableExtensions.<CopySourceAdapter>head(_filter);
-		}
+		EList<Adapter> _eAdapters = obj.eAdapters();
+		
+		Iterable<CopySourceAdapter> _filter = Iterables.<CopySourceAdapter>filter(_eAdapters, CopySourceAdapter.class);
+
+		CopySourceAdapter _head = IterableExtensions.<CopySourceAdapter>head(_filter);
+
 		final CopySourceAdapter adapter = _head;
 		EObject _xifexpression = null;
 		if ((adapter == null)) {
 			_xifexpression = obj;
+		} else if(!recurse) {
+			_xifexpression = adapter.getOrigin();
 		} else {
-			_xifexpression = BaseUtils.computeOrigin(adapter.getOrigin());
+			_xifexpression = BaseUtils.computeOrigin(adapter.getOrigin(), recurse);
 		}
 		return _xifexpression;
 	}

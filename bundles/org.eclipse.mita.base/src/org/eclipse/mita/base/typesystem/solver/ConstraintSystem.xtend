@@ -396,7 +396,11 @@ class ConstraintSystem {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
 		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
-			return #[getTypeVariable(tvp.origin.eGet(tvp.reference) as EObject)];
+			return #[
+				BaseUtils.ignoreChange(tvp.origin, [
+					getTypeVariable(tvp.origin.eGet(tvp.reference) as EObject)
+				])
+			];
 		}
 		var origin = tvp.origin;
 		val name = tvp.targetQID;
