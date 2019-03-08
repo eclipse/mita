@@ -280,34 +280,13 @@ class ValueRange extends Expression {
 }
 
 class FeatureCall extends ElementReferenceExpression {
-	
 	op String toString() {
-		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
-		
-		var refText = if(ref instanceof NamedElement) {
-			ref.name;
-		} else {
-			ref?.toString();	
-		}
-		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
-		refText = refText ?: "<null>"
-
 		return arguments.head?.value + "." + refText + (if(operationCall) "(" + arguments.tail.join(", ") + ")" else "");
 	}
 }
 
 class FeatureCallWithoutFeature extends FeatureCall {
-	op String toString() {
-		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
-		
-		var refText = if(ref instanceof NamedElement) {
-			ref.name;
-		} else {
-			ref?.toString();	
-		}
-		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
-		refText = refText ?: "<null>"
-		
+	op String toString() {	
 		return "<auto>." + refText + (if(operationCall) "(" + arguments.join(", ") + ")" else "");
 	}
 }
@@ -324,17 +303,21 @@ class ElementReferenceExpression extends ArgumentExpression, ArrayAccessOrOperat
 		}
 	}
 	
-	op String toString() {
+	op String getRefText() {
 		val ref = eGet(ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false)
 		
 		var refText = if(ref instanceof NamedElement) {
 			ref.name;
-		} else {
-			ref?.toString();	
+		} else if(ref !== null && ref instanceof EObject && !(ref as EObject).eIsProxy) {
+			ref.toString();	
 		}
 		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference).head?.text
 		refText = refText ?: "<null>"
 		
+		return refText;
+	}
+	
+	op String toString() {		
 		return refText + (if(!arguments.empty) "(" + arguments.join(", ") + ")" else "")
 	}
 }

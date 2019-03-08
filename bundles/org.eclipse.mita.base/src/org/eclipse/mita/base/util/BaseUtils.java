@@ -325,11 +325,16 @@ public class BaseUtils {
 			it.ignoreNotifications();
 		};
 		cacheAdapters.forEach(_function);
-		final T result = action.get();
-		final Consumer<OnChangeEvictingCache.CacheAdapter> _function_1 = (OnChangeEvictingCache.CacheAdapter it) -> {
-			it.listenToNotifications();
-		};
-		cacheAdapters.forEach(_function_1);
+		T result; 
+		try {
+			result = action.get();
+		}
+		finally {
+			final Consumer<OnChangeEvictingCache.CacheAdapter> _function_1 = (OnChangeEvictingCache.CacheAdapter it) -> {
+				it.listenToNotifications();
+			};
+			cacheAdapters.forEach(_function_1);
+		}
 		return result;
 	}
 

@@ -41,7 +41,10 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Function read cannot be used here: bool, A";
+			return "org.eclipse.emf.ecore.impl.EObjectImpl";
+		}
+		private static boolean testFun(String s) {
+			return s.startsWith(getTestString());
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");
@@ -65,7 +68,7 @@ public interface IValidationIssueAcceptor {
 				this.target = null;
 				this.feature = null;
 			}
-			if(shouldTest() && message.equals(getTestString())) {
+			if(shouldTest() && testFun(message)) {
 				singleBreakpoint();
 			}
 		}
@@ -85,7 +88,7 @@ public interface IValidationIssueAcceptor {
 			this.target = target;
 			this.issueCode = issueCode;
 			this.feature = feature;
-			if(shouldTest() && message.equals(getTestString())) {
+			if(shouldTest() && testFun(message)) {
 				singleBreakpoint();
 			}
 		}
