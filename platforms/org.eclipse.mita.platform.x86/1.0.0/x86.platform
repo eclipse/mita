@@ -1,0 +1,8 @@
+package platforms.x86;
+
+
+
+platform x86 {
+	module "org.eclipse.mita.platform.x86.platform.X86PlatformGeneratorModule"
+	event startup
+}

@@ -46,7 +46,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			#define STORAGE_SDCARD_DRIVE_NUMBER             UINT8_C(0)
 			
 			«FOR sigInst : setup.signalInstances»
-				«IF sigInst.instanceOf.name.startsWith("appendingFile")»
+				«IF sigInst.instanceOf.name.startsWith("resuming")»
 					static uint16_t «sigInst.name»FilePosition = 0UL;
 				«ENDIF»
 			«ENDFOR»
@@ -66,10 +66,10 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	static def String getSizeName(SignalInstance instance) {
-		if (instance.instanceOf.name.startsWith("appendingFile")) {
-			return "blockSize";
-		} else {
+		if (instance.instanceOf.name.startsWith("rewinding")) {
 			return "fileSize";
+		} else {
+			return "blockSize";
 		}
 	}
 
@@ -102,10 +102,17 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	override generateSignalInstanceGetter(SignalInstance sigInst, String valueVariableName) {
+		val signalName = sigInst.instanceOf.name;
+		if(signalName.endsWith("Write")) {
+			return codeFragmentProvider.create('''
+				BCDS_UNUSED(«valueVariableName»);
+				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+			''')
+		} 
 		val data = sigInst.dataAccessor(valueVariableName);
 		val len = sigInst.getSize;
 		val filename = sigInst.filenameAccessor(valueVariableName);
-		val fileSeekIndex = if (sigInst.instanceOf.name.startsWith("appendingFile")) {
+		val fileSeekIndex = if (signalName.startsWith("resuming")) {
 				codeFragmentProvider.create('''«sigInst.name»FilePosition''');
 			} else {
 				codeFragmentProvider.create('''0''');
@@ -142,7 +149,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			}
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
-				«IF sigInst.instanceOf.name.startsWith("appendingFile")»
+				«IF signalName.startsWith("resuming")»
 					«sigInst.name»FilePosition += bytesRead;
 				«ENDIF»
 			}
@@ -160,22 +167,50 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	override generateSignalInstanceSetter(SignalInstance sigInst, String valueVariableName) {
+		val signalName = sigInst.instanceOf.name;
+		val isAppending = signalName.startsWith("appending");
+		if(signalName.endsWith("Read")) {
+			return codeFragmentProvider.create('''
+				BCDS_UNUSED(«valueVariableName»);
+				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+			''')
+		} 
+		
 		val data = sigInst.dataAccessor(valueVariableName);
 		val len = sigInst.lenAccessor(valueVariableName);
 		val filename = sigInst.filenameAccessor(valueVariableName);
-		val fileSeekIndex = if (sigInst.instanceOf.name.startsWith("appendingFile")) {
+		val fileSeekIndex = if (isAppending) {
 				codeFragmentProvider.create('''«sigInst.name»FilePosition''');
 			} else {
 				codeFragmentProvider.create('''0''');
 			}
+		val fileOpenMode = if (isAppending) {
+			"FA_WRITE | FA_OPEN_ALWAYS"
+		}
+		else {
+			"FA_WRITE | FA_CREATE_ALWAYS"
+		}
 
 		codeFragmentProvider.create('''
 			Retcode_T retcode = RETCODE_OK;
-			uint32_t length = 0;
 			FRESULT sdCardReturn = FR_OK, fileOpenReturn = FR_OK;
 			FIL fileWriteHandle;
 			UINT bytesWritten;
-			fileOpenReturn = f_open(&fileWriteHandle, «filename», FA_WRITE | FA_CREATE_ALWAYS);
+			«IF isAppending»
+			FILINFO sdCardFileInfo;
+			#if _USE_LFN
+			sdCardFileInfo.lfname = NULL;
+			#endif
+			uint16_t «fileSeekIndex»;
+			«ENDIF»
+			fileOpenReturn = f_open(&fileWriteHandle, «filename», «fileOpenMode»);
+			«IF isAppending»
+			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
+			{
+				sdCardReturn = f_stat(«filename», &sdCardFileInfo);
+				«fileSeekIndex» = sdCardFileInfo.fsize;
+			}
+			«ENDIF»
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
 			    sdCardReturn = f_lseek(&fileWriteHandle, «fileSeekIndex»);
@@ -183,12 +218,6 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
 			{
 			    sdCardReturn = f_write(&fileWriteHandle, «data», «len», &bytesWritten); /* Write it to the destination file */
-			}
-			if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
-			{
-				«IF sigInst.instanceOf.name.startsWith("appendingFile")»
-					«sigInst.name»FilePosition += bytesWritten;
-				«ENDIF»
 			}
 			if (FR_OK == fileOpenReturn)
 			{

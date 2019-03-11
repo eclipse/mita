@@ -29,6 +29,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.xtext.generator.IFileSystemAccess2
 
 class SystemResourceHandlingGenerator {
 
@@ -53,6 +54,18 @@ class SystemResourceHandlingGenerator {
 	@Inject
 	protected extension ProgramDslTraceExtensions
 
+	def generateAdditionalFiles(IFileSystemAccess2 fsa, CompilationContext context, EObject obj) {
+		val componentAndSetup = obj.getComponentAndSetup(context);
+		val component = componentAndSetup.key;
+		val setup = componentAndSetup.value;
+		
+		val internalGenerator = registry.getGenerator(component);
+		if(internalGenerator !== null) {
+			internalGenerator.prepare(context, component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
+		}
+		internalGenerator.generateAdditionalFiles(fsa);
+	}
+
 	def generateHeader(CompilationContext context, EObject obj) {
 		val componentAndSetup = obj.getComponentAndSetup(context);
 		val component = componentAndSetup.key;
@@ -60,7 +73,7 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(context, component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		
 		val exceptionType = exceptionGenerator.exceptionType;
@@ -78,7 +91,7 @@ class SystemResourceHandlingGenerator {
 				 * Enables the «name» sensor.
 				 */
 				«exceptionType» «(setup ?: component).enableName»(void);
-	
+
 				«IF setup !== null»
 				«FOR signalInstance : setup?.signalInstances»
 				«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
@@ -86,7 +99,7 @@ class SystemResourceHandlingGenerator {
 				 * Provides read access to «signalInstance.name».
 				 */
 				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result);
-	
+
 				«IF signalInstance.writeable»
 				/**
 				 * Provides write access to «signalInstance.name».
@@ -109,7 +122,7 @@ class SystemResourceHandlingGenerator {
 		
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
-			internalGenerator.prepare(component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
+			internalGenerator.prepare(context, component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
 		}
 		
 		val exceptionType = exceptionGenerator.exceptionType;
@@ -156,7 +169,7 @@ class SystemResourceHandlingGenerator {
 				}
 				
 				«ENDIF»
-	
+
 				«ENDFOR»
 				«ENDIF»
 				«internalGenerator?.generateAdditionalImplementation()»

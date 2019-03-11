@@ -8,7 +8,7 @@ draft: false
     <img src="images/mita.svg" height="200">
 </div>
 
-Eclipse Mita is a programming language that is focused on making Internet-Of-Things things easier to program, especially for developers without an embedded development background. 
+Eclipse Mita is a programming language that is focused on making Internet-Of-Things things easier to program, especially for developers without an embedded development background.
 It aims to increase programmer productivity, enables fast exploration of use-cases and tries to make you feel right at home on an embedded device.
 
 ```Typescript

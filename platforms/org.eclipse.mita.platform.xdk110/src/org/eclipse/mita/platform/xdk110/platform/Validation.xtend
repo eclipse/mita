@@ -116,6 +116,7 @@ class Validation implements IResourceValidator {
 		val i2cs = filterSigInstName.apply("I2C").toSet
 		val gpios = filterSigInstName.apply("GPIO").toSet
 		val sdcard = filterSigInstName.apply("SDCard").toSet
+		val loras = filterSigInstName.apply("LoRa").toSet
 		
 		// since modalities are read only this should only be reads.
 		val noises = filterModalityName.apply("noise_sensor").toSet;
@@ -141,6 +142,7 @@ class Validation implements IResourceValidator {
 		val gpioWrites = new HashSet(gpios ) => [retainAll(writes)]
 		val sdCardReads  = new HashSet(sdcard) => [retainAll(reads)]
 		val sdCardWrites = new HashSet(sdcard) => [retainAll(writes)]
+		val loraReads = new HashSet(loras) => [retainAll(reads)]
 				
 		i2cReads.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Read", "read from", acceptor)]
 		i2cWrites.forEach[validateI2cReadWrite(it.source, it.sigInst, it.structFeature, "Write", "write to", acceptor)]
@@ -154,9 +156,21 @@ class Validation implements IResourceValidator {
 
 		sdCardReads.forEach[validateSdCardRead(it, acceptor)]
 		sdCardWrites.forEach[validateSdCardWrite(it, acceptor)]
+		
+		loraReads.forEach[validateNoReads(it, acceptor)]
 	}
 	
+	def validateNoWrites(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
+		val init = call.sigInst.initialization as ElementReferenceExpression;
+		val signal = init.reference as Signal;
+		acceptor.acceptError("Can not write to " + signal.name, call.source, call.structFeature, 0, "CANT_WRITE_TO_" + signal.name.toUpperCase)
+	}
 	
+		def validateNoReads(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
+		val init = call.sigInst.initialization as ElementReferenceExpression;
+		val signal = init.reference as Signal;
+		acceptor.acceptError("Can not read from " + signal.name, call.source, call.structFeature, 0, "CANT_WRITE_TO_" + signal.name.toUpperCase)
+	}
 	
 	def validateGpioRead(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
 		val init = call.sigInst.initialization as ElementReferenceExpression;
@@ -209,17 +223,17 @@ class Validation implements IResourceValidator {
 		
 	}
 
-	def validateSdCardRead(MethodCall call, ValidationMessageAcceptor acceptor) {
+	def validateSdCardRead(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
 		val init = call.sigInst.initialization as ElementReferenceExpression;
 		val signal = init.reference as Signal;
-		if(signal.name.contains("_Write")) {
+		if(signal.name.contains("Write")) {
 			acceptor.acceptError("Can not read from " + signal.name, call.source, call.structFeature, 0, "CANT_READ_FROM_" + signal.name.toUpperCase)
 		}
 	}
-	def validateSdCardWrite(MethodCall call, ValidationMessageAcceptor acceptor) {
+	def validateSdCardWrite(MethodCallSigInst call, ValidationMessageAcceptor acceptor) {
 		val init = call.sigInst.initialization as ElementReferenceExpression;
 		val signal = init.reference as Signal;
-		if(signal.name.contains("_Read")) {
+		if(signal.name.contains("Read")) {
 			acceptor.acceptError("Can not write to " + signal.name, call.source, call.structFeature, 0, "CANT_WRITE_TO_" + signal.name.toUpperCase)
 		}
 	}

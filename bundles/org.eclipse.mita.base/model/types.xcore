@@ -232,9 +232,7 @@ class AnonymousProductType extends SumAlternative {
 	op Type realType() {
 		if(typeSpecifiers.length == 1) {
 			val mbRealType = typeSpecifiers.get(0).^type;
-			if(mbRealType instanceof HasAccessors) {
-				return mbRealType;
-			}
+			return mbRealType;
 		}
 		return this;	
 	}

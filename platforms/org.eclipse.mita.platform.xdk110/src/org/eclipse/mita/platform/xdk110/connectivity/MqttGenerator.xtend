@@ -19,12 +19,16 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
+import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.xtext.generator.IFileSystemAccess2
+import java.util.stream.Collectors
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 
@@ -36,53 +40,113 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	@Inject
 	protected extension StatementGenerator statementGenerator
+	
+	@Inject
+	protected GeneratorUtils generatorUtils
+	
+	override generateAdditionalFiles(IFileSystemAccess2 fsa) {
+		val brokerUri = new URI(configuration.getString("url"));
+		val isSecure = brokerUri.scheme == "mqtts";
+		if(isSecure) {
+			val certificateFileLoc = configuration.getString("certificatePath");
+			val certificate = generatorUtils.getFileContents(setup.eResource, certificateFileLoc);
+			if(certificate === null) {
+				return #[];
+			}
+			return #["ServerCA.h" => [fsa.generateFile(it, 
+			'''
+				#define SERVER_CA \
+					«FOR line: certificate.collect(Collectors.toList) SEPARATOR(" \\")»
+					"«line»\n"
+					«ENDFOR»
+			''')]];
+		}
+		return #[];
+	}
 
 	override generateSetup() {
 		val brokerUri = new URI(configuration.getString("url"));
 		var brokerPortRaw = brokerUri.port;
-		val brokerPort = if(brokerPortRaw < 0) 1883 else brokerPortRaw;
+		val isSecure = brokerUri.scheme == "mqtts"
+		val brokerPort = if(brokerPortRaw < 0) {
+			if(isSecure) {
+				8883
+			} 
+			else {
+				1883
+			}
+		} 
+		else {
+			brokerPortRaw;
+		}
+		
+		val sntpUri = new URI(configuration.getString("sntpServer"));
+		val sntpPort = if(sntpUri.port < 0) {
+			123;
+		} else {
+			sntpUri.port;
+		}
+		
+		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
+		
+		val result = codeFragmentProvider.create('''
+		Retcode_T exception = RETCODE_OK;
+		«IF auth instanceof SumTypeRepr»
+			«IF auth.isLogin()»
+				StringDescr_wrap(&username, usernameBuf);
+				StringDescr_wrap(&password, passwordBuf);
+			«ENDIF»
+		«ENDIF»
 
-		codeFragmentProvider.create('''
-		Retcode_T retcode = RETCODE_OK;
+		«servalpalGenerator.generateSetup(isSecure)»
+		
+		«IF isSecure»
+		exception = SNTP_Setup(&sntpSetup);
 
-		«servalpalGenerator.generateSetup()»
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		exception = HTTPRestClientSecurity_Setup();
 
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		«ENDIF»		
+		
 		mqttSubscribeHandle = xSemaphoreCreateBinary();
 		if (NULL == mqttSubscribeHandle)
 		{
-			retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 		}
-		if (RETCODE_OK == retcode)
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		mqttPublishHandle = xSemaphoreCreateBinary();
+		if (NULL == mqttPublishHandle)
 		{
-			mqttPublishHandle = xSemaphoreCreateBinary();
-			if (NULL == mqttPublishHandle)
-			{
-				vSemaphoreDelete(mqttSubscribeHandle);
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-			}
+			vSemaphoreDelete(mqttSubscribeHandle);
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 		}
-		if (RETCODE_OK == retcode)
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		mqttSendHandle = xSemaphoreCreateBinary();
+		if (NULL == mqttSendHandle)
 		{
-			mqttSendHandle = xSemaphoreCreateBinary();
-			if (NULL == mqttSendHandle)
-			{
-				vSemaphoreDelete(mqttSubscribeHandle);
-				vSemaphoreDelete(mqttPublishHandle);
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-			}
+			vSemaphoreDelete(mqttSubscribeHandle);
+			vSemaphoreDelete(mqttPublishHandle);
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 		}
-		if (RETCODE_OK == retcode)
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		mqttConnectHandle = xSemaphoreCreateBinary();
+		if (NULL == mqttConnectHandle)
 		{
-			mqttConnectHandle = xSemaphoreCreateBinary();
-			if (NULL == mqttConnectHandle)
-			{
-				vSemaphoreDelete(mqttSubscribeHandle);
-				vSemaphoreDelete(mqttPublishHandle);
-				vSemaphoreDelete(mqttSendHandle);
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-			}
+			vSemaphoreDelete(mqttSubscribeHandle);
+			vSemaphoreDelete(mqttPublishHandle);
+			vSemaphoreDelete(mqttSendHandle);
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 		}
-		return retcode;
+		
+		return exception;
 		''')
 		.setPreamble('''
 		/**
@@ -100,7 +164,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		static const uint16_t MQTT_BROKER_PORT = «brokerPort»;
 
 		/**<  Macro for the non secure serval stack expected MQTT URL format */
-		#define MQTT_URL_FORMAT_NON_SECURE          "mqtt://%s:%d"
+		#define MQTT_URL_FORMAT          "«brokerUri.scheme»://%s:%d"
 
 		/**< Handle for MQTT subscribe operation  */
 		static SemaphoreHandle_t mqttSubscribeHandle;
@@ -118,17 +182,34 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		static bool mqttIsSubscribed = false;
 		/**< MQTT publish status */
 		static bool mqttWasPublished = false;
+		
+		«IF isSecure»
+		SNTP_Setup_T sntpSetup = {
+			.ServerUrl = "«sntpUri.host»",
+			.ServerPort = «sntpPort»
+		};
+		«ENDIF»
 		''')
 		.addHeader("Serval_Mqtt.h", true, IncludePath.LOW_PRIORITY)
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("XdkCommonInfo.h", true)
-		.addHeader("BCDS_NetworkConfig.h", true)
+		.addHeader("BCDS_WlanNetworkConfig.h", true)
+		
+		if(isSecure) {
+			result.addHeader("HTTPRestClientSecurity.h", true)
+		}
+		return result;
 	}
 
 	override generateEnable() {
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
+		val lastWill = StaticValueInferrer.infer(configuration.getExpression("lastWill"), []);
+		
+		val brokerUri = new URI(configuration.getString("url"));
+		val isSecure = brokerUri.scheme == "mqtts";
+				
 		val result = codeFragmentProvider.create('''
-		Retcode_T retcode = RETCODE_OK;
+		Retcode_T exception = RETCODE_OK;
 
 		Ip_Address_T brokerIpAddress = 0UL;
 		StringDescr_T clientID;
@@ -136,118 +217,158 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		char serverIpStringBuffer[16] = { 0 };
 
 		«servalpalGenerator.generateEnable()»
+		
+		«IF isSecure»
+		exception = SNTP_Enable();
+		
+		if(RC_OK != MbedTLSAdapter_Initialize())
+		{
+			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : unable to initialize Mbedtls.")»
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_HTTP_INIT_REQUEST_FAILED);
+		}
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		uint64_t sntpTimeStampFromServer = 0UL;
+		
+		/* We Synchronize the node with the SNTP server for time-stamp.
+		 * Since there is no point in doing a HTTPS communication without a valid time */
+		do
+		{
+			exception = SNTP_GetTimeFromServer(&sntpTimeStampFromServer, 1000);
+			if ((RETCODE_OK != exception) || (0UL == sntpTimeStampFromServer))
+			{
+				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT_Enable : SNTP server time was not synchronized. Retrying...")»
+				BSP_Board_Delay(1000);
+			}
+		} while (0UL == sntpTimeStampFromServer);
 
+		struct tm time;
+		char timezoneISO8601format[40];
+		TimeStamp_SecsToTm(sntpTimeStampFromServer, &time);
+		TimeStamp_TmToIso8601(&time, timezoneISO8601format, 40);
+		
+		«loggingGenerator.generateLogStatement(LogLevel.Info, "MQTT_Enable : Getting time successful. Current time is %s", codeFragmentProvider.create('''timezoneISO8601format'''))»
+		
+		BCDS_UNUSED(sntpTimeStampFromServer); /* Copy of sntpTimeStampFromServer will be used be HTTPS for TLS handshake */
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+       	«ENDIF»
+		
 		retcode_t mqttRetcode = RC_OK;
 		mqttRetcode = Mqtt_initialize();
 		if (RC_OK != mqttRetcode)
 		{
 			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : MQTT init failed: %x", codeFragmentProvider.create('''mqttRetcode'''))»
-			retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_INIT_FAILED);
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_INIT_FAILED);
 		}
 
-		if (RETCODE_OK == retcode)
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		mqttRetcode = Mqtt_initializeInternalSession(&mqttSession);
+		if (RC_OK != mqttRetcode)
 		{
-			mqttRetcode = Mqtt_initializeInternalSession(&mqttSession);
-			if (RC_OK != mqttRetcode)
-			{
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : MQTT init session failed: %x", codeFragmentProvider.create('''mqttRetcode'''))»
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_INIT_INTERNAL_SESSION_FAILED);
-			}
+			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : MQTT init session failed: %x", codeFragmentProvider.create('''mqttRetcode'''))»
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_INIT_INTERNAL_SESSION_FAILED);
 		}
 
-		if (RETCODE_OK == retcode)
-		{
-			retcode = NetworkConfig_GetIpAddress((uint8_t *) MQTT_BROKER_HOST, &brokerIpAddress);
-			if(RETCODE_OK != retcode) {
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to resolve host: %s", codeFragmentProvider.create('''MQTT_BROKER_HOST'''))»
-			}
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		exception = WlanNetworkConfig_GetIpAddress((uint8_t *) MQTT_BROKER_HOST, &brokerIpAddress);
+		if(RETCODE_OK != exception) {
+			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to resolve host: %s", codeFragmentProvider.create('''MQTT_BROKER_HOST'''))»
+			return exception;
 		}
-		if (RETCODE_OK == retcode)
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		if (0 > Ip_convertAddrToString(&brokerIpAddress, serverIpStringBuffer))
 		{
-			if (0 > Ip_convertAddrToString(&brokerIpAddress, serverIpStringBuffer))
-			{
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to convert IP")»
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_IPCONIG_FAIL);
-			}
+			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to convert IP")»
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_IPCONIG_FAIL);
 		}
-		if (RETCODE_OK == retcode)
-		{
-			mqttSession.MQTTVersion = 3;
-			mqttSession.keepAliveInterval = 60;
-			mqttSession.cleanSession = false;
-			mqttSession.will.haveWill = false;
-			mqttSession.onMqttEvent = MqttEventHandler;
-			«IF auth instanceof SumTypeRepr»
-				«IF auth.isLogin()»
-					mqttSession.username = username;
-					mqttSession.password = password;
-				«ENDIF»
+
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+
+		mqttSession.MQTTVersion = 4;
+		mqttSession.keepAliveInterval = 60;
+		mqttSession.cleanSession = false;
+		«IF lastWill instanceof SumTypeRepr»
+			«IF lastWill.hasLastWill»
+				StringDescr_wrap(&lastWillTopic, lastWillTopicBuf);
+				StringDescr_wrap(&lastWillMessage, lastWillMessageBuf);
+				mqttSession.will.haveWill = true;
+				mqttSession.will.topic = lastWillTopic;
+				mqttSession.will.message = lastWillMessage;
+				mqttSession.will.retained = true;
+				mqttSession.will.qos = «getQosFromInt(StaticValueInferrer.infer(lastWill.properties.get("qos"), []) as Integer)»;
+			«ELSE»
+				mqttSession.will.haveWill = false;
 			«ENDIF»
+		«ELSE»
+			mqttSession.will.haveWill = false;
+		«ENDIF»
+		mqttSession.onMqttEvent = MqttEventHandler;
+		«IF auth instanceof SumTypeRepr»
+			«IF auth.isLogin()»
+				mqttSession.username = username;
+				mqttSession.password = password;
+			«ENDIF»
+		«ENDIF»
 
-			StringDescr_wrap(&clientID, MQTT_CLIENT_ID);
-			mqttSession.clientID = clientID;
+		StringDescr_wrap(&clientID, MQTT_CLIENT_ID);
+		mqttSession.clientID = clientID;
 
-			size_t neccessaryBytes = snprintf(mqttBrokerURL, sizeof(mqttBrokerURL), MQTT_URL_FORMAT_NON_SECURE, serverIpStringBuffer, MQTT_BROKER_PORT);
-			if(neccessaryBytes > sizeof(mqttBrokerURL)) {
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to convert IP")»
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
-			}
+		size_t neccessaryBytes = snprintf(mqttBrokerURL, sizeof(mqttBrokerURL), MQTT_URL_FORMAT, serverIpStringBuffer, MQTT_BROKER_PORT);
+		if(neccessaryBytes > sizeof(mqttBrokerURL)) {
+			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to convert IP")»
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_OUT_OF_RESOURCES);
 		}
-		if (RETCODE_OK == retcode)
+		
+		«generatorUtils.generateExceptionHandler(setup, "exception")»
+		
+		mqttSession.target.scheme = SERVAL_SCHEME_MQTT;
+		if (RC_OK == SupportedUrl_fromString((const char *) mqttBrokerURL, (uint16_t) strlen((const char *) mqttBrokerURL), &mqttSession.target))
 		{
-			mqttSession.target.scheme = SERVAL_SCHEME_MQTT;
-			if (RC_OK == SupportedUrl_fromString((const char *) mqttBrokerURL, (uint16_t) strlen((const char *) mqttBrokerURL), &mqttSession.target))
-			{
-				mqttIsConnected = false;
-				/* This is a dummy take. In case of any callback received
-				 * after the previous timeout will be cleared here. */
-				(void) xSemaphoreTake(mqttConnectHandle, 0UL);
-				if (RC_OK != Mqtt_connect(&mqttSession))
-				{
-					«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to connect MQTT")»
-					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_FAILED);
-				}
-			}
-			else
-			{
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to parse IP/port: %s", codeFragmentProvider.create('''mqttBrokerURL'''))»
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PARSING_ERROR);
-			}
+			exception = connectToBackend();
 		}
-		if (RETCODE_OK == retcode)
+		else
 		{
-			if (pdTRUE != xSemaphoreTake(mqttConnectHandle, pdMS_TO_TICKS(30000)))
-			{
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed since Post CB was not received")»
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_CB_NOT_RECEIVED);
-			}
-			else
-			{
-				if (true != mqttIsConnected)
-				{
-					«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to connect")»
-					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_STATUS_ERROR);
-				}
-			}
+			«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to parse IP/port: %s", codeFragmentProvider.create('''mqttBrokerURL'''))»
+			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PARSING_ERROR);
 		}
-		return retcode;
-		''');
-		if(auth instanceof SumTypeRepr) {
-			if(auth.isLogin()) {
-				val username = auth.properties.get("username")?.code;
-				val password = auth.properties.get("password")?.code;
-				result.setPreamble('''
+		
+		return exception;
+		''')
+		.addHeader("BCDS_BSP_Board.h", true)
+		.addHeader("XDK_SNTP.h", true)
+		.addHeader("MbedTLSAdapter.h", true)
+		.addHeader("HTTPRestClientSecurity.h", true)
+		.addHeader("time.h", true)
+		.addHeader("XDK_TimeStamp.h", true)
+		result.setPreamble('''
+		«IF auth instanceof SumTypeRepr»
+			«IF auth.isLogin()»
+				«val username = auth.properties.get("username")»
+				«val password = auth.properties.get("password")»
+				StringDescr_T username;
+				const char* usernameBuf = «username?.code»;
+				
+				StringDescr_T password;
+				const char* passwordBuf = «password?.code»;
+			«ENDIF»
+		«ENDIF»
+		
+		«IF lastWill instanceof SumTypeRepr»
+			«IF lastWill.hasLastWill»
+				StringDescr_T lastWillTopic;
+				const char* lastWillTopicBuf = «lastWill.properties.get("topic")?.code»;
+				StringDescr_T lastWillMessage;
+				const char* lastWillMessageBuf = «lastWill.properties.get("message")?.code»;
+			«ENDIF»
+		«ENDIF»
+		''').addHeader("Serval_StringDescr.h", true);
 
-                StringDescr_T username;
-                const char* usernameBuf = «username»;
-                StringDescr_wrap(&username, usernameBuf);
-
-                StringDescr_T password;
-                const char* passwordBuf = «password»;
-				StringDescr_wrap(&password, passwordBuf);
-				''').addHeader("Serval_StringDescr.h", true);
-			}
-		}
 
 		return result;
 
@@ -255,6 +376,10 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	protected def isLogin(SumTypeRepr repr) {
 		return repr.name == "Login"
+	}
+	
+	protected def hasLastWill(SumTypeRepr repr) {
+		return repr.name == "LastWill"
 	}
 
 	override generateAdditionalImplementation() {
@@ -276,14 +401,15 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		static retcode_t MqttEventHandler(MqttSession_T* session, MqttEvent_t event, const MqttEventData_t* eventData)
 		{
 			BCDS_UNUSED(session);
-			Retcode_T retcode = RETCODE_OK;
+			BCDS_UNUSED(eventData);
+			Retcode_T exception = RETCODE_OK;
 			switch (event)
 			{
 			case MQTT_CONNECTION_ESTABLISHED:
 				mqttIsConnected = true;
 				if (pdTRUE != xSemaphoreGive(mqttConnectHandle))
 				{
-					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
 			case MQTT_CONNECTION_ERROR:
@@ -292,19 +418,19 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				mqttIsConnected = false;
 				if (pdTRUE != xSemaphoreGive(mqttConnectHandle))
 				{
-					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 
 				break;
 			case MQTT_CONNECTION_CLOSED:
 				mqttIsConnected = false;
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECTION_CLOSED);
+				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT_Event : Disconnected. Will try to reconnect on next send.")»
 				break;
 			case MQTT_SUBSCRIPTION_ACKNOWLEDGED:
 				mqttIsSubscribed = true;
 				if (pdTRUE != xSemaphoreGive(mqttSubscribeHandle))
 				{
-					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
 			case MQTT_SUBSCRIBE_SEND_FAILED:
@@ -312,11 +438,11 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				mqttIsSubscribed = false;
 				if (pdTRUE != xSemaphoreGive(mqttSubscribeHandle))
 				{
-					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
 			case MQTT_SUBSCRIPTION_REMOVED:
-				retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_REMOVED);
+				exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_REMOVED);
 				break;
 			case MQTT_INCOMING_PUBLISH:
 				break;
@@ -324,7 +450,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				mqttWasPublished = true;
 				if (pdTRUE != xSemaphoreGive(mqttPublishHandle))
 				{
-					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
 			case MQTT_PUBLISH_SEND_FAILED:
@@ -333,7 +459,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				mqttWasPublished = false;
 				if (pdTRUE != xSemaphoreGive(mqttPublishHandle))
 				{
-					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
+					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
 			default:
@@ -341,17 +467,48 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				break;
 			}
 
-			if (RETCODE_OK != retcode)
+			if (RETCODE_OK != exception)
 			{
-				Retcode_RaiseError(retcode);
+				Retcode_RaiseError(exception);
 			}
 
 			return RC_OK;
 		}
+		
+		/**
+		 * Connects to a configured backend.
+		 */
+		Retcode_T connectToBackend(void) {
+			/* This is a dummy take. In case of any callback received
+			 * after the previous timeout will be cleared here. */
+			(void) xSemaphoreTake(mqttConnectHandle, 0UL);
+			retcode_t rc = Mqtt_connect(&mqttSession);
+			if(RC_OK != rc) {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT: 0x%d", codeFragmentProvider.create('''rc'''))»
+				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_FAILED);
+			}
+			if (pdTRUE != xSemaphoreTake(mqttConnectHandle, pdMS_TO_TICKS(30000)))
+			{
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed since Post CB was not received")»
+				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_CB_NOT_RECEIVED);
+			}
+			if (!mqttIsConnected)
+			{
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect")»
+				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_STATUS_ERROR);
+			}
+			return RETCODE_OK;
+		}
 		''')
 		.setPreamble('''
 		static retcode_t MqttEventHandler(MqttSession_T* session, MqttEvent_t event, const MqttEventData_t* eventData);
+		static Retcode_T connectToBackend(void);
 		''')
+	}
+
+	def getQosFromInt(int qos) {
+		val qosLevel = #[ "MQTT_QOS_AT_MOST_ONE", "MQTT_QOS_AT_LEAST_ONCE", "MQTT_QOS_EXACTLY_ONCE"	];
+		return qosLevel.get(qos);
 	}
 
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
@@ -359,12 +516,23 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
-		val qosLevel = #[ "MQTT_QOS_AT_MOST_ONE", "MQTT_QOS_AT_LEAST_ONCE", "MQTT_QOS_EXACTLY_ONCE"	];
 		val qosRaw = getQosLevel(signalInstance);
-		val qos = qosLevel.get(qosRaw);
+		val qos = getQosFromInt(qosRaw);
 
 		return codeFragmentProvider.create('''
-			Retcode_T retcode = RETCODE_OK;
+			Retcode_T exception = RETCODE_OK;
+			
+			if(!mqttIsConnected) {
+				«loggingGenerator.generateLogStatement(LogLevel.Info, "MQTT_Write : Reconnecting...")»
+				exception = connectToBackend();
+				if(mqttIsConnected) {
+					«loggingGenerator.generateLogStatement(LogLevel.Info, "MQTT_Write : Connected.")»
+				}
+				else {
+					«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Write : Connection failed!")»
+				}
+			}
+			«generatorUtils.generateExceptionHandler(signalInstance, "exception")»
 
 			static StringDescr_T publishTopicDescription;
 			static char *topic = "«getTopicName(signalInstance)»";
@@ -376,23 +544,24 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			(void) xSemaphoreTake(mqttPublishHandle, 0UL);
 			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, *value, strlen(*value), (uint8_t) «qos», false))
 			{
-			    retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
+			    exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 			}
-			if (RETCODE_OK == retcode)
+			
+			«generatorUtils.generateExceptionHandler(signalInstance, "exception")»
+			
+			if (pdTRUE != xSemaphoreTake(mqttPublishHandle, pdMS_TO_TICKS(5000)))
 			{
-			    if (pdTRUE != xSemaphoreTake(mqttPublishHandle, pdMS_TO_TICKS(5000)))
-			    {
-			        retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_CB_NOT_RECEIVED);
-			    }
-			    else
-			    {
-			        if (true != mqttWasPublished)
-			        {
-			            retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_STATUS_ERROR);
-			        }
-			    }
+				exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_CB_NOT_RECEIVED);
 			}
-			return retcode;
+			else
+			{
+				if (true != mqttWasPublished)
+				{
+					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_STATUS_ERROR);
+				}
+			}
+			
+			return exception;
 		''')
 	}
 

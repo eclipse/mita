@@ -20,6 +20,7 @@ import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.xtext.generator.IFileSystemAccess2
 
 /**
  * Base interface for Mita component generators.
@@ -31,6 +32,8 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	 */
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
+	
+	protected CompilationContext context;
 	
 	/**
 	 * The system resource to generate the setup code for the event handler registered to events of this component.
@@ -55,7 +58,8 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 	/**
 	 * Prepares this generator for producing code by supplying all contextual information for doing so.
 	 */
-	public def void prepare(AbstractSystemResource component, SystemResourceSetup setup, IComponentConfiguration config, Iterable<EventHandlerDeclaration> eventHandler) {
+	public def void prepare(CompilationContext context, AbstractSystemResource component, SystemResourceSetup setup, IComponentConfiguration config, Iterable<EventHandlerDeclaration> eventHandler) {
+		this.context = context;
 		this.component = component;
 		this.setup = setup;
 		this.configuration = config;
@@ -106,6 +110,9 @@ abstract class AbstractSystemResourceGenerator implements IGenerator {
 		return CodeFragment.EMPTY;
 	}
 	
+	public def Iterable<String> generateAdditionalFiles(IFileSystemAccess2 fsa) {
+		return #[];
+	}
 	
 	/**
 	 * Generates code which prepares the subsequent access to a sensor modality. The

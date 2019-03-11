@@ -80,9 +80,9 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	override CodeFragment generateHeader(TypeSpecifier type) {
 		codeFragmentProvider.create('''
-		typedef struct { 
+		typedef struct {
 			«typeGenerator.code(type.typeArguments.head)»* data;
-			uint32_t length; 	
+			uint32_t length;
 		} «typeGenerator.code(type)»;
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}

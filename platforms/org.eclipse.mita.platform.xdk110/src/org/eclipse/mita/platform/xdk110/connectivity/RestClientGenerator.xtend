@@ -121,20 +121,20 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
 		
 		codeFragmentProvider.create('''
-		size_t messageLength = strlen((const char*) *«variableName»);
+		size_t messageLength = strlen((const char*) *«variableName») + 1;
 		if(messageLength > sizeof(httpBodyBuffer))
 		{
 			return EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION;
 		}
 		
-		memcpy(httpBodyBuffer, *«variableName», strlen(*«variableName»));
+		memcpy(httpBodyBuffer, *«variableName», messageLength);
 
-		Retcode_T retcode = RETCODE_OK;
+		Retcode_T exception = RETCODE_OK;
 		Ip_Address_T destAddr;
-		retcode = NetworkConfig_GetIpAddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
-		if (retcode != RETCODE_OK)
+		exception = NetworkConfig_GetIpAddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
+		if (exception != RETCODE_OK)
 		{
-			return retcode;
+			return exception;
 		}
 
 		retcode_t rc;
@@ -225,9 +225,9 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSetup() {
 		codeFragmentProvider.create('''
-		Retcode_T retcode = RETCODE_OK;
+		Retcode_T exception = RETCODE_OK;
 
-		«servalpalGenerator.generateSetup()»
+		«servalpalGenerator.generateSetup(false)»
 
 		responseReceivedSemaphore = xSemaphoreCreateBinary();
 		''')
@@ -235,14 +235,14 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateEnable() {
 		codeFragmentProvider.create('''
-	    Retcode_T retcode = RETCODE_OK;
+	    Retcode_T exception = RETCODE_OK;
 
 	    «servalpalGenerator.generateEnable()»
 
-	    retcode = HttpClient_initialize();
-	    if(retcode != RETCODE_OK) 
+	    exception = HttpClient_initialize();
+	    if(exception != RETCODE_OK) 
 	    {
-	    	return retcode;
+	    	return exception;
 	    }
 		''')
 		.addHeader("BCDS_Basics.h", true, IncludePath.HIGH_PRIORITY)

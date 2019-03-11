@@ -79,7 +79,7 @@ class EntryPointGenerator {
 			baseIncludes.add(new IncludePath(systemResource.fileBasename + '.h', false));
 		}
 		for(program : context.allUnits.filter[containsCodeRelevantContent]) {
-			baseIncludes.add(new IncludePath(userCodeGenerator.getResourceBaseName(program) + '.h', false))
+			baseIncludes.add(new IncludePath(UserCodeFileGenerator.getResourceBaseName(program) + '.h', false))
 		}
 		
 		// and produce code
@@ -95,13 +95,6 @@ class EntryPointGenerator {
 				«exceptionType» exception = NO_EXCEPTION;
 				
 				«eventLoopGenerator.generateSetupPreamble(context)»
-
-				«IF context.hasTimeEvents»
-
-				// setup time
-				exception = SetupTime();
-				«"Time".generateLoggingExceptionHandler("setup")»
-				«ENDIF»
 			
 				«IF !allResourcesUsed.empty»
 				// setup resources
@@ -110,6 +103,13 @@ class EntryPointGenerator {
 				«resource.baseName.generateLoggingExceptionHandler("setup")»
 				
 				«ENDFOR»
+
+				«IF context.hasTimeEvents»
+
+				// setup time
+				exception = SetupTime();
+				«"Time".generateLoggingExceptionHandler("setup")»
+				«ENDIF»
 				«ENDIF»
 				return exception;
 			}

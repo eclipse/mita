@@ -20,6 +20,7 @@ import org.eclipse.mita.base.expressions.BoolLiteral
 import org.eclipse.mita.base.expressions.DoubleLiteral
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.NumericalUnaryExpression
@@ -32,6 +33,8 @@ import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
@@ -87,7 +90,9 @@ class StaticValueInferrer {
 		constr.infer(inferenceBlockerAcceptor);
 	}
 	
-	
+	static dispatch def Object infer(ArrayLiteral expression, (EObject) => void inferenceBlockerAcceptor) {
+		return expression.values.map[it.infer(inferenceBlockerAcceptor)].toList
+	}
 	
 	static dispatch def Object infer(BoolLiteral expression, (EObject) => void inferenceBlockerAcceptor) {
 		return expression.value;
@@ -161,9 +166,17 @@ class StaticValueInferrer {
 		return #[lower, upper];
 	}
 	
+	static dispatch def Object infer(ConfigurationItemValue configItemValue, (EObject) => void inferenceBlockerAcceptor) {
+		configItemValue.value.infer(inferenceBlockerAcceptor);
+	}
+	
 	static dispatch def Object infer(Void expression, (EObject) => void inferenceBlockerAcceptor) {
 		inferenceBlockerAcceptor.apply(null);
 		return null;
+	}
+	
+	static dispatch def Object infer(FeatureCall expression, (EObject) => void inferenceBlockerAcceptor) {
+		return infer(expression.feature, inferenceBlockerAcceptor);
 	}
 	
 	static dispatch def Object infer(Expression expression, (EObject) => void inferenceBlockerAcceptor) {

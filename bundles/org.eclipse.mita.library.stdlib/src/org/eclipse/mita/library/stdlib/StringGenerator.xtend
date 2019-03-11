@@ -150,7 +150,7 @@ class StringGenerator extends AbstractTypeGenerator {
 			} else if(operator == AssignmentOperator.ADD_ASSIGN) {
 				codeFragmentProvider.create('''
 				«prelude_rightCode.key»
-				strcat(«left.code.noTerminator», «right.code.noTerminator»);
+				strcat(«leftCode», «prelude_rightCode.value»);
 				''')
 				.addHeader('string.h', true);
 			} else {
@@ -233,7 +233,7 @@ class StringGenerator extends AbstractTypeGenerator {
 	}
 	
 	def getPattern(InterpolatedStringExpression expression) {
-		val tokenizedCode = expression.originalTexts;
+		val tokenizedCode = expression.originalTexts.map[it.replaceAll("%", "%%")];
 		
 		var result = "";
 		for(var i = 0; i < tokenizedCode.length; i++) {

@@ -34,6 +34,7 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.internal.EntryPointGenerator
@@ -190,17 +191,24 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			|| resourceOrSetup instanceof SystemResourceSetup) { 
 				files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».h''', resourceOrSetup as EObject, systemResourceGenerator.generateHeader(context, resourceOrSetup));
 				files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».c''', resourceOrSetup as EObject, systemResourceGenerator.generateImplementation(context, resourceOrSetup));
+				files += systemResourceGenerator.generateAdditionalFiles(fsa, context, resourceOrSetup);
 			}
 		}
 	
 		for (program : compilationUnits.filter[containsCodeRelevantContent]) {
 			// generate the actual content for this resource
-			files += fsa.produceFile(userCodeGenerator.getResourceBaseName(program) + '.c', program, stdlib.head.trace.append(userCodeGenerator.generateImplementation(context, program)));
-			files += fsa.produceFile(userCodeGenerator.getResourceBaseName(program) + '.h', program, stdlib.head.trace.append(userCodeGenerator.generateHeader(context, program)));
-			val compilationUnitTypesFilename = userCodeGenerator.getResourceTypesName(program) + '.h';
+			files += fsa.produceFile(UserCodeFileGenerator.getResourceBaseName(program) + '.c', program, stdlib.head.trace.append(userCodeGenerator.generateImplementation(context, program)));
+			files += fsa.produceFile(UserCodeFileGenerator.getResourceBaseName(program) + '.h', program, stdlib.head.trace.append(userCodeGenerator.generateHeader(context, program)));
+			val compilationUnitTypesFilename = UserCodeFileGenerator.getResourceTypesName(program) + '.h';
 			files += fsa.produceFile(compilationUnitTypesFilename, program, stdlib.head.trace.append(userCodeGenerator.generateTypes(context, program)));
 			userTypeFiles += compilationUnitTypesFilename;
 		}
+		
+		val platformSpec = platform.eContainer as SystemSpecification;
+		files += fsa.produceFile(
+			UserCodeFileGenerator.getResourceTypesName(platformSpec) + '.h',
+			platform, stdlib.head.trace.append(userCodeGenerator.generateTypes(context, platformSpec))
+		)
 		
 		files += fsa.produceFile('base/MitaGeneratedTypes.h', someProgram, generatedTypeGenerator.generateHeader(context, userTypeFiles));
 		

@@ -31,11 +31,13 @@ SystemSpecification returns platform::SystemSpecification:
 PlatformSpecification returns platform::Platform: 
 	'platform' name=ID '{' 
 		'module' module=STRING
+		('generator' generator=STRING)?
 		('validator' validator=STRING)?
 	(
 		('has' resources+=[platform::AbstractSystemResource])
 		| (events += SystemResourceEvent)
 		| (configurationItems += ConfigurationItem)
+		| (modalities += Modality)
 	)* '}'
 ;
 
