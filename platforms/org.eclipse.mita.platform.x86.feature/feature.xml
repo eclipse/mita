@@ -2,7 +2,7 @@
 <feature
       id="org.eclipse.mita.platform.x86.feature"
       label="Mita x86 Platform Feature"
-      version="0.1.0.qualifier"
+      version="0.2.0.qualifier"
       provider-name="Eclipse.org/Mita">
   <description>
       Contains the Mita Platform X86

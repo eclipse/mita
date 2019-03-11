@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Mita Standard Library
 Bundle-SymbolicName: org.eclipse.mita.library.stdlib;singleton:=true
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 0.2.0.qualifier
 Bundle-Vendor: Eclipse.org/Mita
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.mita.base,
@@ -11,6 +11,6 @@ Require-Bundle: org.eclipse.mita.base,
  org.eclipse.xtext.xbase.lib,
  org.eclipse.xtend.lib,
  org.eclipse.xtend.lib.macro,
- org.eclipse.mita.program;bundle-version="0.1.0",
+ org.eclipse.mita.program,
  com.google.inject
 
