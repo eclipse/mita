@@ -217,7 +217,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		    {
 		        do
 		        {
-		            if ((WLANNETWORKCONFIG_IPV4_ACQUIRED == WlanNetworkConfig_GetIpStatus()) && (WLANNETWORK_CONNECTED == WlanNetworkConnect_GetStatus()))
+		            if ((WLANNWCNF_IPSTATUS_IPV4_AQRD == WlanNetworkConfig_GetIpStatus()) && (WLANNWCT_STATUS_CONNECTED == WlanNetworkConnect_GetStatus()))
 		            {
 		                exception = RETCODE_OK;
 		            }
@@ -243,6 +243,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('BCDS_WlanNetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
+		.addHeader("BCDS_WlanNetworkConnect.h", true)
 		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
 		if(auth instanceof SumTypeRepr) {
 			if(auth.name == "Enterprise") {
@@ -259,7 +260,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 	private def CodeFragment buildStatusCallbacks(SystemResourceSetup component) {
 		val baseName = component.baseName
 		
-		codeFragmentProvider.create('''
+		return codeFragmentProvider.create('''
 		static void «baseName»_WlanConnectStatusCallback(WlanNetworkConnect_Status_T connectStatus)
 		{
 			BCDS_UNUSED(connectStatus);
