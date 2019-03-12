@@ -217,7 +217,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		    {
 		        do
 		        {
-		            if ((WLANNETWORKCONFIG_IPV4_ACQUIRED == WlanNetworkConfig_GetIpStatus()) && (WLANNETWORK_CONNECTED == WlanNetworkConnect_GetStatus()))
+		            if ((WLANNWCNF_IPSTATUS_IPV4_AQRD == WlanNetworkConfig_GetIpStatus()) && (WLANNWCT_STATUS_CONNECTED == WlanNetworkConnect_GetStatus()))
 		            {
 		                exception = RETCODE_OK;
 		            }
