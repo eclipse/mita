@@ -1,12 +1,11 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: %pluginName
-Bundle-Vendor: %providerName
+Bundle-Name: Mita Type Definition Language
+Bundle-Vendor: Eclipse.org/Mita
 Bundle-Localization: plugin
 Bundle-Version: 0.1.0.qualifier
 Bundle-ClassPath: .
 Bundle-SymbolicName: org.eclipse.mita.base;singleton:=true
-Automatic-Module-Name: org.eclipse.mita.base
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.eclipse.xtext.xbase,
