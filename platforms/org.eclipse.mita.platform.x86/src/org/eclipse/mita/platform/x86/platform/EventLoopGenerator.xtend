@@ -15,7 +15,6 @@
 package org.eclipse.mita.platform.x86.platform
 
 import com.google.inject.Inject
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.TimeIntervalEvent
@@ -85,5 +84,4 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	override generateEnablePreamble(CompilationContext context) {
 		return CodeFragment.EMPTY;
 	}
-	
 }

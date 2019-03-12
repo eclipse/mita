@@ -42,6 +42,12 @@ enum BMA280_Bandwidth {
 	BW_1000Hz
 }
 
+struct vec3d {
+	var x: int32;
+	var y: int32;
+	var z: int32;
+}
+
 /**
  * The BMA280 is a tri axial, low-g acceleration sensor with digital output for consumer applications.
  * It allows measurements of acceleration in three perpendicular axes.
@@ -557,6 +563,8 @@ sensor Button {
 	 * Fires after the button was released.
 	 */
 	event released
+	
+	event changed: bool
 }
 
 enum ADC_Channel {
@@ -1110,6 +1118,8 @@ platform XDK110 {
 	 * This is especially useful to view debug output.
 	 */
 	configuration-item startupDelay: uint32 = 0
+	
+	configuration-item queueSize: uint32 = 16
 	
 	modality powerStatus: PowerStatus
 	

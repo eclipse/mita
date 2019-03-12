@@ -114,6 +114,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
+import org.eclipse.mita.program.EventHandlerVariableDeclaration
 
 import static org.eclipse.mita.base.types.TypesUtil.*
 import static org.eclipse.mita.program.model.ModelUtils.*
@@ -575,6 +576,10 @@ class StatementGenerator {
 	dispatch def IGeneratorNode initializationCode(VariableDeclaration stmt) {
 		return initializationCode(stmt, codeFragmentProvider.create('''«stmt.name»'''), AssignmentOperator.ASSIGN, stmt.initialization, false);
 	}
+	@Traced dispatch def IGeneratorNode code(EventHandlerVariableDeclaration stmt) {
+		return '''«stmt.inferType.code» «stmt.name»'''
+	}
+	
 	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
 		return initializationCode(expr.varRef, codeFragmentProvider.create('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
 	}
@@ -721,7 +726,11 @@ class StatementGenerator {
 			'''
 		}
 	}
-
+	
+	dispatch def IGeneratorNode code(TypeSpecifier type) {
+		return codeFragmentProvider.create('''«type.ctype»''');
+	}
+	
 	@Traced dispatch def IGeneratorNode code(TryStatement stmt) {
 		val bool = codeFragmentProvider.create('''bool''').addHeader('stdbool.h', true);
 		'''

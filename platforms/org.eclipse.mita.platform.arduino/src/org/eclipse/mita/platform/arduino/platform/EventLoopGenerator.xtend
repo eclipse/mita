@@ -75,6 +75,5 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	
 	override generateEnablePreamble(CompilationContext context) {
 		return CodeFragment.EMPTY;
-	}
-	
+	}	
 }

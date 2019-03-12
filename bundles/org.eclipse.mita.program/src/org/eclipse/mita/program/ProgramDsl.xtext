@@ -89,8 +89,12 @@ VariableDeclaration returns program::VariableDeclaration:
 	(writeable ?= 'var' | 'let') name=ID typeSpecifier=OptionalTypeSpecifier ('=' initialization=Expression)? ';'
 ;
 
+EventHandlerVariableDeclaration returns program::EventHandlerVariableDeclaration:
+	name=ID
+;
+
 EventHandlerDeclaration returns program::EventHandlerDeclaration: 
-	'every' event=(TimeIntervalEvent | SystemEventSource)
+	'every' event=(TimeIntervalEvent | SystemEventSource) ('(' payload=EventHandlerVariableDeclaration ')')?
 	block=ProgramBlock
 ;
 

@@ -47,6 +47,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 			void «handlergrp.head.internalHandlerName»(uint32_t data)
 			{
 				«FOR idx_handler: handlergrp.indexed»
+				«IF #["pressed", "released"].contains((idx_handler.value.event as SystemEventSource)?.source?.name)»
 				«IF idx_handler.key > 0»else «ENDIF»if(data == «getButtonStatusEnumName(idx_handler.value)») {
 					Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «idx_handler.value.handlerName», NULL, data);
 					if(retcode != RETCODE_OK)
@@ -54,7 +55,16 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 						Retcode_RaiseErrorFromIsr(retcode);
 					}
 				}
+				«ENDIF»
             	«ENDFOR»
+				«val changedHandler = handlergrp.findFirst[(it.event as SystemEventSource)?.source?.name == "changed"]»
+				«IF changedHandler !== null»
+				Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «changedHandler.handlerName», NULL, data);
+				if(retcode != RETCODE_OK)
+				{
+					Retcode_RaiseErrorFromIsr(retcode);
+				}
+            	«ENDIF»
 			}
 			
 			«ENDFOR»

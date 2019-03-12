@@ -26,16 +26,15 @@ import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.platform.Bus
+import org.eclipse.mita.base.types.SystemResourceEvent
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.util.BaseUtilsimport org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.ConfigurationItem
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.Signal
-import org.eclipse.mita.platform.SignalEvent
 import org.eclipse.mita.platform.SystemResourceAlias
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
 
 /**
@@ -105,10 +104,6 @@ class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
 
 	def text(SystemResourceEvent ele) {
 		'''event «ele.name»'''
-	}
-
-	def text(SignalEvent ele) {
-		'''signal event «ele.name»'''
 	}
 
 	def text(Modality ele) {

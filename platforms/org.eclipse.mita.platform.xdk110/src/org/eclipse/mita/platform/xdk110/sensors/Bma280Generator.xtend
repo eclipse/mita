@@ -13,8 +13,9 @@
 
 package org.eclipse.mita.platform.xdk110.sensors
 
+import com.google.inject.Inject
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.platform.xdk110.platform.EventLoopGenerator
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ModalityAccess
@@ -26,7 +27,6 @@ import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IComponentConfiguration
-import com.google.inject.Inject
 
 class Bma280Generator extends AbstractSystemResourceGenerator {
 

@@ -1,24 +1,14 @@
 package org.eclipse.mita.platform.xdk110.platform
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
-import org.eclipse.mita.base.types.Enumerator
-import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.xdk110.connectivity.AdcGenerator
 import org.eclipse.mita.platform.xdk110.connectivity.AdcGenerator.SignalInfo
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
-import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.DefaultMainSystemResourceGenerator
 import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.xtext.EcoreUtil2
 
-class Xdk110PlatformGenerator extends AbstractSystemResourceGenerator {
+class Xdk110PlatformGenerator extends DefaultMainSystemResourceGenerator {
 	
 	@Inject
 	extension GeneratorUtils

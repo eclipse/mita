@@ -549,3 +549,7 @@ class CoercionExpression extends Expression {
 	}
 }
 
+class SystemResourceEvent extends Event {
+}
+
+

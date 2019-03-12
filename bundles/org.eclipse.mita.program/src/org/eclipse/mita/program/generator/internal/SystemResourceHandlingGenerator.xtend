@@ -20,8 +20,11 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.SystemResourceEvent
+import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.SystemResourceEvent
+import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrerimport org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.CodeFragmentProvider
@@ -31,6 +34,7 @@ import org.eclipse.mita.program.generator.IComponentConfiguration
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.TypeGenerator
+import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.IFileSystemAccess2
 
 class SystemResourceHandlingGenerator {

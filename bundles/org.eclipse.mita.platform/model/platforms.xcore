@@ -17,7 +17,7 @@ package org.eclipse.mita.platform
 import org.eclipse.mita.base.types.GeneratedElement
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.ParameterWithDefaultValue
@@ -74,16 +74,7 @@ class ConfigurationItem extends Property {
 }
 
 class Signal extends Operation {
-	contains SignalEvent[] events opposite signal
 }
-
-
-class SystemResourceEvent extends Event {
-}
-class SignalEvent extends Event {
-	container Signal signal opposite events
-}
-
 class Modality extends Property {
 }
 

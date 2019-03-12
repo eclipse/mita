@@ -97,8 +97,12 @@ class SignalInstance extends VariableDeclaration {
 	
 }
 
+class EventHandlerVariableDeclaration extends VariableDeclaration {
+}
+
 class EventHandlerDeclaration {
 	contains EventSource event
+	contains EventHandlerVariableDeclaration payload
 	contains ProgramBlock block
 	
 	op String toString() {

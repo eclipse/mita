@@ -44,6 +44,7 @@ import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.Connectivity
@@ -52,7 +53,6 @@ import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.ModalityAccess

@@ -144,6 +144,11 @@ ProductMember returns ProductMember:
 	name=ID ':' typeSpecifier=TypeSpecifier
 ;
 
+SystemResourceEvent returns SystemResourceEvent: 
+	'event' name=ID (':' typeSpecifier=TypeSpecifier)?
+;
+
+
 
 /**
  * BELOW THIS LINE

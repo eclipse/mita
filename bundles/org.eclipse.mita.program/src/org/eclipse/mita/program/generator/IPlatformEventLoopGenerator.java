@@ -136,6 +136,5 @@ public interface IPlatformEventLoopGenerator {
 		public CodeFragment generateEnablePreamble(CompilationContext context) {
 			return CodeFragment.EMPTY;
 		}
-
 	}
 }
