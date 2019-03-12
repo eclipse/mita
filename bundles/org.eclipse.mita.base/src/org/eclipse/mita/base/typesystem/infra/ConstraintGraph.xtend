@@ -154,7 +154,6 @@ class ConstraintGraph extends Graph<AbstractType> {
 	override replace(AbstractType from, AbstractType with) {
 		super.replace(from, with)
 		constraintSystem?.explicitSubtypeRelations?.replace(from, with);
-		//constraintSystem?.explicitSubtypeRelationsTypeSource?.replaceAll([k, v | v.replace(from, with)]);
 	}
 	
 } 

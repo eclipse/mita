@@ -13,8 +13,10 @@
 
 package org.eclipse.mita.base.typesystem.constraints
 
-import com.google.common.base.Optional
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.infra.CachedBoolean
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -24,10 +26,6 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
-import org.eclipse.mita.base.typesystem.infra.CachedBoolean
-import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
-import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -87,7 +85,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	// for example t1 and t2 are sum type constructors. Then previously this was tv <= t2, now it's t1 <= t2. Then someone else already did what this constraint would have done. 
 	dispatch def boolean typesAreCommon(TypeConstructorType type1, TypeConstructorType type2) {
-		return type1.class == type2.class //&& type1.typeArguments.head.name == type2.typeArguments.head.name
+		return type1.class == type2.class
 	}
 		
 	dispatch def boolean hasSubtypes(ConstraintSystem system, AbstractType type) {
@@ -112,11 +110,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	private def isAtomic(AbstractType t) {
 		return t instanceof AbstractBaseType || t instanceof TypeVariable
 	}
-	
-	private def isCompositeButShouldNotBeResolved(AbstractType t) {
-		(t instanceof ProdType)
-	}
-	
+		
 	override toGraphviz() {
 		return '''"«subType»" -> "«superType»"; «subType.toGraphviz» «superType.toGraphviz»'''
 	}

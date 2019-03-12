@@ -224,8 +224,6 @@ class MitaTypesDebugView extends ViewPart {
     	
     	this.constraintSolution = solution;
     	Display.^default.asyncExec([
-//    		this.constraintViewer.input = solution.constraints?.constraints ?: #[];
-//    		this.solutionViewer.input = solution.solution?.substitutions?.entrySet ?: #[];
     		this.issueViewer.input =  solution.issues?.toArray() ?: #[];
     	]);
     }
@@ -240,8 +238,6 @@ class MitaTypesDebugView extends ViewPart {
     	val origins = input
     		.map[ it as AbstractTypeConstraint ]
     	val result = origins
-//    		.filter[c| c.origins.exists[origin| objects.exists[obj| origin == obj ] ] ]
-//    		.toSet();
 		this.constraintViewer.input = result;
     }
     

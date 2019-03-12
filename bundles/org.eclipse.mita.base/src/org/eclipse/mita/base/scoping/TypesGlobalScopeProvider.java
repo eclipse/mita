@@ -82,9 +82,6 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 				String isExported = input.getUserData(BaseResourceDescriptionStrategy.EXPORTED);
 				
 				boolean includeInScope = inSamePackage || isExported == null || "true".equals(isExported);
-				if(input.getName().getLastSegment().equals("NotExportedStruct") && includeInScope) {
-					System.out.print("");
-				}
 				return includeInScope;
 			}
 			

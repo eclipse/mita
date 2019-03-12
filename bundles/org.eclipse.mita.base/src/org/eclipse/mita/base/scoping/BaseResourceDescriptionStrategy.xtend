@@ -109,47 +109,13 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 					}
 				]
 				val String json = serializationAdapter.toJSON(constraints);
-				userData.put(CONSTRAINTS, json);
-//			
+				userData.put(CONSTRAINTS, json);		
 			}
 			catch(Exception e) {
 				// something went wrong during constraint generation 
 				// => probably dirty model. just return here.
 				return; 
-			}
-			val packageName = (eObject as PackageAssociation).name
-			
-//			val csCopy = new ConstraintSystem(constraints);
-//			val simplification = coerciveSubtypeSolver.simplify(csCopy, Substitution.EMPTY, eObject);
-//			val substitution = simplification.substitution;
-//			val simplifiedConstraints = substitution.apply(constraints);
-//			
-//			simplifiedConstraints.nonAtomicConstraints = simplifiedConstraints.nonAtomicConstraints.filter[
-//				if(it instanceof EqualityConstraint) {
-//					return it.left == it.right;
-//				}
-//				return false;
-//			].force;
-//			
-//			substitution.substitutions.forEach[t1, t2|
-//				simplifiedConstraints.nonAtomicConstraints.add(new EqualityConstraint(t1, t2, new ValidationIssue("Definition", t1.origin ?: t2.origin)))
-//			]
-			
-//			constraints.typeClasses.entrySet.force.forEach[tc |
-//				tc.value.instances.entrySet.force.forEach[
-//					if(!it.value.isExported) {
-//						tc.value.instances.remove(it.key);
-//					}
-//				]
-//			]
-			
-//			val jsonCompressed = GZipper.compress(json);
-//			userData.put(CONSTRAINTS, jsonCompressed);
-//			val lenRaw = json.length;
-//			val lenCompressed = jsonCompressed.length;
-			if(eObject.eResource.URI.lastSegment == "application.mita") {
-				print("");	
-			}
+			}	
 		}
 	}
 

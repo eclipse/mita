@@ -48,11 +48,7 @@ class MitaContainerManager extends StateBasedContainerManager {
 	protected Map<String, Iterable<IResourceDescription>> packageDescriptions = new HashMap;
 	
 	protected XtextResourceSet resourceSet;
-	
-	new() {
-		print("");
-	}
-	
+		
 	protected def getResourceSet() {
 		resourceSet ?: (resourceSetProvider.get() => [this.resourceSet = it]);
 	}
