@@ -46,12 +46,12 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 
 			return CodeFragment.EMPTY;
 		}
-		val optGen = registry.getGenerator(functionCall.eResource, funType).castOrNull(AbstractTypeGenerator);
+		val optGen = registry.getGenerator(ref.eResource, funType).castOrNull(AbstractTypeGenerator);
 				
 		codeFragmentProvider.create('''
 
 			«IF resultVariableName === null»
-			(«optGen?.generateTypeSpecifier(funType, functionCall)») {
+			(«optGen?.generateTypeSpecifier(funType, ref)») {
 				.«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»,
 				.«OptionalGenerator.OPTIONAL_DATA_MEMBER» = «valueVarOrExpr.code»
 			}

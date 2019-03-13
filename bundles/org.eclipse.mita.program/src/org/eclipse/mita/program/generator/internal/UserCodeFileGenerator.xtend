@@ -25,6 +25,7 @@ import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
@@ -32,14 +33,12 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
-import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.program.EventHandlerDeclaration
-import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.program.SystemEventSource
+import org.eclipse.xtext.EcoreUtil2
 
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
-import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.generator.BuiltinRingbufferGenerator
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class UserCodeFileGenerator { 
 	
@@ -62,10 +61,10 @@ class UserCodeFileGenerator {
 	protected StatementGenerator statementGenerator
 	
 	@Inject
-	protected extension ProgramDslTypeInferrer
+	protected GeneratorRegistry generatorRegistry
 	
 	@Inject
-	protected GeneratorRegistry generatorRegistry
+	protected BuiltinRingbufferGenerator ringBuffer
 	
 	/**
 	 * Generates custom types used by the application.
@@ -184,22 +183,23 @@ class UserCodeFileGenerator {
 		val exceptionType = exceptionGenerator.exceptionType;
 		return codeFragmentProvider.create('''
 			«FOR handler : program.eventHandlers»
-			«val eventSource = handler.event»
-			«val event = if(eventSource instanceof SystemEventSource) eventSource.source»
-			«IF event?.typeSpecifier !== null»
-			// generate ringbuffer
-			«ENDIF»
-			«exceptionType» «handler.handlerName»(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
-			{
-				«eventLoopGenerator.generateEventLoopHandlerPreamble(context, handler)»
-				«IF event?.typeSpecifier !== null»
-				«IF handler.payload !== null»«statementGenerator.code(handler.payload).noTerminator» = «ENDIF»// call ringbuffer.pop
+				«val eventSource = handler.event»
+				«val eventType = BaseUtils.getType(eventSource)»
+				«IF !(eventType instanceof TypeVariable)»
+				//todo: size
+				«ringBuffer.generateVariableDeclaration(program, eventType, "rb_" + handler.handlerName, -1, true, "0")»
 				«ENDIF»
-			«statementGenerator.code(handler.block).noBraces» 
+				«exceptionType» «handler.handlerName»(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
+				{
+					«eventLoopGenerator.generateEventLoopHandlerPreamble(context, handler)»
+					«IF !(eventType instanceof TypeVariable)»
+					«ringBuffer.generatePopStatements(null, "rb_" + handler.handlerName, if(handler.payload !== null) statementGenerator.code(handler.payload).noTerminator)»
+					«ENDIF»
+				«statementGenerator.code(handler.block).noBraces» 
 
-				return NO_EXCEPTION;
-			}
-			
+					return NO_EXCEPTION;
+				}
+
 			«ENDFOR»
 		''')
 		.addHeader('MitaExceptions.h', false);

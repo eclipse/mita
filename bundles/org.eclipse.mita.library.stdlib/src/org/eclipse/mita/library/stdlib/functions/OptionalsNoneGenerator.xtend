@@ -43,7 +43,7 @@ class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 		if(!(funType instanceof TypeConstructorType)) {
 			return CodeFragment.EMPTY;
 		}
-		val optGen = registry.getGenerator(functionCall.eResource, funType) as AbstractTypeGenerator;
+		val optGen = registry.getGenerator(ref.eResource, funType) as AbstractTypeGenerator;
 				
 		codeFragmentProvider.create('''
 			«IF resultVariableName === null»

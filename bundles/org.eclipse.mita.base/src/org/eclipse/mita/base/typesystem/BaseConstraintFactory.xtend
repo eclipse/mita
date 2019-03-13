@@ -46,9 +46,11 @@ import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
@@ -99,7 +101,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.NamedElement
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -116,6 +117,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected IScopeProvider scopeProvider;
 	
 	public static final String GENERATOR_KEY = "generator";
+	public static final String VALIDATOR_KEY = "validator";
 	public static final String SIZE_INFERRER_KEY = "sizeInferrer";
 	public static final String PARENT_NAME_KEY = "parentName";
 	public static final String ECLASS_KEY = "eClass";
@@ -363,6 +365,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// refType is the type of the referenced thing (or the function application)
 		// assert f/f(x): refType
 		return system.associate(refType, varOrFun);		
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Event event) {
+		return system.associate(system.computeConstraints(event.typeSpecifier), event);
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<TypeVariable> candidates) {
@@ -758,9 +764,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		system.typeTable.put(QualifiedName.create(genType.name), result);
 		
-		system.putUserData(result, GENERATOR_KEY, genType.generator)
+		system.putUserData(result, GENERATOR_KEY, genType.generator);
 		if(genType.sizeInferrer !== null) {
-			system.putUserData(result, SIZE_INFERRER_KEY, genType.sizeInferrer)
+			system.putUserData(result, SIZE_INFERRER_KEY, genType.sizeInferrer);
+		}
+		if(genType.validator !== null) {
+			system.putUserData(result, VALIDATOR_KEY, genType.validator);
 		}
 		
 		return result;

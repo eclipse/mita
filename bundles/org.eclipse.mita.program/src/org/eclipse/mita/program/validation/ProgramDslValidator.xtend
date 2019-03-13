@@ -354,10 +354,12 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	
 	@Check(CheckType.NORMAL)
 	def checkGeneratedTypeVariableDeclarations(VariableDeclaration variable) {
-		val type = variable.infer?.type;
-		if(type instanceof GeneratedType) {
-			if(!type.validator.nullOrEmpty) {
-				runLibraryValidator(EcoreUtil2.getContainerOfType(variable, Program), variable, type.eResource, type.validator);
+		val type = BaseUtils.getType(variable);
+		if(TypesUtil.isGeneratedType(variable, type)) {
+			val cs = TypesUtil.getConstraintSystem(variable.eResource);
+			val validator = cs.getUserData(type, BaseConstraintFactory.VALIDATOR_KEY);
+			if(validator !== null) {
+				runLibraryValidator(EcoreUtil2.getContainerOfType(variable, Program), variable, variable.eResource, validator);
 			}
 		}
 	}

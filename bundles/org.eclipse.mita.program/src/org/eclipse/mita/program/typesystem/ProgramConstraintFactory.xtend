@@ -88,6 +88,9 @@ import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.program.ArrayRuntimeCheckStatement
+import org.eclipse.mita.program.TimeIntervalEvent
+import org.eclipse.mita.program.SystemEventSource
+import org.eclipse.mita.program.EventHandlerVariableDeclaration
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -153,11 +156,31 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return system.associate(typeRegistry.getTypeModelObjectProxy(system, writeAccess, StdlibTypeRegistry.voidTypeQID), writeAccess);
 	}
 	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TimeIntervalEvent eventSource) {
+		return system.getTypeVariable(eventSource);
+	} 
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemEventSource eventSource) {
+		return system.associate(system.getTypeVariableProxy(eventSource, ProgramPackage.eINSTANCE.systemEventSource_Source), eventSource);
+	} 
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
 		system.computeConstraints(eventHandler.block);
+		system.computeConstraints(eventHandler.event);
+		if(eventHandler.payload !== null) {
+			system.computeConstraints(eventHandler.payload);
+		}
 		
 		val voidType = typeRegistry.getTypeModelObjectProxy(system, eventHandler, StdlibTypeRegistry.voidTypeQID);
 		return system.associate(new FunctionType(eventHandler, new AtomicType(eventHandler.event, eventHandler.event.toString), voidType, voidType));
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerVariableDeclaration varDecl) {
+		val eventHandler = EcoreUtil2.getContainerOfType(varDecl, EventHandlerDeclaration);
+		val event = eventHandler?.event;
+		if(event !== null) {
+			system.associate(system.getTypeVariable(event), varDecl);
+		}
+		return system.getTypeVariable(varDecl);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement __) {

@@ -18,12 +18,10 @@ import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
-import org.eclipse.mita.program.model.ModelUtils
 
 class EventLoopGenerator implements IPlatformEventLoopGenerator {
 
@@ -33,8 +31,6 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	protected extension StatementGenerator statementGenerator;
 	@Inject
 	protected extension GeneratorUtils generatorUtils;
-	@Inject
-	protected extension ProgramDslTypeInferrer typeInferrer;
 	
 	def generateEventloopInject(String functionName, String userParam1, String userParam2) {
 		return codeFragmentProvider.create('''CmdProcessor_Enqueue(&Mita_EventQueue, «functionName», «userParam1», «userParam2»);''')

@@ -27,8 +27,8 @@ import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.SystemResourceEvent
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.base.util.BaseUtilsimport org.eclipse.mita.platform.Bus
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.ConfigurationItem
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Modality

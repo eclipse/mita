@@ -3,10 +3,13 @@ package org.eclipse.mita.library.stdlib
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
@@ -15,22 +18,23 @@ import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
-import org.eclipse.mita.program.VariableDeclaration
 
 // https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/
 class RingbufferGenerator extends AbstractTypeGenerator {
 	@Inject
 	extension GeneratorUtils
 	
-	override generateHeader(AbstractType type) {
-		codeFragmentProvider.create('''
-			typedef struct {
-				«typeGenerator.code(type.typeArguments.head)»* data;
-				uint32_t read;
-				uint32_t length;
-				uint32_t capacity;
-			} «typeGenerator.code(type)»;
-		''').addHeader('inttypes.h', true);
+	override generateHeader(EObject context, AbstractType type) {
+		if(type instanceof TypeConstructorType) {
+			codeFragmentProvider.create('''
+				typedef struct {
+					«typeGenerator.code(context, type.typeArguments.tail.head)»* data;
+					uint32_t read;
+					uint32_t length;
+					uint32_t capacity;
+				} «typeGenerator.code(context, type)»;
+			''').addHeader('inttypes.h', true);
+		}
 	}
 	
 	override generateHeader() {
@@ -50,50 +54,54 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''ringbuffer_«typeGenerator.code(type.typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
+		if(type instanceof TypeConstructorType) {
+			codeFragmentProvider.create('''ringbuffer_«typeGenerator.code(context, type.typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);	
+		}
 	}
 	
 	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		if(stmt.eContainer instanceof Program) {
-			val parent = stmt.eContainer;
-			val expr = stmt.initialization;
-			if(expr instanceof NewInstanceExpression) {
-				val size = StaticValueInferrer.infer(ModelUtils.getArgumentValue(expr.reference as Operation, expr, "size"), []);
-				val occurrence = getOccurrence(parent);
-				codeFragmentProvider.create('''
-					«typeGenerator.code(type.typeArguments.head)» data_«stmt.name»_«occurrence»[«size»];
-					«typeGenerator.code(type)» «stmt.name» = {
-						.data = data_«stmt.name»_«occurrence»,
-						.read = 0,
-						.length = 0,
-						.capacity = «size»
-					};
-				''')
+		if(type instanceof TypeConstructorType) {
+			if(stmt.eContainer instanceof Program) {
+				val parent = stmt.eContainer;
+				val expr = stmt.initialization;
+				if(expr instanceof NewInstanceExpression) {
+					val size = StaticValueInferrer.infer(ExpressionUtils.getArgumentValue(expr.reference as Operation, expr, "size"), []);
+					val occurrence = getOccurrence(parent);
+					return codeFragmentProvider.create('''
+						«typeGenerator.code(stmt, type.typeArguments.tail.head)» data_«stmt.name»_«occurrence»[«size»];
+						«typeGenerator.code(stmt, type)» «stmt.name» = {
+							.data = data_«stmt.name»_«occurrence»,
+							.read = 0,
+							.length = 0,
+							.capacity = «size»
+						};
+					''')
+				}
 			}
 		}
-		else {
-			return super.generateVariableDeclaration(type, stmt);
-		}
+		return super.generateVariableDeclaration(type, stmt);
 	}
 	
 	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
-		val parent = expr.eContainer;
-		val isGlobalVariable = !needsCast(expr);
-		if(isGlobalVariable) {
-			return codeFragmentProvider.create('''''');
+		if(type instanceof TypeConstructorType) {
+			val parent = expr.eContainer;
+			val isGlobalVariable = !needsCast(expr);
+			if(isGlobalVariable) {
+				return codeFragmentProvider.create('''''');
+			}
+			val size = StaticValueInferrer.infer(ExpressionUtils.getArgumentValue(expr.reference as Operation, expr, "size"), []);
+			val occurrence = getOccurrence(parent);
+			
+			return codeFragmentProvider.create('''
+				«typeGenerator.code(expr, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«size»];
+				«varName» = («typeGenerator.code(expr, type)») {
+					.data = data_«varName»_«occurrence»,
+					.read = 0,
+					.length = 0,
+					.capacity = «size»
+				};
+			''')
 		}
-		val size = StaticValueInferrer.infer(ModelUtils.getArgumentValue(expr.reference as Operation, expr, "size"), []);
-		val occurrence = getOccurrence(parent);
-		
-		return codeFragmentProvider.create('''
-			«typeGenerator.code(type.typeArguments.head)» data_«varName»_«occurrence»[«size»];
-			«varName» = («typeGenerator.code(type)») {
-				.data = data_«varName»_«occurrence»,
-				.read = 0,
-				.length = 0,
-				.capacity = «size»
-			};
-		''')
 	}
 	
 	static class PushGenerator extends AbstractFunctionGenerator {
@@ -103,8 +111,8 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		extension GeneratorUtils
 		
 		override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
-			val rbRef = ModelUtils.getArgumentValue(ref.reference as Operation, ref, "self").code;
-			val value = ModelUtils.getArgumentValue(ref.reference as Operation, ref, "element").code;
+			val rbRef = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, "self").code;
+			val value = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, "element").code;
 			return codeFragmentProvider.create('''
 				if(«rbRef».length >= «rbRef».capacity) {
 					«generateExceptionHandler(ref, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»

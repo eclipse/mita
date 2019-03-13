@@ -61,6 +61,7 @@ import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
@@ -78,6 +79,7 @@ import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ArrayRuntimeCheckStatement
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
+import org.eclipse.mita.program.EventHandlerVariableDeclaration
 import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.ForEachStatement
@@ -114,15 +116,14 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
-import org.eclipse.mita.program.EventHandlerVariableDeclaration
 
 import static org.eclipse.mita.base.types.TypesUtil.*
 import static org.eclipse.mita.program.model.ModelUtils.*
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class StatementGenerator {
 
@@ -576,7 +577,7 @@ class StatementGenerator {
 		return initializationCode(stmt, codeFragmentProvider.create('''«stmt.name»'''), AssignmentOperator.ASSIGN, stmt.initialization, false);
 	}
 	@Traced dispatch def IGeneratorNode code(EventHandlerVariableDeclaration stmt) {
-		return '''«stmt.inferType.code» «stmt.name»'''
+		return '''«getCtype(BaseUtils.getType(stmt), stmt)» «stmt.name»'''
 	}
 	
 	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
@@ -727,7 +728,7 @@ class StatementGenerator {
 	}
 	
 	dispatch def IGeneratorNode code(TypeSpecifier type) {
-		return codeFragmentProvider.create('''«type.ctype»''');
+		return codeFragmentProvider.create('''«getCtype(BaseUtils.getType(type), type)»''');
 	}
 	
 	@Traced dispatch def IGeneratorNode code(TryStatement stmt) {
