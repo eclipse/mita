@@ -57,14 +57,15 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 				}
 				«ENDIF»
             	«ENDFOR»
-				«val changedHandler = handlergrp.findFirst[(it.event as SystemEventSource)?.source?.name == "changed"]»
-				«IF changedHandler !== null»
+				«val changedHandlers = handlergrp.filter[(it.event as SystemEventSource)?.source?.name == "changed"]»
+				«FOR changedHandler: changedHandlers»
+				// enqueue boolean in ringbuffer
 				Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «changedHandler.handlerName», NULL, data);
 				if(retcode != RETCODE_OK)
 				{
 					Retcode_RaiseErrorFromIsr(retcode);
 				}
-            	«ENDIF»
+            	«ENDFOR»
 			}
 			
 			«ENDFOR»

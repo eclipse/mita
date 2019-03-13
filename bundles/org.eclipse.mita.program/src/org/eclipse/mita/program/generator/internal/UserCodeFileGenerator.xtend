@@ -36,6 +36,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.SystemEventSource
 
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
 import org.eclipse.mita.program.model.ModelUtils
@@ -65,7 +66,7 @@ class UserCodeFileGenerator {
 	
 	@Inject
 	protected GeneratorRegistry generatorRegistry
-
+	
 	/**
 	 * Generates custom types used by the application.
 	 */
@@ -175,55 +176,24 @@ class UserCodeFileGenerator {
 		}
 		''')
 	}
+		
 	
-	private def getPrefix(EventHandlerDeclaration handler) {
-		return "rb" + handler.event.baseName.toFirstUpper;
-	}
 	
-	// https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/
-	private def createRingbufferDatastructure(EventHandlerDeclaration handler) {
-		val prefix = handler.prefix;
-		return codeFragmentProvider.create('''
-			«statementGenerator.code(ModelUtils.toSpecifier(handler.payload.infer))» «prefix»_buffer[1 << «»] = {0};
-			uint32_t «prefix»_read = 0;
-			uint32_t «prefix»_write = 0;
-		''')
-		.addHeader("inttypes.h", true)
-	}
-	
-	private def assertRingbufferNotEmpty(EventHandlerDeclaration handler) {
-		return codeFragmentProvider.create('''
-			assert(«handler.prefix»_read != «handler.prefix»_write);
-		''');
-	}
-
-	private def peekFromRingbuffer(EventHandlerDeclaration handler) {
-		val prefix = handler.prefix;
-		return codeFragmentProvider.create('''
-			«prefix»_buffer[«prefix»_read & (sizeof(«prefix»_buffer) - 1)]
-		''')
-	}
-	
-	private def removeFromRingbuffer(EventHandlerDeclaration handler) {
-		return codeFragmentProvider.create('''
-			«handler.prefix»_read++;
-		''')
-	}
 	
 	private def generateEventHandlers(CompilationContext context, Program program) {		
 		val exceptionType = exceptionGenerator.exceptionType;
 		return codeFragmentProvider.create('''
 			«FOR handler : program.eventHandlers»
-			«IF handler.payload !== null»
-			«createRingbufferDatastructure(handler)»
+			«val eventSource = handler.event»
+			«val event = if(eventSource instanceof SystemEventSource) eventSource.source»
+			«IF event?.typeSpecifier !== null»
+			// generate ringbuffer
 			«ENDIF»
 			«exceptionType» «handler.handlerName»(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
 			{
 				«eventLoopGenerator.generateEventLoopHandlerPreamble(context, handler)»
-				«IF handler.payload !== null»
-				«handler.assertRingbufferNotEmpty»
-				«statementGenerator.code(handler.payload).noTerminator» = «peekFromRingbuffer(handler)»;
-				«handler.removeFromRingbuffer»
+				«IF event?.typeSpecifier !== null»
+				«IF handler.payload !== null»«statementGenerator.code(handler.payload).noTerminator» = «ENDIF»// call ringbuffer.pop
 				«ENDIF»
 			«statementGenerator.code(handler.block).noBraces» 
 
