@@ -141,18 +141,18 @@
   </profiles>
 
   <pluginRepositories>
-		<pluginRepository>
-			<id>eclipse-jarsigner-repo</id>
-			<name>Eclipse Jarsigner Repository</name>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<url>https://repo.eclipse.org/content/repositories/cbi-releases/</url>
-		</pluginRepository>
-	</pluginRepositories>
+    <pluginRepository>
+      <id>eclipse-jarsigner-repo</id>
+      <name>Eclipse Jarsigner Repository</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>https://repo.eclipse.org/content/repositories/cbi-releases/</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <build>
     <plugins>
