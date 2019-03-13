@@ -14,6 +14,7 @@
 package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeFragment
@@ -29,8 +30,8 @@ class ModalityReadGenerator extends AbstractFunctionGenerator {
 		return false;
 	}
 	
-	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
-		if(resultVariableName === null) {
+	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression functionCall) {
+		if(target === null) {
 			CodeFragment.EMPTY
 		} else {
 			codeFragmentProvider.create('''«resultVariableName» = «statementGenerator.code(functionCall.arguments.get(0).value)»;''');			

@@ -14,6 +14,7 @@
 package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.NamedElement
@@ -35,7 +36,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected TypeGenerator typeGenerator
 	
-	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
+	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression functionCall) {
 		val firstArg = functionCall.arguments.get(0)?.value;
 		val siginst = if(firstArg instanceof FeatureCall && (firstArg as FeatureCall).reference instanceof SignalInstance) {
 			(firstArg as FeatureCall).reference as SignalInstance;

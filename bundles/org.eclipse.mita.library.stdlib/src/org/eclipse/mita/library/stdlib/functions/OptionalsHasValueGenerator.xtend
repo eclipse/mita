@@ -14,6 +14,7 @@
 package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.library.stdlib.OptionalGenerator.enumOptional
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
@@ -26,11 +27,11 @@ class OptionalsHasValueGenerator extends AbstractFunctionGenerator {
 	@Inject 
 	protected extension StatementGenerator statementGenerator
 	
-	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
-		val args = functionCall.arguments;
+	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
+		val args = ref.arguments;
 		val optVarOrExpr = args.head.value;
 				
-		codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«optVarOrExpr.code».flag == «enumOptional.Some.name»;''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''«IF target !== null»«resultVariableName» = «ENDIF»«optVarOrExpr.code».flag == «enumOptional.Some.name»;''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
 	

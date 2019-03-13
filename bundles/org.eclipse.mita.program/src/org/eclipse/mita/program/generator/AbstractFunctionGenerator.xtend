@@ -36,7 +36,7 @@ abstract class AbstractFunctionGenerator implements IGenerator {
 	 * If resultVariableName is null the generator is expected to produce a valid C expression. If the generator
 	 * cannot produce such an expression it should mark an error.
 	 */
-	abstract def CodeFragment generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName)
+	abstract def CodeFragment generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression functionCall)
 	
 	/**
 	 * This function allows generators to opt out of the regular function unraveling. This enables function generators

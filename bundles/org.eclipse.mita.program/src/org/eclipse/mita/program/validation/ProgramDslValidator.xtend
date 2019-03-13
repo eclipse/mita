@@ -352,6 +352,16 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 	}
 	
+	@Check(CheckType.NORMAL)
+	def checkGeneratedTypeVariableDeclarations(VariableDeclaration variable) {
+		val type = variable.infer?.type;
+		if(type instanceof GeneratedType) {
+			if(!type.validator.nullOrEmpty) {
+				runLibraryValidator(EcoreUtil2.getContainerOfType(variable, Program), variable, type.eResource, type.validator);
+			}
+		}
+	}
+
 	@Check(CheckType.FAST)
 	def checkVariableDeclaration_isUniqueInProgramBlock(VariableDeclaration variable) {
 		val parentBlock = EcoreUtil2.getContainerOfType(variable, ProgramBlock);

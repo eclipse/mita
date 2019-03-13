@@ -33,7 +33,7 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	@Inject
 	protected extension GeneratorUtils
 	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
+	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	

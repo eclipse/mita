@@ -53,7 +53,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a new instance of the type
 	 */
-	def CodeFragment generateNewInstance(AbstractType type, NewInstanceExpression expr);
+	def CodeFragment generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr);
 
 	/**
 	 * Checks if this type supports a particular expression within its type hierarchy

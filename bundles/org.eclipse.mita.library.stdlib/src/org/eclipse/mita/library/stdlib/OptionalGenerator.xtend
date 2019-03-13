@@ -53,7 +53,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	public static final String OPTIONAL_FLAG_MEMBER = "flag";
 	public static final String OPTIONAL_DATA_MEMBER = "data";
 	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
+	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	

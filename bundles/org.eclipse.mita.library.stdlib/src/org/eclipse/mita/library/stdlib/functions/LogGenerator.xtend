@@ -14,6 +14,7 @@
 package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.library.stdlib.StringGenerator
@@ -33,8 +34,8 @@ class LogGenerator extends AbstractFunctionGenerator {
 	protected IPlatformLoggingGenerator loggingGenerator
 
 	
-	override generate(ElementReferenceExpression function, IGeneratorNode resultVariableName) {
-		val functionName = (function.reference as NamedElement).name;
+	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression functionCall) {
+		val functionName = (functionCall.reference as NamedElement).name;
 		val level = switch(functionName) {
 			case "logDebug": LogLevel.Debug
 			case "logInfo": LogLevel.Info
@@ -42,7 +43,7 @@ class LogGenerator extends AbstractFunctionGenerator {
 			case "logError": LogLevel.Error
 		}
 		
-		val firstArg = function.arguments.head?.value;
+		val firstArg = functionCall.arguments.head?.value;
 		val result = if(firstArg instanceof InterpolatedStringExpression) {
 			val pattern = stringGenerator.getPattern(firstArg);
 			val args = firstArg.content.map[ codeFragmentProvider.create('''«generate(it)»''') ]

@@ -440,7 +440,7 @@ class StatementGenerator {
 			} else if (ref instanceof FunctionDefinition) {
 				'''«ref.generateFunctionCall(codeFragmentProvider.create('''NULL''').addHeader("stdlib.h", true), stmt)»'''
 			} else if (ref instanceof GeneratedFunctionDefinition) {
-				'''«registry.getGenerator(ref)?.generate(stmt, null)»''';
+				'''«registry.getGenerator(ref)?.generate(null, codeFragmentProvider.create('''NULL'''), stmt)»''';
 			} else if(ref instanceof NativeFunctionDefinition) {
 				if(ref.checked) {
 					'''«ref.generateNativeFunctionCallChecked(codeFragmentProvider.create('''NULL'''), stmt)»'''
@@ -544,8 +544,7 @@ class StatementGenerator {
 	}
 	
 	
-
-	def IGeneratorNode generateFunCallStmt(IGeneratorNode variableName, AbstractType type, ElementReferenceExpression initialization) {
+	def IGeneratorNode generateFunCallStmt(EObject target, IGeneratorNode variableName, AbstractType type, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
 		if (reference instanceof VirtualFunction) {
 			return codeFragmentProvider.create('''
@@ -557,7 +556,7 @@ class StatementGenerator {
 			''')
 		} else if (reference instanceof GeneratedFunctionDefinition) {
 			return codeFragmentProvider.create('''
-				«registry.getGenerator(reference).generate(initialization, variableName).noTerminator»;
+				«registry.getGenerator(reference).generate(target, variableName, initialization).noTerminator»;
 			''')
 		} else if(reference instanceof NativeFunctionDefinition) {
 			if(reference.checked) {
@@ -583,17 +582,17 @@ class StatementGenerator {
 	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
 		return initializationCode(expr.varRef, codeFragmentProvider.create('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
 	}
-	def IGeneratorNode initializationCode(EObject target, IGeneratorNode varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
+	public def IGeneratorNode initializationCode(EObject target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
  		val type = BaseUtils.getType(target);
 		
 		if (isGeneratedType(target, type)) {
 			val generator = registry.getGenerator(target.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (initialization instanceof NewInstanceExpression) {
-				return generator.generateNewInstance(type, initialization);
+				return generator.generateNewInstance(varName, type, initialization);
 			} else if (initialization instanceof ArrayAccessExpression) {
 				return generator.generateExpression(type, target, op, initialization);
 			} else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
-				return generateFunCallStmt(varName, type, initialization as ElementReferenceExpression);
+				return generateFunCallStmt(target, varName, type, initialization as ElementReferenceExpression);
 			} else if(initialization instanceof PrimitiveValueExpression) {
 				if(initialization.value instanceof ArrayLiteral) {
 					return CodeFragment.EMPTY;
@@ -604,7 +603,7 @@ class StatementGenerator {
 			return generator.generateExpression(type, target, op, initialization);
 		} else if (initialization instanceof ElementReferenceExpression) {
 			if(initialization.isOperationCall) {
-				return generateFunCallStmt(varName, type, initialization);	
+				return generateFunCallStmt(target, varName, type, initialization);	
 			}
 			else {
 				return target.trace('''«varName» «op» «initialization.code.noTerminator»;''');

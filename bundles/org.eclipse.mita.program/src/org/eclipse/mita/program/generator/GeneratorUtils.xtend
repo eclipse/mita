@@ -619,4 +619,8 @@ class GeneratorUtils {
 		!eventHandlers.empty || !functionDefinitions.empty || !types.empty || !globalVariables.empty
 	}
 
+	def boolean needsCast(EObject obj) {
+		return EcoreUtil2.getContainerOfType(obj, ProgramBlock) !== null;
+	}
+
 }

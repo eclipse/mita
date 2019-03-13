@@ -138,7 +138,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''array_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
+	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
 		// if we are not in a function we are top-level and must do nothing, since we can't modify top-level anyway
 		if(EcoreUtil2.getContainerOfType(expr, FunctionDefinition) === null && EcoreUtil2.getContainerOfType(expr, EventHandlerDeclaration) === null) {
 			return CodeFragment.EMPTY;
@@ -147,7 +147,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val size = expr.getArraySize(sizeInferrer);
 		val parent = expr.eContainer;
 		val occurrence = getOccurrence(parent);
-		val varName = generatorUtils.getBaseName(parent);
 		
 		// variable declarations create the buffer already
 		val generateBuffer = (EcoreUtil2.getContainerOfType(expr, VariableDeclaration) === null);
@@ -317,8 +316,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	
-
-		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
+		override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;
@@ -327,7 +325,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 				}
 			}
 			
-			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref».length''').addHeader('MitaGeneratedTypes.h', false);
+			return codeFragmentProvider.create('''«IF target !== null»«resultVariableName» = «ENDIF»«varref».length''').addHeader('MitaGeneratedTypes.h', false);
 		}
 		
 		override callShouldBeUnraveled(ElementReferenceExpression expression) {

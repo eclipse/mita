@@ -14,6 +14,7 @@
 package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.library.stdlib.StringGenerator
@@ -26,16 +27,16 @@ class PrintGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected StringGenerator stringGenerator
 	
-	override generate(ElementReferenceExpression function, IGeneratorNode resultVariableName) {
-		val functionName = (function.reference as NamedElement).name;
+	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
+		val functionName = (ref.reference as NamedElement).name;
 		val addBreaklinePostfix = functionName == 'println';
 		
-		val firstArg = function.arguments.head?.value;
+		val firstArg = ref.arguments.head?.value;
 		val result = if(firstArg instanceof InterpolatedStringExpression) {
 			codeFragmentProvider.create('''printf("«stringGenerator.getPattern(firstArg)»«IF addBreaklinePostfix»\n«ENDIF»"«IF !firstArg.content.empty», «FOR arg : firstArg.content SEPARATOR ', '»«generate(arg)»«ENDFOR»«ENDIF»);''')
 				.addHeader('inttypes.h', true);
 		} else {
-			codeFragmentProvider.create('''printf("%s«IF addBreaklinePostfix»\n«ENDIF»", «function.arguments.head.generate»);
+			codeFragmentProvider.create('''printf("%s«IF addBreaklinePostfix»\n«ENDIF»", «ref.arguments.head.generate»);
 			''');
 		}
 		

@@ -26,6 +26,7 @@ import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
+import org.eclipse.emf.ecore.EObject
 
 class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 	
@@ -35,9 +36,9 @@ class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected GeneratorRegistry registry
 	
-	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
+	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
 		// need the optionalGenerator
-		val funType = BaseUtils.getType(functionCall);
+		val funType = BaseUtils.getType(ref);
 		val funTypeOrigin = funType.origin;
 		if(!(funType instanceof TypeConstructorType)) {
 			return CodeFragment.EMPTY;
@@ -46,7 +47,7 @@ class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 				
 		codeFragmentProvider.create('''
 			«IF resultVariableName === null»
-			(«optGen?.generateTypeSpecifier(funType, functionCall)») {
+			(«optGen?.generateTypeSpecifier(funType, ref)») {
 				.«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.None.name»
 			}
 			«ELSE»

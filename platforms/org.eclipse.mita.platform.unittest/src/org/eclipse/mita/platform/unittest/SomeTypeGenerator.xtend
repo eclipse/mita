@@ -47,7 +47,7 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''')
 	}
 	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
+	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	
@@ -57,8 +57,7 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 		
-
-		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
+		override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			
 			return codeFragmentProvider.create('''«resultVariableName» = «variable.generate»''');
@@ -71,8 +70,7 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 	
-
-		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
+		override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val value = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'value');
 			

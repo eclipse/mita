@@ -280,7 +280,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''char*''')
 	}
 	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
+	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	
@@ -323,7 +323,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	
-		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
+		override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;
@@ -332,7 +332,7 @@ class StringGenerator extends AbstractTypeGenerator {
 				}
 			}
 			
-			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref?.getFixedSize(sizeInferrer)»''');
+			return codeFragmentProvider.create('''«IF target !== null»«resultVariableName» = «ENDIF»«varref?.getFixedSize(sizeInferrer)»''');
 		}
 		
 	}

@@ -14,6 +14,7 @@
 package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -36,12 +37,13 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected GeneratorRegistry registry
 	
-	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
-		val args = functionCall.arguments;
+	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
+		val args = ref.arguments;
 		val valueVarOrExpr = args.head.value;
 		// need the optionalGenerator
-		val funType = BaseUtils.getType(functionCall);
+		val funType = BaseUtils.getType(ref);
 		if(!(funType instanceof TypeConstructorType)) {
+
 			return CodeFragment.EMPTY;
 		}
 		val optGen = registry.getGenerator(functionCall.eResource, funType).castOrNull(AbstractTypeGenerator);
