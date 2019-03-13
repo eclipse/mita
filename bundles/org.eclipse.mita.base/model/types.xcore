@@ -44,14 +44,6 @@ class PresentTypeSpecifier extends TypeSpecifier {
 		return refText + args;
 	}
 }
-//class VirtualTypeSpecifier extends PresentTypeSpecifier {
-//	op String toString() {
-//		return super.toString();
-//	}
-//	op Type getType() {
-//		
-//	}
-//}
 
 class NullTypeSpecifier extends TypeSpecifier {
 	op String toString() {
@@ -77,7 +69,6 @@ abstract class Type extends PackageMember {
 		return this;
 	}
 	
-	//refers Type[] superTypes
 	contains TypeConstraint[] constraint
 	contains TypeKind typeKind opposite kindOf
 	
@@ -253,9 +244,6 @@ class ComplexType extends Type, GenericElement {
 		if (tpe === null || visited.contains(tpe))
 			return;
 		if (tpe instanceof ComplexType) {
-//			for (Type superType : tpe.getSuperTypes()) {
-//				collectFeatures(superType, features, visited);
-//			}
 			features.addAll(tpe.getFeatures());
 		}
 		visited.add(tpe);
@@ -476,9 +464,6 @@ class SumAlternative extends StructuralType, GeneratedObject, HasAccessors {
 	}
 	
 	op void generateMembers() {
-//		if (!super.superTypes.contains(sumType)) {
-//			super.superTypes.add(sumType);
-//		}
 	}
 }
 class Singleton extends SumAlternative {
