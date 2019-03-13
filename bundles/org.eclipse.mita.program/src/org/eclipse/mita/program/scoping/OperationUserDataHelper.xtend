@@ -17,15 +17,14 @@ import com.google.inject.Inject
 import java.util.List
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtext.resource.IEObjectDescription
 
-class OperationUserDataHelper {
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
-	@Inject
-	extension ITypeSystemInferrer inferrer;
+class OperationUserDataHelper {
 
 	@Inject
 	extension ITypeSystem typesystem;
@@ -34,23 +33,23 @@ class OperationUserDataHelper {
 		val rawTypesArray = operation.parameterTypeNames
 		
 		if(rawTypesArray !== null) {
-			return rawTypesArray.map[ typesystem.getType(it) ]
+			return rawTypesArray.map[ typesystem.getType(it) ].force;
 		} else {
 			val objOrProxy = operation.EObjectOrProxy;
 			if(objOrProxy instanceof Operation) {
 				if(!objOrProxy.eIsProxy) {
-					return objOrProxy.parameters.map[ it.type ]
+					return objOrProxy.parameters.map[ it.type ].force;
 				}
 			}
 			return #[];
 		}
 	}
 	
-	def List<InferenceResult> getParameterInferenceResults(IEObjectDescription operation) {
+	def List<AbstractType> getParameterInferenceResults(IEObjectDescription operation) {
 		val objOrProxy = operation.EObjectOrProxy;
 		if (objOrProxy instanceof Operation) {
 			if (!objOrProxy.eIsProxy) {
-				return objOrProxy.parameters.map[it.infer]
+				return objOrProxy.parameters.map[BaseUtils.getType(it)].force;
 			}
 		}
 		return #[];

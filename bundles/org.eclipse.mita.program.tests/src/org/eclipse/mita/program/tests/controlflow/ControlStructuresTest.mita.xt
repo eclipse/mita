@@ -23,16 +23,16 @@ function testIfSuccess() : void {
 } 
 
 function testIfFail(){
+	// XPECT errors --> "prim»i»10 (:: xint8) has a different type than foo (:: bool)" at "10"
 	var foo = 10;
 	// If-conditions must be bool
-	// XPECT errors --> "Incompatible types int32 and bool." at "foo"
 	if(foo) { }
 }
 
 // XPECT noCompileErrors
 function testLoopsSuccess() : void {
 	// Traditional for loops are supported
-	for(var i = 0; i < 10; i=i+1) { 
+	for(var i: uint8 = 0; i < 10; i=i+1) { 
 		var x = i;
 	}
 	
@@ -80,10 +80,10 @@ function testLoopsSuccess() : void {
 function testLoopsFail() {
 	var x : int32 = 10;
 
-	// XPECT errors --> "Incompatible types int32 and bool." at "x"
+	// XPECT errors --> "Types bool and int32 are not the same." at "x"
 	while(x) { }
 	
-	// XPECT errors --> "Incompatible types int32 and bool." at "x"
+	// XPECT errors --> "Types bool and int32 are not the same." at "x"
 	do { } while(x)
 	
 }
@@ -96,7 +96,7 @@ function testConditionalSuccess() {
 
 function testConditionalFail() {
 	/* XPECT errors ---
-		"conditional expression must be of type boolean." at "5 ? 5 : 1"
+		"Types xint8 and bool are not the same." at "5"
 	--- */
 	var x  = 5 ? 5 : 1;
 }

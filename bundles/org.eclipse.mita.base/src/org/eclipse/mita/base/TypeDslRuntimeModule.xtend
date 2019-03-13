@@ -17,22 +17,31 @@
 package org.eclipse.mita.base
 
 import com.google.inject.Binder
-import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrer
+import com.google.inject.name.Names
 import org.eclipse.mita.base.expressions.terminals.ExpressionsValueConverterService
+import org.eclipse.mita.base.scoping.BaseImportScopeProvider
 import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.base.scoping.LibraryProviderImpl
+import org.eclipse.mita.base.scoping.MitaContainerManager
+import org.eclipse.mita.base.scoping.MitaResourceSetBasedAllContainersState
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.xtext.conversion.IValueConverterService
+import org.eclipse.xtext.linking.lazy.LazyURIEncoder
+import org.eclipse.xtext.resource.IContainer
 import org.eclipse.xtext.scoping.IGlobalScopeProvider
-import org.eclipse.mita.base.scoping.LibraryProviderImpl
+import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 
 class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 
 	override configure(Binder binder) {
-		super.configure(binder)
-		binder.bind(ITypeSystem).toInstance(MitaTypeSystem.getInstance())
+		super.configure(binder);
+		binder.bind(ITypeSystem).toInstance(MitaTypeSystem.getInstance());
+		binder.bind(IConstraintFactory).to(BaseConstraintFactory);
 	}
 	
 	def Class<? extends ILibraryProvider> bindILibraryProvider() {
@@ -42,13 +51,27 @@ class TypeDslRuntimeModule extends AbstractTypeDslRuntimeModule {
 	override Class<? extends IGlobalScopeProvider> bindIGlobalScopeProvider() {
 		return TypesGlobalScopeProvider
 	}
-
-	def Class<? extends ITypeSystemInferrer> bindITypeSystemInferrer() {
-		return ExpressionsTypeInferrer
-	}
 	
 	override Class<? extends IValueConverterService> bindIValueConverterService() {
 		return ExpressionsValueConverterService
 	}
 	
+	override Class<? extends IContainer.Manager> bindIContainer$Manager() {
+		return MitaContainerManager;
+	}
+	
+	override bindIAllContainersState$Provider() {
+		return MitaResourceSetBasedAllContainersState.Provider;
+	}
+	
+	override configureUseIndexFragmentsForLazyLinking(Binder binder) {
+		binder.bind(boolean).annotatedWith(Names.named(LazyURIEncoder.USE_INDEXED_FRAGMENTS_BINDING)).toInstance(false);
+	}
+	
+	override configureIScopeProviderDelegate(Binder binder) {
+		binder.bind(IScopeProvider)
+                .annotatedWith(Names
+                        .named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE))
+                .to(BaseImportScopeProvider);
+	}
 }

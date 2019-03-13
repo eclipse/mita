@@ -15,19 +15,22 @@ package org.eclipse.mita.library.stdlib
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.program.ArrayAccessExpression
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ReturnStatement
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
@@ -39,9 +42,9 @@ import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -61,7 +64,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	protected TypeGenerator typeGenerator
 		
 		
-	private static def Integer getArraySize(VariableDeclaration stmt, ElementSizeInferrer sizeInferrer) {
+	private static def long getArraySize(VariableDeclaration stmt, ElementSizeInferrer sizeInferrer) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
 			inference.elementCount;
@@ -69,7 +72,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			return -1;
 		}
 	}
-	private static def Integer getArraySize(NewInstanceExpression stmt, ElementSizeInferrer sizeInferrer) {
+	private static def long getArraySize(NewInstanceExpression stmt, ElementSizeInferrer sizeInferrer) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
 			inference.elementCount;
@@ -78,12 +81,12 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override CodeFragment generateHeader(TypeSpecifier type) {
+	override CodeFragment generateHeader(EObject context, AbstractType type) {
 		codeFragmentProvider.create('''
 		typedef struct {
-			«typeGenerator.code(type.typeArguments.head)»* data;
+			«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»* data;
 			uint32_t length;
-		} «typeGenerator.code(type)»;
+		} «typeGenerator.code(context, type)»;
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
@@ -94,47 +97,48 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return false;
 	}
 	
-	override CodeFragment generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
+	override CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
+		val init = stmt.initialization.ignoreCoercions;
 		val size = stmt.getArraySize(sizeInferrer);
 		// if we are top-level, we must do initialization if there is any
 		val topLevel = (EcoreUtil2.getContainerOfType(stmt, FunctionDefinition) === null) && (EcoreUtil2.getContainerOfType(stmt, EventHandlerDeclaration) === null);
 		val occurrence = getOccurrence(stmt);
-		val initWithValueLiteral = stmt.initialization !== null 
-			&& stmt.initialization instanceof PrimitiveValueExpression 
-			&& (stmt.initialization as PrimitiveValueExpression).value instanceof ArrayLiteral
+		val initWithValueLiteral = init !== null 
+			&& init instanceof PrimitiveValueExpression 
+			&& (init as PrimitiveValueExpression).value instanceof ArrayLiteral
 		
 		
-		val operationCallInit = (!topLevel) && stmt.initialization !== null 
-			&& stmt.initialization.isOperationCall;
+		val operationCallInit = (!topLevel) && init !== null 
+			&& init.isOperationCall;
 		
-		val otherInit = stmt.initialization !== null 
+		val otherInit = init !== null 
 			&& !initWithValueLiteral
 			&& !operationCallInit
 		
 		val cf = codeFragmentProvider.create('''
 		«IF size > 0»
 		// buffer for «stmt.name»
-		«typeGenerator.code(type.typeArguments.head)» data_«stmt.name»_«occurrence»[«size»]«IF initWithValueLiteral» = «statementGenerator.code(stmt.initialization)»«ENDIF»;
+		«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.tail.head)» data_«stmt.name»_«occurrence»[«size»]«IF initWithValueLiteral» = «statementGenerator.code(init)»«ENDIF»;
 		«ELSE»
 		// WARNING: Couldn't infer size!
 		«ENDIF»
-		// var «stmt.name»: array<«typeGenerator.code(type.typeArguments.head)»>
-		«typeGenerator.code(type)» «stmt.name»«IF topLevel || stmt.initialization !== null» = {
+		// var «stmt.name»: array<«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.tail.head)»>
+		«typeGenerator.code(stmt, type)» «stmt.name»«IF topLevel || init !== null» = {
 			.data = data_«stmt.name»_«occurrence»,
 			.length = «size»
 		}«ENDIF»;
 		«IF !topLevel && otherInit»
-		«generateExpression(type, stmt, AssignmentOperator.ASSIGN, stmt.initialization)»
+		«generateExpression(type, stmt, AssignmentOperator.ASSIGN, init)»
 		«ENDIF»
 		''').addHeader('MitaGeneratedTypes.h', false);
 		return cf;
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
-		codeFragmentProvider.create('''array_«typeGenerator.code(type.typeArguments.head)»''').addHeader('MitaGeneratedTypes.h', false);
+	override generateTypeSpecifier(AbstractType type, EObject context) {
+		codeFragmentProvider.create('''array_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
 		// if we are not in a function we are top-level and must do nothing, since we can't modify top-level anyway
 		if(EcoreUtil2.getContainerOfType(expr, FunctionDefinition) === null && EcoreUtil2.getContainerOfType(expr, EventHandlerDeclaration) === null) {
 			return CodeFragment.EMPTY;
@@ -149,20 +153,23 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val generateBuffer = (EcoreUtil2.getContainerOfType(expr, VariableDeclaration) === null);
 		codeFragmentProvider.create('''
 		«IF generateBuffer»
-		«typeGenerator.code(type.typeArguments.head)» data_«varName»_«occurrence»[«size»];
+		«typeGenerator.code(expr, (type as TypeConstructorType).typeArguments.tail.head)» data_«varName»_«occurrence»[«size»];
 		«ENDIF»
-		// «varName» = new array<«typeGenerator.code(type)»>(size = «size»);
-		«varName» = («typeGenerator.code(type)») {
+		// «varName» = new array<«typeGenerator.code(expr, type)»>(size = «size»);
+		«varName» = («typeGenerator.code(expr, type)») {
 			.data = data_«varName»_«occurrence»,
 			.length = «size»
 		};
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
+
+	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject _right) {
+		val right = _right.ignoreCoercions;
 		if(right === null) {
 			return codeFragmentProvider.create('''''');
 		}
+
 		val isReturnStmt = left instanceof ReturnStatement;
 		
 		val varNameLeft = if(left instanceof VariableDeclaration) {
@@ -184,6 +191,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			right
 		}
 		
+		val isNewInstance = right instanceof NewInstanceExpression;
+		
 		val codeRightExpr = codeFragmentProvider.create('''«statementGenerator.code(rightRef).noTerminator»''');
 		val rightExprIsValueLit = right instanceof PrimitiveValueExpression;
 		val rightValueLit = if(right instanceof PrimitiveValueExpression) {
@@ -201,10 +210,10 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val lengthLeft = codeFragmentProvider.create('''«varNameLeft».length''')
 		val lengthRight = codeFragmentProvider.create('''«IF rightExprIsValueLit»«rightValueLit.values.length»«ELSE»«codeRightExpr».length«ENDIF»''');
 		
-		val valueType = type.typeArguments.head;
+		val valueType = (type as TypeConstructorType).typeArguments.tail.head;
 		val dataLeft = codeFragmentProvider.create('''«varNameLeft».data''');
 		val dataRight = codeFragmentProvider.create(
-		'''«codeRightExpr».data«IF valRange !== null»«IF valRange.lowerBound !== null» + «valRange.lowerBound.code.noTerminator» * sizeof(«typeGenerator.code(valueType).noTerminator»)«ENDIF»«ENDIF»'''
+		'''«codeRightExpr».data«IF valRange !== null»«IF valRange.lowerBound !== null» + «valRange.lowerBound.code.noTerminator» * sizeof(«typeGenerator.code(left ?: right, valueType).noTerminator»)«ENDIF»«ENDIF»'''
 		);
 		
 		
@@ -212,8 +221,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val sizeResRight = sizeInferrer.infer(right);
 		
 		// if we can infer the sizes, we might be able to know that we don't need a new buffer to copy the data
-		var newElementCount = -1;
-		var oldElementCount = -1;
+		var long newElementCount = -1;
+		var long oldElementCount = -1;
 		val staticSize = sizeResLeft.valid && sizeResRight.valid;
 		if(staticSize) {
 			oldElementCount = (sizeResLeft as ValidElementSizeInferenceResult).elementCount;
@@ -261,7 +270,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val lengthModifyStmt = codeFragmentProvider.create('''«lengthLeft» = «lengthRight»«IF valRange !== null»«IF valRange.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«IF valRange.upperBound !== null» - («lengthRight» - «valRange.upperBound.code.noTerminator»)«ENDIF»«ENDIF»''');
 		val newLengthExpr = codeFragmentProvider.create('''«IF rightExprIsValueLit»«rightValueLit.values.length»«ELSE»«varNameLeft».length«ENDIF»''');
 		
-		val newBufferStmt = codeFragmentProvider.create('''«typeGenerator.code(type.typeArguments.head)» «reallocBufferName»[«newLengthExpr»]«IF rightExprIsValueLit» = «codeRightExpr»«ENDIF»''');
+		val newBufferStmt = codeFragmentProvider.create('''«typeGenerator.code(left ?: right, valueType)» «reallocBufferName»[«newLengthExpr»]«IF rightExprIsValueLit» = «codeRightExpr»«ENDIF»''');
 		
 		val returnStatementLengthCheck = if(isReturnStmt) {
 			codeFragmentProvider.create('''
@@ -274,7 +283,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			CodeFragment.EMPTY;
 		}
 		
-		val typeSize = codeFragmentProvider.create('''sizeof(«typeGenerator.code(type.typeArguments.head)»)''')
+		val typeSize = codeFragmentProvider.create('''sizeof(«typeGenerator.code(left ?: right, valueType)»)''')
 		
 		codeFragmentProvider.create('''
 		«returnStatementLengthCheck»
@@ -290,7 +299,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		«dataLeft» = «reallocBufferName»;
 		«ENDIF»
 		«ENDIF»
-		«IF !rightExprIsValueLit»
+		«IF !isNewInstance && !rightExprIsValueLit»
 		// «varNameLeft» = «codeRightExpr»
 		memcpy(«dataLeft», «dataRight», «typeSize» * «newLengthExpr»);
 		««« we had to create a new buffer, but we mustn't pass it out
@@ -308,8 +317,9 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	
+
 		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
-			val variable = ModelUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;
 				if(varref instanceof NamedElement) {
@@ -324,5 +334,14 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			false
 		}
 		
-	}	
+	}
+	
+	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
+		val inner = expr.value;
+		if(inner instanceof ArrayLiteral) {
+			return codeFragmentProvider.create('''«inner.code»''');
+		}
+		return codeFragmentProvider.create('''CANT COERCE «inner.eClass.name»''');
+	}
+	
 }

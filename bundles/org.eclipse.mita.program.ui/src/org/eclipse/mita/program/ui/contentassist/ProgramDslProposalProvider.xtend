@@ -24,7 +24,6 @@ import org.eclipse.jface.viewers.StyledString
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.ComplexType
-import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
@@ -32,7 +31,8 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramPackage
@@ -52,32 +52,55 @@ import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor
 class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 
 	@Inject
-	private ProposalPriorityHelper priorityHelper;
+	ProposalPriorityHelper priorityHelper;
 	@Inject
-	private ILabelProvider labelProvider;
+	ILabelProvider labelProvider;
 	@Inject
-	private IScopeProvider scopeProvider;
-	@Inject
-	protected ITypeSystemInferrer typeInferrer;
+	IScopeProvider scopeProvider;
 	@Inject 
 	protected extension ImportHelper
 	@Inject 
 	DefaultValueProvider defaultValueProvider
+
+	static val hiddenQIDs = 
+		StdlibTypeRegistry.integerTypeQIDs.filter[it.lastSegment.startsWith("x")] + 
+		#[StdlibTypeRegistry.plusFunctionQID, StdlibTypeRegistry.minusFunctionQID, StdlibTypeRegistry.timesFunctionQID, StdlibTypeRegistry.divisionFunctionQID, StdlibTypeRegistry.moduloFunctionQID, StdlibTypeRegistry.leftShiftFunctionQID, StdlibTypeRegistry.rightShiftFunctionQID, StdlibTypeRegistry.postincrementFunctionQID, StdlibTypeRegistry.postdecrementFunctionQID].map[it.skipFirst(1)]
 
 	override Function<IEObjectDescription, ICompletionProposal> getProposalFactory(String ruleName,
 		ContentAssistContext contentAssistContext) {
 		return new DefaultProposalCreator(contentAssistContext, ruleName, getQualifiedNameConverter()) {
 
 			override ICompletionProposal apply(IEObjectDescription candidate) {
+				if(candidate.toString == "__POSTINCREMENT__") {
+					print("")
+				}
+				val uri = candidate.EObjectURI;
+				val h = hiddenQIDs;
+				if(hiddenQIDs.exists[
+					uri.fragment.startsWith(it.toString)
+				]) {
+					return null;
+				}
+				
 				val proposal = super.apply(candidate);
 				if (TypesPackage.Literals.OPERATION.isSuperTypeOf(candidate.EClass)) {
 					createFunctionDefinitionProposal(candidate, proposal)
+				}
+				if(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(candidate.EClass)) {
+					createTypeKindProposal(candidate, proposal)
 				}
 				if (proposal instanceof ConfigurableCompletionProposal) {
 					proposal.image = labelProvider.getImage(candidate.EObjectOrProxy);
 				}
 
 				return proposal;
+			}
+			
+			def void createTypeKindProposal(IEObjectDescription description, ICompletionProposal proposal) {
+				if (proposal instanceof ConfigurableCompletionProposal) {
+					// remove star
+					proposal.displayString = proposal.displayString.replaceAll("∗", "");
+				}
 			}
 
 			/**
@@ -86,24 +109,23 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 			protected def void createFunctionDefinitionProposal(IEObjectDescription candidate,
 				ICompletionProposal proposal) {
 				if (proposal instanceof ConfigurableCompletionProposal) {
-					val configProposal = proposal as ConfigurableCompletionProposal;
 					val paramTypes = getParamTypes(candidate).replace("[", "").replace("]", "");
 					val returnType = getType(candidate);
 					if (paramTypes !== null) {
 						// add semicolon for operations with void return type
 						if (MitaTypeSystem.VOID.equals(returnType)) {
-							configProposal.setReplacementString(configProposal.getReplacementString() + "();");
+							proposal.setReplacementString(proposal.getReplacementString() + "();");
 						} else {
-							configProposal.setReplacementString(configProposal.getReplacementString() + "()");
+							proposal.setReplacementString(proposal.getReplacementString() + "()");
 						}
 						// move cursor between brackets for operations with input parameters
 						if (paramTypes.split(",").length > 0) {
-							configProposal.setCursorPosition(configProposal.getCursorPosition() + 1);
+							proposal.setCursorPosition(proposal.getCursorPosition() + 1);
 						} else {
-							configProposal.setCursorPosition(configProposal.getCursorPosition() + 2);
+							proposal.setCursorPosition(proposal.getCursorPosition() + 2);
 						}
 						
-						configProposal.displayString = configProposal.displayString + "(" +
+						proposal.displayString = proposal.displayString + "(" +
 							paramTypes + ")" + " : " + returnType;
 					}
 				}
@@ -122,7 +144,7 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 				if (candidate.EObjectOrProxy.eIsProxy) {
 					return candidate.getUserData(ProgramDslResourceDescriptionStrategy.TYPE);
 				} else {
-					return typeInferrer.infer(candidate.EObjectOrProxy)?.type?.name;
+					return BaseUtils.getType(candidate.EObjectOrProxy)?.name;
 				}
 			}
 		};

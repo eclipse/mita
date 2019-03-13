@@ -13,12 +13,13 @@
 
 package org.eclipse.mita.library.stdlib
 
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 
 class VirtualTypeSizeInferrer extends ElementSizeInferrer {
 	
-	override protected doInfer(EObject obj) {
+	override protected dispatch doInfer(EObject obj, AbstractType type) {
 		return newInvalidResult(obj, "Object does not have a size");
 	}
 	

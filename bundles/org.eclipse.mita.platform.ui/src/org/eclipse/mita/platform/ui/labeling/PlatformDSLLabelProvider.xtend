@@ -26,7 +26,7 @@ import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.ConfigurationItem
 import org.eclipse.mita.platform.Connectivity
@@ -44,9 +44,6 @@ import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#label-provider
  */
 class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
-
-	@Inject
-	ITypeSystemInferrer typeInferrer
 
 	@Inject
 	new(AdapterFactoryLabelProvider delegate) {
@@ -115,7 +112,7 @@ class PlatformDSLLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(Modality ele) {
-		val type = typeInferrer.infer(ele)?.type
+		val type = BaseUtils.getType(ele);
 		'''modality «ele.name» : «type»'''
 	}
 

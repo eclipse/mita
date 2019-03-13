@@ -14,36 +14,37 @@
 package org.eclipse.mita.program.generator.transformation
 
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.xtext.EcoreUtil2
+import java.util.HashSet
 
 class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 	
 	override protected needsUnraveling(Expression expression) {
-		val printContextFunctionNames = #[
+		val printContextFunctionNames = new HashSet(#[
 			'print',
 			'println',
 			'logDebug',
 			'logInfo',
 			'logWarning',
 			'logError'
-		];
+		]);
 		
 		var isInPrintContext = false;
 		val possibleFunctionCallContainer = EcoreUtil2.getContainerOfType(expression, ElementReferenceExpression);
 		if(possibleFunctionCallContainer !== null) {
-			val ref = possibleFunctionCallContainer.reference;
-			if(ref instanceof GeneratedFunctionDefinition) {
-				if(printContextFunctionNames.contains(ref.name)) {
-					isInPrintContext = true;
-				}
+			val funName = BaseUtils.getText(possibleFunctionCallContainer, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+			if(printContextFunctionNames.contains(funName)) {
+				isInPrintContext = true;
 			}
 		}
 		
-		return possibleFunctionCallContainer !== null && possibleFunctionCallContainer.reference instanceof Operation && !isInPrintContext && (expression instanceof InterpolatedStringExpression);
+		return possibleFunctionCallContainer !== null && possibleFunctionCallContainer?.isOperationCall && !isInPrintContext && (expression instanceof InterpolatedStringExpression);
 	}
 	
 }

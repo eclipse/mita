@@ -16,24 +16,22 @@ package org.eclipse.mita.library.stdlib.functions
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.TypeParameter
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.library.stdlib.OptionalGenerator
 import org.eclipse.mita.library.stdlib.OptionalGenerator.enumOptional
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.generator.AbstractTypeGenerator
 
 class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	
 	@Inject 
 	protected extension StatementGenerator statementGenerator
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
 	
 	@Inject
 	protected GeneratorRegistry registry
@@ -42,16 +40,16 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 		val args = functionCall.arguments;
 		val valueVarOrExpr = args.head.value;
 		// need the optionalGenerator
-		val funTypeIR = typeInferrer.infer(functionCall);
-		val funType = funTypeIR.type;
-		if(!(funType instanceof GeneratedType)) {
+		val funType = BaseUtils.getType(functionCall);
+		if(!(funType instanceof TypeConstructorType)) {
 			return CodeFragment.EMPTY;
 		}
-		val optGen = registry.getGenerator(funType as GeneratedType);
+		val optGen = registry.getGenerator(functionCall.eResource, funType).castOrNull(AbstractTypeGenerator);
 				
 		codeFragmentProvider.create('''
+
 			«IF resultVariableName === null»
-			(«optGen?.generateTypeSpecifier(ModelUtils.toSpecifier(funTypeIR), functionCall)») {
+			(«optGen?.generateTypeSpecifier(funType, functionCall)») {
 				.«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»,
 				.«OptionalGenerator.OPTIONAL_DATA_MEMBER» = «valueVarOrExpr.code»
 			}
@@ -64,11 +62,10 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	
 	override callShouldBeUnraveled(ElementReferenceExpression expression) {
 		// if we can't fully infer the type we need to unravel
-		val refTypeIR = typeInferrer.infer(expression);
-		val refType = refTypeIR.type;
-		if(!(refType instanceof GeneratedType) || refType.name != "optional") {
+		val refType = BaseUtils.getType(expression);
+		if(!(refType instanceof TypeConstructorType) || refType.name != "optional") {
 			return true;
 		}
-		return ModelUtils.containsTypeBy(true, [t | t.abstract || t instanceof TypeParameter], refTypeIR);
+		return !refType.freeVars.empty;
 	}
 }

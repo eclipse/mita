@@ -33,6 +33,8 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.Program
@@ -52,8 +54,11 @@ import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
+import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.xbase.lib.Functions.Function1
+
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 /**
  * Generates code from your model files on save.
@@ -113,6 +118,9 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	@Inject
 	protected PluginResourceLoader resourceLoader
 	
+	@Inject
+	Provider<XtextResourceSet> resourceSetProvider;
+		
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		resource.resourceSet.doGenerate(fsa);
@@ -148,10 +156,10 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		}
 		
 		// Include libraries such as the stdlib in the compilation context
-		val libs = libraryProvider.defaultLibraries;
+		val libs = libraryProvider.standardLibraries;
 		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
-		val stdlib = stdlibUri.map[input.getResource(it, true).contents.filter(Program).head]
-	
+		val stdlib = stdlibUri.map[input.getResource(it, true)].filterNull.map[it.contents.filter(Program).head].force;
+		
 		/*
 		 * Steps:
 		 *  1. Copy all programs
@@ -160,15 +168,41 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		 *  4. Generate shared files
 		 *  5. Generate user code per input model file
 		 */
+		val copyResourceSet = resourceSetProvider.get();
 		val compilationUnits = (resourcesToCompile)
 			.map[x | x.contents.filter(Program).head ]
 			.filterNull
-			.map[x | transformer.get.transform(x.copy) ]
+			.map[x | 
+				val resource = x.eResource;
+				if(resource instanceof MitaBaseResource) {
+					if(resource.latestSolution === null) {
+						x.doType();
+					}
+				}
+				val copy = x.copy(copyResourceSet);
+				BaseUtils.ignoreChange(copy, [
+					transformer.get.transform(copy)
+				]);
+				return copy;
+			]
 			.toList();
 		
 		val someProgram = compilationUnits.head;
-		val platform = modelUtils.getPlatform(someProgram);
-		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);		
+		
+		compilationUnits.forEach[
+			doType(it);			
+		]
+		
+		val platform = modelUtils.getPlatform(input, someProgram);
+		
+		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
+		
+		var EObject platformRoot = platform;
+		while(platformRoot.eContainer !== null) {
+			platformRoot = platformRoot.eContainer;
+		}
+		
+		doType(platformRoot)
 		
 		val context = compilationContextProvider.get(compilationUnits, stdlib);
 		
@@ -217,6 +251,13 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val codefragment = makefileGenerator?.generateMakefile(compilationUnits, files)
 		if(codefragment !== null && codefragment != CodeFragment.EMPTY)
 			fsa.produceFile('Makefile', someProgram, codefragment);
+	}
+		
+	def doType(EObject program) {
+		val resource = program.eResource;
+		if(resource instanceof MitaBaseResource) {
+			resource.collectAndSolveTypes(program);
+		}
 	}
 		
 	def Iterable<String> getUserFiles(ResourceSet set) {

@@ -13,9 +13,20 @@
 
 package org.eclipse.mita.platform.scoping
 
-import org.eclipse.xtext.scoping.impl.ImportedNamespaceAwareLocalScopeProvider
+import com.google.inject.Inject
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.scoping.BaseImportScopeProvider
+import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
+import org.eclipse.xtext.resource.IContainer
+import org.eclipse.xtext.scoping.impl.MultimapBasedSelectable
 
-class PlatformDslImportScopeProvider extends ImportedNamespaceAwareLocalScopeProvider {
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+
+class PlatformDslImportScopeProvider extends BaseImportScopeProvider {
+	@Inject
+	ResourceDescriptionsProvider resourceDescriptionsProvider;
+	@Inject
+	IContainer.Manager containerManager;
 	
 	override protected getImplicitImports(boolean ignoreCase) {
 		return (
@@ -24,4 +35,14 @@ class PlatformDslImportScopeProvider extends ImportedNamespaceAwareLocalScopePro
 		).toList()
 	}
 	
+	override protected internalGetAllDescriptions(Resource resource) {
+		val resourceDescriptions = resourceDescriptionsProvider.get(resource.resourceSet);
+		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI)
+		if (thisResourceDescription === null) {
+			return super.internalGetAllDescriptions(resource);
+		}
+		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
+		val exportedObjects = visibleContainers.map[x|x.exportedObjects].flatten().force();
+		return new MultimapBasedSelectable(exportedObjects);
+	}
 }

@@ -14,26 +14,16 @@
 package org.eclipse.mita.program.validation
 
 import com.google.inject.Inject
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.platform.Instantiability
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
 
 class ProgramSetupValidator extends AbstractDeclarativeValidator {
-	
-	@Inject ProgramDslTypeInferrer inferrer
-	@Inject TypeValidator typeValidator
-
 	public static val String INCOMPATIBLE_VALUE_TYPE_MSG = "The type '%s' is not compatible with the configuration item's type '%s'";
 	public static val String INCOMPATIBLE_VALUE_TYPE_CODE = "incompatible_value_type";
 	
@@ -50,27 +40,6 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	
 	@Check(CheckType.FAST)
 	def checkConfigurationItemValues(SystemResourceSetup setup) {
-		// check config item value types match
-		for (value : setup.configurationItemValues) {
-			val itemValue = value.value;
-			if(itemValue === null) return;
-
-			val configItemType = inferrer.infer(value.item);
-			val valueType = inferrer.infer(itemValue);
-			typeValidator.assertAssignable(configItemType, valueType, String.format(INCOMPATIBLE_VALUE_TYPE_MSG, valueType, configItemType), [
-				error(it.getMessage(), value, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE);
-			]);
-			
-			if(itemValue instanceof ElementReferenceExpression) {
-				val ref = itemValue.reference;
-				if(ref instanceof SumAlternative || ref instanceof StructureType) {
-					/* do nothing, it's ok */
-				} else if(ref instanceof Type) {
-					error(String.format("Value has to be an instance of '%s'", configItemType), value,
-						ProgramPackage.eINSTANCE.configurationItemValue_Value, INCOMPATIBLE_VALUE_TYPE_CODE);
-				}
-			}
-		}
 
 		// check config item values are unique
 		setup.configurationItemValues.groupBy[x| x.item.name ].entrySet.filter[x|x.value.length > 1].forEach [ x |

@@ -13,7 +13,6 @@
 
 package org.eclipse.mita.program.generator.tests;
 
-import org.eclipse.mita.program.tests.arrays.ArraysTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;

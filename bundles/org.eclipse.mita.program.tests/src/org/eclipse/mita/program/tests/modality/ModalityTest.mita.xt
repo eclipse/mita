@@ -10,7 +10,7 @@ import platforms.unittest;
 
 fn accessWithoutRead() {
 	/* XPECT errors ---
-		"Cannot determine size of element: Object does not have a size" at "my_sensor00.modality00"
+		"Cannot determine size of element: Unable to infer size from type __args(∗MySensor) → modality<int16>" at "my_sensor00.modality00"
 		"Modalities must be used immediately. Add .read() after modality00" at "modality00"
 	--- */
 	var x1 = my_sensor00.modality00;

@@ -18,7 +18,7 @@
     <tycho-version>1.0.0</tycho-version>
     <tycho-extras-version>1.0.0</tycho-extras-version>
     <junit-version>4.11</junit-version>
-    <xtextVersion>2.13.0</xtextVersion>
+    <xtextVersion>2.16.0</xtextVersion>
     <xcoreVersion>[1.3.1-SNAPSHOT,)</xcoreVersion>
     <xcoreLibVersion>1.1.100</xcoreLibVersion>
     <mweVersion>2.9.1.201705291010</mweVersion>
@@ -141,18 +141,18 @@
   </profiles>
 
   <pluginRepositories>
-		<pluginRepository>
-			<id>eclipse-jarsigner-repo</id>
-			<name>Eclipse Jarsigner Repository</name>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<url>https://repo.eclipse.org/content/repositories/cbi-releases/</url>
-		</pluginRepository>
-	</pluginRepositories>
+    <pluginRepository>
+      <id>eclipse-jarsigner-repo</id>
+      <name>Eclipse Jarsigner Repository</name>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <url>https://repo.eclipse.org/content/repositories/cbi-releases/</url>
+    </pluginRepository>
+  </pluginRepositories>
 
   <build>
     <plugins>
@@ -379,22 +379,22 @@
             <outputDirectory>${basedir}/xtend-gen</outputDirectory>
             <testOutputDirectory>${basedir}/xtend-gen</testOutputDirectory>
           </configuration>
-          <!-- Workaround for https://github.com/eclipse/xtext/issues/1231 -->
+          <!-- Workaround for https://github.com/eclipse/xtext-xtend/issues/493 -->
           <dependencies>
             <dependency>
               <groupId>org.eclipse.jdt</groupId>
               <artifactId>org.eclipse.jdt.core</artifactId>
-              <version>3.13.102</version>
+              <version>3.15.0</version>
             </dependency>
             <dependency>
               <groupId>org.eclipse.jdt</groupId>
               <artifactId>org.eclipse.jdt.compiler.apt</artifactId>
-              <version>1.3.110</version>
+              <version>1.3.300</version>
             </dependency>
             <dependency>
               <groupId>org.eclipse.jdt</groupId>
               <artifactId>org.eclipse.jdt.compiler.tool</artifactId>
-              <version>1.2.101</version>
+              <version>1.2.300</version>
             </dependency>
           </dependencies>
         </plugin>
@@ -402,22 +402,22 @@
           <groupId>org.eclipse.xtext</groupId>
           <artifactId>xtext-maven-plugin</artifactId>
           <version>${xtext-version}</version>
-          <!-- Workaround for https://github.com/eclipse/xtext/issues/1231 -->
+          <!-- Workaround for https://github.com/eclipse/xtext-xtend/issues/493 -->
           <dependencies>
             <dependency>
               <groupId>org.eclipse.jdt</groupId>
               <artifactId>org.eclipse.jdt.core</artifactId>
-              <version>3.13.102</version>
+              <version>3.15.0</version>
             </dependency>
             <dependency>
               <groupId>org.eclipse.jdt</groupId>
               <artifactId>org.eclipse.jdt.compiler.apt</artifactId>
-              <version>1.3.110</version>
+              <version>1.3.300</version>
             </dependency>
             <dependency>
               <groupId>org.eclipse.jdt</groupId>
               <artifactId>org.eclipse.jdt.compiler.tool</artifactId>
-              <version>1.2.101</version>
+              <version>1.2.300</version>
             </dependency>
           </dependencies>
         </plugin>

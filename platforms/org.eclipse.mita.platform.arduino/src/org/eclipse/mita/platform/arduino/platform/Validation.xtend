@@ -6,6 +6,7 @@ import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Signal
@@ -26,21 +27,21 @@ class Validation implements IResourceValidator {
 		val sigInstAccesses = (
 			functionCalls1.map[
 				val ArgumentExpression source = it;
-				val method = it.feature;
-				val owner = it.owner;
+				val method = it.reference;
+				val owner = it.arguments.head.value;
 				if(owner instanceof FeatureCall) {
-					val sigInst = owner.feature;
+					val sigInst = owner.reference;
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}
-					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE)
+					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
 				}
 				return null;
 			] + functionCalls2.map[
 				val ArgumentExpression source = it;
 				val method = it.reference;
 				if(method instanceof Operation) {
-					val sigInst = ModelUtils.getArgumentValue(method, it, "self");
+					val sigInst = ExpressionUtils.getArgumentValue(method, it, "self");
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}

@@ -15,7 +15,7 @@ package org.eclipse.mita.program.scoping
 
 import com.google.common.collect.Lists
 import java.util.List
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation

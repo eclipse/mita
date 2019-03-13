@@ -33,11 +33,11 @@ class TestProjectHelper {
 	
 	public val String testProjectName = "unittestprj"
 	
-	public def getTestProject() {
+	def getTestProject() {
 		return ResourcesPlugin.workspace.root.getProject(testProjectName);
 	}
 	
-	public def createEmptyTestProject() {
+	def createEmptyTestProject() {
 		val project = testProject;
 		val op = new WorkspaceModifyOperation() {
 			override protected execute(IProgressMonitor monitor) throws CoreException, InvocationTargetException, InterruptedException {

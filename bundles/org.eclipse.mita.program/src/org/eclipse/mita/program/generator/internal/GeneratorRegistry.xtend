@@ -19,8 +19,9 @@ import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.google.inject.Inject
 import com.google.inject.Singleton
-import org.eclipse.mita.base.types.GeneratedElement
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
@@ -28,6 +29,8 @@ import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.IGenerator
 import org.eclipse.mita.program.resource.PluginResourceLoader
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.types.TypesUtil
 
 /**
  * Creates and maintains the component generators associated with a platform.
@@ -38,11 +41,11 @@ class GeneratorRegistry {
 	@Inject
 	protected PluginResourceLoader loader
 
-	private final LoadingCache<GeneratedElement, Optional<IGenerator>> generatorCache = CacheBuilder.newBuilder().
-		build(new CacheLoader<GeneratedElement, Optional<IGenerator>>() {
+	final LoadingCache<Pair<Resource, String>, Optional<IGenerator>> generatorCache = CacheBuilder.newBuilder().
+		build(new CacheLoader<Pair<Resource, String>, Optional<IGenerator>>() {
 			
-			override Optional<IGenerator> load(GeneratedElement elem) {
-				val result = loader.loadFromPlugin(elem.eResource, elem.generator) as IGenerator
+			override Optional<IGenerator> load(Pair<Resource, String> elem) {
+				val result = loader.loadFromPlugin(elem.key, elem.value) as IGenerator
 				if (result === null) {
 					return Optional.absent
 				}
@@ -50,15 +53,23 @@ class GeneratorRegistry {
 			}
 		});
 
+	def getGenerator(Resource eResource, AbstractType type) {
+		val generatorString = TypesUtil.getConstraintSystem(eResource).getUserData(type, BaseConstraintFactory.GENERATOR_KEY);
+		if(generatorString !== null) {
+			return generatorCache.get(eResource -> generatorString).orNull
+		}
+		return null;
+	}
+
 	def getGenerator(AbstractSystemResource resource) {
-		generatorCache.get(resource).orNull as AbstractSystemResourceGenerator;
+		generatorCache.get(resource.eResource -> resource.generator).orNull as AbstractSystemResourceGenerator;
 	}
 
 	def AbstractTypeGenerator getGenerator(GeneratedType type) {
-		generatorCache.get(type).orNull as AbstractTypeGenerator;
+		generatorCache.get(type.eResource -> type.generator).orNull as AbstractTypeGenerator;
 	}
 
 	def AbstractFunctionGenerator getGenerator(GeneratedFunctionDefinition function) {
-		generatorCache.get(function).orNull as AbstractFunctionGenerator;
+		generatorCache.get(function.eResource -> function.generator).orNull as AbstractFunctionGenerator;
 	}
 }

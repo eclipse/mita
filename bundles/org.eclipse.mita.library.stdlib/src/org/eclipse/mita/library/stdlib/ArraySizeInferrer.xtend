@@ -13,19 +13,23 @@
 
 package org.eclipse.mita.library.stdlib
 
-import org.eclipse.mita.program.ArrayLiteral
-import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.ValueRange
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.program.model.ModelUtils
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.inferrer.ElementSizeInferrer
+import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 
 class ArraySizeInferrer extends ElementSizeInferrer {
 	
@@ -33,10 +37,10 @@ class ArraySizeInferrer extends ElementSizeInferrer {
     protected ITypeSystem registry;
 	
 	
-	override protected dispatch doInfer(NewInstanceExpression obj) {
-		val parentType = ModelUtils.toSpecifier(typeInferrer.infer(obj.eContainer));
+	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
+		val parentType = BaseUtils.getType(obj.eContainer);
 		
-		val rawSizeValue = ModelUtils.getArgumentValue(obj.reference as Operation, obj, 'size');
+		val rawSizeValue = ExpressionUtils.getArgumentValue(obj.reference as Operation, obj, 'size');
 		if(rawSizeValue === null) {
 			return new InvalidElementSizeInferenceResult(obj, parentType, "size missing");
 		} else if(parentType === null) {
@@ -46,27 +50,28 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			val result = if(staticSizeValue === null) {
 				newInvalidResult(obj.reference, "Cannot infer static value");
 			} else {
-				new ValidElementSizeInferenceResult(obj, parentType, staticSizeValue as Integer);
+				// lets assume that no one constructs arrays bigger than Integer.MAX_VALUE
+				new ValidElementSizeInferenceResult(obj, parentType, (staticSizeValue as Long).longValue as int);
 			}
 			
 			/**
 			 * TODO: at the moment we don't have array/struct literals. As such the size inference for arrays
 			 * is limited to primitive types, because the size of generated types is determined during initialization.
 			 */
-			val typeOfChildren = parentType.typeArguments.head;
+			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
 			result.children.add(obj.inferFromType(typeOfChildren));
 			return result;
 		}
 	}
 	
-	def protected dispatch doInfer(ArrayLiteral obj) {
-		val parentType = ModelUtils.toSpecifier(typeInferrer.infer(obj.eContainer));
+	def protected dispatch doInfer(ArrayLiteral obj, AbstractType type) {
+		val parentType = BaseUtils.getType(obj.eContainer);
 		
-		val typeOfChildren = parentType.typeArguments.head;
+		val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
 		
 		val result = new ValidElementSizeInferenceResult(obj, parentType, obj.values.length);
 		 
-		if(typeOfChildren.type === registry.getType(ProgramDslTypeInferrer.ARRAY_LITERAL_TYPE)) {
+		if(typeOfChildren.name == StdlibTypeRegistry.arrayTypeQID.lastSegment) {
 			result.children.add(infer(obj.values.head));	
 		}
 		else {
@@ -75,12 +80,13 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 		return result;			
 	}
 	
-	override protected dispatch doInfer(ElementReferenceExpression obj) {
-		if(obj.arrayAccess && obj.arraySelector.head instanceof ValueRange) {
-			val valRange = (obj as ElementReferenceExpression).arraySelector.head as ValueRange;
+	override protected dispatch doInfer(ElementReferenceExpression obj, AbstractType type) {
+		val arraySelectors = obj.arraySelector.map[it.ignoreCoercions];
+		if(obj.arrayAccess && arraySelectors.head instanceof ValueRange) {
+			val valRange = arraySelectors.head as ValueRange;
 			
-			val parentType = ModelUtils.toSpecifier(typeInferrer.infer(obj));
-			val typeOfChildren = parentType.typeArguments.head;
+			val parentType = BaseUtils.getType(obj);
+			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
 			
 			val lowerBound = StaticValueInferrer.infer(valRange.lowerBound, [x |]);
 			val upperBound = StaticValueInferrer.infer(valRange.upperBound, [x |]);
@@ -93,7 +99,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			result.children.add(obj.inferFromType(typeOfChildren));
 			return result;
 		} else {
-			return super._doInfer(obj);
+			return super._doInfer(obj, type);
 		}
 	}
 	

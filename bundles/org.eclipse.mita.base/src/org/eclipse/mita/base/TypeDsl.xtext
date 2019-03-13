@@ -11,7 +11,7 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-grammar org.eclipse.mita.base.TypeDsl with org.eclipse.xtext.common.Terminals
+grammar org.eclipse.mita.base.TypeDsl hidden(WS, ML_COMMENT, SL_COMMENT)
 
 import "http://www.eclipse.org/emf/2002/Ecore" as ecore
 import "org.eclipse.mita.base.types"
@@ -30,25 +30,39 @@ NativeTypeDeclaration returns NativeType:
 	(exported?='export')? 
 	'native-type' name=ID
 	('alias-of' aliasOf=ID)?
-	('subtype-of' superTypes+=[PrimitiveType] (',' superTypes+=[PrimitiveType])* )?
 	('header' header=STRING)?
 ;
 
-EnumerationDeclaration returns EnumerationType:
+EnumerationDeclaration returns SumType:
+	{SumType}
+	typeKind=TypeKind
 	(exported?='export')?
-	'enum' name=ID '{' enumerator+=Enumerator (','enumerator+=Enumerator)*
+	'enum' name=ID '{' alternatives += Enumerator (',' alternatives += Enumerator)*
 	'}';
 
-Enumerator returns Enumerator:
-	name=ID;
+Enumerator returns Singleton:
+	name=ID constructor=SumSubTypeConstructor;
+
+NullTypeSpecifier returns NullTypeSpecifier:
+	{NullTypeSpecifier}
+;
 
 StructureTypeDeclaration returns ComplexType: 
 	{StructureType}
+	constructor=TypeConstructor
 	(exported?='export')?
 	'struct' name=ID '{' (parameters+=StructureField)+ '}'
 ;
 
-StructureField returns Parameter: 
+TypeConstructor returns TypeConstructor:
+	{TypeConstructor}
+;
+TypeAccessor returns TypeAccessor:
+	{TypeAccessor}
+;
+
+StructureField returns StructuralParameter: 
+	accessor = TypeAccessor
 	'var' name=ID ':' typeSpecifier=TypeSpecifier ';'
 ;
 
@@ -57,10 +71,10 @@ ExceptionTypeDeclaration:
 	'exception' name=ID ';'
 ;
 
-GeneratedType returns ComplexType:
+GeneratedType returns GeneratedType:
 	{GeneratedType} 
 	(exported?='export')?
-	'generated' 'type' name=ID ('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')? ('subtype-of' superTypes+=[ComplexType|QID])?
+	'generated' 'type' name=ID ('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')?
 		'generator' generator=STRING
 		'size-inferrer' sizeInferrer=STRING
 		('validator' validator=STRING)?
@@ -68,22 +82,27 @@ GeneratedType returns ComplexType:
 	';'
 ;
 
-GeneratedTypeConstructor returns Operation:
-	{Operation}
-	'constructor' name=ID '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')'
+GeneratedTypeConstructor returns GeneratedTypeConstructor:
+	{GeneratedTypeConstructor}
+	'constructor' name='con' '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')' 
 ;
 
-GeneratedTypeParameter returns Parameter:
+GeneratedTypeParameter returns GeneratedTypeParameter:
 	{GeneratedTypeParameter}
-	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' value=Expression)?
+	name=ID ':' (static?='static')? typeSpecifier=TypeSpecifier (optional?='=' defaultValue=Expression)?
 ;
 
 TypeParameter returns TypeParameter:
 	name=ID ('extends' bound=[Type])?;
 
 
+TypeKind returns TypeKind:
+	{TypeKind}
+;
+
 SumType returns SumType:
 	{SumType}
+	typeKind=TypeKind
 	(exported?='export')?
 	('alt' | 'alternative') name = ID '{' alternatives += SumAlternative ('|' alternatives += SumAlternative)* '}'
 ;	
@@ -95,20 +114,33 @@ SumAlternative returns SumAlternative:
 	)
 ;
 
-Singleton returns Singleton:
-	name=ID
+SumSubTypeConstructor returns SumSubTypeConstructor:
+	{SumSubTypeConstructor}
 ;
 
+AnonymousProductTypeImportingConstructor returns AnonymousProductTypeImportingConstructor:
+	{AnonymousProductTypeImportingConstructor}
+;
+
+Singleton returns Singleton:
+	constructor=SumSubTypeConstructor
+	name=ID
+;
 AnonymousProductType returns AnonymousProductType: 
 	{AnonymousProductType}
-	name=ID ':' typeSpecifiers+=TypeSpecifier (',' typeSpecifiers+=TypeSpecifier)*
+	constructor=SumSubTypeConstructor
+	name=ID ':' (
+		  typeSpecifiers+=TypeSpecifier (',' typeSpecifiers+=TypeSpecifier)*  /* ((',' typeSpecifiers+=TypeSpecifier)+ | (importingConstructor=AnonymousProductTypeImportingConstructor)) */
+	)
 ;
 NamedProductType returns NamedProductType:
 	{NamedProductType}
+	constructor=SumSubTypeConstructor
 	name=ID ':' '{' parameters+=ProductMember (',' parameters+=ProductMember)* '}'
 ;
 
 ProductMember returns ProductMember: 
+	accessor = TypeAccessor
 	name=ID ':' typeSpecifier=TypeSpecifier
 ;
 
@@ -123,6 +155,7 @@ ProductMember returns ProductMember:
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributors:
  * 	committers of YAKINDU - initial API and implementation
+ *  Bosch Connected Devices and Solutions GmbH - modifications
  * 
  */
 Expression:
@@ -192,37 +225,42 @@ TypeCastExpression returns Expression:
 
 PrimaryExpression returns Expression:
 	PrimitiveValueExpression
-	| FeatureCall
-	| ParenthesizedExpression;
+	| FeatureCall;
 
 PrimitiveValueExpression returns Expression:
 	{PrimitiveValueExpression} value=Literal;
 
 
+arraySelector returns Expression:
+	  Expression ({ValueRange.lowerBound=current} ':' (upperBound=Expression)?)?
+	| ({ValueRange} ':' (upperBound=Expression)?)
+;
+
+FeatureCallWithoutFeature returns Expression:
+	  ({FeatureCallWithoutFeature} operationCall?='.' reference=[ecore::EObject] (=> '('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
+;
 
 FeatureCall returns Expression:
-	ElementReferenceExpression ({FeatureCall.owner=current} '.' feature=[ecore::EObject]
-	(=> operationCall?= '('(arguments+=Argument (',' arguments+=Argument)*)?')'
-		|
-	=> (arrayAccess ?= '[' arraySelector+=Expression ']') => ('[' arraySelector+=Expression ']')* 
-	)?)*;
+	FeatureCallWithoutFeature |
+    (ElementReferenceExpression | ParenthesizedExpression) (
+	      ({Argument.value=current} {FeatureCall.arguments+=current} operationCall?='.' reference=[ecore::EObject] (=> '('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
+		| ({ArrayAccessExpression.owner=current} '[' (arraySelector=arraySelector) ']')
+    )*
+;
 
 ElementReferenceExpression returns Expression:
 	{ElementReferenceExpression} reference=[ecore::EObject|ID]
-	(=> operationCall?='('	(arguments+=Argument (',' arguments+=Argument)*)?	')' 
-		|
-	=> (arrayAccess ?= '[' arraySelector+=Expression ']') => ('[' arraySelector+=Expression ']')*
-	)?;
+	(=> operationCall?='('	(arguments+=Argument (',' arguments+=Argument)*)?	')' )?;
 
-Argument:
+Argument returns Argument:
 	(parameter=[Parameter] '=')?  value=ConditionalExpression
 ;
 
 ParenthesizedExpression returns Expression:
 	{ParenthesizedExpression} '(' expression=Expression ')';
 
-TypeSpecifier returns TypeSpecifier:
-	{TypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
+TypeSpecifier returns PresentTypeSpecifier:
+	{PresentTypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
 
 Literal:
 	BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;
@@ -231,7 +269,7 @@ BoolLiteral:
 	{BoolLiteral} value=BOOL;
 
 IntLiteral:
-	{IntLiteral} value=INT;
+	{IntLiteral} value=LONG;
 
 DoubleLiteral:
 	{DoubleLiteral} value=DOUBLE;
@@ -302,18 +340,41 @@ enum RelationalOperator:
 terminal BOOL returns ecore::EBoolean:
 	'true' | 'false';
 
-terminal HEX returns ecore::EInt:
+terminal HEX returns ecore::ELong:
 	('0') ('x' | 'X') ('0'..'9' | 'a'..'f' | 'A'..'F')+;
 
-terminal BINARY returns ecore::EInt: 
+terminal BINARY returns ecore::ELong: 
 	('0')('b' | 'B') ('0'|'1')+
 ;
 terminal DOUBLE returns ecore::EDouble:
-	(INT '.' INT) ('e' ('-' | '+') INT)? ('d' | 'D')?;
+	(LONG '.' LONG) ('e' ('-' | '+') LONG)? ('d' | 'D')?;
 
 terminal FLOAT returns ecore::EFloat:
-	(INT '.' INT) ('e' ('-' | '+') INT)? ('f' | 'F')?;
+	(LONG '.' LONG) ('e' ('-' | '+') LONG)? ('f' | 'F')?;
 
 QID:
 	ID ('.' ID)*;
+
+/*******************************************************************************
+ * BELOW THIS LINE
+ * 
+ * Copyright (c) 2008 itemis AG and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *******************************************************************************/
+
+terminal ID: '^'?('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+terminal LONG returns ecore::ELong: ('0'..'9')+;
+terminal STRING:
+			'"' ( '\\' . /* 'b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\' */ | !('\\'|'"') )* '"' |
+			"'" ( '\\' . /* 'b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\' */ | !('\\'|"'") )* "'"
+		;
+terminal ML_COMMENT : '/*' -> '*/';
+terminal SL_COMMENT : '//' !('\n'|'\r')* ('\r'? '\n')?;
+
+terminal WS         : (' '|'\t'|'\r'|'\n')+;
+
+terminal ANY_OTHER: .;
 

@@ -14,15 +14,16 @@ import java.util.List
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 
 class GenericsPrettyPrinter {
 
 	def concatTypeParameter(List<TypeParameter> parameter) {
-		return '''<«FOR param : parameter SEPARATOR ', '»«param.name»«IF param.bound != null» extends «(param.bound as Type).name»«ENDIF»«ENDFOR»>'''.toString
+		return '''<«FOR param : parameter SEPARATOR ', '»«param.name»«IF param.bound !== null» extends «(param.bound as Type).name»«ENDIF»«ENDFOR»>'''.toString
 	}
 
-	def concatTypeArguments(List<TypeSpecifier> parameter) {
+	def <T extends TypeSpecifier> concatTypeArguments(List<T> parameter) {
 		// TODO: type arguments can have multiple hierarches Type1<Type2<T>>
-		return '''<«FOR param : parameter SEPARATOR ', '»«param.type.name»«ENDFOR»>'''.toString
+		return '''<«FOR param : parameter.filter(PresentTypeSpecifier) SEPARATOR ', '»«param.type.name»«ENDFOR»>'''.toString
 	}
 }

@@ -14,16 +14,19 @@ package org.eclipse.mita.platform.xdk110.platform
  ********************************************************************************/
 
 import com.google.inject.Inject
+import java.util.HashSet
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Signal
+import org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SignalInstance
@@ -32,19 +35,10 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
-import org.eclipse.xtext.validation.ValidationMessageAcceptor
-import java.util.Set
-import java.util.HashSet
-import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.mita.program.validation.MethodCall
-import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
 import org.eclipse.mita.program.validation.MethodCall.MethodCallModality
-import org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator
-import org.eclipse.mita.program.EventHandlerDeclaration
-import org.eclipse.mita.program.TimeIntervalEvent
-import org.eclipse.mita.program.ProgramBlock
+import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
+import org.eclipse.xtext.validation.ValidationMessageAcceptor
 
 class Validation implements IResourceValidator {
 
@@ -60,21 +54,21 @@ class Validation implements IResourceValidator {
 		val sigInstOrModalityAccesses = (
 			functionCalls1.map[
 				val ArgumentExpression source = it;
-				val method = it.feature;
-				val owner = it.owner;
+				val method = it.reference;
+				val owner = it.arguments.head.value;
 				if(owner instanceof FeatureCall) {
-					val sigInst = owner.feature;
+					val sigInst = owner.reference;
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}
-					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE)
+					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
 				}
 				return null;
 			] + functionCalls2.map[
 				val ArgumentExpression source = it;
 				val method = it.reference;
 				if(method instanceof Operation) {
-					val sigInst = ModelUtils.getArgumentValue(method, it, "self");
+					val sigInst = ExpressionUtils.getArgumentValue(method, it, "self");
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}
@@ -211,7 +205,7 @@ class Validation implements IResourceValidator {
 		}
 		val specifiedLength = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "length"), []);
 		if(specifiedLength instanceof Integer) {
-			val argumentArray = ModelUtils.getArgumentValue(writeMethod, source, "value");
+			val argumentArray = ExpressionUtils.getArgumentValue(writeMethod, source, "value");
 			val arraySize = sizeInferrer.infer(argumentArray);
 			if(arraySize instanceof ValidElementSizeInferenceResult) {
 				val actualLength = arraySize.elementCount;

@@ -1,4 +1,5 @@
 Manifest-Version: 1.0
+Automatic-Module-Name: org.eclipse.mita.program.tests
 Bundle-ManifestVersion: 2
 Bundle-Name: Mita Program Language Tests
 Bundle-SymbolicName: org.eclipse.mita.program.tests

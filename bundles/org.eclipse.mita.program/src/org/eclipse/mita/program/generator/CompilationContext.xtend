@@ -19,9 +19,8 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.TypeParameter
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.program.EventHandlerDeclaration
@@ -35,6 +34,7 @@ import org.eclipse.mita.program.generator.internal.IResourceGraph
 import org.eclipse.mita.program.generator.internal.ResourceGraphBuilder
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.mita.base.types.TypesUtil
 
 class CompilationContext {
 	protected Iterable<Program> units;
@@ -58,9 +58,9 @@ class CompilationContext {
 	@Accessors
 	protected String mitaVersion = "0.2.0";
 	
-	private var Boolean isInited = false;
+	var Boolean isInited = false;
 
-	public def init(Iterable<Program> compilationUnits, Iterable<Program> stdLib) {
+	def init(Iterable<Program> compilationUnits, Iterable<Program> stdLib) {
 		if(isInited) {
 			throw new IllegalStateException("CompilationContext.init was called twice");
 		}
@@ -74,7 +74,7 @@ class CompilationContext {
 		systemResourceSetups = compilationUnits.map[it.setup].flatten.toSet();
 		
 		eventHandler = compilationUnits.map[x|x.eventHandlers].flatten.toList();
-		platform = modelUtils.getPlatform(compilationUnits.head);
+		platform = modelUtils.getPlatform(units.head.eResource.resourceSet, compilationUnits.head);
 	}
 	
 	private def assertInited() {
@@ -95,29 +95,33 @@ class CompilationContext {
 		this.resourceGraph = resourceGraph;
 	}
 	
-	public def Iterable<Program> getAllUnits() {
+	def Iterable<Program> getAllUnits() {
 		assertInited();
 		return units;
 	}
 
-	public def Iterable<SystemResourceSetup> getAllSystemResourceSetup() {
+	def Iterable<SystemResourceSetup> getAllSystemResourceSetup() {
 		assertInited();
 		return systemResourceSetups;
 	}
 	
-	public def SystemResourceSetup getSetupFor(AbstractSystemResource resource) {
+	def SystemResourceSetup getSetupFor(AbstractSystemResource resource) {
 		assertInited();
 		return allSystemResourceSetup.findFirst[ EcoreUtil.getID(it.type) == EcoreUtil.getID(resource) ];
 	}
 	
-	public def Iterable<EventHandlerDeclaration> getAllEventHandlers() {
+	def Iterable<EventHandlerDeclaration> getAllEventHandlers() {
 		assertInited();
 		return eventHandler;
 	}
 	
 	def hasTimeEvents() {
 		assertInited();
-		return units.exists[unit | unit.eventHandlers.exists[e| e.event instanceof TimeIntervalEvent ] ]
+		return units.exists[unit | 
+			unit.eventHandlers.exists[e| 
+				e.event instanceof TimeIntervalEvent
+			]
+		]
 	}
 	
 	def hasGlobalVariables() {
@@ -133,33 +137,22 @@ class CompilationContext {
 			program.eAllContents.filter(TryStatement).flatMap[x | x.catchStatements.map[it.exceptionType].iterator].toIterable
 		];
 		val platformExceptions = platform.eResource.allContents.filter(ExceptionTypeDeclaration).toIterable();
-		return (unitAndStdlibExceptions + platformExceptions).groupBy[it.name].entrySet.map[it.value.head];
+		return (unitAndStdlibExceptions + platformExceptions).filterNull.groupBy[it.name].entrySet.map[it.value.head];
 	}
 		
-	public def getAllGeneratedTypesUsed(ITypeSystemInferrer typeInferrer) {
+	def getAllGeneratedTypesUsed() {
 		assertInited();
 		return (units + stdlib).flatMap[program |
-			(   program.eAllContents.filter(TypeSpecifier) + 
-				program.eAllContents.filter(VariableDeclaration).map[
-					ModelUtils.toSpecifier(typeInferrer.infer(it))
-				]
-			).filterNull.filter[
-				it.type !== null && it.type instanceof GeneratedType && noUnboundTypeParameters(it)
-			].toIterable
-		].groupBy[ModelUtils.typeSpecifierIdentifier(it)].entrySet.map[it.value.head];
+			(program.eAllContents.filter(PresentTypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
+				it -> BaseUtils.getType(it)
+			].filter[
+				it.value?.freeVars?.empty && TypesUtil.isGeneratedType(program.eResource, it.value)
+			].map[it.value].toIterable
+		].groupBy[it.toString].entrySet.map[it.value.head];
 	}
 	
-	public def getResourceGraph() {
+	def getResourceGraph() {
 		assertInited();
 		return resourceGraph;
 	}
-	
-	private def Boolean noUnboundTypeParameters(TypeSpecifier specifier) {
-		assertInited();
-		if(specifier.type instanceof TypeParameter) {
-			return false;
-		}
-		return specifier.typeArguments.map[noUnboundTypeParameters].fold(true, [x, y | x && y]);
-	}
-
 }

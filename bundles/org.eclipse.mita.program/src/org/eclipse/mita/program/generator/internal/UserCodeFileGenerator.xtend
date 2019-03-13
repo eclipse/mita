@@ -20,6 +20,7 @@ import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NativeFunctionDefinition
@@ -32,7 +33,9 @@ import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.xtext.EcoreUtil2
-import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin;
+
+import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
+import org.eclipse.mita.program.model.ModelUtils
 
 class UserCodeFileGenerator { 
 	
@@ -107,11 +110,20 @@ class UserCodeFileGenerator {
 	
 	static def String getResourceBaseName(PackageAssociation program) {
 		val resource = program.origin.eResource;
-		return resource.URI.segments.last.replace('.' + resource.URI.fileExtension, '');
+		return resource.URI.segments.last.getResourceBaseName;
 	}
 	
+	static def String getResourceBaseName(String programFileName) {
+		// replace from last dot until end <-> remove file extension
+		return programFileName.replaceFirst('\\.[^\\.]+$', '');
+	}
+
 	static def String getResourceTypesName(PackageAssociation program) {
 		getResourceBaseName(program) + 'Types';
+	}	
+	
+	static def String getResourceTypesName(String programFileName) {
+		getResourceBaseName(programFileName) + 'Types';
 	}
 	
 	protected def getContextIncludes(CompilationContext context, Program program) {
@@ -142,7 +154,10 @@ class UserCodeFileGenerator {
 		«exceptionGenerator.exceptionType» «program.globalInitName»() {
 			«exceptionGenerator.exceptionType» exception = «exceptionGenerator.noExceptionStatement»;
 			
-			«FOR variable : program.globalVariables»
+			«FOR variable : program.globalVariables.filter[
+				val type = BaseUtils.getType(it);
+				return !ModelUtils.isStructuralType(type, it);
+			]»
 			«statementGenerator.initializationCode(variable)»
 			«generateExceptionHandler(null, "exception")»
 			

@@ -63,7 +63,7 @@ class UnravelFunctionCallsTest extends AbstractGeneratorTest {
 		package main;
 		import platforms.unittest;
 
-		fn alwaysTrueOuter(x : boolean) {
+		fn alwaysTrueOuter(x : bool) {
 			return true;
 		}
 		

@@ -13,26 +13,22 @@
 
 package org.eclipse.mita.program.generator.transformation
 
+import com.google.inject.Inject
+import java.util.LinkedList
+import java.util.List
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.internal.ProgramCopier
-import com.google.inject.Inject
-import java.util.LinkedList
-import java.util.List
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
 abstract class AbstractTransformationStage {
 	
 	@Inject 
 	protected extension ProgramCopier copier
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
 	
 	@Inject
 	protected ITypeSystem typeSystem
@@ -45,7 +41,7 @@ abstract class AbstractTransformationStage {
 	
 	protected ITransformationPipelineInfoProvider pipelineInfoProvider;
 	
-	private final List<(EObject)=>void> postTransformations = new LinkedList;
+	final List<(EObject)=>void> postTransformations = new LinkedList;
 	
 	public static final int ORDER_VERY_EARLY = 100;
 	public static final int ORDER_EARLY = 300;
@@ -132,11 +128,11 @@ abstract class AbstractTransformationStage {
 	/**
 	 * Replaces an object within its container.
 	 */
-	protected def void replaceWith(EObject target, EObject replacement) {
+	static public def void replaceWith(EObject target, EObject replacement) {
 		val container = target.eContainer;
 		if(container === null) return;
 		
-		replacement.linkOrigin(target);
+		ProgramCopier.linkOrigin(replacement, target);
 		if(target.eContainingFeature.isMany) {
 			val containerList = (container.eGet(target.eContainmentFeature) as List<EObject>);
 			val index = containerList.indexOf(target);

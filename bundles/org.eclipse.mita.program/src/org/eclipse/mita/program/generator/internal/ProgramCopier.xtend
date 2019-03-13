@@ -13,28 +13,26 @@
 
 package org.eclipse.mita.program.generator.internal
 
-import org.eclipse.mita.program.Program
-import org.eclipse.emf.common.notify.impl.AdapterImpl
+import com.google.inject.Inject
+import com.google.inject.Provider
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl
+import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.emf.ecore.util.EcoreUtil.Copier
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.CopySourceAdapter
+import org.eclipse.mita.program.Program
 import org.eclipse.xtext.resource.XtextResourceSet
 
 class ProgramCopier {
-
-	private static class CopySourceAdapter extends AdapterImpl {
-		private final EObject origin;
-		
-		new(EObject origin) {
-			this.origin = origin;
-		}
-		
-		def getOrigin() {
-			origin;
-		}
-	}
-
+	
+	@Inject
+	Provider<XtextResourceSet> resourceSetProvider;
+	
 	def copy(Program program) {
+		return copy(program, resourceSetProvider.get);
+	}
+	
+	def copy(Program program, ResourceSet set) {
 		val copier = new Copier();
 		val copy = copier.copy(program) as Program;
 		copier.copyReferences();
@@ -42,31 +40,25 @@ class ProgramCopier {
 			o, c | c.linkOrigin(o)
 		]
 		
-		createPseudoResource(program, copy)
+		createPseudoResource(set, program, copy)
 		
 		return copy;
 	}
 	
-	protected def createPseudoResource(Program original, Program copy) {
-		val set = new XtextResourceSet();
-		val res = set.createResource(original.eResource.URI);
+	protected def createPseudoResource(ResourceSet set, Program original, Program copy) {
+		val uri = original.eResource.URI;
+		val res = set.getResource(uri, false) ?: set.createResource(original.eResource.URI);
+		res.contents.clear();
 		res.contents.add(copy);
+		return res;
 	}
 	
-	def void linkOrigin(EObject copy, EObject origin) {
+	static def void linkOrigin(EObject copy, EObject origin) {
 		copy.eAdapters.add(new CopySourceAdapter(origin));
 	}
 	
 	static def EObject getOrigin(EObject obj) {
-		computeOrigin(obj);
+		BaseUtils.computeOrigin(obj);
 	}
 	
-	static def EObject computeOrigin(EObject obj) {
-		val adapter = obj.eAdapters.filter(CopySourceAdapter).head;
-		return if(adapter === null) {
-			obj;
-		} else {
-			computeOrigin(adapter.getOrigin());
-		}
-	}
 }
