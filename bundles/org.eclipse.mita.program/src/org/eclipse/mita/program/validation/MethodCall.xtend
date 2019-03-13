@@ -50,20 +50,20 @@ class MethodCall<T extends NamedElement> {
 			return super.equals(arg0)
 		}
 		
-		public static class MethodCallSigInst extends MethodCall<SignalInstance> {
+		static class MethodCallSigInst extends MethodCall<SignalInstance> {
 			private new(ArgumentExpression ae, Operation op, SignalInstance si, EStructuralFeature sf) {
 				super(ae, op, si, sf)
 			}
-			public def SignalInstance getSigInst() {
+			def SignalInstance getSigInst() {
 				return t;
 			}
 		}
 		
-		public static class MethodCallModality extends MethodCall<Modality> {
+		static class MethodCallModality extends MethodCall<Modality> {
 			private new(ArgumentExpression ae, Operation op, Modality t, EStructuralFeature sf) {
 				super(ae, op, t, sf)
 			}
-			public def Modality getModality() {
+			def Modality getModality() {
 				return t;
 			}
 		}

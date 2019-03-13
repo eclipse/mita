@@ -756,7 +756,7 @@ connectivity named-singleton WLAN {
     /**
      * Configure IP address and network via DHCP or static 
      */
-    configuration-item ipConfiguration : IpConfiguration = Dhcp()
+    configuration-item ipConfiguration : IpConfiguration = IpConfiguration.Dhcp()
 }
 
 exception MqttException;
@@ -805,9 +805,9 @@ connectivity many MQTT {
 	 */
 	required configuration-item clientId : string
 	
-	configuration-item lastWill: MqttWill = NoWill()
+	configuration-item lastWill: MqttWill = MqttWill.NoWill()
 	
-	configuration-item authentication: MqttAuthentication = None()
+	configuration-item authentication: MqttAuthentication = MqttAuthentication.None()
 	
 	/**
 	 * The clean session flag indicates to the broker whether the client wants

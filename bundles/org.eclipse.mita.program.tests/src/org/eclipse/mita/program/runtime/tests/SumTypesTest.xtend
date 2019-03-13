@@ -50,8 +50,8 @@ class SumTypesTest extends AbstractRuntimeTest {
 					is(anyVec.vec1d -> x) {
 					    b = anyVec.vec1d(x + 1);
 					} 
-					is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
-					    b = anyVec.vec2d(x = x + 1, y = y + 1);
+					is(anyVec.vec2d -> v) {
+					    b = anyVec.vec2d(vec2d_t(x = v.x + 1, y = v.y + 1));
 					}
 					is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
 					    b = anyVec.vec3d(x + 1, y + 1, z + 1);
@@ -71,8 +71,8 @@ class SumTypesTest extends AbstractRuntimeTest {
 					is(anyVec.vec1d -> x) {
 						return `v1d(${x})`;
 					} 
-					is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
-					    return `v2d(${x}, ${y})`;
+					is(anyVec.vec2d -> v) {
+					    return `v2d(${v.x}, ${v.y})`;
 					}
 					is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
 					    return `v3d(${x}, ${y}, ${z})`;
@@ -85,14 +85,14 @@ class SumTypesTest extends AbstractRuntimeTest {
 			
 			var w0 = anyVec.vec0d();
 			var w1 = anyVec.vec1d(11);
-			var w2 = anyVec.vec2d(12, 13);
+			var w2 = anyVec.vec2d(vec2d_t(12, 13));
 			var w3 = anyVec.vec3d(14, 15, 16);
 			var w4 = anyVec.vec4d(17, 18, 19, 20);
 			
 			every x86.startup {
 				var v0 = anyVec.vec0d();
 				var v1 = anyVec.vec1d(1);
-				var v2 = anyVec.vec2d(2, 3);
+				var v2 = anyVec.vec2d(vec2d_t(2, 3));
 				var v3 = anyVec.vec3d(4, 5, 6);
 				var v4 = anyVec.vec4d(7, 8, 9, 10);
 				println(v0.incVec().toString());

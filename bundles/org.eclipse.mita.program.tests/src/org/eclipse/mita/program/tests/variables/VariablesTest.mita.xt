@@ -10,10 +10,10 @@ import platforms.unittest;
 
 // Mutable variables are declared with the var keyword
 function variableMutabilityTest() : void {
-	var foo = 1;
+	var foo: uint8 = 1;
 	foo = 2;
 	
-	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int32 and bool." at "foo = true"
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and bool." at "foo = true"
 	foo = true;
 	
 	// Immutable variables are declared with the let keyword
@@ -38,16 +38,28 @@ fn printf(i:uint32) : void {}
 exception FooException;
 
 function typesAvailableInVarDec() : void {
-	// XPECT errors --> "Couldn't resolve reference to Type 'FooException'." at "FooException"
+	/* XPECT errors ---
+		"Couldn't resolve reference to Type 'FooException'." at "FooException"
+		"Couldn't resolve reference to Type 'FooException'." at "var withException : FooException;"
+	--- */
 	var withException : FooException;
 	
-	// XPECT errors --> "Couldn't resolve reference to Type 'MySensor'." at "MySensor"
+	/* XPECT errors ---
+		"Cannot determine size of element: Type has no size inferrer" at "withSensor"
+		"Cannot use Sensor as type here" at "MySensor"
+	--- */
 	var withSensor : MySensor;
 	
-	// XPECT errors --> "Couldn't resolve reference to Type 'MyConnectivity'." at "MyConnectivity"
+	/* XPECT errors ---
+		"Cannot determine size of element: Type has no size inferrer" at "withConnectivity"
+		"Cannot use Connectivity as type here" at "MyConnectivity"
+	--- */
 	var withConnectivity : MyConnectivity;
 	
-	// XPECT errors --> "Couldn't resolve reference to Type 'array.T'." at "array.T"
+	/* XPECT errors ---
+		"Cannot determine size of element: Unable to infer size from type A" at "withTypeParameter"
+		"Couldn't resolve reference to Type 'array.T'." at "array.T"
+	--- */
 	var withTypeParameter : array.T;
 }
 
@@ -63,10 +75,16 @@ function voidIsInvalidForVariableDeclarations() : void {
 function withParams(param : bool) {}
 
 function parameterScoping() {
-	// XPECT errors --> "Couldn't resolve reference to EObject 'param'." at "param"
+	/* XPECT errors ---
+		"Couldn't resolve reference to EObject 'param'." at "param"
+		"Couldn't resolve reference to EObject 'param'." at "var operationParamRef = param;"
+	--- */
 	var operationParamRef = param;
 	
-	// XPECT errors --> "Couldn't resolve reference to EObject 'p01'." at "p01"
+	/* XPECT errors ---
+		"Couldn't resolve reference to EObject 'p01'." at "p01"
+		"Couldn't resolve reference to EObject 'p01'." at "var vciParamRef = p01;"
+	--- */
 	var vciParamRef = p01;
 }
 

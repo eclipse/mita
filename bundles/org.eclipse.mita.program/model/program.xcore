@@ -16,15 +16,15 @@ package org.eclipse.mita.program
  
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.types.Event
-import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.types.Operation 
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Property
-import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.ConfigurationItem
 import org.eclipse.mita.platform.Modality
@@ -34,9 +34,11 @@ import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Exportable
 import org.eclipse.mita.base.types.GeneratedElement
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.SumAlternative 
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -44,7 +46,9 @@ class Program extends PackageAssociation {
 	contains VariableDeclaration[] globalVariables
 	contains Operation[] functionDefinitions
 	contains EventHandlerDeclaration[] eventHandlers
-	contains Type[] types
+	op String toString() {
+		return "PROGRAM " + name;
+	}
 }
 
 class SystemResourceSetup {
@@ -59,11 +63,22 @@ class SystemResourceSetup {
 	op Expression getConfigurationItemValueOrDefault(String name) {
 		getConfigurationItemValue(name)?:(^type?.configurationItems?.findFirst[it.name == name]?.defaultValue)
 	}
+	
+	op String toString() {
+		val typeName = BaseUtils.getText(this, ProgramPackage.eINSTANCE.systemResourceSetup_Type);
+		return 'setup ' + name + ': ' + typeName + ' {...}';
+	}
 }
 
 class ConfigurationItemValue {
 	refers ConfigurationItem item
 	contains Expression value
+	op String toString() {
+		val ref = eGet(ProgramPackage.eINSTANCE.configurationItemValue_Item, false)
+		var refText = ref?.toString()
+		refText = refText ?: BaseUtils.getText(this, ProgramPackage.eINSTANCE.configurationItemValue_Item)
+		return refText + " = " + value.toString();
+	}
 }
 
 /*
@@ -85,16 +100,31 @@ class SignalInstance extends VariableDeclaration {
 class EventHandlerDeclaration {
 	contains EventSource event
 	contains ProgramBlock block
+	
+	op String toString() {
+		return "every " + event.toString()
+	}
 }
 
 abstract class EventSource { }
 class TimeIntervalEvent extends EventSource {
 	contains IntLiteral interval
 	TimeUnit unit
+	op String toString() {
+		return interval.toString + " " + unit.toString
+	}
 }
 class SystemEventSource extends EventSource {
 	refers AbstractSystemResource origin
 	refers Event source
+	
+	op String toString() {
+		val ref = eGet(ProgramPackage.eINSTANCE.systemEventSource_Source, false);
+		var refText = ref?.toString();
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.systemEventSource_Source).head?.text;
+
+		return refText ?: "null";
+	}
 }
 
 enum TimeUnit {
@@ -104,7 +134,11 @@ enum TimeUnit {
 	Hour
 }
 
-abstract class ExportableOperation extends Operation, Exportable { }
+abstract class ExportableOperation extends Operation, Exportable {
+	op String toString() {
+		return super.toString();
+	}
+}
 
 class FunctionDefinition extends ExportableOperation {
 	contains ProgramBlock body
@@ -112,26 +146,42 @@ class FunctionDefinition extends ExportableOperation {
 	op String getId(){
 		return null;
 	}
+	op String toString() {
+		super.toString()
+	}
 }
 
 class GeneratedFunctionDefinition extends ExportableOperation, GeneratedElement {
 	op String getId(){
 		return null;
 	}
+	op String toString() {
+		return super.toString();
+	}
 }
 
 class NativeFunctionDefinition extends ExportableOperation, GeneratedElement {
 	String header
 	boolean checked
+	op String toString() {
+		super.toString()
+	}
 }
 
 class FunctionParameterDeclaration extends Parameter {
 	boolean ^static
 	contains Expression value
+	
+	op String toString() {
+		return (if(static) 'static ' else '') + super.toString();
+	}
 }
 
 class ProgramBlock {
 	contains AbstractStatement[] content
+	op String toString() {
+		return "PROGRAM_BLOCK {...}"
+	}
 }
 
 
@@ -142,6 +192,13 @@ class VariableDeclaration extends Property, AbstractStatement {
 	contains Expression initialization
 	op boolean isConst() {
 		return !writeable
+	}
+	
+	op String toString() {
+		return (if(this.writeable) 'var' else 'let') + ' ' 
+			+ name 
+			+ (if(typeSpecifier instanceof PresentTypeSpecifier) ': ' + typeSpecifier else '') 
+			+ (if(initialization !== null) ' = ' + initialization else '');
 	}
 }
 
@@ -186,11 +243,18 @@ class IfStatement extends ConditionalStatement {
 
 class ReturnStatement extends AbstractStatement {
 	contains Expression value
+	
+	op String toString() {
+		return 'return' + (if(value !== null) ' ...' else '');
+	}
 }
 
 class WhereIsStatement extends AbstractStatement {
 	contains Expression matchElement
 	contains IsCase[] isCases
+	op String toString() {
+		return "where(" + matchElement + ") { ...[" + isCases.length + "]... }"
+	}
 }
 
 abstract class IsCase extends AbstractStatement { 
@@ -199,10 +263,16 @@ abstract class IsCase extends AbstractStatement {
 
 class IsTypeMatchCase extends IsCase {
 	refers SumAlternative productType
+	op String toString() {
+		return NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isTypeMatchCase_ProductType).head?.text;
+	}
 }
 
 class IsAssignmentCase extends IsCase {
 	contains VariableDeclaration assignmentVariable
+	op String toString() {
+		return "is(" + assignmentVariable.name + ": " + assignmentVariable.typeSpecifier + ") { ... }" 
+	}
 }
 class IsDeconstructionCase extends IsCase {
 	refers SumAlternative productType
@@ -210,11 +280,20 @@ class IsDeconstructionCase extends IsCase {
 	op Boolean isAnonymous() {
 		return deconstructors.map[it.productMember === null].contains(true);
 	}
+	op String toString() {
+		val ref = eGet(ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType, false)
+		var refText = (ref as SumAlternative)?.name;
+		refText = refText ?: NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructionCase_ProductType).head?.text;
+		return "is(" + refText + " -> " + deconstructors.join(", ") + ") { ... }" 
+	}
 }
 
 class IsOtherCase extends IsCase { }
 class IsDeconstructor extends VariableDeclaration { 
 	refers Parameter productMember
+	op String toString() {
+		return super.toString + "(" + NodeModelUtils.findNodesForFeature(this, ProgramPackage.eINSTANCE.isDeconstructor_ProductMember).head?.text + ")";
+	}
 }
 
 class ThrowExceptionStatement extends AbstractStatement {
@@ -233,14 +312,12 @@ class CatchStatement extends AbstractStatement {
 }
 
 class NewInstanceExpression extends ElementReferenceExpression {
-	contains TypeSpecifier ^type
+	contains PresentTypeSpecifier ^type
 	
-	op EObject getReference() {
-		val t = ^type.^type
-		if (t instanceof GeneratedType) {
-			t.constructor
-		} else {
-			super.reference
+	op Operation getReference() {
+		val refType = ^type.^type;
+		if(refType instanceof GeneratedType) {
+			return refType.constructor;
 		}
 	}
 }
@@ -264,15 +341,6 @@ class ReferenceExpression extends Expression {
 	contains Expression variable
 } 
 
-class ArrayAccessExpression extends Expression {
-	contains Expression owner
-	contains Expression arraySelector
-}
-
-class ValueRange extends Expression {
-	contains Expression lowerBound
-	contains Expression upperBound
-}
 
 /**
  * Post-transformation classes

@@ -124,7 +124,7 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
     /**
      * Translates an arbitrary standby time in milliseconds to a fixed, supported value.
      */
-    public static def Pair<Integer, String> clipStandbyTime(int standbyTime) {
+    static def Pair<Integer, String> clipStandbyTime(int standbyTime) {
         val supportedValuesInMs = #[1, 10, 20, 63, 125, 250, 500, 1000];
         val nearestStandbyTime = supportedValuesInMs.minBy[x| Math.abs(x - standbyTime)];
         val constantName = '''ENVIRONMENTAL_BME280_STANDBY_TIME_«nearestStandbyTime»_MS''';

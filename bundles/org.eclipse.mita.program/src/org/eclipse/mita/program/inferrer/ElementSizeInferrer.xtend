@@ -18,66 +18,65 @@ import java.util.LinkedList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.types.AnonymousProductType
-import org.eclipse.mita.base.types.ComplexType
-import org.eclipse.mita.base.types.EnumerationType
-import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.NamedProductType
-import org.eclipse.mita.base.types.PrimitiveType
-import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
 
+import static org.eclipse.mita.base.types.TypesUtil.*
+import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
+import org.eclipse.mita.base.util.PreventRecursion
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
+
 /**
  * Hierarchically infers the size of a data element.
  */
 class ElementSizeInferrer {
-		
-	@Inject
-	protected ProgramDslTypeInferrer typeInferrer;
 
 	@Inject
 	protected PluginResourceLoader loader;
 
+	PreventRecursion preventRecursion = new PreventRecursion;
 
-	public def ElementSizeInferenceResult infer(EObject obj) {
-		return obj.doInfer;
+	def ElementSizeInferenceResult infer(EObject obj) {
+		return obj.doInfer(BaseUtils.getType(obj));
 	}
 	
 	private static class Combination extends ElementSizeInferrer {
-		private final ElementSizeInferrer i1;
-		private final ElementSizeInferrer i2;
+		final ElementSizeInferrer i1;
+		final ElementSizeInferrer i2;
 		new(ElementSizeInferrer i1, ElementSizeInferrer i2) {
 			super();
 			this.i1 = i1;
 			this.i2 = i2;
 		}
 		
-		public override def infer(EObject obj) {
+		override infer(EObject obj) {
 			i1.infer(obj).orElse([| i2.infer(obj)]);
 		}
 	}
 	
-	public static def ElementSizeInferrer orElse(ElementSizeInferrer i1, ElementSizeInferrer i2) {
+	static def ElementSizeInferrer orElse(ElementSizeInferrer i1, ElementSizeInferrer i2) {
 		if(i1 !== null && i2 !== null) {
 			return new Combination(i1, i2);
 		}
@@ -85,12 +84,18 @@ class ElementSizeInferrer {
 			return i1?:i2;
 		}
 	}
+	
+	protected def dispatch ElementSizeInferenceResult doInfer(CoercionExpression expr, AbstractType type) {
+		return expr.value.infer;
+	}
 
-	protected def dispatch ElementSizeInferenceResult doInfer(FunctionDefinition obj) {
-		return ModelUtils.preventRecursion(obj, [
-			val allReturnSizes = obj.eAllContents.filter(ReturnStatement).map[x | x.infer ].toList();
+	protected def dispatch ElementSizeInferenceResult doInfer(FunctionDefinition obj, AbstractType type) {
+		return PreventRecursion.preventRecursion(this.class.simpleName -> obj, [
+			val allReturnSizes = obj.eAllContents.filter(ReturnStatement).map[x | 
+				x.infer
+			].toList();
 			var result = if(allReturnSizes.empty) {
-				obj.inferFromType
+				obj.inferFromType(type)
 			} else if(allReturnSizes.size == 1) {
 				allReturnSizes.head;
 			} else {
@@ -111,20 +116,20 @@ class ElementSizeInferrer {
 		
 	}
 	
-	protected def dispatch ElementSizeInferenceResult doInfer(ArrayAccessExpression obj) {
-		val accessor = obj.arraySelector;
+	protected def dispatch ElementSizeInferenceResult doInfer(ArrayAccessExpression obj, AbstractType type) {
+		val accessor = obj.arraySelector.ignoreCoercions;
 		if(accessor instanceof ValueRange) {
 			val maxResult = obj.owner.infer;
 			if(maxResult instanceof ValidElementSizeInferenceResult) {
-				var elementCount = maxResult.elementCount;
+				var long elementCount = maxResult.elementCount;
 				
 				if(accessor.lowerBound !== null) {
 					val lowerBound = StaticValueInferrer.infer(accessor.lowerBound, [x|]);
-					elementCount -= (lowerBound as Integer)?:0;
+					elementCount -= (lowerBound as Long) ?: Long.valueOf(0);
 				}	
 				if(accessor.upperBound !== null) {
 					val upperBound = StaticValueInferrer.infer(accessor.upperBound, [x|]);
-					elementCount -= maxResult.elementCount - ((upperBound as Integer)?:0);
+					elementCount -= maxResult.elementCount - ((upperBound as Long) ?: Long.valueOf(0));
 				}
 				
 				val result = new ValidElementSizeInferenceResult(maxResult.root, maxResult.typeOf, elementCount);
@@ -134,19 +139,20 @@ class ElementSizeInferrer {
 			return maxResult;
 		}
 		else {
-			return obj.inferFromType
+			return obj.inferFromType(type)
 		}
 	}
 	
-	protected def dispatch ElementSizeInferenceResult doInfer(ElementReferenceExpression obj) {
-		val inferredSize = obj.inferFromType;
+	protected def dispatch ElementSizeInferenceResult doInfer(ElementReferenceExpression obj, AbstractType type) {
+		val inferredSize = obj.inferFromType(type);
 		if (inferredSize instanceof ValidElementSizeInferenceResult) {
 			return inferredSize;
 		}
-		return obj.reference.infer;
+		val result = obj.reference.infer;
+		return result.replaceRoot(obj);
 	}
 
-	protected def dispatch ElementSizeInferenceResult doInfer(ReturnStatement obj) {
+	protected def dispatch ElementSizeInferenceResult doInfer(ReturnStatement obj, AbstractType type) {
 		if(obj.value === null) {
 			return newInvalidResult(obj, "Return statements without values do not have a size");
 		} else {
@@ -154,12 +160,12 @@ class ElementSizeInferrer {
 		}
 	}
 	
-	protected def dispatch ElementSizeInferenceResult doInfer(NewInstanceExpression obj) {
-		return obj.inferFromType;
+	protected def dispatch ElementSizeInferenceResult doInfer(NewInstanceExpression obj, AbstractType type) {
+		return obj.inferFromType(type);
 	}
 	
-	protected def dispatch ElementSizeInferenceResult doInfer(VariableDeclaration variable) {
-		val typeSpec = ModelUtils.toSpecifier(typeInferrer.infer(variable));
+
+	protected def dispatch ElementSizeInferenceResult doInfer(VariableDeclaration variable, AbstractType type) {
 		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
 		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
 		val initialization = variable.initialization ?: (
@@ -174,50 +180,38 @@ class ElementSizeInferrer {
 				.head
 		)
 		if(initialization === null) {
-			variable.inferFromType(typeSpec);
+			variable.inferFromType(type);
 		} else {
 			return initialization.infer;
 		}
 	}
-	protected def dispatch ElementSizeInferenceResult doInfer(PrimitiveValueExpression obj) {
+	protected def dispatch ElementSizeInferenceResult doInfer(PrimitiveValueExpression obj, AbstractType type) {
 		return obj.value.infer;
 	}
 	
-	protected def dispatch ElementSizeInferenceResult doInfer(EObject obj) {
+	protected def dispatch ElementSizeInferenceResult doInfer(EObject obj, AbstractType type) {
 		// fallback: try and infer based on the type of the expression
-		return obj.inferFromType;
+		return obj.inferFromType(type);
+	}
+	
+	protected def dispatch ElementSizeInferenceResult doInfer(Object obj, AbstractType type) {
+		return newInvalidResult(null, "Unable to infer size from " + obj.class.simpleName);
 	}
 		
-	protected def dispatch ElementSizeInferenceResult doInfer(Void obj) {
+	protected def dispatch ElementSizeInferenceResult doInfer(Void obj, AbstractType type) {
 		return newInvalidResult(null, "Unable to infer size from nothing");
 	}
 	
-	protected def ElementSizeInferenceResult inferFromType(Void type) {
-		return newInvalidResult(null, "Unable to infer size from unknown type");
+	protected def ElementSizeInferenceResult inferFromType(EObject obj, AbstractType type) {
+		doInferFromType(obj, type);
 	}
 	
-	protected def ElementSizeInferenceResult inferFromType(EObject obj) {
-		var typeInf = typeInferrer.infer(obj);
-		val VariableDeclaration parentVarDecl = 
-		EcoreUtil2.getContainerOfType(obj, VariableDeclaration) ?:
-		ModelUtils.getUnderlyingVariableDeclaration(EcoreUtil2.getContainerOfType(obj, AssignmentExpression)?.varRef);
-		if(parentVarDecl !== null) {
-			typeInf = typeInferrer.replace(typeInf, parentVarDecl);
-		}
-		return obj.inferFromType(ModelUtils.toSpecifier(typeInf));
-	}
-		
-	protected def ElementSizeInferenceResult inferFromType(EObject obj, TypeSpecifier typeSpec) {
-		val type = typeSpec?.type;
-		return inferFromType(obj, typeSpec, type);	
-	}
-	protected def ElementSizeInferenceResult inferFromType(EObject obj, TypeSpecifier typeSpec, Type type) {
-		
+	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject obj, AbstractType type) {
 		// this expression has an immediate value (akin to the StaticValueInferrer)
-		if (type instanceof PrimitiveType || type instanceof ExceptionTypeDeclaration) {
+		if (ModelUtils.isPrimitiveType(type, obj) || type?.name == "Exception") {
 			// it's a primitive type
-			return new ValidElementSizeInferenceResult(obj, typeSpec, 1);
-		} else if (type instanceof GeneratedType) {
+			return new ValidElementSizeInferenceResult(obj, type, 1);
+		} else if (isGeneratedType(obj, type)) {
 			// it's a generated type, so we must load the inferrer
 			var ElementSizeInferrer inferrer = null;
 			
@@ -227,12 +221,9 @@ class ElementSizeInferrer {
 					obj.arguments.head.value; 
 				}
 			}
-			else if (obj instanceof FeatureCall) {
-				obj.owner;
-			}
 			if(instance !== null) {
-				if(instance instanceof FeatureCall) {
-					val resourceRef = instance.owner;
+				if(instance instanceof ElementReferenceExpression) {
+					val resourceRef = instance.arguments.head?.value;
 					if(resourceRef instanceof ElementReferenceExpression) {
 						var resourceSetup = resourceRef.reference;
 						var Object loadedInferrer = null;
@@ -258,7 +249,7 @@ class ElementSizeInferrer {
 				}
 			}
 			
-			val loadedTypeInferrer = loader.loadFromPlugin(type.eResource, type.sizeInferrer);
+			val loadedTypeInferrer = loader.loadFromPlugin(obj.eResource, TypesUtil.getConstraintSystem(obj.eResource).getUserData(type, BaseConstraintFactory.SIZE_INFERRER_KEY));
 			
 			if(loadedTypeInferrer instanceof ElementSizeInferrer) {			
 				inferrer = inferrer.orElse(loadedTypeInferrer);	
@@ -266,100 +257,65 @@ class ElementSizeInferrer {
 			
 			val finalInferrer = inferrer;
 			if (finalInferrer === null) {
-				return new InvalidElementSizeInferenceResult(obj, typeSpec, "Type has no size inferrer");
+				return new InvalidElementSizeInferenceResult(obj, type, "Type has no size inferrer");
 			} else {
 				
-				return ModelUtils.preventRecursion(obj, 
+				return PreventRecursion.preventRecursion(this.class.simpleName -> obj, 
 				[|
 					return finalInferrer.infer(obj);
 				], [|
-					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type»".''')
+					val renamer = new NicerTypeVariableNamesForErrorMessages();
+					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type.modifyNames(renamer)»".''')
 				])
 			}
-		} else if (type instanceof StructureType) {
-			// it's a struct, let's build our children, but mark the type first
-			return ModelUtils.preventRecursion(type, [
-				val result = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
-				result.children.addAll(type.parameters.map[x|x.infer]);
-				return result;
-			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
-			]);
-			
-		} else if (type instanceof SumType) {
-			return ModelUtils.preventRecursion(type, [
-				val childs = type.alternatives.map[it.infer];
-				val result = if(childs.filter(InvalidElementSizeInferenceResult).empty) {
-					 new ValidElementSizeInferenceResult(obj, typeSpec, 1);
-				} else {
-					new InvalidElementSizeInferenceResult(obj, typeSpec, '''Cannot infer size of ""«obj.class.simpleName»" of type"«type»".''');
-				}
-				
-				val maxChild = childs.filter(ValidElementSizeInferenceResult).maxBy[it.byteCount];
-				val invalidChilds = childs.filter(InvalidElementSizeInferenceResult);
-				
-				result.children.add(maxChild);
-				result.children += invalidChilds;
-					
-				return result;
-			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
-			]);
-			
-			
-			
-		} else if (type instanceof NamedProductType) {
-			// it's a struct, let's build our children, but mark the type first
-			return ModelUtils.preventRecursion(type, [
-				val childs = type.parameters.map[x|x.infer];
-				val result = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
-				result.children.addAll(childs);
-				
-				return result;
-			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
-			]);
-			
-			
-			
-		} else if (type instanceof AnonymousProductType) {
-			// it's a struct, let's build our children, but mark the type first
-			return ModelUtils.preventRecursion(type, [
-				val childs = type.typeSpecifiers.map[x|inferFromType(obj, x)];
-				val result = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
-				result.children.addAll(childs);
-				
-				return result;
-			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
-			]);
-			
-		}	else if (type instanceof ComplexType) {
-			// it's a struct, let's build our children, but mark the type first
-			return ModelUtils.preventRecursion(type, [
-				val result = new ValidElementSizeInferenceResult(obj, typeSpec, 1);
-				result.children.addAll(type.features.map[x|x.infer]);
-
-				return result;
-			], [|
-				return newInvalidResult(obj, '''Type "«type.name»" is recursive. Cannot infer size.''')
-			]);
-			
-			
-			
-		} else if (type === null) {
-			// if type is null we have different problems than size inference
-			return newValidResult(obj, 0)
 		}
-		return newInvalidResult(obj, "Unable to infer size from type " + type.name);
+		val renamer = new NicerTypeVariableNamesForErrorMessages;
+		return newInvalidResult(obj, "Unable to infer size from type " + type.modifyNames(renamer));
+	}
+	
+	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject context, Void type) {
+		return newInvalidResult(context, '''Unable to infer size from nothing''')
+	}
+	
+	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject context, ProdType type) {
+		// it's a struct, let's build our children, but mark the type first
+		return PreventRecursion.preventRecursion(this.class.simpleName -> type, [
+			val result = new ValidElementSizeInferenceResult(context, type, 1);
+			result.children.addAll(type.typeArguments.tail.map[x|
+				inferFromType(context, x)
+			]);
+			return result;
+		], [|
+			return newInvalidResult(context, '''Type "«type.name»" is recursive. Cannot infer size.''')
+		]);
+	}
+	
+	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject context, SumType type) {
+		return PreventRecursion.preventRecursion(this.class.simpleName -> type, [
+			val childs = type.typeArguments.tail.map[
+				doInferFromType(context, it)
+			];
+			val result = if(childs.filter(InvalidElementSizeInferenceResult).empty) {
+				 new ValidElementSizeInferenceResult(context, type, 1);
+			} else {
+				val renamer = new NicerTypeVariableNamesForErrorMessages();
+				new InvalidElementSizeInferenceResult(context, type, '''Cannot infer size of ""«context.class.simpleName»" of type"«type.modifyNames(renamer)»".''');
+			}
+							
+			result.children += childs;
+				
+			return result;
+		], [|
+			return newInvalidResult(context, '''Type "«type.name»" is recursive. Cannot infer size.''')
+		]);
 	}
 	
 	/**
 	 * Produces a valid size inference of the root object. This method assumes that the type
 	 * we're reporting a multiple of (size parameter) is the result of typeInferer.infer(root). 
 	 */
-	protected def newValidResult(EObject root, int size) {
-		val type = ModelUtils.toSpecifier(typeInferrer.infer(root));
+	protected def newValidResult(EObject root, long size) {
+		val type = BaseUtils.getType(root);
 		return new ValidElementSizeInferenceResult(root, type, size);
 	}
 	
@@ -368,7 +324,7 @@ class ElementSizeInferrer {
 	 * we're reporting a multiple of (size parameter) is the result of typeInferer.infer(root). 
 	 */
 	protected def newInvalidResult(EObject root, String message) {
-		val type = ModelUtils.toSpecifier(typeInferrer.infer(root));
+		val type = BaseUtils.getType(root);
 		return new InvalidElementSizeInferenceResult(root, type, message);
 	}
 	
@@ -378,9 +334,9 @@ class ElementSizeInferrer {
  * The inference result of the ElementSizeInferrer
  */
 abstract class ElementSizeInferenceResult {
-	private final EObject root;
-	private final TypeSpecifier typeOf;
-	private final List<ElementSizeInferenceResult> children;
+	val EObject root;
+	val AbstractType typeOf;
+	val List<ElementSizeInferenceResult> children;
 	
 	def ElementSizeInferenceResult orElse(ElementSizeInferenceResult esir){
 		return orElse([| esir]);
@@ -391,11 +347,13 @@ abstract class ElementSizeInferenceResult {
 	 * Creates a new valid inference result for an element, its type and the
 	 * required element count.
 	 */
-	protected new(EObject root, TypeSpecifier typeOf) {
+	protected new(EObject root, AbstractType typeOf) {
 		this.root = root;
 		this.typeOf = typeOf;
 		this.children = new LinkedList<ElementSizeInferenceResult>();
 	}
+	
+	abstract def ElementSizeInferenceResult replaceRoot(EObject root);
 	
 	/**
 	 * Checks if this size inference and its children are valid/complete.
@@ -434,7 +392,7 @@ abstract class ElementSizeInferenceResult {
 	/**
 	 * The data type we require elements of.
 	 */
-	def TypeSpecifier getTypeOf() {
+	def AbstractType getTypeOf() {
 		return typeOf;
 	}
 	
@@ -446,7 +404,11 @@ abstract class ElementSizeInferenceResult {
 	}
 		
 	override toString() {
-		var result = typeOf?.type?.name;
+		var result = if(typeOf instanceof PresentTypeSpecifier) {
+			typeOf.type.name;
+		} else {
+			""
+		}
 		result += ' {' + children.map[x | x.toString ].join(', ') + '}';
 		return result;
 	}
@@ -455,9 +417,9 @@ abstract class ElementSizeInferenceResult {
 
 class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 	
-	private final int elementCount;
+	val long elementCount;
 	
-	new(EObject root, TypeSpecifier typeOf, int elementCount) {
+	new(EObject root, AbstractType typeOf, long elementCount) {
 		super(root, typeOf);
 		this.elementCount = elementCount;
 	}
@@ -465,7 +427,7 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 	/**
 	 * The number of elements of this type we require.
 	 */
-	def int getElementCount() {
+	def long getElementCount() {
 		return elementCount;
 	}
 	
@@ -481,84 +443,24 @@ class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
 		}
 		return result;
 	}
-	
-	def public Integer getByteCount() {
-		val type = typeOf?.type;
-		val ownSize = (
-			if(type instanceof EnumerationType) {
-				// enums are uint16
-				elementCount * 2;
-			}
-			else if(type instanceof PrimitiveType) {
-				elementCount * switch (type.name) {
-					case "int64": {
-						4;
-					}
-					case "uint64": {
-						4;
-					}
-					case "int32": {
-						4;
-					}
-					case "uint32": {
-						4;
-					}
-					case "int16": {
-						2;
-					}
-					case "uint16": {
-						2;
-					}
-					case "int8": {
-						1;
-					}
-					case "uint8": {
-						1;
-					}
-					case "float": {
-						2;
-					}
-					case "double": {
-						4;
-					}
-					case "long double": {
-						8;
-					}
-					case "bool": {
-						1;
-					}
-					default: {
-						throw new Exception("Unknown type: " + type.name);
-					}
-				}
-			} 
-			else if(type instanceof StructureType) {
-				0;
-			}
-			else if(type instanceof SumType) {
-				1;
-			}
-			else {
-				0;
-			}
-		)
-		ownSize + elementCount * children
-			.filter[x | x instanceof ValidElementSizeInferenceResult]
-			.map[x | (x as ValidElementSizeInferenceResult).byteCount]
-			.fold(0, [x, y | x + y]);
-	}
-	
+		
 	override orElse(() => ElementSizeInferenceResult esirProvider) {
 		return this;
+	}
+	
+	override replaceRoot(EObject root) {
+		val result = new ValidElementSizeInferenceResult(root, this.typeOf, this.elementCount);
+		result.children += children;
+		return result;
 	}
 	
 }
 
 class InvalidElementSizeInferenceResult extends ElementSizeInferenceResult {
 	
-	private final String message;
+	val String message;
 	
-	new(EObject root, TypeSpecifier typeOf, String message) {
+	new(EObject root, AbstractType typeOf, String message) {
 		super(root, typeOf);
 		this.message = message;
 	}
@@ -584,6 +486,12 @@ class InvalidElementSizeInferenceResult extends ElementSizeInferenceResult {
 			esir = new InvalidElementSizeInferenceResult(esir.root, esir.typeOf, message + "\n" + esir.message);
 		}
 		return esir;
+	}
+	
+	override replaceRoot(EObject root) {
+		val result = new InvalidElementSizeInferenceResult(root, this.typeOf, this.message);
+		result.children += children;
+		return result;
 	}
 	
 }

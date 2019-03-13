@@ -14,45 +14,54 @@
 package org.eclipse.mita.program.validation
 
 import com.google.inject.Inject
-import java.util.List
+import java.util.HashSet
+import java.util.Set
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.expressions.inferrer.ExpressionsTypeInferrerMessages
-import org.eclipse.mita.base.types.AnonymousProductType
-import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.GenericElement
 import org.eclipse.mita.base.types.NamedElement
-import org.eclipse.mita.base.types.NamedProductType
-import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
-import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.TypeAccessor
+import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
-import org.eclipse.mita.base.types.validation.TypeValidator
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.PreventRecursion
+import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Modality
-import org.eclipse.mita.program.ArrayAccessExpression
+import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.DereferenceExpression
-import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.FunctionParameterDeclaration
 import org.eclipse.mita.program.GeneratedFunctionDefinition
-import org.eclipse.mita.program.IfStatement
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
@@ -60,18 +69,15 @@ import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.WhileStatement
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
-import org.eclipse.mita.program.scoping.ExtensionMethodHelper
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
@@ -150,48 +156,161 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	public static val String MUST_BE_USED_IMMEDIATELY_CODE = "must_be_used_immediately";
 	
 	public static val String SIGINST_MODALITY_CANT_BE_FUNC_PARAM_MSG = "Signal instances and modalities cannot be passed as parameters.";
-	
-	@Inject extension ExtensionMethodHelper
 
-	@Inject extension ProgramDslTypeInferrer inferrer
+	public static val String ERROR_ASSIGNMENT_TO_CONST_CODE = "AssignmentToConst";
+	public static val String ERROR_ASSIGNMENT_TO_CONST_MSG = "Assignment to constant not allowed.";
+
+	public static final String ERROR_LEFT_HAND_ASSIGNMENT_CODE = "LeftHandAssignment";
+	public static final String ERROR_LEFT_HAND_ASSIGNMENT_MSG = "The left-hand side of an assignment must be a variable.";
+
 	@Inject ITypeSystem typeSystem
-	@Inject TypeValidator validator
 	@Inject PluginResourceLoader loader
 	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
 		
+	def featureOrNull(EStructuralFeature ref, EObject object) {
+		if(object === null || ref === null || object.eClass.getEStructuralFeature(ref.getName()) !== ref) {
+			return null;
+		}
+		return ref;
+	}
+	@Check(CheckType.FAST)
+	def attachTypingIssues(Program program) {
+		val resource = program.eResource;
+		val solution = TypesUtil.getConstraintSolution(resource);
+		if(solution === null) {
+			return;
+		}
+		val issues = solution.issues
+			.map[MitaBaseResource.resolveProxy(program.eResource, it.target) -> it]
+			.filter[it.key !== null]
+			.groupBy[it.value.message->EcoreUtil.getURI(it.key)].values.map[it.head]
+			.filter[it.key.eResource == program.eResource];
+		issues.toSet.filter[it.value.severity == Severity.ERROR].forEach[
+			error(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
+		]
+		issues.toSet.filter[it.value.severity == Severity.WARNING].forEach[
+			warning(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
+		]
+		issues.toSet.filter[it.value.severity == Severity.INFO].forEach[
+			info(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
+		]
+	}
+	
 	@Check(CheckType.NORMAL)
-	def checkElementSizeInference(VariableDeclaration variable) {
-		if(EcoreUtil2.getContainerOfType(variable, SystemResourceSetup) !== null) return;
-		
-		val sizeInferenceResult = elementSizeInferrer.infer(variable);
-		val invalidElements = sizeInferenceResult.invalidSelfOrChildren;
-		for(invalidElement : invalidElements) {
-			if(invalidElement.typeOf !== null && invalidElement.typeOf.type.name == "array") {
-			}
-			else {
-				var invalidObj = if(invalidElement.root?.eResource == variable.eResource) {
-					invalidElement.root
-				} else {
-					variable
-				}
+	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {
+		val item = expr.owner;
+		val sizeInfRes = elementSizeInferrer.infer(item);
 				
-				error('Cannot determine size of element: ' + (invalidElement as InvalidElementSizeInferenceResult).message,
-					invalidObj,
-					invalidObj?.eClass?.EAllAttributes?.head)		
+		val staticVal = StaticValueInferrer.infer(expr.arraySelector, [x|]);
+		val isInferred = (sizeInfRes instanceof ValidElementSizeInferenceResult) && staticVal instanceof Long;
+		if(isInferred) {
+			val idx = staticVal as Long;
+			val len = (sizeInfRes as ValidElementSizeInferenceResult).elementCount;
+			if(idx < 0 || len <= idx) {
+				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ExpressionsPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
+			}
+		}
+	}
+	
+	@Check(CheckType.FAST) 
+	def void checkValidTypesForPresentTypeSpecifier(PresentTypeSpecifier ts) {
+		if(EcoreUtil2.getContainerOfType(ts, SystemResourceSetup) === null) {
+			val typeRef = TypesPackage.eINSTANCE.presentTypeSpecifier_Type;
+			val type = BaseUtils.getType(ts);
+			val eClassName = TypesUtil.getConstraintSystem(ts.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY);
+			if(#[ExceptionTypeDeclaration, Sensor, Connectivity].map[it.simpleName].contains(eClassName)) {
+				error('''Cannot use «eClassName» as type here''', ts, typeRef);
+			}
+			if(eClassName == TypeParameter.simpleName) {
+				var Iterable<AbstractType> typeParameterTypes = #[];
+				var EObject prev = ts;
+				var container = EcoreUtil2.getContainerOfType(ts, GenericElement);
+				while(container !== null && container !== prev) {
+					typeParameterTypes = typeParameterTypes + container.typeParameters.map[BaseUtils.getType(it)];
+					prev = container;
+					container = EcoreUtil2.getContainerOfType(ts, GenericElement);
+				}
+				if(!typeParameterTypes.exists[it == type]) {
+					error('''Couldn't resolve reference to Type '«BaseUtils.getText(ts, typeRef)»'.''', ts, typeRef);
+				} 	
+			}
+			// otherwise we didn't get a type for this
+			else if(type instanceof TypeVariable) {
+				val resolvedReference = ts.eGet(TypesPackage.eINSTANCE.presentTypeSpecifier_Type, false);
+				if(resolvedReference instanceof EObject) {
+					val genericElement = EcoreUtil2.getContainerOfType(resolvedReference, GenericElement);
+					if(genericElement !== null) {
+						if(EcoreUtil2.isAncestor(genericElement, ts)) {
+							// ts refers a type variable declared in a parent.
+							return;
+						}
+					}
+				}
+				error('''Couldn't resolve reference to Type '«BaseUtils.getText(ts, typeRef)»'.''', ts, typeRef);
+			}
+		}
+	}
+	
+	@Check(CheckType.FAST) 
+	def void checkAssignmentToFinalVariable(AssignmentExpression exp) {
+		val Expression varRef = exp.getVarRef()
+		val EObject referencedObject = if (varRef instanceof ElementReferenceExpression) {
+			varRef.reference
+		}
+		if (referencedObject instanceof Property) {
+			if (referencedObject.isConst()) {
+				error(ERROR_ASSIGNMENT_TO_CONST_MSG, ExpressionsPackage.Literals.ASSIGNMENT_EXPRESSION__VAR_REF,
+					ERROR_ASSIGNMENT_TO_CONST_CODE)
 			}
 		}
 	}
 	
 	@Check(CheckType.NORMAL)
-	def checkSiginstOrModalityIsUsedImediately(FeatureCall featureCall) {
-		val isSiginst = featureCall.feature instanceof SignalInstance;
-		val isModality = featureCall.feature instanceof Modality;
+	def checkFunctionsReturnSomething(FunctionDefinition funDef) {
+		val returnType = BaseUtils.getType(funDef.typeSpecifier);
+		if(returnType !== null && returnType.name != "void") {
+			if(funDef.eAllContents.filter(ReturnStatement).empty) {
+				error(String.format(MISSING_RETURN_VALUE_MSG, returnType), funDef, TypesPackage.eINSTANCE.namedElement_Name, MISSING_RETURN_VALUE_CODE);
+			}
+		}
+	}
+	
+	@Check(CheckType.NORMAL)
+	def checkElementSizeInference(VariableDeclaration variable) {[|
+		if(EcoreUtil2.getContainerOfType(variable, SystemResourceSetup) !== null) return;
+		
+		val sizeInferenceResult = elementSizeInferrer.infer(variable);
+		val invalidElements = sizeInferenceResult.invalidSelfOrChildren;
+		for(invalidElement : invalidElements) {
+			if(invalidElement.typeOf instanceof PresentTypeSpecifier && (invalidElement.typeOf as PresentTypeSpecifier).type.name == "array") {
+			}
+			else {
+				val invalidObj = if(invalidElement.root?.eResource == variable.eResource) {
+					invalidElement.root
+				} else {
+					variable
+				}
+				
+				val invalidRef = if(invalidObj instanceof VariableDeclaration) {
+					TypesPackage.eINSTANCE.namedElement_Name
+				}
+				
+				error('Cannot determine size of element: ' + (invalidElement as InvalidElementSizeInferenceResult).message,
+					invalidObj, invalidRef)		
+			}
+		}
+	].apply()}
+	
+	@Check(CheckType.NORMAL)
+	def checkSiginstOrModalityIsUsedImediately(ElementReferenceExpression featureCall) {[|
+		val isSiginst = featureCall.reference instanceof SignalInstance;
+		val isModality = featureCall.reference instanceof Modality;
 		if(!(isSiginst || isModality)) return;
 
 		val container = featureCall.eContainer;
-		if (container instanceof FeatureCall) {
-			if (container.feature instanceof GeneratedFunctionDefinition) {
+		if (container instanceof ElementReferenceExpression) {
+			if (container.reference instanceof GeneratedFunctionDefinition) {
 				return
 			}
 		} else if (container instanceof Argument) {
@@ -203,15 +322,15 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			}
 		}
 
-		val featureName = (featureCall.feature as NamedElement).name;
+		val featureName = (featureCall.reference as NamedElement).name;
 		val msg = if (isModality) {
 				String.format(MUST_BE_USED_IMMEDIATELY_MSG, "Modalities", '''Add .read() after «featureName»''')
 			} else {
 				String.format(MUST_BE_USED_IMMEDIATELY_MSG,
 					"Signal instances", '''Add .read() or .write() after «featureName»''')
 			}
-		error(msg, featureCall, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE, MUST_BE_USED_IMMEDIATELY_CODE);
-	}
+		error(msg, featureCall, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE, MUST_BE_USED_IMMEDIATELY_CODE);
+	].apply()}
 
 	@Check(CheckType.NORMAL)
 	def checkSetup_platformValidator(SystemResourceSetup setup) {
@@ -224,32 +343,15 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Check(CheckType.NORMAL)
 	def checkProgram_platformValidator(Program program) {
-		val platform = modelUtils.getPlatform(program);
-		if (platform === null) {
-			//TODO: 
-//			error(String.format(NO_PLATFORM_SELECTED_MSG, LibraryExtensions.descriptors.filter[optional].map[id].join(", ")), program, ProgramPackage.eINSTANCE.program_EventHandlers,
-//				NO_PLATFORM_SELECTED_CODE);
+		val platform = modelUtils.getPlatform(program.eResource.resourceSet, program);
+		if (platform === null) { 
+			error(String.format(NO_PLATFORM_SELECTED_MSG, LibraryExtensions.descriptors.filter[optional].map[id].join(", ")), program, ProgramPackage.eINSTANCE.program_EventHandlers,
+				NO_PLATFORM_SELECTED_CODE);
 		} else {
 			runLibraryValidator(program, platform, platform.eResource, platform.validator);
 		}
 	}
 	
-	@Check(CheckType.NORMAL)
-	def checkVariableDeclaration_hasValidType(VariableDeclaration variable) {
-		val explicitType = variable.typeSpecifier;
-		if(explicitType === null) return;
-		
-		val initialization = variable.initialization;
-		if(initialization === null) return;
-		
-		val explicitTypeInfered = inferrer.infer(explicitType);
-		val initializationTypeInfered = inferrer.infer(initialization);
-		validator.assertAssignable(explicitTypeInfered, initializationTypeInfered, 
-			String.format(ExpressionsTypeInferrerMessages.ASSIGNMENT_OPERATOR, AssignmentOperator.ASSIGN, explicitTypeInfered?.type, initializationTypeInfered?.type), 
-			this);
-	}
-
-
 	@Check(CheckType.FAST)
 	def checkVariableDeclaration_isUniqueInProgramBlock(VariableDeclaration variable) {
 		val parentBlock = EcoreUtil2.getContainerOfType(variable, ProgramBlock);
@@ -267,7 +369,14 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		if (validatorClassName !== null) {
 			try {
 				val validator = loader.loadFromPlugin(validatorOrigin, validatorClassName) as IResourceValidator;
-				validator.validate(program, context, this);
+				if(validator !== null) {
+					if(validatorOrigin instanceof MitaBaseResource)	{
+						if(validatorOrigin.latestSolution === null) {
+							validatorOrigin.collectAndSolveTypes(validatorOrigin.contents.head);
+						}
+					}				
+					validator.validate(program, context, this);
+				}
 			} catch (Exception e) {
 				// TODO: add this to the error log
 				e.printStackTrace();
@@ -276,23 +385,13 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	}
 
 	@Check(CheckType.FAST)
-	override checkOperationArguments_FeatureCall(FeatureCall call) {
-		val feature = call.feature
-		if (feature instanceof Operation) {
-			if(!call.isOperationCall) {
-				error(FUNCTIONS_CAN_NOT_BE_REFERENCED_MSG, call, ExpressionsPackage.eINSTANCE.featureCall_Feature, FUNCTIONS_CAN_NOT_BE_REFERENCED_CODE);
-			}
-			
-			if (call.owner !== null && feature.isExtensionMethodOn(inferrer.infer(call.owner, this)?.type)) {
-				assertOperationArguments(feature, combine(call.owner, call.expressions));
-			} else {
-				assertOperationArguments(feature, call.expressions);
-			}
+	def checkMixedNamedParameters(ArgumentExpression expr) {
+		val arguments = if(expr instanceof FeatureCall && !(expr instanceof FeatureCallWithoutFeature)) {
+			expr.arguments.tail;
 		}
-	}
-
-	@Check(CheckType.FAST)
-	def checkMixedNamedParameters(ArgumentExpression it) {
+		else {
+			expr.arguments;
+		}
 		if (!(arguments.forall[argument|argument.parameter !== null] || arguments.forall [ argument |
 			argument.parameter === null
 		])) {
@@ -309,13 +408,6 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 	}
 
-	override assertOperationArguments(Operation op, List<Expression> args) {
-		val parameters = op.parameters
-		if (args.size() < parameters.filter[!optional].size || args.size > parameters.size) {
-			error(String.format(WRONG_NR_OF_ARGS_MSG, parameters.map[type]), null, WRONG_NR_OF_ARGS_CODE);
-		}
-	}
-
 	@Check(CheckType.NORMAL)
 	def checkNoReturnValueForVoidOperation(FunctionDefinition op) {
 		if(typeSystem.isSame(op.getType(), typeSystem.getType(VOID))) {
@@ -327,7 +419,9 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Check(CheckType.FAST)
 	def checkNoModalityOrSiginstParameters(FunctionDefinition op) {
-		val hasModalityOrSiginstParam = op.parameters.findFirst[ it.type.name == 'modality' || it.type.name == 'siginst' ]
+		val hasModalityOrSiginstParam = op.parameters.findFirst[ 
+			it.type?.name == 'modality' || it.type?.name == 'siginst'
+		]
 		if(hasModalityOrSiginstParam !== null) {
 			error(SIGINST_MODALITY_CANT_BE_FUNC_PARAM_MSG, hasModalityOrSiginstParam, TypesPackage.Literals.TYPED_ELEMENT__TYPE_SPECIFIER);
 		}
@@ -339,38 +433,12 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			.filter[x | x.value !== null ]
 			.forEach [ error(VOID_OP_CANNOT_RETURN_VALUE_MSG, it, null) ];
 	}
-
-	@Check(CheckType.NORMAL)
-	def checkReturnStatementsAreCompatibleToReturnType(FunctionDefinition op) {
-		val operationType = inferrer.infer(op, this);
-		if (typeSystem.isSuperType(operationType.getType(), typeSystem.getType(VOID))) {
-			return;
-		}
-		if (op.body.content.isEmpty()) {
-			error(String.format(MISSING_RETURN_VALUE_MSG, operationType), op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
-			return;
-		}
-
-		val returnStatements = EcoreUtil2.getAllContentsOfType(op.getBody(), ReturnStatement);
-		for (ReturnStatement rs : returnStatements) {
-			val rsType = inferrer.infer(rs, this);
-			if(rsType === null) {
-				error(String.format(INCOMPATIBLE_RETURN_TYPE_MSG, 'void', operationType), rs, ProgramPackage.eINSTANCE.returnStatement_Value);
-			} else {
-				validator.assertAssignable(operationType, rsType,
-					String.format(INCOMPATIBLE_RETURN_TYPE_MSG, rsType, operationType), [issue | 
-						error(issue.getMessage, rs, ProgramPackage.eINSTANCE.returnStatement_Value)
-					])				
-			}
-			
-		}
-	}
 	
 	// Forbid returning structs/generics etc. (allow void, primitive) (via validator), until implemented.
 	@Check(CheckType.NORMAL)
-	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {
-		val operationType = ModelUtils.toSpecifier(inferrer.infer(op, this));
-		if(!(op instanceof GeneratedFunctionDefinition) && typeSystem.isSame(operationType?.type, typeSystem.getType(VOID)) || ModelUtils.isPrimitiveType(operationType)) {
+	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {[|
+		val operationType = BaseUtils.getType(op.typeSpecifier); 
+		if(!(op instanceof GeneratedFunctionDefinition) && (op instanceof AtomicType && op.name == "void") || ModelUtils.isPrimitiveType(operationType, op)) {
 			return;
 		}
 		
@@ -382,110 +450,16 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			return;
 		}
 		warning(FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
-	}
-
-	@Check(CheckType.NORMAL)
-	def checkIfCondition(IfStatement it) {
-		assertIsBoolean(condition)
-	}
-
-	@Check(CheckType.NORMAL)
-	def checkWhileStatement(WhileStatement it) {
-		assertIsBoolean(condition)
-	}
-
-	@Check(CheckType.NORMAL)
-	def checkDoWhileCondition(DoWhileStatement it) {
-		assertIsBoolean(condition)
-	}
+	].apply()}
 	
 	@Check(CheckType.NORMAL)
-	def checkVariableDeclaration(VariableDeclaration it){
-		var result1 = inferrer.infer(it)
-		var result2 = inferrer.infer(typeSystem.getType(ITypeSystem.VOID))
-		if(result1.type.equals(result2.type)) {
-			error(VOID_VARIABLE_TYPE, it, null);
+	def checkVariableDeclaration(VariableDeclaration varDecl){
+		val varType = BaseUtils.getType(varDecl);
+		if(varType?.name == "void") {
+			error(VOID_VARIABLE_TYPE, varDecl, null);
 		}
-	}
-	
-	def protected assertIsBoolean(Expression exp) {
-		var result1 = inferrer.infer(exp)
-		var result2 = inferrer.infer(typeSystem.getType(ProgramDslTypeInferrer.BOOL_LITERAL_TYPE))
-		validator.assertCompatible(result1, result2, null, [issue | error(issue.getMessage, exp, null)])
-
 	}
 		
-	def protected assertIsInteger(Expression exp, String outerMessage) {
-		var result1 = inferrer.infer(exp)
-		var result2 = inferrer.infer(typeSystem.getType(ITypeSystem.INTEGER))
-		validator.assertCompatible(result1, result2, null, [issue | error(String.format(outerMessage?:"%s", issue.getMessage), exp, null)])
-	}
-	
-	@Check(CheckType.NORMAL)
-	def checkStructLiteralsHaveCorrectNumberOfArgumentsAndTheirTypesMatch(ElementReferenceExpression exp) {
-		val ref = exp.reference;
-		if(ref instanceof StructureType) {
-			if(exp.isOperationCall) {
-				if(ref.parameters.length != exp.arguments.length) {
-					error(String.format(ERROR_WRONG_NUMBER_OF_ARGUMENTS_MSG, ref.parameters.map[it.type].toString), exp, null);
-					return;
-				}
-				
-				val parmsToArgs = ModelUtils.getSortedArgumentsAsMap(ref.parameters, exp.arguments);				
-				parmsToArgs.entrySet.forEach[parm_arg | 
-					val sField = parm_arg.key;
-					val sArg = parm_arg.value.value;
-					val t1 = inferrer.infer(sField, this);
-					val t2 = inferrer.infer(sArg, this);
-					validator.assertAssignable(t1, t2,
-						
-					// message says t2 can't be assigned to t1, --> invert in format
-					String.format(INCOMPATIBLE_TYPES_MSG, t2, t1), [issue | error(issue.getMessage, sArg, null)])
-				]
-			}
-		}
-	}
-	
-
-	// allow assignment on struct members, derefs, array index
-	override checkLeftHandAssignment(AssignmentExpression expression) {
-		val varRef = expression.varRef;
-		var EObject innerExpr = varRef;
-		var nested = true;
-		while(nested) {
-			if(innerExpr instanceof FeatureCall) {
-				if(!innerExpr.operationCall) {
-					innerExpr = innerExpr.feature;	
-				}
-				else {
-					nested = false;
-				}
-			}
-			else if(innerExpr instanceof ElementReferenceExpression) {
-				innerExpr = innerExpr.reference;
-			}
-			else if(innerExpr instanceof DereferenceExpression) {
-				innerExpr = innerExpr.innerReference;
-			}
-			else if(innerExpr instanceof ArrayAccessExpression) {
-				// we can't assign on slices, so we don't unnest here
-				if(innerExpr.arraySelector instanceof ValueRange) {
-					nested = false;
-				}
-				else {
-					innerExpr = innerExpr.owner;	
-				}
-			}
-			else {
-				nested = false;
-			}
-		}
-		if(innerExpr instanceof VariableDeclaration || innerExpr instanceof FunctionParameterDeclaration || innerExpr instanceof Parameter || innerExpr instanceof Property) {
-			return;
-		}
-		
-		super.checkLeftHandAssignment(expression);
-	}
 	
 	@Check(CheckType.FAST)
 	def checkOptionalParametersInFunctionDeclarations(FunctionParameterDeclaration parameter) {
@@ -499,98 +473,78 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		if(lit.values.empty) {
 			error(ARRAY_LITERALS_CANT_BE_EMPTY, lit, null);
 		}
-		else {
-			// only do this check if lit has values
-			arrayLiteralsMustBeHomogenous(lit);
-		}
 	}
-	
-	def arrayLiteralsMustBeHomogenous(ArrayLiteral lit) {
-		val typesInArray = lit.values.map[ModelUtils.toSpecifier(inferrer.infer(it, this))];
-		val typesInArrayGrouped = typesInArray.groupBy[ModelUtils.typeSpecifierIdentifier(it)]
-		if(typesInArrayGrouped.size > 1) {
-			error(ARRAY_LITERAL_IS_NOT_HOMOGENOUS, lit, null);
-		}
-		else {
-			if(lit.eAllContents.toIterable.filter(ArrayLiteral).empty === false) {
-				error(NESTED_ARRAY_LITERALS_NOT_SUPPORTED, lit, null);
-			}
-			
-		}
-	}
-	
+		
 	@Check(CheckType.NORMAL)
 	def checkTypesAreNotNestedGeneratedTypes(VariableDeclaration declaration) {
 		if(EcoreUtil2.getContainerOfType(declaration, SystemResourceSetup) !== null) return;
-		checkTypesAreNotNestedGeneratedTypes(declaration, declaration.infer);
+		checkTypesAreNotNestedGeneratedTypes(declaration, BaseUtils.getType(declaration));
+	}
+	@Check(CheckType.NORMAL)
+	def checkParametersAreAssignedOnlyOnce(ElementReferenceExpression functionCall) {
+		if(functionCall.isOperationCall) {
+			val arguments = functionCall.arguments;
+			val Set<String> usedParams = new HashSet();
+			arguments.filter[it.parameter !== null].forEach[
+				if(usedParams.contains(it.parameter.name)) {
+					error("Duplicate assignment to parameter " + it.parameter.name + ".", it, null, 0);
+				}
+				else {
+					usedParams.add(it.parameter.name);
+				}
+			]
+		}
 	}
 	
 	@Check(CheckType.NORMAL)
 	def checkTypesAreNotNestedGeneratedTypes(FunctionDefinition fd) {
-		val infType = fd.infer;
+		val infType = BaseUtils.getType(fd);
 		checkTypesAreNotNestedGeneratedTypes(fd, infType);
 	}
 	
 	@Check(CheckType.NORMAL)
 	def checkTypesAreNotNestedGeneratedTypes(TypeSpecifier ts) {
-		val infType = ts.infer;
+		val infType = BaseUtils.getType(ts);
 		checkTypesAreNotNestedGeneratedTypes(ts, infType);
 	}
 	
-	protected def checkTypesAreNotNestedGeneratedTypes(EObject obj, InferenceResult ir) {
+	protected def checkTypesAreNotNestedGeneratedTypes(EObject obj, AbstractType ir) {
 		checkTypesAreNotNestedGeneratedTypes(obj, ir, false, false);
 	}
 	
-	protected def void checkTypesAreNotNestedGeneratedTypes(EObject obj, InferenceResult ir, Boolean hasGeneratedType, Boolean containsReferenceTypes) {
-		if(ir === null) {
+	protected def void checkTypesAreNotNestedGeneratedTypes(EObject obj, AbstractType type, Boolean hasGeneratedType, Boolean containsReferenceTypes) {
+		if(type === null) {
 			return;
 		}
 		var hasGeneratedTypeNext = hasGeneratedType;
 		var containsReferenceTypesNext = containsReferenceTypes;
-		val type = ir.type;
-		val subTypes = if(type instanceof GeneratedType) {
-			if(type.name == "reference") {
-				if(hasGeneratedTypeNext) {
+
+		val subTypes = if(type instanceof TypeConstructorType) {
+			if(TypesUtil.isGeneratedType(obj, type)) {
+				if(type.name == "reference") {
+					if(hasGeneratedTypeNext) {
+						error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
+						return;
+					}
+					else {
+						containsReferenceTypesNext = true;
+					}
+				}
+				else if(hasGeneratedTypeNext || containsReferenceTypesNext) {
 					error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
 					return;
 				}
 				else {
-					containsReferenceTypesNext = true;
+					// we support nested references, but no other generated nested types. 
+					// if references are nested, no other generated types must be part of the type,
+					// since references don't recurse properly at codegen
+					hasGeneratedTypeNext = true;
 				}
 			}
-			else if(hasGeneratedTypeNext || containsReferenceTypesNext) {
-				error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
-				return;
-			}
-			else {
-				// we support nested references, but no other generated nested types. 
-				// if references are nested, no other generated types must be part of the type,
-				// since references don't recurse properly at codegen
-				hasGeneratedTypeNext = true;
-			}
-			
-			ir.bindings;
-		}
-		else if(type instanceof ComplexType) {
-			if(type instanceof StructureType) {
-				type.parameters.map[it.typeSpecifier.infer];
-			}
-			else if(type instanceof SumType) {
-				type.alternatives.flatMap[alt | 
-					if(alt instanceof NamedProductType) {
-						alt.parameters.map[it.typeSpecifier.infer]	
-					}
-					else if(alt instanceof AnonymousProductType) {
-						alt.typeSpecifiers.map[infer]
-					}
-					else {
-						#[]
-					}
-				]
-			}
+			type.typeArguments.tail;
 		}
 		else {
-			newArrayList
+			#[];
 		}
 		
 		// We don't have nested types so there is nothing to check.
@@ -599,7 +553,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val hasGeneratedTypeNextFinal = hasGeneratedTypeNext;
 		val containsReferenceTypesNextFinal = containsReferenceTypesNext;	
 		subTypes.filterNull.forEach[
-			ModelUtils.preventRecursion(it.type, [| 
+			PreventRecursion.preventRecursion(it, [| 
 				checkTypesAreNotNestedGeneratedTypes(obj, it, hasGeneratedTypeNextFinal, containsReferenceTypesNextFinal);
 				return null;
 			]);
@@ -615,99 +569,81 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			error(ARRAY_SLICES_ARE_NOT_SUPPORTED_TOP_LEVEL, lit, null);
 		}
 	}
-	
-	@Check(CheckType.NORMAL)
-	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {
-		val item = expr.owner;
-		val sizeInfRes = elementSizeInferrer.infer(item);
 		
-		if(!(expr.arraySelector instanceof ValueRange)) {
-			expr.arraySelector?.assertIsInteger(ARRAY_INDEX_MUST_BE_INTEGER);
-		}	
-		
-		val staticVal = StaticValueInferrer.infer(expr.arraySelector, [x|]);
-		val isInferred = (sizeInfRes instanceof ValidElementSizeInferenceResult) && staticVal instanceof Integer;
-		if(isInferred) {
-			val idx = staticVal as Integer;
-			val len = (sizeInfRes as ValidElementSizeInferenceResult).elementCount;
-			if(idx < 0 || len <= idx) {
-				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ProgramPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
-			}
-		}
-	}
-	
 	@Check(CheckType.NORMAL)
 	def arrayRangeChecks(ValueRange range) {
 		val errorFun1 = [String s | error(s, range, null)];
 		val errorFun2 = [String s | error(String.format(ARRAY_RANGE_INVALID, s), range, null)];
-		val expr = (range.eContainer as ArrayAccessExpression).owner;
-		val typ = inferrer.infer(expr, this);
-		if(typ.type.name != "array") {
-			errorFun1.apply(ARRAY_RANGE_ONLY_ON_ARRAY);
-		}
+		val expr = EcoreUtil2.getContainerOfType(range, ArrayAccessExpression).owner;
 		
-		range.lowerBound?.assertIsInteger(ARRAY_RANGE_INVALID)
-		range.upperBound?.assertIsInteger(ARRAY_RANGE_INVALID)
-
 		val lengthOfArrayIR = elementSizeInferrer.infer(expr);
 		val lengthOfArray = if(lengthOfArrayIR instanceof ValidElementSizeInferenceResult) {
 			lengthOfArrayIR.elementCount;
 		}
-		val lowerBound = StaticValueInferrer.infer(range.lowerBound, [x|])?:0
+		val lowerBound = StaticValueInferrer.infer(range.lowerBound, [x|])?:0L
 		val upperBound = StaticValueInferrer.infer(range.upperBound, [x|])?:lengthOfArray
-		
-		if((lowerBound as Integer) < 0) {
+				
+		if((lowerBound as Long) < 0) {
 			errorFun2.apply("Lower bound must be positive or zero");
 		}
 		
 		if(upperBound !== null) {
 			val size = elementSizeInferrer.infer(expr);
 			if(size.valid) {
-				if((upperBound as Integer) > (size as ValidElementSizeInferenceResult).elementCount) {
+				if((upperBound as Long) > (size as ValidElementSizeInferenceResult).elementCount) {
 					errorFun2.apply(String.format("Upper bound must be less than or equal to array size (%s)", (size as ValidElementSizeInferenceResult).elementCount));
 				}
-				else if((upperBound as Integer) <= 0) {
+				else if((upperBound as Long) <= 0) {
 					errorFun2.apply("Upper bound must be strictly positive");
 				}
 			}
 		}
 		if(lowerBound !== null && upperBound !== null) {
-			if(lowerBound as Integer >= upperBound as Integer) {
+			if(lowerBound as Long >= upperBound as Long) {
 				errorFun2.apply("Lower bound must be smaller than upper bound");
 			}
 		}
 	}
 	
-	@Check(CheckType.NORMAL)
-	def noUpcastingToOptionalsInFunctionArguments(ElementReferenceExpression eref) {
-		val typesAndArgs = ModelUtils.getFunctionCallArguments(eref);
-		if(typesAndArgs === null) return;
-		
-		typesAndArgs.forEach[ts_arg | 
-			val ts = ts_arg.key;
-			if(ts.type instanceof GeneratedType && ts.type.name == "optional") {
-				val arg = ts_arg.value;
-				val argType = ModelUtils.toSpecifier(inferrer.infer(arg.value));
-				if(ModelUtils.typeSpecifierEqualsWith([t1, t2 | typeSystem.haveCommonType(t1, t2)], ts.typeArguments.head, argType)) {
-					error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "function calls"), arg, null);
+	@Check(CheckType.FAST) 
+	def void checkLeftHandAssignment(AssignmentExpression expression) {
+		val varRef = expression.varRef;
+		var EObject innerExpr = varRef;
+		var nested = true;
+		while (nested) {
+			if (innerExpr instanceof ElementReferenceExpression) {
+				if (innerExpr.arguments.size > 0) {
+					innerExpr = innerExpr.arguments.head.value;
+				} else {
+					innerExpr = (innerExpr as ElementReferenceExpression).reference;
 				}
+			} else if (innerExpr instanceof DereferenceExpression) {
+				innerExpr = innerExpr.innerReference;
+			} else if (innerExpr instanceof ArrayAccessExpression) {
+				// we can't assign on slices, so we don't unnest here
+				if (innerExpr.arraySelector instanceof ValueRange) {
+					nested = false;
+				} else {
+					innerExpr = innerExpr.owner;
+				}
+			} else {
+				nested = false;
 			}
-		]
-	}
-	
-	@Check(CheckType.NORMAL)
-	def noUpcastingToOptionalsInReturns(ReturnStatement stmt) {
-		val funDef = EcoreUtil2.getContainerOfType(stmt, FunctionDefinition);
-		if(funDef === null) {
+		}
+		if (innerExpr instanceof VariableDeclaration || innerExpr instanceof FunctionParameterDeclaration ||
+			innerExpr instanceof TypeAccessor || innerExpr instanceof Property) {
 			return;
 		}
 		
-		val retType = inferrer.infer(funDef);
-		if(retType.type instanceof GeneratedType && retType.type.name == "optional") {
-			val returnedValueType = inferrer.infer(stmt.value);
-			if(stmt.value instanceof PrimitiveValueExpression) {
-				error(String.format(IMPLICIT_TO_OPTIONAL_IS_NOT_SUPPORTED, "returns"), stmt, null);
+		else if (varRef instanceof ElementReferenceExpression) {
+			var EObject referencedObject = ((varRef as ElementReferenceExpression)).getReference()
+			if (!(referencedObject instanceof Property) && !(referencedObject instanceof Parameter)) {
+				error(ERROR_LEFT_HAND_ASSIGNMENT_MSG, ExpressionsPackage.Literals.ASSIGNMENT_EXPRESSION__VAR_REF,
+					ERROR_LEFT_HAND_ASSIGNMENT_CODE)
 			}
+		} else {
+			error(ERROR_LEFT_HAND_ASSIGNMENT_MSG, ExpressionsPackage.Literals.ASSIGNMENT_EXPRESSION__VAR_REF,
+				ERROR_LEFT_HAND_ASSIGNMENT_CODE)
 		}
-	} 
+	}
 }

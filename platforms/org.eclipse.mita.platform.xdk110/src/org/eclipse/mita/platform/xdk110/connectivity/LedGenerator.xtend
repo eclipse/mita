@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import java.util.HashMap
 import java.util.Map
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.program.SignalInstance
@@ -26,20 +27,19 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.model.ModelUtils
 
 class LedGenerator extends AbstractSystemResourceGenerator {
 
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 
-	public static def Map<SignalInstance, String> getSignalToColorAssignment(SystemResourceSetup context) {
+	static def Map<SignalInstance, String> getSignalToColorAssignment(SystemResourceSetup context) {
 		val result = new HashMap<SignalInstance, String>();
 		
 		context.signalInstances.forEach[vciv | 
 			val color = #[vciv.initialization]
 				.filter(ElementReferenceExpression)
-				.map[x | ModelUtils.getArgumentValue(x.reference as Operation, x, "color") ]
+				.map[x | ExpressionUtils.getArgumentValue(x.reference as Operation, x, "color") ]
 				.map[ StaticValueInferrer.infer(it, []) ]
 				.filter(Enumerator)
 				.map[it.name]

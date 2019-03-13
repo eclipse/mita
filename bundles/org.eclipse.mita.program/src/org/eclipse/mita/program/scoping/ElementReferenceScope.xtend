@@ -16,8 +16,11 @@ package org.eclipse.mita.program.scoping
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.TypeAccessor
+import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
@@ -27,29 +30,29 @@ import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.AbstractScope
+import org.eclipse.xtext.util.SimpleAttributeResolver
 
+import static extension org.eclipse.emf.ecore.util.EcoreUtil.*
 import static extension org.eclipse.xtext.EcoreUtil2.*
+import org.eclipse.xtext.resource.IEObjectDescription
 
 class ElementReferenceScope extends AbstractScope {
 
 	EObject context
 
 	new(IScope outer, EObject context) {
-		//super(unqualifySumTypeConstructors(outer), false)
 		super(outer, false);
 		this.context = context
 	}
 	
-//	static def IScope unqualifySumTypeConstructors(IScope scope) {
-//		val foo = scope.allElements;
-//		val sumTypes = scope.allElements.filter[(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(it.EClass))]
-//		var s = new ImportScope(sumTypes.map[new ImportNormalizer(it.qualifiedName, true, false)].toList, scope, null, TypesPackage.Literals.NAMED_PRODUCT_TYPE, false);
-//		return s;
-//	}
-
+	override protected isShadowed(IEObjectDescription input) {
+		return false;
+	}
+	
 	override protected getAllLocalElements() {
 		var result = newArrayList()
 		result.addFunctionParameter(context);
@@ -58,13 +61,13 @@ class ElementReferenceScope extends AbstractScope {
 		result.addForEachLoopIterator(context)
 		result.addGlobalVariables(context)
 		result.addDeconstructorVariables(context)
-		result.addStructureTypes(context)
-		//result.addSumTypes(context)
-		Scopes.scopedElementsFor(result)
-	}
-	
-	def addSumTypes(ArrayList<EObject> result, EObject context) {
-		result += context.getContainerOfType(Program).types.filter(SumType).flatMap[st | st.alternatives]
+		result.addStructureAccessors(context)
+		Scopes.scopedElementsFor(result, [obj | 
+			if(obj instanceof TypeKind) {
+				return QualifiedName.create(obj.name.substring(1));
+			}
+			return QualifiedName.wrapper(SimpleAttributeResolver.NAME_RESOLVER).apply(obj)
+		])
 	}
 	
 	def addDeconstructorVariables(ArrayList<EObject> result, EObject context) {
@@ -77,12 +80,9 @@ class ElementReferenceScope extends AbstractScope {
 			result += assignmentDeconstructor.assignmentVariable
 		}
 	}
-	
-	def addStructureTypes(ArrayList<EObject> result, EObject object) {
-	    /* Here we just add the structures defined in the same program/compilation
-	     * unit. The outer scope will provide structures defined elsewhere.
-	     */
-		result += object.getContainerOfType(Program).types.filter(StructureType)
+		
+	def addStructureAccessors(ArrayList<EObject> result, EObject object) {
+		result += object.getContainerOfType(PackageAssociation).types.allContents.filter(TypeAccessor).toIterable;
 	}
 	
 	def addFunctionParameter(ArrayList<EObject> result, EObject object) {
@@ -113,11 +113,11 @@ class ElementReferenceScope extends AbstractScope {
 	}
 
 	def addGlobalFunctions(List<EObject> result, EObject object) {
-		result += object.getContainerOfType(Program).functionDefinitions
+		result += object.getContainerOfType(Program)?.functionDefinitions?.toList ?: #[]
 	}
 
 	def addGlobalVariables(List<EObject> result, EObject object) {
-		result += object.getContainerOfType(Program).globalVariables
+		result += object.getContainerOfType(Program)?.globalVariables?.toList ?: #[]
 	}
 
 	def void addProgramBlocks(List<EObject> result, EObject object) {

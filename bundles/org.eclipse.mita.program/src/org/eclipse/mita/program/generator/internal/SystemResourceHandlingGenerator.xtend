@@ -13,6 +13,13 @@
 
 package org.eclipse.mita.program.generator.internal
 
+import com.google.inject.Inject
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.SystemEventSource
@@ -24,11 +31,6 @@ import org.eclipse.mita.program.generator.IComponentConfiguration
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
 import org.eclipse.xtext.generator.IFileSystemAccess2
 
 class SystemResourceHandlingGenerator {
@@ -47,9 +49,6 @@ class SystemResourceHandlingGenerator {
     
     @Inject
     protected TypeGenerator typeGenerator
-    
-    @Inject
-	protected ITypeSystemInferrer typeInferrer
 	
 	@Inject
 	protected extension ProgramDslTraceExtensions
@@ -94,17 +93,17 @@ class SystemResourceHandlingGenerator {
 
 				«IF setup !== null»
 				«FOR signalInstance : setup?.signalInstances»
-				«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
+				«val signalType = BaseUtils.getType(signalInstance).sigInstType2»
 				/**
 				 * Provides read access to «signalInstance.name».
 				 */
-				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result);
+				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(obj, signalType)»* result);
 
 				«IF signalInstance.writeable»
 				/**
 				 * Provides write access to «signalInstance.name».
 				 */
-				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(signalType)»* result);
+				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(obj, signalType)»* result);
 				«ENDIF»
 				«ENDFOR»
 				«ENDIF»
@@ -113,6 +112,31 @@ class SystemResourceHandlingGenerator {
 			''')
 			.toHeader(context, '''«component.baseName.toUpperCase»_«name.toUpperCase»_H'''))
 		return cgn;
+	}
+	
+	dispatch def AbstractType getSigInstType(AbstractType type) {
+		return type;
+	}
+	
+	dispatch def AbstractType getSigInstType(FunctionType type) {
+		return type.to.sigInstType2;
+	}
+	
+	dispatch def AbstractType getSigInstType2(AbstractType type) {
+		return type;
+	}
+	dispatch def AbstractType getSigInstType2(FunctionType type) {
+		return type.to.sigInstType3;
+	}
+	
+	dispatch def AbstractType getSigInstType3(AbstractType type) {
+		return type;
+	}
+	dispatch def AbstractType getSigInstType3(TypeConstructorType type) {
+		if(type.name == "siginst" && type.typeArguments.tail.size > 0) {
+			return type.typeArguments.tail.head;
+		}
+		return type;
 	}
 	
 	def generateImplementation(CompilationContext context, EObject obj) {
@@ -146,11 +170,11 @@ class SystemResourceHandlingGenerator {
 				
 				«IF setup !== null»
 				«FOR signalInstance : setup?.signalInstances»
-				«val signalType = ModelUtils.toSpecifier(typeInferrer.infer(signalInstance.instanceOf))»
+				«val signalType = BaseUtils.getType(signalInstance).sigInstType2»
 				/**
 				 * Provides read access to the «signalInstance.name» signal.
 				 */
-				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(signalType)»* result)
+				«exceptionType» «signalInstance.readAccessName»(«typeGenerator.code(obj, signalType)»* result)
 				{
 					«internalGenerator?.generateSignalInstanceGetter(signalInstance, 'result')»
 					
@@ -161,7 +185,7 @@ class SystemResourceHandlingGenerator {
 				/**
 				 * Provides write access to the «signalInstance.name» signal.
 				 */
-				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(signalType)»* value)
+				«exceptionType» «signalInstance.writeAccessName»(«typeGenerator.code(obj, signalType)»* value)
 				{
 					«internalGenerator?.generateSignalInstanceSetter(signalInstance, 'value')»
 					

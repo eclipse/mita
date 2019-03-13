@@ -15,18 +15,24 @@ package org.eclipse.mita.program.generator.transformation
 
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.VirtualFunction
+import org.eclipse.mita.base.types.GeneratedTypeConstructor
+import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.base.types.TypeAccessor
 
 class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	
@@ -38,6 +44,9 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 		// The statement generator can recover for direct initialization (x = foo()), so we don't unravel here.
 		// this might lead to invalid code, since unraveling fixes nested expressions like foo() && bar(), however unraveling leads to just as invalid code.
 		if(EcoreUtil2.getContainerOfType(expression, ProgramBlock) === null) {
+			return false;
+		}
+		if(expression instanceof NewInstanceExpression) {
 			return false;
 		}
 		if(expression instanceof ElementReferenceExpression) {
@@ -52,8 +61,8 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 					}
 				}
 				
-				val inferenceResult = typeInferrer.infer(ref);
-				if(inferenceResult?.type?.name == 'void') {
+				val inferenceResult = BaseUtils.getType(ref);
+				if(inferenceResult?.name == 'void') {
 					// don't unravel void function calls
 					return false;
 				}
@@ -63,11 +72,19 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 					return false;
 				}
 				
+				if(ref instanceof VirtualFunction) {
+					if(ref instanceof TypeConstructor && !(ref instanceof GeneratedTypeConstructor)) {
+						return false;
+					}
+					if(ref instanceof TypeAccessor) {
+						return false;
+					}
+					return true;
+				}
 				return true;
 			}
 			
-			return (ref instanceof ComplexType && !(ref instanceof SumType || ref instanceof StructureType)) 
-				|| ref instanceof GeneratedType
+			return false;
 		}
 		
 		return false;

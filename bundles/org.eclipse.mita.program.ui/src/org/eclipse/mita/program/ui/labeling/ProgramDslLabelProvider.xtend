@@ -18,8 +18,8 @@ package org.eclipse.mita.program.ui.labeling
 
 import com.google.inject.Inject
 import java.net.URL
+import org.apache.commons.lang.StringEscapeUtils
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider
 import org.eclipse.jface.resource.ImageDescriptor
 import org.eclipse.jface.viewers.StyledString
@@ -37,11 +37,12 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
+import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.SignalInstance
@@ -57,9 +58,6 @@ import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
  * See https://www.eclipse.org/Xtext/documentation/304_ide_concepts.html#label-provider
  */
 class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
-
-	@Inject
-	ITypeSystemInferrer typeInferrer
 
 	@Inject
 	new(AdapterFactoryLabelProvider delegate) {
@@ -127,10 +125,21 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(SystemResourceSetup ele) {
-		if (ele.type instanceof Connectivity) {
-			'''connectivity «ele.name» : «EcoreUtil.getID(ele.type)»'''
+		if(ele.type instanceof Connectivity) {
+			'''connectivity <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
 		} else {
-			'''resource «ele.name» : «EcoreUtil.getID(ele.type)»'''
+			'''resource <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
+		}
+	}
+	
+	def text(TimeIntervalEvent ele) {
+		'''time event every «ele.interval.value» «ele.unit.literal»'''
+	}
+	
+	def text(Event ele) {
+		val eventType = switch(ele) {
+			case SystemResourceEvent: '''system event'''
+			default: 'event'
 		}
 	}
 
@@ -141,26 +150,22 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 		}
 	}
 
-	def text(FunctionDefinition ele) {
-		val typeIR = typeInferrer.infer(ele)
-		val params = ele.parameters.map[name + " : " + type.name]
-		ele.name + "(" + params.toString.replace("[", "").replace("]", "") + ")" + " : " + getText(typeIR)
+	def text(Operation ele) {
+		'''fun <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
 	}
 
 	def text(SignalInstance ele) {
 		var vci = ele.instanceOf;
-		val type = typeInferrer.infer(ele)?.type
-
-		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci.name» «ele.name» : «type»'''
+		
+		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci?.name» <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
 	}
 
 	def text(VariableDeclaration ele) {
-		val typeIR = typeInferrer.infer(ele)
-		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» «ele.name» : «getText(typeIR)»'''
+		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
 	}
 
-	def text(InferenceResult ir) {
-		'''«ir.type.name»«IF ir.bindings.empty === false»<«FOR t: ir.bindings SEPARATOR(", ")»«t.getText()»«ENDFOR»>«ENDIF»'''
+	def text(AbstractType ir) {
+		'''«ir.toString»'''
 	}
 
 	def text(ExceptionTypeDeclaration it) {
@@ -172,7 +177,7 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(Parameter it) {
-		'''«name»«IF typeSpecifier !== null» : «typeSpecifier»«ENDIF»'''
+		'''«name»«IF typeSpecifier !== null»: «typeSpecifier»«ENDIF»'''
 	}
 
 	def text(EnumerationType it) {
@@ -192,15 +197,15 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(AnonymousProductType it) {
-		'''«name»«IF typeSpecifiers !== null» : «FOR typeSepc : typeSpecifiers SEPARATOR ", "»«typeSepc»«ENDFOR»«ENDIF»'''
+		'''«name»«IF typeSpecifiers !== null»: «FOR typeSepc: typeSpecifiers SEPARATOR ", "»«typeSepc»«ENDFOR»«ENDIF»'''
 	}
 
 	def text(GeneratedType it) {
 		'''generated type «name»'''
 	}
 
-	def text(Operation it) {
-		'''constructor «name»«IF parameters !== null»(«FOR param : parameters SEPARATOR ", "»«param.name» : «param.typeSpecifier»«ENDFOR»«ENDIF»)'''
+	def text(EObject it) {
+		'''«it»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(it)?.toString)»'''
 	}
 
 	override protected convertToString(Object text) {

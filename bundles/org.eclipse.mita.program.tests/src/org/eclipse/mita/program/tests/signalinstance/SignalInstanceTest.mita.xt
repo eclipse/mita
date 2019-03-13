@@ -9,7 +9,8 @@ package test;
 import platforms.unittest; 
 
 setup connectivity : MyConnectivity {
-	var signal_instance00 = vci00(p01=true, p02=CFG_VAL_1);
+	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
+	var signal_instance00 = vci00(p01=true, p02=.CFG_VAL_1);
 	var signal_instance01 = vci01(20);
 	var signal_instance03 = vci03(5);
 	var signal_instance04 = vci04(6);
@@ -17,7 +18,7 @@ setup connectivity : MyConnectivity {
 
 fn accessWithoutReadOrWrite() {
 	/* XPECT errors ---
-		"Cannot determine size of element: Object does not have a size" at "connectivity.signal_instance00"
+		"Cannot determine size of element: Unable to infer size from type __args(bool, MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())) → __args(MyConnectivity) → siginst<bool>" at "connectivity.signal_instance00"
 		"Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
 	--- */
 	var x1 = connectivity.signal_instance00;
@@ -66,12 +67,4 @@ fn useSiginstCorrectly() {
 	var x6 = read(connectivity.signal_instance00);
 	
 	write(connectivity.signal_instance00, true);
-}
-
-fn stuffSiginstShouldValidate() {
-	/* XPECT errors ---
-		"Could not infer common type for type parameter T from argument types [integer, bool]." at "connectivity.signal_instance00.write(20)"
-		"Incompatible types integer and bool." at "connectivity.signal_instance00.write(20)"
-	--- */
-	connectivity.signal_instance00.write(20);
 }

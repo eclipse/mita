@@ -18,9 +18,11 @@ import java.util.LinkedList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ReturnStatement
@@ -40,11 +42,10 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 
 class StringGenerator extends AbstractTypeGenerator {
 	
-	static public val DOUBLE_PRECISION = 6;
+	static public val DOUBLE_PRECISION = 6L;
 	
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
@@ -59,16 +60,13 @@ class StringGenerator extends AbstractTypeGenerator {
 	protected TypeGenerator typeGenerator
 	
 	@Inject
-	protected ITypeSystemInferrer typeInferrer
-	
-	@Inject
 	protected extension StatementGenerator
 	
 	@Inject
 	protected extension GeneratorUtils
 	
 	
-	private static def Integer getFixedSize(EObject stmt, ElementSizeInferrer sizeInferrer) {
+	private static def long getFixedSize(EObject stmt, ElementSizeInferrer sizeInferrer) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
 			inference.elementCount;
@@ -77,22 +75,22 @@ class StringGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override checkExpressionSupport(TypeSpecifier type, AssignmentOperator operator, TypeSpecifier otherType) {
+	override checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
 		var result = false;
 
 		// inline expression support
 		result = result || operator === null;
 		
 		// assign to string
-		result = result || (operator == AssignmentOperator.ASSIGN && type.type == otherType.type && type.type?.name == 'string')
+		result = result || (operator == AssignmentOperator.ASSIGN && type == otherType && type.name == 'string')
 		
 		// append to string
-		result = result || (operator == AssignmentOperator.ADD_ASSIGN && type.type == otherType.type && type.type?.name == 'string')
+		result = result || (operator == AssignmentOperator.ADD_ASSIGN && type == otherType && type.name == 'string')
 		
 		return result; 
 	}
 	
-	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
+	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
 		return if(operator === null) {
 			// inline string interpolation, so let's create a statement expression
 			val interpolationCode = generateVariableDeclaration('_str', left, right);
@@ -112,7 +110,9 @@ class StringGenerator extends AbstractTypeGenerator {
 				left.code.noTerminator;
 			}
 			
+			var createdBuffer = true;
 			val prelude_rightCode = if(right instanceof ElementReferenceExpression) {
+				createdBuffer = false;
 				codeFragmentProvider.create('''''') -> codeFragmentProvider.create('''«right.code.noTerminator»''')
 			}
 			else if(right instanceof PrimitiveValueExpression) {
@@ -132,19 +132,24 @@ class StringGenerator extends AbstractTypeGenerator {
 				}) -> codeFragmentProvider.create('''«bufName»''')
 			}
 
-			val rightSizeVar = if(right instanceof ElementReferenceExpression) {
+			val rightSize = if(right instanceof ElementReferenceExpression) {
 				if(right.operationCall) {
 					codeFragmentProvider.create('''ERROR: Couldn't infer size!''')
 				}
-				codeFragmentProvider.create('''«prelude_rightCode.value»_buf''');
+				if(createdBuffer) {
+					codeFragmentProvider.create('''sizeof(«prelude_rightCode.value»_buf)''');
+				}
+				else {
+					codeFragmentProvider.create('''strlen(«prelude_rightCode.value»)''');
+				}
 			} else {
-				codeFragmentProvider.create('''«prelude_rightCode.value»''')
+				codeFragmentProvider.create('''sizeof(«prelude_rightCode.value»)''')
 			}
 
 			if(operator == AssignmentOperator.ASSIGN) {
 				codeFragmentProvider.create('''
 				«prelude_rightCode.key»
-				memcpy(«leftCode», «prelude_rightCode.value», sizeof(«rightSizeVar»));
+				memcpy(«leftCode», «prelude_rightCode.value», «rightSize»);
 				''')
 				.addHeader('string.h', true);
 			} else if(operator == AssignmentOperator.ADD_ASSIGN) {
@@ -159,7 +164,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
+	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
 		return codeFragmentProvider.create(trace(stmt).append(generateVariableDeclaration(stmt.name, stmt, stmt.initialization)));
 	}
 	
@@ -198,7 +203,6 @@ class StringGenerator extends AbstractTypeGenerator {
 			.addHeader('stdio.h', true)
 			.addHeader('inttypes.h', true)
 		} else if(initialization.isOperationCall) {
-			val elementReference = initialization as ElementReferenceExpression;
 			codeFragmentProvider.create(
 			'''
 				char «name»_buf[«byteCount»] = {0};
@@ -248,7 +252,7 @@ class StringGenerator extends AbstractTypeGenerator {
 			if(i < expression.content.length) {
 				val sub = expression.content.get(i);
 				if(sub !== null) {
-					val type = typeInferrer.infer(sub)?.type;
+					val type = BaseUtils.getType(sub);
 					var typePattern = switch(type?.name) {
 						case 'uint32': '%" PRIu32 "'
 						case 'uint16': '%" PRIu16 "'
@@ -256,8 +260,11 @@ class StringGenerator extends AbstractTypeGenerator {
 						case 'int32':  '%" PRId32 "'
 						case 'int16':  '%" PRId16 "'
 						case 'int8':   '%" PRId8 "'
-						case 'float':  '%.' + DOUBLE_PRECISION + 'g'
-						case 'double': '%.' + DOUBLE_PRECISION + 'g'
+						case 'xint32':  '%" PRId32 "'
+						case 'xint16':  '%" PRId16 "'
+						case 'xint8':   '%" PRId8 "'
+						case 'f32':  '%.' + DOUBLE_PRECISION + 'g'
+						case 'f64': '%.' + DOUBLE_PRECISION + 'g'
 						case 'bool':   '%d'
 						case 'string': '%s'
 						default: 'UNKNOWN'
@@ -269,11 +276,11 @@ class StringGenerator extends AbstractTypeGenerator {
 		return result;
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
+	override generateTypeSpecifier(AbstractType type, EObject context) {
 		codeFragmentProvider.create('''char*''')
 	}
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	
@@ -317,7 +324,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		protected ElementSizeInferrer sizeInferrer
 	
 		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
-			val variable = ModelUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;
 				if(varref instanceof VariableDeclaration) {

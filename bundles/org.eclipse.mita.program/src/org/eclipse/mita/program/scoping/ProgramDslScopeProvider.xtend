@@ -19,25 +19,32 @@ package org.eclipse.mita.program.scoping
 import com.google.common.base.Predicate
 import com.google.inject.Inject
 import java.util.Collections
+import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.emf.ecore.EcorePackage
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
+import org.eclipse.mita.base.scoping.TypeKindNormalizer
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.EnumerationType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Platform
@@ -67,72 +74,53 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
-
-	@Inject
-	ITypeSystemInferrer typeInferrer
 
 	@Inject
 	IQualifiedNameConverter fqnConverter
 
 	@Inject
 	IQualifiedNameProvider qualifiedNameProvider
-	
-	@Inject
-	ITypeSystem typeSystem
-	
 
 	override scope_Argument_parameter(Argument argument, EReference ref) {
 		if (EcoreUtil2.getContainerOfType(argument, SystemResourceSetup) !== null) {
-			scopeInSetupBlock(argument, ref);
+			return scopeInSetupBlock(argument, ref);
 		} else {
 			val ec = argument.eContainer;
 			if (ec instanceof ElementReferenceExpression) {
-				scope_Argument_parameter(ec as ElementReferenceExpression, ref)
-			} else if (ec instanceof FeatureCall) {
-				scope_Argument_parameter(ec as FeatureCall, ref)
-			}
+				return scope_Argument_parameter(ec as ElementReferenceExpression, ref)
+			} 
 		}
+		return IScope.NULLSCOPE;
 	}
 
-	override scope_Argument_parameter(ElementReferenceExpression exp, EReference _ref) {
+	override scope_Argument_parameter(ElementReferenceExpression exp, EReference ref) {
 		if (EcoreUtil2.getContainerOfType(exp, SystemResourceSetup) !== null) {
-			scopeInSetupBlock(exp, _ref);
+			scopeInSetupBlock(exp, ref);
 		} else {
-			val nodes = NodeModelUtils.findNodesForFeature(exp,
-				ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
-			if (nodes.isEmpty) {
-				return super.scope_Argument_parameter(exp, _ref);
+			val reference = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
+			val txt = BaseUtils.getText(exp, reference)
+			if (txt.nullOrEmpty) {
+				return super.scope_Argument_parameter(exp, ref);
 			} else {
-				return exp.getCandidateParameterScope(nodes.head.text)
+				return exp.getCandidateParameterScope(ref);
 			}
-		}
-	}
-
-	override scope_Argument_parameter(FeatureCall fc, EReference ref) {
-		if (EcoreUtil2.getContainerOfType(fc, SystemResourceSetup) !== null) {
-			scopeInSetupBlock(fc, ref);
-		} else {
-			val nodes = NodeModelUtils.findNodesForFeature(fc, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE)
-			if (nodes.isEmpty) {
-				return IScope.NULLSCOPE
-			}
-			fc.getCandidateParameterScope(nodes.head.text)
 		}
 	}
 
 	static class CombiningScope implements IScope {
 		var Iterable<IScope> scopes;
 
-		public new(IScope s1, IScope s2) {
+		new(IScope s1, IScope s2) {
 			scopes = #[s1, s2];
 			if (s1 === null || s2 === null) {
 				throw new NullPointerException;
 			}
 		}
 
-		public new(Iterable<IScope> scopes) {
+		new(Iterable<IScope> scopes) {
 			this.scopes = scopes.filterNull;
 		}
 
@@ -168,8 +156,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	}
 
-	def protected IScope getCandidateParameterScope(EObject context, String crossRefString) {
-		return getCandidateParameterScope(context, crossRefString, delegate.getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE));
+	def protected IScope getCandidateParameterScope(EObject context) {
+		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
+		return getCandidateParameterScope(context, ref);
+	}
+	
+	def protected IScope getCandidateParameterScope(EObject context, EReference ref) {
+		return getCandidateParameterScope(context, getAllImportQualifiers(context), delegate.getScope(context, ref), ref);
 	}
 	
 	def protected IScope getCandidateParameterScope(IScope globalScope, SumType superType, SumAlternative subType, String constructor) {
@@ -203,6 +196,11 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		
 	}
 	
+	def protected dispatch IScope doGetCandidateParameterScope(SumSubTypeConstructor subType, IScope constructorScope) {
+		return subType.eContainer.doGetCandidateParameterScope(constructorScope);
+		
+	}
+	
 	def protected createConstructorScope(IScope globalScope, Type type, String constructor) {
 		val name = type.name + "." + constructor
 		val qName = fqnConverter.toQualifiedName(name)
@@ -210,26 +208,33 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE.EReferenceType, false) as IScope;
 	}
 	
-	def protected IScope getCandidateParameterScope(EObject context, String crossRefString, IScope globalScope) {
-		if (context instanceof FeatureCall) {
-			if (context.owner instanceof ElementReferenceExpression) {
-				val owner = context.owner as ElementReferenceExpression;
-				val reference = owner.reference;
-				if (reference instanceof SumType) {
-					val feature = context.feature;
-					if(feature instanceof SumAlternative) {
-						return getCandidateParameterScope(globalScope, reference, feature, crossRefString);
-					}
-					
-				}
-			}
+	dispatch def protected QualifiedName getImportQualifier(ElementReferenceExpression obj) {
+		val baseQN = obj.arguments.head?.value.importQualifier;
+		val txt = BaseUtils.getText(obj, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+		return baseQN.append(txt);
+	}
+	dispatch def protected QualifiedName getImportQualifier(EObject obj) {
+		return QualifiedName.EMPTY;
+	}
+	dispatch def protected QualifiedName getImportQualifier(Void obj) {
+		return QualifiedName.EMPTY;
+	}
+	
+	def Iterable<QualifiedName> getAllImportQualifiers(EObject obj) {
+		var qn = obj.importQualifier;
+		val result = newArrayList;
+		while(!qn.empty) {
+			result.add(qn);
+			qn = qn.skipFirst(1);
 		}
+		return result;
+	}
+	
+	def protected IScope getCandidateParameterScope(EObject context, Iterable<QualifiedName> importNormalizerQNs, IScope globalScope, EReference ref) {
 		// import by name, for named parameters of structs and functions
-		val ref = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
-		val qualifiedLinkName = fqnConverter.toQualifiedName(crossRefString)
 		val scopeDequalified = new ImportScope(
-			#[new ImportNormalizer(qualifiedLinkName, true, false)],
-			new FilteringScope(globalScope, [it.name.startsWith(qualifiedLinkName)]),
+			importNormalizerQNs.map[new ImportNormalizer(it, true, false)].force,
+			globalScope,
 			null,
 			ref.EReferenceType,
 			false
@@ -238,14 +243,20 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	def IScope scope_VariableDeclarationImpl_feature(VariableDeclarationImpl context, EReference reference) {
-		val type = context.getTypeSpecifier().type;
+		val typeSpecifier = context.getTypeSpecifier();
+		val type = if(typeSpecifier instanceof PresentTypeSpecifier) {
+			typeSpecifier.type;
+		}
 		if(!(type instanceof ComplexType)) return IScope.NULLSCOPE;
 
 		return Scopes.scopeFor((type as ComplexType).allFeatures)
 	}
 
 	def IScope scope_FeatureValue_feature(VariableDeclaration context, EReference reference) {
-		val type = context.typeSpecifier.type;
+		val typeSpecifier = context.getTypeSpecifier();
+		val type = if(typeSpecifier instanceof PresentTypeSpecifier) {
+			typeSpecifier.type;
+		}
 		if(!(type instanceof ComplexType)) return IScope.NULLSCOPE;
 
 		return Scopes.scopeFor((type as ComplexType).allFeatures)
@@ -253,43 +264,14 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	protected final OnChangeEvictingCache scope_FeatureCall_feature_cache = new OnChangeEvictingCache();
 
-	def IScope scope_FeatureCall_feature(FeatureCall context, EReference reference) {
-		scope_FeatureCall_feature_cache.get(context, context.eResource, [
-			val owner = context.owner
-
-			var scope = IScope.NULLSCOPE;
-			val result = typeInferrer.infer(owner);
-			val ownerType = result?.getType ?: null
-
-			if (owner instanceof ElementReferenceExpression) {
-				if (owner.reference instanceof AbstractSystemResource ||
-					owner.reference instanceof SystemResourceSetup) {
-					/* Special case: the type inferrer delivers a valid type for system resources and their setup.
-					 * 				 However, we musn't use that type to provide the scope but rather the direct rules (addFeatureScope).
-					 */
-					return addFeatureScope(owner.reference, scope);
-				}
-			}
-
-			if (ownerType !== null) {
-				scope = getExtensionMethodScope(context, reference, ownerType);
-				return addFeatureScope(ownerType, scope)
-			} else if (owner instanceof ElementReferenceExpression) {
-				return addFeatureScope(owner.reference, scope)
-			} else {
-				return getDelegate().getScope(context, reference);
-			}
-		])
-	}
-
-	protected def getExtensionMethodScope(Expression context, EReference reference, Type type) {
+	protected def getExtensionMethodScope(Expression context, EReference reference, AbstractType type) {
 		return new FilteringScope(delegate.getScope(context, reference), [ x |
 			(x.EClass == ProgramPackage.Literals.FUNCTION_DEFINITION ||
 				x.EClass == ProgramPackage.Literals.GENERATED_FUNCTION_DEFINITION) && x.isApplicableOn(type)
 		]);
 	}
 
-	protected def isApplicableOn(IEObjectDescription operationDesc, Type contextType) {
+	protected def isApplicableOn(IEObjectDescription operationDesc, AbstractType contextType) {
 		var params = operationDesc.getUserData(ProgramDslResourceDescriptionStrategy.OPERATION_PARAM_TYPES);
 		val paramArray = if (params === null) {
 				if (operationDesc.EObjectOrProxy instanceof Operation) {
@@ -313,11 +295,12 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return contextType.isSubtypeOf(paramTypeName)
 	}
 
-	protected def isSubtypeOf(Type subType, String superTypeName) {
-		if (subType.name == superTypeName) {
-			return true
-		}
-		return typeSystem.getSuperTypes(subType).exists[name == superTypeName]
+	protected def isSubtypeOf(AbstractType subType, String superTypeName) {
+		return subType.name == superTypeName;
+//		if (subType.name == superTypeName) {
+//			return true
+//		}
+//		return typeSystem.getSuperTypes(subType).exists[name == superTypeName]
 	}
 
 	protected def toArray(String paramArrayAsString) {
@@ -355,13 +338,20 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return if(owner.delegate === null) scope else addFeatureScope(owner.delegate, scope)
 	}
 
-	dispatch protected def addFeatureScope(EObject owner, IScope scope) {
+	dispatch protected def addFeatureScope(Object owner, IScope scope) {
+		// fall-back
+		scope
+	}
+	dispatch protected def addFeatureScope(Void owner, IScope scope) {
 		// fall-back
 		scope
 	}
 
 	def IScope scope_ConfigurationItemValue_item(SystemResourceSetup context, EReference reference) {
-		val items = context.type.configurationItems
+		val items = context.type?.configurationItems
+		if(items === null) {
+			return IScope.NULLSCOPE;
+		}
 		return Scopes.scopeFor(items);
 	}
 
@@ -389,82 +379,124 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		]);
 	}
 
-	val Predicate<IEObjectDescription> globalElementFilter = [ x |
-		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
-			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
-			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass));
+	public static val Predicate<EClass> globalElementFilter = [ x |
+		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x)) ||
+			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x));
 
-		val exclusion = (PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
-			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x.EClass)) ||
-			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass))
+		val exclusion = 
+			(PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x)) 
+
+		inclusion && !exclusion;
+	]
+	
+	public static val Predicate<EClass> globalElementFilterInSetup = [ x |
+		val inclusion = (ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x)) ||
+			(ProgramPackage.Literals.SIGNAL_INSTANCE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x));
+
+		val exclusion = 
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x)) ||
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x)) ||
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x)) 
 
 		inclusion && !exclusion;
 	]
 
-	val Predicate<IEObjectDescription> globalTypeFilter = [ x |
-		val inclusion = TypesPackage.Literals.TYPE.isSuperTypeOf(x.EClass);
+	public static val Predicate<EClass> globalTypeFilter = [ x |
+		val inclusion = TypesPackage.Literals.TYPE.isSuperTypeOf(x);
 
-		val exclusion = PlatformPackage.Literals.SENSOR.isSuperTypeOf(x.EClass) ||
-			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x.EClass) ||
-			TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x.EClass) ||
-			TypesPackage.Literals.TYPE_PARAMETER.isSuperTypeOf(x.EClass); // exclude gloabal type parameters, local ones are added in TypeReferenceScope
+		val exclusion = 
+			PlatformPackage.Literals.SENSOR.isSuperTypeOf(x) ||
+			PlatformPackage.Literals.CONNECTIVITY.isSuperTypeOf(x) ||
+			PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x) ||
+			TypesPackage.Literals.EXCEPTION_TYPE_DECLARATION.isSuperTypeOf(x) ||
+			TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x) ||
+			TypesPackage.Literals.TYPE_PARAMETER.isSuperTypeOf(x); // exclude global type parameters, local ones are added in TypeReferenceScope
 		inclusion && !exclusion;
 	]
 
 	def scope_TypeSpecifier_type(EObject context, EReference ref) {
-		return new TypeReferenceScope(new FilteringScope(delegate.getScope(context, ref), globalTypeFilter), context);
+		val parentScope = delegate.getScope(context, ref)
+		return new TypeReferenceScope(new FilteringScope(parentScope, [globalTypeFilter.apply(it.EClass)]), context);
+	}
+	def scope_PresentTypeSpecifier_type(EObject context, EReference ref) {
+		return scope_TypeSpecifier_type(context, ref);
 	}
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
-		return if (setup !== null && typeInferrer.infer(setup) !== null) {
+		if (setup !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
-			scopeInSetupBlock(context, ref);
+			val scope = scopeInSetupBlock(context, ref);
+			return new FilteringScope(scope, [globalElementFilterInSetup.apply(it.EClass)]);
 		} else {
-			val superScope = new FilteringScope(delegate.getScope(context, ref), globalElementFilter);
-			new ElementReferenceScope(superScope, context);
+			val superScope = new FilteringScope(delegate.getScope(context, ref), [globalElementFilter.apply(it.EClass)]);
+			val scope = (
+			if(context instanceof FeatureCallWithoutFeature) {
+				val normalizer = new ImportNormalizer(QualifiedName.create("<auto>"), true, false);
+				new ImportScope(#[normalizer], superScope, null, null, false);
+			} else if(context instanceof ElementReferenceExpression) {
+				if(context.isOperationCall && context.arguments.size > 0) {
+					val owner = context.arguments.head.value;
+					
+					val ownerText = BaseUtils.getText(owner, ref) ?: "";
+					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
+					new ImportScope(#[normalizer], superScope, null, null, false);
+					
+				}
+			}) ?: superScope;
+			val typeKindNormalizer = new TypeKindNormalizer();
+			return new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
 		}
 	}
 
 	dispatch def IScope scopeInSetupBlock(SignalInstance context, EReference reference) {
 		if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 			val systemResource = (context.eContainer as SystemResourceSetup).type
-			val result = Scopes.scopeFor(systemResource.signals)
-			return result;
+			if(systemResource !== null) {
+				val result = Scopes.scopeFor(systemResource.signals)
+				return result;
+			}
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 			val globalScope = getDelegate().getScope(context, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE);
-			val enumTypes = context.instanceOf.parameters.map[typeInferrer.infer(it.type)?.type].filter(EnumerationType)
+			val enumTypes = context.instanceOf.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
 			val enumeratorScope = filteredEnumeratorScope(globalScope, enumTypes)
 			val paramScope = Scopes.scopeFor(context.instanceOf.parameters)
 			val scope = new CombiningScope(paramScope, enumeratorScope)
 			return scope
-		} else {
-			return IScope.NULLSCOPE;
-		}
+		} 
+		return IScope.NULLSCOPE;
 	}
 
 	dispatch def IScope scopeInSetupBlock(ConfigurationItemValue context, EReference reference) {
 		// configuration item values and unqualified enumerator values
 		val originalScope = getDelegate().getScope(context, reference);
-		val itemType = typeInferrer.infer(context.item)?.type;
-
-		if (itemType instanceof EnumerationType) {
-			return filteredEnumeratorScope(originalScope, itemType);
-		} else if(itemType instanceof SumType) {
-			return filteredSumTypeScope(originalScope, itemType);
-		} else if(itemType instanceof SumAlternative) {
-			return originalScope
-		} else {
+		if(context.item === null) {
 			return originalScope;
 		}
+		return originalScope;
+		
 	}
 	
 	def filteredSumTypeScope(IScope originalScope, SumType itemType) {
@@ -494,45 +526,76 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	dispatch def IScope scopeInSetupBlock(Argument context, EReference reference) {
-			val originalScope = getDelegate().getScope(context, reference);
+		val originalScope = getDelegate().getScope(context, reference);
 
 		if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 			if (context.parameter !== null) {
-				val itemType = typeInferrer.infer(context.parameter)?.type;
+				val itemType = BaseUtils.getType(context.parameter);
 				if (itemType instanceof EnumerationType) {
 					// unqualified resolving of enumeration values
 					return filteredEnumeratorScope(originalScope, itemType);
+				}
+				else {
+					val typeName = BaseUtils.getText(context.parameter.typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+					val normalizer = new ImportNormalizer(QualifiedName.create(typeName), true, false);
+					return new ImportScope(#[normalizer], originalScope, null, EcorePackage.eINSTANCE.EObject, false);
 				}
 			} else {
 				val signal = (context.eContainer() as ElementReferenceExpression).reference
 				if (signal instanceof Operation) {
 					// unqualified resolving of enumeration values
-					val enumTypes = signal.parameters.map[typeInferrer.infer(it.type)?.type].filter(EnumerationType)
+					val enumTypes = signal.parameters.map[BaseUtils.getType(it)?.origin].filter(EnumerationType)
 					return filteredEnumeratorScope(originalScope, enumTypes)
+				}
+				else {
+					return originalScope;
 				}
 			}
 		} else if (reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 			// unqualified resolving of parameter names
-			val container = (context.eContainer as ElementReferenceExpression).reference;
-			
-			return ModelUtils.getAccessorParameters(container)
+			val container = EcoreUtil2.getContainerOfType(context.eContainer, ElementReferenceExpression);
+			if(container.reference === null) {
+				val erefTxt = BaseUtils.getText(container, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+				val systemResourceSetup = EcoreUtil2.getContainerOfType(container.eContainer, SystemResourceSetup);
+				val systemResourceTxt = BaseUtils.getText(systemResourceSetup, ProgramPackage.eINSTANCE.systemResourceSetup_Type);
+				val normalizers = newArrayList(QualifiedName.create(erefTxt), QualifiedName.create(systemResourceTxt, erefTxt));
+				val mbSumTypeConstructor = if(container instanceof FeatureCallWithoutFeature) {
+					"<auto>"
+				} else {
+					if(container.arguments.size > 0) {
+						val firstArg = container.arguments.head;
+						if(firstArg !== context) {
+							val value = firstArg.value;
+							if(value instanceof ElementReferenceExpression) {
+								BaseUtils.getText(value, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
+							}
+						}
+					}
+				}
+				if(!mbSumTypeConstructor.nullOrEmpty) {
+					normalizers.add(QualifiedName.create(mbSumTypeConstructor, erefTxt))
+				}
+				return new ImportScope(normalizers.map[new ImportNormalizer(it, true, false)], originalScope, null, TypesPackage.eINSTANCE.parameter, false);
+			}
+			return ModelUtils.getAccessorParameters(container.reference)
 				.transform[parameters | Scopes.scopeFor(parameters)]
 				.or(originalScope)		
 		}
+		return originalScope;
 	}
 
 	dispatch def IScope scopeInSetupBlock(ElementReferenceExpression context, EReference reference) {
 		
 		// Erefs should only be constructors or refs in arguments.
 		val ref = context.eGet(ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE, false) as EObject;
-		if(ref.eIsProxy){
+		if(ref === null || ref.eIsProxy){
 			val container = context.eContainer;
 			if (container !== null && container != context) {
 				if(container instanceof ConfigurationItemValue) {
 					val confItem = container.item;
-					val typ = confItem.type;
+					val typ = confItem?.type;
 					if(typ instanceof SumType) {
-						return Scopes.scopeFor(typ.alternatives);
+						return Scopes.scopeFor(typ.alternatives.map[it.constructor]);
 					} else if(typ instanceof StructureType) {
 						return Scopes.scopeFor(#[typ]);
 					}
@@ -553,7 +616,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			}
 		}
 		else {
-			if(ref instanceof SumAlternative) {
+			if(ref instanceof SumSubTypeConstructor) {
 				if(reference == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
 					return doGetCandidateParameterScope(ref, IScope.NULLSCOPE);
 				}
@@ -585,7 +648,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			val obj = x.EObjectOrProxy;
 
 			val result = if (obj instanceof AbstractSystemResource) {
-					!obj.events.empty
+					obj.events === null || !obj.events.empty
 				} else {
 					false;
 				}
@@ -594,7 +657,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	def IScope scope_SystemEventSource_source(SystemEventSource context, EReference reference) {
-		return if (context === null) {
+		return if (context === null || context.origin === null || context.origin.events.nullOrEmpty) {
 			IScope.NULLSCOPE;
 		} else {
 			Scopes.scopeFor(context.origin.events);
@@ -611,15 +674,19 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			.or(originalScope)
 	}
 
+	val cache = new OnChangeEvictingCache();
+
 	override IScope getScope(EObject context, EReference reference) {
 		// Performance improvement: hard-code well traveled routes
-		val scope = if (reference == TypesPackage.Literals.TYPE_SPECIFIER__TYPE) {
+		
+		val scope = //cache.get(context -> reference, context.eResource, [
+			if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
-				scope_ElementReferenceExpression_reference(context, reference);
-			} else if (reference == ExpressionsPackage.Literals.FEATURE_CALL__FEATURE &&
-				context instanceof FeatureCall) {
-				scope_FeatureCall_feature(context as FeatureCall, reference);
+				val scope = scope_ElementReferenceExpression_reference(context, reference);
+				//val normalizers = #[new ImportNormalizer(QualifiedName.create("_kinds"), true, false)];
+				//return new ImportScope(normalizers, scope, null, EcorePackage.eINSTANCE.EObject, false);
+				scope;
 			} else if (reference == ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__ITEM &&
 				context instanceof SystemResourceSetup) {
 				scope_ConfigurationItemValue_item(context as SystemResourceSetup, reference);
@@ -628,7 +695,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 //				println(methodName + ' -> ' + context.eClass.name);
 				super.getScope(context, reference);
 			}
-
+//		]);
 		return TypesGlobalScopeProvider.filterExportable(context.eResource, reference, scope);
 	}
 

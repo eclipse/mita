@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Mita Platform IDE
+Automatic-Module-Name: org.eclipse.mita.platform.ide
 Bundle-Vendor: Eclipse.org/Mita
 Bundle-Version: 0.1.0.qualifier
 Bundle-SymbolicName: org.eclipse.mita.platform.ide; singleton:=true

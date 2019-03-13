@@ -16,7 +16,7 @@ package platforms.unittest;
 /**
  * Some Generic Type
  */
-export generated type SomeGenType<T> subtype-of iterable
+export generated type SomeGenType<T>
 	generator "org.eclipse.mita.platform.unittest.SomeTypeGenerator"
 	size-inferrer "org.eclipse.mita.platform.unittest.SomeTypeSizeInferrer"
 	

@@ -23,7 +23,7 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 class MakefileGenerator implements IPlatformMakefileGenerator {
 	
 	@Inject
-	private CodeFragmentProvider codeFragmentProvider 
+	CodeFragmentProvider codeFragmentProvider 
 	
 	override generateMakefile(Iterable<Program> compilationUnits, List<String> sourceFiles) {
 		val setups = compilationUnits?.flatMap[it.setup];

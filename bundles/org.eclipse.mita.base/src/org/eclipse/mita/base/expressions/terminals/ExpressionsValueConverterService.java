@@ -29,6 +29,7 @@ public class ExpressionsValueConverterService extends DefaultTerminalConverters 
 	public static final String HEX = "HEX";
 	public static final String BINARY = "BINARY";
 	public static final String FLOAT = "FLOAT";
+	public static final String LONG = "LONG";
 	
 	@Inject
 	protected AbstractIDValueConverter idValueConverter;
@@ -48,29 +49,38 @@ public class ExpressionsValueConverterService extends DefaultTerminalConverters 
 	@Inject
 	protected FloatValueConverter floatConverter;
 	
+	@Inject
+	protected LongValueConverter longConverter;
+	
 	@ValueConverter(rule = BOOL)
 	public IValueConverter<Boolean> BOOL() {
 		return boolConverter;
 	}
 	
 	@ValueConverter(rule = HEX)
-	public IValueConverter<Integer> HEX() {
+	public IValueConverter<Long> HEX() {
 		return hexConverter;
 	}
 	
 	@ValueConverter(rule = BINARY)
-	public IValueConverter<Integer> BINARY() {
+	public IValueConverter<Long> BINARY() {
 		return binaryConverter;
 	}
 	
 	@ValueConverter(rule = QID)
 	public IValueConverter<String> QID() {
+		// TODO: QIDConverter can't handle empty strings which can come up during editing
 		return qidConverter;
 	}
 	
 	@ValueConverter(rule = FLOAT)
 	public IValueConverter<Float> FLOAT() {
 		return floatConverter;
+	}
+	
+	@ValueConverter(rule = LONG)
+	public IValueConverter<Long> LONG() {
+		return longConverter;
 	}
 
 }

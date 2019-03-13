@@ -2,7 +2,7 @@ package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
@@ -102,11 +102,11 @@ class DefaultValueProvider {
 			]];
 			if(EcoreUtil2.getContainerOfType(context, SystemResourceSetup) === null) {
 				return ExpressionsFactory.eINSTANCE.createFeatureCall => [
-					feature = alt;
+					reference = alt;
 					operationCall = true;
-					owner = ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
+					arguments += ExpressionsFactory.eINSTANCE.createArgument => [ value = ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
 						reference = itemType;
-					]
+					]]
 					arguments += args;
 				]
 			}

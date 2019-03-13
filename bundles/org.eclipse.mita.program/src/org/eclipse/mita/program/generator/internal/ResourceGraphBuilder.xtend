@@ -13,13 +13,6 @@
 
 package org.eclipse.mita.program.generator.internal
 
-import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.Platform
-import org.eclipse.mita.program.ModalityAccess
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.SystemEventSource
-import org.eclipse.mita.program.SystemResourceSetup
 import com.google.inject.Inject
 import java.util.Collections
 import java.util.HashSet
@@ -28,14 +21,20 @@ import java.util.Map
 import java.util.Set
 import java.util.TreeMap
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.Platform
+import org.eclipse.mita.program.ModalityAccess
+import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.SystemEventSource
+import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.mita.base.types.TypesUtil
 
 class ResourceGraphBuilder {
-	
-	@Inject
-	protected ITypeSystemInferrer typeSystemInferrer
 	
 	protected final Set<Object> nodes = new HashSet();
 	
@@ -64,7 +63,7 @@ class ResourceGraphBuilder {
 	protected dispatch def Iterable<EObject> doComputeDependencies(AbstractSystemResource resource) {
 		return resource
 			.configurationItems
-			.filter[ typeSystemInferrer.infer(it)?.type instanceof AbstractSystemResource ]
+			.filter[ TypesUtil.getConstraintSystem(resource.eResource).getUserData(BaseUtils.getType(it), BaseConstraintFactory.ECLASS_KEY) == "AbstractSystemResource" ]
 			.filter(EObject)
 			.toList;
 	}

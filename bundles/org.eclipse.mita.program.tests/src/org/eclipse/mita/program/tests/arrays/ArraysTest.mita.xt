@@ -14,8 +14,12 @@ var foo = new array<uint8>(size = 10);
 // Arrays can be initialized with brackets
 var foo2: array<uint8> = [1, 2, 3, 4, 5];
 
-// xpect errors --> "Array does not have a unique type (uint32 and bool are incompatible)." at "baz"
-//var baz = [1, 2, true];
+/* XPECT errors ---
+"f_90 (:: xint8) doesn't share a common type with the other members of this array literal" at "1"
+"f_91 (:: xint8) doesn't share a common type with the other members of this array literal" at "2"
+"f_93 (:: bool) doesn't share a common type with the other members of this array literal" at "true"
+--- */
+var baz = [1, 2, true];
 
 // XPECT noCompileErrors
 fn works() {
@@ -32,7 +36,7 @@ fn works() {
 	a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<int32>
+	// XPECT inferredType --> array<xint8>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
@@ -82,7 +86,7 @@ fn blabla() {
 	a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<int32>
+	// XPECT inferredType --> array<xint8>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
@@ -131,7 +135,7 @@ every 100 milliseconds {
 	a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<int32>
+	// XPECT inferredType --> array<xint8>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
@@ -159,23 +163,6 @@ fn errors() {
 	b = a[6:];
 	// XPECT errors --> "Array range is invalid: Upper bound must be less than or equal to array size (5)" at ":7"
 	b = a[:7];
-	/* XPECT errors ---
-		"Array range is invalid: Lower bound must be positive or zero" at "-2:-1"
-		"Array range is invalid: Upper bound must be strictly positive" at "-2:-1"
-	--- */
-	b = a[-2:-1];
-	var str = "asdf";
-	// XPECT errors --> "Array index must be integer." at "str"
-	var c = a[str];
-	// XPECT errors --> "Array range is invalid: Incompatible types string and integer." at "str"
-	b = a[str:];
-	// XPECT errors --> "Array range is invalid: Incompatible types string and integer." at "str"
-	b = a[:str];
-	/* XPECT errors ---
-		"Array range is invalid: Incompatible types string and integer." at "str"
-		"Array range is invalid: Incompatible types string and integer." at "str"
-	--- */
-	b = a[str:str];
 }
 
 // XPECT noCompileErrors
@@ -201,7 +188,6 @@ struct SensorMessage {
 // XPECT noCompileErrors
 fn mean(data : array<SensorMessage>) {
     let result : SensorMessage;
-
     for(var i = 0; i < data.length(); i++) {
         // featureCalls on arrayAccess is allowed
         result.accX += data[i].accX; 

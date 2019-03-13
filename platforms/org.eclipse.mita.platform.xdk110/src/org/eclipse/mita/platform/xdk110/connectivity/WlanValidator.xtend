@@ -24,7 +24,7 @@ import org.eclipse.xtext.validation.ValidationMessageAcceptor
 
 class WlanValidator implements IResourceValidator {
 	
-	private static final Pattern IPV4_ADDR_PATTERN = Pattern.compile(
+	static final Pattern IPV4_ADDR_PATTERN = Pattern.compile(
         "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 	
 	

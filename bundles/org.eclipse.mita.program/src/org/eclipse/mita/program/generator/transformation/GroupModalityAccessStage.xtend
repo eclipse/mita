@@ -85,7 +85,7 @@ class GroupModalityAccessStage extends AbstractTransformationStage {
 	
 	def void replaceAllReferencesWith(EObject oldObj, EObject newObj, EObject context) {
 		context.eAllContents.filter(ElementReferenceExpression).filter[ it.reference == oldObj ].forEach[ it.reference = newObj ]
-		context.eAllContents.filter(FeatureCall).filter[ it.feature == oldObj ].forEach[ it.feature = newObj ]
+		context.eAllContents.filter(FeatureCall).filter[ it.reference == oldObj ].forEach[ it.reference = newObj ]
 		context.eAllContents.filter(ModalityAccess).filter[ it.preparation == oldObj ].forEach[ it.preparation = newObj as ModalityAccessPreparation ]
 	}
 	

@@ -16,8 +16,10 @@ package org.eclipse.mita.platform.unittest
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
@@ -25,7 +27,6 @@ import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class SomeTypeGenerator extends AbstractTypeGenerator {
@@ -38,15 +39,15 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 
 	
 	
-	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type.typeArguments.head)» «stmt.name»;''');
+	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
+		codeFragmentProvider.create('''«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.tail.head)» «stmt.name»;''');
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
-		codeFragmentProvider.create('''«typeGenerator.code(type.typeArguments.head)»''')
+	override generateTypeSpecifier(AbstractType type, EObject context) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''')
 	}
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	
@@ -56,8 +57,9 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 		
+
 		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
-			val variable = ModelUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			
 			return codeFragmentProvider.create('''«resultVariableName» = «variable.generate»''');
 		}
@@ -69,9 +71,10 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 	
+
 		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
-			val variable = ModelUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
-			val value = ModelUtils.getArgumentValue(ref.reference as Operation, ref, 'value');
+			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+			val value = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'value');
 			
 			return codeFragmentProvider.create('''«variable.generate» = «value.generate»;''');
 		}

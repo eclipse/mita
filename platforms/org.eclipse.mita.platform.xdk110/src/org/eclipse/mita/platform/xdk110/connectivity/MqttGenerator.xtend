@@ -19,14 +19,13 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
-import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
+import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import java.util.stream.Collectors
 
@@ -516,9 +515,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
-		val qosRaw = getQosLevel(signalInstance);
-		val qos = getQosFromInt(qosRaw);
-
+		val qos = getQosLevel(signalInstance);
+		
 		return codeFragmentProvider.create('''
 			Retcode_T exception = RETCODE_OK;
 			
@@ -567,8 +565,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	protected def int getQosLevel(SignalInstance instance) {
 		val qosRaw = ModelUtils.getArgumentValue(instance, 'qos');
-		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]) as Integer;
-		return Math.min(Math.max(qosRawValue ?: 0, 0), 3);
+		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]) as Long  ?: 0;
+		return Math.min(Math.max(qosRawValue.intValue, 0), 3);
 	}
 
 	protected def String getTopicName(SignalInstance instance) {

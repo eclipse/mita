@@ -45,6 +45,6 @@ public interface IResourceGraph<T> {
 	/**
 	 * @return all nodes of this graph in their topological sort order
 	 */
-	Iterable<T> getNodesInTopolicalOrder();
+	Iterable<T> getNodesInTopologicalOrder();
 	
 }
