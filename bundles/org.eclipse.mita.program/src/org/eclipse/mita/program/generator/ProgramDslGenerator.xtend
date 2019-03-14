@@ -190,6 +190,11 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val someProgram = compilationUnits.head;
 		
 		compilationUnits.forEach[
+			// some transformation stages might force evaluation of resource descriptions. 
+			// Here we clear them again.
+			clearCache(it);
+		]
+		compilationUnits.forEach[
 			doType(it);			
 		]
 		
@@ -245,6 +250,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		)
 		
 		files += fsa.produceFile('base/MitaGeneratedTypes.h', someProgram, generatedTypeGenerator.generateHeader(context, userTypeFiles));
+		files += fsa.produceFile('base/MitaGeneratedTypes.c', someProgram, generatedTypeGenerator.generateImplementation(context, userTypeFiles));
 		
 		files += getUserFiles(input);
 		
@@ -252,7 +258,14 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		if(codefragment !== null && codefragment != CodeFragment.EMPTY)
 			fsa.produceFile('Makefile', someProgram, codefragment);
 	}
-		
+	
+	def clearCache(EObject obj) {
+		val resource = obj.eResource;
+		BaseUtils.getCacheAdapters(resource).forEach[
+			it.clearValues();
+		];
+	}
+	
 	def doType(EObject program) {
 		val resource = program.eResource;
 		if(resource instanceof MitaBaseResource) {

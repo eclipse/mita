@@ -17,9 +17,7 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import java.io.IOException
 import java.io.InputStream
-import java.util.List
 import java.util.Map
-import java.util.Set
 import org.apache.log4j.Logger
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
@@ -42,9 +40,7 @@ import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.diagnostics.Severity
-import org.eclipse.xtext.linking.impl.IllegalNodeException
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource
 import org.eclipse.xtext.nodemodel.INode
 import org.eclipse.xtext.resource.IContainer
@@ -52,12 +48,12 @@ import org.eclipse.xtext.resource.IFragmentProvider
 import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
 import org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.ui.resource.LiveScopeResourceSetInitializer
 import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.util.Triple
 import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import java.lang.reflect.Field
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -89,6 +85,9 @@ class MitaBaseResource extends LazyLinkingResource {
 
 	@Inject
 	protected XtextFragmentProvider fragmentProvider;
+
+	@Inject
+	protected LiveScopeResourceSetInitializer liveScopeResourceSetInitializer
 
 	override toString() {
 		val str = URI.toString;
@@ -195,7 +194,8 @@ class MitaBaseResource extends LazyLinkingResource {
 
 		timer.start("resourceDescriptions");
 		if (!resourceSet.loadOptions.containsKey(ResourceDescriptionsProvider.NAMED_BUILDER_SCOPE)) {
-			resourceSet.loadOptions.put(ResourceDescriptionsProvider.LIVE_SCOPE, true);
+//			resourceSet.loadOptions.put(ResourceDescriptionsProvider.LIVE_SCOPE, true);
+			liveScopeResourceSetInitializer.initialize(resourceSet);
 		}
 		val resourceDescriptions = resourceDescriptionsProvider.getResourceDescriptions(resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);

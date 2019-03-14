@@ -50,6 +50,12 @@ abstract class AbstractTransformationStage {
 	public static final int ORDER_VERY_LATE = 900;
 	public static final int ORDER_CUSTOM_STUFF = 1100;
 	
+	static def before(int x) {
+		return x - 10;
+	}
+	static def afterwards(int x) {
+		return x + 10;
+	}
 	
 	def transform(ITransformationPipelineInfoProvider pipeline, Program program) {
 		pipelineInfoProvider = pipeline;

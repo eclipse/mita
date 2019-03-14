@@ -51,4 +51,18 @@ class GeneratedTypeGenerator {
 		''').addHeader(userTypeFiles.map[new IncludePath(it, false)])
 		.toHeader(context, 'MITA_GENERATED_TYPES_H')
 	}
+	
+	def generateImplementation(CompilationContext context, List<String> userTypeFiles) {
+		val generatorsWithTypeSpecs = context.getAllGeneratedTypesUsed().map[new Pair(it, registry.getGenerator(context.allUnits.head.eResource, it) as AbstractTypeGenerator)].toList;
+		val generators = context.getAllGeneratedTypesUsed().groupBy[it.name].values.map[it.head].map[registry.getGenerator(context.allUnits.head.eResource, it) as AbstractTypeGenerator].toList;
+		
+		return codeFragmentProvider.create('''
+			«FOR generator: generators SEPARATOR("\n")» 
+			«generator.generateImplementation()»
+			«ENDFOR»
+		''')
+		.addHeader("MitaGeneratedTypes.h", false)
+		.addHeader(userTypeFiles.map[new IncludePath(it, false)])
+		.toImplementation(context);
+	}
 }

@@ -79,6 +79,13 @@ abstract class AbstractTypeGenerator implements IGenerator {
 		return CodeFragment.EMPTY;
 	}
 	
+	/**
+	 * Produces function definitions. Called only once.
+	 */
+	def CodeFragment generateImplementation() {
+		return CodeFragment.EMPTY;
+	}
+	
 	def CodeFragment generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
 		return codeFragmentProvider.create('''
 		ERROR: CANT COERCE FROM «from» to «to» (expr.eClass = «expr.eClass.name»). THIS IS MOST LIKELY A BUG IN THE COMPILER, PLEASE REPORT

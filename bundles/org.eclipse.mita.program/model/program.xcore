@@ -324,6 +324,10 @@ class NewInstanceExpression extends ElementReferenceExpression {
 			return refType.constructor;
 		}
 	}
+	
+	op String getRefText() {
+		return ^type.toString;
+	}
 }
 
 class InterpolatedStringExpression extends Expression {

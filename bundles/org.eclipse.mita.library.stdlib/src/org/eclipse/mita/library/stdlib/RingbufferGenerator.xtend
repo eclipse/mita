@@ -39,6 +39,13 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 	
 	override generateHeader() {
 		return codeFragmentProvider.create('''
+		uint32_t ringbuffer_mask(uint32_t i, uint32_t len);
+		uint32_t ringbuffer_increment(uint32_t i, uint32_t len);
+		''')
+	}
+	
+	override generateImplementation() {
+		return codeFragmentProvider.create('''
 			//assumes that you won't be overflowing by more than len
 			uint32_t ringbuffer_mask(uint32_t i, uint32_t len) {
 				if(i >= len) {
@@ -113,6 +120,10 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
 			val rbRef = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, "self").code;
 			val value = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, "element").code;
+			return generate(rbRef, value, ref);
+		}
+		
+		public def generate(IGeneratorNode rbRef, IGeneratorNode value, ElementReferenceExpression ref) {
 			return codeFragmentProvider.create('''
 				if(«rbRef».length >= «rbRef».capacity) {
 					«generateExceptionHandler(ref, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»

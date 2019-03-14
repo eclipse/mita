@@ -38,7 +38,7 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean shouldTest() {
-			return true;
+			return false;
 		}
 		private static String getTestString() {
 			return "Couldn't resolve reference to Type ''";

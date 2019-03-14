@@ -39,6 +39,8 @@ import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
+import org.eclipse.xtext.ui.editor.DirtyStateManager
+import org.eclipse.xtext.ui.editor.IDirtyStateManager
 import org.eclipse.xtext.validation.IResourceValidator
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
@@ -55,6 +57,7 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(PlatformLinker);
+		binder.bind(IDirtyStateManager).to(DirtyStateManager);
 	}
 
 	override bindIGlobalScopeProvider() {

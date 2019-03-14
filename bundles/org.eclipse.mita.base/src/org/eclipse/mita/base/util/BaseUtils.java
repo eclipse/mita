@@ -338,7 +338,7 @@ public class BaseUtils {
 		return result;
 	}
 
-	private static List<OnChangeEvictingCache.CacheAdapter> getCacheAdapters(final Resource resource) {
+	public static List<OnChangeEvictingCache.CacheAdapter> getCacheAdapters(final Resource resource) {
 		final ArrayList<OnChangeEvictingCache.CacheAdapter> cacheAdapters = BaseUtils.<OnChangeEvictingCache.CacheAdapter>force(
 				Iterables.<OnChangeEvictingCache.CacheAdapter>filter(resource.eAdapters(),
 						OnChangeEvictingCache.CacheAdapter.class));

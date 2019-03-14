@@ -24,6 +24,8 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.library.stdlib.RingbufferGenerator
+import org.eclipse.mita.library.stdlib.RingbufferGenerator.PushGenerator
 
 class ButtonGenerator extends AbstractSystemResourceGenerator {
 
@@ -33,6 +35,9 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 	
+	@Inject
+	protected PushGenerator pushGenerator
+		
     override generateSetup() {
         codeFragmentProvider.create('''
             return BSP_Button_Connect();
@@ -42,28 +47,38 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
             .addHeader('BSP_BoardType.h', true, IncludePath.HIGH_PRIORITY)
             .addHeader('BCDS_BSP_Button.h', true)
             .addHeader('MitaEvents.h', true)
+            .addHeader("MitaGeneratedTypes.h", false)
             .setPreamble('''
 			«FOR handlergrp : eventHandler.groupBy[it.sensorInstance.buttonNumber].values»
-			void «handlergrp.head.internalHandlerName»(uint32_t data)
+			«val changedHandlers = handlergrp.filter[(it.event as SystemEventSource)?.source?.name == "changed"]»
+			«FOR changedHandler: changedHandlers»
+				extern ringbuffer_bool rb_«changedHandler.baseName»;
+			«ENDFOR»
+			
+			Retcode_T «handlergrp.head.internalHandlerName»(uint32_t data)
 			{
+				Retcode_T exception = RETCODE_OK;
 				«FOR idx_handler: handlergrp.indexed»
 				«IF #["pressed", "released"].contains((idx_handler.value.event as SystemEventSource)?.source?.name)»
 				«IF idx_handler.key > 0»else «ENDIF»if(data == «getButtonStatusEnumName(idx_handler.value)») {
-					Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «idx_handler.value.handlerName», NULL, data);
-					if(retcode != RETCODE_OK)
+					exception = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «idx_handler.value.handlerName», NULL, data);
+					if(exception != RETCODE_OK)
 					{
-						Retcode_RaiseErrorFromIsr(retcode);
+						Retcode_RaiseErrorFromIsr(exception);
 					}
 				}
 				«ENDIF»
             	«ENDFOR»
-				«val changedHandlers = handlergrp.filter[(it.event as SystemEventSource)?.source?.name == "changed"]»
 				«FOR changedHandler: changedHandlers»
-				// enqueue boolean in ringbuffer
-				Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «changedHandler.handlerName», NULL, data);
-				if(retcode != RETCODE_OK)
+				«pushGenerator.generate(
+					codeFragmentProvider.create('''rb_«changedHandler.baseName»'''),
+					codeFragmentProvider.create('''data == BSP_XDK_BUTTON_PRESSED'''),
+					null
+				)»
+				exception = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «changedHandler.handlerName», NULL, data);
+				if(exception != RETCODE_OK)
 				{
-					Retcode_RaiseErrorFromIsr(retcode);
+					Retcode_RaiseErrorFromIsr(exception);
 				}
             	«ENDFOR»
 			}

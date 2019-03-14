@@ -20,12 +20,12 @@ import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
@@ -37,8 +37,6 @@ import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
-import org.eclipse.mita.program.generator.BuiltinRingbufferGenerator
-import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class UserCodeFileGenerator { 
 	
@@ -62,10 +60,7 @@ class UserCodeFileGenerator {
 	
 	@Inject
 	protected GeneratorRegistry generatorRegistry
-	
-	@Inject
-	protected BuiltinRingbufferGenerator ringBuffer
-	
+		
 	/**
 	 * Generates custom types used by the application.
 	 */
@@ -187,14 +182,10 @@ class UserCodeFileGenerator {
 				«val eventType = BaseUtils.getType(eventSource)»
 				«IF !(eventType instanceof TypeVariable)»
 				//todo: size
-				«ringBuffer.generateVariableDeclaration(program, eventType, "rb_" + handler.handlerName, -1, true, "0")»
 				«ENDIF»
 				«exceptionType» «handler.handlerName»(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
 				{
 					«eventLoopGenerator.generateEventLoopHandlerPreamble(context, handler)»
-					«IF !(eventType instanceof TypeVariable)»
-					«ringBuffer.generatePopStatements(null, "rb_" + handler.handlerName, if(handler.payload !== null) statementGenerator.code(handler.payload).noTerminator)»
-					«ENDIF»
 				«statementGenerator.code(handler.block).noBraces» 
 
 					return NO_EXCEPTION;
