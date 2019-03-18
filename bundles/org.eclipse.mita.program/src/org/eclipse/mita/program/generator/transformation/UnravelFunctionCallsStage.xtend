@@ -34,6 +34,7 @@ import org.eclipse.mita.base.types.TypeConstructor
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.base.expressions.AssignmentExpression
 
 class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	
@@ -47,8 +48,11 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 		if(EcoreUtil2.getContainerOfType(expression, ProgramBlock) === null) {
 			return false;
 		}
-		// we would unravel expressions into a variable declaration anyway.
-		if(expression.eContainer instanceof VariableDeclaration) {
+		val parent = expression.eContainer;
+		// we would unravel expressions into a variable declaration/assignment anyway.
+		if(	parent instanceof VariableDeclaration
+		 || (parent instanceof AssignmentExpression && parent.eContainer instanceof ExpressionStatement)
+		) {
 			return false;
 		}
 		if(expression instanceof NewInstanceExpression) {

@@ -545,7 +545,7 @@ class StatementGenerator {
 	}
 	
 	
-	def IGeneratorNode generateFunCallStmt(EObject target, IGeneratorNode variableName, AbstractType type, ElementReferenceExpression initialization) {
+	def IGeneratorNode generateFunCallStmt(EObject target, CodeFragment variableName, AbstractType type, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
 		if (reference instanceof VirtualFunction) {
 			return codeFragmentProvider.create('''
@@ -576,16 +576,17 @@ class StatementGenerator {
 	dispatch def IGeneratorNode initializationCode(VariableDeclaration stmt) {
 		return initializationCode(stmt, codeFragmentProvider.create('''«stmt.name»'''), AssignmentOperator.ASSIGN, stmt.initialization, false);
 	}
-	@Traced dispatch def IGeneratorNode code(EventHandlerVariableDeclaration stmt) {
-		return '''«getCtype(BaseUtils.getType(stmt), stmt)» «stmt.name»'''
-	}
+//	@Traced dispatch def IGeneratorNode code(EventHandlerVariableDeclaration stmt) {
+//		return '''«getCtype(BaseUtils.getType(stmt), stmt)» «stmt.name»'''
+//	}
 	
 	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
 		return initializationCode(expr.varRef, codeFragmentProvider.create('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
 	}
 	public def IGeneratorNode initializationCode(EObject target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
- 		val type = BaseUtils.getType(target);
-		
+ 		return initializationCode(BaseUtils.getType(target), target, varName, op, initialization, alwaysGenerate);
+ 	}
+ 	public def IGeneratorNode initializationCode(AbstractType type, EObject target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {		
 		if (isGeneratedType(target, type)) {
 			val generator = registry.getGenerator(target.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (initialization instanceof NewInstanceExpression) {

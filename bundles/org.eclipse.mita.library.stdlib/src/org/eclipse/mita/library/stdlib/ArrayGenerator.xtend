@@ -316,7 +316,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	
-		override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
+		override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;

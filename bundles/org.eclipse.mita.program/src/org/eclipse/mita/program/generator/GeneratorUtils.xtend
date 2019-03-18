@@ -13,7 +13,10 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.inject.Guice
 import com.google.inject.Inject
+import com.google.inject.Module
+import com.google.inject.name.Named
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.file.Files
@@ -30,13 +33,13 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.types.GeneratedTypeConstructor
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -44,7 +47,6 @@ import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Bus
 import org.eclipse.mita.platform.Connectivity
@@ -75,6 +77,7 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.service.DefaultRuntimeModule
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 

@@ -145,7 +145,10 @@ ProductMember returns ProductMember:
 ;
 
 SystemResourceEvent returns SystemResourceEvent: 
-	'event' name=ID ((':' typeSpecifier=TypeSpecifier) | (typeSpecifier=NullTypeSpecifier))
+	'event' name=ID ((':' typeSpecifier=TypeSpecifier) | (typeSpecifier=NullTypeSpecifier)) ('{'
+		("size-inferrer" sizeInferrer=STRING)?
+		("maximum-size" maximumSize=LONG)?
+	'}')?
 ;
 
 

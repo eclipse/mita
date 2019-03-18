@@ -16,18 +16,17 @@ package org.eclipse.mita.library.stdlib.functions
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.library.stdlib.OptionalGenerator
 import org.eclipse.mita.library.stdlib.OptionalGenerator.enumOptional
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
+import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.program.generator.AbstractTypeGenerator
 
 class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	
@@ -37,7 +36,7 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected GeneratorRegistry registry
 	
-	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
+	override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
 		val args = ref.arguments;
 		val valueVarOrExpr = args.head.value;
 		// need the optionalGenerator

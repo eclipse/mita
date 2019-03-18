@@ -90,6 +90,12 @@ class StringGenerator extends AbstractTypeGenerator {
 		return result; 
 	}
 	
+	override generateExpression(AbstractType type, CodeFragment left, AssignmentOperator operator, CodeFragment right) {
+		return codeFragmentProvider.create('''
+			memcpy(«left», «right», strlen(«right»));
+		''');
+	}
+	
 	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
 		return if(operator === null) {
 			// inline string interpolation, so let's create a statement expression
@@ -277,7 +283,11 @@ class StringGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''char*''')
+		codeFragmentProvider.create('''string''')
+	}
+	
+	override generateHeader() {
+		return codeFragmentProvider.create('''typedef char* string;''');
 	}
 	
 	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
@@ -323,7 +333,7 @@ class StringGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	
-		override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
+		override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;

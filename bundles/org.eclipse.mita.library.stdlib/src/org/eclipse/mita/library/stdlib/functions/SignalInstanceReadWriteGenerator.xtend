@@ -18,15 +18,15 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.NamedElement
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.generator.AbstractFunctionGenerator
-import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.generator.AbstractFunctionGenerator
+import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.generator.TypeGenerator
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
@@ -36,7 +36,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected TypeGenerator typeGenerator
 	
-	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression functionCall) {
+	override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression functionCall) {
 		val firstArg = functionCall.arguments.get(0)?.value;
 		val siginst = if(firstArg instanceof FeatureCall && (firstArg as FeatureCall).reference instanceof SignalInstance) {
 			(firstArg as FeatureCall).reference as SignalInstance;

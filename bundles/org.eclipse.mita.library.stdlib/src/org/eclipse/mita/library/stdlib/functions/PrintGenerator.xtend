@@ -20,14 +20,14 @@ import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.library.stdlib.StringGenerator
 import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import org.eclipse.mita.program.generator.CodeFragment
 
 class PrintGenerator extends AbstractFunctionGenerator {
 	
 	@Inject
 	protected StringGenerator stringGenerator
 	
-	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
+	override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
 		val functionName = (ref.reference as NamedElement).name;
 		val addBreaklinePostfix = functionName == 'println';
 		

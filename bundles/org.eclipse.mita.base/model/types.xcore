@@ -550,6 +550,8 @@ class CoercionExpression extends Expression {
 }
 
 class SystemResourceEvent extends Event {
+	String sizeInferrer
+	long maximumSize
 }
 
 

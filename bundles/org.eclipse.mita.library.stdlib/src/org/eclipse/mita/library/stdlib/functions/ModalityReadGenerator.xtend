@@ -30,7 +30,7 @@ class ModalityReadGenerator extends AbstractFunctionGenerator {
 		return false;
 	}
 	
-	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression functionCall) {
+	override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression functionCall) {
 		if(target === null) {
 			CodeFragment.EMPTY
 		} else {

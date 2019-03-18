@@ -26,7 +26,7 @@ import org.eclipse.mita.program.VariableDeclaration
 /**
  * Interface for type generators.
  */
-abstract class AbstractTypeGenerator implements IGenerator {
+class AbstractTypeGenerator implements IGenerator {
 
 	@Inject SubtypeChecker subtypeChecker;
 
@@ -53,7 +53,9 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a new instance of the type
 	 */
-	def CodeFragment generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr);
+	def CodeFragment generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
+		return CodeFragment.EMPTY;
+	}
 
 	/**
 	 * Checks if this type supports a particular expression within its type hierarchy
@@ -69,6 +71,10 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 * {@link #checkExpressionSupport) returned true for the corresponding types.
 	 */
 	def CodeFragment generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
+		return codeFragmentProvider.create('''«left» «operator.literal» «right»;''');
+	}
+	
+	def CodeFragment generateExpression(AbstractType type, CodeFragment left, AssignmentOperator operator, CodeFragment right) {
 		return codeFragmentProvider.create('''«left» «operator.literal» «right»;''');
 	}
 	

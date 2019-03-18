@@ -32,6 +32,7 @@ import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
+import org.eclipse.mita.program.generator.MainSystemResourceGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
@@ -178,19 +179,20 @@ class UserCodeFileGenerator {
 		val exceptionType = exceptionGenerator.exceptionType;
 		return codeFragmentProvider.create('''
 			«FOR handler : program.eventHandlers»
-				«val eventSource = handler.event»
-				«val eventType = BaseUtils.getType(eventSource)»
-				«IF !(eventType instanceof TypeVariable)»
-				//todo: size
-				«ENDIF»
-				«exceptionType» «handler.handlerName»(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
+				«exceptionType» «handler.handlerName»_worker()
 				{
-					«eventLoopGenerator.generateEventLoopHandlerPreamble(context, handler)»
-				«statementGenerator.code(handler.block).noBraces» 
-
+				«statementGenerator.code(handler.block).noBraces»
 					return NO_EXCEPTION;
 				}
-
+				
+				«exceptionType» «handler.handlerName»(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
+				{
+					«exceptionType» exception = NO_EXCEPTION;
+					«eventLoopGenerator.generateEventLoopHandlerPreamble(context, handler)»
+					exception = «handler.handlerName»_worker();
+					«eventLoopGenerator.generateEventLoopHandlerEpilogue(context, handler)»
+					return NO_EXCEPTION;
+				}
 			«ENDFOR»
 		''')
 		.addHeader('MitaExceptions.h', false);

@@ -18,16 +18,16 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.library.stdlib.OptionalGenerator
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
+import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class OptionalsValueGenerator extends AbstractFunctionGenerator {
 	
 	@Inject 
 	protected extension StatementGenerator statementGenerator
 	
-	override generate(EObject target, IGeneratorNode resultVariableName, ElementReferenceExpression ref) {
+	override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
 		val args = ref.arguments;
 		val optVarOrExpr = args.head.value;
 				

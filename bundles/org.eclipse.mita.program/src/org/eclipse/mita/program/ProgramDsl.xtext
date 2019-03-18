@@ -110,7 +110,7 @@ enum TimeUnit returns program::TimeUnit:
 ;
 
 SystemEventSource returns program::SystemEventSource: 
-	origin=[platform::AbstractSystemResource] '.' source=[types::Event]
+	origin=[platform::AbstractSystemResource] '.' source=[types::SystemResourceEvent]
 ;
 
 ProgramBlock returns program::ProgramBlock:

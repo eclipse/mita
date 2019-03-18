@@ -122,6 +122,11 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	Provider<XtextResourceSet> resourceSetProvider;
 		
 
+	protected def injectPlatformDependencies(Object obj, Module libraryModule) {
+		val injector = Guice.createInjector(injectingModule, libraryModule);
+		injector.injectMembers(obj)
+	}
+
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		resource.resourceSet.doGenerate(fsa);
 	}
@@ -130,11 +135,6 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		return resource.URI.segments.last.startsWith('application.')
 	}
 	
-	protected def injectPlatformDependencies(Module libraryModule) {
-		injector = Guice.createInjector(injectingModule, libraryModule);
-		injector.injectMembers(this)
-	}
-
 	private def produceFile(IFileSystemAccess2 fsa, String path, EObject ctx, CompositeGeneratorNode content) {
 		var root = CodeFragment.cleanNullChildren(content);
 		fsa.generateTracedFile(path, root);
@@ -159,6 +159,12 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val libs = libraryProvider.standardLibraries;
 		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
 		val stdlib = stdlibUri.map[input.getResource(it, true)].filterNull.map[it.contents.filter(Program).head].force;
+		
+		val someProgram = resourcesToCompile.map[it.contents.head].filter(Program).head;
+		val platform = modelUtils.getPlatform(input, someProgram);
+		val platformModule = resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module;
+		injectPlatformDependencies(this, platformModule);
+		
 		
 		/*
 		 * Steps:
@@ -187,7 +193,6 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			]
 			.toList();
 		
-		val someProgram = compilationUnits.head;
 		
 		compilationUnits.forEach[
 			// some transformation stages might force evaluation of resource descriptions. 
@@ -198,11 +203,8 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			doType(it);			
 		]
 		
-		val platform = modelUtils.getPlatform(input, someProgram);
 		
-		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
-		
-		var EObject platformRoot = platform;
+		var EObject platformRoot = modelUtils.getPlatform(input, compilationUnits.head);
 		while(platformRoot.eContainer !== null) {
 			platformRoot = platformRoot.eContainer;
 		}

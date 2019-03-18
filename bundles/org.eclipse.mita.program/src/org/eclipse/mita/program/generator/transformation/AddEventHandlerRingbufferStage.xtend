@@ -25,27 +25,36 @@ import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.generator.MainSystemResourceGenerator
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
-import org.eclipse.mita.program.GeneratedFunctionDefinition
+import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.resource.PluginResourceLoader
+import com.google.inject.Module
 
 class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 
 	@Inject
 	IScopeProvider scopeProvider
+		
+	@Inject(optional=true)
+	protected MainSystemResourceGenerator queueSizeProvider
 
 	override getOrder() {
 		return before(AddExceptionVariableStage.ORDER);
 	}
-
+	
 	protected dispatch def void doTransform(EventHandlerDeclaration decl) {
 		val varDecl = addRingbufferDeclaration(decl);
 		if(varDecl === null) {
@@ -83,19 +92,30 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		popCallExpression.arguments += rbReferenceArg;
 		popCallExpression.operationCall = true;
 		
-		val popCallStmt = if(decl.payload === null) {
+		val popCallStmts = if(decl.payload === null) {
 			val stmt = pf.createExpressionStatement;
 			stmt.expression = popCallExpression;
-			stmt;
+			#[stmt];
 		}
 		else {
-			val stmt = pf.createVariableDeclaration;
-			stmt.name = decl.payload.name;
-			stmt.initialization = popCallExpression;			
-			stmt;
+			val vdecl = pf.createEventHandlerVariableDeclaration;
+			vdecl.name = decl.payload.name;	
+			vdecl.initialization = popCallExpression;
+
+//			val assignmentExpr = ef.createAssignmentExpression;
+//			assignmentExpr.expression = popCallExpression;
+//			
+//			val varReference = ef.createElementReferenceExpression;
+//			varReference.reference = vdecl;
+//			assignmentExpr.varRef = varReference;
+//			
+//			val assignmentStmt = pf.createExpressionStatement;
+//			assignmentStmt.expression = assignmentExpr;
+			
+			#[vdecl as VariableDeclaration/*, assignmentStmt*/];
 		}
 		
-		block.content.add(0, popCallStmt);
+		block.content.addAll(0, popCallStmts);
 	}
 	
 	protected def VariableDeclaration addRingbufferDeclaration(EventHandlerDeclaration decl) {
@@ -139,7 +159,7 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		val sizeArg = ef.createArgument;
 		val sizeExpression = ef.createPrimitiveValueExpression;
 		val sizeLiteral = ef.createIntLiteral;
-		sizeLiteral.value = 10;
+		sizeLiteral.value = queueSizeProvider.getEventHandlerPayloadQueueSize(decl);
 		sizeExpression.value = sizeLiteral;
 		sizeArg.value = sizeExpression;
 		rbInit.arguments += sizeArg;

@@ -14,6 +14,8 @@
 package org.eclipse.mita.platform.xdk110.platform
 
 import com.google.inject.Inject
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
@@ -93,4 +95,16 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	override generateEnablePreamble(CompilationContext context) {
 		return CodeFragment.EMPTY;
 	}	
+	override CodeFragment generateEventLoopHandlerEpilogue(CompilationContext context, EventHandlerDeclaration declaration) {
+		val payloadType = BaseUtils.getType(declaration);
+		if(payloadType.name == "string") {
+			val privateRingbufferName = declaration.xdkRingbufferName;
+		}
+		return CodeFragment.EMPTY
+	}
+	
+	public def String getXdkRingbufferName(EventHandlerDeclaration declaration) {
+		return "xdkrb_" + declaration.baseName.toFirstLower;
+	}
+	
 }

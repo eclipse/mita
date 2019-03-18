@@ -1,14 +1,17 @@
 package org.eclipse.mita.platform.xdk110.platform
 
 import com.google.inject.Inject
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.xdk110.connectivity.AdcGenerator
 import org.eclipse.mita.platform.xdk110.connectivity.AdcGenerator.SignalInfo
+import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
-import org.eclipse.mita.program.generator.DefaultMainSystemResourceGenerator
 import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.generator.MainSystemResourceGenerator
+import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin;
 
-class Xdk110PlatformGenerator extends DefaultMainSystemResourceGenerator {
+class Xdk110PlatformGenerator extends MainSystemResourceGenerator {
 	
 	@Inject
 	extension GeneratorUtils
@@ -81,6 +84,14 @@ class Xdk110PlatformGenerator extends DefaultMainSystemResourceGenerator {
 			«varName»
 		''')
 		.addHeader("xdk110Types.h", false)
+	}
+	
+	override getEventHandlerPayloadQueueSize(EventHandlerDeclaration handler) {
+		val type = BaseUtils.getType(handler.event.computeOrigin);
+		if(type.name == "string") {
+			return 2;
+		}
+		return 10;
 	}
 	
 }

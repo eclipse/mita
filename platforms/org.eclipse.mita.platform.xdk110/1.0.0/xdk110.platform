@@ -837,6 +837,9 @@ connectivity many MQTT {
 	 */
 	signal topic(name : string, qos : uint32 = 0) : string
 	
+	event msgReceived: string {
+		maximum-size 500
+	}
 }
 
 alt HonoAuthentication {
