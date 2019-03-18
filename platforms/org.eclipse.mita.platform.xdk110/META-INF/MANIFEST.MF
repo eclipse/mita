@@ -9,5 +9,5 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Require-Bundle: org.eclipse.mita.library.extension,
  org.eclipse.xtend.lib;bundle-version="2.10.0",
  org.eclipse.mita.program,
- org.eclipse.mita.platform
+ org.eclipse.mita.platform,
  org.eclipse.mita.library.stdlib
