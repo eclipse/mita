@@ -56,7 +56,7 @@ class CompilationContext {
 	protected ModelUtils modelUtils;
 	
 	@Accessors
-	protected String mitaVersion = "0.1.0";
+	protected String mitaVersion = "0.2.0";
 	
 	var Boolean isInited = false;
 

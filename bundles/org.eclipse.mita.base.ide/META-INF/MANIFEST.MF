@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Mita Type Definition Language IDE
 Bundle-Vendor: Eclipse.org/Mita
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 0.2.0.qualifier
 Bundle-SymbolicName: org.eclipse.mita.base.ide; singleton:=true
 Bundle-ActivationPolicy: lazy
 Automatic-Module-Name: org.eclipse.mita.base.ide
