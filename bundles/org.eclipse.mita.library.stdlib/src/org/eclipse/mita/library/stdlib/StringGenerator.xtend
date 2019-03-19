@@ -43,29 +43,17 @@ import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 
-class StringGenerator extends AbstractTypeGenerator {
+class StringGenerator extends ArrayGenerator {
 	
 	static public val DOUBLE_PRECISION = 6L;
-	
-	@Inject
-	protected CodeFragmentProvider codeFragmentProvider
-	
+		
 	@Inject
 	protected ElementSizeInferrer sizeInferrer
 
 	@Inject
 	protected extension ProgramDslTraceExtensions
 	
-	@Inject
-	protected TypeGenerator typeGenerator
-	
-	@Inject
-	protected extension StatementGenerator
-	
-	@Inject
-	protected extension GeneratorUtils
-	
-	
+		
 	private static def long getFixedSize(EObject stmt, ElementSizeInferrer sizeInferrer) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
@@ -75,21 +63,16 @@ class StringGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
-		var result = false;
-
-		// inline expression support
-		result = result || operator === null;
-		
-		// assign to string
-		result = result || (operator == AssignmentOperator.ASSIGN && type == otherType && type.name == 'string')
-		
-		// append to string
-		result = result || (operator == AssignmentOperator.ADD_ASSIGN && type == otherType && type.name == 'string')
-		
-		return result; 
+	override CodeFragment generateHeader(EObject context, AbstractType type) {
+		codeFragmentProvider.create('''
+		typedef struct {
+			char* data;
+			uint32_t length;
+			uint32_t bufferSize;
+		} «typeGenerator.code(context, type)»;
+		''').addHeader('MitaGeneratedTypes.h', false);
 	}
-	
+		
 	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
 		return if(operator === null) {
 			// inline string interpolation, so let's create a statement expression
@@ -228,14 +211,7 @@ class StringGenerator extends AbstractTypeGenerator {
 			.addHeader('string.h', true)
 		}
 	}
-	
-	protected def boolean getIsOperationCall(EObject object) {
-		if(object instanceof ElementReferenceExpression) {
-			return object.isOperationCall && object.reference instanceof Operation;
-		}
-		return false;
-	}
-	
+		
 	def getPattern(InterpolatedStringExpression expression) {
 		val tokenizedCode = expression.originalTexts.map[it.replaceAll("%", "%%")];
 		
@@ -277,7 +253,7 @@ class StringGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''char*''')
+		codeFragmentProvider.create('''array_char''')
 	}
 	
 	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {

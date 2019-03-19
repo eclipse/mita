@@ -203,7 +203,7 @@ class VariableDeclaration extends Property, AbstractStatement {
 }
 
 class ArrayLiteral extends Literal {
-	contains Literal[] values
+	contains Expression[] values
 }
 
 class ExpressionStatement extends AbstractStatement {

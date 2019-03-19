@@ -27,7 +27,10 @@ class ExceptionGenerator implements IPlatformExceptionGenerator {
 	protected CodeFragmentProvider codeFragmentProvider
 
 	override generateExceptionCodeFor(CompilationContext context, Type exception) {
-		return CodeFragment.EMPTY
+		val exceptionName = '''EXCEPTION_«exception.name.toUpperCase»''';
+		val exceptionValue = Math.abs(exceptionName.hashCode);
+		
+		return codeFragmentProvider.create('''«exceptionValue»''')
 	}
 
 	override generateRaiseException(CompilationContext context, String exceptionVariableName) {
@@ -35,7 +38,7 @@ class ExceptionGenerator implements IPlatformExceptionGenerator {
 	}
 
 	override getExceptionType() {
-		return codeFragmentProvider.create('''int32_t''').addHeader("inttypes.h", true);
+		return codeFragmentProvider.create('''uint32_t''').addHeader("inttypes.h", true);
 	}
 
 	override getNoExceptionStatement() {

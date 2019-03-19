@@ -59,7 +59,11 @@ class ElementSizeInferrer {
 	PreventRecursion preventRecursion = new PreventRecursion;
 
 	def ElementSizeInferenceResult infer(EObject obj) {
-		return obj.doInfer(BaseUtils.getType(obj));
+		val type = BaseUtils.getType(obj);
+		if(TypesUtil.isGeneratedType(obj, type)) {
+			return obj._doInferFromType(type);
+		}
+		return obj.doInfer(type);
 	}
 	
 	private static class Combination extends ElementSizeInferrer {
@@ -262,7 +266,7 @@ class ElementSizeInferrer {
 				
 				return PreventRecursion.preventRecursion(this.class.simpleName -> obj, 
 				[|
-					return finalInferrer.infer(obj);
+					return finalInferrer.doInfer(obj, type);
 				], [|
 					val renamer = new NicerTypeVariableNamesForErrorMessages();
 					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type.modifyNames(renamer)»".''')

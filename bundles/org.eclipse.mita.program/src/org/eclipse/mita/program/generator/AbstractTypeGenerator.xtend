@@ -54,15 +54,6 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 * Produces a new instance of the type
 	 */
 	def CodeFragment generateNewInstance(AbstractType type, NewInstanceExpression expr);
-
-	/**
-	 * Checks if this type supports a particular expression within its type hierarchy
-	 */
-	def boolean checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
-		val resource = context.eResource;
-		val cs = if(resource instanceof MitaBaseResource) resource.latestSolution.getConstraintSystem;
-		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(cs, context, otherType, type);
-	}
 	
 	/**
 	 * Produces code which implements an assignment operation. This function will only be executed if

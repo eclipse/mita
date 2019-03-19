@@ -63,7 +63,7 @@ GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition:
 
 NativeFunctionDefinition returns program::NativeFunctionDefinition:
 	(exported?='export')?
-	'native' (checked?='checked' | 'unchecked') ('fn' | 'function')  name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
+	'native' (checked?='checked' | 'unchecked') ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
 	'header' header=STRING ';'
 ;
 
@@ -139,7 +139,7 @@ Literal returns expressions::Literal:
 
 ArrayLiteral returns program::ArrayLiteral:
 	{program::ArrayLiteral}
-	'[' (values+=Literal (',' values += Literal)*)? ']'
+	'[' (values+=Expression (',' values += Expression)*)? ']'
 ;
 
 @Override 

@@ -520,7 +520,7 @@ class StatementGenerator {
 		val type = BaseUtils.getType(stmt);
 		if (isGeneratedType(stmt.eResource, type)) {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
-			if (generator !== null && generator.checkExpressionSupport(stmt, type, null, null)) {
+			if (generator !== null) {
 				return '''«generator.generateExpression(type, stmt, null, null)»''';
 			} else {
 				throw new CoreException(
@@ -590,7 +590,7 @@ class StatementGenerator {
 			} else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
 				return generateFunCallStmt(varName, type, initialization as ElementReferenceExpression);
 			} else if(initialization instanceof PrimitiveValueExpression) {
-				if(initialization.value instanceof ArrayLiteral) {
+				if(initialization.value instanceof ArrayLiteral && target instanceof VariableDeclaration) {
 					return CodeFragment.EMPTY;
 				}
 			} else {
