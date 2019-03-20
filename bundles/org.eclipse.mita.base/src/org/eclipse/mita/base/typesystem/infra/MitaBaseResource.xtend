@@ -17,17 +17,18 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import java.io.IOException
 import java.io.InputStream
-import java.util.List
 import java.util.Map
 import java.util.Set
 import org.apache.log4j.Logger
 import org.eclipse.emf.common.util.BasicEList
+import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.types.NullTypeSpecifier
@@ -44,7 +45,6 @@ import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.diagnostics.Severity
-import org.eclipse.xtext.linking.impl.IllegalNodeException
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource
 import org.eclipse.xtext.nodemodel.INode
 import org.eclipse.xtext.resource.IContainer
@@ -57,7 +57,6 @@ import org.eclipse.xtext.util.Triple
 import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import java.lang.reflect.Field
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -187,8 +186,8 @@ class MitaBaseResource extends LazyLinkingResource {
 		val resource = obj.eResource;
 		val resourceSet = resource.resourceSet;
 		val errors = if (resource instanceof ResourceImpl) {
-				resource.errors;
-			}
+			resource.errors;
+		}
 		if (!errors.nullOrEmpty) {
 			return;
 		}
@@ -206,12 +205,12 @@ class MitaBaseResource extends LazyLinkingResource {
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 
 		val cancelIndicator = if (resource instanceof MitaBaseResource) {
-				resource.mkCancelIndicator();
-			}
+			resource.mkCancelIndicator();
+		}
 
-		val visibleResources = visibleContainers.flatMap[it?.exportedObjects].map[it?.EObjectOrProxy?.eResource].groupBy [
-			it?.URI
-		].keySet.force;
+		val Set<URI> referencedResources = newHashSet
+		collectReferencedResources(resource, referencedResources)
+
 
 		val exportedObjects = (visibleContainers.flatMap [
 			it.exportedObjects
@@ -221,8 +220,13 @@ class MitaBaseResource extends LazyLinkingResource {
 				print("")
 			}
 			it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS)
-		].filter[it.value !== null].groupBy[it.key].values.map[it.head.value]// .map[GZipper.decompress(it)]
+		]
+		.filter[e | referencedResources.exists[e.key.path===it.path]]
+		.filter[it.value !== null]
+		.groupBy[it.key].values
+		.map[it.head.value]// .map[GZipper.decompress(it)]
 		.force;
+		
 		timer.stop("resourceDescriptions");
 		timer.start("deserialize");
 		val allConstraintSystems = jsons.map [
@@ -306,6 +310,25 @@ class MitaBaseResource extends LazyLinkingResource {
 				}
 			}
 		}
+	}
+	
+	protected def void collectReferencedResources(Resource res, Set<URI> references) {
+		val refs = res.referencedResources
+		for (Resource r : refs) {
+			if (!references.contains(r.URI)) {
+				references.add(r.URI)
+				collectReferencedResources(r, references)
+			}
+		}		
+	}
+	
+	protected def Set<Resource> referencedResources(Resource res) {
+		EcoreUtil.CrossReferencer.find(EcoreUtil2::eAllContentsAsList(res)).values
+		.flatten
+		.map[get(false)]
+		.filter(EObject)
+		.map[eResource]
+		.toSet
 	}
 
 }
