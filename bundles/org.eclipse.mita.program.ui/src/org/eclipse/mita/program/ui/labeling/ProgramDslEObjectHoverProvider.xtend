@@ -21,7 +21,7 @@ class ProgramDslEObjectHoverProvider extends DefaultEObjectHoverProvider {
 	override protected getFirstLine(EObject o) {
 		val label = labelProvider.getText(o);
 		if(label === null) {
-			return ('''<b>«o.eClass().getName()»</b>''').toString
+			return ('''«o.eClass().getName()»</b>''').toString
 		} else {
 			return label;
 		}
