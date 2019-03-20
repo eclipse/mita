@@ -257,13 +257,18 @@ Argument returns Argument:
 ;
 
 ParenthesizedExpression returns Expression:
-	{ParenthesizedExpression} '(' expression=Expression ')';
+	'(' Expression ')';
 
 TypeSpecifier returns PresentTypeSpecifier:
 	{PresentTypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
 
+InterpolatedStringExpression returns InterpolatedStringLiteral hidden(): 
+	{InterpolatedStringLiteral}
+	'`' ((=>'${' content+=Expression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
+;
+
 Literal:
-	BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;
+	BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral | InterpolatedStringExpression;
 
 BoolLiteral:
 	{BoolLiteral} value=BOOL;
@@ -354,6 +359,79 @@ terminal FLOAT returns ecore::EFloat:
 
 QID:
 	ID ('.' ID)*;
+	
+IntAsString returns ecore::EString: LONG;
+
+ReservedKeywords:
+	'alias-of' |
+	'alt' |
+	'alternative' |
+	'catch' |
+	'checked' |
+	'constructor' |
+	'do' |
+	'else' |
+	'enum' |
+	'every' |
+	'exception' |
+	'export' |
+	'extends' |
+	'finally' |
+	'fn' |
+	'for' |
+	'function' |
+	'generated' |
+	'generator' |
+	'header' |
+	'hour' |
+	'hours' |
+	'if' |
+	'import' |
+	'is' |
+	'isother' |
+	'let' |
+	'millisecond' |
+	'milliseconds' |
+	'minute' |
+	'minutes' |
+	'native' |
+	'native-type' |
+	'package' |
+	'return' |
+	'second' |
+	'seconds' |
+	'setup' |
+	'size-inferrer' |
+	'static' |
+	'struct' |
+	'subtype-of' |
+	'throw' |
+	'try' |
+	'type' |
+	'unchecked' |
+	'validator' |
+	'var' |
+	'where' |
+	'while'
+;
+
+ReservedSymbols:
+	'{' | '}' |
+	',' | ';' |
+	':' | '.' |
+	'(' | ')' |
+	'[' | ']' |
+	'+' | '-' |
+	'*' | '/' |
+	'%' | '\\'| 
+	'&&' | '||' |
+	'&' | '|' |
+	'=' | '==' |
+	'!' | '<' | 
+	'>' | '<=' |
+	'>=' | '!='
+;
+
 
 /*******************************************************************************
  * BELOW THIS LINE

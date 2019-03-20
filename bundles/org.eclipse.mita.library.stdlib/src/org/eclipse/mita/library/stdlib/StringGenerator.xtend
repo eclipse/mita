@@ -16,25 +16,18 @@ package org.eclipse.mita.library.stdlib
 import com.google.inject.Inject
 import java.util.LinkedList
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
-import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
-import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
-import org.eclipse.mita.program.generator.StatementGenerator
-import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.generator.transformation.EscapeWhitespaceInStringStage
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
@@ -53,103 +46,83 @@ class StringGenerator extends ArrayGenerator {
 	@Inject
 	protected extension ProgramDslTraceExtensions
 	
-		
-	private static def long getFixedSize(EObject stmt, ElementSizeInferrer sizeInferrer) {
-		val inference = sizeInferrer.infer(stmt);
-		return if(inference instanceof ValidElementSizeInferenceResult) {
-			inference.elementCount;
-		} else {
-			return -1;
-		}
-	}
+//	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
+//		return if(operator === null) {
+//			// inline string interpolation, so let's create a statement expression
+//			val interpolationCode = generateVariableDeclaration('_str', left, right);
+//			val trimmedInterpolationCode = interpolationCode.removeAllNewLines;
+//			codeFragmentProvider.create('''/* WARNING: unstable code path! */ ({ «trimmedInterpolationCode.noTerminator»; _str; })''');
+//		} else if(right === null) {
+//			// called with null <-> create default value, this was already done at declaration, so do nothing.
+//			codeFragmentProvider.create('''''')
+//		} else {
+//			val leftCode = if(left instanceof VariableDeclaration) {
+//				codeFragmentProvider.create('''«left.name»''');
+//			}
+//			else if(left instanceof ReturnStatement) {
+//				codeFragmentProvider.create('''*_result''');
+//			}
+//			else {
+//				left.code.noTerminator;
+//			}
+//			
+//			var createdBuffer = true;
+//			val prelude_rightCode = if(right instanceof ElementReferenceExpression) {
+//				createdBuffer = false;
+//				codeFragmentProvider.create('''''') -> codeFragmentProvider.create('''«right.code.noTerminator»''')
+//			}
+//			else if(right instanceof PrimitiveValueExpression) {
+//				val bufName = left.uniqueIdentifier + "_buf";
+//				codeFragmentProvider.create('''char «bufName»[«right.getFixedSize(sizeInferrer)»] = «right.code.noTerminator»;''') -> codeFragmentProvider.create('''«bufName»''')
+//			}
+//			else if(right instanceof InterpolatedStringExpression) {
+//				val bufName = left.uniqueIdentifier + "_buf";
+//				val strLen = sizeInferrer.infer(right);
+//				(if(strLen instanceof ValidElementSizeInferenceResult) {
+//					codeFragmentProvider.create('''
+//					char «bufName»[«strLen.elementCount + 1»] = {0};
+//					snprintf(«bufName», sizeof(«bufName»), "«right.pattern»"«FOR x : right.content BEFORE ', ' SEPARATOR ', '»«x.code»«ENDFOR»);
+//					''') 
+//				} else {
+//					codeFragmentProvider.create('''ERROR: Couldn't infer size!''');
+//				}) -> codeFragmentProvider.create('''«bufName»''')
+//			}
+//
+//			val rightSize = if(right instanceof ElementReferenceExpression) {
+//				if(right.operationCall) {
+//					codeFragmentProvider.create('''ERROR: Couldn't infer size!''')
+//				}
+//				if(createdBuffer) {
+//					codeFragmentProvider.create('''sizeof(«prelude_rightCode.value»_buf)''');
+//				}
+//				else {
+//					codeFragmentProvider.create('''strlen(«prelude_rightCode.value»)''');
+//				}
+//			} else {
+//				codeFragmentProvider.create('''sizeof(«prelude_rightCode.value»)''')
+//			}
+//
+//			if(operator == AssignmentOperator.ASSIGN) {
+//				codeFragmentProvider.create('''
+//				«prelude_rightCode.key»
+//				memcpy(«leftCode», «prelude_rightCode.value», «rightSize»);
+//				''')
+//				.addHeader('string.h', true);
+//			} else if(operator == AssignmentOperator.ADD_ASSIGN) {
+//				codeFragmentProvider.create('''
+//				«prelude_rightCode.key»
+//				strcat(«leftCode», «prelude_rightCode.value»);
+//				''')
+//				.addHeader('string.h', true);
+//			} else {
+//				codeFragmentProvider.create('''ERROR: unimplemented string operator''')
+//			}	
+//		}
+//	}
 	
-	override CodeFragment generateHeader(EObject context, AbstractType type) {
-		codeFragmentProvider.create('''
-		typedef struct {
-			char* data;
-			uint32_t length;
-			uint32_t bufferSize;
-		} «typeGenerator.code(context, type)»;
-		''').addHeader('MitaGeneratedTypes.h', false);
-	}
-		
-	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
-		return if(operator === null) {
-			// inline string interpolation, so let's create a statement expression
-			val interpolationCode = generateVariableDeclaration('_str', left, right);
-			val trimmedInterpolationCode = interpolationCode.removeAllNewLines;
-			codeFragmentProvider.create('''/* WARNING: unstable code path! */ ({ «trimmedInterpolationCode.noTerminator»; _str; })''');
-		} else if(right === null) {
-			// called with null <-> create default value, this was already done at declaration, so do nothing.
-			codeFragmentProvider.create('''''')
-		} else {
-			val leftCode = if(left instanceof VariableDeclaration) {
-				codeFragmentProvider.create('''«left.name»''');
-			}
-			else if(left instanceof ReturnStatement) {
-				codeFragmentProvider.create('''*_result''');
-			}
-			else {
-				left.code.noTerminator;
-			}
-			
-			var createdBuffer = true;
-			val prelude_rightCode = if(right instanceof ElementReferenceExpression) {
-				createdBuffer = false;
-				codeFragmentProvider.create('''''') -> codeFragmentProvider.create('''«right.code.noTerminator»''')
-			}
-			else if(right instanceof PrimitiveValueExpression) {
-				val bufName = left.uniqueIdentifier + "_buf";
-				codeFragmentProvider.create('''char «bufName»[] = «right.code.noTerminator»;''') -> codeFragmentProvider.create('''«bufName»''')
-			}
-			else if(right instanceof InterpolatedStringExpression) {
-				val bufName = left.uniqueIdentifier + "_buf";
-				val strLen = sizeInferrer.infer(right);
-				(if(strLen instanceof ValidElementSizeInferenceResult) {
-					codeFragmentProvider.create('''
-					char «bufName»[«strLen.elementCount + 1»] = {0};
-					snprintf(«bufName», sizeof(«bufName»), "«right.pattern»"«FOR x : right.content BEFORE ', ' SEPARATOR ', '»«x.code»«ENDFOR»);
-					''') 
-				} else {
-					codeFragmentProvider.create('''ERROR: Couldn't infer size!''');
-				}) -> codeFragmentProvider.create('''«bufName»''')
-			}
-
-			val rightSize = if(right instanceof ElementReferenceExpression) {
-				if(right.operationCall) {
-					codeFragmentProvider.create('''ERROR: Couldn't infer size!''')
-				}
-				if(createdBuffer) {
-					codeFragmentProvider.create('''sizeof(«prelude_rightCode.value»_buf)''');
-				}
-				else {
-					codeFragmentProvider.create('''strlen(«prelude_rightCode.value»)''');
-				}
-			} else {
-				codeFragmentProvider.create('''sizeof(«prelude_rightCode.value»)''')
-			}
-
-			if(operator == AssignmentOperator.ASSIGN) {
-				codeFragmentProvider.create('''
-				«prelude_rightCode.key»
-				memcpy(«leftCode», «prelude_rightCode.value», «rightSize»);
-				''')
-				.addHeader('string.h', true);
-			} else if(operator == AssignmentOperator.ADD_ASSIGN) {
-				codeFragmentProvider.create('''
-				«prelude_rightCode.key»
-				strcat(«leftCode», «prelude_rightCode.value»);
-				''')
-				.addHeader('string.h', true);
-			} else {
-				codeFragmentProvider.create('''ERROR: unimplemented string operator''')
-			}	
-		}
-	}
-	
-	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		return codeFragmentProvider.create(trace(stmt).append(generateVariableDeclaration(stmt.name, stmt, stmt.initialization)));
-	}
+//	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
+//		return codeFragmentProvider.create(trace(stmt).append(generateVariableDeclaration(stmt.name, stmt, stmt.initialization)));
+//	}
 	
 	protected def generateVariableDeclaration(String name, EObject variable, EObject initialization) {
 		/*
@@ -176,7 +149,7 @@ class StringGenerator extends ArrayGenerator {
 			size;
 		}
 		
-		if(initialization instanceof InterpolatedStringExpression) {
+		if(initialization instanceof InterpolatedStringLiteral) {
 			codeFragmentProvider.create(
 			'''
 				char «name»_buf[«byteCount»] = {0};
@@ -212,7 +185,7 @@ class StringGenerator extends ArrayGenerator {
 		}
 	}
 		
-	def getPattern(InterpolatedStringExpression expression) {
+	def getPattern(InterpolatedStringLiteral expression) {
 		val tokenizedCode = expression.originalTexts.map[it.replaceAll("%", "%%")];
 		
 		var result = "";
@@ -251,16 +224,8 @@ class StringGenerator extends ArrayGenerator {
 		}
 		return result;
 	}
-	
-	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''array_char''')
-	}
-	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
-		CodeFragment.EMPTY;
-	}
-	
-	static def getOriginalTexts(InterpolatedStringExpression expr) {
+			
+	static def getOriginalTexts(InterpolatedStringLiteral expr) {
 		val originalSourceCode = ModelUtils.getOriginalSourceCode(expr);
 		val codeWithoutBackticks = originalSourceCode.substring(1, originalSourceCode.length - 1);
 		
@@ -282,6 +247,10 @@ class StringGenerator extends ArrayGenerator {
 		 * with interpolated strings we'll be bound to this dependency.
 		 */
 		return results.map[x | EscapeWhitespaceInStringStage.replaceSpecialCharacters(x) ];
+	}
+
+	override CodeFragment getBufferType(EObject context, AbstractType type) {
+		return codeFragmentProvider.create('''char''')
 	}
 
 	protected def CompositeGeneratorNode removeAllNewLines(CompositeGeneratorNode node) {
@@ -308,7 +277,7 @@ class StringGenerator extends ArrayGenerator {
 				}
 			}
 			
-			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref?.getFixedSize(sizeInferrer)»''');
+			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref».length''');
 		}
 		
 	}

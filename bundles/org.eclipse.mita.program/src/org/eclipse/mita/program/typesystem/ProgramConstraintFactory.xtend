@@ -23,6 +23,7 @@ import org.eclipse.mita.base.expressions.PostFixUnaryExpression
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
@@ -49,6 +50,7 @@ import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.ArrayRuntimeCheckStatement
 import org.eclipse.mita.program.CatchStatement
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
@@ -61,7 +63,6 @@ import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.IfStatement
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsOtherCase
@@ -87,7 +88,6 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.program.ArrayRuntimeCheckStatement
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -265,7 +265,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return null;
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, InterpolatedStringExpression expr) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, InterpolatedStringLiteral expr) {
 		system.computeConstraintsForChildren(expr);
 		val stringType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.stringTypeQID);
 		return system.associate(stringType, expr);

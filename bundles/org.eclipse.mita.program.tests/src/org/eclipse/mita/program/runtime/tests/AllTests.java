@@ -20,6 +20,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({ 
 	HelloWorldTest.class,
 	StringTest.class,
+	ArraysTest.class,
 	SumTypesTest.class
 })
 @RunWith(Suite.class)

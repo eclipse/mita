@@ -65,15 +65,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	protected TypeGenerator typeGenerator
 		
 		
-	private static def long getArraySize(VariableDeclaration stmt, ElementSizeInferrer sizeInferrer) {
-		val inference = sizeInferrer.infer(stmt);
-		return if(inference instanceof ValidElementSizeInferenceResult) {
-			inference.elementCount;
-		} else {
-			return -1;
-		}
-	}
-	private static def long getArraySize(NewInstanceExpression stmt, ElementSizeInferrer sizeInferrer) {
+	private static def long getFixedSize(EObject stmt, ElementSizeInferrer sizeInferrer) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
 			inference.elementCount;
@@ -85,7 +77,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
 		codeFragmentProvider.create('''
 		typedef struct {
-			«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»* data;
+			«getBufferType(context, type)»* data;
 			uint32_t length;
 			uint32_t capacity;
 		} «typeGenerator.code(context, type)»;
@@ -101,11 +93,11 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	override CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
 		val init = stmt.initialization.ignoreCoercions;
-		val capacity = stmt.getArraySize(sizeInferrer);
+		val capacity = stmt.getFixedSize(sizeInferrer);
 		// if we are top-level, we must do initialization if there is any
 		val topLevel = (EcoreUtil2.getContainerOfType(stmt, FunctionDefinition) === null) && (EcoreUtil2.getContainerOfType(stmt, EventHandlerDeclaration) === null);
 		val occurrence = getOccurrence(stmt);
-		val initValue = init?.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(ArrayLiteral)
+		val initValue = init?.castOrNull(PrimitiveValueExpression)
 		val initWithValueLiteral = initValue !== null
 		
 		
@@ -120,14 +112,14 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val cf = codeFragmentProvider.create('''
 		«IF capacity > 0»
 		// buffer for «stmt.name»
-		«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.tail.head)» data_«stmt.name»_«occurrence»[«capacity»]«IF initWithValueLiteral» = «statementGenerator.code(init)»«ENDIF»;
+		«getBufferType(stmt, type)» data_«stmt.name»_«occurrence»[«capacity»]«IF initWithValueLiteral» = «statementGenerator.code(init)»«ENDIF»;
 		«ELSE»
 		ERROR: Couldn't infer size!
 		«ENDIF»
-		// var «stmt.name»: array<«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.tail.head)»>
+		// var «stmt.name»: array<«getBufferType(stmt, type)»>
 		«typeGenerator.code(stmt, type)» «stmt.name»«IF topLevel || init !== null» = {
 			.data = data_«stmt.name»_«occurrence»,
-			.length = «IF initWithValueLiteral»«initValue.values.length»«ELSE»0«ENDIF»,
+			.length = «IF initWithValueLiteral»«getFixedSize(initValue, sizeInferrer)»«ELSE»0«ENDIF»,
 			.capacity = «capacity»
 		}«ENDIF»;
 		«IF !topLevel && otherInit»
@@ -137,8 +129,12 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return cf;
 	}
 	
+	def CodeFragment getBufferType(EObject context, AbstractType type) {
+		typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head);
+	}
+	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''array_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''array_«getBufferType(context, type)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
 	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
@@ -147,7 +143,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			return CodeFragment.EMPTY;
 		}
 		
-		val capacity = expr.getArraySize(sizeInferrer);
+		val capacity = expr.getFixedSize(sizeInferrer);
 		val parent = expr.eContainer;
 		val occurrence = getOccurrence(parent);
 		val varName = generatorUtils.getBaseName(parent);
@@ -199,11 +195,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		val codeRightExpr = codeFragmentProvider.create('''«statementGenerator.code(rightRef).noTerminator»''');
 		val rightExprIsValueLit = right instanceof PrimitiveValueExpression;
-		val rightValueLit = if(right instanceof PrimitiveValueExpression) {
-			right.value as ArrayLiteral;
-		} else {
-			null;
-		}
 		
 		val valRange = if(right instanceof ArrayAccessExpression) {
 			if(right.arraySelector instanceof ValueRange) {
@@ -212,11 +203,10 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		}
 		
 		val lengthLeft = codeFragmentProvider.create('''«varNameLeft».length''')
-		val lengthRight = codeFragmentProvider.create('''«IF rightExprIsValueLit»«rightValueLit.values.length»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«codeRightExpr».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»''');
+		val lengthRight = codeFragmentProvider.create('''«IF rightExprIsValueLit»«getFixedSize(right, sizeInferrer)»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«codeRightExpr».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»''');
 		val capacityLeft = codeFragmentProvider.create('''«varNameLeft».capacity''')
 		val remainingCapacityLeft = codeFragmentProvider.create('''«IF operator == AssignmentOperator.ADD_ASSIGN»(«capacityLeft» - «lengthLeft»)«ELSE»«capacityLeft»«ENDIF»''')
 		
-		val valueType = (type as TypeConstructorType).typeArguments.tail.head;
 		val dataLeft = if(operator == AssignmentOperator.ASSIGN) {
 			codeFragmentProvider.create('''«varNameLeft».data''');
 		}
@@ -257,7 +247,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		}
 		 		
 		val lengthModifyStmt = codeFragmentProvider.create('''«lengthLeft» «operator.literal» «lengthRight»«IF valRange !== null»«IF valRange.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«IF valRange.upperBound !== null» - («lengthRight» - «valRange.upperBound.code.noTerminator»)«ENDIF»«ENDIF»;''');
-		val newLengthExpr = codeFragmentProvider.create('''«IF rightExprIsValueLit»«rightValueLit.values.length»«ELSE»«varNameLeft».length«ENDIF»''');
 		
 		val returnStatementLengthCheck = if(isReturnStmt) {
 			codeFragmentProvider.create('''
@@ -270,7 +259,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			CodeFragment.EMPTY;
 		}
 		
-		val typeSize = codeFragmentProvider.create('''sizeof(«typeGenerator.code(left ?: right, valueType)»)''')
+		val typeSize = codeFragmentProvider.create('''sizeof(«getBufferType(left, type)»)''')
 		
 		codeFragmentProvider.create('''
 		«IF isReturnStmt»
@@ -282,7 +271,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		// «varNameLeft» «operator.literal» «codeRightExpr»
 		memcpy(«dataLeft», «dataRight», «typeSize» * «lengthRight»);
 		«ELSEIF rightExprIsValueLit»
-		«typeGenerator.code(left, valueType)» «left.baseName»_temp_«left.occurrence»[] = «right.code»;
+		«getBufferType(left, type)» «left.baseName»_temp_«left.occurrence»[] = «right.code»;
 		memcpy(«dataLeft», «left.baseName»_temp_«left.occurrence», «typeSize» * «lengthRight»);
 		«ENDIF»
 		«lengthModifyStmt»

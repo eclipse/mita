@@ -13,41 +13,31 @@
 
 package org.eclipse.mita.library.stdlib
 
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
-import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.xtext.EcoreUtil2
 
 class StringSizeInferrer extends ArraySizeInferrer {
 	
 	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression, AbstractType type) {
-		expression.inferContainerIfVariableDeclaration[ expression.isolatedDoInfer ]
+		return newValidResult(expression, expression.value.length);
 	}
 	
 	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression, AbstractType type) {
-		expression.inferContainerIfVariableDeclaration[ expression.isolatedDoInfer ]
+		return expression.value.infer;
 	}
 
-	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringExpression expr, AbstractType type) {
-		expr.inferContainerIfVariableDeclaration[ expr.isolatedDoInfer ]
+	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringLiteral expr, AbstractType type) {
+		expr.isolatedDoInfer
 	}
 	
 	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr, AbstractType type) {
-		expr.inferContainerIfVariableDeclaration[ expr.inferFixedSize ]
+		expr.inferFixedSize
 	}
 		
 	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(StringLiteral expression) {
@@ -63,7 +53,7 @@ class StringSizeInferrer extends ArraySizeInferrer {
 		}
 	}
 	
-	protected def dispatch isolatedDoInfer(InterpolatedStringExpression expr) {
+	protected def dispatch isolatedDoInfer(InterpolatedStringLiteral expr) {
 		var length = expr.sumTextParts
 		
 		// sum expression value part
@@ -105,30 +95,13 @@ class StringSizeInferrer extends ArraySizeInferrer {
 		return newValidResult(expr, length);
 	}
 		
-	protected def long sumTextParts(InterpolatedStringExpression expr) {
+	protected def long sumTextParts(InterpolatedStringLiteral expr) {
 		val texts = StringGenerator.getOriginalTexts(expr)
 		if (texts.nullOrEmpty) {
 			0
 		} else {
 			texts.map[x | x.length as long ].reduce[x1, x2| x1 + x2 ];
 		}
-	}
-	
-	
-	protected def inferContainerIfVariableDeclaration(EObject obj, (EObject) => ElementSizeInferenceResult alternative) {
-		// Special case: we're in an interpolated string, then the variable declaration does not matter
-		if(EcoreUtil2.getContainerOfType(obj, InterpolatedStringExpression) !== null) {
-			return alternative.apply(obj);
-		}
-		
-		val container = EcoreUtil2.getContainerOfType(obj, VariableDeclaration);
-		return if(container !== null) {
-			// we must not just infer the size for the new instance in isolation, but also check what's happening to the value afterwards.
-			container.infer;
-		} else {
-			return alternative.apply(obj);
-		}
-	}
-			
+	}		
 	
 }

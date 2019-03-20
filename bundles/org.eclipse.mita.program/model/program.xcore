@@ -322,11 +322,6 @@ class NewInstanceExpression extends ElementReferenceExpression {
 	}
 }
 
-class InterpolatedStringExpression extends Expression {
-	String[] text
-	contains Expression[] content
-}
-
 class DereferenceExpression extends Expression {
 	contains Expression expression
 	op EObject getInnerReference() {

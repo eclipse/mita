@@ -50,6 +50,7 @@ import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
@@ -85,7 +86,6 @@ import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.IfStatement
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsDeconstructor
@@ -120,8 +120,8 @@ import static org.eclipse.mita.program.model.ModelUtils.*
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class StatementGenerator {
 
@@ -511,7 +511,7 @@ class StatementGenerator {
 		return '''«stmt.initializationCode.noTerminator»'''
 	}
 
-	@Traced dispatch def IGeneratorNode code(InterpolatedStringExpression stmt) {
+	@Traced dispatch def IGeneratorNode code(InterpolatedStringLiteral stmt) {
 		/*
 		 * InterpolatedStrings are a special case of an expression where the code generation must be devolved to
 		 * the StringGenerator (i.e. the code generator registered at the generated-type string). Inelegantly, we
@@ -590,7 +590,9 @@ class StatementGenerator {
 			} else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
 				return generateFunCallStmt(varName, type, initialization as ElementReferenceExpression);
 			} else if(initialization instanceof PrimitiveValueExpression) {
-				if(initialization.value instanceof ArrayLiteral && target instanceof VariableDeclaration) {
+				if((initialization.value instanceof ArrayLiteral || initialization.value instanceof StringLiteral) 
+					&& target instanceof VariableDeclaration
+				) {
 					return CodeFragment.EMPTY;
 				}
 			} else {
