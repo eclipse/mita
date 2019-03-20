@@ -66,7 +66,6 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.IQualifiedNameConverter
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
@@ -75,6 +74,7 @@ import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.platform.SystemSpecification
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -646,13 +646,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 		return new FilteringScope(originalScope, [ x |
 			val obj = x.EObjectOrProxy;
-
-			val result = if (obj instanceof AbstractSystemResource) {
-					obj.events === null || !obj.events.empty
-				} else {
-					false;
+			if (obj instanceof AbstractSystemResource) {
+				if (!obj.events.isNullOrEmpty && obj.eContainer instanceof SystemSpecification) {
+					val sysSpec = (obj.eContainer as SystemSpecification).name
+					return context.imports.exists[it.importedNamespace.equals(sysSpec)]
 				}
-			return result;
+			}
+			return false;
 		])
 	}
 
