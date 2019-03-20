@@ -57,6 +57,7 @@ import org.eclipse.xtext.util.Triple
 import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.scoping.ILibraryProvider
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -88,6 +89,10 @@ class MitaBaseResource extends LazyLinkingResource {
 
 	@Inject
 	protected XtextFragmentProvider fragmentProvider;
+	
+	@Inject
+	protected ILibraryProvider libraryProvider;
+	
 
 	override toString() {
 		val str = URI.toString;
@@ -208,9 +213,7 @@ class MitaBaseResource extends LazyLinkingResource {
 			resource.mkCancelIndicator();
 		}
 
-		val Set<URI> referencedResources = newHashSet
-		collectReferencedResources(resource, referencedResources)
-
+		val Set<URI> relevantResources = resource.relevantResources
 
 		val exportedObjects = (visibleContainers.flatMap [
 			it.exportedObjects
@@ -221,7 +224,7 @@ class MitaBaseResource extends LazyLinkingResource {
 			}
 			it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS)
 		]
-		.filter[e | referencedResources.exists[e.key.path===it.path]]
+		.filter[e | relevantResources.exists[e.key.path===it.path]]
 		.filter[it.value !== null]
 		.groupBy[it.key].values
 		.map[it.head.value]// .map[GZipper.decompress(it)]
@@ -310,6 +313,13 @@ class MitaBaseResource extends LazyLinkingResource {
 				}
 			}
 		}
+	}
+	
+	protected def Set<URI> relevantResources(Resource res) {
+		val Set<URI> relevantResources = newHashSet(res.URI)
+		relevantResources += libraryProvider.standardLibraries
+		collectReferencedResources(res, relevantResources)
+		return relevantResources
 	}
 	
 	protected def void collectReferencedResources(Resource res, Set<URI> references) {
