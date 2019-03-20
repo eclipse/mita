@@ -135,7 +135,7 @@ ExpressionStatement returns program::ExpressionStatement:
 
 @Override
 Literal returns expressions::Literal:
-	ArrayLiteral | BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;
+	ArrayLiteral | BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral | InterpolatedStringLiteral;
 
 ArrayLiteral returns program::ArrayLiteral:
 	{program::ArrayLiteral}
@@ -150,6 +150,7 @@ PrimaryExpression returns types::Expression:
 	| DereferenceExpression
 	| ReferenceExpression
 ;
+
 
 DereferenceExpression returns program::DereferenceExpression hidden():
 	'*' expression=PrimaryExpression

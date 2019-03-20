@@ -540,7 +540,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttPublishHandle, 0UL);
-			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, *value, strlen(*value), (uint8_t) «qos», false))
+			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, value->data, value->length, (uint8_t) «qos», false))
 			{
 			    exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 			}

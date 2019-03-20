@@ -49,3 +49,7 @@ export generated fn logWarning(msg : string) : void
 export generated fn logError(msg : string) : void
 	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
 	
+export exception StringFormatException;
+
+	
+	

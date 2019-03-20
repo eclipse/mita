@@ -38,10 +38,10 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean shouldTest() {
-			return true;
+			return false;
 		}
 		private static String getTestString() {
-			return "Couldn't resolve reference to Type ''";
+			return "Types modalityAccess and x_axis are not the same.";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

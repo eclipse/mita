@@ -46,11 +46,7 @@ class StringSizeInferrer extends ArraySizeInferrer {
 	
 	protected override dispatch ElementSizeInferenceResult isolatedDoInfer(PrimitiveValueExpression expression) {
 		val value = expression.value;
-		if(value instanceof StringLiteral) {
-			value.isolatedDoInfer;
-		} else {
-			newInvalidResult(expression, "Cannot infer string length of " + value);
-		}
+		return value.isolatedDoInfer;
 	}
 	
 	protected def dispatch isolatedDoInfer(InterpolatedStringLiteral expr) {

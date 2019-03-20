@@ -114,12 +114,13 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		//systemResourceTypeVar ~ SystemResource (don't care about resource, so just put in a placeholder)
 		//resultInModality ~ Modality<T ~ int32>
 		//result ~ T 
-		val modalityTypeVar = system.resolveReferenceToSingleAndGetType(access, ProgramPackage.eINSTANCE.modalityAccess_Modality);
+		val feature = ProgramPackage.eINSTANCE.modalityAccess_Modality;
+		val modalityTypeVar = system.resolveReferenceToSingleAndGetType(access, feature);
 		val systemResourceTypeVar = system.newTypeVariable(null);
-		val result = system.newTypeVariable(access);
+		val result = system.getTypeVariable(access);
 		val modalityTypeScheme = typeRegistry.getTypeModelObjectProxy(system, access, StdlibTypeRegistry.modalityTypeQID);
 		val resultInModality = system.nestInType(access, result, modalityTypeScheme, "modality");
-		val supposedModalityType = new FunctionType(null, new AtomicType(null, "modalityAccess"), systemResourceTypeVar, resultInModality);
+		val supposedModalityType = new FunctionType(null, new AtomicType(null, BaseUtils.getText(access, feature)), systemResourceTypeVar, resultInModality);
 		system.addConstraint(new EqualityConstraint(modalityTypeVar, supposedModalityType, new ValidationIssue("%s needs to be of type '%s'", access)));
 		return result;
 	}

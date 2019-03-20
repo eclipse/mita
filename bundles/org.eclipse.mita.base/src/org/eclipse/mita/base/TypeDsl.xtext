@@ -262,13 +262,13 @@ ParenthesizedExpression returns Expression:
 TypeSpecifier returns PresentTypeSpecifier:
 	{PresentTypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
 
-InterpolatedStringExpression returns InterpolatedStringLiteral hidden(): 
+InterpolatedStringLiteral returns InterpolatedStringLiteral hidden(): 
 	{InterpolatedStringLiteral}
 	'`' ((=>'${' content+=Expression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
 ;
 
 Literal:
-	BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral | InterpolatedStringExpression;
+	BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;
 
 BoolLiteral:
 	{BoolLiteral} value=BOOL;

@@ -36,10 +36,11 @@ class PrintGenerator extends AbstractFunctionGenerator {
 		val firstArg = function.arguments.head?.value;
 		val interpolatedStringLiteral = firstArg.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(InterpolatedStringLiteral)
 		val result = if(interpolatedStringLiteral !== null) {
-			codeFragmentProvider.create('''printf("«stringGenerator.getPattern(interpolatedStringLiteral)»«IF addBreaklinePostfix»\n«ENDIF»"«IF !interpolatedStringLiteral.content.empty», «FOR arg : interpolatedStringLiteral.content SEPARATOR ', '»«generate(arg)»«ENDFOR»«ENDIF»);''')
+			codeFragmentProvider.create('''printf("«stringGenerator.getPattern(interpolatedStringLiteral)»«IF addBreaklinePostfix»\n«ENDIF»"«IF !interpolatedStringLiteral.content.empty», «FOR arg : interpolatedStringLiteral.content SEPARATOR ', '»«stringGenerator.getDataHandleForPrintf(arg)»«ENDFOR»«ENDIF»);''')
 				.addHeader('inttypes.h', true);
 		} else {
-			codeFragmentProvider.create('''printf("%s«IF addBreaklinePostfix»\n«ENDIF»", «function.arguments.head.generate»);
+			val expr = function.arguments.head.value;
+			codeFragmentProvider.create('''printf("«stringGenerator.getPattern(expr)»«IF addBreaklinePostfix»\n«ENDIF»", «stringGenerator.getDataHandleForPrintf(expr)»);
 			''');
 		}
 		

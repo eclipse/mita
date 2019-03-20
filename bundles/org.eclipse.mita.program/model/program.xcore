@@ -39,6 +39,7 @@ import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -367,6 +368,8 @@ class LoopBreakerStatement extends AbstractStatement {
 class ArrayRuntimeCheckStatement extends AbstractStatement {
 	refers ArrayAccessExpression access
 }
-
+class InterpolatedStringBufferStatement extends AbstractStatement {
+	contains InterpolatedStringLiteral literal
+}
 
 
