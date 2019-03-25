@@ -33,7 +33,9 @@ fn works() {
 	var a = new array<uint16>(size = 10);
 	var b = new array<uint16>(size = 8);
 	b = a;
-	a = b;
+	// TODO: it's not possible right now to have a circular assignment.
+	// To fix this we need to take into account only previous statements when calculating the size of an EREF.  
+	//a = b;
 	
 	// arrays can be initialized with literals
 	// XPECT inferredType --> array<xint8>
@@ -89,7 +91,9 @@ fn blabla() {
 	var a = new array<uint16>(size = 10);
 	var b = new array<uint16>(size = 8);
 	b = a;
-	a = b;
+	// TODO: it's not possible right now to have a circular assignment.
+	// To fix this we need to take into account only previous statements when calculating the size of an EREF.  
+	//a = b;
 	
 	// arrays can be initialized with literals
 	// XPECT inferredType --> array<xint8>

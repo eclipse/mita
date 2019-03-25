@@ -120,19 +120,16 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val cf = codeFragmentProvider.create('''
 		«IF capacity > 0»
 		// buffer for «stmt.name»
-		«generateBufferStmt(stmt, type, bufferName, getFixedSize(initValue), initValue)»
+		«generateBufferStmt(stmt, type, bufferName, getFixedSize(init), initValue)»
 		«ELSE»
 		ERROR: Couldn't infer size!
 		«ENDIF»
-		// var «stmt.name»: array<«getBufferType(stmt, type)»>
+		// var «stmt.name»: «type.toString»
 		«typeGenerator.code(stmt, type)» «stmt.name»«IF topLevel || init !== null» = {
 			.data = data_«stmt.name»_«occurrence»,
 			.length = «IF initWithValueLiteral»«getFixedSize(init)»«ELSE»0«ENDIF»,
 			.capacity = «capacity»
 		}«ENDIF»;
-		«IF !topLevel && otherInit»
-		«generateExpression(type, stmt, AssignmentOperator.ASSIGN, init)»
-		«ENDIF»
 		''').addHeader('MitaGeneratedTypes.h', false);
 		return cf;
 	}
@@ -173,7 +170,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	def generateLength(EObject obj, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr) {
 		val objLit = obj.castOrNull(PrimitiveValueExpression);
-		return codeFragmentProvider.create('''
+		return codeFragmentProvider.create(
+		'''
 			«IF objLit !== null»«getFixedSize(obj)»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«objCodeExpr».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»
 		''');
 	}
@@ -208,7 +206,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		val isNewInstance = right instanceof NewInstanceExpression;
 		
-		val codeRightExpr = codeFragmentProvider.create('''«statementGenerator.code(rightRef).noTerminator»''');
+		val codeRightExpr = codeFragmentProvider.create('''«statementGenerator.code(rightRef).noTerminator.noNewline»''');
 		val rightExprIsValueLit = rightLit !== null;
 		
 		val temporaryBufferName = codeFragmentProvider.create('''«left.baseName»_temp_«left.occurrence»''')
@@ -233,7 +231,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val dataRight = if(!isNewInstance && !rightExprIsValueLit) {
 			codeFragmentProvider.create('''
 				«IF valRange?.lowerBound !== null»&«ENDIF»«codeRightExpr».data«IF valRange?.lowerBound !== null»[«valRange.lowerBound.code.noTerminator»]«ENDIF»
-			''');	
+			''');
 		} else if(rightExprIsValueLit) {
 			temporaryBufferName;	
 		}

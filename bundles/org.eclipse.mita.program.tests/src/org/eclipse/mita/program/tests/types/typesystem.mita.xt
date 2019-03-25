@@ -42,6 +42,7 @@ fn id(x: int32): int32 {
 "Could not infer the size of the function's return." at "id"
 --- */
 fn id(x: string): string {
+	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "x"
 	return x;
 }   
 
@@ -55,6 +56,7 @@ fn id2(x: int32, y: int8): int32 {
 "Could not infer the size of the function's return." at "id2"
 --- */
 fn id2(x: string, y: int8): string {
+	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "x"
 	return x;
 }
     
@@ -72,10 +74,8 @@ every 100 milliseconds {
 	let d = c.x(); 
 	let e = "asdf";     
 	let f = 8;
-	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "id(e)"
 	let g: string = id(e);          
 	let h = id(f); 
-	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "id2(y=0, x=e)"
 	let h2 = id2(y=0, x=e);
 	let h3 = id2(y=0, x=f);    
 	let m = C_Magnetometer_read();
@@ -93,7 +93,7 @@ every 100 milliseconds {
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
 	/* XPECT errors ---
-		"Cannot determine size of element: Unable to infer size from type __args(∗MySensor) → modality<uint32>" at "MySensor.modality01"
+		"Cannot determine size of element: Object does not have a size" at "MySensor.modality01"
 		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
 	--- */
 	let a: modality<uint32> = MySensor.modality01; 
@@ -154,7 +154,7 @@ fn <T> foo2() {
 	let bar5 = new array<int32>(10, 20);
 	let bar6 = new array<int32>(10);
 	/* XPECT errors ---
-		"Cannot determine size of element: size missing" at "new array<int32>()"
+		"Cannot determine size of element: No explicit maximum size was given" at "new array<int32>()"
 		"__args() and __args(uint32) differ in the number of type arguments" at "new array<int32>()"
 	--- */
 	let bar7 = new array<int32>();

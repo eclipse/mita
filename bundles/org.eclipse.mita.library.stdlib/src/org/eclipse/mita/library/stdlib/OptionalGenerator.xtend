@@ -93,10 +93,16 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			initAsOperation as GeneratedFunctionDefinition;
 		}
 		
-		val validInit = if(initIsGeneratedFunction && initAsGeneratedFunction.name == "some") {
-			codeFragmentProvider.create('''«initAsEref.arguments.head.code»''')
-		} else if(right !== null) {
+		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, left ?: right)») ''');
+		
+		val validInit = if(right !== null) {
 			codeFragmentProvider.create('''«right.code»''');
+		}
+		else {
+			codeFragmentProvider.create('''
+			«valueExpressionTypeAnnotation»{
+				.«OPTIONAL_FLAG_MEMBER» = «enumOptional.None.name»
+			}''')
 		}
 		
 		val initValueIsNone = right === null || (initIsGeneratedFunction && initAsGeneratedFunction.name == "none");
@@ -110,19 +116,9 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		|| right === null 
 		|| (!(firstTypeArgOrigin instanceof GeneratedType));
 		
-		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, left ?: right)») ''');
 		
 		val init = if(initWithImmediate) {
-			codeFragmentProvider.create('''
-			«valueExpressionTypeAnnotation»{
-				«IF initValueIsNone»
-				.«OPTIONAL_FLAG_MEMBER» = «enumOptional.None.name»
-				«ELSE»
-				.«OPTIONAL_DATA_MEMBER» = «validInit»,
-				.«OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»
-				«ENDIF»
-			};
-			''')
+			validInit
 		} else {
 			if(firstTypeArgType instanceof GeneratedType) {
 				// We don't get here (guaranteed by validation), but this is about the code we would produce
@@ -133,7 +129,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 					«ELSE»
 					.«OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»
 					«ENDIF»
-				 }; 
+				 }
 				«IF !initValueIsNone»
 				«««this is impossible right now, since we can't reference «left.name».data
 				«««registry.getGenerator(firstTypeArgType).generateExpression(firstTypeArg, '''«left.name».«OPTIONAL_DATA_MEMBER»''', AssignmentOperator.ASSIGN, stmt.initialization)»
@@ -143,7 +139,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			else {
 				//!initIsGeneratedFunction && !firstTypeArg.checkExpressionSupport(AssignmentOperator.ASSIGN, initType))
 				//This should only be variable copying with non-generated types
-				codeFragmentProvider.create('''«right.code»;''')
+				codeFragmentProvider.create('''«right.code»''')
 			}
 		}
 		

@@ -9,7 +9,6 @@ package test;
 import platforms.unittest;
 
 // Strings are one-byte ASCII strings (not UTF8, not ISO8859-1)
-// Strings are reference types
 // Strings have a maximum length fixed at compile time
 
 function someExternalFunction() : int32 {

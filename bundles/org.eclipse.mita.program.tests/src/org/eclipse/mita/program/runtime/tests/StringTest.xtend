@@ -50,7 +50,7 @@ class StringTest extends AbstractRuntimeTest {
 			println(d);
 			exit(0); 
 		}
-		
+				
 		every 1 second {
 			// do nothing, this is just to generate time functions
 		}

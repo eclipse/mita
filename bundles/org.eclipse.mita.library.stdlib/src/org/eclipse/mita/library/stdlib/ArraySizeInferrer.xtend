@@ -44,6 +44,7 @@ import org.eclipse.xtext.EcoreUtil2
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.EventHandlerDeclaration
 
 class ArraySizeInferrer extends ElementSizeInferrer {
 	
@@ -84,7 +85,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 		if(value instanceof ArrayLiteral) {
 			value.isolatedDoInfer;
 		} else {
-			newInvalidResult(expression, "Cannot infer array length of " + value);
+			newInvalidResult(expression, '''Cannot infer «BaseUtils.getType(expression)?.name ?: "array"» length of «value»''');
 		}
 	}
 	
@@ -150,7 +151,8 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			} else {
 				null
 			}
-		].filterNull;
+		]
+		.filterNull;
 		
 		/*
 		 * Check if we can infer the length across all modifications
@@ -186,7 +188,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			if(!allowedInLoop) {
 				val loopContainer = expr.getSharedLoopContainer(variable);
 				if(loopContainer !== null) {
-					return newInvalidResult(expr, 'Cannot infer array length in loops');
+					return newInvalidResult(expr, '''Cannot infer «BaseUtils.getType(variable)?.name ?: "array"» length in loops''');
 				}	
 			}
 		}

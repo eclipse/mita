@@ -507,8 +507,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return SimplificationResult.failure(processedResults.head.issues)
 			}
 		}
+		val renamer = new NicerTypeVariableNamesForErrorMessages();
 		return SimplificationResult.failure(#[
-			new ValidationIssue(Severity.ERROR, '''«refType» not instance of «typeClass»''', constraint.errorMessage.target, constraint.errorMessage.feature, constraint.errorMessage.issueCode), 
+			new ValidationIssue(Severity.ERROR, '''«refType» not instance of «typeClass.modifyNames(renamer)»''', constraint.errorMessage.target, constraint.errorMessage.feature, constraint.errorMessage.issueCode), 
 			constraint.errorMessage
 		]);
 	}

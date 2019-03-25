@@ -493,7 +493,7 @@ class StatementGenerator {
 		
 		'''
 			«IF hasValue && generatedTypeGenerator !== null»
-				«generatedTypeGenerator.generateExpression(resultType, stmt, AssignmentOperator.ASSIGN, stmt.value)»
+				«generatedTypeGenerator.generateExpression(resultType, stmt, AssignmentOperator.ASSIGN, stmt.value).noTerminator»;
 			«ELSEIF hasValue»
 				*_result = «stmt.value.code.noTerminator»;
 			«ENDIF» 
@@ -635,7 +635,8 @@ class StatementGenerator {
 		if (isGeneratedType(stmt, type)) {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			result.children += generator.generateVariableDeclaration(type, stmt);
-			if(type.name == MitaTypeSystem.ARRAY_TYPE && initialization instanceof ArrayLiteral) {
+			if(initialization instanceof PrimitiveValueExpression && (
+				type.name == MitaTypeSystem.ARRAY_TYPE || type.name == MitaTypeSystem.STRING)) {
 				initializationDone = true;
 			}
 		// Exception base variable
@@ -687,7 +688,8 @@ class StatementGenerator {
 		// generate initialization
 		if(!initializationDone) {
 			result.children += codeFragmentProvider.create('''«"\n"»''');
-			result.children += stmt.initializationCode;
+			result.children += stmt.initializationCode.noNewline.noTerminator;
+			result.children += codeFragmentProvider.create('''«";"»''');
 		
 		}
 		
