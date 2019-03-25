@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Types modalityAccess and x_axis are not the same.";
+			return "f_101 (:: bool) doesn't share a common type with the other members of this array literal";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

@@ -105,20 +105,11 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val occurrence = getOccurrence(stmt);
 		val initValue = init?.castOrNull(PrimitiveValueExpression)
 		val initWithValueLiteral = initValue !== null
-		
-		
-		val operationCallInit = (!topLevel) && init !== null 
-			&& init.isOperationCall;
-		
-		val otherInit = init !== null 
-			&& !initWithValueLiteral
-			&& !operationCallInit
-			&& !(init instanceof NewInstanceExpression)
-		
+						
 		val bufferName = codeFragmentProvider.create('''data_«stmt.name»_«occurrence»''');
 		
 		val cf = codeFragmentProvider.create('''
-		«IF capacity > 0»
+		«IF capacity >= 0»
 		// buffer for «stmt.name»
 		«generateBufferStmt(stmt, type, bufferName, getFixedSize(init), initValue)»
 		«ELSE»

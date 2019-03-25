@@ -368,8 +368,4 @@ class LoopBreakerStatement extends AbstractStatement {
 class ArrayRuntimeCheckStatement extends AbstractStatement {
 	refers ArrayAccessExpression access
 }
-class InterpolatedStringBufferStatement extends AbstractStatement {
-	contains InterpolatedStringLiteral literal
-}
-
 

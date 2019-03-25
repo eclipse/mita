@@ -219,10 +219,10 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayLiteral arrayLiteral) {
-		val literalTypes = arrayLiteral.values.map[system.computeConstraints(it)];
+		val literalTypes = arrayLiteral.values.map[it -> system.computeConstraints(it)];
 		val innerType = system.newTypeVariable(null);
 		literalTypes.forEach[
-			system.addConstraint(new SubtypeConstraint(it, innerType, new ValidationIssue(Severity.ERROR, '''«it» (:: %s) doesn't share a common type with the other members of this array literal''', it.origin, null, "")))
+			system.addConstraint(new SubtypeConstraint(it.value, innerType, new ValidationIssue(Severity.ERROR, '''«it.key» (:: %s) doesn't share a common type with the other members of this array literal''', it.value.origin, null, "")))
 		]
 		val arrayTypeSchemeTV = typeRegistry.getTypeModelObjectProxy(system, arrayLiteral, StdlibTypeRegistry.arrayTypeQID);
 		val outerType = system.nestInType(arrayLiteral, innerType, arrayTypeSchemeTV, "array");

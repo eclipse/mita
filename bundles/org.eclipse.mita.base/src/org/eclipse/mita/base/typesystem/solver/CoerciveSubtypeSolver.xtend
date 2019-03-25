@@ -216,9 +216,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 		
 	def Iterable<ValidationIssue> validateSubtypes(ConstraintSystem system, EObject typeResolutionOrigin) {
+		val renamer = new NicerTypeVariableNamesForErrorMessages;
 		return system.constraints.filter(SubtypeConstraint).flatMap[
 			if(!subtypeChecker.isSubType(system, typeResolutionOrigin, it.subType, it.superType)) {
-				#[it.errorMessage]
+				#[it.modifyNames(renamer).errorMessage]
 			}
 			else {
 				#[]
@@ -781,7 +782,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					supremum !== null && successors.forall[ t | 
 						subtypeChecker.isSubType(system, typeResolutionOrigin, supremum, t)
 					];
-					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
+					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.modifyNames(new NicerTypeVariableNamesForErrorMessages).errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «predecessors» don't share a super type (best guess: «supremum ?: "none"»)''', 
 					v.origin, null, "")].toSet);
 					issues += newIssues;
