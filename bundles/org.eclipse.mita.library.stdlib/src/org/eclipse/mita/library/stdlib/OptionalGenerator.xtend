@@ -13,26 +13,26 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ProgramBlock
-import org.eclipse.mita.program.ReturnStatement
-import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 
 class OptionalGenerator extends AbstractTypeGenerator {
@@ -61,23 +61,16 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(stmt, type)» «stmt.name»;''')
+	override generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
-	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
-		val isReturnStmt = left instanceof ReturnStatement;
-		
+	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, AssignmentOperator operator, EObject right) {		
 		if(operator != AssignmentOperator.ASSIGN) {
 			return codeFragmentProvider.create('''ERROR: Unsuported operator: «operator.literal»''')
 		}
 		val haveInit = right !== null;
-		
-		val varType = BaseUtils.getType(left);
-		val initType = if(haveInit) {
-			BaseUtils.getType(right);
-		}
-		
+				
 		val initIsEref = haveInit && right instanceof ElementReferenceExpression;
 		val initAsEref = if(initIsEref) {
 			right as ElementReferenceExpression;
@@ -93,7 +86,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			initAsOperation as GeneratedFunctionDefinition;
 		}
 		
-		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, left ?: right)») ''');
+		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, context)») ''');
 		
 		val validInit = if(right !== null) {
 			codeFragmentProvider.create('''«right.code»''');
@@ -107,7 +100,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		
 		val initValueIsNone = right === null || (initIsGeneratedFunction && initAsGeneratedFunction.name == "none");
 		
-		val firstTypeArgType = (varType as TypeConstructorType).typeArguments.tail.head;
+		val firstTypeArgType = (type as TypeConstructorType).typeArguments.tail.head;
 		val firstTypeArgOrigin = firstTypeArgType.origin;
 
 		
@@ -142,16 +135,8 @@ class OptionalGenerator extends AbstractTypeGenerator {
 				codeFragmentProvider.create('''«right.code»''')
 			}
 		}
-		
-		val varNameLeft = if(left instanceof VariableDeclaration) {
-			codeFragmentProvider.create('''«left.name»''')
-		} else if(isReturnStmt) {
-			codeFragmentProvider.create('''*_result''');
-		} else {
-			codeFragmentProvider.create('''«left.code.noTerminator»''')
-		}
-		
-		codeFragmentProvider.create('''«varNameLeft» = «init.noNewline»''')
+				
+		codeFragmentProvider.create('''«leftName» = «init.noNewline»''')
 	}
 	
 	override CodeFragment generateHeader() {

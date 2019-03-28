@@ -143,7 +143,7 @@ class CompilationContext {
 	def getAllGeneratedTypesUsed() {
 		assertInited();
 		return (units + stdlib).flatMap[program |
-			(program.eAllContents.filter(PresentTypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
+			(program.eAllContents).map[
 				it -> BaseUtils.getType(it)
 			].filter[
 				it.value?.freeVars?.empty && TypesUtil.isGeneratedType(program.eResource, it.value)

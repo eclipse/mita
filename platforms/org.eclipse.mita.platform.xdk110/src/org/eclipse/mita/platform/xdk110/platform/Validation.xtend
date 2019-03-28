@@ -20,7 +20,7 @@ import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Operation
@@ -45,7 +45,7 @@ class Validation implements IResourceValidator {
 	@Inject ElementSizeInferrer sizeInferrer
 		
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
-		val functionCalls = program.eAllContents.filter(ElementReferenceExpression).filter[it.operationCall].toList;
+		val functionCalls = program.eAllContents.filter(ElementReferenceExpression).filter[!(it instanceof FeatureCallWithoutFeature)].filter[it.operationCall].toList;
 		
 		// the following is extension method hell
 		// EObject source = it, SignalInstance sigInst, int structFeature

@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
@@ -44,8 +45,11 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
+import org.eclipse.mita.base.types.Expression
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -97,27 +101,26 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		''')
 	}
 	
-	override CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		val init = stmt.initialization.ignoreCoercions;
-		val capacity = stmt.getFixedSize;
+	override CodeFragment generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+		val init = initialization.ignoreCoercions;
+		val capacity = size.elementCount;
 		// if we are top-level, we must do initialization if there is any
-		val topLevel = (EcoreUtil2.getContainerOfType(stmt, FunctionDefinition) === null) && (EcoreUtil2.getContainerOfType(stmt, EventHandlerDeclaration) === null);
-		val occurrence = getOccurrence(stmt);
+		val occurrence = getOccurrence(context);
 		val initValue = init?.castOrNull(PrimitiveValueExpression)
 		val initWithValueLiteral = initValue !== null
 						
-		val bufferName = codeFragmentProvider.create('''data_«stmt.name»_«occurrence»''');
+		val bufferName = codeFragmentProvider.create('''data_«varName»_«occurrence»''');
 		
 		val cf = codeFragmentProvider.create('''
 		«IF capacity >= 0»
-		// buffer for «stmt.name»
-		«generateBufferStmt(stmt, type, bufferName, getFixedSize(init), initValue)»
+		// buffer for «varName»
+		«generateBufferStmt(context, type, bufferName, getFixedSize(init), initValue)»
 		«ELSE»
 		ERROR: Couldn't infer size!
 		«ENDIF»
-		// var «stmt.name»: «type.toString»
-		«typeGenerator.code(stmt, type)» «stmt.name»«IF topLevel || init !== null» = {
-			.data = data_«stmt.name»_«occurrence»,
+		// var «varName»: «type.toString»
+		«typeGenerator.code(context, type)» «varName»«IF isTopLevel || init !== null» = {
+			.data = data_«varName»_«occurrence»,
 			.length = «IF initWithValueLiteral»«getFixedSize(init)»«ELSE»0«ENDIF»,
 			.capacity = «capacity»
 		}«ENDIF»;
@@ -167,30 +170,15 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		''');
 	}
 
-	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject _right) {
+	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, AssignmentOperator operator, EObject _right) {
 		val right = _right.ignoreCoercions;
 		if(right === null) {
 			return codeFragmentProvider.create('''''');
 		}
 		val rightLit = right.castOrNull(PrimitiveValueExpression);
-
-		val isReturnStmt = left instanceof ReturnStatement;
 		
-		val varNameLeft = if(left instanceof VariableDeclaration) {
-			// actually reference the thing, recursion would not terminate, since we get called if left is VariableDeclaration
-			codeFragmentProvider.create('''«left.name»''');
-		} 
-		else if(isReturnStmt) {
-			codeFragmentProvider.create('''(*_result)''');
-		}
-		else {
-			// recurse
-			codeFragmentProvider.create('''«statementGenerator.code(left).noTerminator»''');
-		}
 		val rightRef = if(right instanceof ArrayAccessExpression) {
 			right.owner
-		} else if(isReturnStmt) {
-			(left as ReturnStatement).value
 		} else {
 			right
 		}
@@ -200,7 +188,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val codeRightExpr = codeFragmentProvider.create('''«statementGenerator.code(rightRef).noTerminator.noNewline»''');
 		val rightExprIsValueLit = rightLit !== null;
 		
-		val temporaryBufferName = codeFragmentProvider.create('''«left.baseName»_temp_«left.occurrence»''')
+		val temporaryBufferName = codeFragmentProvider.create('''«leftName»_temp_«context.occurrence»''')
 		
 		val valRange = if(right instanceof ArrayAccessExpression) {
 			if(right.arraySelector instanceof ValueRange) {
@@ -208,16 +196,16 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			}
 		}
 		
-		val lengthLeft = codeFragmentProvider.create('''«varNameLeft».length''')
+		val lengthLeft = codeFragmentProvider.create('''«leftName».length''')
 		val lengthRight = generateLength(right, temporaryBufferName, valRange, codeRightExpr);
-		val capacityLeft = codeFragmentProvider.create('''«varNameLeft».capacity''')
+		val capacityLeft = codeFragmentProvider.create('''«leftName».capacity''')
 		val remainingCapacityLeft = codeFragmentProvider.create('''«IF operator == AssignmentOperator.ADD_ASSIGN»(«capacityLeft» - «lengthLeft»)«ELSE»«capacityLeft»«ENDIF»''')
 		
 		val dataLeft = if(operator == AssignmentOperator.ASSIGN) {
-			codeFragmentProvider.create('''«varNameLeft».data''');
+			codeFragmentProvider.create('''«leftName».data''');
 		}
 		else if(operator == AssignmentOperator.ADD_ASSIGN) {
-			codeFragmentProvider.create('''&«varNameLeft».data[«varNameLeft».length]''');
+			codeFragmentProvider.create('''&«leftName».data[«leftName».length]''');
 		}
 		val dataRight = if(!isNewInstance && !rightExprIsValueLit) {
 			codeFragmentProvider.create('''
@@ -227,7 +215,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			temporaryBufferName;	
 		}
 		
-		val sizeResLeft = sizeInferrer.infer(left);
+		val sizeResLeft = left.transform[sizeInferrer.infer(it)].or(new InvalidElementSizeInferenceResult(null, null, ""));
 		val sizeResRight = sizeInferrer.infer(right);
 		
 		// if we can infer the sizes we don't need to check bounds 
@@ -238,7 +226,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			codeFragmentProvider.create('''
 				// do a runtime check since we either don't know the sizes statically or we're appending
 				if(«remainingCapacityLeft» < «lengthRight») {
-					«generateExceptionHandler(left, "EXCEPTION_INVALIDRANGEEXCEPTION")»
+					«generateExceptionHandler(context, "EXCEPTION_INVALIDRANGEEXCEPTION")»
 				}
 			''')
 		}
@@ -260,31 +248,16 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val lengthModifyStmt = codeFragmentProvider.create('''
 			«lengthLeft» «operator.literal» «lengthRight»«IF valRange !== null»«IF valRange.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«IF valRange.upperBound !== null» - («lengthRight» - «valRange.upperBound.code.noTerminator»)«ENDIF»«ENDIF»;
 		''');
-		
-		val returnStatementLengthCheck = if(isReturnStmt) {
-			codeFragmentProvider.create('''
-			// We need enough space in our target array
-			if(«remainingCapacityLeft» < «lengthRight») {
-				«generateExceptionHandler(left, "EXCEPTION_INVALIDRANGEEXCEPTION")»
-			}
-			''')
-		} else {
-			CodeFragment.EMPTY;
-		}
-		
-		val typeSize = codeFragmentProvider.create('''sizeof(«getBufferType(left, type)»)''')
+				
+		val typeSize = codeFragmentProvider.create('''sizeof(«getBufferType(context, type)»)''')
 		
 		codeFragmentProvider.create('''
 		«IF rightExprIsValueLit»
 		// generate buffer to hold immediate
-		«generateBufferStmt(left, type, temporaryBufferName, getFixedSize(rightLit), rightLit)»
+		«generateBufferStmt(context, type, temporaryBufferName, getFixedSize(rightLit), rightLit)»
 		«ENDIF»
-		«IF isReturnStmt»
-		«returnStatementLengthCheck»
-		«ELSE»
 		«capacityCheck»
-		«ENDIF»
-		// «varNameLeft» «operator.literal» «codeRightExpr»
+		// «leftName» «operator.literal» «codeRightExpr»
 		memcpy(«dataLeft», «dataRight», «typeSize» * «lengthRight»);
 		«lengthModifyStmt»
 		''').addHeader('MitaGeneratedTypes.h', false);

@@ -13,15 +13,16 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.types.CoercionExpression
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 /**
  * Interface for type generators.
@@ -46,8 +47,8 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a variable declaration for a variable of a generated type
 	 */
-	def CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(stmt, type)» «stmt.name»;''')
+	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
 	/**
@@ -56,11 +57,12 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	def CodeFragment generateNewInstance(AbstractType type, NewInstanceExpression expr);
 	
 	/**
-	 * Produces code which implements an assignment operation. This function will only be executed if
-	 * {@link #checkExpressionSupport) returned true for the corresponding types.
+	 * Produces code which implements an assignment operation. 
+	 * Every generator should be able to at least handle AssignmentOperator.ASSIGN. 
+	 * left can be used for size inference, but might not exist, for example when copying inner structures.
 	 */
-	def CodeFragment generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
-		return codeFragmentProvider.create('''«left» «operator.literal» «right»;''');
+	def CodeFragment generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, AssignmentOperator operator, EObject right) {
+		return codeFragmentProvider.create('''«leftName» «operator.literal» «right»;''');
 	}
 	
 	/**

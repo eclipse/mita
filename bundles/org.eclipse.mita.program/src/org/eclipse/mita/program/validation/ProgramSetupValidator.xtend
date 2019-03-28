@@ -51,7 +51,7 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 		var missingConfigItems = setup.type?.configurationItems
 		?.filter[required] // item is mandatory
 		?.filter[!setup.configurationItemValues.map[c|c.item].contains(it)] // item is not contained in setup
-		if (!missingConfigItems.empty) {
+		if (missingConfigItems === null || !missingConfigItems.empty) {
 			error('Missing configuration items: ' + missingConfigItems.map[c|c.name].join(', '), null,
 				MISSING_CONIGURATION_ITEM_CODE)
 		}
@@ -92,7 +92,7 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 		if(setup.type?.instantiable == Instantiability.NONE || setup.type?.instantiable == Instantiability.NAMED_SINGLETON) {
 			val allSetupsForThisType = setup.eResource.resourceSet.allContents
 				.filter(SystemResourceSetup)
-				.filter[ it.type.name == setup.type.name ];
+				.filter[ it.type?.name == setup.type?.name ];
 			if(!allSetupsForThisType.tail.empty) {
 				// more than two setups for this system resource exist. That's a problem.
 				error("This system resource must only be setup once", setup, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE);
