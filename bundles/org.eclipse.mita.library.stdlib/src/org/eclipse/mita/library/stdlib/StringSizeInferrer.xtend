@@ -21,6 +21,7 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.inferrer.ElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class StringSizeInferrer extends ArraySizeInferrer {
 	
@@ -39,6 +40,7 @@ class StringSizeInferrer extends ArraySizeInferrer {
 	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr, AbstractType type) {
 		expr.inferFixedSize
 	}
+
 		
 	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(StringLiteral expression) {
 		newValidResult(expression, expression.value.length);		

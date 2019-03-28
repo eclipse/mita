@@ -73,11 +73,17 @@ class ElementSizeInferrer {
 			super();
 			this.i1 = i1;
 			this.i2 = i2;
+			this.loader = i1?.loader ?: i2?.loader;
 		}
 		
 		override infer(EObject obj) {
 			i1.infer(obj).orElse([| i2.infer(obj)]);
 		}
+		
+		override protected doInfer(Object obj, AbstractType type) {
+			i1.doInfer(obj, type).orElse([| i2.doInfer(obj, type)])
+		}
+		
 	}
 	
 	static def ElementSizeInferrer orElse(ElementSizeInferrer i1, ElementSizeInferrer i2) {

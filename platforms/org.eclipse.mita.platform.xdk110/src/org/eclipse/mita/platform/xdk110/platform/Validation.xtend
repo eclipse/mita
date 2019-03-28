@@ -45,26 +45,13 @@ class Validation implements IResourceValidator {
 	@Inject ElementSizeInferrer sizeInferrer
 		
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
-		val functionCalls1 = program.eAllContents.filter(FeatureCall).filter[it.operationCall].toList;
-		val functionCalls2 = program.eAllContents.filter(ElementReferenceExpression).filter[it.operationCall].toList;
+		val functionCalls = program.eAllContents.filter(ElementReferenceExpression).filter[it.operationCall].toList;
 		
 		// the following is extension method hell
 		// EObject source = it, SignalInstance sigInst, int structFeature
 		// ArgumentExpression source = it, Operation writeMethod, SignalInstance sigInst
 		val sigInstOrModalityAccesses = (
-			functionCalls1.map[
-				val ArgumentExpression source = it;
-				val method = it.reference;
-				val owner = it.arguments.head.value;
-				if(owner instanceof FeatureCall) {
-					val sigInst = owner.reference;
-					if(source === null || method === null || sigInst === null) {
-						return null;
-					}
-					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE)
-				}
-				return null;
-			] + functionCalls2.map[
+			functionCalls.map[
 				val ArgumentExpression source = it;
 				val method = it.reference;
 				if(method instanceof Operation) {

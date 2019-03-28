@@ -52,7 +52,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
     protected ITypeSystem registry;
 	
 	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(ElementReferenceExpression expr) {
-		return expr?.reference?.infer;
+		return expr?.infer;
 	}
 	
 	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(EObject expr) {
