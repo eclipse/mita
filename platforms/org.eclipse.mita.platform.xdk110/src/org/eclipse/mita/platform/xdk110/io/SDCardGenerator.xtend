@@ -232,19 +232,11 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	def CodeFragment dataAccessor(SignalInstance sigInst, String varName) {
-		return if (sigInst.instanceOf.name.contains("Text")) {
-			codeFragmentProvider.create('''*«varName»''');
-		} else {
-			codeFragmentProvider.create('''«varName»->data''');
-		}
+		return codeFragmentProvider.create('''«varName»->data''');
 	}
 
 	def CodeFragment lenAccessor(SignalInstance sigInst, String varName) {
-		return if (sigInst.instanceOf.name.contains("Text")) {
-			codeFragmentProvider.create('''strlen(*«varName»)''');
-		} else {
-			codeFragmentProvider.create('''«varName»->length''');
-		}
+		return codeFragmentProvider.create('''«varName»->length''');
 	}
 
 	def CodeFragment filenameAccessor(SignalInstance sigInst, String varName) {
