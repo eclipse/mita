@@ -42,13 +42,13 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	def checkConfigurationItemValues(SystemResourceSetup setup) {
 
 		// check config item values are unique
-		setup.configurationItemValues.groupBy[x| x.item.name ].entrySet.filter[x|x.value.length > 1].forEach [ x |
+		setup.configurationItemValues.groupBy[x| x.item?.name ].entrySet.filter[x|x.value.length > 1].forEach [ x |
 			error(String.format(CONFIG_ITEM_VALUE_NOT_UNIQUE_MSG, x.key), x.value.last,
 				ProgramPackage.eINSTANCE.configurationItemValue_Item, CONFIG_ITEM_VALUE_NOT_UNIQUE_MSG);
 		]
 
 		// check all mandatory config items are present
-		var missingConfigItems = setup.type.configurationItems
+		var missingConfigItems = setup.type?.configurationItems
 		?.filter[required] // item is mandatory
 		?.filter[!setup.configurationItemValues.map[c|c.item].contains(it)] // item is not contained in setup
 		if (!missingConfigItems.empty) {
@@ -71,14 +71,14 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	@Check(CheckType.FAST)
 	def checkSetupNaming(SystemResourceSetup setup) {
 		val setupType = setup.type;
-		if(setupType.instantiable == Instantiability.MANY || setupType.instantiable == Instantiability.NAMED_SINGLETON) {
+		if(setupType?.instantiable == Instantiability.MANY || setupType?.instantiable == Instantiability.NAMED_SINGLETON) {
 			// must be named
 			if(setup.name === null || setup.name.trim.empty) {
 				val proposal = '''setup «setupType.name.toFirstLower» : «setupType.name» { }'''
 				error(String.format(SETUP_MUST_HAVE_NAME_MSG, proposal), setup,
 					ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, SETUP_MUST_HAVE_NAME_CODE);
 			}
-		} else if(setupType.instantiable == Instantiability.NONE) {
+		} else if(setupType?.instantiable == Instantiability.NONE) {
 			// cannot be named
 			if(setup.name !== null && !setup.name.trim.empty) {
 				error(ProgramSetupValidator.SETUP_MUST_NOT_HAVE_NAME_MSG, setup,
@@ -89,7 +89,7 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	
 	@Check(CheckType.FAST)
 	def checkSetupIsSingleton(SystemResourceSetup setup) {
-		if(setup.type.instantiable == Instantiability.NONE || setup.type.instantiable == Instantiability.NAMED_SINGLETON) {
+		if(setup.type?.instantiable == Instantiability.NONE || setup.type?.instantiable == Instantiability.NAMED_SINGLETON) {
 			val allSetupsForThisType = setup.eResource.resourceSet.allContents
 				.filter(SystemResourceSetup)
 				.filter[ it.type.name == setup.type.name ];
