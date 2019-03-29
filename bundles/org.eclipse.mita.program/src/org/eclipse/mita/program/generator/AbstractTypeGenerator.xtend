@@ -60,8 +60,9 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 * Produces code which implements an assignment operation. 
 	 * Every generator should be able to at least handle AssignmentOperator.ASSIGN. 
 	 * left can be used for size inference, but might not exist, for example when copying inner structures.
+	 * leftName might be a C expression (for example `(*_result)`), to generate temporary variable names use cVariablePrefix. 
 	 */
-	def CodeFragment generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, AssignmentOperator operator, EObject right) {
+	def CodeFragment generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {
 		return codeFragmentProvider.create('''«leftName» «operator.literal» «right»;''');
 	}
 	

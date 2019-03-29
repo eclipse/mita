@@ -65,7 +65,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
-	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, AssignmentOperator operator, EObject right) {		
+	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {		
 		if(operator != AssignmentOperator.ASSIGN) {
 			return codeFragmentProvider.create('''ERROR: Unsuported operator: «operator.literal»''')
 		}

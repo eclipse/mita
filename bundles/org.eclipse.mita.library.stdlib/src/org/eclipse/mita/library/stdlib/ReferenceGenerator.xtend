@@ -55,7 +55,7 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	override generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»«IF initialization !== null» = «initialization.code»«ENDIF»;''')
 	}
-	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, AssignmentOperator operator, EObject right) {
+	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {
 		codeFragmentProvider.create('''«leftName» «operator.literal» «right.code»;''')
 		
 	}

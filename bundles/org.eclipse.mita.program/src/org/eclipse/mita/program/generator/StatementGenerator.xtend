@@ -495,7 +495,7 @@ class StatementGenerator {
 		
 		'''
 			«IF hasValue && generatedTypeGenerator !== null»
-				«generatedTypeGenerator.generateExpression(resultType, stmt, Optional.absent, codeFragmentProvider.create('''(*_result)'''), AssignmentOperator.ASSIGN, stmt.value).noTerminator»;
+				«generatedTypeGenerator.generateExpression(resultType, stmt, Optional.absent, codeFragmentProvider.create('''(*_result)'''), codeFragmentProvider.create('''_result'''), AssignmentOperator.ASSIGN, stmt.value).noTerminator»;
 			«ELSEIF hasValue»
 				*_result = «stmt.value.code.noTerminator»;
 			«ENDIF» 
@@ -514,6 +514,7 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(InterpolatedStringLiteral stmt) {
+		// This method seems like dead code!
 		/*
 		 * InterpolatedStrings are a special case of an expression where the code generation must be devolved to
 		 * the StringGenerator (i.e. the code generator registered at the generated-type string). Inelegantly, we
@@ -523,7 +524,8 @@ class StatementGenerator {
 		if (isGeneratedType(stmt.eResource, type)) {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (generator !== null) {
-				return '''«generator.generateExpression(type, stmt, Optional.absent, codeFragmentProvider.create('''«stmt»'''), null, null)»''';
+				val varName = codeFragmentProvider.create('''«stmt»''');
+				return '''«generator.generateExpression(type, stmt, Optional.absent, varName, varName, null, null)»''';
 			} else {
 				throw new CoreException(
 					new Status(IStatus.ERROR, "org.eclipse.mita.program",
@@ -586,7 +588,7 @@ class StatementGenerator {
 			if (initialization instanceof NewInstanceExpression) {
 				return generator.generateNewInstance(type, initialization);
 			} else if (initialization instanceof ArrayAccessExpression) {
-				return generator.generateExpression(type, context, target, varName, op, initialization);
+				return generator.generateExpression(type, context, target, varName, varName, op, initialization);
 			} else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
 				return generateFunCallStmt(varName, type, initialization as ElementReferenceExpression);
 			} else if(initialization instanceof PrimitiveValueExpression) {
@@ -596,9 +598,9 @@ class StatementGenerator {
 					return CodeFragment.EMPTY;
 				}
 			} else {
-				return generator.generateExpression(type, context, target, varName, op, initialization);
+				return generator.generateExpression(type, context, target, varName, varName, op, initialization);
 			}
-			return generator.generateExpression(type, context, target, varName, op, initialization);
+			return generator.generateExpression(type, context, target, varName, varName, op, initialization);
 		} else if (initialization instanceof ElementReferenceExpression) {
 			if(initialization.isOperationCall) {
 				return generateFunCallStmt(varName, type, initialization);	

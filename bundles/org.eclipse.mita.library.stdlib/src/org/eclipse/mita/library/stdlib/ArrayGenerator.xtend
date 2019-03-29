@@ -170,7 +170,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		''');
 	}
 
-	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, AssignmentOperator operator, EObject _right) {
+	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject _right) {
 		val right = _right.ignoreCoercions;
 		if(right === null) {
 			return codeFragmentProvider.create('''''');
