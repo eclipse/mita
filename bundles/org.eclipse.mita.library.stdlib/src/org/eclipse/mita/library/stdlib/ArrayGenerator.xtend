@@ -188,7 +188,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val codeRightExpr = codeFragmentProvider.create('''«statementGenerator.code(rightRef).noTerminator.noNewline»''');
 		val rightExprIsValueLit = rightLit !== null;
 		
-		val temporaryBufferName = codeFragmentProvider.create('''«leftName»_temp_«context.occurrence»''')
+		val temporaryBufferName = codeFragmentProvider.create('''«cVariablePrefix»_temp_«context.occurrence»''')
 		
 		val valRange = if(right instanceof ArrayAccessExpression) {
 			if(right.arraySelector instanceof ValueRange) {
