@@ -744,7 +744,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				finalState.nonUnifiable
 					.filter[
 						val str = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, it.subType, it.superType);
-						return !str.valid || !str.constraints.empty;
+						return it.subType instanceof TypeVariable || it.superType instanceof TypeVariable || !str.valid || !str.constraints.empty;
 					]
 					.map[it.errorMessage]
 			));
