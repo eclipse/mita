@@ -495,7 +495,7 @@ class StatementGenerator {
 		
 		'''
 			«IF hasValue && generatedTypeGenerator !== null»
-				«generatedTypeGenerator.generateExpression(resultType, stmt, Optional.absent, codeFragmentProvider.create('''*_result'''), AssignmentOperator.ASSIGN, stmt.value).noTerminator»;
+				«generatedTypeGenerator.generateExpression(resultType, stmt, Optional.absent, codeFragmentProvider.create('''(*_result)'''), AssignmentOperator.ASSIGN, stmt.value).noTerminator»;
 			«ELSEIF hasValue»
 				*_result = «stmt.value.code.noTerminator»;
 			«ENDIF» 
