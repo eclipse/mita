@@ -173,9 +173,9 @@ UnqualifiedPresentTypeSpecifier returns types::PresentTypeSpecifier:
 	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))?
 ;
 
-InterpolatedStringExpression returns program::InterpolatedStringExpression hidden(): 
+InterpolatedStringExpression returns program::InterpolatedStringExpression: 
 	{program::InterpolatedStringExpression}
-	'`' ((=>'${' content+=ConditionalExpression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
+	'`' ((=>'${' content+=ConditionalExpression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|IntAsString)))* '`'
 ;
 IntAsString returns ecore::EString: LONG;
 
