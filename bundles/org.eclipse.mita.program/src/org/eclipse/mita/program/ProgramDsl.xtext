@@ -273,6 +273,7 @@ ReservedKeywords:
 	'alias-of' |
 	'alt' |
 	'alternative' |
+	'as' |
 	'catch' |
 	'checked' |
 	'constructor' |
@@ -293,6 +294,7 @@ ReservedKeywords:
 	'hour' |
 	'hours' |
 	'if' |
+	'in' |
 	'import' |
 	'is' |
 	'isother' |
