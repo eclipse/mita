@@ -305,6 +305,7 @@ ReservedKeywords:
 	'minutes' |
 	'native' |
 	'native-type' |
+	'new' |
 	'package' |
 	'return' |
 	'second' |
