@@ -33,6 +33,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemSpecification
@@ -182,6 +183,10 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		
 		val someProgram = compilationUnits.head;
 		
+		compilationUnits.forEach[
+			doType(it);			
+		]
+		
 		val platform = modelUtils.getPlatform(input, someProgram);
 		
 		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
@@ -233,6 +238,14 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		if(codefragment !== null && codefragment != CodeFragment.EMPTY)
 			fsa.produceFile('Makefile', someProgram, codefragment);
 	}
+	
+	def doType(EObject program) {
+		val resource = program.eResource;
+		if(resource instanceof MitaBaseResource) {
+			resource.collectAndSolveTypes(program);
+		}
+	}
+	
 		
 	def Iterable<String> getUserFiles(ResourceSet set) {
         val resource = set.resources.head;   
