@@ -110,7 +110,11 @@ class UserCodeFileGenerator {
 	
 	static def String getResourceBaseName(PackageAssociation program) {
 		val resource = program.origin.eResource;
-		return resource.URI.segments.last.getResourceBaseName;
+		val resourceBaseName = resource.URI.segments.last.getResourceBaseName
+		if(resourceBaseName == "main") {
+			return "mainApp"
+		}
+		return resourceBaseName
 	}
 	
 	static def String getResourceBaseName(String programFileName) {
