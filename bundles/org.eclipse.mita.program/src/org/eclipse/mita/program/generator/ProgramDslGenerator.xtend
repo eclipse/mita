@@ -173,6 +173,12 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			.map[x | x.contents.filter(Program).head ]
 			.filterNull
 			.map[x | 
+				val resource = x.eResource;	
+				if(resource instanceof MitaBaseResource) {	
+					if(resource.latestSolution === null) {	
+						x.doType();	
+					}	
+				}
 				val copy = x.copy(copyResourceSet);
 				BaseUtils.ignoreChange(copy, [
 					transformer.get.transform(copy)
