@@ -446,13 +446,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
-		if (setup !== null) {
+		val superScope = if (setup !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
-			val scope = scopeInSetupBlock(context, ref);
-			return new FilteringScope(scope, [globalElementFilterInSetup.apply(it.EClass)]);
+			new FilteringScope(scopeInSetupBlock(context, ref), [globalElementFilterInSetup.apply(it.EClass)]);
 		} else {
-			val superScope = new FilteringScope(delegate.getScope(context, ref), [globalElementFilter.apply(it.EClass)]);
-			val scope = (
+			new FilteringScope(delegate.getScope(context, ref), [globalElementFilter.apply(it.EClass)]);	
+		}
+		val scope = (
 			if(context instanceof FeatureCallWithoutFeature) {
 				val normalizer = new ImportNormalizer(QualifiedName.create("<auto>"), true, false);
 				new ImportScope(#[normalizer], superScope, null, null, false);
@@ -466,9 +466,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					
 				}
 			}) ?: superScope;
-			val typeKindNormalizer = new TypeKindNormalizer();
-			return new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
-		}
+		val typeKindNormalizer = new TypeKindNormalizer();
+		return new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
+		
 	}
 
 	dispatch def IScope scopeInSetupBlock(SignalInstance context, EReference reference) {

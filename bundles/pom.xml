@@ -82,6 +82,7 @@
                 <module>../platforms/org.eclipse.mita.platform.unittest</module>
                 <module>../platforms/org.eclipse.mita.platform.arduino</module>
                 <module>../platforms/org.eclipse.mita.platform.x86</module>
+                <module>../platforms/org.eclipse.mita.platform.cgw</module>
             </modules>
         </profile>
         
@@ -102,6 +103,7 @@
                 <module>../platforms/org.eclipse.mita.platform.xdk110.feature</module>
                 <module>../platforms/org.eclipse.mita.platform.arduino.feature</module>
                 <module>../platforms/org.eclipse.mita.platform.x86.feature</module>
+                <module>../platforms/org.eclipse.mita.platform.cgw.feature</module>
                 <module>org.eclipse.mita.repository</module>
             </modules>
         </profile>

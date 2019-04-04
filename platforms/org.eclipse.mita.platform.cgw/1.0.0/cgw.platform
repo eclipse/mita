@@ -1,0 +1,211 @@
+package platforms.cgw;
+
+
+
+enum BMA280_Range {
+	/**< sets range to +/- 2G mode */
+	Range_2G,
+	
+	/**< sets range to +/- 4G mode */
+	Range_4G,
+	
+	/**< sets range to +/- 8G mode */
+	Range_8G,
+	
+	/**< sets range to +/- 16G mode */
+	Range_16G
+}
+
+enum BMA280_Bandwidth {
+ 	/**< sets bandwidth to LowPass 7.81HZ  */
+	BW_7_81Hz,
+
+	/**< sets bandwidth to LowPass 15.63HZ  */
+	BW_15_63Hz,
+	
+	/**< sets bandwidth to LowPass 31.25HZ  */
+	BW_31_25Hz,
+	
+	 /**< sets bandwidth to LowPass 62.50HZ  */
+	BW_62_50Hz,
+	
+	/**< sets bandwidth to LowPass 125HZ  */
+	BW_125Hz,
+	
+	/**< sets bandwidth to LowPass 250HZ  */
+	BW_250Hz,
+	
+	/**< sets bandwidth to LowPass 500HZ  */
+	BW_500Hz,
+	
+	/**< sets bandwidth to LowPass 1000HZ  */
+	BW_1000Hz
+}
+
+struct vec3d_16 {
+	var x: int16;
+	var y: int16;
+	var z: int16;
+}
+
+/**
+ * The BMA280 is a tri axial, low-g acceleration sensor with digital output for consumer applications.
+ * It allows measurements of acceleration in three perpendicular axes.
+ */
+sensor BMA280 {
+	generator "org.eclipse.mita.platform.cgw.sensors.Bma280Generator"
+	
+	/**
+	 * The range of acceleration we want to measure.
+	 */
+	configuration-item range : BMA280_Range = BMA280_Range.Range_2G
+	
+	/**
+	 * The low-pass filter bandwidth used by the BMA.
+	 */
+	configuration-item bandwidth : BMA280_Bandwidth = BMA280_Bandwidth.BW_500Hz
+	
+	/**
+	 * The threshold of acceleration that has to be crossed before an any motion event is triggered.
+	 */
+	configuration-item any_motion_threshold : uint32 = 20
+	
+	/**
+	 * The threshold of acceleration that must not be exceeded for a no motion event to be triggered.
+	 */
+	configuration-item no_motion_threshold : uint32 = 20
+	
+	
+	/**
+	 * The X axis of the BMA280
+	 */
+	modality x_axis : int16
+	
+	/**
+	 * The Y axis of the BMA280
+	 */
+	modality y_axis : int16
+	
+	/**
+	 * The Z axis of the BMA280
+	 */ 
+	modality z_axis : int16
+	
+	/**
+	 * The L2 norm of the acceleration vector: sqrt(x^2 + y^2 + z^2)
+	 */
+	modality magnitude : uint32
+}
+
+
+enum BME280_PowerMode {
+	/**
+	 * Normal mode comprises an automated perpetual cycling between an (active) measurement period and an (inactive) standby period.
+	 */
+	Normal,
+	
+	/**
+	 * In forced mode, a single measurement is performed in accordance to the selected
+	 * measurement and filter options. When the measurement is finished, the sensor returns to sleep
+	 * mode and the measurement results can be obtained from the data registers.
+	 */
+	Forced
+}
+
+enum BME280_Oversampling {
+	OVERSAMPLE_1X,
+	OVERSAMPLE_2X,
+	OVERSAMPLE_4X,
+	OVERSAMPLE_8X,
+	OVERSAMPLE_16X
+}
+
+struct EnvironmentData {
+	var temperature: int32;
+	var humidity: uint32;
+	var pressure: uint32;
+}
+
+/**
+ * The BME280 is as combined digital humidity, pressure and temperature sensor based on proven sensing principles.
+ */
+sensor BME280 {
+	generator "org.eclipse.mita.platform.cgw.sensors.Bme280Generator"
+	validator "org.eclipse.mita.platform.cgw.sensors.Bme280Validator"
+	
+	/**
+	 * The BME280 power mode
+	 */
+	configuration-item power_mode : BME280_PowerMode = BME280_PowerMode.Normal
+	
+	/**
+	 * The standby time used in normal mode in milliseconds.
+	 * Beware that the value supplied here will be clipped to the nearest valid value.
+	 */
+	configuration-item standby_time : uint32
+	
+	/**
+	 * Reduces noise in the temperature measurement by over sampling.
+	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
+	 */
+	configuration-item temperature_oversampling : BME280_Oversampling
+	
+	/**
+	 * Reduces noise in the pressure measurement by over sampling.
+	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
+	 */
+	configuration-item pressure_oversampling : BME280_Oversampling
+	
+	/**
+	 * Reduces noise in the humidity measurement by over sampling.
+	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
+	 */
+	configuration-item humidity_oversampling : BME280_Oversampling
+	
+	/**
+	 * The temperature in milli-celcius
+	 */
+	modality temperature : int32
+	
+	/**
+	 * The pressure in pascal
+	 */
+	modality pressure : uint32
+	
+	/**
+	 * The relative humidity as percentage
+	 */
+	modality humidity : uint32
+	
+}
+
+enum LedColor {
+	Red,
+	Green,
+	Blue
+}
+
+/**
+ * Displays state using three differently colored LEDs on the device.
+ */
+connectivity named-singleton LED {
+	generator "org.eclipse.mita.platform.cgw.connectivity.LedGenerator"
+	validator "org.eclipse.mita.platform.cgw.connectivity.LedValidator"
+	
+	signal light_up(color : LedColor) : bool
+}
+
+alias accelerometer for BMA280
+alias environment for BME280
+
+platform CGW {
+	module "org.eclipse.mita.platform.cgw.platform.CgwPlatformGeneratorModule"
+	generator "org.eclipse.mita.platform.cgw.platform.MainGenerator"
+	
+	has accelerometer
+	has environment
+	
+	configuration-item startupDelay: uint32
+	
+	event startup
+}

@@ -1,21 +1,21 @@
 /********************************************************************************
- * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
+ * Copyright (c) 2019 Robert Bosch GmbH.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
  *
  * Contributors:
- *    itemis AG - initial contribution
+ *    Robert Bosch GmbH
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
  
-package org.eclipse.mita.platform.x86.platform
+package org.eclipse.mita.platform.cgw.platform
 
 import org.eclipse.mita.program.generator.EmptyPlatformGeneratorModule
 
-class X86PlatformGeneratorModule extends EmptyPlatformGeneratorModule {
+class CgwPlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 
 	override bindIPlatformEventLoopGenerator() {
 		EventLoopGenerator
@@ -34,7 +34,7 @@ class X86PlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 	}
 	
 	override bindPlatformBuildSystemGenerator() {
-		MakefileGenerator
+		MesonGenerator
 	}
 
 }

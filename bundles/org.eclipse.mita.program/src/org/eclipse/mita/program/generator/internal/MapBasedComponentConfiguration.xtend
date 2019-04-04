@@ -16,6 +16,7 @@ package org.eclipse.mita.program.generator.internal
 import java.util.HashMap
 import java.util.Map
 import java.util.NoSuchElementException
+import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.platform.AbstractSystemResource
@@ -82,6 +83,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 		}
 		return null;
 	}
+
 	
 	override getInteger(String key) {
 		val expr = getExpression(key)?.reduce;
@@ -117,11 +119,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	/**
 	 * Reduces an expression to it's root value. This function is useful when generating
 	 * code from configuration item values. It behaves as follows:
-	 *   if expression is FeatureCall: return expression.feature
-	 *   if expression is ElementReferenceExpression: return reference
-	 *   if expression is not null: return staticValueOf(expression)
-	 *   else null
-	 * 
+	 * staticValueOf(expression)
 	 */
 	protected static def reduce(Expression expression) {
 		return StaticValueInferrer.infer(expression, [x | ]);

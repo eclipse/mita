@@ -18,7 +18,6 @@ import java.util.HashMap
 import java.util.Map
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
-import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
@@ -27,6 +26,7 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 
 class LedGenerator extends AbstractSystemResourceGenerator {
 
@@ -41,7 +41,7 @@ class LedGenerator extends AbstractSystemResourceGenerator {
 				.filter(ElementReferenceExpression)
 				.map[x | ExpressionUtils.getArgumentValue(x.reference as Operation, x, "color") ]
 				.map[ StaticValueInferrer.infer(it, []) ]
-				.filter(Enumerator)
+				.filter(SumTypeRepr)
 				.map[it.name]
 				.head;
 				

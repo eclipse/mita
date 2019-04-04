@@ -62,10 +62,10 @@ class EntryPointGenerator {
 		
 		
 		// find all resources used
-		val allResourcesUsed = context.resourceGraph
+		val allResourcesUsed = (#[context.platform] + context.resourceGraph
 			.nodesInTopologicalOrder
 			.filter[ it instanceof AbstractSystemResource || it instanceof SystemResourceSetup ]
-			.filter(EObject)
+			.filter(EObject))
 			.toList;
 		
 		// build list of base includes

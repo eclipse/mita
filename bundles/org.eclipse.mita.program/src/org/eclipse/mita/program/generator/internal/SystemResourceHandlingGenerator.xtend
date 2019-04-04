@@ -198,6 +198,7 @@ class SystemResourceHandlingGenerator {
 				«ENDIF»
 				«internalGenerator?.generateAdditionalImplementation()»
 			''')
+			.addHeader(obj.fileBasename + ".h", false)
 			.addHeader('MitaExceptions.h', false)
 			.toImplementation(context))
 		return cgn;

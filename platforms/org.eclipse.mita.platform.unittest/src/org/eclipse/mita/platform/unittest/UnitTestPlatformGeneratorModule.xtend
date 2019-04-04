@@ -53,7 +53,7 @@ class UnitTestPlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 		ExceptionGenerator
 	}
 
-	override bindIPlatformMakefileGenerator() {
+	override bindPlatformBuildSystemGenerator() {
 		MakefileGenerator
 	}
 }
