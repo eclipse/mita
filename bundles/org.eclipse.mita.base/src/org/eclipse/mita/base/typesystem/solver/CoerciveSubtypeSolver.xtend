@@ -68,6 +68,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
+import org.eclipse.mita.base.typesystem.types.Signedness
 
 /**
  * Solves coercive subtyping as described in 
@@ -530,7 +531,20 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return Double.POSITIVE_INFINITY;
 	}
 	dispatch def double doComputeDistance(IntegerType type, IntegerType type2) {
-		return Math.abs(type.widthInBytes - type2.widthInBytes);
+		return Math.abs(type.widthInBytes - type2.widthInBytes) + doComputeDistance(type.signedness, type2.signedness);
+	}
+	dispatch def double doComputeDistance(Signedness s1, Signedness s2) {
+		if(s1 == s2) {
+			return 0.0;			
+		}
+		if(s1 == Signedness.DontCare) {
+			return 1;
+		}
+		if(s2 == Signedness.DontCare) {
+			return 1;
+		}
+		return 2;
+		
 	}
 	
 		
