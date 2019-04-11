@@ -87,7 +87,7 @@ class UnravelFunctionCallsTest extends AbstractGeneratorTest {
 		package main;
 		import platforms.unittest;
 
-		fn plusFiveOuter(x : int32) {
+		fn plusFiveOuter(x : int32): int32 {
 			return x + 5;
 		}
 		
