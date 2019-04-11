@@ -115,7 +115,6 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 	abstract protected def boolean needsUnraveling(Expression expression)
 
 	protected def void doUnravel(Expression obj) {
-		val type = BaseUtils.getType(ProgramCopier.getOrigin(obj));
 		/* Unraveling means that we pull an expression out of its tree and place it in a variable created for
 		 * this expression beforehand. By default we use the original expression (the expression being unraveled)
 		 * as initialization for this result variable.

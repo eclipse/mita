@@ -174,17 +174,13 @@ class GeneratorUtils {
 	}
 	
 	private def dispatch String getUniqueIdentifierInternal(ElementReferenceExpression expr) {
-		return expr.reference.uniqueIdentifierInternal;
-	}
-	
-	private def dispatch String getUniqueIdentifierInternal(FeatureCall feature) {
-		if(feature.reference instanceof SignalInstance) {
-			return feature.reference.baseName.toFirstLower;
+		if(expr.reference instanceof SignalInstance) {
+			return expr.reference.baseName.toFirstLower;
 		} else {
-			return feature.arguments.head.value.uniqueIdentifierInternal + feature.reference.baseName.toFirstUpper;			
+			return expr.reference.uniqueIdentifierInternal;
 		}
 	}
-	
+		
 	private def dispatch String getUniqueIdentifierInternal(ProgramBlock pb) {
 		pb.eContainer.uniqueIdentifierInternal + pb.eContainer.eAllContents.toList.indexOf(pb).toString;
 	}
