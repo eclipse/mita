@@ -149,7 +149,7 @@ class GeneratorUtils {
 		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
 			?:EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration) as EObject
 			?:EcoreUtil2.getContainerOfType(obj, Program) as EObject;
-		val result = funDef?.eAllContents?.filter(obj.class)?.indexed?.findFirst[it.value.equals(obj)]?.key?:(-1);
+		val result = funDef?.eAllContents?.indexed?.findFirst[it.value.equals(obj)]?.key?:(-1);
 		return result + 1;
 	}
 	
