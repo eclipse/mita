@@ -174,13 +174,10 @@ class GeneratorUtils {
 	}
 	
 	private def dispatch String getUniqueIdentifierInternal(ElementReferenceExpression expr) {
-		if(expr.reference instanceof SignalInstance) {
-			return expr.reference.baseName.toFirstLower;
-		} else {
-			return expr.reference.uniqueIdentifierInternal;
-		}
+		// Erefs should only reference named things, so baseName should always be fine.
+		expr.eContainer.uniqueIdentifierInternal + "Ref" + expr.reference?.baseName?.toFirstUpper;
 	}
-		
+
 	private def dispatch String getUniqueIdentifierInternal(ProgramBlock pb) {
 		pb.eContainer.uniqueIdentifierInternal + pb.eContainer.eAllContents.toList.indexOf(pb).toString;
 	}
