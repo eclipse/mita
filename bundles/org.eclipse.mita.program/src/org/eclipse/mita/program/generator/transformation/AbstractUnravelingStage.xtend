@@ -28,6 +28,7 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.util.BaseUtils
 
 abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 
@@ -114,15 +115,14 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 	abstract protected def boolean needsUnraveling(Expression expression)
 
 	protected def void doUnravel(Expression obj) {
+		val type = BaseUtils.getType(ProgramCopier.getOrigin(obj));
 		/* Unraveling means that we pull an expression out of its tree and place it in a variable created for
 		 * this expression beforehand. By default we use the original expression (the expression being unraveled)
 		 * as initialization for this result variable.
 		 * 
 		 * If you as an implementer of an unraveling stage need a different behavior, please override createInitialization.
-		 */
-		val unraveledInitialization = createInitialization(obj);
-
-		/* The result variable will later be inserted in the parent block just before the expression tree that contained
+		 *
+		 * The result variable will later be inserted in the parent block just before the expression tree that contained
 		 * the expression we're currently unraveling. We'll choose a unique name for the variable based on some heuristics.
 		 * 
 		 * If you want to change the name generated, override getUniqueVariableName.
@@ -132,6 +132,8 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 		 * This is the only way to allow for easy unraveling while correctly compiling f() && g()
 		 */
 		val resultVariable = createResultVariable(obj);
+		
+		val unraveledInitialization = createInitialization(obj);
 		/* We create two references to the variable:
 		 * - One for usage in chained conditional evaluations, such as f() && g()
 		 * - One for the original location
@@ -139,12 +141,7 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 		val resultVariableReference1 = createResultVariableReference(resultVariable);
 		val resultVariableReference2 = createResultVariableReference(resultVariable);
 		// This will initialize the variable
-		val initializationExpr = ExpressionsFactory.eINSTANCE.createAssignmentExpression();
-		initializationExpr.varRef = resultVariableReference1;
-		initializationExpr.expression = unraveledInitialization;
-		
-		val initialization = ProgramFactory.eINSTANCE.createExpressionStatement();
-		initialization.expression = initializationExpr;
+		val initialization = createAssignmentStatement(resultVariableReference1, unraveledInitialization)
 		
 		// conditional chained evaluation, such as f() && g(), is present only if we are in a BinaryExpression or a ConditionalExpression
 		val logicalBinaryExpression = EcoreUtil2.getContainerOfType(obj, BinaryExpression);
@@ -197,12 +194,21 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 		addPostTransformation([ insertNextToParentBlock(resultVariable, false, initializationStmt) ]);
 	}
 
-	protected def Expression createResultVariableReference(EObject resultVariable) {
+	protected def Expression createResultVariableReference(AbstractStatement resultVariable) {
 		val resultVariableReference = ExpressionsFactory.eINSTANCE.createElementReferenceExpression;
 		resultVariableReference.reference = resultVariable;
 		return resultVariableReference;
 	}
-
+	
+	protected def AbstractStatement createAssignmentStatement(Expression varRef, Expression initialization) {
+		val initializationExpr = ExpressionsFactory.eINSTANCE.createAssignmentExpression();
+		initializationExpr.varRef = varRef;
+		initializationExpr.expression = initialization;		
+		val initializationStmt = ProgramFactory.eINSTANCE.createExpressionStatement();
+		initializationStmt.expression = initializationExpr;
+		return initializationStmt;
+	}
+	
 	/**
 	 * Creates the expression that serves as initialization for the result variable of
 	 * the unraveled operation.

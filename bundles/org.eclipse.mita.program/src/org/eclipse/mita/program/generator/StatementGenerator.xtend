@@ -123,6 +123,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.NoopStatement
 
 class StatementGenerator {
 
@@ -611,6 +612,10 @@ class StatementGenerator {
 			return target.trace('''«varName» «op» «initialization.code.noTerminator»;''');
 		}
 		return CodeFragment.EMPTY;
+	}
+	
+	dispatch def IGeneratorNode code(NoopStatement stmt) {
+		return codeFragmentProvider.create();
 	}
 	
 	dispatch def IGeneratorNode code(VariableDeclaration stmt) {

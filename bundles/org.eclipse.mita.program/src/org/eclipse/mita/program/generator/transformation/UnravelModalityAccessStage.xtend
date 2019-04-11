@@ -13,13 +13,13 @@
 
 package org.eclipse.mita.program.generator.transformation
 
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
+import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.ProgramFactory
@@ -60,13 +60,17 @@ class UnravelModalityAccessStage extends AbstractUnravelingStage {
 		return result;
 	}
 	
-	override protected createResultVariableReference(EObject resultVariable) {
+	// We don't create a variable declaration but a modality access preparation, therefore we don't need to assign anything
+	override protected AbstractStatement createAssignmentStatement(Expression varRef, Expression initialization) {
+		return ProgramFactory.eINSTANCE.createNoopStatement();
+	}
+	
+	override protected createResultVariableReference(AbstractStatement resultVariable) {
 		val modalityAccessPreparation = resultVariable as ModalityAccessPreparation;
 		
 		val result = ProgramFactory.eINSTANCE.createModalityAccess();
 		result.preparation = modalityAccessPreparation;
 		result.modality = modalityAccessPreparation.modalities.head;
 		return result;
-	}
-	
+	}	
 }
