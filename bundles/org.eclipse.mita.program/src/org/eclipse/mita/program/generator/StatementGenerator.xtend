@@ -65,6 +65,7 @@ import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
@@ -120,8 +121,8 @@ import static org.eclipse.mita.program.model.ModelUtils.*
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class StatementGenerator {
 
@@ -671,6 +672,15 @@ class StatementGenerator {
 				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = {0};''');
 			} else if (type instanceof NumericType) {
 				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = 0;''');
+			} else if(type instanceof AtomicType) {
+				// init is zero, type is atomic, but not generated
+				// -> type is bool
+				if(type.name == "bool") {
+					result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = false;''');
+				}
+				else {
+					result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = ERROR unsupported initialization;''');
+				}
 			} else {
 				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «stmt.name» = ERROR unsupported initialization;''');
 			}

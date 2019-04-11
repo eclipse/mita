@@ -44,7 +44,7 @@ class UnravelModalityAccessStage extends AbstractUnravelingStage {
 		return false;
 	}
 	
-	override protected createResultVariable(Expression unravelingObject, Expression initialization) {
+	override protected createResultVariable(Expression unravelingObject) {
 		/* TODO: This code makes very strict assumptions about the structure of the rewritten function call.
 		 *       As such this code is very likely to break in the future.
 		 */
