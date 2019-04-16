@@ -42,6 +42,7 @@ import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.ParenthesizedExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.RelationalOperator
+import org.eclipse.mita.base.expressions.ShiftOperator
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
@@ -49,6 +50,7 @@ import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
@@ -99,7 +101,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.NamedElement
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -631,6 +632,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 				system.addConstraint(new JavaClassInstanceConstraint(mkIssue.apply(expr.rightOperand), system.computeConstraints(expr.rightOperand), NumericType))
 			}
 			return system.associate(boolType, expr);
+		}
+		else if(expr.operator instanceof ShiftOperator) {
+			val opQID = switch(expr.operator) {
+				case(ShiftOperator.LEFT): StdlibTypeRegistry.leftShiftFunctionQID
+				case(ShiftOperator.RIGHT): StdlibTypeRegistry.rightShiftFunctionQID
+			}
+			return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
 		}
 		else {
 			return system.associate(new BottomType(expr, println("BinaryExpression not implemented for " + expr.operator)));
