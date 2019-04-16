@@ -264,7 +264,7 @@ TypeSpecifier returns PresentTypeSpecifier:
 
 InterpolatedStringLiteral returns InterpolatedStringLiteral hidden(): 
 	{InterpolatedStringLiteral}
-	'`' ((=>'${' content+=Expression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
+	'`' ((=>'${' content+=ConditionalExpression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
 ;
 
 Literal:
@@ -366,6 +366,7 @@ ReservedKeywords:
 	'alias-of' |
 	'alt' |
 	'alternative' |
+	'as' |
 	'catch' |
 	'checked' |
 	'constructor' |
@@ -386,6 +387,7 @@ ReservedKeywords:
 	'hour' |
 	'hours' |
 	'if' |
+	'in' |
 	'import' |
 	'is' |
 	'isother' |
@@ -396,6 +398,7 @@ ReservedKeywords:
 	'minutes' |
 	'native' |
 	'native-type' |
+	'new' |
 	'package' |
 	'return' |
 	'second' |

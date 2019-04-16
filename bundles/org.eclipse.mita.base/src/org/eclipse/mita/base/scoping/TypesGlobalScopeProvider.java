@@ -55,8 +55,20 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 	public IScope getScope(Resource context, EReference reference, Predicate<IEObjectDescription> filter) {
 		IScope superScope = super.getScope(context, reference, filter);
 		superScope = addLibraryScope(context, reference, superScope);
-		superScope = filterExportable(context, reference, superScope);
+		//superScope = filterExportable(context, reference, superScope);
 		return superScope;
+	}
+	
+	public static class ExportedFilteredScope extends FilteringScope {
+		protected final IScope delegate;
+		public ExportedFilteredScope(IScope delegate, Predicate<IEObjectDescription> filter) {
+			super(delegate, filter);
+			this.delegate = delegate;
+		}
+		
+		public IScope unfilter() {
+			return delegate;
+		}
 	}
 
 	public static IScope filterExportable(Resource context, EReference reference, IScope superScope) {
@@ -73,7 +85,7 @@ public class TypesGlobalScopeProvider extends DefaultGlobalScopeProvider {
 		}
 		final String resourcePackageName = resourcePackage;
 		
-		return new FilteringScope(superScope, new Predicate<IEObjectDescription>() {
+		return new ExportedFilteredScope(superScope, new Predicate<IEObjectDescription>() {
 			
 			@Override
 			public boolean apply(IEObjectDescription input) {

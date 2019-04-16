@@ -126,9 +126,9 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 
 	def text(SystemResourceSetup ele) {
 		if(ele.type instanceof Connectivity) {
-			'''connectivity <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
+			'''connectivity «ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»'''
 		} else {
-			'''resource <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
+			'''resource «ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»'''
 		}
 	}
 	
@@ -151,17 +151,17 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def text(Operation ele) {
-		'''fun <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
+		'''fun «ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»'''
 	}
 
 	def text(SignalInstance ele) {
 		var vci = ele.instanceOf;
 		
-		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci?.name» <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
+		'''«IF ele.writeable»read/write«ELSE»read-only«ENDIF» «vci?.name» «ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»'''
 	}
 
 	def text(VariableDeclaration ele) {
-		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» <b>«ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»</b>'''
+		'''«IF ele.writeable»variable«ELSE»constant«ENDIF» «ele.name»: «StringEscapeUtils.escapeHtml(BaseUtils.getType(ele)?.toString)»'''
 	}
 
 	def text(AbstractType ir) {

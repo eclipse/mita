@@ -56,8 +56,9 @@ function stringTestSuccess() : void {
 	let x17 = `${x14} ${x15}`;
 	let x18 = `\n\t\r 0123456789{}()[],.;:`;
 	let x19 = `{ } , ; : . ( ) [ ] + - * / % \\ && || & | = == < > <= >= !=`;
-	let x20 = `alias-of alt alternative catch checked constructor do else enum every exception export extends finally fn for function generated generator header hour hours if import is isother let millisecond milliseconds minute minutes native native-type package return second seconds setup size-inferrer static struct subtype-of throw try type unchecked validator var where while`;
+	let x20 = `alias-of alt alternative as catch checked constructor do else enum every exception export extends finally fn for function generated generator header hour hours if in import is isother let millisecond milliseconds minute minutes native native-type new package return second seconds setup size-inferrer static struct subtype-of throw try type unchecked validator var where while`;
 	let x21 = `this ${"is"} a test`;
+	let x22 = `${bla + bla * 2}`;
 }
 
 function stringTestFail() : void {

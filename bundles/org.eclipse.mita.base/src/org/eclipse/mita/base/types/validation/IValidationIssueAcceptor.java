@@ -41,10 +41,10 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "f_101 (:: bool) doesn't share a common type with the other members of this array literal";
+			return "Function __PLUS__ cannot be used here: Return type incompatible: int8 is not subtype of uint8";
 		}
 		private static boolean testFun(String s) {
-			return s.startsWith(getTestString());
+			return s.equals(getTestString());
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");
