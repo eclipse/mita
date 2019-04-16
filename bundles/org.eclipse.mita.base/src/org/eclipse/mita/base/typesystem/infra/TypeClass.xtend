@@ -20,6 +20,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -71,7 +72,7 @@ class TypeClass {
 		return this;
 	}
 	
-	def TypeClass modifyNames((String) => String converter) {
+	def TypeClass modifyNames(NameModifier converter) {
 		return new TypeClass(instances.entrySet.toMap([it.key.modifyNames(converter)], [it.value]), mostSpecificGeneralization)
 	}
 }

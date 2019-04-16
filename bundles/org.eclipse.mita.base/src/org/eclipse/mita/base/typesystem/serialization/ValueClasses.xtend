@@ -30,6 +30,7 @@ final class SerializedConstraintSystem {
 	public SerializedAbstractTypeGraph explicitSubtypeRelations;
 	public Map<Integer, Object> explicitSubtypeRelationsTypeSource;
 	public Map<String, Map<String, String>> userData;
+	public int instanceCount;
 }
 
 final class SerializedAbstractTypeGraph {    
@@ -63,8 +64,6 @@ abstract class SerializedAbstractType {
 abstract class SerializedAbstractBaseType extends SerializedAbstractType {
 }
 
-final class SerializedTypeHole extends SerializedAbstractType {
-}
 
 final class SerializedUnorderedArguments extends SerializedCompoundType {
     public List<String> parameterNames = new ArrayList;
@@ -115,13 +114,19 @@ final class SerializedTypeScheme extends SerializedAbstractType {
 }
 
 final class SerializedTypeVariable extends SerializedAbstractType {
+	public int idx;
 }
 
 final class SerializedTypeVariableProxy extends SerializedAbstractType {
+	public int idx;
 	public SerializedEReference reference;
 	public String targetQID;
 	public AmbiguityResolutionStrategy ambiguityResolutionStrategy;
 	public boolean isLinkingProxy;
+}
+
+final class SerializedTypeHole extends SerializedAbstractType {
+	public int idx;
 }
 
 abstract class SerializedAbstractTypeConstraint {

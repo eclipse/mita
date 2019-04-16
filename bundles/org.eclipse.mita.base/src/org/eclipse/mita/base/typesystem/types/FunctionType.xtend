@@ -38,10 +38,6 @@ class FunctionType extends TypeConstructorType {
 			
 	new(EObject origin, AbstractType type, AbstractType from, AbstractType to) {
 		this(origin, #[type, from, to]);
-		
-//		if(from === null || to === null) {
-//			throw new NullPointerException;
-//		}
 	}
 	
 	new(EObject origin, Iterable<AbstractType> typeArgs) {

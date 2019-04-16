@@ -23,6 +23,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 
 @FinalFieldsConstructor
 @EqualsHashCode
@@ -69,7 +70,7 @@ abstract class AbstractTypeConstraint {
 		return map[it.replaceProxies(system, resolve)]
 	}
 	
-	def AbstractTypeConstraint modifyNames((String) => String converter) {
+	def AbstractTypeConstraint modifyNames(NameModifier converter) {
 		return map[it.modifyNames(converter)]
 	}
 }

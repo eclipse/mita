@@ -104,6 +104,10 @@ class TypeConstructorType extends AbstractType {
 		return _freeVars;
 	}
 	
+	override hasNoFreeVars() {
+		return _freeVars.size === 0;
+	}
+	
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; "«this»" -> "«t»" «t.toGraphviz»«ENDFOR»''';
 	}

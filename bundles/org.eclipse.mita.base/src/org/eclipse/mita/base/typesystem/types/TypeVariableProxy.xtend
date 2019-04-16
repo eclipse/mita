@@ -37,9 +37,11 @@ class TypeVariableProxy extends TypeVariable {
 	enum AmbiguityResolutionStrategy {
 		UseFirst, UseLast, MakeNew;
 	}
-	
-	new(EObject origin, String name, EReference reference, QualifiedName targetQID, boolean isLinkingProxy) {
-		super(origin, name);
+	new(EObject origin, int idx, EReference reference, QualifiedName targetQID, boolean isLinkingProxy) {
+		this(origin, idx, reference, targetQID, isLinkingProxy, null);
+	}
+	new(EObject origin, int idx, EReference reference, QualifiedName targetQID, boolean isLinkingProxy, String name) {
+		super(origin, idx, name);
 		this.reference = reference;
 		this.targetQID = targetQID;
 		this.isLinkingProxy = isLinkingProxy;
@@ -51,15 +53,22 @@ class TypeVariableProxy extends TypeVariable {
 		}
 	}
 	
-	new(EObject origin, String name, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy, boolean isLinkingProxy) {
-		this(origin, name, reference, targetQID, isLinkingProxy);
+	new(EObject origin, int idx, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy, boolean isLinkingProxy) {
+		this(origin, idx, reference, targetQID, ambiguityResolutionStrategy, isLinkingProxy, null);
+	}
+	new(EObject origin, int idx, EReference reference, QualifiedName targetQID, AmbiguityResolutionStrategy ambiguityResolutionStrategy, boolean isLinkingProxy, String name) {
+		this(origin, idx, reference, targetQID, isLinkingProxy, name);
 		this.ambiguityResolutionStrategy = ambiguityResolutionStrategy;
 	}
 	
-	new(EObject origin, String name, EReference reference) {
-		this(origin, name, reference, TypeVariableProxy.getQName(origin, reference), true);
+	new(EObject origin, int idx, EReference reference) {
+		this(origin, idx, reference, TypeVariableProxy.getQName(origin, reference), true);
 	}
 	
+	new(EObject origin, int idx, EReference reference, QualifiedName qualifiedName) {
+		this(origin, idx, reference, qualifiedName, true);
+	}
+
 	public static def getQName(EObject origin, EReference reference) {
 		var QualifiedName maybeQname; 
 		if(!origin.eIsProxy) {
@@ -76,11 +85,7 @@ class TypeVariableProxy extends TypeVariable {
 		
 		val qname = (maybeQname ?: QualifiedName.create(BaseUtils.getText(origin, reference)?.split("\\.")));
 		return qname;
-	}
-	
-	new(EObject origin, String name, EReference reference, QualifiedName qualifiedName) {
-		this(origin, name, reference, qualifiedName, true);
-	}
+	}	
 	
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
 		//assertion based on control flow in ConstraintSystem.replaceProxies: this.origin.eIsProxy === false
@@ -113,8 +118,17 @@ class TypeVariableProxy extends TypeVariable {
 		return f.apply(this);
 	}
 	
-	override modifyNames((String) => String converter) {
-		return new TypeVariableProxy(origin, converter.apply(name), reference, targetQID, ambiguityResolutionStrategy, isLinkingProxy);
+	override modifyNames(NameModifier converter) {
+		val newName = converter.apply(idx);
+		if(newName instanceof Left<?, ?>) {
+			return new TypeVariableProxy(origin, (newName as Left<Integer, String>).value, reference, targetQID, ambiguityResolutionStrategy, isLinkingProxy, name);
+		}
+		else {
+			return new TypeVariableProxy(origin, idx, reference, targetQID, ambiguityResolutionStrategy, isLinkingProxy, (newName as Right<Integer, String>).value);
+		}
 	}
 	
+	override getToStringPrefix() {
+		return "p_";
+	}
 }

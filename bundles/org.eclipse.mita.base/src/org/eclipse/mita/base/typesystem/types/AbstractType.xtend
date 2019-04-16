@@ -13,11 +13,13 @@
 
 package org.eclipse.mita.base.typesystem.types
 
+import java.util.function.IntFunction
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
 @Accessors
 abstract class AbstractType {
@@ -87,8 +89,28 @@ abstract class AbstractType {
 		map[it.replaceProxies(system, resolve)];
 	}
 	
-	def AbstractType modifyNames((String) => String converter) {
+	def AbstractType modifyNames(NameModifier converter) {
 		map[it.modifyNames(converter)];
+	}
+	
+	public static abstract class Either<LEFT, RIGHT> {
+		public static def <LEFT, RIGHT> Either<LEFT, RIGHT> left(LEFT l) {
+			return new Left(l);
+		}
+		public static def <LEFT, RIGHT> Either<LEFT, RIGHT> right(RIGHT r) {
+			return new Right(r);
+		}
+	}
+	@FinalFieldsConstructor
+	public static class Left<T, R> extends Either<T, R> {
+		public val T value;
+	}
+	@FinalFieldsConstructor
+	public static class Right<T, R> extends Either<T, R> {
+		public val R value;
+	}
+	// basically a typedef of (A ~ typeof(TypeVariable.uniqueId)) => A -> A
+	public static abstract class NameModifier implements IntFunction<Either<Integer, String>> {
 	}
 	
 }

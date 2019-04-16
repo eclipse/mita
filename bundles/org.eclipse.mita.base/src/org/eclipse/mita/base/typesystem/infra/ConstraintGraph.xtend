@@ -112,7 +112,7 @@ class ConstraintGraph extends Graph<AbstractType> {
 		val tsIntersection = tsWithSubTypes.reduce[s1, s2| s1.reject[t1 | !s2.exists[t2 | 
 			val unification = mguComputer.compute(null, t1, t2)
 			if(unification.valid) {
-				if(!unification.substitution.substitutions.empty) {
+				if(!unification.substitution.content.empty) {
 					if(!typeSubstitutions.containsKey(t1)) {
 						typeSubstitutions.put(t1, unification.substitution);
 					}

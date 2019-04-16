@@ -19,6 +19,10 @@ import java.util.ArrayList
 import java.util.HashMap
 import java.util.List
 import java.util.Map
+import java.util.function.IntUnaryOperator
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.IStatus
+import org.eclipse.core.runtime.Status
 import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
@@ -29,23 +33,21 @@ import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
-import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.core.runtime.CoreException
-import org.eclipse.core.runtime.Status
-import org.eclipse.core.runtime.IStatus
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
+import org.eclipse.mita.base.typesystem.types.AbstractType.Either
 
 @Accessors
 class ConstraintSystem {
@@ -68,6 +70,9 @@ class ConstraintSystem {
 	dispatch def Map<String, String> doGetUserData(TypeConstructorType t) {
 		return getUserData(t.typeArguments.head);
 	}
+	dispatch def Map<String, String> doGetUserData(TypeVariable t) {
+		return internGetUserData(t.toString);
+	}
 	dispatch def Map<String, String> doGetUserData(AbstractType t) {
 		return internGetUserData(t.name);
 	}
@@ -89,19 +94,19 @@ class ConstraintSystem {
 	var int instanceCount = 0;
 		
 	def TypeVariable newTypeVariable(EObject obj) {
-		new TypeVariable(obj, '''f_«instanceCount++»''')
+		new TypeVariable(obj, instanceCount++)
 	}
 	
 	def TypeVariable newTypeHole(EObject obj) {
-		new TypeHole(obj, '''h_«instanceCount++»''')
+		new TypeHole(obj, instanceCount++)
 	}
 	
 	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference) {
-		return new TypeVariableProxy(origin, '''p_«instanceCount++»''', reference);
+		return new TypeVariableProxy(origin, instanceCount++, reference);
 	}
 	
 	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference, QualifiedName qualifiedName) {
-		return new TypeVariableProxy(origin, '''p_«instanceCount++»''', reference, qualifiedName);
+		return new TypeVariableProxy(origin, instanceCount++, reference, qualifiedName);
 	}
 	
 	
@@ -147,9 +152,9 @@ class ConstraintSystem {
 		}
 		getOrCreate(obj, uri, [ 
 			if(objName !== null) {
-				return new TypeVariableProxy(it, '''p_«instanceCount++»''', reference, objName, isLinking)
+				return new TypeVariableProxy(it, instanceCount++, reference, objName, isLinking)
 			}
-			return new TypeVariableProxy(it, '''p_«instanceCount++»''', reference, TypeVariableProxy.getQName(it, reference), isLinking);
+			return new TypeVariableProxy(it, instanceCount++, reference, TypeVariableProxy.getQName(it, reference), isLinking);
 		]);
 	}
 	
@@ -168,9 +173,13 @@ class ConstraintSystem {
 		coercions.putAll(other.coercions);
 	}
 		
-	def ConstraintSystem modifyNames(String suffix) {
+	def ConstraintSystem modifyNames(int offset) {
 		val result = new ConstraintSystem(this);
-		val converter = [it + suffix];
+		val converter = new NameModifier() {
+			override apply(int var1) {
+				return Either.left(var1+offset);
+			}	
+		}
 		result.atomicConstraints.replaceAll([it.modifyNames(converter)])
 		result.nonAtomicConstraints.replaceAll([it.modifyNames(converter)])
 		result.symbolTable.replaceAll([k, v | v.modifyNames(converter) as TypeVariable]);
@@ -439,8 +448,8 @@ class ConstraintSystem {
 				println('''introducing «uri»!''');
 			}
 			// explicitly set the origin to the resolved object, since the symbol table only contains proxies!
-			val tvName = this.getTypeVariable(it).name;
-			return new TypeVariable(it, tvName) as AbstractType;
+			val tvIdx = this.getTypeVariable(it).idx;
+			return new TypeVariable(it, tvIdx) as AbstractType;
 		].force;
 	}
 	

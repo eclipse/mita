@@ -13,20 +13,33 @@
 
 package org.eclipse.mita.base.typesystem.types
 
-import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
-@FinalFieldsConstructor
 @EqualsHashCode
 @Accessors
 class TypeHole extends TypeVariable {
+	
+	new(EObject origin, int idx) {
+		super(origin, idx);
+	}
+	
+	new(EObject origin, int idx, String name) {
+		super(origin, idx, name);
+	}
 	
 	override getFreeVars() {
 		return #[];
 	}
 	
-	override modifyNames((String) => String converter) {
-		return new TypeHole(origin, converter.apply(name))
+	override modifyNames(NameModifier converter) {
+		val newName = converter.apply(idx);
+		if(newName instanceof Left<?, ?>) {
+			return new TypeHole(origin, (newName as Left<Integer, String>).value, name);
+		}
+		else {
+			return new TypeHole(origin, idx, (newName as Right<Integer, String>).value);
+		}
 	}
 }
