@@ -30,18 +30,19 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 @Accessors
 class FunctionType extends TypeConstructorType {
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
-		return new FunctionType(null, TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as TypeConstructorType].map[it.typeArguments.head]),
+		return new FunctionType(null, 
+			TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as TypeConstructorType].map[it.typeArguments.head]),
 			TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as FunctionType].map[it.from]),
 			TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, instances.map[it as FunctionType].map[it.to])
 		)
 	}
 			
 	new(EObject origin, AbstractType type, AbstractType from, AbstractType to) {
-		this(origin, #[type, from, to]);
+		this(origin, type.name, #[type, from, to]);
 	}
 	
-	new(EObject origin, Iterable<AbstractType> typeArgs) {
-		super(origin, typeArgs);
+	new(EObject origin, String name, Iterable<AbstractType> typeArgs) {
+		super(origin, name, typeArgs);
 	}
 	
 	def AbstractType getFrom() {
@@ -76,13 +77,13 @@ class FunctionType extends TypeConstructorType {
 	
 
 	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new FunctionType(origin, children.map[it.node.unquote(it.children)].force);
+		return new FunctionType(origin, name, children.map[it.node.unquote(it.children)].force);
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new FunctionType(origin, newTypeArgs);
+			return new FunctionType(origin, name, newTypeArgs);
 		}
 		return this;
 	}

@@ -42,4 +42,9 @@ class TypeHole extends TypeVariable {
 			return new TypeHole(origin, idx, (newName as Right<Integer, String>).value);
 		}
 	}
+	
+	override protected getToStringPrefix() {
+		return "h_"
+	}
+	
 }

@@ -40,32 +40,35 @@ class TypeConstructorType extends AbstractType {
 			return system.newTypeVariable(null);
 		}
 		// else transpose the instances' type args (so we have a list of all the first args, all the second args, etc.), then unify each of those
-		return new TypeConstructorType(null, 
-			BaseUtils.transpose(instances.map[it as TypeConstructorType].map[it.typeArguments])
+		val typeArgs = BaseUtils.transpose(instances.map[it as TypeConstructorType].map[it.typeArguments])
 				.map[TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, it)]
-				.force
-		)
+				.force;
+		val name = typeArgs.head.name;
+		return new TypeConstructorType(null, name, typeArgs);
 	}
 	
 //	def getType() {
 //		return typeArguments.head;
 //	}
 	
-	new(EObject origin, Iterable<AbstractType> typeArguments) {
-		super(origin, typeArguments.head.name);
+	new(EObject origin, String name, Iterable<AbstractType> typeArguments) {
+		super(origin, name);
 		this.typeArguments = typeArguments.force;
 		if(this.typeArguments.contains(null)) {
 			throw new NullPointerException;
 		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
+		if(this.name === null) {
+			print("");
+		}
 	}
 	
 	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
-		this(origin,  #[type] + typeArguments);
+		this(origin, type.name, #[type] + typeArguments);
 	}
 	
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
-		this(origin, #[type] + typeArguments);
+		this(origin, type.name, #[type] + typeArguments);
 	}
 		
 	override Tree<AbstractType> quote() {
@@ -92,7 +95,7 @@ class TypeConstructorType extends AbstractType {
 	
 	def void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newCType = new TypeConstructorType(origin, newTypeVars);
+		val newCType = new TypeConstructorType(origin, name, newTypeVars);
 		s.add(tv, newCType);
 	}
 		
@@ -115,13 +118,13 @@ class TypeConstructorType extends AbstractType {
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new TypeConstructorType(origin, newTypeArgs);
+			return new TypeConstructorType(origin, name, newTypeArgs);
 		}
 		return this;
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new TypeConstructorType(origin, children.map[it.node.unquote(it.children)].force);
+		return new TypeConstructorType(origin, name, children.map[it.node.unquote(it.children)].force);
 	}
 	
 	override boolean equals(Object obj) {
