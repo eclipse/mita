@@ -68,9 +68,7 @@ class Substitution {
 			newContent.content.put(tv.idx, typ);
 			newContent.idxToTypeVariable.put(tv.idx, tv);
 		]
-		val resultSub = newContent.apply(this);
-		this.content = resultSub.content;
-		this.idxToTypeVariable = resultSub.idxToTypeVariable;
+		newContent.applyMutating(this);
 	}
 	def void add(Iterable<Pair<TypeVariable, AbstractType>> content) {
 		add(content.toMap([it.key], [it.value]))
@@ -80,6 +78,20 @@ class Substitution {
 		val result = new Substitution();
 		result.constraintSystemProvider = constraintSystemProvider;
 		result.content = new Int2ObjectOpenHashMap(content.mapValues[it.replace(from, with)])
+		// nothing changes for typevariable idx
+		result.idxToTypeVariable = new Int2ObjectOpenHashMap(idxToTypeVariable);
+		return result;
+	}
+	def Substitution replaceMutating(TypeVariable from, AbstractType with) {
+		val result = this;
+		result.constraintSystemProvider = constraintSystemProvider;
+		for(int k: result.content.keySet.force) {
+			val vOld = result.content.get(k);
+			val vNew = vOld.replace(from, with);
+			if(vOld !== vNew) {	
+				result.content.put(k, vNew);	
+			}
+		}
 		// nothing changes for typevariable idx
 		return result;
 	}
@@ -153,10 +165,7 @@ class Substitution {
 		];
 		debugTimer.stop("typeClasses")
 		
-		// to keep overridden methods etc. we clone instead of using a copy constructor
 		debugTimer.start("explicitSubtypeRelations");
-//		system.explicitSubtypeRelations.nodeIndex.replaceAll[i, t | t.replace(this)];
-//		system.explicitSubtypeRelations.computeReverseMap;
 		system.explicitSubtypeRelationsTypeSource.replaceAll[tname, t | t.replace(this)];
 		debugTimer.stop("explicitSubtypeRelations");
 		

@@ -796,7 +796,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					// assign-sup
 					v.origin.coerceTo(system, supremum);
 					graph.replace(v, supremum);
-					resultSub = resultSub.replace(v, supremum)
 					resultSub.add(v, supremum);
 				} else {
 					//redo for debugging
@@ -822,7 +821,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					// assign-inf
 					v.origin.coerceTo(system, infimum);
 					graph.replace(v, infimum);
-					resultSub = resultSub.replace(v, infimum) 
 					resultSub.add(v, infimum);
 				} else {
 					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 

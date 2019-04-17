@@ -25,7 +25,7 @@ pipeline {
                 checkout scm;
                 // clean local copies of mita artifacts
                 sh 'rm -rf /opt/public/hipp/homes/genie.mita/.m2/repository/org/eclipse/mita/'
-                sh "mvn -Pplugins -Pplatforms -P!tests -P!deployment -Psign -f bundles/pom.xml clean install"
+                sh "mvn -U -Pplugins -Pplatforms -P!tests -P!deployment -Psign -f bundles/pom.xml clean install"
             }
         }
 
