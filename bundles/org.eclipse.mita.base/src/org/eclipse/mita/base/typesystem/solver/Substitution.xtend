@@ -26,12 +26,16 @@ import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import it.unimi.dsi.fastutil.objects.ObjectSet
+import it.unimi.dsi.fastutil.ints.IntSet
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
 	@Accessors
 	protected Int2ObjectMap<AbstractType> content = new Int2ObjectOpenHashMap();
 	protected Int2ObjectMap<TypeVariable> idxToTypeVariable = new Int2ObjectOpenHashMap();
+	protected Int2ObjectMap<IntSet> tvHasThisFreeVar = new Int2ObjectOpenHashMap();
 	
 	def Substitution filter(Predicate<TypeVariable> predicate) {
 		val result = new Substitution;
@@ -65,8 +69,7 @@ class Substitution {
 	def void add(Map<TypeVariable, AbstractType> content) {
 		val newContent = new Substitution();
 		content.forEach[tv, typ|
-			newContent.content.put(tv.idx, typ);
-			newContent.idxToTypeVariable.put(tv.idx, tv);
+			newContent.addToContent(tv, typ);
 		]
 		newContent.applyMutating(this);
 	}
@@ -84,7 +87,6 @@ class Substitution {
 	}
 	def Substitution replaceMutating(TypeVariable from, AbstractType with) {
 		val result = this;
-		result.constraintSystemProvider = constraintSystemProvider;
 		for(int k: result.content.keySet.force) {
 			val vOld = result.content.get(k);
 			val vNew = vOld.replace(from, with);
@@ -105,43 +107,60 @@ class Substitution {
 		}
 		return result;
 	}
-		
+	
 	def Substitution apply(Substitution oldEntries) {
-		val result = new Substitution();
-		val newEntries = this;
-		result.constraintSystemProvider = newEntries.constraintSystemProvider ?: oldEntries.constraintSystemProvider;
-		result.content = new Int2ObjectOpenHashMap(oldEntries.content);
-		for(int k: result.content.keySet.force) {
-			val vOld = result.content.get(k);
-			val vNew = vOld.replace(newEntries);
-			if(vOld !== vNew) {	
-				result.content.put(k, vNew);	
-			}
-		}
-		result.content.putAll(newEntries.content);
-		result.idxToTypeVariable = new Int2ObjectOpenHashMap(oldEntries.idxToTypeVariable);
-		result.idxToTypeVariable.putAll(newEntries.idxToTypeVariable);
-		return result;
+		return new Substitution(this).applyMutating(oldEntries);
 	}
 	
 	// returns the mutated argument (or a copy of this if other is an empty substitution)
 	def Substitution applyMutating(Substitution oldEntries) {
 		if(oldEntries == EMPTY) {
-			return apply(oldEntries);
+			return new Substitution(this);
 		}
 		val result = oldEntries;
 		val newEntries = this;
 		result.constraintSystemProvider = newEntries.constraintSystemProvider ?: oldEntries.constraintSystemProvider;
-		for(int k: result.content.keySet) {
-			val vOld = result.content.get(k);
-			val vNew = vOld.replace(newEntries);
-			if(vOld !== vNew) {	
-				result.content.put(k, vNew);	
+		result.idxToTypeVariable.putAll(newEntries.idxToTypeVariable);
+		if(newEntries.content.size <= 5) {
+			for(int tvIdx: newEntries.content.keySet) {
+				val from = newEntries.idxToTypeVariable.get(tvIdx);
+				val to = newEntries.content.get(tvIdx);
+				val affectedIdxs = oldEntries.tvHasThisFreeVar.remove(tvIdx);
+				if(affectedIdxs !== null) {
+					for(int typeIdx: affectedIdxs) {
+						val vOld = oldEntries.content.get(typeIdx);
+						val vNew = vOld.replace(from, to);
+						result.addToContent(oldEntries.idxToTypeVariable.get(typeIdx), vNew);	
+					}
+				}
 			}
 		}
+		else {
+			for(int k: result.content.keySet) {
+				val vOld = result.content.get(k);
+				val vNew = vOld.replace(newEntries);
+				if(vOld !== vNew) {	
+					add(idxToTypeVariable.get(k), vNew);	
+				}
+			}	
+		}
 		result.content.putAll(newEntries.content);
-		result.idxToTypeVariable.putAll(newEntries.idxToTypeVariable);
+		for(k_v: newEntries.tvHasThisFreeVar.int2ObjectEntrySet) {
+			// if somethings already there, we add all new ones
+			// otherwise we put the set and `putIfAbsent` returns null, so the elvis isn't done.
+			result.tvHasThisFreeVar.putIfAbsent(k_v.intKey, k_v.value)?.addAll(k_v.value);
+		}
+		
 		return result;
+	}
+	
+	def void addToContent(TypeVariable tv, AbstractType typ) {
+		content.put(tv.idx, typ);
+		idxToTypeVariable.put(tv.idx, tv);
+		val freeVars = typ.freeVars;
+		for(fv: freeVars) {
+			tvHasThisFreeVar.computeIfAbsent(fv.idx, [int __| new IntOpenHashSet()]).add(tv.idx);		
+		}
 	}
 	
 	def AbstractType applyToType(AbstractType typ) {
@@ -230,6 +249,19 @@ class Substitution {
 		override setContent(Int2ObjectMap<AbstractType> content) {
 			throw new UnsupportedOperationException("Cannot add to empty substitution");
 		}
+	}
+	
+	new(Substitution substitution) {
+		this.constraintSystemProvider = substitution.constraintSystemProvider;
+		this.content = new Int2ObjectOpenHashMap(substitution.content);
+		this.idxToTypeVariable = new Int2ObjectOpenHashMap(substitution.idxToTypeVariable);
+		this.tvHasThisFreeVar = new Int2ObjectOpenHashMap(substitution.tvHasThisFreeVar.size);
+		for(k_v: substitution.tvHasThisFreeVar.int2ObjectEntrySet) {
+			this.tvHasThisFreeVar.put(k_v.intKey, new IntOpenHashSet(k_v.value));
+		}
+	}
+	
+	new() {
 	}
 	
 	override toString() {
