@@ -417,9 +417,9 @@ class ConstraintSystem {
 			print("")
 		}
 		if(tvp.reference.name == "type") {
-			val typeCandidates = typeTable.entrySet.filter[it.key == tvp.targetQID]
-			if(!typeCandidates.empty) {
-				return typeCandidates.map[it.value].force;
+			val typeCandidate = typeTable.get(tvp.targetQID)
+			if(typeCandidate !== null) {
+				return #[typeCandidate];
 			}
 			else {
 				if(origin.eIsProxy) {

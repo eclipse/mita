@@ -309,11 +309,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					
 					resultSystem = returnedSub.applyToGraph(simplification.system, debugTimer);
 					resultSub = returnedSub.applyMutating(resultSub);
-					val rs2 = resultSub;
-					val undeclared = resultSub.content.keySet.findFirst[!rs2.idxToTypeVariable.containsKey(it.intValue)]
-					if(undeclared !== null) {
-						print("")
-					}
 					#["typeClasses", "explicitSubtypeRelations", "constraints", "atomicity", "constraintAssert"].forEach[
 						debugTimer.consolidateByPrefix(it);
 					]

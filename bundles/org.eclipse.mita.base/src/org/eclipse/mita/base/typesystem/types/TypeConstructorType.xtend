@@ -58,9 +58,6 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = typeArguments.flatMap[it.freeVars].force;
-		if(this.name === null) {
-			print("");
-		}
 	}
 	
 	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
