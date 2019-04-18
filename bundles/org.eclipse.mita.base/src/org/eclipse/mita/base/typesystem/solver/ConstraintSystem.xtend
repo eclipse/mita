@@ -15,9 +15,9 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import it.unimi.dsi.fastutil.objects.ObjectSet
 import java.util.ArrayList
 import java.util.HashMap
+import java.util.HashSet
 import java.util.List
 import java.util.Map
 import org.eclipse.core.runtime.CoreException
@@ -48,8 +48,6 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet
-import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 
 @Accessors
 class ConstraintSystem {
@@ -436,7 +434,7 @@ class ConstraintSystem {
 		val scope = scopeProvider.getScope(origin, tvp.reference);
 		val scopeElements = scope.getElements(tvp.targetQID);
 		
-		val replacementObjects = new ObjectOpenHashSet(scopeElements.map[EObjectOrProxy]);
+		val replacementObjects = new HashSet(scopeElements.map[EObjectOrProxy].toList);
 		if(replacementObjects.empty) { 
 			// redo to allow easier debugging
 			scopeProvider.getScope(origin, tvp.reference);
