@@ -26,16 +26,12 @@ import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import it.unimi.dsi.fastutil.objects.ObjectSet
-import it.unimi.dsi.fastutil.ints.IntSet
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
 	@Accessors
 	protected Int2ObjectMap<AbstractType> content = new Int2ObjectOpenHashMap();
 	protected Int2ObjectMap<TypeVariable> idxToTypeVariable = new Int2ObjectOpenHashMap();
-	protected Int2ObjectMap<IntSet> tvHasThisFreeVar = new Int2ObjectOpenHashMap();
 	
 	def Substitution filter(Predicate<TypeVariable> predicate) {
 		val result = new Substitution;
@@ -69,7 +65,8 @@ class Substitution {
 	def void add(Map<TypeVariable, AbstractType> content) {
 		val newContent = new Substitution();
 		content.forEach[tv, typ|
-			newContent.addToContent(tv, typ);
+			newContent.content.put(tv.idx, typ);
+			newContent.idxToTypeVariable.put(tv.idx, tv);
 		]
 		newContent.applyMutating(this);
 	}
@@ -107,7 +104,7 @@ class Substitution {
 		}
 		return result;
 	}
-	
+		
 	def Substitution apply(Substitution oldEntries) {
 		return new Substitution(this).applyMutating(oldEntries);
 	}
@@ -120,59 +117,16 @@ class Substitution {
 		val result = oldEntries;
 		val newEntries = this;
 		result.constraintSystemProvider = newEntries.constraintSystemProvider ?: oldEntries.constraintSystemProvider;
-		result.idxToTypeVariable.putAll(newEntries.idxToTypeVariable);
-
-		if(newEntries.content.size <= 100) {
-			val iterateInsteadOfBulkSubstitute = newEntries.content.size <= 5;
-			val affectedIdxs = new IntOpenHashSet();
-			for(int tvIdx: newEntries.content.keySet) {
-				val newAffectedIdxs = oldEntries.tvHasThisFreeVar.remove(tvIdx)
-				if(newAffectedIdxs !== null) {
-					affectedIdxs.addAll(newAffectedIdxs);
-				}
+		for(int k: result.content.keySet) {
+			val vOld = result.content.get(k);
+			val vNew = vOld.replace(newEntries);
+			if(vOld !== vNew) {	
+				result.content.put(k, vNew);	
 			}
-			for(int typeIdx: affectedIdxs) {
-				val vOld = oldEntries.content.get(typeIdx);
-				val vNew = if(iterateInsteadOfBulkSubstitute) {
-					var vNewTemp = vOld;
-					for(k_v: newEntries.content.int2ObjectEntrySet) {
-						val tv = newEntries.idxToTypeVariable.get(k_v.intKey);
-						vNewTemp = vNewTemp.replace(tv, k_v.value)
-					}
-					vNewTemp;
-				}
-				else {
-					vOld.replace(newEntries);
-				}
-				result.addToContent(oldEntries.idxToTypeVariable.get(typeIdx), vNew);	
-			}
-		}
-		else {
-			for(int k: result.content.keySet) {
-				val vOld = result.content.get(k);
-				val vNew = vOld.replace(newEntries);
-				if(vOld !== vNew) {	
-					add(idxToTypeVariable.get(k), vNew);	
-				}
-			}	
 		}
 		result.content.putAll(newEntries.content);
-		for(k_v: newEntries.tvHasThisFreeVar.int2ObjectEntrySet) {
-			// if somethings already there, we add all new ones
-			// otherwise we put the set and `putIfAbsent` returns null, so the elvis isn't done.
-			result.tvHasThisFreeVar.putIfAbsent(k_v.intKey, k_v.value)?.addAll(k_v.value);
-		}
-		
+		result.idxToTypeVariable.putAll(newEntries.idxToTypeVariable);
 		return result;
-	}
-	
-	def void addToContent(TypeVariable tv, AbstractType typ) {
-		content.put(tv.idx, typ);
-		idxToTypeVariable.put(tv.idx, tv);
-		val freeVars = typ.freeVars;
-		for(fv: freeVars) {
-			tvHasThisFreeVar.computeIfAbsent(fv.idx, [int __| new IntOpenHashSet()]).add(tv.idx);		
-		}
 	}
 	
 	def AbstractType applyToType(AbstractType typ) {
@@ -267,10 +221,6 @@ class Substitution {
 		this.constraintSystemProvider = substitution.constraintSystemProvider;
 		this.content = new Int2ObjectOpenHashMap(substitution.content);
 		this.idxToTypeVariable = new Int2ObjectOpenHashMap(substitution.idxToTypeVariable);
-		this.tvHasThisFreeVar = new Int2ObjectOpenHashMap(substitution.tvHasThisFreeVar.size);
-		for(k_v: substitution.tvHasThisFreeVar.int2ObjectEntrySet) {
-			this.tvHasThisFreeVar.put(k_v.intKey, new IntOpenHashSet(k_v.value));
-		}
 	}
 	
 	new() {
