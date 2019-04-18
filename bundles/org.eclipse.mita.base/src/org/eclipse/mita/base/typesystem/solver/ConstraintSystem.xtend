@@ -15,11 +15,11 @@ package org.eclipse.mita.base.typesystem.solver
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import it.unimi.dsi.fastutil.objects.ObjectSet
 import java.util.ArrayList
 import java.util.HashMap
 import java.util.List
 import java.util.Map
-import java.util.function.IntUnaryOperator
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.IStatus
 import org.eclipse.core.runtime.Status
@@ -35,6 +35,8 @@ import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AbstractType.Either
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
@@ -46,8 +48,8 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
-import org.eclipse.mita.base.typesystem.types.AbstractType.Either
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 
 @Accessors
 class ConstraintSystem {
@@ -405,10 +407,11 @@ class ConstraintSystem {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
 		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
+			val resultOrProxy = BaseUtils.ignoreChange(tvp.origin, [
+				getTypeVariable(tvp.origin.eGet(tvp.reference, false) as EObject)
+			]);
 			return #[
-				BaseUtils.ignoreChange(tvp.origin, [
-					getTypeVariable(tvp.origin.eGet(tvp.reference) as EObject)
-				])
+				resultOrProxy
 			];
 		}
 		var origin = tvp.origin;
@@ -431,9 +434,9 @@ class ConstraintSystem {
 			return #[new BottomType(origin, '''Couldn't resolve reference to «tvp.reference.EReferenceType.name» '«tvp.targetQID»'.''', tvp.reference)];
 		}
 		val scope = scopeProvider.getScope(origin, tvp.reference);
-		val scopeElements = scope.getElements(tvp.targetQID).toList;
+		val scopeElements = scope.getElements(tvp.targetQID);
 		
-		val replacementObjects = scopeElements.map[EObjectOrProxy].force.toSet;
+		val replacementObjects = new ObjectOpenHashSet(scopeElements.map[EObjectOrProxy]);
 		if(replacementObjects.empty) { 
 			// redo to allow easier debugging
 			scopeProvider.getScope(origin, tvp.reference);
