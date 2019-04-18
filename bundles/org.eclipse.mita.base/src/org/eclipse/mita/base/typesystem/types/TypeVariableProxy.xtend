@@ -15,6 +15,7 @@ package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
@@ -104,10 +105,24 @@ class TypeVariableProxy extends TypeVariable {
 		if(this.origin.eClass.EReferences.contains(reference)) {			
 			val currentEntry = this.origin.eGet(reference, false).castOrNull(EObject);
 		 	if((currentEntry === null || currentEntry.eIsProxy) && resultType.origin !== null && resultType.origin !== this.origin) {
-		 		val finalOrigin = this.origin;
-				BaseUtils.ignoreChange(this.origin.eResource, [ 
-					finalOrigin.eSet(reference, resultType.origin);
-				]);
+		 		// If result is proxy and previous is proxy, set the previous proxy's uri to the result's proxy uri
+		 		if(resultType.origin.eIsProxy) {
+		 			if(currentEntry !== null && currentEntry.eIsProxy) {
+		 				val newProxyUri = resultType.origin.castOrNull(BasicEObjectImpl).eProxyURI;
+		 				if(newProxyUri !== null) {
+		 					BaseUtils.ignoreChange(this.origin.eResource, [ 
+				 				currentEntry.castOrNull(BasicEObjectImpl)?.eSetProxyURI(newProxyUri);
+							]);
+						}
+		 			}
+		 		}
+		 		// otherwise we have a real object, so assign it (i.e. link)
+		 		else {
+			 		val finalOrigin = this.origin;
+					BaseUtils.ignoreChange(this.origin.eResource, [ 
+						finalOrigin.eSet(reference, resultType.origin);
+					]);
+				}
 			}
 		}
 		
