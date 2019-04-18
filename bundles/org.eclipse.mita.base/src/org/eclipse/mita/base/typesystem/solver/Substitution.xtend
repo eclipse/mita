@@ -121,18 +121,30 @@ class Substitution {
 		val newEntries = this;
 		result.constraintSystemProvider = newEntries.constraintSystemProvider ?: oldEntries.constraintSystemProvider;
 		result.idxToTypeVariable.putAll(newEntries.idxToTypeVariable);
-		if(newEntries.content.size <= 5) {
+
+		if(newEntries.content.size <= 100) {
+			val iterateInsteadOfBulkSubstitute = newEntries.content.size <= 5;
+			val affectedIdxs = new IntOpenHashSet();
 			for(int tvIdx: newEntries.content.keySet) {
-				val from = newEntries.idxToTypeVariable.get(tvIdx);
-				val to = newEntries.content.get(tvIdx);
-				val affectedIdxs = oldEntries.tvHasThisFreeVar.remove(tvIdx);
-				if(affectedIdxs !== null) {
-					for(int typeIdx: affectedIdxs) {
-						val vOld = oldEntries.content.get(typeIdx);
-						val vNew = vOld.replace(from, to);
-						result.addToContent(oldEntries.idxToTypeVariable.get(typeIdx), vNew);	
-					}
+				val newAffectedIdxs = oldEntries.tvHasThisFreeVar.remove(tvIdx)
+				if(newAffectedIdxs !== null) {
+					affectedIdxs.addAll(newAffectedIdxs);
 				}
+			}
+			for(int typeIdx: affectedIdxs) {
+				val vOld = oldEntries.content.get(typeIdx);
+				val vNew = if(iterateInsteadOfBulkSubstitute) {
+					var vNewTemp = vOld;
+					for(k_v: newEntries.content.int2ObjectEntrySet) {
+						val tv = newEntries.idxToTypeVariable.get(k_v.intKey);
+						vNewTemp = vNewTemp.replace(tv, k_v.value)
+					}
+					vNewTemp;
+				}
+				else {
+					vOld.replace(newEntries);
+				}
+				result.addToContent(oldEntries.idxToTypeVariable.get(typeIdx), vNew);	
 			}
 		}
 		else {
