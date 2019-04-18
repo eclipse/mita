@@ -434,7 +434,7 @@ class ConstraintSystem {
 		val scope = scopeProvider.getScope(origin, tvp.reference);
 		val scopeElements = scope.getElements(tvp.targetQID);
 		
-		val replacementObjects = new HashSet(scopeElements.map[EObjectOrProxy].toList);
+		val replacementObjects = scopeElements.map[EObjectOrProxy].force.toSet;
 		if(replacementObjects.empty) { 
 			// redo to allow easier debugging
 			scopeProvider.getScope(origin, tvp.reference);
