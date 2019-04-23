@@ -28,6 +28,7 @@ class BaseResourceValidator extends ResourceValidatorImpl {
 				resource.generateLinkAndType(resource.contents.head);
 			}
 			if(resource.latestSolution === null) {
+				print("");
 			}
 		}
 		

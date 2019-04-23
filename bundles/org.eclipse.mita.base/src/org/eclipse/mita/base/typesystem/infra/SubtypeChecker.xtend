@@ -24,9 +24,11 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
+import org.eclipse.mita.base.typesystem.solver.UnificationResult
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
@@ -133,7 +135,7 @@ class SubtypeChecker {
 	dispatch def Iterable<AbstractType> getSubTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
 		val g = s.explicitSubtypeRelations;
 		val idxs = g.reverseMap.get(t.superTypeGraphHandle) ?: #[];
-		val explicitSubTypes = #[t] + idxs.flatMap[
+		val explicitSubTypes = idxs.flatMap[
 			val keys = g.walk(g.incoming, new HashSet(), it) [i, v | i -> v];
 			return keys.map[key_typeName | 
 				val realType = s.explicitSubtypeRelationsTypeSource.get(key_typeName.key) ?: key_typeName.value
@@ -222,7 +224,14 @@ class SubtypeChecker {
 		return isSubtypeOf(s, context, sub.kindOf, top.kindOf);
 	}
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, AbstractType sub, AbstractType top) {
-		return (getSubTypes(s, top, context).toList.exists[mguComputer.compute(null, sub, it).valid]).subtypeMsgFromBoolean(sub, top);
+		val unifications = getSubTypes(s, top, context)
+			.map[mguComputer.compute(null, sub, it)].force
+		val validUnification = unifications.filter[it.valid]
+			.sortBy[it.substitution.substitutions.size].head
+		return (
+			// if validUnification is invalid, all unifications are invalid -> take any (first)
+			validUnification ?: (unifications.head)
+		).subtypeMsgFromUnification(sub, top);
 	}
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, TypeHole sub, AbstractType top) {
@@ -230,6 +239,17 @@ class SubtypeChecker {
 	}
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, AbstractType sub, TypeHole top) {
 		return new SubtypeCheckResult(#[], #[new SubtypeConstraint(sub, top, new ValidationIssue(Severity.ERROR, '''Couldn't infer type/arg here''', top.origin, null, ""))]);
+	}
+	
+	protected def SubtypeCheckResult subtypeMsgFromUnification(UnificationResult unification, AbstractType sub, AbstractType top) {
+		if(unification.valid) {
+			return new SubtypeCheckResult(#[], unification.substitution.substitutions.entrySet.map[
+				new EqualityConstraint(it.key, it.value, new ValidationIssue("%s is not %s", sub.origin ?: top.origin))
+			])
+		}
+		else {
+			return SubtypeCheckResult.invalid(unification.issues.map[it.message]);
+		}
 	}
 	
 	protected def SubtypeCheckResult subtypeMsgFromBoolean(boolean isSuperType, AbstractType sub, AbstractType top) {
