@@ -31,12 +31,13 @@ import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.GeneratedElement
 import org.eclipse.mita.base.types.GenericElement
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
+import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeSpecifier
@@ -403,7 +404,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	def checkNewInstanceExpression(NewInstanceExpression npe) {
 		// check type is a generated type
 		val type = npe.^type?.type;
-		if(!(type instanceof GeneratedType)) {
+		if(!(type instanceof Type) || !(type instanceof GeneratedElement)) {
 			error('Can only instantiate generated types', npe, ProgramPackage.eINSTANCE.newInstanceExpression_Type);
 		}
 	}
