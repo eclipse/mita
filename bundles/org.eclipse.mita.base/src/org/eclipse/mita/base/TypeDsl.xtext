@@ -262,7 +262,7 @@ ParenthesizedExpression returns Expression:
 TypeSpecifier returns PresentTypeSpecifier:
 	{PresentTypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
 
-InterpolatedStringLiteral returns InterpolatedStringLiteral hidden(): 
+InterpolatedStringLiteral returns InterpolatedStringLiteral: 
 	{InterpolatedStringLiteral}
 	'`' ((=>'${' content+=ConditionalExpression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
 ;

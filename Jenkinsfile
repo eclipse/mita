@@ -32,7 +32,7 @@ pipeline {
         stage('base tests') {
             steps {
                 wrap([$class:'Xvnc', useXauthority: true]) {
-                    sh "mvn -P!plugins -P!platforms -Ptests -P!deployment -P!sign -f bundles/pom.xml install"
+                    sh "mvn -P!plugins -P!platforms -Ptests -P!deployment -P!sign -f bundles/pom.xml clean install"
                 }
             }
             post {
