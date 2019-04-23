@@ -40,6 +40,7 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
+import org.eclipse.mita.base.types.GeneratedTypeAlias
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -318,6 +319,9 @@ class NewInstanceExpression extends ElementReferenceExpression {
 	op Operation getReference() {
 		val refType = ^type.^type;
 		if(refType instanceof GeneratedType) {
+			return refType.constructor;
+		}
+		if(refType instanceof GeneratedTypeAlias) {
 			return refType.constructor;
 		}
 	}

@@ -90,13 +90,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			return scopeInSetupBlock(argument, ref);
 		} else {
 			val ec = argument.eContainer;
-			if (ref == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
-				val txt = BaseUtils.getText(argument, ref)
-				if (!txt.nullOrEmpty) {
-					return getCandidateParameterScope(argument, ref);
-				}
-			}
-			
 			if (ec instanceof ElementReferenceExpression) {
 				return scope_Argument_parameter(ec as ElementReferenceExpression, ref)
 			} 
@@ -108,8 +101,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		if (EcoreUtil2.getContainerOfType(exp, SystemResourceSetup) !== null) {
 			scopeInSetupBlock(exp, ref);
 		} else {
-			val reference = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
-			val txt = BaseUtils.getText(exp, reference)
+			val txt = if(exp instanceof NewInstanceExpression) {
+				val reference = ProgramPackage.Literals.NEW_INSTANCE_EXPRESSION__TYPE;
+				BaseUtils.getText(exp, reference)
+			} else {
+				val reference = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
+				BaseUtils.getText(exp, reference)	
+			}
 			if (txt.nullOrEmpty) {
 				return super.scope_Argument_parameter(exp, ref);
 			} else {
@@ -217,7 +215,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 	
 	dispatch def protected QualifiedName getImportQualifier(ElementReferenceExpression obj) {
-		val baseQN = obj.arguments.head?.value.importQualifier;
+		val baseQN = obj.arguments.head?.value.getImportQualifier;
 		val txt = BaseUtils.getText(obj, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		return baseQN.append(txt);
 	}
@@ -226,14 +224,14 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return QualifiedName.create(typeName, "con_" + typeName);
 	}
 	dispatch def protected QualifiedName getImportQualifier(EObject obj) {
-		return getImportQualifier(obj.eContainer);
+		return QualifiedName.EMPTY;
 	}
 	dispatch def protected QualifiedName getImportQualifier(Void obj) {
 		return QualifiedName.EMPTY;
 	}
 	
 	def Iterable<QualifiedName> getAllImportQualifiers(EObject obj) {
-		var qn = obj.importQualifier;
+		var qn = obj.getImportQualifier;
 		val result = newArrayList;
 		while(!qn.empty) {
 			result.add(qn);

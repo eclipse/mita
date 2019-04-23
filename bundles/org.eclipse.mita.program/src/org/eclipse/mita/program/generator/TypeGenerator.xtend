@@ -24,6 +24,7 @@ import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeAlias
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 
@@ -51,6 +52,15 @@ class TypeGenerator implements IGenerator {
 	}
 	public dispatch def CodeFragment code(EObject context, Void type) {
 		return codeFragmentProvider.create('''NOT IMPLEMENTED FOR NULL''')
+	}
+	public dispatch def CodeFragment code(EObject context, TypeAlias type) {
+		if(TypesUtil.isGeneratedType(context, type)) {
+			val generator = generatorRegistry.getGenerator(context.eResource, type);
+			if(generator instanceof AbstractTypeGenerator) {
+				return generator.generateTypeSpecifier(type, context);
+			}
+		}
+		return context.code(type.aliasOf);
 	}
 	public dispatch def CodeFragment code(EObject context, AtomicType type) {
 		if(TypesUtil.isGeneratedType(context, type)) {
