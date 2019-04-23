@@ -48,6 +48,8 @@ class StringTest extends AbstractRuntimeTest {
 				d += `${i}`;
 			}
 			println(d);
+			let e = d[1:3];
+			println(e);
 			exit(0); 
 		}
 		
@@ -61,7 +63,7 @@ class StringTest extends AbstractRuntimeTest {
 		compileC(projectPath, "all");
 		val executable = projectPath.resolve(Paths.get("src-gen", "build", "app"));
 		val lines = runAtMost(executable, 60);
-		val expectedLines = #["1", "2", "34", "3", "56", "7", "7891011"];
+		val expectedLines = #["1", "2", "34", "3", "56", "7", "7891011", "891"];
 		for(l1_l2: lines.collect(Collectors.toList).zip(expectedLines)) {
 			Assert.assertEquals(l1_l2.key.trim, l1_l2.value.trim);
 		}

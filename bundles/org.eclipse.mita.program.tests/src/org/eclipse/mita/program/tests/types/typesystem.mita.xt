@@ -131,12 +131,14 @@ every 100 milliseconds {
 			
 		} 
 	}
+	let e1 = [1,2,3];     
 	/* XPECT errors ---
 		"f (:: A) and g don't share a common type" at "f"
 		"f (:: xint8) and g don't share a common type" at "f"
 		"f and g (:: string) don't share a common type" at "g"
 	 --- */
-	let a4 = f == g;
+	let f1 = 8;
+	let a4 = e1 == f1;
 //	let k = m.x;    
 	//backend.t.write(`[${m.x}, ${m.y}, ${m.z}, ${m.r}]`);
 }   

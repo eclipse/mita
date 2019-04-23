@@ -21,6 +21,7 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeAlias
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -82,6 +83,13 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return false
 	}
 	
+	dispatch def boolean typesAreCommon(TypeAlias t1, AbstractType t2) {
+		return typesAreCommon(t1.aliasOf, t2);
+	}
+	dispatch def boolean typesAreCommon(AbstractType t1, TypeAlias t2) {
+		return typesAreCommon(t1, t2.aliasOf);
+	}
+	
 	// for example t1 and t2 are sum type constructors. Then previously this was tv <= t2, now it's t1 <= t2. Then someone else already did what this constraint would have done. 
 	dispatch def boolean typesAreCommon(TypeConstructorType type1, TypeConstructorType type2) {
 		return type1.class == type2.class
@@ -106,8 +114,13 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return !explicitSuperTypes.empty;
 	}
 	
-	private def isAtomic(AbstractType t) {
-		return t instanceof AbstractBaseType || t instanceof TypeVariable
+	private def boolean isAtomic(AbstractType t) {
+		return if(t instanceof TypeAlias) {
+			isAtomic(t.aliasOf)
+		}
+		else {
+			t instanceof AbstractBaseType || t instanceof TypeVariable
+		}
 	}
 		
 	override toGraphviz() {

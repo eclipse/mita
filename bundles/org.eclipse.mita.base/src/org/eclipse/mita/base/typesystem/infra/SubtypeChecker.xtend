@@ -55,10 +55,13 @@ class SubtypeChecker {
 	@Inject
 	MostGenericUnifierComputer mguComputer;
 	
-	public static dispatch def getSuperTypeGraphHandle(AbstractType t) {
+	public static dispatch def AbstractType getSuperTypeGraphHandle(AbstractType t) {
 		return t;
 	}
-	public static dispatch def getSuperTypeGraphHandle(TypeConstructorType t) {
+	public static dispatch def AbstractType getSuperTypeGraphHandle(TypeAlias t) {
+		return t.aliasOf.superTypeGraphHandle;
+	}
+	public static dispatch def AbstractType getSuperTypeGraphHandle(TypeConstructorType t) {
 		return t.typeArguments.head;
 	}
 	
@@ -112,9 +115,6 @@ class SubtypeChecker {
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Void v, EObject typeResolveOrigin) {
 		return #[]
-	}
-	dispatch def Iterable<AbstractType> getSubTypes(ConstraintSystem s, TypeAlias t, EObject typeResolveOrigin) {
-		return #[t] + s.getSubTypes(t.aliasOf, typeResolveOrigin);
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(ConstraintSystem s, IntegerType t, EObject typeResolveOrigin) {
 		return getIntegerTypes(typeResolveOrigin).filter[isSubType(s, typeResolveOrigin, it, t)].force

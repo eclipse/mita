@@ -102,8 +102,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			scopeInSetupBlock(exp, ref);
 		} else {
 			val txt = if(exp instanceof NewInstanceExpression) {
-				val reference = ProgramPackage.Literals.NEW_INSTANCE_EXPRESSION__TYPE;
-				BaseUtils.getText(exp, reference)
+				val typeSpec = exp.type;
+				val reference = TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE;
+				BaseUtils.getText(typeSpec, reference)
 			} else {
 				val reference = ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE;
 				BaseUtils.getText(exp, reference)	
@@ -220,7 +221,8 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return baseQN.append(txt);
 	}
 	dispatch def protected QualifiedName getImportQualifier(NewInstanceExpression obj) {
-		val typeName = BaseUtils.getText(obj, ProgramPackage.eINSTANCE.newInstanceExpression_Type);
+		val typeSpec = obj.type;
+		val typeName = BaseUtils.getText(typeSpec, TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE);
 		return QualifiedName.create(typeName, "con_" + typeName);
 	}
 	dispatch def protected QualifiedName getImportQualifier(EObject obj) {
