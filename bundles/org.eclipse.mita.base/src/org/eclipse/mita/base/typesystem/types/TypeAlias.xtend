@@ -43,7 +43,7 @@ class TypeAlias extends AbstractType {
 	}
 	
 	override toString() {
-		return ('''«name» := «aliasOf»''').toString;
+		return ('''«name»''').toString // ~ «aliasOf»;
 	}
 	
 	override toGraphviz() {

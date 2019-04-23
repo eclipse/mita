@@ -363,6 +363,10 @@ class ExceptionTypeDeclaration extends Type, Exportable {
 
 class NativeType extends PrimitiveType, Exportable {
 	String header
+	
+	op String toString() {
+		return name;
+	}
 }
 
 class StructureType extends StructuralType, HasAccessors, Exportable {
