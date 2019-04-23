@@ -75,6 +75,7 @@ import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.platform.SystemSpecification
+import org.eclipse.mita.program.NewInstanceExpression
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -89,6 +90,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			return scopeInSetupBlock(argument, ref);
 		} else {
 			val ec = argument.eContainer;
+			if (ref == ExpressionsPackage.Literals.ARGUMENT__PARAMETER) {
+				val txt = BaseUtils.getText(argument, ref)
+				if (!txt.nullOrEmpty) {
+					return getCandidateParameterScope(argument, ref);
+				}
+			}
+			
 			if (ec instanceof ElementReferenceExpression) {
 				return scope_Argument_parameter(ec as ElementReferenceExpression, ref)
 			} 
@@ -213,8 +221,12 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		val txt = BaseUtils.getText(obj, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		return baseQN.append(txt);
 	}
+	dispatch def protected QualifiedName getImportQualifier(NewInstanceExpression obj) {
+		val typeName = BaseUtils.getText(obj, ProgramPackage.eINSTANCE.newInstanceExpression_Type);
+		return QualifiedName.create(typeName, "con_" + typeName);
+	}
 	dispatch def protected QualifiedName getImportQualifier(EObject obj) {
-		return QualifiedName.EMPTY;
+		return getImportQualifier(obj.eContainer);
 	}
 	dispatch def protected QualifiedName getImportQualifier(Void obj) {
 		return QualifiedName.EMPTY;
