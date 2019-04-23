@@ -50,6 +50,7 @@ import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.GeneratedTypeAlias
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.NullTypeSpecifier
@@ -63,6 +64,7 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeAlias
 import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypedElement
@@ -771,6 +773,27 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.putUserData(result, SIZE_INFERRER_KEY, genType.sizeInferrer)
 		}
 		
+		return result;
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, TypeAlias aliasDeclaration) {		
+		val aliasOf = system.computeConstraints(aliasDeclaration.aliasOf)
+		
+		val result = new org.eclipse.mita.base.typesystem.types.TypeAlias(aliasDeclaration, aliasDeclaration.name, aliasOf);
+		system.typeTable.put(QualifiedName.create(aliasDeclaration.name), result);
+				
+		return result;
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedTypeAlias aliasDeclaration) {		
+		val result = _doTranslateTypeDeclaration(system, aliasDeclaration as TypeAlias);
+		
+		system.computeConstraints(aliasDeclaration.constructor);
+		system.putUserData(result, GENERATOR_KEY, aliasDeclaration.generator)
+		if(aliasDeclaration.sizeInferrer !== null) {
+			system.putUserData(result, SIZE_INFERRER_KEY, aliasDeclaration.sizeInferrer)
+		}
+	
 		return result;
 	}
 	

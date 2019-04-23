@@ -26,6 +26,7 @@ import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
@@ -35,15 +36,14 @@ import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeAlias
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
-import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.diagnostics.Severity
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
 
 class SubtypeChecker {
 	
@@ -96,17 +96,23 @@ class SubtypeChecker {
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, TypeConstructorType t, EObject typeResolveOrigin) {
 		return  #[t];
 	}
-	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
-		return #[t];
-	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, FloatingType t, EObject typeResolveOrigin) {
 		return getFloatingTypes(typeResolveOrigin).filter[isSubType(s, typeResolveOrigin, t, it)].force
+	}
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, TypeAlias t, EObject typeResolveOrigin) {
+		return #[t] + s.doGetSuperTypes(t.aliasOf, typeResolveOrigin);
+	}
+	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, AbstractType t, EObject typeResolveOrigin) {
+		return #[t];
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Object t, EObject typeResolveOrigin) {
 		return #[];
 	}
 	dispatch def Iterable<AbstractType> doGetSuperTypes(ConstraintSystem s, Void v, EObject typeResolveOrigin) {
 		return #[]
+	}
+	dispatch def Iterable<AbstractType> getSubTypes(ConstraintSystem s, TypeAlias t, EObject typeResolveOrigin) {
+		return #[t] + s.getSubTypes(t.aliasOf, typeResolveOrigin);
 	}
 	dispatch def Iterable<AbstractType> getSubTypes(ConstraintSystem s, IntegerType t, EObject typeResolveOrigin) {
 		return getIntegerTypes(typeResolveOrigin).filter[isSubType(s, typeResolveOrigin, it, t)].force

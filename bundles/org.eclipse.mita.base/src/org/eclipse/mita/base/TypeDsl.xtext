@@ -23,14 +23,44 @@ TypeRoot returns Package:
 ;
 
 TypeDeclaration returns Type:
-	(NativeTypeDeclaration | StructureTypeDeclaration | ExceptionTypeDeclaration | EnumerationDeclaration | GeneratedType | SumType) 
+	(NativeTypeDeclaration 
+	| StructureTypeDeclaration 
+	| ExceptionTypeDeclaration 
+	| EnumerationDeclaration 
+	| GeneratedType 
+	| SumType
+	| TypeAlias
+	| GeneratedTypeAlias
+	) 
 ;
 
 NativeTypeDeclaration returns NativeType:
 	(exported?='export')? 
 	'native-type' name=ID
-	('alias-of' aliasOf=ID)?
 	('header' header=STRING)?
+;
+
+TypeAlias returns TypeAlias:
+	(exported?='export')?
+	'alias' 
+	name=ID
+	// TODO implement type parameters in type checker, codegen 
+	//('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')? 
+	'=' aliasOf=TypeSpecifier
+;
+
+GeneratedTypeAlias returns GeneratedTypeAlias:
+	(exported?='export')?
+	'generated' 'alias' 
+	name=ID 
+	// TODO implement type parameters in type checker, codegen 
+	//('<' (typeParameters+=TypeParameter) (',' typeParameters+=TypeParameter)* '>')? 
+	'=' aliasOf=TypeSpecifier
+		'generator' generator=STRING
+		'size-inferrer' sizeInferrer=STRING
+		('validator' validator=STRING)?
+		constructor = GeneratedTypeConstructor
+	';'
 ;
 
 EnumerationDeclaration returns SumType:
@@ -363,7 +393,7 @@ QID:
 IntAsString returns ecore::EString: LONG;
 
 ReservedKeywords:
-	'alias-of' |
+	'alias' |
 	'alt' |
 	'alternative' |
 	'as' |

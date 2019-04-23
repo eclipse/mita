@@ -27,6 +27,7 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
+import org.eclipse.mita.base.typesystem.types.TypeAlias
 
 /* Interesting papers:
  *  Generalizing Hindley-Milner Type Inference Algorithms: https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
@@ -124,6 +125,14 @@ class MostGenericUnifierComputer {
 			return UnificationResult.failure(new ValidationIssue(issue, error.message));
 		}
 		return UnificationResult.success(result);		
+	}
+	
+	protected dispatch def UnificationIssue unify(Substitution substitution, TypeAlias t1, AbstractType t2) {
+		return substitution.unify(t1.aliasOf, t2);
+	}
+	
+	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, TypeAlias t2) {
+		return substitution.unify(t1, t2.aliasOf);
 	}
 	
 	protected dispatch def UnificationIssue unify(Substitution substitution, IntegerType t1, IntegerType t2) {

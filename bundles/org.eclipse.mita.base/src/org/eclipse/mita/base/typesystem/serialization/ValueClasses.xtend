@@ -108,6 +108,9 @@ final class SerializedProductType extends SerializedCompoundType {
 
 final class SerializedSumType extends SerializedCompoundType {
 }
+final class SerializedTypeAlias extends SerializedAbstractType {
+	public SerializedAbstractType aliasOf;
+}
 
 final class SerializedTypeScheme extends SerializedAbstractType {
 	public List<SerializedTypeVariable> vars;

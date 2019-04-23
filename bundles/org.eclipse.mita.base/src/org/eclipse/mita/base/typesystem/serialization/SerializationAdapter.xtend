@@ -68,6 +68,7 @@ import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.types.TypeAlias
 
 class SerializationAdapter {
 	
@@ -180,6 +181,10 @@ class SerializationAdapter {
 			obj.returnTypeVariance,
 			constraintSystemProvider
 		);
+	}
+	
+	protected dispatch def AbstractType fromValueObject(SerializedTypeAlias obj) {
+		return new TypeAlias(obj.origin.resolveEObject(), obj.name, obj.aliasOf.fromValueObject as AbstractType);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedAtomicType obj) {
@@ -462,6 +467,13 @@ class SerializationAdapter {
 		ctxt.vars = obj.vars.map[ it.toValueObject as SerializedTypeVariable ].force;
 		ctxt.on = obj.on.toValueObject as SerializedAbstractType;
 		return ctxt;
+	}
+	
+	protected dispatch def Object toValueObject(TypeAlias obj) {
+		new SerializedTypeAlias => [
+			fill(it, obj)
+			it.aliasOf = obj.aliasOf.toValueObject as SerializedAbstractType
+		]
 	}
 	
 	protected dispatch def Object toValueObject(FunctionType obj) {
