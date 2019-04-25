@@ -4,7 +4,7 @@
 	<classpathentry kind="src" path="src-gen"/>
 	<classpathentry kind="src" path="xtend-gen"/>
 	<classpathentry kind="src" path="emf-gen"/>
-	<classpathentry exported="true" kind="lib" path="lib/fastutil-8.2.2.jar" sourcepath="C:/Users/wge7rt/AppData/Local/Temp/.org.sf.feeling.decompiler1555430943377/source/fastutil-8.2.2-sources-1555430968869.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/fastutil-8.2.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/protostuff-api-1.5.3.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/protostuff-collectionschema-1.5.3.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/protostuff-core-1.5.3.jar"/>

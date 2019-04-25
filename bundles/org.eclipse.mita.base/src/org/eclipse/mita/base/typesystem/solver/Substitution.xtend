@@ -121,7 +121,14 @@ class Substitution {
 		result.constraintSystemProvider = newEntries.constraintSystemProvider ?: oldEntries.constraintSystemProvider;
 		result.idxToTypeVariable.putAll(newEntries.idxToTypeVariable);
 
-		if(newEntries.content.size <= 100) {
+		/* two different implementations: 
+		 * - if newEntries is small, we should check only the affected entries in result
+		 * - if newEntries is large, we would probably need to replace everything anyway, so collecting affected types before is slower
+		 * 
+		 * as a guessed heuristic about 10% of entries will be affected, so let's do the first path if newEntries is smaller than 1/(10/100) result.
+		 */
+		if(newEntries.content.size <= 10 * result.content.size) {
+			// if newEntries is REALLY small (guess: 5), hashmap lookup is slower than that many identity equals.
 			val iterateInsteadOfBulkSubstitute = newEntries.content.size <= 5;
 			val affectedIdxs = new IntOpenHashSet();
 			for(int tvIdx: newEntries.content.keySet) {
