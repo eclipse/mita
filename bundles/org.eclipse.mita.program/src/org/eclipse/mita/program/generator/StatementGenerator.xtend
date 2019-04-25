@@ -689,16 +689,16 @@ class StatementGenerator {
 			} else if (type instanceof ProdType || type instanceof org.eclipse.mita.base.typesystem.types.SumType) {
 				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = {0};''');
 			} else if (type instanceof NumericType) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «varName» = 0;''');
+				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = 0;''');
 			} else if(type instanceof AtomicType) {
 				// init is zero, type is atomic, but not generated
 				// -> type is bool
 				if(type.name == "bool") {
-					result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «varName» = false;''');
+					result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = false;''');
 				}
 				else {
-					result.children += codeFragmentProvider.create('''«type.getCtype(stmt)» «varName» = ERROR unsupported initialization;''');
-				}
+					result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
+				} 
 			} else {
 				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
 			}
