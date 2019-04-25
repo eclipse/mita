@@ -114,7 +114,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val cf = codeFragmentProvider.create('''
 		«IF capacity >= 0»
 		// buffer for «varName»
-		«generateBufferStmt(context, type, bufferName, getFixedSize(init), initValue)»
+		«generateBufferStmt(context, type, bufferName, capacity, initValue)»
 		«ELSE»
 		ERROR: Couldn't infer size!
 		«ENDIF»
