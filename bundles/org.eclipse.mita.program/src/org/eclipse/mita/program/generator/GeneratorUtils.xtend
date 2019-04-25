@@ -174,17 +174,10 @@ class GeneratorUtils {
 	}
 	
 	private def dispatch String getUniqueIdentifierInternal(ElementReferenceExpression expr) {
-		return expr.reference.uniqueIdentifierInternal;
+		// Erefs should only reference named things, so baseName should always be fine.
+		expr.eContainer.uniqueIdentifierInternal + "Ref" + expr.reference?.baseName?.toFirstUpper;
 	}
-	
-	private def dispatch String getUniqueIdentifierInternal(FeatureCall feature) {
-		if(feature.reference instanceof SignalInstance) {
-			return feature.reference.baseName.toFirstLower;
-		} else {
-			return feature.arguments.head.value.uniqueIdentifierInternal + feature.reference.baseName.toFirstUpper;			
-		}
-	}
-	
+
 	private def dispatch String getUniqueIdentifierInternal(ProgramBlock pb) {
 		pb.eContainer.uniqueIdentifierInternal + pb.eContainer.eAllContents.toList.indexOf(pb).toString;
 	}

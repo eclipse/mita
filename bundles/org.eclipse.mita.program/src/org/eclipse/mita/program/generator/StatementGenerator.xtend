@@ -66,6 +66,7 @@ import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
@@ -122,6 +123,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.NoopStatement
 import com.google.common.base.Optional
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
@@ -616,7 +618,10 @@ class StatementGenerator {
 		return CodeFragment.EMPTY;
 	}
 	
-	
+	dispatch def IGeneratorNode code(NoopStatement stmt) {
+		return codeFragmentProvider.create();
+	}
+  
 	dispatch def IGeneratorNode code(ExceptionBaseVariableDeclaration stmt) {
 		return codeFragmentProvider.create('''
 				«exceptionGenerator.exceptionType» «stmt.name» = NO_EXCEPTION;
@@ -626,6 +631,7 @@ class StatementGenerator {
 				
 			''').addHeader('stdbool.h', true)
 	}
+  
 	dispatch def IGeneratorNode code(VariableDeclaration stmt) {
 		return generateVariableDeclaration(
 			BaseUtils.getType(stmt), 
@@ -684,6 +690,15 @@ class StatementGenerator {
 				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = {0};''');
 			} else if (type instanceof NumericType) {
 				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = 0;''');
+			} else if(type instanceof AtomicType) {
+				// init is zero, type is atomic, but not generated
+				// -> type is bool
+				if(type.name == "bool") {
+					result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = false;''');
+				}
+				else {
+					result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
+				} 
 			} else {
 				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
 			}
