@@ -20,6 +20,7 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -43,7 +44,7 @@ class TypeClassProxy extends TypeClass {
 		return this;
 	}
 	
-	override TypeClass modifyNames((String) => String converter) {
+	override TypeClass modifyNames(NameModifier converter) {
 		return new TypeClassProxy(toResolve.map[it.modifyNames(converter) as TypeVariableProxy]);
 	}
 	

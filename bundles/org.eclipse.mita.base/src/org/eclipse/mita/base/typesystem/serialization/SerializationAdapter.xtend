@@ -130,6 +130,7 @@ class SerializationAdapter {
 			[it.key], [it.value.fromValueObject as AbstractType]
 		)
 		result.userData = new HashMap(obj.userData.entrySet.toMap([it.key], [new HashMap(it.value)]));
+		result.instanceCount = obj.instanceCount;
 		return result;
 	}
 	
@@ -203,12 +204,13 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeHole obj) {
-		return new TypeHole(obj.origin.resolveEObject(), obj.name);
+		return new TypeHole(obj.origin.resolveEObject(), obj.idx);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedFunctionType obj) {
 		return new FunctionType(
 			obj.origin.resolveEObject(),
+			obj.name,
 			obj.typeArguments.fromSerializedTypes()
 		);
 	}
@@ -218,16 +220,16 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
-		return new ProdType(obj.origin.resolveEObject(), obj.typeArguments.fromSerializedTypes());
+		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
-		return new SumType(obj.origin.resolveEObject(), obj.typeArguments.fromSerializedTypes());
+		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeConstructorType obj) {
-		return new TypeConstructorType(obj.origin.resolveEObject(), obj.typeArguments.fromSerializedTypes());
+		return new TypeConstructorType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeScheme obj) {
@@ -236,14 +238,14 @@ class SerializationAdapter {
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariable obj) {
 		val origin = obj.origin.resolveEObject();
-		return new TypeVariable(origin, obj.name);
+		return new TypeVariable(origin, obj.idx);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
 		// we resolve the origin of TypeVarProxies because we pass them to the scope later
 		val resolve = obj.reference.eReferenceName != "type";
 		val origin = obj.origin.resolveEObject(resolve);
-		return new TypeVariableProxy(origin, obj.name, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy, obj.isLinkingProxy);
+		return new TypeVariableProxy(origin, obj.idx, obj.reference.fromValueObject as EReference, obj.targetQID.toQualifiedName, obj.ambiguityResolutionStrategy, obj.isLinkingProxy);
 	}
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
@@ -335,6 +337,7 @@ class SerializationAdapter {
 				[it.key], [it.value.toValueObject as SerializedAbstractType]
 			)
 			userData = new HashMap(obj.userData.entrySet.toMap([it.key], [new HashMap(it.value)]));
+			instanceCount = obj.instanceCount;
 		]
 	}
 	
@@ -405,12 +408,17 @@ class SerializationAdapter {
 		]
 	}
 	
+	protected dispatch def Object fill(SerializedAbstractType ctxt, TypeVariable obj) {
+		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
+		return ctxt;
+	}
+	
 	protected dispatch def Object fill(SerializedAbstractType ctxt, AbstractType obj) {
 		ctxt.name = obj.name;
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
 		return ctxt;
 	}
-		
+	
 	protected dispatch def Object toValueObject(BaseKind obj) {
 		new SerializedBaseKind => [
 			fill(it, obj)
@@ -448,6 +456,7 @@ class SerializationAdapter {
 	protected dispatch def Object toValueObject(TypeHole obj) {
 		new SerializedTypeHole => [
 			fill(it, obj);
+			it.idx = obj.idx;
 		]
 	}
 	
@@ -508,12 +517,14 @@ class SerializationAdapter {
 	protected dispatch def Object toValueObject(TypeVariable obj) {
 		new SerializedTypeVariable => [
 			fill(it, obj)
+			it.idx = obj.idx;
 		]
 	}
 	
 	protected dispatch def Object toValueObject(TypeVariableProxy obj) {
 		new SerializedTypeVariableProxy => [
 			fill(it, obj)
+			it.idx = obj.idx;
 			it.reference = obj.reference?.toValueObject as SerializedEReference;
 			it.targetQID = obj.targetQID.toString;
 			it.ambiguityResolutionStrategy = obj.ambiguityResolutionStrategy;

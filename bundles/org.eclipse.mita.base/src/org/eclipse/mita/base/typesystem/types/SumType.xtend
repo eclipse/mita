@@ -38,15 +38,15 @@ class SumType extends TypeConstructorType {
 			return system.newTypeVariable(null);
 		}
 		// else transpose the instances' type args (so we have a list of all the first args, all the second args, etc.), then unify each of those
-		return new SumType(null, 
-			BaseUtils.transpose(instances.map[it as SumType].map[it.typeArguments])
+		val typeArgs = BaseUtils.transpose(instances.map[it as TypeConstructorType].map[it.typeArguments])
 				.map[TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, it)]
-				.force
-		)
+				.force;
+		val name = typeArgs.head.name;
+		return new SumType(null, name, typeArgs);
 	}
 	
-	new(EObject origin, Iterable<AbstractType> typeArguments) {
-		super(origin, typeArguments)
+	new(EObject origin, String name, Iterable<AbstractType> typeArguments) {
+		super(origin, name, typeArguments)
 	}
 	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
 		super(origin, type, typeArguments);
@@ -65,7 +65,7 @@ class SumType extends TypeConstructorType {
 	
 	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newSType = new SumType(origin, newTypeVars);
+		val newSType = new SumType(origin, name, newTypeVars);
 		s.add(tv, newSType);
 	}
 	override toGraphviz() {
@@ -75,13 +75,13 @@ class SumType extends TypeConstructorType {
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new SumType(origin, newTypeArgs);	
+			return new SumType(origin, name, newTypeArgs);	
 		}
 		return this;
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new SumType(origin, children.map[it.node.unquote(it.children)].force);
+		return new SumType(origin, name, children.map[it.node.unquote(it.children)].force);
 	}
 	
 }

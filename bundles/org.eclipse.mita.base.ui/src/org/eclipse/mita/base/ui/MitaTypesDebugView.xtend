@@ -245,7 +245,7 @@ class MitaTypesDebugView extends ViewPart {
     	if(constraintSolution === null) return;
     	
     	val substitution = constraintSolution.solution;
-    	val input = constraintSolution.solution?.substitutions?.keySet;
+    	val input = constraintSolution.solution;
     	val system = constraintSolution.constraintSystem;
     	if(input === null) {
     		return;
@@ -296,7 +296,7 @@ class MitaTypesDebugView extends ViewPart {
 			.setLabelProvider(new ColumnLabelProvider() {
             
             override String getText(Object element) {
-                return (element as Pair<TypeVariable, AbstractType>).key?.name?.toString() ?: "null";
+                return (element as Pair<TypeVariable, AbstractType>).key?.toString() ?: "null";
             }
             
         });
