@@ -43,6 +43,7 @@ export native unchecked function __PLUS__(x: float , y: float ): float  header "
 export native unchecked function __PLUS__(x: double, y: double): double header "math.h";
 
 export native unchecked function __PLUS__(x: string, y: string): string header "string.h";
+export native unchecked function <T> __PLUS__(x: array<T>, y: array<T>): array<T> header "string.h";
 
 export native unchecked function __MINUS__(x: xint32, y: xint32):  int32 header "math.h";
 export native unchecked function __MINUS__(x: xint16, y: xint16):  int16 header "math.h";

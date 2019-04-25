@@ -23,6 +23,7 @@ import org.eclipse.mita.base.expressions.PostFixUnaryExpression
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.ImportStatement
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
@@ -49,6 +50,7 @@ import org.eclipse.mita.base.typesystem.types.UnorderedArguments
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.typesystem.PlatformConstraintFactory
 import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.ArrayRuntimeCheckStatement
 import org.eclipse.mita.program.CatchStatement
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
@@ -61,7 +63,6 @@ import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.IfStatement
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsOtherCase
@@ -87,7 +88,6 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.program.ArrayRuntimeCheckStatement
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -114,12 +114,13 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		//systemResourceTypeVar ~ SystemResource (don't care about resource, so just put in a placeholder)
 		//resultInModality ~ Modality<T ~ int32>
 		//result ~ T 
-		val modalityTypeVar = system.resolveReferenceToSingleAndGetType(access, ProgramPackage.eINSTANCE.modalityAccess_Modality);
+		val feature = ProgramPackage.eINSTANCE.modalityAccess_Modality;
+		val modalityTypeVar = system.resolveReferenceToSingleAndGetType(access, feature);
 		val systemResourceTypeVar = system.newTypeVariable(null);
-		val result = system.newTypeVariable(access);
+		val result = system.getTypeVariable(access);
 		val modalityTypeScheme = typeRegistry.getTypeModelObjectProxy(system, access, StdlibTypeRegistry.modalityTypeQID);
 		val resultInModality = system.nestInType(access, result, modalityTypeScheme, "modality");
-		val supposedModalityType = new FunctionType(null, new AtomicType(null, "modalityAccess"), systemResourceTypeVar, resultInModality);
+		val supposedModalityType = new FunctionType(null, new AtomicType(null, BaseUtils.getText(access, feature)), systemResourceTypeVar, resultInModality);
 		system.addConstraint(new EqualityConstraint(modalityTypeVar, supposedModalityType, new ValidationIssue("%s needs to be of type '%s'", access)));
 		return result;
 	}
@@ -218,10 +219,10 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayLiteral arrayLiteral) {
-		val literalTypes = arrayLiteral.values.map[system.computeConstraints(it)];
+		val literalTypes = arrayLiteral.values.map[it -> system.computeConstraints(it)];
 		val innerType = system.newTypeVariable(null);
 		literalTypes.forEach[
-			system.addConstraint(new SubtypeConstraint(it, innerType, new ValidationIssue(Severity.ERROR, '''«it» (:: %s) doesn't share a common type with the other members of this array literal''', it.origin, null, "")))
+			system.addConstraint(new SubtypeConstraint(it.value, innerType, new ValidationIssue(Severity.ERROR, '''«it.key» (:: %s) doesn't share a common type with the other members of this array literal''', it.value.origin, null, "")))
 		]
 		val arrayTypeSchemeTV = typeRegistry.getTypeModelObjectProxy(system, arrayLiteral, StdlibTypeRegistry.arrayTypeQID);
 		val outerType = system.nestInType(arrayLiteral, innerType, arrayTypeSchemeTV, "array");
@@ -265,7 +266,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return null;
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, InterpolatedStringExpression expr) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, InterpolatedStringLiteral expr) {
 		system.computeConstraintsForChildren(expr);
 		val stringType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.stringTypeQID);
 		return system.associate(stringType, expr);

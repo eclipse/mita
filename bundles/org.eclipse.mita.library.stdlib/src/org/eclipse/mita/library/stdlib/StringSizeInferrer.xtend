@@ -13,166 +13,45 @@
 
 package org.eclipse.mita.library.stdlib
 
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
-import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
-import org.eclipse.mita.base.expressions.util.ExpressionUtils
-import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.AbstractLoopStatement
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
-class StringSizeInferrer extends ElementSizeInferrer {
+class StringSizeInferrer extends ArraySizeInferrer {
 	
 	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression, AbstractType type) {
-		expression.inferContainerIfVariableDeclaration[ expression.isolatedDoInfer ]
+		return newValidResult(expression, expression.value.length);
 	}
 	
 	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression, AbstractType type) {
-		expression.inferContainerIfVariableDeclaration[ expression.isolatedDoInfer ]
+		return expression.value.infer;
 	}
 
-	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringExpression expr, AbstractType type) {
-		expr.inferContainerIfVariableDeclaration[ expr.isolatedDoInfer ]
+	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringLiteral expr, AbstractType type) {
+		expr.isolatedDoInfer
 	}
 	
 	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr, AbstractType type) {
-		expr.inferContainerIfVariableDeclaration[ expr.inferFixedSize ]
+		expr.inferFixedSize
 	}
-	
-	/**
-	 * Computes the maximum length of a string variable.
-	 * 
-	 * @return the max length of the string or -1 if the length could not be infered.
-	 */
-	protected dispatch override ElementSizeInferenceResult doInfer(VariableDeclaration variable, AbstractType type) {
-		/*
-		 * Find initial size
-		 */
-		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
-		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
-		val initialization = variable.initialization ?: (
-			referencesToVariable
-				.map[it.eContainer]
-				.filter(AssignmentExpression)
-				.filter[ae |
-					val left = ae.varRef; 
-					left instanceof ElementReferenceExpression && (left as ElementReferenceExpression).reference === variable 
-				]
-				.map[it.expression]
-				.head
-		)
-		var stringHasFixedSize = false;
-		val initialLength = if(initialization !== null) {
-			if(initialization instanceof NewInstanceExpression) {
-				stringHasFixedSize = true;
-				initialization.inferFixedSize();
-			} else {
-				initialization.isolatedDoInfer();
-			}
-		} else {
-			newInvalidResult(variable, "Cannot infer size of initialization");
-		}
-		if(initialLength instanceof InvalidElementSizeInferenceResult) {
-			return initialLength;
-		}
-		var length = (initialLength as ValidElementSizeInferenceResult).elementCount;
 
-		/*
-		 * Strategy is to find all places where this variable is modified and try to infer the length there.
-		 */		
-		val modifyingExpressions = referencesToVariable.map[ref | 
-			val refContainer = ref.eContainer;
-			
-			if(refContainer instanceof AssignmentExpression) {
-				if(refContainer.varRef == ref) {
-					// we're actually assigning to this reference, thus modifying it
-					refContainer					
-				} else {
-					// the variable reference is just on the right side. No modification happening
-					null
-				}
-			} else if(refContainer instanceof FeatureCall) {
-				refContainer
-			} else {
-				null
-			}
-		].filterNull;
 		
-		/*
-		 * Check if we can infer the length across all modifications
-		 */
-		for(expr : modifyingExpressions) {
-			/*
-			 * First, let's see if we can infer the string length after the modification.
-			 */
-			var allowedInLoop = stringHasFixedSize;
-			if(expr instanceof AssignmentExpression) {
-				if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
-					val additionLength = expr.expression.infer();
-					if(!additionLength.isValid) return additionLength;
-					
-					length += (additionLength as ValidElementSizeInferenceResult).elementCount;
-				} else if(expr.operator == AssignmentOperator.ASSIGN) {
-					val additionLength = expr.expression.infer();
-					if(!additionLength.isValid) return additionLength;
-					
-					allowedInLoop = true;
-					length = Math.max(length, (additionLength as ValidElementSizeInferenceResult).elementCount);
-				} else {
-					// can't infer the length due to unknown operator
-					return newInvalidResult(expr, '''Cannot infer size when using the «expr.operator.getName()» operator''')
-				}
-			} else if(expr instanceof FeatureCall) {
-				// Feature calls are not yet supported. Abort inference here.
-				return newInvalidResult(expr, '''Cannot infer size of feature calls yet''')
-			}
-			
-			/*
-			 * Second, see if the modification happens in a loop. In that case we don't bother with trying to infer the length.
-			 * Because of block scoping we just have to find a loop container of the modifyingExpression and then make sure that
-			 * the loop container and the variable definition are/share a common ancestor.
-			 */
-			if(!allowedInLoop) {
-				val loopContainer = expr.getSharedLoopContainer(variable);
-				if(loopContainer !== null) {
-					return newInvalidResult(expr, 'Cannot infer string length in loops');
-				}	
-			}
-		}
-		
-		return newValidResult(variable, length);
-	}
-	
 	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(StringLiteral expression) {
 		newValidResult(expression, expression.value.length);		
 	}
 	
-	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(PrimitiveValueExpression expression) {
+	protected override dispatch ElementSizeInferenceResult isolatedDoInfer(PrimitiveValueExpression expression) {
 		val value = expression.value;
-		if(value instanceof StringLiteral) {
-			value.isolatedDoInfer;
-		} else {
-			newInvalidResult(expression, "Cannot infer string length of " + value);
-		}
+		return value.isolatedDoInfer;
 	}
 	
-	protected def dispatch isolatedDoInfer(InterpolatedStringExpression expr) {
+	protected def dispatch isolatedDoInfer(InterpolatedStringLiteral expr) {
 		var length = expr.sumTextParts
 		
 		// sum expression value part
@@ -213,67 +92,14 @@ class StringSizeInferrer extends ElementSizeInferrer {
 
 		return newValidResult(expr, length);
 	}
-	
-	protected def dispatch isolatedDoInfer(ElementReferenceExpression expr) {
-		return expr?.reference?.infer;
-	}
-	
-	protected def dispatch isolatedDoInfer(EObject expr) {
-		newInvalidResult(expr, "Cannot infer string length");
-	}
-	
-	protected def long sumTextParts(InterpolatedStringExpression expr) {
+		
+	protected def long sumTextParts(InterpolatedStringLiteral expr) {
 		val texts = StringGenerator.getOriginalTexts(expr)
 		if (texts.nullOrEmpty) {
 			0
 		} else {
 			texts.map[x | x.length as long ].reduce[x1, x2| x1 + x2 ];
 		}
-	}
-	
-	
-	protected def inferContainerIfVariableDeclaration(EObject obj, (EObject) => ElementSizeInferenceResult alternative) {
-		// Special case: we're in an interpolated string, then the variable declaration does not matter
-		if(EcoreUtil2.getContainerOfType(obj, InterpolatedStringExpression) !== null) {
-			return alternative.apply(obj);
-		}
-		
-		val container = EcoreUtil2.getContainerOfType(obj, VariableDeclaration);
-		return if(container !== null) {
-			// we must not just infer the size for the new instance in isolation, but also check what's happening to the value afterwards.
-			container.infer;
-		} else {
-			return alternative.apply(obj);
-		}
-	}
-	
-	protected def inferFixedSize(NewInstanceExpression initialization) {
-		val rawSizeValue = ExpressionUtils.getArgumentValue(initialization.reference as Operation, initialization, 'size');
-		val staticSizeValue = StaticValueInferrer.infer(rawSizeValue, [x |]);
-		return if(staticSizeValue instanceof Long) {
-			newValidResult(initialization, staticSizeValue);
-		} else {
-			newInvalidResult(initialization, "No explicit maximum string size was given");
-		}
-	}
-	
-	/**
-	 * Finds a loop ancestor of expr which shares a common ancestor with other.
-	 */
-	private static def getSharedLoopContainer(EObject expr, EObject other) {
-		val loopContainer = EcoreUtil2.getContainerOfType(expr, AbstractLoopStatement);
-		if(loopContainer !== null) {
-			/* We found a loop containing the modifying expression. Let's make sure they share a parent with the variable declaration. */
-			val variableContainer = other.eContainer;
-			val sharedAncestor = EcoreUtil2.getAllContainers(loopContainer).findFirst[c | c == variableContainer];
-			
-			if(variableContainer == loopContainer || sharedAncestor !== null) {
-				/* We have a found a string manipulation in a loop. We won't bother trying to infer the new string length. */
-				return loopContainer;
-			}				
-		}
-		return null;
-	}
-	
+	}		
 	
 }

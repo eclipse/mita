@@ -9,7 +9,6 @@ package test;
 import platforms.unittest;
 
 // Strings are one-byte ASCII strings (not UTF8, not ISO8859-1)
-// Strings are reference types
 // Strings have a maximum length fixed at compile time
 
 function someExternalFunction() : int32 {
@@ -70,3 +69,19 @@ function stringTestFail() : void {
 		foo += "hello"; // compiler error: Cannot determine the length of foo. Please set the length explicitly.
 	}
 }
+function notSupportedArrayUsage(): void {
+	/* XPECT errors ---
+		"Cannot determine size of element: Cannot infer string length of s»"hello world"" at ""hello world""
+		"prim»s»"hello world" (:: string) has a different type than foo (:: array<A>)" at ""hello world""
+	--- */
+	var foo = "hello world";
+	// We don't support direct access yet
+	// XPECT errors --> "Cannot determine size of element: Unable to infer size from type A" at "foo[1]"
+	var bar = foo[1];
+	// We don't support splicing yet
+	// the error that is produced here manifests at `var foo`: 
+	// [1:3] creates the very strong type constraint that foo :: array<T>.
+	// The solver therefore sees the problem in initializing foo with a string.
+	var bar2 = foo[1:3];
+}
+

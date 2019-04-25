@@ -15,11 +15,14 @@ package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.library.stdlib.StringGenerator
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 
 class PrintGenerator extends AbstractFunctionGenerator {
 	
@@ -31,11 +34,13 @@ class PrintGenerator extends AbstractFunctionGenerator {
 		val addBreaklinePostfix = functionName == 'println';
 		
 		val firstArg = function.arguments.head?.value;
-		val result = if(firstArg instanceof InterpolatedStringExpression) {
-			codeFragmentProvider.create('''printf("«stringGenerator.getPattern(firstArg)»«IF addBreaklinePostfix»\n«ENDIF»"«IF !firstArg.content.empty», «FOR arg : firstArg.content SEPARATOR ', '»«generate(arg)»«ENDFOR»«ENDIF»);''')
+		val interpolatedStringLiteral = firstArg.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(InterpolatedStringLiteral)
+		val result = if(interpolatedStringLiteral !== null) {
+			codeFragmentProvider.create('''printf("«stringGenerator.getPattern(interpolatedStringLiteral)»«IF addBreaklinePostfix»\n«ENDIF»"«IF !interpolatedStringLiteral.content.empty», «FOR arg : interpolatedStringLiteral.content SEPARATOR ', '»«stringGenerator.getDataHandleForPrintf(arg)»«ENDFOR»«ENDIF»);''')
 				.addHeader('inttypes.h', true);
 		} else {
-			codeFragmentProvider.create('''printf("%s«IF addBreaklinePostfix»\n«ENDIF»", «function.arguments.head.generate»);
+			val expr = function.arguments.head.value;
+			codeFragmentProvider.create('''printf("«stringGenerator.getPattern(expr)»«IF addBreaklinePostfix»\n«ENDIF»", «stringGenerator.getDataHandleForPrintf(expr)»);
 			''');
 		}
 		
