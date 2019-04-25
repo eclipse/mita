@@ -13,18 +13,17 @@
 
 package org.eclipse.mita.program.generator.internal
 
-import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.program.generator.CompilationContext
-import org.eclipse.mita.program.generator.IComponentConfiguration
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import java.util.HashMap
 import java.util.Map
 import java.util.NoSuchElementException
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.IComponentConfiguration
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 
 class MapBasedComponentConfiguration implements IComponentConfiguration {
 	
@@ -75,11 +74,13 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	
 	override getEnumerator(String key) {
 		val expr = getExpression(key)?.reduce;
-		if(expr instanceof Enumerator) {
-			return expr;
-		} else {
-			return null;
+		if(expr instanceof SumTypeRepr) {
+			val constructor = expr.constructor;
+			if(constructor instanceof Singleton) {
+				return constructor;
+			}	
 		}
+		return null;
 	}
 	
 	override getInteger(String key) {
@@ -123,15 +124,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	 * 
 	 */
 	protected static def reduce(Expression expression) {
-		return if(expression instanceof FeatureCall) {
-			expression.reference;
-		} else if(expression instanceof ElementReferenceExpression) {
-			expression.reference;
-		} else if(expression !== null) {
-			StaticValueInferrer.infer(expression, [x | ])
-		} else {
-			null;
-		};
+		return StaticValueInferrer.infer(expression, [x | ]);
 	}
 	
 }

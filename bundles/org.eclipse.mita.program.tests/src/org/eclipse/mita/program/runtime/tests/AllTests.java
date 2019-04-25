@@ -20,8 +20,9 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({ 
 	HelloWorldTest.class,
 	StringTest.class,
-	SumTypesTest.class,
-	ControlflowTest.class
+	ControlflowTest.class,
+	ArraysTest.class,
+	SumTypesTest.class
 })
 @RunWith(Suite.class)
 public class AllTests {

@@ -20,6 +20,8 @@ import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
+import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
 class GeneratedTypeGenerator {
 	
@@ -34,8 +36,9 @@ class GeneratedTypeGenerator {
 
 	def generateHeader(CompilationContext context, List<String> userTypeFiles) {
 		
-		val generatorsWithTypeSpecs = context.getAllGeneratedTypesUsed().map[new Pair(it, registry.getGenerator(context.allUnits.head.eResource, it) as AbstractTypeGenerator)].toList;
-		val generators = context.getAllGeneratedTypesUsed().groupBy[it.name].values.map[it.head].map[registry.getGenerator(context.allUnits.head.eResource, it) as AbstractTypeGenerator].toList;
+		val generatedTypes = context.getAllGeneratedTypesUsed().filterNull.force;
+		val generatorsWithTypeSpecs = generatedTypes.map[new Pair(it, registry.getGenerator(context.allUnits.head.eResource, it).castOrNull(AbstractTypeGenerator))].filter[it.value !== null].toList;
+		val generators = generatedTypes.groupBy[it.name].values.map[it.head].map[registry.getGenerator(context.allUnits.head.eResource, it).castOrNull(AbstractTypeGenerator)].filterNull.toList;
 		
 		return codeFragmentProvider.create('''
 			«FOR generator: generators SEPARATOR("\n")» 

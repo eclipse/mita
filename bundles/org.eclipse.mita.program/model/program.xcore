@@ -39,6 +39,7 @@ import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -203,7 +204,7 @@ class VariableDeclaration extends Property, AbstractStatement {
 }
 
 class ArrayLiteral extends Literal {
-	contains Literal[] values
+	contains Expression[] values
 }
 
 class ExpressionStatement extends AbstractStatement {
@@ -325,11 +326,6 @@ class NewInstanceExpression extends ElementReferenceExpression {
 	}
 }
 
-class InterpolatedStringExpression extends Expression {
-	String[] text
-	contains Expression[] content
-}
-
 class DereferenceExpression extends Expression {
 	contains Expression expression
 	op EObject getInnerReference() {
@@ -391,6 +387,4 @@ class LoopBreakerStatement extends AbstractStatement {
 class ArrayRuntimeCheckStatement extends AbstractStatement {
 	refers ArrayAccessExpression access
 }
-
-
 

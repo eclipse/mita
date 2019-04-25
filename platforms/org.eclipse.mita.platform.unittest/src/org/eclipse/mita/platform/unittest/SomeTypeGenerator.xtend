@@ -17,16 +17,17 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class SomeTypeGenerator extends AbstractTypeGenerator {
@@ -39,8 +40,8 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 
 	
 	
-	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(stmt, (type as TypeConstructorType).typeArguments.tail.head)» «stmt.name»;''');
+	override generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)» «varName»;''');
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
