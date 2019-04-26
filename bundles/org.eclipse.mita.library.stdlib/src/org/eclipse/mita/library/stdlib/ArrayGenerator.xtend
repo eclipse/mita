@@ -23,6 +23,7 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -31,7 +32,6 @@ import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
@@ -41,6 +41,7 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
+import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
@@ -48,8 +49,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.base.types.Expression
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -175,10 +174,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		if(right === null) {
 			return codeFragmentProvider.create('''''');
 		}
-
 		val rightLit = right.castOrNull(PrimitiveValueExpression);
 
-		
 		val rightRef = if(right instanceof ArrayAccessExpression) {
 			right.owner
 		} else {
@@ -272,15 +269,14 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
-	
+		
+		@Inject
+		protected extension StatementGenerator
 
 		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
-			val varref = if(variable instanceof ElementReferenceExpression) {
-				val varref = variable.reference;
-				if(varref instanceof NamedElement) {
-					varref.name
-				}
+			val varref = if(variable !== null) {
+				variable.code;
 			}
 			
 			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref».length''').addHeader('MitaGeneratedTypes.h', false);

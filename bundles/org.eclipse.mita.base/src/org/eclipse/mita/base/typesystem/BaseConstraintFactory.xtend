@@ -296,7 +296,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
 			}
 			
+			// [(ParameterName, Argument, Expression)]
 			val argumentParamsAndValues = varOrFun.arguments.indexed.map[
+				// for FeatureCalls (except not real featureCalls) the first parameter doesn't have a name/text.
 				if(it.key == 0 && varOrFun instanceof FeatureCall && !(varOrFun instanceof FeatureCallWithoutFeature)) {
 					null -> (it.value -> it.value.value)
 				}
@@ -305,6 +307,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 				}
 			].force
 			
+			// FeatureCalls are unordered if they have at least one parameter on the right side
 			val requiredArgCountForUnordered = if(varOrFun instanceof FeatureCall && !(varOrFun instanceof FeatureCallWithoutFeature)) {
 				2
 			} else {

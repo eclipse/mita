@@ -128,6 +128,7 @@ import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSyste
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 
 class StatementGenerator {
 
@@ -150,6 +151,10 @@ class StatementGenerator {
 	
 	@Inject
 	protected ElementSizeInferrer sizeInferrer
+
+	dispatch def IGeneratorNode code(Void stmt) {
+		return codeFragmentProvider.create('''CODE CALLED ON NULL''');
+	}
 
 	@Traced dispatch def IGeneratorNode code(Argument stmt) {
 		'''«stmt.value.code»'''
@@ -246,31 +251,18 @@ class StatementGenerator {
 		generator.generateAccessPreparationFor(stmt).addHeader(stmt.systemResource.fileBasename + '.h', false);
 	}
 
-	@Traced dispatch def IGeneratorNode code(ArrayAccessExpression stmt) {
-		val maybeErefExpr = stmt.owner;
-		val id = if(maybeErefExpr instanceof ElementReferenceExpression) {
-			maybeErefExpr.reference.baseName;
-		}
-		else {
-			maybeErefExpr.uniqueIdentifier;
-		}
-		
-		'''«id».data[«stmt.arraySelector.code.noTerminator»]'''
+	@Traced dispatch def IGeneratorNode code(ArrayAccessExpression stmt) {		
+		'''«stmt.owner.code».data[«stmt.arraySelector.code.noTerminator»]'''
 	}
 	
 	@Traced dispatch def IGeneratorNode code(ArrayRuntimeCheckStatement stmt) {
 		val accessStatement = stmt.access;
 		val owner = accessStatement.owner;
-		val variableName = if(owner instanceof ElementReferenceExpression) {
-			owner.reference.baseName;
-		}
-		else {
-			owner.uniqueIdentifier;
-		}
+		val variableName = owner.code
 		
 		val checks = new LinkedList<CodeFragment>();
 		val arraySelector = accessStatement.arraySelector.ignoreCoercions; 
-		val arrayLength = '''«variableName».length''';
+		val arrayLength = codeFragmentProvider.create('''«variableName».length''');
 		if(arraySelector instanceof ValueRange) {			
 			if(arraySelector.lowerBound !== null) {
 				checks += codeFragmentProvider.create('''«arraySelector.lowerBound.code.noTerminator» < 0''');
@@ -331,6 +323,7 @@ class StatementGenerator {
 	}
 	
 	@Traced dispatch def IGeneratorNode code(FeatureCall stmt) {
+		val arguments = ExpressionUtils.getArgumentsOfElementReferenceExpression(stmt);
 		if (stmt.operationCall) {
 			val feature = stmt.reference;
 			if(feature instanceof SumAlternative) {
@@ -342,7 +335,7 @@ class StatementGenerator {
 				return '''«_code(stmt as ElementReferenceExpression)»'''
 			}
 		} else if (stmt.isArrayAccess) {
-			'''«stmt.arguments.head.value.code.noTerminator»[«stmt.arraySelector.head.code.noTerminator»];'''
+			'''«arguments.head.value.code.noTerminator»[«stmt.arraySelector.head.code.noTerminator»];'''
 		} else if (stmt.reference instanceof Modality) {
 			throw new CoreException(new Status(IStatus.ERROR, null, 'Sensor access should not be a feature call'));
 		} else if (stmt.reference instanceof SignalInstance) {
@@ -358,7 +351,7 @@ class StatementGenerator {
 			'''«stmt.reference.code.noTerminator».«_feature.name»'''
 		} else if (stmt.reference instanceof Parameter) {
 			val _feature = stmt.reference as Parameter
-			'''«stmt.arguments.head.value.code.noTerminator».«_feature.name»'''
+			'''«arguments.head.value.code.noTerminator».«_feature.name»'''
 		}
 	}
 
@@ -384,7 +377,6 @@ class StatementGenerator {
 		val constructingType = BaseUtils.getType(eConstructingType);
 		// the result destination of this expression has type of either the constructor or its parent sum type.
 		// if this expression is part of a return statement then the sum type would be inferred at the function definition.
-		// TODO handle nested sum types via coercions.
 		val EObject expressionDestination = if(EcoreUtil2.getContainerOfType(callSite, ReturnValueExpression) !== null) {
 			EcoreUtil2.getContainerOfType(callSite, Operation)?.typeSpecifier;
 		} 
@@ -438,10 +430,13 @@ class StatementGenerator {
 	@Traced dispatch def IGeneratorNode code(ElementReferenceExpression stmt) {
 		val ref = stmt.reference
 		val id = ref?.baseName
+		
+		val arguments = ExpressionUtils.getArgumentsOfElementReferenceExpression(stmt);
+		
 
 		if (stmt.operationCall) {
 			if (ref instanceof VirtualFunction) {
-				'''«generateVirtualFunctionCall(stmt, ref, stmt.arguments)»'''
+				'''«generateVirtualFunctionCall(stmt, ref, arguments)»'''
 			} else if (ref instanceof FunctionDefinition) {
 				'''«ref.generateFunctionCall(codeFragmentProvider.create('''NULL''').addHeader("stdlib.h", true), stmt)»'''
 			} else if (ref instanceof GeneratedFunctionDefinition) {
@@ -547,9 +542,10 @@ class StatementGenerator {
 
 	def IGeneratorNode generateFunCallStmt(IGeneratorNode variableName, AbstractType type, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
+		val arguments = ExpressionUtils.getArgumentsOfElementReferenceExpression(initialization);
 		if (reference instanceof VirtualFunction) {
 			return codeFragmentProvider.create('''
-				«variableName» = «generateVirtualFunctionCall(initialization, reference, initialization.arguments).noTerminator»;
+				«variableName» = «generateVirtualFunctionCall(initialization, reference, arguments).noTerminator»;
 			''')
 		} else if (reference instanceof FunctionDefinition) {
 			return codeFragmentProvider.create('''
@@ -1062,18 +1058,20 @@ class StatementGenerator {
 		return '''«call»''';
 	}
 	
-	@Traced def generateNativeFunctionCallUnchecked(NativeFunctionDefinition op, ArgumentExpression args) {
+	@Traced def generateNativeFunctionCallUnchecked(NativeFunctionDefinition op, ArgumentExpression argExpression) {
+		val arguments = ExpressionUtils.getArgumentsOfElementReferenceExpression(argExpression);
 		val call = codeFragmentProvider
-			.create('''«op.name»(«FOR arg : ExpressionUtils.getSortedArguments(op.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»)''')
+			.create('''«op.name»(«FOR arg : ExpressionUtils.getSortedArguments(op.parameters, arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»)''')
 			.addHeader(op.header, true);
 		return '''«call»'''
 	}
 	
-	@Traced def generateFunctionCall(Operation op, IGeneratorNode firstArg, ArgumentExpression args) {
+	@Traced def generateFunctionCall(Operation op, IGeneratorNode firstArg, ArgumentExpression argExpression) {
+		val arguments = ExpressionUtils.getArgumentsOfElementReferenceExpression(argExpression);
 		'''
 
-		exception = «op.baseName»(«IF firstArg !== null»«firstArg.noTerminator»«IF !args.arguments.empty», «ENDIF»«ENDIF»«FOR arg : ExpressionUtils.getSortedArguments(op.parameters, args.arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»);
-		«generateExceptionHandler(args, 'exception')»
+		exception = «op.baseName»(«IF firstArg !== null»«firstArg.noTerminator»«IF !arguments.empty», «ENDIF»«ENDIF»«FOR arg : ExpressionUtils.getSortedArguments(op.parameters, arguments) SEPARATOR ', '»«arg.value.code.noTerminator»«ENDFOR»);
+		«generateExceptionHandler(argExpression, 'exception')»
 		'''
 
 	}

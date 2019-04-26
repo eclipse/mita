@@ -23,7 +23,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 class ControlflowTest extends AbstractRuntimeTest {
 	@Test
 	def testMe() {
-		val projectPath = setup("helloWorld", '''
+		val projectPath = setup("controlflowTest", '''
 			package my.pkg;
 			
 			import platforms.x86;

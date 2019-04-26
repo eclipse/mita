@@ -239,7 +239,7 @@ ReturnParameterReference returns program::ReturnParameterReference:
 ;
 
 WhereIsStatement returns program::WhereIsStatement:
-	'where' '(' matchElement=ElementReferenceExpression ')' '{'
+	'where' '(' matchElement=Expression ')' '{'
 		(isCases += IsCase)*
 	'}'
 ;

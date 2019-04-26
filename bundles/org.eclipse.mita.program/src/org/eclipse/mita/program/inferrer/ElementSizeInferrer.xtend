@@ -60,6 +60,9 @@ class ElementSizeInferrer {
 	PreventRecursion preventRecursion = new PreventRecursion;
 
 	def ElementSizeInferenceResult infer(EObject obj) {
+		if(obj === null) {
+			return doInfer(obj, null);
+		}
 		val type = BaseUtils.getType(obj);
 		if(TypesUtil.isGeneratedType(obj, type)) {
 			return obj._doInferFromType(type);

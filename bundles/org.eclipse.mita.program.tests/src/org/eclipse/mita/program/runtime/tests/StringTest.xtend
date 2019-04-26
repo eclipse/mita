@@ -23,7 +23,7 @@ import java.util.stream.Collectors
 class StringTest extends AbstractRuntimeTest {
 	@Test
 	def testMe() {
-		val projectPath = setup("helloWorld", '''
+		val projectPath = setup("stringTest", '''
 		package my.pkg;
 				
 		import platforms.x86;

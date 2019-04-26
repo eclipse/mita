@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Types uint32 and reference<f_1578.0> are not the same.";
+			return "Function __PLUS__ cannot be used here: Return type incompatible: int8 is not subtype of uint8";
 		}
 		private static boolean testFun(String s) {
 			return s.equals(getTestString());
