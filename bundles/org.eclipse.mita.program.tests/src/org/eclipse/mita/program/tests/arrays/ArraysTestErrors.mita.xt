@@ -54,8 +54,7 @@ fn works() {
     // It happens because of lines like line 168 (b = a[-2:-1];), negative indices create a graph  uint32 -> f_685.0 <- int8.
     // With those lines disabled in ArraysTest.mita.xt no errors occur. 
 	/* XPECT errors ---
-		"Function length cannot be used here: uint32, A" at "length"
-		"v1.length() (:: A) has a different type than l (:: B)" at "v1.length()"
+		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of A" at "length"
 	--- */
 	var l = v1.length();
 	
