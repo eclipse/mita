@@ -202,7 +202,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
-		println('''BCF: computeConstraints is not implemented for «context.eClass.name»''');
+		println('''«this.class.simpleName.replaceAll("[a-z]", "")»: computeConstraints is not implemented for «context.eClass.name»''');
 		system.computeConstraintsForChildren(context);
 		return system.getTypeVariable(context);
 	}

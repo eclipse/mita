@@ -12,8 +12,8 @@ import platforms.unittest;
 // functions can have an optional return type, if no return type is specified, it is inferred from return statements
 fn foo11() {
 	/* XPECT errors ---
-		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of A" at "return 17;"
-		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of bool" at "return 17;"
+		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of A" at "17"
+		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of bool" at "17"
 	--- */
 	return 17;
 }
@@ -67,13 +67,13 @@ fn noRet() : bool {}
 
 fn incompatibleReturnTypes() : int32 {
 	if (true) {
-		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of int32" at "return "";"
+		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of int32" at """"
 		return "";
 	} else {
 		return 18;
 	}
 	/* XPECT errors ---
-		"Can't return prim»b»true (:: bool) since it's not of a subtype of int32" at "return true;"
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of int32" at "true"
 	--- */
 	return true;
 }
@@ -81,12 +81,12 @@ fn incompatibleReturnTypes() : int32 {
 // XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "impossibleInference"
 fn impossibleInference() {
 	if (true) {
-		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of A" at "return "";"
+		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of A" at """"
 		return "";
 	}
 	/* XPECT errors ---
-		"Can't return prim»b»true (:: bool) since it's not of a subtype of A" at "return true;"
-		"Can't return prim»b»true (:: bool) since it's not of a subtype of string" at "return true;"
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of A" at "true"
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of string" at "true"
 	--- */
 	return true;
 }
@@ -95,14 +95,14 @@ fn returnInVoid() : void {
 	if(true) {
 		return;
 	} else {
-		// XPECT errors --> "Can't return prim»i»1 (:: xint8) since it's not of a subtype of void" at "return 1;"
+		// XPECT errors --> "Can't return prim»i»1 (:: xint8) since it's not of a subtype of void" at "1"
 		return 1;
 	}
 }
 
+// XPECT errors --> "Types void and uint32 are not the same." at "uint32"
 fn returnWithoutValudInNoVoidFunction() : uint32 {
 	if(true) {
-		// XPECT errors --> "Can't return  (:: void) since it's not of a subtype of uint32" at "return;"
 		return;
 	}
 }

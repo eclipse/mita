@@ -31,7 +31,7 @@ import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
@@ -175,7 +175,9 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		if(right === null) {
 			return codeFragmentProvider.create('''''');
 		}
+
 		val rightLit = right.castOrNull(PrimitiveValueExpression);
+
 		
 		val rightRef = if(right instanceof ArrayAccessExpression) {
 			right.owner

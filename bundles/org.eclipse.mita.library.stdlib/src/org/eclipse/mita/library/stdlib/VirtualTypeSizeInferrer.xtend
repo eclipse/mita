@@ -21,6 +21,6 @@ class VirtualTypeSizeInferrer extends ElementSizeInferrer {
 	
 	override protected dispatch doInfer(EObject obj, AbstractType type) {
 		return newInvalidResult(obj, "Object does not have a size");
-	}
+	} 
 	
 }

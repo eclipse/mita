@@ -20,6 +20,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
@@ -39,7 +40,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.expressions.ValueRange
 
 class StringGenerator extends ArrayGenerator {
 	
@@ -55,6 +55,7 @@ class StringGenerator extends ArrayGenerator {
 		return codeFragmentProvider.create('''«doGenerateLength(obj, temporaryBufferName, valRange, objCodeExpr).noNewline»''');
 	}
 	
+
 	dispatch def CodeFragment doGenerateLength(PrimitiveValueExpression expr, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr) {
 		return doGenerateLength(expr, temporaryBufferName, valRange, objCodeExpr, expr.value);
 	}

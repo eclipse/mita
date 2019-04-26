@@ -13,15 +13,16 @@
 
 package org.eclipse.mita.program.generator.transformation
 
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.program.AbstractLoopStatement
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.WhileStatement
-import org.eclipse.emf.ecore.EReference
-import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.expressions.ExpressionsFactory
 
 class PrepareLoopForFunctionUnvravelingStage extends AbstractTransformationStage {
 	
@@ -36,13 +37,9 @@ class PrepareLoopForFunctionUnvravelingStage extends AbstractTransformationStage
 			rewriteLoop(expression, true, ProgramPackage.Literals.FOR_STATEMENT__CONDITION);
 		}
 		
-		val plsWithFunctionCalls = expression.postLoopStatements.filter[ it.containsUnraveledObject ].toList().toArray();
+		val plsWithFunctionCalls = expression.postLoopStatements.filter[ it.containsUnraveledObject ].toList();
 		expression.postLoopStatements.removeAll(plsWithFunctionCalls);
-		expression.body.content.addAll(plsWithFunctionCalls.map[
-			val stmt = ProgramFactory.eINSTANCE.createExpressionStatement();
-			stmt.expression = it as Expression;
-			return stmt;
-		]);
+		expression.body.content.addAll(plsWithFunctionCalls);
 	}
 	
 	protected dispatch def void doTransform(WhileStatement expression) {
@@ -59,7 +56,7 @@ class PrepareLoopForFunctionUnvravelingStage extends AbstractTransformationStage
 		rewriteLoop(expression, false, ProgramPackage.Literals.DO_WHILE_STATEMENT__CONDITION);
 	}
 	
-	protected def boolean containsUnraveledObject(Expression obj) {
+	protected def boolean containsUnraveledObject(EObject obj) {
 		return obj.eAllContents.exists[ pipelineInfoProvider.willBeUnraveled(it) ]
 	}
 	
