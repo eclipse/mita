@@ -69,7 +69,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	protected TypeGenerator typeGenerator
 		
 		
-	private dispatch def long getFixedSize(EObject stmt) {
+	private def long getFixedSize(EObject stmt) {
 		val inference = sizeInferrer.infer(stmt);
 		return if(inference instanceof ValidElementSizeInferenceResult) {
 			inference.elementCount;
@@ -114,16 +114,16 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val cf = codeFragmentProvider.create('''
 		«IF capacity >= 0»
 		// buffer for «varName»
-		«generateBufferStmt(context, type, bufferName, getFixedSize(init), initValue)»
+		«generateBufferStmt(context, type, bufferName, capacity, initValue)»
 		«ELSE»
 		ERROR: Couldn't infer size!
 		«ENDIF»
 		// var «varName»: «type.toString»
-		«typeGenerator.code(context, type)» «varName»«IF isTopLevel || init !== null» = {
+		«typeGenerator.code(context, type)» «varName» = {
 			.data = data_«varName»_«occurrence»,
 			.length = «IF initWithValueLiteral»«getFixedSize(init)»«ELSE»0«ENDIF»,
 			.capacity = «capacity»
-		}«ENDIF»;
+		};
 		''').addHeader('MitaGeneratedTypes.h', false);
 		return cf;
 	}

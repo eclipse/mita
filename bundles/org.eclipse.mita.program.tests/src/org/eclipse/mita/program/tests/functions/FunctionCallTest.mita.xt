@@ -30,7 +30,6 @@ fn h(x : int32) { return x; }
 fn callFGH() {
 	let x = f(g(h(42)));
 
-	// TODO: make this statement work with noCompileErrors
 	let y = (42 as int32).f().g().h();
 }
 
