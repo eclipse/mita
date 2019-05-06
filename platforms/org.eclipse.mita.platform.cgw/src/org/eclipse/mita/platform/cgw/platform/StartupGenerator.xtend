@@ -117,6 +117,15 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		 *
 		 */
 		
+		int _write(int file, char *ptr, int len)
+		{
+		    char buf[len+1];
+			memcpy(buf, ptr, len);
+			buf[len] = 0;
+			LOG_DEBUG(buf);
+			return len;
+		}
+		
 		void assertIndicationMapping(const unsigned long line, const unsigned char * const file)
 		{
 		    /* Switch on the LEDs */
@@ -153,7 +162,10 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		    {
 		        returnValue = BSP_Board_Initialize(param1, param2);
 		    }
-		
+			if (RETCODE_OK == returnValue)
+		    {
+		    	returnValue = Logging_Init(Logging_SyncRecorder, Logging_RttAppender);
+		    }
 		    return returnValue;
 		}
 		void ErrorHandler(Retcode_T error, bool isfromIsr)
@@ -184,6 +196,16 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		.addHeader('timers.h', true)
 		.addHeader("BCDS_CmdProcessor.h", true)
 		.addHeader("stdio.h", true)
+		.addHeader("BCDS_Logging.h", false)
+//		.addHeader("sys/stat.h", true)
+//		.addHeader("stdlib.h", true)
+//		#include <errno.h>
+//		#include <stdio.h>
+//		#include <signal.h>
+//		#include <time.h>
+//		#include <sys/time.h>
+//		#include <sys/times.h>
+//		#include "protected/usbd_cdc_if.h"
 	}
 	
 }

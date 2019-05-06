@@ -30,6 +30,7 @@ class MesonGenerator extends PlatformMesonGenerator {
 			subdir('kiso/thirdparty/freertos')
 			subdir('kiso/thirdparty/stm32cubel4')
 			subdir('kiso/thirdparty/bstlib')
+			subdir('kiso/thirdparty/SeggerRTT')
 			
 			# Get kiso libraries
 			subdir('kiso/core/essentials')
@@ -43,7 +44,7 @@ class MesonGenerator extends PlatformMesonGenerator {
 			# Define application build and its dependencies
 			exe = executable('Application.out', 
 			  application_files,
-			  dependencies : [bsp_lib_dep, freertos_lib_dep, stm32cubel4_lib_dep, essentials_lib_dep, utils_lib_dep, bst_lib_dep],
+			  dependencies : [bsp_lib_dep, freertos_lib_dep, stm32cubel4_lib_dep, essentials_lib_dep, utils_lib_dep, bst_lib_dep, seggerrtt_lib_dep],
 			  include_directories: ['.', 'base'],
 			  install : true)
 			
