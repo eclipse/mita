@@ -2,7 +2,9 @@ package org.eclipse.mita.platform.cgw.connectivity
 
 import com.google.inject.Inject
 import java.net.URL
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.GeneratorUtils
@@ -12,8 +14,6 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.model.ModelUtils.getArgumentValue
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.program.SystemResourceSetup
 
 class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
@@ -54,7 +54,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			«generateLoggingExceptionHandler("HttpRestClient", "Cellular Power on")»
 
 
-			char iccid[CELLULAR_ICCID_MAX_LENGTH];
 			uint32_t iccidLen = sizeof(iccid);
 			exception = Cellular_QueryIccid(iccid, &iccidLen);
 			
@@ -74,10 +73,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			
 			static void OnDataReady(CellularSocket_Handle_T socket, uint32_t numBytesAvailable);
 			
-			static void OnSocketClosed(CellularSocket_Handle_T socket);
-			
-			static void PerformSocketOperations(void* param, uint32_t len);
-			
 			static Retcode_T ActivateDataContext(void* param, uint32_t len);
 			
 			static void HandleStateChanged(Cellular_State_T oldState, Cellular_State_T newState, void* param, uint32_t len);
@@ -88,6 +83,8 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			extern CmdProcessor_T Mita_EventQueue;
 			
 			static QueueHandle_t httpEvent;
+			
+			static char iccid[CELLULAR_ICCID_MAX_LENGTH];
 			
 			static SemaphoreHandle_t powerOnDone, registerDone, dataActivated;
 			
@@ -137,62 +134,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 				if (RETCODE_OK != retcode)
 				{
 					LOG_ERROR("Error during data-ready handling (0x%08x)!", retcode);
-					Retcode_RaiseError(retcode);
-				}
-			}
-			
-			static void OnSocketClosed(CellularSocket_Handle_T socket)
-			{
-				LOG_WARNING("Socket closed externally (id=%d).", (int ) socket);
-			}
-			
-			static void PerformSocketOperations(void* param, uint32_t len)
-			{
-				BCDS_UNUSED(param);
-				BCDS_UNUSED(len);
-			
-				Retcode_T retcode = RETCODE_OK;
-				const uint8_t* data = (const uint8_t*) "HELLO WORLD";
-			
-				Cellular_IpAddress_T address;
-				retcode = CellularDns_ResolveDomain(DataContext, "tcpbin.org", &address);
-			
-				if (RETCODE_OK == retcode)
-				{
-					retcode = CellularSocket_CreateAndBind(
-							&Socket,
-							DataContext,
-							CELLULAR_SOCKET_PORT_RANDOM,
-							CELLULAR_SOCKET_PROTOCOL_TCP,
-							OnSocketClosed,
-							OnDataReady);
-				}
-			
-				if (RETCODE_OK == retcode)
-				{
-					Cellular_IpAddress_T ip;
-					ip.Type = CELLULAR_IPADDRESSTYPE_IPV4;
-					ip.Address.IPv4[3] = 52;
-					ip.Address.IPv4[2] = 20;
-					ip.Address.IPv4[1] = 16;
-					ip.Address.IPv4[0] = 20;
-					uint16_t port = 30001;
-					retcode = CellularSocket_Connect(Socket, &ip, port);
-				}
-			
-				if (RETCODE_OK == retcode)
-				{
-					retcode = CellularSocket_Send(Socket, data, strlen((const char*) data));
-				}
-			
-				if (RETCODE_OK == retcode)
-				{
-					retcode = CellularSocket_Send(Socket, data, strlen((const char*) data));
-				}
-			
-				if (RETCODE_OK != retcode)
-				{
-					LOG_ERROR("Error during socket operations (0x%08x)!", retcode);
 					Retcode_RaiseError(retcode);
 				}
 			}
@@ -266,14 +207,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 				Retcode_T retcode = RETCODE_OK;
 			
 				retcode = Cellular_ActivateDataContext(0, &DataContext);
-			 /*   if (RETCODE_OK == retcode)
-				{
-					LOG_INFO("Data-context activated (IP=%d.%d.%d.%d)",
-							((uint8_t* ) &(DataContext->IpAddress.Address.IPv4))[3],
-							((uint8_t* ) &(DataContext->IpAddress.Address.IPv4))[2],
-							((uint8_t* ) &(DataContext->IpAddress.Address.IPv4))[1],
-							((uint8_t* ) &(DataContext->IpAddress.Address.IPv4))[0]);
-				}*/
 			
 				if (RETCODE_OK != retcode)
 				{
@@ -415,33 +348,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			}
 			
 			return exception;
-			
-«««			uint32_t fileSize;
-«««			if (RETCODE_OK == retcode)
-«««			{
-«««				CellularHttp_GetResultSize(&fileSize);
-«««				LOG_DEBUG("File Size: %d", (int ) fileSize);
-«««			}
-«««			
-«««			if (RETCODE_OK == retcode)
-«««			{
-«««				CellularHttp_GetResultData(httpBuffer, fileSize);
-«««				LOG_DEBUG("File Size: %s", httpBuffer);
-«««			}
-«««			
-«««			retcode = CellularHttp_Post("httpbin.org","/get", 80, false);
-«««			
-«««			if (retcode == RETCODE_OK)
-«««			{
-«««				retcode = Http_WaitEvent(1,5000);
-«««			}
-«««			
-«««			
-«««			if (RETCODE_OK != retcode)
-«««			{
-«««				LOG_ERROR("Error during socket operations (0x%08x)!", retcode);
-«««				Retcode_RaiseError(retcode);
-«««			}
 		''')
 	}
 	

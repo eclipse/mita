@@ -36,5 +36,9 @@ class CgwPlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 	override bindPlatformBuildSystemGenerator() {
 		MesonGenerator
 	}
+	
+	override bindIPlatformLoggingGenerator() {
+		LoggingGenerator
+	}
 
 }
