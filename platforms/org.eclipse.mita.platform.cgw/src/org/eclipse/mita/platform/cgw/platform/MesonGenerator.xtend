@@ -35,7 +35,7 @@ class MesonGenerator extends PlatformMesonGenerator {
 			# Get kiso libraries
 			subdir('kiso/core/essentials')
 			subdir('kiso/core/utils')
-			#subdir('kiso/core/connectivity/cellular')
+			subdir('kiso/core/connectivity/cellular')
 			
 			
 			# Get sources
@@ -44,7 +44,7 @@ class MesonGenerator extends PlatformMesonGenerator {
 			# Define application build and its dependencies
 			exe = executable('Application.out', 
 			  application_files,
-			  dependencies : [bsp_lib_dep, freertos_lib_dep, stm32cubel4_lib_dep, essentials_lib_dep, utils_lib_dep, bst_lib_dep, seggerrtt_lib_dep],
+			  dependencies : [cellular_lib_dep, bsp_lib_dep, freertos_lib_dep, stm32cubel4_lib_dep, essentials_lib_dep, utils_lib_dep, bst_lib_dep, seggerrtt_lib_dep],
 			  include_directories: ['.', 'base'],
 			  install : true)
 			

@@ -5,6 +5,7 @@ import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.GeneratorUtils
 
 class MainGenerator extends AbstractSystemResourceGenerator {
@@ -28,7 +29,8 @@ class MainGenerator extends AbstractSystemResourceGenerator {
 		return resourcesUsed.exists[#["accelerometer", "environment"].exists[name | name == it]];
 	}
 	
-	override generateSetup() {	
+	override generateSetup() {
+		val consoleInterface = configuration.getEnumerator("consoleInterface")?.name;
 		return codeFragmentProvider.create('''
 			Retcode_T exception = NO_EXCEPTION;
 			«IF i2cTranceiverSetupNeeded»
@@ -44,6 +46,8 @@ class MainGenerator extends AbstractSystemResourceGenerator {
 			exception = MCU_I2C_Initialize(i2cHandle, I2CCallback);
 			«generateExceptionHandler(null, "exception")»
 			«ENDIF»
+			exception = Logging_Init(Logging_SyncRecorder, «IF consoleInterface == "RTT"»Logging_RttAppender«ELSE»Logging_UARTAppender«ENDIF»);
+		    «generateExceptionHandler(null, "exception")»
 			return exception;
 		''').setPreamble('''
 			«IF i2cTranceiverSetupNeeded»
@@ -51,11 +55,26 @@ class MainGenerator extends AbstractSystemResourceGenerator {
 				I2CTransceiver_LoopCallback(&i2cTransceiverStruct,  event);
 			}
 			«ENDIF»
+
+			#undef BCDS_MODULE_ID
+			#define BCDS_MODULE_ID 43
+			#include "BCDS_Logging.h"
+
+			int _write(int file, char *ptr, int len)
+			{
+			    char buf[len+1];
+				memcpy(buf, ptr, len);
+				buf[len] = 0;
+				LOG_DEBUG(buf);
+				return len;
+			}
 		''')
 		.addHeader("BCDS_BSP_BMA280.h", false)
 		.addHeader("BCDS_BSP_BME280.h", false)
 		.addHeader("BCDS_MCU_I2C.h", false)
-		.addHeader("BCDS_I2CTransceiver.h",	false);
+		.addHeader("BCDS_I2CTransceiver.h",	false)
+		.addHeader('BCDS_Basics.h', false, IncludePath.VERY_HIGH_PRIORITY)
+		.addHeader("BCDS_Retcode.h", false)
 	}
 	
 	override generateAdditionalHeaderContent() {

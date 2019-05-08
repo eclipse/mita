@@ -195,8 +195,54 @@ connectivity named-singleton LED {
 	signal light_up(color : LedColor) : bool
 }
 
+enum RadioStandard {
+	CAT_M1,
+	NB_IoT
+}
+
+connectivity many Radio {
+	generator "org.eclipse.mita.platform.cgw.connectivity.RadioGenerator"
+
+	required configuration-item radioStandard: RadioStandard
+	configuration-item apn: string
+	configuration-item username: string
+	configuration-item password: string
+}
+
+/**
+ * Implements an HTTP REST Client over WIFI 
+ */
+connectivity many HttpRestClient {
+	generator "org.eclipse.mita.platform.cgw.connectivity.RestClientGenerator"
+	//validator "org.eclipse.mita.platform.cgw.connectivity.RestClientValidator"
+	
+	/**
+	 * The underlying transport connectivity we use to send the data out. In the future we might also
+	 * support LoRa here.
+	 */
+	required configuration-item transport : Radio
+	
+	/**
+	 * The part of the endpoint URL common to all requests, e.g. http://foobar.com/api/v1
+	 */
+	required configuration-item endpointBase : string
+	
+	/**
+	 * A custom header which is added to each HTTP request. Example:
+	 *   X-Auth: MySecretToken\nX-Version: 1.0 
+	 */
+	configuration-item headerContent : string
+
+	signal resource(endpoint : string, contentType : string = "application/json") : string
+	
+}
+
 alias accelerometer for BMA280
 alias environment for BME280
+
+enum ConsoleInterface {
+	RTT, UART
+}
 
 platform CGW {
 	module "org.eclipse.mita.platform.cgw.platform.CgwPlatformGeneratorModule"
@@ -206,6 +252,7 @@ platform CGW {
 	has environment
 	
 	configuration-item startupDelay: uint32
+	configuration-item consoleInterface: ConsoleInterface = ConsoleInterface.RTT
 	
 	event startup
 }
