@@ -210,7 +210,7 @@ connectivity named-singleton Radio {
 }
 
 enum ContentType {
-	Text, Json, Xml
+	Text, Json, Xml, Octet, WwwUrl, Multipart
 }
 
 /**

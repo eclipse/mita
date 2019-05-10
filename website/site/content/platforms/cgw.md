@@ -55,7 +55,7 @@ The CGW features three custom usable LEDs in red, green and blue. On and off are
 
 #### Modalities
 
-Name                            | Description                           | Parameters |
+Name                            | Description                           | Parameters | 
 --------------------------------|---------------------------------------|------------|------------
 `light_up: bool`                | Represents one of the three LEDs.     | `color: LedColor`  | One of `Red`, `Green` or `Blue`.
 
@@ -91,10 +91,10 @@ every 100 milliseconds {
 
 #### Signals
 
-Name                            | Description                           | Parameters |
+Name                            | Description                           | Parameters | 
 --------------------------------|---------------------------------------|------------|------------
 `resource: string`              | A REST resource on the server.        | `endpoint: string`  | The REST path to the resource.
- || `contentType: ContentType`  | The content type of your payload. One of `.Text, .Json, .Xml`. Default: `.Json`
+ || `contentType: ContentType`  | The content type of your payload. One of `.Text, .Json, .Xml, .Octet, .WwwUrl, Multipart`. Default: `.Json`
 
 
 ## Sensors
@@ -128,9 +128,9 @@ Name                            | Description
 `single_tap`                    | A single tap is an event triggered by high activity followed shortly by no activity.
 `double_tap`                    | A double tap consists of two single tap events right after one another.
 `flat`                          | The flat event is triggered when the device is flat on the ground.
-`orientation`                   |
-`fifo_full`                     |
-`fifo_wml`                      |
+`orientation`                   | 
+`fifo_full`                     | 
+`fifo_wml`                      | 
 `new_data`                      | This event serves the asynchronous reading of data. It is generated after storing a new value of z-axis acceleration data in the data register.
 
 
