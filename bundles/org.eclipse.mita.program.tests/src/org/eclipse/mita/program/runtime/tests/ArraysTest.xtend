@@ -21,7 +21,7 @@ import org.junit.Test
 class ArraysTest extends AbstractRuntimeTest {
 	@Test
 	def testMe() {
-		val projectPath = setup("helloWorld", '''
+		val projectPath = setup("arraysTest", '''
 		package my.pkg;
 		
 		import platforms.x86;

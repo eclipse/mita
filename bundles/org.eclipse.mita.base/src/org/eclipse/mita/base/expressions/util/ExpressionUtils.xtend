@@ -26,8 +26,17 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.StructureType
 
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 
 class ExpressionUtils {
+	dispatch def static getArgumentsOfElementReferenceExpression(ArgumentExpression eref) {
+		return eref.arguments
+	}
+	
+	dispatch def static getArgumentsOfElementReferenceExpression(FeatureCallWithoutFeature eref) {
+		return #[null] + eref.arguments
+	}
+	
 	def static getSortedArgumentsAsMap(Iterable<? extends Parameter> parameters, Iterable<Argument> arguments) {
 		val args = getSortedArguments(parameters, arguments);
 		val map = new TreeMap<Parameter, Argument>([p1, p2 | p1.name.compareTo(p2.name)]);

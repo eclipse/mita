@@ -20,7 +20,7 @@ import org.junit.Assert
 class HelloWorldTest extends AbstractRuntimeTest {
 	@Test
 	def testMe() {
-		val projectPath = setup("helloWorld", '''
+		val projectPath = setup("helloWorldTest", '''
 		package my.pkg;
 		
 		import platforms.x86;

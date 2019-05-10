@@ -81,7 +81,7 @@ fn variableScopesFail(){
 		"Assignment operator '=' may only be applied on compatible types, not on ⊥ (Couldn't resolve reference to EObject 'myVarIf'.) and bool." at "myVarIf = false"
 		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf"
 		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf = false"
-		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf = false;"
+		"Couldn't resolve reference to EObject 'myVarIf'." at "myVarIf = false"
 		"The left-hand side of an assignment must be a variable." at "myVarIf"
 	--- */
 	myVarIf = false;   
@@ -99,7 +99,7 @@ fn variableDeclarationAfterReference(){
 		"Assignment operator '=' may only be applied on compatible types, not on ⊥ (Couldn't resolve reference to EObject 'myVar2'.) and xint8." at "myVar2 = 10"
 		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2"
 		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2 = 10"
-		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2 = 10;"
+		"Couldn't resolve reference to EObject 'myVar2'." at "myVar2 = 10"
 		"The left-hand side of an assignment must be a variable." at "myVar2"
 	--- */
 	myVar2 = 10;          

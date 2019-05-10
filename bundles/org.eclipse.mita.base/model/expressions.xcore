@@ -29,7 +29,21 @@ class GeneratedTypeParameter extends ParameterWithDefaultValue {
 	boolean ^static
 }
 
+class ExpressionStatement extends AbstractStatement {
+	contains Expression expression
+	op String toString() {
+		return expression.toString + ";";
+	}
+}
 
+class AssignmentExpression extends Expression {
+	contains Expression varRef
+	AssignmentOperator operator
+	contains Expression expression
+	op String toString() {
+		return varRef.toString + " " + operator + " " + expression.toString
+	}
+}
 
 abstract class BinaryExpression extends Expression {
 	contains Expression leftOperand
@@ -151,14 +165,8 @@ enum PostFixOperator {
 	decrement as "--" = 1
 }
 
-class AssignmentExpression extends Expression {
-	contains Expression varRef
-	AssignmentOperator operator
-	contains Expression expression
-	op String toString() {
-		return varRef.toString + " = " + expression.toString
-	}
-}
+abstract class AbstractStatement { }
+
 class ConditionalExpression extends Expression {
 	contains Expression condition
 	contains Expression trueCase

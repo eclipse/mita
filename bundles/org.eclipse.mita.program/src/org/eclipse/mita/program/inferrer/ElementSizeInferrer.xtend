@@ -27,16 +27,18 @@ import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.model.ModelUtils
@@ -44,9 +46,8 @@ import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
 
 import static org.eclipse.mita.base.types.TypesUtil.*
+
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
-import org.eclipse.mita.base.util.PreventRecursion
-import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 /**
  * Hierarchically infers the size of a data element.
@@ -59,6 +60,9 @@ class ElementSizeInferrer {
 	PreventRecursion preventRecursion = new PreventRecursion;
 
 	def ElementSizeInferenceResult infer(EObject obj) {
+		if(obj === null) {
+			return doInfer(obj, null);
+		}
 		val type = BaseUtils.getType(obj);
 		if(TypesUtil.isGeneratedType(obj, type)) {
 			return obj._doInferFromType(type);
@@ -101,7 +105,7 @@ class ElementSizeInferrer {
 
 	protected def dispatch ElementSizeInferenceResult doInfer(FunctionDefinition obj, AbstractType type) {
 		return PreventRecursion.preventRecursion(this.class.simpleName -> obj, [
-			val allReturnSizes = obj.eAllContents.filter(ReturnStatement).map[x | 
+			val allReturnSizes = obj.eAllContents.filter(ReturnValueExpression).map[x | 
 				x.infer
 			].toList();
 			var result = if(allReturnSizes.empty) {
@@ -162,11 +166,11 @@ class ElementSizeInferrer {
 		return result.replaceRoot(obj);
 	}
 
-	protected def dispatch ElementSizeInferenceResult doInfer(ReturnStatement obj, AbstractType type) {
-		if(obj.value === null) {
+	protected def dispatch ElementSizeInferenceResult doInfer(ReturnValueExpression obj, AbstractType type) {
+		if(obj.expression === null) {
 			return newInvalidResult(obj, "Return statements without values do not have a size");
 		} else {
-			return obj.value.infer;
+			return obj.expression.infer;
 		}
 	}
 	
