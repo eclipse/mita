@@ -85,9 +85,9 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	}
 
 	
-	override getInteger(String key) {
+	override getLong(String key) {
 		val expr = getExpression(key)?.reduce;
-		if(expr instanceof Integer) {
+		if(expr instanceof Long) {
 			return expr;
 		} else {
 			return null;

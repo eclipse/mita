@@ -44,7 +44,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		val baseName = (setup ?: component).baseName;
 		
 		val deviceName = configuration.getString('deviceName') ?: baseName;
-		val serviceUid = configuration.getInteger('serviceUID') ?: baseName.hashCode;
+		val serviceUid = configuration.getLong('serviceUID') ?: baseName.hashCode as long;
 		val macAddressStr = configuration.getString('macAddress');
 		var macAdressConfigured = false;
 		val macAddress = if(macAddressStr !== null) {
@@ -129,7 +129,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static Retcode_T BleSendStatus;
 		
 		/* «baseName» service */
-		static uint8_t «baseName»ServiceUid[ATTPDU_SIZEOF_128_BIT_UUID] = { 0x66, 0x9A, 0x0C, 0x20, 0x00, 0x08, 0xF8, 0x82, 0xE4, 0x11, 0x66, 0x71, «FOR i : ByteBuffer.allocate(4).putInt(serviceUid).array() SEPARATOR ', '»0x«Integer.toHexString(i.bitwiseAnd(0xFF)).toUpperCase»«ENDFOR» };
+		static uint8_t «baseName»ServiceUid[ATTPDU_SIZEOF_128_BIT_UUID] = { 0x66, 0x9A, 0x0C, 0x20, 0x00, 0x08, 0xF8, 0x82, 0xE4, 0x11, 0x66, 0x71, «FOR i : ByteBuffer.allocate(8).putLong(serviceUid).array() SEPARATOR ', '»0x«Integer.toHexString(i.bitwiseAnd(0xFF)).toUpperCase»«ENDFOR» };
 		static AttServiceAttribute «baseName»Service;
 		
 		enum «baseName»_E {

@@ -16,8 +16,43 @@ package org.eclipse.mita.platform.cgw.platform
 import java.util.List
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.PlatformMesonGenerator
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 
 class MesonGenerator extends PlatformMesonGenerator {
+	def findPlatformSetup(CompilationContext context) {
+		context.allUnits
+			.flatMap[it.setup]
+			.filter[it.type?.name == "CGW"]
+			.head;
+	}
+	
+	def findPlatformDefinition(CompilationContext context) {
+		context.platform;
+	}
+	
+	def getPlatformSetupConfigExpression(CompilationContext context, String configName) {
+		(context.findPlatformSetup()?.configurationItemValues?.findFirst[it.item.name == configName]?.value) ?:
+		(context.findPlatformDefinition()?.configurationItems?.findFirst[it.name == configName]?.defaultValue)
+	}
+
+	override getMesonExecutable(CompilationContext context) {
+		val mesonConfig = StaticValueInferrer.infer(getPlatformSetupConfigExpression(context, "buildSystem"), [])?.castOrNull(SumTypeRepr);
+		if(mesonConfig?.name == "Relative") {
+			return "../python/Scripts/meson";
+		}
+		return super.getMesonExecutable(context)
+	}
+	override getNinjaExecutable(CompilationContext context) {
+		val mesonConfig = StaticValueInferrer.infer(getPlatformSetupConfigExpression(context, "buildSystem"), [])?.castOrNull(SumTypeRepr);
+		if(mesonConfig?.name == "Relative") {
+			return "../ninja";
+		}
+		return super.getNinjaExecutable(context)
+	}
+	
 	override generateMeson(CompilationContext context, List<String> sourceFiles) {
 		return codeFragmentProvider.create('''
 			# Define project name

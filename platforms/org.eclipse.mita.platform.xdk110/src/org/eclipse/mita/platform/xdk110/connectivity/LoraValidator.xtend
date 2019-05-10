@@ -30,21 +30,21 @@ import java.util.function.Predicate
 class LoraValidator implements IResourceValidator {
 	protected val rangeChecks = #{
 		"EU" -> #{
-			"bandFrequency" -> [int it | if(!(#[433, 868].contains(it))) {"one of 433, 868"}],
-			"rx2Frequency" ->  [int it | if(!((433050 <= it && it <= 434790) || (863000 <= it && it <= 870000))) {"either between 433050 and 434790 or between 863000 and 870000"}],
-			"rx2DataRate" ->   [int it | if(!(0 <= it && it <= 7)) {"between 0 and 7"}],
-			"dataRate" ->      [int it | if(!(0 <= it && it <= 7)) {"between 0 and 7"}]
+			"bandFrequency" -> [long it | if(!(#[433, 868].contains(it))) {"one of 433, 868"}],
+			"rx2Frequency" ->  [long it | if(!((433050 <= it && it <= 434790) || (863000 <= it && it <= 870000))) {"either between 433050 and 434790 or between 863000 and 870000"}],
+			"rx2DataRate" ->   [long it | if(!(0 <= it && it <= 7)) {"between 0 and 7"}],
+			"dataRate" ->      [long it | if(!(0 <= it && it <= 7)) {"between 0 and 7"}]
 		}, 
 		"US" -> #{
-			"bandFrequency" -> [int it | if(!(it == 915)) {"exactly 915"}],
-			"rx2Frequency" ->  [int it | if(!(923300 <= it && it <= 927500)) {"between 923300 and 927500"}],
-			"rx2DataRate" ->   [int it | if(!(8 <= it && it <= 13)) {"between 8 and 13"}],
-			"dataRate" ->      [int it | if(!(0 <= it && it <= 4)) {"between 0 and 4"}]
+			"bandFrequency" -> [long it | if(!(it == 915)) {"exactly 915"}],
+			"rx2Frequency" ->  [long it | if(!(923300 <= it && it <= 927500)) {"between 923300 and 927500"}],
+			"rx2DataRate" ->   [long it | if(!(8 <= it && it <= 13)) {"between 8 and 13"}],
+			"dataRate" ->      [long it | if(!(0 <= it && it <= 4)) {"between 0 and 4"}]
 		}
 	}
 	
 	protected val bandAndRx2Checks = #{
-		"EU" -> [int fBand, int fRx2 | ((fBand / 100) as int) == ((fRx2 / 100000) as int)],
+		"EU" -> [long fBand, long fRx2 | ((fBand / 100) as long) == ((fRx2 / 100000) as long)],
 		"US" -> [a,b | true]
 	}
 	
@@ -76,7 +76,7 @@ class LoraValidator implements IResourceValidator {
 					val check = name_check.value;
 					
 					val configItemValue = context.configurationItemValues.findFirst[it.item.name == name];
-					val value = StaticValueInferrer.infer(configItemValue, []).castOrNull(Integer);
+					val value = StaticValueInferrer.infer(configItemValue, []).castOrNull(Long);
 					if(value !== null) {
 						val msg = check.apply(value); 
 						if(msg !== null) {
@@ -88,8 +88,8 @@ class LoraValidator implements IResourceValidator {
 			val bandRx2Check = bandAndRx2Checks.get(region);
 			val fBandItem = context.configurationItemValues.findFirst[ it.item.name == "bandFrequency"]; 
 			val fRx2Item = context.configurationItemValues.findFirst[ it.item.name == "rx2Frequency"];
-			val fBand = StaticValueInferrer.infer(fBandItem, []).castOrNull(Integer);
-			val fRx2 = StaticValueInferrer.infer(fRx2Item, []).castOrNull(Integer);
+			val fBand = StaticValueInferrer.infer(fBandItem, []).castOrNull(Long);
+			val fRx2 = StaticValueInferrer.infer(fRx2Item, []).castOrNull(Long);
 			
 			if(bandRx2Check !== null && fBand !== null && fRx2 !== null && !bandRx2Check.apply(fBand, fRx2)) {
 				val msg = "bandFrequency and rx2Frequency don't fit together";

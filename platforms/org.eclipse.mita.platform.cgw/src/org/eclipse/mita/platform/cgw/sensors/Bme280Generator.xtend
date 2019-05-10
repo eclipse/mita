@@ -20,6 +20,7 @@ import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
+import java.util.Map
 
 class Bme280Generator extends AbstractSystemResourceGenerator {
     
@@ -36,8 +37,7 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
 	protected CodeFragmentProvider codeFragmentProvider
     
     override generateSetup() {        
-    	val powerMode = if(configuration.getEnumerator(CONFIG_ITEM_POWER_MODE)?.name == 'Forced') 'BME280_FORCED_MODE' else 'BME280_NORMAL_MODE';
-        val standbyTimeRaw = configuration.getInteger(CONFIG_ITEM_STANDBY_TIME);
+    	val standbyTimeRaw = configuration.getLong(CONFIG_ITEM_STANDBY_TIME);
         val standbyTime = if(standbyTimeRaw === null) null else standbyTimeRaw.clipStandbyTime?.value;
         val temperatureOversampling = configuration.getEnumerator(CONFIG_ITEM_TEMPERATURE_OVERSAMPLING)?.oversamplingConstant;
         val pressureOversampling = configuration.getEnumerator(CONFIG_ITEM_PRESSURE_OVERSAMPLING)?.oversamplingConstant;
@@ -87,9 +87,13 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
 					«IF humidityOversampling !== null»
 					.osr_h = «humidityOversampling»,
 					«ENDIF»
+					«IF temperatureOversampling !== null»
+					.osr_t = «temperatureOversampling»,
+					«ENDIF»
 					«IF standbyTime !== null»
 					.standby_time = «standbyTime»,
 					«ENDIF»
+					.filter = BME280_FILTER_COEFF_16,
 				},
 			};
 		''')
@@ -103,23 +107,31 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
     
     protected def String getOversamplingConstant(Singleton value) {
         return switch(value?.name) {
-            case 'OVERSAMPLE_1X':  'BME280_OVERSAMP_1X'
-            case 'OVERSAMPLE_2X':  'BME280_OVERSAMP_2X'
-            case 'OVERSAMPLE_4X':  'BME280_OVERSAMP_4X'
-            case 'OVERSAMPLE_8X':  'BME280_OVERSAMP_8X'
-            case 'OVERSAMPLE_16X': 'BME280_OVERSAMP_16X'
+            case 'OVERSAMPLE_1X':  'BME280_OVERSAMPLING_1X'
+            case 'OVERSAMPLE_2X':  'BME280_OVERSAMPLING_2X'
+            case 'OVERSAMPLE_4X':  'BME280_OVERSAMPLING_4X'
+            case 'OVERSAMPLE_8X':  'BME280_OVERSAMPLING_8X'
+            case 'OVERSAMPLE_16X': 'BME280_OVERSAMPLING_16X'
             default: null
         }
     }
     
     override generateEnable() {
+        val powerMode = if(configuration.getEnumerator(CONFIG_ITEM_POWER_MODE)?.name == 'Forced') 'BME280_FORCED_MODE' else 'BME280_NORMAL_MODE';
         
 		return codeFragmentProvider.create('''
 			Retcode_T exception = NO_EXCEPTION;
 			exception = BSP_BME280_Enable(COMMONGATEWAY_BME280_ID);
 			«generateExceptionHandler(null, "exception")»
-			if (BME280_OK != bme280_init(&bme280Struct))
-			{
+			if (BME280_OK != bme280_init(&bme280Struct)) {
+				exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+			}
+			«generateExceptionHandler(null, "exception")»
+			if (BME280_OK != bme280_set_sensor_settings(BME280_ALL_SETTINGS_SEL, &bme280Struct)) {
+				exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+			}
+			«generateExceptionHandler(null, "exception")»
+			if(BME280_OK != bme280_set_sensor_mode(«powerMode», &bme280Struct)) {
 				exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
 			}
 			«generateExceptionHandler(null, "exception")»
@@ -166,11 +178,11 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
     /**
      * Translates an arbitrary standby time in milliseconds to a fixed, supported value.
      */
-    static def Pair<Integer, String> clipStandbyTime(int standbyTime) {
-        val supportedValuesInMs = #[1, 10, 20, 63, 125, 250, 500, 1000];
-        val nearestStandbyTime = supportedValuesInMs.minBy[x| Math.abs(x - standbyTime)];
-        val constantName = '''ENVIRONMENTAL_BME280_STANDBY_TIME_«nearestStandbyTime»_MS''';
-        return nearestStandbyTime -> constantName;
+    static def Pair<Double, String> clipStandbyTime(long standbyTime) {
+        val Map<Double, String> supportedValuesInMs = #{1.0 -> "1", 10.0 -> "10", 20.0 -> "20", 62.5 -> "62_5", 125.0 -> "125", 250.0 -> "250", 500.0 -> "500", 1000.0 -> "1000"};
+        val nearestStandbyTime = supportedValuesInMs.entrySet.minBy[x| Math.abs(x.key - standbyTime)];
+        val constantName = '''BME280_STANDBY_TIME_«nearestStandbyTime.value»_MS''';
+        return nearestStandbyTime.key -> constantName;
     }
     
 }

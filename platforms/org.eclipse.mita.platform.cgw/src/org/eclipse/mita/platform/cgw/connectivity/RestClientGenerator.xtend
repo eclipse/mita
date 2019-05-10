@@ -26,6 +26,9 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	override generateSetup() {
 		val radioSetup = configuration.getExpression("transport")?.castOrNull(ElementReferenceExpression)?.reference?.castOrNull(SystemResourceSetup);
 		val radioStandard = StaticValueInferrer.infer(radioSetup.getConfigurationItemValue("radioStandard"), [])?.castOrNull(SumTypeRepr);
+		val radioApn = StaticValueInferrer.infer(radioSetup.getConfigurationItemValue("apn"), [])?.castOrNull(String);
+		val radioUsername = StaticValueInferrer.infer(radioSetup.getConfigurationItemValue("username"), [])?.castOrNull(String);
+		val radioPassword = StaticValueInferrer.infer(radioSetup.getConfigurationItemValue("password"), [])?.castOrNull(String);
 		
 		return codeFragmentProvider.create('''
 			Retcode_T exception = NO_EXCEPTION;
@@ -53,8 +56,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			exception = Cellular_PowerOn(&powerUpParam);
 			«generateLoggingExceptionHandler("HttpRestClient", "Cellular Power on")»
 
-
-			uint32_t iccidLen = sizeof(iccid);
 			exception = Cellular_QueryIccid(iccid, &iccidLen);
 			
 			if (RETCODE_OK != exception)
@@ -85,6 +86,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			static QueueHandle_t httpEvent;
 			
 			static char iccid[CELLULAR_ICCID_MAX_LENGTH];
+			static uint32_t iccidLen = sizeof(iccid);
 			
 			static SemaphoreHandle_t powerOnDone, registerDone, dataActivated;
 			
@@ -173,16 +175,21 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			}
 			
 			
-			static Retcode_T Http_WaitEvent(uint32_t command, uint32_t timeout)
+			static Retcode_T Http_WaitEvent(CellularHttp_ContentType_T command, uint32_t timeout)
 			{
 				HttpResult_T result;
 				Retcode_T retcode = RETCODE_OK;
 			
 				if (pdFALSE != xQueueReceive(httpEvent, &result,timeout) )
 				{
-					if ((command==result.command) && (result.result == 1))
+					if (command==result.command)
 					{
-						retcode = RETCODE_OK;
+						if(result.result == CELLULARHTTP_RESULT_SUCCESS) {
+							retcode = RETCODE_OK;
+						}
+						else {
+							retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+						}
 					}
 					else
 					{
@@ -223,10 +230,10 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 				Retcode_T retcode = RETCODE_OK;
 				Cellular_DataContextParameters_T ctxParam;
 				ctxParam.Type = CELLULAR_DATACONTEXTTYPE_INTERNAL;
-				ctxParam.ApnSettings.ApnName =  «IF configuration.getString("apn") !== null»"«configuration.getString("apn")»"«ELSE»NULL«ENDIF»;
+				ctxParam.ApnSettings.ApnName =  «IF radioApn !== null»"«radioApn»"«ELSE»NULL«ENDIF»;
 				ctxParam.ApnSettings.AuthMethod = CELLULAR_APNAUTHMETHOD_NONE;
-				ctxParam.ApnSettings.Username = «IF configuration.getString("username") !== null»"«configuration.getString("username")»"«ELSE»NULL«ENDIF»;
-				ctxParam.ApnSettings.Password = «IF configuration.getString("password") !== null»"«configuration.getString("password")»"«ELSE»NULL«ENDIF»;
+				ctxParam.ApnSettings.Username = «IF radioUsername !== null»"«radioUsername»"«ELSE»NULL«ENDIF»;
+				ctxParam.ApnSettings.Password = «IF radioPassword !== null»"«radioPassword»"«ELSE»NULL«ENDIF»;
 				retcode = Cellular_ConfigureDataContext(0, &ctxParam);
 			
 				if (RETCODE_OK == retcode)
@@ -300,6 +307,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("BCDS_CellularDnsService.h", true)
 		.addHeader("BCDS_CellularConfig.h", true)
 		.addHeader("inttypes.h", true)
+		.addHeader("BCDS_CellularHttpService.h", false)
 		
 	}
 	
@@ -332,23 +340,46 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String valueVariableName) {
-		val writeMethod = StaticValueInferrer.infer(signalInstance.getArgumentValue("writeMethod"), [])?.castOrNull(SumTypeRepr);
+		val contentType = StaticValueInferrer.infer(signalInstance.getArgumentValue("contentType"), [])?.castOrNull(SumTypeRepr);
 		val url = new URL(configuration.getString('endpointBase'));
 		val port = if(url.port < 0) 80 else url.port;
 		
 		codeFragmentProvider.create('''
-			char buf[«valueVariableName»->length + 1];
-			memcpy(buf, «valueVariableName»->data, «valueVariableName»->length);
-			buf[«valueVariableName»->length] = 0;
-			Retcode_T exception = CellularHttp_Post("«url.host»", «signalInstance.getArgumentValue("endpoint").code», «port», buf, false);
+			Retcode_T exception = RETCODE_OK;
+			
+			CellularHttp_Data_T data = {
+				.BufferLength = «valueVariableName»->length,
+				.Buffer = «valueVariableName»->data,
+			};
+			
+			CellularHttp_Request_T request = {
+				.Method = CELLULARHTTP_METHOD_POST,
+				.Server = "«url.host»",
+				.Path = «signalInstance.getArgumentValue("endpoint").code»,
+				.Port = «port»,
+				.IsSecure = false,
+				.ContentType = CELLULARHTTP_CONTENTTYPE_APP_«contentType?.name?.toUpperCase»,
+				.Data = &data,
+			};
+			
+			exception = CellularHttp_SendRequest(&request);
 			
 			if (exception == RETCODE_OK)
 			{
-				exception = Http_WaitEvent(5,120000);
+				exception = Http_WaitEvent(CELLULARHTTP_METHOD_POST,120000);
 			}
 			
 			return exception;
 		''')
+	}
+	
+	def translateContentType(SumTypeRepr contentType) {
+		switch contentType?.name {
+			case "Json":  "CELLULARHTTP_CONTENTTYPE_APP_JSON"
+			case "Xml":   "CELLULARHTTP_CONTENTTYPE_APP_XML"
+			case "Octet": "CELLULARHTTP_CONTENTTYPE_APP_OCTET"
+			case "Text":  "CELLULARHTTP_CONTENTTYPE_RAW_TEXT"
+		}
 	}
 	
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {

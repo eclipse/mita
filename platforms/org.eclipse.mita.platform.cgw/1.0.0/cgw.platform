@@ -148,19 +148,19 @@ sensor BME280 {
 	 * Reduces noise in the temperature measurement by over sampling.
 	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
 	 */
-	configuration-item temperature_oversampling : BME280_Oversampling
+	configuration-item temperature_oversampling : BME280_Oversampling = BME280_Oversampling.OVERSAMPLE_1X
 	
 	/**
 	 * Reduces noise in the pressure measurement by over sampling.
 	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
 	 */
-	configuration-item pressure_oversampling : BME280_Oversampling
+	configuration-item pressure_oversampling : BME280_Oversampling = BME280_Oversampling.OVERSAMPLE_16X
 	
 	/**
 	 * Reduces noise in the humidity measurement by over sampling.
 	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
 	 */
-	configuration-item humidity_oversampling : BME280_Oversampling
+	configuration-item humidity_oversampling : BME280_Oversampling = BME280_Oversampling.OVERSAMPLE_12X
 	
 	/**
 	 * The temperature in milli-celcius
@@ -200,7 +200,7 @@ enum RadioStandard {
 	NB_IoT
 }
 
-connectivity many Radio {
+connectivity named-singleton Radio {
 	generator "org.eclipse.mita.platform.cgw.connectivity.RadioGenerator"
 
 	required configuration-item radioStandard: RadioStandard
@@ -209,10 +209,14 @@ connectivity many Radio {
 	configuration-item password: string
 }
 
+enum ContentType {
+	Text, Json, Xml
+}
+
 /**
  * Implements an HTTP REST Client over WIFI 
  */
-connectivity many HttpRestClient {
+connectivity named-singleton HttpRestClient {
 	generator "org.eclipse.mita.platform.cgw.connectivity.RestClientGenerator"
 	validator "org.eclipse.mita.platform.cgw.connectivity.RestClientValidator"
 	
@@ -233,14 +237,14 @@ connectivity many HttpRestClient {
 	 */
 	configuration-item headerContent : string
 
-	signal resource(endpoint : string, contentType : string = "application/json") : string
+	signal resource(endpoint : string, contentType : ContentType = ContentType.Json) : string
 	
 }
 
 /**
  * Implements an HTTP REST Client over WIFI 
  */
-connectivity many BcxHttpRestClient {
+connectivity named-singleton BcxHttpRestClient {
 	generator "org.eclipse.mita.platform.cgw.connectivity.BcxRestClientGenerator"
 	validator "org.eclipse.mita.platform.cgw.connectivity.RestClientValidator"
 	
@@ -249,19 +253,14 @@ connectivity many BcxHttpRestClient {
 	 * support LoRa here.
 	 */
 	required configuration-item transport : Radio
-	
-	/**
-	 * The part of the endpoint URL common to all requests, e.g. http://foobar.com/api/v1
-	 */
-	required configuration-item endpointBase : string
-	
+		
 	/**
 	 * A custom header which is added to each HTTP request. Example:
 	 *   X-Auth: MySecretToken\nX-Version: 1.0 
 	 */
 	configuration-item headerContent : string
 
-	signal resource(endpoint : string, contentType : string = "application/json") : string
+	signal telemetry() : string
 	
 }
 
@@ -270,6 +269,14 @@ alias environment for BME280
 
 enum ConsoleInterface {
 	RTT, UART
+}
+alt Binaries {
+	  OnPath 
+	| Relative 
+//	| Absolute: {
+//		meson: string,
+//		ninja: string
+//	}
 }
 
 platform CGW {
@@ -281,6 +288,7 @@ platform CGW {
 	
 	configuration-item startupDelay: uint32
 	configuration-item consoleInterface: ConsoleInterface = ConsoleInterface.RTT
+	configuration-item buildSystem: Binaries = Binaries.OnPath()
 	
 	event startup
 }
