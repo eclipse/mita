@@ -59,6 +59,25 @@ Name                            | Description                           | Parame
 --------------------------------|---------------------------------------|------------|------------
 `light_up: bool`                | Represents one of the three LEDs.     | `color: LedColor`  | One of `Red`, `Green` or `Blue`.
 
+### Radio
+
+The Common Gateway features a u-blox mobile radio capable of both CAT-M1 and NB-IoT technologies. 
+
+```TypeScript
+setup net: Radio {
+  radioStandard = .CAT_M1;
+  apn = "internet.m2mportal.de";
+}
+```
+
+#### Configuration
+
+   | Name                            | Description
+---|---------------------------------|------------
+**Required** | `radioStandard: RadioStandard`      | Whether to use NB-IoT or CAT-M1. One of `.NB_IoT, .CAT_M1`.
+**Required** | `apn: string`                       | The APN of your mobile provider.
+
+
 ### REST over HTTP
 
 Using REST you can easily talk to servers over HTTP. REST defines a stateless interface with a simple URL scheme. Normally a REST server consists of a versioned endpoint like `http://api.github.com/v3` which then provides different resources, for example `api.github.com/v3/repos/eclipse/mita/branches` and `/repos/eclipse/mita/issues`.
@@ -86,7 +105,7 @@ every 100 milliseconds {
 
    | Name                            | Description
 ---|---------------------------------|------------
-**Required** |`transport: WLAN`       | The transport layer used for communication.
+**Required** |`transport: Radio`       | The transport layer used for communication.
 **Required** |`endpointBase: string`  | The server URL base to which REST requests are made.
 
 #### Signals
@@ -107,8 +126,6 @@ The BMA280 is a tri axial, low-g acceleration sensor with digital output for con
 ---|---------------------------------|------------
    | `range: BMA280_Range`           | The range of acceleration we want to measure. Default: `2G`
    | `bandwidth: BMA280_Bandwidth`   | The low-pass filter bandwidth used by the BMA. Default: `500Hz`
-   | `any_motion_threshold: uint32`  | The threshold of acceleration that has to be crossed before an any motion event is triggered. Default: `20`
-   | `no_motion_threshold: uint32`   | The threshold of acceleration that must not be exceeded for a no motion event to be triggered. Default: `20`
 
 #### Modalities
    | Name                            | Description
@@ -117,21 +134,6 @@ The BMA280 is a tri axial, low-g acceleration sensor with digital output for con
    | `y_axis: int32`                 | The Y axis of the BMA280.
    | `z_axis: int32`                 | The Z axis of the BMA280.
    | `magnitude: int32`              | The L2 norm of the acceleration vector: `sqrt(x^2 + y^2 + z^2)`
-
-#### Events
-Name                            | Description
---------------------------------|------------
-`any_motion`                    | The any motion event (also called activity) uses the change between two successive acceleration measurements to detect changes in motion. An event is generated when this change exceeds the any_motion_threshold.
-`no_motion`                     | The no motion event (also called any inactivity) uses the change between two successive acceleration measurements to detect changes in motion. An event is generated when this change consecutively stays below the no_motion_threshold.
-`low_g`                         | The low g event is based on comparing acceleration to a threshold which is most useful for free-fall detection.
-`high_g`                        | The high g event is based on comparing acceleration to a threshold to detect shocks or other high acceleration events.
-`single_tap`                    | A single tap is an event triggered by high activity followed shortly by no activity.
-`double_tap`                    | A double tap consists of two single tap events right after one another.
-`flat`                          | The flat event is triggered when the device is flat on the ground.
-`orientation`                   | 
-`fifo_full`                     | 
-`fifo_wml`                      | 
-`new_data`                      | This event serves the asynchronous reading of data. It is generated after storing a new value of z-axis acceleration data in the data register.
 
 
 ### Environment (BME280)

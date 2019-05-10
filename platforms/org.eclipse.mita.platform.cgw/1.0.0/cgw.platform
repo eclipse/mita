@@ -65,16 +65,6 @@ sensor BMA280 {
 	 */
 	configuration-item bandwidth : BMA280_Bandwidth = BMA280_Bandwidth.BW_500Hz
 	
-	/**
-	 * The threshold of acceleration that has to be crossed before an any motion event is triggered.
-	 */
-	configuration-item any_motion_threshold : uint32 = 20
-	
-	/**
-	 * The threshold of acceleration that must not be exceeded for a no motion event to be triggered.
-	 */
-	configuration-item no_motion_threshold : uint32 = 20
-	
 	
 	/**
 	 * The X axis of the BMA280
