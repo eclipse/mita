@@ -358,7 +358,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 				.Path = «signalInstance.getArgumentValue("endpoint").code»,
 				.Port = «port»,
 				.IsSecure = false,
-				.ContentType = CELLULARHTTP_CONTENTTYPE_APP_«contentType?.name?.toUpperCase»,
+				.ContentType = «translateContentType(contentType)»,
 				.Data = &data,
 			};
 			
@@ -374,11 +374,14 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	}
 	
 	def translateContentType(SumTypeRepr contentType) {
-		switch contentType?.name {
-			case "Json":  "CELLULARHTTP_CONTENTTYPE_APP_JSON"
-			case "Xml":   "CELLULARHTTP_CONTENTTYPE_APP_XML"
-			case "Octet": "CELLULARHTTP_CONTENTTYPE_APP_OCTET"
-			case "Text":  "CELLULARHTTP_CONTENTTYPE_RAW_TEXT"
+		return switch contentType?.name {
+			case "Json":   "CELLULARHTTP_CONTENTTYPE_APP_JSON"
+			case "Xml":    "CELLULARHTTP_CONTENTTYPE_APP_XML"
+			case "Octet":  "CELLULARHTTP_CONTENTTYPE_APP_OCTET"
+			case "Text":   "CELLULARHTTP_CONTENTTYPE_TEXT_PLAIN"
+			case "WwwUrl": "CELLULARHTTP_CONTENTTYPE_APP_X_WWW_URL"
+			case "Multipart": "CELLULARHTTP_CONTENTTYPE_MULTIPLART"
+			case null: null
 		}
 	}
 	
