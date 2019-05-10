@@ -163,17 +163,17 @@ sensor BME280 {
 	configuration-item humidity_oversampling : BME280_Oversampling = BME280_Oversampling.OVERSAMPLE_12X
 	
 	/**
-	 * The temperature in milli-celcius
+	 * The temperature in centi-celcius
 	 */
 	modality temperature : int32
 	
 	/**
-	 * The pressure in pascal
+	 * The pressure in centi-pascal
 	 */
 	modality pressure : uint32
 	
 	/**
-	 * The relative humidity as percentage
+	 * The relative humidity as percentage, fixed point times 2^10
 	 */
 	modality humidity : uint32
 	
