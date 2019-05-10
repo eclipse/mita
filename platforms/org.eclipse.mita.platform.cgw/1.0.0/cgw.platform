@@ -287,8 +287,8 @@ platform CGW {
 	has environment
 	
 	configuration-item startupDelay: uint32
-	configuration-item consoleInterface: ConsoleInterface = ConsoleInterface.RTT
-	configuration-item buildSystem: Binaries = Binaries.OnPath()
+	configuration-item consoleInterface: ConsoleInterface = ConsoleInterface.UART
+	configuration-item buildSystem: Binaries = Binaries.Relative()
 	
 	event startup
 }
