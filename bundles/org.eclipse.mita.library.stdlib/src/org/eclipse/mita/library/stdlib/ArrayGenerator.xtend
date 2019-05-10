@@ -76,6 +76,14 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			codeFragmentProvider.create('''-1''');
 		}
 	}
+	protected def long getMaximumFixedSize(EObject stmt) {
+		val inference = sizeInferrer.infer(stmt);
+		return if(inference instanceof ValidElementSizeInferenceResult) {
+			inference.elementCount
+		} else {
+			-1
+		}
+	}
 	
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
 		codeFragmentProvider.create('''
@@ -254,7 +262,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''
 		«IF rightExprIsValueLit»
 		// generate buffer to hold immediate
-		«generateBufferStmt(context, type, temporaryBufferName, getFixedSize(temporaryBufferName, rightLit), rightLit)»
+		«generateBufferStmt(context, type, temporaryBufferName, codeFragmentProvider.create('''«getMaximumFixedSize(right)»'''), rightLit)»
 		«ENDIF»
 		«capacityCheck»
 		// «leftName» «operator.literal» «codeRightExpr»
