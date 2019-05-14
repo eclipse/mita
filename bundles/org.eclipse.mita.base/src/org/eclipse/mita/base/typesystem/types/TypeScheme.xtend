@@ -82,8 +82,8 @@ class TypeScheme extends AbstractType {
 	
 	override replace(Substitution sub) {
 		// slow path: collisions between bound vars and substitution. need to filter and apply manually.
-		if(vars.exists[sub.substitutions.containsKey(it)]) {
-			if(freeVars.forall[!sub.substitutions.containsKey(it)]) {
+		if(vars.exists[sub.content.containsKey(it.idx)]) {
+			if(freeVars.forall[!sub.content.containsKey(it.idx)]) {
 				// no need to do anything
 				return this;
 			}
@@ -103,7 +103,7 @@ class TypeScheme extends AbstractType {
 		return new TypeScheme(origin, vars.map[replaceProxies(system, resolve) as TypeVariable].force, on.replaceProxies(system, resolve));
 	}
 	
-	override modifyNames((String) => String converter) {
+	override modifyNames(NameModifier converter) {
 		return new TypeScheme(origin, vars.map[modifyNames(converter) as TypeVariable].force, on.modifyNames(converter));
 	}
 	

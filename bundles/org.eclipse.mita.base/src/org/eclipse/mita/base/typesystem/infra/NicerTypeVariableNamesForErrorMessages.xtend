@@ -20,11 +20,13 @@ import java.util.stream.Collectors
 import java.util.stream.IntStream
 import org.eclipse.core.runtime.Assert
 import org.eclipse.xtext.xbase.lib.Functions.Function1
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
+import org.eclipse.mita.base.typesystem.types.AbstractType.Either
 
-class NicerTypeVariableNamesForErrorMessages implements Function1<String, String> {
+class NicerTypeVariableNamesForErrorMessages extends NameModifier {
 	
 	
-	Map<String, String> seenNames = new HashMap();
+	Map<Integer, String> seenNames = new HashMap();
 	
 	var nextSuffix = 1;
 	var state = getAlphabet("").iterator;
@@ -43,11 +45,11 @@ class NicerTypeVariableNamesForErrorMessages implements Function1<String, String
 		return state.next();
 	}
 	
-	override apply(String varName) {
-		if(!seenNames.containsKey(varName)) {
-			seenNames.put(varName, nextName());
+	override apply(int varIdx) {
+		if(!seenNames.containsKey(Integer.valueOf(varIdx))) {
+			seenNames.put(Integer.valueOf(varIdx), nextName());
 		}
-		return seenNames.get(varName);
+		return Either.right(seenNames.get(Integer.valueOf(varIdx)));
 	}
 	
 	def static void main(String[] args) {
@@ -56,7 +58,7 @@ class NicerTypeVariableNamesForErrorMessages implements Function1<String, String
 		val results = newArrayList;
 		for(var i = 0; i < 5000; i++) {
 			val key = r.nextInt(100);
-			val name = x.apply(String.valueOf(key));
+			val name = x.apply(key);
 			results.add(key -> name);
 			print(key);
 			print(": ");

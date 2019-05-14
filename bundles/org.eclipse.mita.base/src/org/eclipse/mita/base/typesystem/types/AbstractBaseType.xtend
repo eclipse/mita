@@ -53,7 +53,7 @@ abstract class AbstractBaseType extends AbstractType {
 		return f.apply(this);
 	}
 	
-	override modifyNames((String) => String converter) {
+	override modifyNames(NameModifier converter) {
 		return this;
 	}
 	

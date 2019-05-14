@@ -14,16 +14,13 @@ class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 		return 'length';
 	}
 
-	override infer(EObject obj) {
-		val instance = if(obj instanceof ElementReferenceExpression) {
-			if(obj.isOperationCall && obj.arguments.size > 0) {
-				obj.arguments.head.value; 
-			}
+	override protected _doInfer(ElementReferenceExpression obj, AbstractType type) {
+		val instance = if(obj.isOperationCall && obj.arguments.size > 0) {
+			obj.arguments.head.value; 
 		}
-		val method = if(obj instanceof ElementReferenceExpression) {
-			if(obj.isOperationCall && obj.arguments.size > 0) {
-				obj.reference;
-			}
+		
+		val method = if(obj.isOperationCall && obj.arguments.size > 0) {
+			obj.reference;
 		}
 		if(instance !== null && method !== null) {
 			if(method instanceof GeneratedFunctionDefinition) {
@@ -42,7 +39,7 @@ class GenericPlatformSizeInferrer extends ElementSizeInferrer {
 				}
 			}			
 		}
-		return newInvalidResult(obj, "Can't infer for non-feature call");
+		return newInvalidResult(obj, "Can't infer for non-function call");
 	}
 	
 }

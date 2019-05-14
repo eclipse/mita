@@ -13,9 +13,9 @@
 
 package stdlib; 
 
-export native-type xint32 alias-of int32_t header "stdint.h"
-export native-type xint16 alias-of int16_t header "stdint.h"
-export native-type xint8  alias-of int8_t  header "stdint.h"
+native-type xint32 alias-of int32_t header "stdint.h"
+native-type xint16 alias-of int16_t header "stdint.h"
+native-type xint8  alias-of int8_t  header "stdint.h"
 
 export native-type int32 alias-of int32_t header "stdint.h"
 export native-type int16 alias-of int16_t header "stdint.h"
@@ -30,6 +30,9 @@ export native-type double
 export native-type float
 export native-type void
 
+export native unchecked function __PLUS__(x: xint32, y: xint32): xint32 header "math.h";
+export native unchecked function __PLUS__(x: xint16, y: xint16): xint16 header "math.h";
+export native unchecked function __PLUS__(x: xint8 , y: xint8 ): xint8  header "math.h";
 export native unchecked function __PLUS__(x:  int32, y:  int32):  int32 header "math.h";
 export native unchecked function __PLUS__(x:  int16, y:  int16):  int16 header "math.h";
 export native unchecked function __PLUS__(x:  int8 , y:  int8 ):  int8  header "math.h";
@@ -40,7 +43,11 @@ export native unchecked function __PLUS__(x: float , y: float ): float  header "
 export native unchecked function __PLUS__(x: double, y: double): double header "math.h";
 
 export native unchecked function __PLUS__(x: string, y: string): string header "string.h";
+export native unchecked function <T> __PLUS__(x: array<T>, y: array<T>): array<T> header "string.h";
 
+export native unchecked function __MINUS__(x: xint32, y: xint32):  int32 header "math.h";
+export native unchecked function __MINUS__(x: xint16, y: xint16):  int16 header "math.h";
+export native unchecked function __MINUS__(x: xint8 , y: xint8 ):  int8  header "math.h";
 export native unchecked function __MINUS__(x:  int32, y:  int32):  int32 header "math.h";
 export native unchecked function __MINUS__(x:  int16, y:  int16):  int16 header "math.h";
 export native unchecked function __MINUS__(x:  int8 , y:  int8 ):  int8  header "math.h";
@@ -50,6 +57,9 @@ export native unchecked function __MINUS__(x: uint8 , y: uint8 ):  int8  header 
 export native unchecked function __MINUS__(x: float , y: float ): float  header "math.h";
 export native unchecked function __MINUS__(x: double, y: double): double header "math.h";
 
+export native unchecked function __TIMES__(x: xint32, y: xint32): uint32 header "math.h";
+export native unchecked function __TIMES__(x: xint16, y: xint16): xint32 header "math.h";
+export native unchecked function __TIMES__(x: xint8 , y: xint8 ): xint16 header "math.h";
 export native unchecked function __TIMES__(x:  int32, y:  int32):  int32 header "math.h";
 export native unchecked function __TIMES__(x:  int16, y:  int16):  int32 header "math.h";
 export native unchecked function __TIMES__(x:  int8 , y:  int8 ):  int16 header "math.h";
@@ -59,6 +69,9 @@ export native unchecked function __TIMES__(x: uint8 , y: uint8 ): uint16 header 
 export native unchecked function __TIMES__(x: float , y: float ): float  header "math.h";
 export native unchecked function __TIMES__(x: double, y: double): double header "math.h";
 
+export native unchecked function __DIVISION__(x: xint32, y: xint32): xint32 header "math.h";
+export native unchecked function __DIVISION__(x: xint16, y: xint16): xint16 header "math.h";
+export native unchecked function __DIVISION__(x: xint8 , y: xint8 ): xint8  header "math.h";
 export native unchecked function __DIVISION__(x:  int32, y:  int32):  int32 header "math.h";
 export native unchecked function __DIVISION__(x:  int16, y:  int16):  int16 header "math.h";
 export native unchecked function __DIVISION__(x:  int8 , y:  int8 ):  int8  header "math.h";
@@ -68,6 +81,9 @@ export native unchecked function __DIVISION__(x: uint8 , y: uint8 ): uint8  head
 export native unchecked function __DIVISION__(x: float , y: float ): float  header "math.h";
 export native unchecked function __DIVISION__(x: double, y: double): double header "math.h";
 
+export native unchecked function __MODULO__(x: xint32, y: xint32): xint32 header "math.h";
+export native unchecked function __MODULO__(x: xint16, y: xint16): xint16 header "math.h";
+export native unchecked function __MODULO__(x: xint8 , y: xint8 ): xint8  header "math.h";
 export native unchecked function __MODULO__(x:  int32, y:  int32):  int32 header "math.h";
 export native unchecked function __MODULO__(x:  int16, y:  int16):  int16 header "math.h";
 export native unchecked function __MODULO__(x:  int8 , y:  int8 ):  int8  header "math.h";
@@ -75,6 +91,9 @@ export native unchecked function __MODULO__(x: uint32, y: uint32): uint32 header
 export native unchecked function __MODULO__(x: uint16, y: uint16): uint16 header "math.h";
 export native unchecked function __MODULO__(x: uint8 , y: uint8 ): uint8  header "math.h";
 
+export native unchecked function __LEFTSHIFT__(x: xint32, y: uint8): xint32 header "math.h";
+export native unchecked function __LEFTSHIFT__(x: xint16, y: uint8): xint16 header "math.h";
+export native unchecked function __LEFTSHIFT__(x: xint8 , y: uint8): xint8  header "math.h";
 export native unchecked function __LEFTSHIFT__(x:  int32, y: uint8):  int32 header "math.h";
 export native unchecked function __LEFTSHIFT__(x:  int16, y: uint8):  int16 header "math.h";
 export native unchecked function __LEFTSHIFT__(x:  int8 , y: uint8):  int8  header "math.h";
@@ -82,6 +101,9 @@ export native unchecked function __LEFTSHIFT__(x: uint32, y: uint8): uint32 head
 export native unchecked function __LEFTSHIFT__(x: uint16, y: uint8): uint16 header "math.h";
 export native unchecked function __LEFTSHIFT__(x: uint8 , y: uint8): uint8  header "math.h";
 
+export native unchecked function __RIGHTSHIFT__(x: xint32, y: uint8): xint32 header "math.h";
+export native unchecked function __RIGHTSHIFT__(x: xint16, y: uint8): xint16 header "math.h";
+export native unchecked function __RIGHTSHIFT__(x: xint8 , y: uint8): xint8  header "math.h";
 export native unchecked function __RIGHTSHIFT__(x:  int32, y: uint8):  int32 header "math.h";
 export native unchecked function __RIGHTSHIFT__(x:  int16, y: uint8):  int16 header "math.h";
 export native unchecked function __RIGHTSHIFT__(x:  int8 , y: uint8):  int8  header "math.h";
@@ -89,6 +111,9 @@ export native unchecked function __RIGHTSHIFT__(x: uint32, y: uint8): uint32 hea
 export native unchecked function __RIGHTSHIFT__(x: uint16, y: uint8): uint16 header "math.h";
 export native unchecked function __RIGHTSHIFT__(x: uint8 , y: uint8): uint8  header "math.h";
 
+export native unchecked function __POSTINCREMENT__(x: xint32): xint32 header "math.h";
+export native unchecked function __POSTINCREMENT__(x: xint16): xint16 header "math.h";
+export native unchecked function __POSTINCREMENT__(x: xint8 ): xint8  header "math.h";
 export native unchecked function __POSTINCREMENT__(x:  int32):  int32 header "math.h";
 export native unchecked function __POSTINCREMENT__(x:  int16):  int16 header "math.h";
 export native unchecked function __POSTINCREMENT__(x:  int8 ):  int8  header "math.h";
@@ -98,6 +123,9 @@ export native unchecked function __POSTINCREMENT__(x: uint8 ): uint8  header "ma
 export native unchecked function __POSTINCREMENT__(x: float ): float  header "math.h";
 export native unchecked function __POSTINCREMENT__(x: double): double header "math.h";
 
+export native unchecked function __POSTDECREMENT__(x: xint32): xint32 header "math.h";
+export native unchecked function __POSTDECREMENT__(x: xint16): xint16 header "math.h";
+export native unchecked function __POSTDECREMENT__(x: xint8 ): xint8  header "math.h";
 export native unchecked function __POSTDECREMENT__(x:  int32):  int32 header "math.h";
 export native unchecked function __POSTDECREMENT__(x:  int16):  int16 header "math.h";
 export native unchecked function __POSTDECREMENT__(x:  int8 ):  int8  header "math.h";

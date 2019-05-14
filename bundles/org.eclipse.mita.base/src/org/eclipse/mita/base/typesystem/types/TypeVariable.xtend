@@ -17,17 +17,25 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
-@EqualsHashCode
 class TypeVariable extends AbstractType {
+	@Accessors
+	protected val int idx;
+	
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
 		return system.newTypeVariable(null);
 	}
 	
 	
-	new(EObject origin, String name) {
-		super(origin, name)
+	new(EObject origin, int idx) {
+		this(origin, idx, null);
+	}
+	
+	new(EObject origin, int idx, String name) {
+		super(origin, name);
+		this.idx = idx;
 	}
 	
 	override quote() {
@@ -39,19 +47,27 @@ class TypeVariable extends AbstractType {
 	}
 	
 	override toString() {
-//		if(origin !== null) {
-//			val originText = if(origin.eIsProxy) {
-//				if(origin instanceof EObjectImpl) {
-//					origin.eProxyURI.fragment;
-//				}
-//			} ?: origin.toString
-//			return '''«name» («originText»)''';
-//		}
-		return name
+		return (name ?: (toStringPrefix + idx));
+	}
+	override hashCode() {
+		return idx.hashCode();
+	}
+	override boolean equals(Object other) {
+		if (this === other)
+		  return true;
+		if (other === null)
+		  return false;
+		if (getClass() !== other.getClass())
+		  return false;
+		return idx == (other as TypeVariable).idx;
 	}
 	
 	override getFreeVars() {
 		return #[this];
+	}
+	
+	override hasNoFreeVars() {
+		return false;
 	}
 	
 	override AbstractType replace(TypeVariable from, AbstractType with) {
@@ -64,11 +80,11 @@ class TypeVariable extends AbstractType {
 	}
 	
 	override toGraphviz() {
-		return '''"«name»"''';
+		return '''"«this»"''';
 	}
 	
 	override replace(Substitution sub) {
-		sub.substitutions.getOrDefault(this, this)
+		sub.content.getOrDefault(this.idx, this)
 	}
 	
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
@@ -79,12 +95,21 @@ class TypeVariable extends AbstractType {
 		return f.apply(this);
 	}
 
-	override modifyNames((String) => String converter) {
-		return new TypeVariable(origin, converter.apply(name))
+	override modifyNames(NameModifier converter) {
+		val newName = converter.apply(idx);
+		if(newName instanceof Left<?, ?>) {
+			return new TypeVariable(origin, (newName as Left<Integer, String>).value, name);
+		}
+		else {
+			return new TypeVariable(origin, idx, (newName as Right<Integer, String>).value);
+		}
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {
 		return this;
 	}
-
+	protected def getToStringPrefix() {
+		return "f_";
+	}
 }
+

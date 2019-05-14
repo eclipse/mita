@@ -13,8 +13,6 @@
 
 package org.eclipse.mita.program.generator;
 
-import org.eclipse.mita.program.InterpolatedStringExpression;
-
 public interface IPlatformLoggingGenerator {
 
 	/**

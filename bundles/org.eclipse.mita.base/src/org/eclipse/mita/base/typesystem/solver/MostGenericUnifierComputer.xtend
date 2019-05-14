@@ -79,18 +79,17 @@ class MostGenericUnifierComputer {
 		val conflictsS1 = s1.content.filter[p1, __ | s2.content.containsKey(p1)].entrySet;
 		val conflictsS2 = s2.content.filter[p1, __ | s1.content.containsKey(p1)].entrySet;
 		// try to unify conflicts
-		val unificationResult = conflictsS1.reject[conflictsS2.contains(it)].fold(UnificationResult.success(substitutionProvider.get()), [ur, tv_t |
+		val unificationResult = conflictsS1.reject[conflictsS2.contains(it)].fold(UnificationResult.success(substitutionProvider.get()), [ur, i_t1 |
 			if(!ur.valid) {
 				// short-circuit failure
 				return ur;
 			}
-			val tv = tv_t.key;
-			val t1 = tv_t.value;
-			val t2 = s2.content.get(tv);
+			val t1 = i_t1.value;
+			val t2 = s2.content.get(i_t1.key);
 			val unification = compute(null, t1, t2);
 			if(unification.valid) {
-				if(unification.substitution.content.containsKey(tv)) {
-					ur.substitution.add(tv, unification.substitution.content.get(tv));
+				if(unification.substitution.content.containsKey(i_t1.key)) {
+					ur.substitution.add(s1.idxToTypeVariable.get(i_t1.key), unification.substitution.content.get(i_t1.key));
 				}
 				// else nothing to do because types just agree
 				// finally return the built unification

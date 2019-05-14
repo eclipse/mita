@@ -13,15 +13,16 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.types.CoercionExpression
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 /**
  * Interface for type generators.
@@ -46,30 +47,23 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a variable declaration for a variable of a generated type
 	 */
-	def CodeFragment generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(stmt, type)» «stmt.name»;''')
+	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
 	/**
 	 * Produces a new instance of the type
 	 */
 	def CodeFragment generateNewInstance(AbstractType type, NewInstanceExpression expr);
-
-	/**
-	 * Checks if this type supports a particular expression within its type hierarchy
-	 */
-	def boolean checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
-		val resource = context.eResource;
-		val cs = if(resource instanceof MitaBaseResource) resource.latestSolution.getConstraintSystem;
-		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(cs, context, otherType, type);
-	}
 	
 	/**
-	 * Produces code which implements an assignment operation. This function will only be executed if
-	 * {@link #checkExpressionSupport) returned true for the corresponding types.
+	 * Produces code which implements an assignment operation. 
+	 * Every generator should be able to at least handle AssignmentOperator.ASSIGN. 
+	 * left can be used for size inference, but might not exist, for example when copying inner structures.
+	 * leftName might be a C expression (for example `(*_result)`), to generate temporary variable names use cVariablePrefix. 
 	 */
-	def CodeFragment generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
-		return codeFragmentProvider.create('''«left» «operator.literal» «right»;''');
+	def CodeFragment generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {
+		return codeFragmentProvider.create('''«leftName» «operator.literal» «right»;''');
 	}
 	
 	/**

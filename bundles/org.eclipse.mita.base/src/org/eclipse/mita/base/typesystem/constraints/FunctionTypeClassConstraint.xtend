@@ -33,6 +33,7 @@ import com.google.common.base.Optional
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.infra.CachedBoolean
 import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 
 @Accessors
 @EqualsHashCode
@@ -98,7 +99,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		return this;
 	}
 	
-	override modifyNames((String) => String converter) {
+	override modifyNames(NameModifier converter) {
 		return new FunctionTypeClassConstraint(_errorMessage, typ.modifyNames(converter), instanceOfQN, functionCall, functionReference, returnTypeTV.modifyNames(converter) as TypeVariable, returnTypeVariance, constraintSystemProvider);
 	}
 	
