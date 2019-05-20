@@ -41,7 +41,7 @@ class ProjectErrorShouldGenerate implements IShouldGenerate {
 			
 			if (project.name == projectConfig?.name) {
 				val allMakers = project.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
-				if(allMakers.exists[ it.getAttribute(IMarker.SEVERITY) == IMarker.SEVERITY_ERROR && it.resource.name.toLowerCase.endsWith(".mita") ]) {
+				if(allMakers.exists[ it.getAttribute(IMarker.SEVERITY) == IMarker.SEVERITY_ERROR && it.resource.name.toLowerCase.endsWith(MitaBaseResource.PROGRAM_EXT) ]) {
 					return false;					
 				}
 			}

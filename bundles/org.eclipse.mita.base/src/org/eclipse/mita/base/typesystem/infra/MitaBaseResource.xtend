@@ -87,7 +87,6 @@ class MitaBaseResource extends LazyLinkingResource {
 	protected XtextFragmentProvider fragmentProvider;
 	
 	public final static String PROGRAM_EXT = ".mita"
-	public final static String TYPES_EXT = ".types"
 	public final static String PLATFORM_EXT = ".platform"
 
 	override toString() {
