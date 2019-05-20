@@ -14,9 +14,6 @@
 package org.eclipse.mita.program.scoping
 
 import com.google.inject.Inject
-import java.util.List
-import org.eclipse.emf.common.util.URI
-import org.eclipse.emf.ecore.EClass
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.resource.Resource
@@ -26,14 +23,9 @@ import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
-import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.IContainer
-import org.eclipse.xtext.resource.IEObjectDescription
-import org.eclipse.xtext.resource.ISelectable
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
-import org.eclipse.xtext.scoping.impl.ImportNormalizer
-import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.scoping.impl.MultimapBasedSelectable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
@@ -44,6 +36,8 @@ class ProgramDslImportScopeProvider extends BaseImportScopeProvider {
 	ResourceDescriptionsProvider resourceDescriptionsProvider;
 	@Inject
 	IContainer.Manager containerManager;
+	
+	public static val IMPLICIT_IMPORTS = #["stdlib.*"]
 
 	override protected String getImportedNamespace(EObject object) {
 		// Mita imports are always wildcard imports. We do not support fully qualified references. 
@@ -54,7 +48,7 @@ class ProgramDslImportScopeProvider extends BaseImportScopeProvider {
 	}
 
 	override protected getImplicitImports(boolean ignoreCase) {
-		#[createImportedNamespaceResolver("stdlib.*", ignoreCase)]
+		IMPLICIT_IMPORTS.map[createImportedNamespaceResolver(it, ignoreCase)].toList
 	}
 
 	override protected getLocalElementsScope(IScope parent, EObject context, EReference reference) {
