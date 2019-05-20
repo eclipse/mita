@@ -25,6 +25,7 @@ import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.validation.CheckMode
 import org.eclipse.xtext.validation.IResourceValidator
 import org.eclipse.xtext.workspace.ProjectConfigAdapter
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class ProjectErrorShouldGenerate implements IShouldGenerate {
 
