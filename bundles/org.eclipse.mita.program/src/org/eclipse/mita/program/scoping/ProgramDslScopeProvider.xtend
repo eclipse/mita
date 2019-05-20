@@ -26,14 +26,12 @@ import org.eclipse.emf.ecore.EcorePackage
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.scoping.TypeKindNormalizer
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.EnumerationType
-import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
@@ -43,14 +41,11 @@ import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.PlatformPackage
-import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
+import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsDeconstructor
@@ -66,15 +61,13 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.IQualifiedNameConverter
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
-import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
-import org.eclipse.xtext.util.OnChangeEvictingCache
+
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.platform.SystemSpecification
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -262,91 +255,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		return Scopes.scopeFor((type as ComplexType).allFeatures)
 	}
 
-	protected final OnChangeEvictingCache scope_FeatureCall_feature_cache = new OnChangeEvictingCache();
-
-	protected def getExtensionMethodScope(Expression context, EReference reference, AbstractType type) {
-		return new FilteringScope(delegate.getScope(context, reference), [ x |
-			(x.EClass == ProgramPackage.Literals.FUNCTION_DEFINITION ||
-				x.EClass == ProgramPackage.Literals.GENERATED_FUNCTION_DEFINITION) && x.isApplicableOn(type)
-		]);
-	}
-
-	protected def isApplicableOn(IEObjectDescription operationDesc, AbstractType contextType) {
-		var params = operationDesc.getUserData(ProgramDslResourceDescriptionStrategy.OPERATION_PARAM_TYPES);
-		val paramArray = if (params === null) {
-				if (operationDesc.EObjectOrProxy instanceof Operation) {
-					/* Workaround for when we did not get a proper object description, i.e. the object description was not produced
-					 * by a ProgramDslResourceDescriptionStrategy. In that case, if the description object is already resolved, we'll
-					 * compute the parameter types ourselves.
-					 */
-					ProgramDslResourceDescriptionStrategy.getOperationParameterTypes(
-						operationDesc.EObjectOrProxy as Operation);
-				} else {
-					#[] as String[]
-				}
-			} else {
-				params.toArray
-			}
-
-		if (paramArray.size == 0) {
-			return false
-		}
-		val paramTypeName = paramArray.get(0)
-		return contextType.isSubtypeOf(paramTypeName)
-	}
-
-	protected def isSubtypeOf(AbstractType subType, String superTypeName) {
-		return subType.name == superTypeName;
-//		if (subType.name == superTypeName) {
-//			return true
-//		}
-//		return typeSystem.getSuperTypes(subType).exists[name == superTypeName]
-	}
-
-	protected def toArray(String paramArrayAsString) {
-		paramArrayAsString.replace("[", "").replace("]", "").split(", ")
-	}
-
-	dispatch protected def addFeatureScope(SumType owner, IScope scope) {
-		Scopes.scopeFor(owner.alternatives, scope);
-	}
-
-	dispatch protected def addFeatureScope(StructureType owner, IScope scope) {
-		Scopes.scopeFor(owner.parameters, scope);
-	}
-
-	dispatch protected def addFeatureScope(ComplexType owner, IScope scope) {
-		Scopes.scopeFor(owner.getAllFeatures(), scope);
-	}
-
-	dispatch protected def addFeatureScope(EnumerationType owner, IScope scope) {
-		Scopes.scopeFor(owner.getEnumerator(), scope);
-	}
-
-	dispatch protected def addFeatureScope(SystemResourceSetup owner, IScope scope) {
-		Scopes.scopeFor(owner.signalInstances, scope)
-	}
-
-	dispatch protected def addFeatureScope(Sensor owner, IScope scope) {
-		Scopes.scopeFor(owner.modalities, scope);
-	}
-	dispatch protected def addFeatureScope(Platform owner, IScope scope) {
-		Scopes.scopeFor(owner.modalities, scope);
-	}
-
-	dispatch protected def IScope addFeatureScope(SystemResourceAlias owner, IScope scope) {
-		return if(owner.delegate === null) scope else addFeatureScope(owner.delegate, scope)
-	}
-
-	dispatch protected def addFeatureScope(Object owner, IScope scope) {
-		// fall-back
-		scope
-	}
-	dispatch protected def addFeatureScope(Void owner, IScope scope) {
-		// fall-back
-		scope
-	}
-
 	def IScope scope_ConfigurationItemValue_item(SystemResourceSetup context, EReference reference) {
 		val items = context.type?.configurationItems
 		if(items === null) {
@@ -499,20 +407,6 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		
 	}
 	
-	def filteredSumTypeScope(IScope originalScope, SumType itemType) {
-		val itemTypeName = qualifiedNameProvider.getFullyQualifiedName(itemType);
-		val normalizer = new ImportNormalizer(itemTypeName, true, false);
-		val delegate = new ImportScope(Collections.singletonList(normalizer), originalScope, null,
-			TypesPackage.Literals.COMPLEX_TYPE, false);
-		return new FilteringScope(delegate, [
-			(
-				   TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(it.EClass) 
-				|| TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(it.EClass) 
-				|| TypesPackage.Literals.SINGLETON.isSuperTypeOf(it.EClass) 
-			) && it.name.segmentCount == 1
-		])	
-	}
-
 	def filteredEnumeratorScope(IScope originalScope, EnumerationType itemType) {
 		return filteredEnumeratorScope(originalScope, Collections.singletonList(itemType));
 	}
@@ -674,19 +568,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			.or(originalScope)
 	}
 
-	val cache = new OnChangeEvictingCache();
-
 	override IScope getScope(EObject context, EReference reference) {
 		// Performance improvement: hard-code well traveled routes
-		
-		val scope = //cache.get(context -> reference, context.eResource, [
+		val scope = 
 			if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
-				val scope = scope_ElementReferenceExpression_reference(context, reference);
-				//val normalizers = #[new ImportNormalizer(QualifiedName.create("_kinds"), true, false)];
-				//return new ImportScope(normalizers, scope, null, EcorePackage.eINSTANCE.EObject, false);
-				scope;
+				scope_ElementReferenceExpression_reference(context, reference);
 			} else if (reference == ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__ITEM &&
 				context instanceof SystemResourceSetup) {
 				scope_ConfigurationItemValue_item(context as SystemResourceSetup, reference);
@@ -695,7 +583,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 //				println(methodName + ' -> ' + context.eClass.name);
 				super.getScope(context, reference);
 			}
-//		]);
+
 		return TypesGlobalScopeProvider.filterExportable(context.eResource, reference, scope);
 	}
 
