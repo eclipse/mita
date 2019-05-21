@@ -337,6 +337,14 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		runLibraryValidator(setup.eContainer as Program, setup, systemResource.eResource, systemResource.validator);
 	}
 	
+	@Check(CheckType.NORMAL)
+	def checkProgram_platformValidator(Program program) {
+		val platform = modelUtils.getPlatform(program.eResource.resourceSet, program);
+		if (platform !== null) { 
+			runLibraryValidator(program, platform, platform.eResource, platform.validator);
+		}
+	}
+	
 	@Check(CheckType.FAST)
 	def checkVariableDeclaration_isUniqueInProgramBlock(VariableDeclaration variable) {
 		val parentBlock = EcoreUtil2.getContainerOfType(variable, ProgramBlock);

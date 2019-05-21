@@ -35,6 +35,9 @@ class ProgramImportValidator extends AbstractDeclarativeValidator {
 	
 	public static val String NO_PLATFORM_SELECTED_MSG = "No platform selected. Please import one of the available platforms: \"%s.\"";
 	public static val String NO_PLATFORM_SELECTED_CODE = "no_platform_selected";
+	
+	public static val String MULTIPLE_PLATFORMS_SELECTED_MSG = "Only one target platform must be imported."
+	public static val String MULTIPLE_PLATFORMS_SELECTED_CODE = "multiple_platforms_selected"
 
 	@Check(CheckType.NORMAL)
 	def checkPackageImportsAreUnique(Program program) {
@@ -68,8 +71,10 @@ class ProgramImportValidator extends AbstractDeclarativeValidator {
 			error(String.format(NO_PLATFORM_SELECTED_MSG, LibraryExtensions.descriptors.filter[optional].map[id].join(", ")), program, ProgramPackage.eINSTANCE.program_EventHandlers,
 				NO_PLATFORM_SELECTED_CODE)
 		} else if (importedPlatforms.size > 1) {
-			error('''Only one target platform must be imported.''', program,
-				ProgramPackage.eINSTANCE.program_EventHandlers)
+			importedPlatforms.forEach[ import | 
+				error(MULTIPLE_PLATFORMS_SELECTED_MSG, import,
+					TypesPackage.Literals.IMPORT_STATEMENT__IMPORTED_NAMESPACE, MULTIPLE_PLATFORMS_SELECTED_CODE, import.importedNamespace)
+			]
 		}
 	}
 
