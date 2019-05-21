@@ -78,7 +78,7 @@ class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 		}
 	}
 
-	@Fix(ProgramImportValidator.MISSING_TARGET_PLATFORM_CODE)
+	@Fix(ProgramImportValidator.NO_PLATFORM_SELECTED_CODE)
 	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {
 		LibraryExtensions.availablePlatforms.forEach [ platform |
 			acceptor.accept(issue, '''Import '«platform.id»' '''.toString,
