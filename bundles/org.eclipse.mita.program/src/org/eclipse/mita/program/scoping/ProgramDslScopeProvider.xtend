@@ -68,6 +68,7 @@ import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -277,14 +278,28 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 			PlatformPackage.Literals.SENSOR,
 			PlatformPackage.Literals.PLATFORM
 		]
+		
+		val program = EcoreUtil.getRootContainer(context) as Program
+		
 		return new FilteringScope(result, [ x |
 			val xobj = x.EObjectOrProxy;
-			if (xobj instanceof SystemResourceAlias) {
+			
+			val isConfigurable = if (xobj instanceof SystemResourceAlias) {
 				configurableResourceTypes.contains(xobj.delegate?.eClass)
 			} else {
 				configurableResourceTypes.contains(x.EClass)
 			}
+			
+			isConfigurable && xobj.isImportedBy(program) 
 		]);
+	}
+	
+	protected def isImportedBy(EObject obj, Program program) {
+		val system = EcoreUtil2.getContainerOfType(obj, SystemSpecification)
+		if (system !== null) {
+			return program.imports.exists[importedNamespace.equals(system.name)]
+		}
+		return false
 	}
 
 	public static val Predicate<EClass> globalElementFilter = [ x |
@@ -535,16 +550,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		}
 	}
 
-	def IScope scope_SystemEventSource_origin(Program context, EReference reference) {
-		val originalScope = getDelegate().getScope(context, reference);
+	def IScope scope_SystemEventSource_origin(Program program, EReference reference) {
+		val originalScope = getDelegate().getScope(program, reference);
 
 		return new FilteringScope(originalScope, [ x |
 			val obj = x.EObjectOrProxy;
 			if (obj instanceof AbstractSystemResource) {
-				if (!obj.events.isNullOrEmpty && obj.eContainer instanceof SystemSpecification) {
-					val sysSpec = (obj.eContainer as SystemSpecification).name
-					return context.imports.exists[it.importedNamespace.equals(sysSpec)]
-				}
+				return !obj.events.isNullOrEmpty && obj.isImportedBy(program)
 			}
 			return false;
 		])
