@@ -51,7 +51,6 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.PreventRecursion
-import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Modality
@@ -121,9 +120,6 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	public static val String VARIABLE_NOT_UNIQUE_MSG = "Cannot redeclare variable '%s'.";
 	public static val String VARIABLE_NOT_UNIQUE_CODE = "variable_not_unique";
 
-	public static val String NO_PLATFORM_SELECTED_MSG = "No platform selected. Please import one of the available platforms: \"%s.\"";
-	public static val String NO_PLATFORM_SELECTED_CODE = "no_platform_selected";
-	
 	public static val String FUNCTIONS_CAN_NOT_BE_REFERENCED_MSG = "Functions can not be used as values. Please add parentheses.";
 	public static val String FUNCTIONS_CAN_NOT_BE_REFERENCED_CODE = "no_function_references";
 	
@@ -340,14 +336,11 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 		runLibraryValidator(setup.eContainer as Program, setup, systemResource.eResource, systemResource.validator);
 	}
-
+	
 	@Check(CheckType.NORMAL)
 	def checkProgram_platformValidator(Program program) {
 		val platform = modelUtils.getPlatform(program.eResource.resourceSet, program);
-		if (platform === null) { 
-			error(String.format(NO_PLATFORM_SELECTED_MSG, LibraryExtensions.descriptors.filter[optional].map[id].join(", ")), program, ProgramPackage.eINSTANCE.program_EventHandlers,
-				NO_PLATFORM_SELECTED_CODE);
-		} else {
+		if (platform !== null) { 
 			runLibraryValidator(program, platform, platform.eResource, platform.validator);
 		}
 	}
