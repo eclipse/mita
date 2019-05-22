@@ -63,6 +63,9 @@ class ElementSizeInferrer {
 	PreventRecursion preventRecursion = new PreventRecursion;
 
 	def ElementSizeInferenceResult infer(EObject obj) {
+		if(obj === null) {
+			return obj.doInfer(null);
+		}
 		val type = BaseUtils.getType(obj);
 		if(TypesUtil.isGeneratedType(obj, type)) {
 			return obj._doInferFromType(type);
@@ -206,11 +209,9 @@ class ElementSizeInferrer {
 				.map[it.expression]
 				.head
 		)
-		if(initialization === null) {
-			variable.inferFromType(type);
-		} else {
-			return initialization.infer;
-		}
+
+		return initialization.infer.orElse[|variable.inferFromType(type)];
+		
 	}
 	protected def dispatch ElementSizeInferenceResult doInfer(PrimitiveValueExpression obj, AbstractType type) {
 		return obj.value.infer;

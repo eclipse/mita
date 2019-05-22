@@ -579,9 +579,9 @@ class StatementGenerator {
 		}	
 	}
 	
-	@Traced dispatch def IGeneratorNode code(EventHandlerVariableDeclaration stmt) {
-		return '''«getCtype(BaseUtils.getType(stmt), stmt)» «stmt.name»'''
-	}
+//	@Traced dispatch def IGeneratorNode code(EventHandlerVariableDeclaration stmt) {
+//		return '''«getCtype(BaseUtils.getType(stmt), stmt)» «stmt.name»'''
+//	}
 
 	// TODO: remove code duplication with generateVariableDeclaration(...)
 	dispatch def IGeneratorNode initializationCode(VariableDeclaration stmt) {

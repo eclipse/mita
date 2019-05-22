@@ -27,7 +27,7 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 /**
  * Interface for type generators.
  */
-abstract class AbstractTypeGenerator implements IGenerator {
+class AbstractTypeGenerator implements IGenerator {
 
 	@Inject SubtypeChecker subtypeChecker;
 
@@ -54,9 +54,9 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a new instance of the type
 	 */
-	def CodeFragment generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr);
-//		return CodeFragment.EMPTY;
-//	}
+	def CodeFragment generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
+		return CodeFragment.EMPTY;
+	}
 //
 //	/**
 //	 * Checks if this type supports a particular expression within its type hierarchy

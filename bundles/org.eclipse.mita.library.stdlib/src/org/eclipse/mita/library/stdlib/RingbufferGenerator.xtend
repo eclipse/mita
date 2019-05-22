@@ -79,12 +79,12 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 				if(initialization instanceof NewInstanceExpression) {
 					val occurrence = getOccurrence(context);
 					return codeFragmentProvider.create('''
-						«typeGenerator.code(context, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«size»];
+						«typeGenerator.code(context, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«size.elementCount»];
 						«typeGenerator.code(context, type)» «varName» = {
 							.data = data_«varName»_«occurrence»,
 							.read = 0,
 							.length = 0,
-							.capacity = «size»
+							.capacity = «size.elementCount»
 						};
 					''')
 				}
@@ -165,8 +165,6 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 				}
 				--«rbRefCode».length;
 				«assignmentGenerator.generateExpression(innerType, resultVariableName, AssignmentOperator.ASSIGN, codeFragmentProvider.create('''«rbRefCode».data[«rbRefCode».read]''')).noTerminator»;
-				//or:
-				«resultVariableName» = «rbRefCode».data[«rbRefCode».read];
 				«rbRefCode».read = ringbuffer_increment(«rbRefCode».read, «rbRefCode».capacity);
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
