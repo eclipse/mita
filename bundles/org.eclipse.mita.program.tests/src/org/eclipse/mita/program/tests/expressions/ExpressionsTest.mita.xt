@@ -32,12 +32,31 @@ function expressions() : void {
 	// logical negation (bool only): !
 	let foo = 1 + 1;
 	(foo * 2) as double / 3.0;
+	foo >> 2;
+	foo << 2;
 	// All expressions have a type. This type can be void
 //	// TODO: what is the semantic here, is it like "instanceof" in Java, i.e. super type hierarchy is checked, or is it a double equality check
 //	typeof(1 + 2) == type(uint32_t); // true
 //	typeof(1 + 2) == type(void); // false
 	// Expressions can be explicitly cast to another type using the as 	keyword
 	var foo2 : uint32 = (42.0 / 3.0) as uint32;
+	// Integer expressions work, whether explicitly typed or not
+	var j = 0;
+	j = j + j;
+	var j1 = 0;
+	j1 = j1 + j1;
+	var k: int8 = 0;
+	k = k + k;
+	var l: uint8 = 0;
+	l = l + l;
+	var m: int16 = 0;
+	m = m + m;
+	m = m + k;
+	m = m + j1;
+	m = m + l;
+	var n: uint16 = 0;
+	n = n + n;
+	n = n + l;
 }
 
 // XPECT noCompileErrors

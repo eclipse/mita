@@ -13,17 +13,21 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.library.stdlib.StringGenerator
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class LogGenerator extends AbstractFunctionGenerator {
 	
@@ -34,7 +38,7 @@ class LogGenerator extends AbstractFunctionGenerator {
 	protected IPlatformLoggingGenerator loggingGenerator
 
 	
-	override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression functionCall) {
+	override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression functionCall) {
 		val functionName = (functionCall.reference as NamedElement).name;
 		val level = switch(functionName) {
 			case "logDebug": LogLevel.Debug
@@ -43,10 +47,17 @@ class LogGenerator extends AbstractFunctionGenerator {
 			case "logError": LogLevel.Error
 		}
 		
+//		val firstArg = functionCall.arguments.head?.value;
+//		val result = if(firstArg instanceof InterpolatedStringExpression) {
+//			val pattern = stringGenerator.getPattern(firstArg);
+//			val args = firstArg.content.map[ codeFragmentProvider.create('''«generate(it)»''') ]
+
 		val firstArg = functionCall.arguments.head?.value;
-		val result = if(firstArg instanceof InterpolatedStringExpression) {
-			val pattern = stringGenerator.getPattern(firstArg);
-			val args = firstArg.content.map[ codeFragmentProvider.create('''«generate(it)»''') ]
+		val interpolatedStringLiteral = firstArg.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(InterpolatedStringLiteral)
+		val result = if(interpolatedStringLiteral !== null) {
+			val pattern = stringGenerator.getPattern(interpolatedStringLiteral);
+			val args = interpolatedStringLiteral.content.map[ codeFragmentProvider.create('''«generate(it)»''') ]
+
 			loggingGenerator.generateLogStatement(level, pattern, args);
 		} else {
 			val pattern = StaticValueInferrer.infer(firstArg, []);

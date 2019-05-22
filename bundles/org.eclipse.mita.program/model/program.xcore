@@ -40,6 +40,7 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -211,11 +212,14 @@ class VariableDeclaration extends Property, AbstractStatement {
 }
 
 class ArrayLiteral extends Literal {
-	contains Literal[] values
+	contains Expression[] values
 }
 
 class ExpressionStatement extends AbstractStatement {
 	contains Expression expression
+	op String toString() {
+		return expression.toString + ";";
+	}
 }
 
 abstract class AbstractLoopStatement extends AbstractStatement {
@@ -334,11 +338,6 @@ class NewInstanceExpression extends ElementReferenceExpression {
 	}
 }
 
-class InterpolatedStringExpression extends Expression {
-	String[] text
-	contains Expression[] content
-}
-
 class DereferenceExpression extends Expression {
 	contains Expression expression
 	op EObject getInnerReference() {
@@ -357,13 +356,29 @@ class ReferenceExpression extends Expression {
 /**
  * Post-transformation classes
  */
+class NoopStatement extends AbstractStatement {
+	op String toString() {
+		return "no-op();";
+	}
+}
+ 
 class ModalityAccessPreparation extends AbstractStatement {
 	refers AbstractSystemResource systemResource
 	refers Modality[] modalities
+	op String toString() {
+		return "modalityAccessPreparation(" 
+			+ (systemResource?.toString ?: "null") + ", " 
+			+ modalities.map[it?.toString ?: "null"] + ");"
+	}
 }
 class ModalityAccess extends Expression {
 	refers ModalityAccessPreparation preparation
 	refers Modality modality
+	op String toString() {
+		return "modalityAccess(" 
+			+ (preparation?.toString ?: "null") + ", " 
+			+ (modality?.toString ?: "null") + ")"
+	}
 }
 class SignalInstanceReadAccess extends VariableDeclaration {
 	refers SignalInstance vci
@@ -384,6 +399,4 @@ class LoopBreakerStatement extends AbstractStatement {
 class ArrayRuntimeCheckStatement extends AbstractStatement {
 	refers ArrayAccessExpression access
 }
-
-
 

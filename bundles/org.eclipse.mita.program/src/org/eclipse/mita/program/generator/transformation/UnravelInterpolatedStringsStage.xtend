@@ -13,15 +13,15 @@
 
 package org.eclipse.mita.program.generator.transformation
 
+import java.util.HashSet
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.GeneratedFunctionDefinition
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.xtext.EcoreUtil2
-import java.util.HashSet
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 
 class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 	
@@ -44,7 +44,10 @@ class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 			}
 		}
 		
-		return possibleFunctionCallContainer !== null && possibleFunctionCallContainer?.isOperationCall && !isInPrintContext && (expression instanceof InterpolatedStringExpression);
+		return possibleFunctionCallContainer !== null 
+			&& possibleFunctionCallContainer?.isOperationCall 
+			&& !isInPrintContext 
+			&& expression.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(InterpolatedStringLiteral) !== null;
 	}
 	
 }

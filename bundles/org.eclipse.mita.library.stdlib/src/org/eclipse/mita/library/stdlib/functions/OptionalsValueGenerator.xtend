@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -27,7 +28,7 @@ class OptionalsValueGenerator extends AbstractFunctionGenerator {
 	@Inject 
 	protected extension StatementGenerator statementGenerator
 	
-	override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
+	override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
 		val args = ref.arguments;
 		val optVarOrExpr = args.head.value;
 				

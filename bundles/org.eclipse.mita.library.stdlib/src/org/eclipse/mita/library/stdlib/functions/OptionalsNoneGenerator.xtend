@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -34,7 +35,7 @@ class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected GeneratorRegistry registry
 	
-	override generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
+	override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
 		// need the optionalGenerator
 		val funType = BaseUtils.getType(ref);
 		val funTypeOrigin = funType.origin;

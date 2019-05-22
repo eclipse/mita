@@ -13,17 +13,19 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 class ReferenceGenerator extends AbstractTypeGenerator {
 	
@@ -50,16 +52,11 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 		
 	}
 	
-	override generateVariableDeclaration(AbstractType type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(stmt, type)» «stmt.name»«IF stmt.initialization !== null» = «stmt.initialization.code»«ENDIF»;''')
+	override generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»«IF initialization !== null» = «initialization.code»«ENDIF»;''')
 	}
-	override generateExpression(AbstractType type, EObject left, AssignmentOperator operator, EObject right) {
-		val leftCode = if(left instanceof VariableDeclaration) {
-			codeFragmentProvider.create('''«left.name»''');
-		} else {
-			left.code;
-		}
-		codeFragmentProvider.create('''«leftCode» «operator.literal» «right.code»;''')
+	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {
+		codeFragmentProvider.create('''«leftName» «operator.literal» «right.code»;''')
 		
 	}
 	

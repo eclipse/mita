@@ -18,8 +18,8 @@ import com.google.inject.Provider
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Platform
@@ -29,12 +29,10 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.ThrowExceptionStatement
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
-import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.IResourceGraph
 import org.eclipse.mita.program.generator.internal.ResourceGraphBuilder
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.mita.base.types.TypesUtil
 
 class CompilationContext {
 	protected Iterable<Program> units;
@@ -56,7 +54,7 @@ class CompilationContext {
 	protected ModelUtils modelUtils;
 	
 	@Accessors
-	protected String mitaVersion = "0.1.0";
+	protected String mitaVersion = "0.2.0";
 	
 	var Boolean isInited = false;
 
@@ -143,10 +141,10 @@ class CompilationContext {
 	def getAllGeneratedTypesUsed() {
 		assertInited();
 		return (units + stdlib).flatMap[program |
-			(program.eAllContents.filter(PresentTypeSpecifier) + program.eAllContents.filter(VariableDeclaration)).map[
+			(program.eAllContents).map[
 				it -> BaseUtils.getType(it)
 			].filter[
-				it.value?.freeVars?.empty && TypesUtil.isGeneratedType(program.eResource, it.value)
+				!(it.value instanceof TypeScheme) && it.value?.freeVars?.empty && TypesUtil.isGeneratedType(program.eResource, it.value)
 			].map[it.value].toIterable
 		].groupBy[it.toString].entrySet.map[it.value.head];
 	}

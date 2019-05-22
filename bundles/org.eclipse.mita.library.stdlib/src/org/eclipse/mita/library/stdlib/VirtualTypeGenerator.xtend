@@ -25,11 +25,7 @@ import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 
 class VirtualTypeGenerator extends AbstractTypeGenerator {
-	
-	override checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
-		return false;
-	}
-	
+		
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}

@@ -63,7 +63,7 @@ GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition:
 
 NativeFunctionDefinition returns program::NativeFunctionDefinition:
 	(exported?='export')?
-	'native' (checked?='checked' | 'unchecked') ('fn' | 'function')  name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
+	'native' (checked?='checked' | 'unchecked') ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
 	'header' header=STRING ';'
 ;
 
@@ -139,11 +139,11 @@ ExpressionStatement returns program::ExpressionStatement:
 
 @Override
 Literal returns expressions::Literal:
-	ArrayLiteral | BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;
+	ArrayLiteral | BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral | InterpolatedStringLiteral;
 
 ArrayLiteral returns program::ArrayLiteral:
 	{program::ArrayLiteral}
-	'[' (values+=Literal (',' values += Literal)*)? ']'
+	'[' (values+=Expression (',' values += Expression)*)? ']'
 ;
 
 @Override 
@@ -151,10 +151,10 @@ PrimaryExpression returns types::Expression:
 	PrimitiveValueExpression
 	| FeatureCall
 	| NewInstanceExpression
-	| InterpolatedStringExpression
 	| DereferenceExpression
 	| ReferenceExpression
 ;
+
 
 DereferenceExpression returns program::DereferenceExpression hidden():
 	'*' expression=PrimaryExpression
@@ -162,11 +162,6 @@ DereferenceExpression returns program::DereferenceExpression hidden():
 
 ReferenceExpression returns program::ReferenceExpression hidden(): 
 	'&' variable=FeatureCall
-;
-
-// no need to capture as its own expression
-@Override ParenthesizedExpression returns types::Expression:
-    '(' Expression ')'
 ;
 
 NewInstanceExpression returns program::NewInstanceExpression:
@@ -177,11 +172,6 @@ UnqualifiedPresentTypeSpecifier returns types::PresentTypeSpecifier:
 	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))?
 ;
 
-InterpolatedStringExpression returns program::InterpolatedStringExpression hidden(): 
-	{program::InterpolatedStringExpression}
-	'`' ((=>'${' content+=Expression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
-;
-IntAsString returns ecore::EString: LONG;
 
 DoWhileStatement returns program::DoWhileStatement: 
 	'do' body=ProgramBlock 'while' '(' condition=Expression ')'
@@ -273,72 +263,3 @@ CatchStatement returns program::CatchStatement:
 	'catch' '(' exceptionType=[types::ExceptionTypeDeclaration] ')' body=ProgramBlock
 ;
 
-ReservedKeywords:
-	'alias-of' |
-	'alt' |
-	'alternative' |
-	'catch' |
-	'checked' |
-	'constructor' |
-	'do' |
-	'else' |
-	'enum' |
-	'every' |
-	'exception' |
-	'export' |
-	'extends' |
-	'finally' |
-	'fn' |
-	'for' |
-	'function' |
-	'generated' |
-	'generator' |
-	'header' |
-	'hour' |
-	'hours' |
-	'if' |
-	'import' |
-	'is' |
-	'isother' |
-	'let' |
-	'millisecond' |
-	'milliseconds' |
-	'minute' |
-	'minutes' |
-	'native' |
-	'native-type' |
-	'package' |
-	'return' |
-	'second' |
-	'seconds' |
-	'setup' |
-	'size-inferrer' |
-	'static' |
-	'struct' |
-	'subtype-of' |
-	'throw' |
-	'try' |
-	'type' |
-	'unchecked' |
-	'validator' |
-	'var' |
-	'where' |
-	'while'
-;
-
-ReservedSymbols:
-	'{' | '}' |
-	',' | ';' |
-	':' | '.' |
-	'(' | ')' |
-	'[' | ']' |
-	'+' | '-' |
-	'*' | '/' |
-	'%' | '\\'| 
-	'&&' | '||' |
-	'&' | '|' |
-	'=' | '==' |
-	'!' | '<' | 
-	'>' | '<=' |
-	'>=' | '!='
-;

@@ -54,7 +54,7 @@ class StringTest extends AbstractRuntimeTest {
 		every 1 second {
 			// do nothing, this is just to generate time functions
 		}
-		 
+		
 		native unchecked fn exit(status: int16): void header "stdlib.h";
 		''').key;
 		compileMita(projectPath);

@@ -52,6 +52,7 @@ import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider.ExportedFilteredScope
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#[/*"stdlib",*/ "void"]);
@@ -165,10 +166,17 @@ class StdlibTypeRegistry {
 		return #[getFloatType(context), getDoubleType(context)];
 	}
 	def Iterable<AbstractType> getIntegerTypes(EObject context) {
-		val typesScope = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
 		val cache = new OnChangeEvictingCache();
 		
 		return cache.get("STDLIB_INTEGER_TYPES", context.eResource, [|
+			val typesScopeFiltered = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+			val typesScope = if(typesScopeFiltered instanceof ExportedFilteredScope) {
+				// we want all integer types, even xint*.
+				typesScopeFiltered.unfilter;
+			}
+			else {
+				typesScopeFiltered;
+			}
 			StdlibTypeRegistry.integerTypeQIDs
 				.map[typesScope.getSingleElement(it)?.EObjectOrProxy]
 				.filter(NativeType)

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Automatic-Module-Name: org.eclipse.mita.library.extension
 Bundle-Name: Mita Library Extension
 Bundle-SymbolicName: org.eclipse.mita.library.extension;singleton:=true
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 0.2.0.qualifier
 Bundle-Activator: org.eclipse.mita.library.extension.LibraryActivator
 Bundle-Vendor: Eclipse.org/Mita
 Require-Bundle: org.eclipse.core.runtime,

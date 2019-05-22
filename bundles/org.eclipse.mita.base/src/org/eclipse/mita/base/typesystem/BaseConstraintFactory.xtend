@@ -42,6 +42,7 @@ import org.eclipse.mita.base.expressions.NumericalUnaryExpression
 import org.eclipse.mita.base.expressions.ParenthesizedExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.RelationalOperator
+import org.eclipse.mita.base.expressions.ShiftOperator
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
@@ -637,6 +638,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 				system.addConstraint(new JavaClassInstanceConstraint(mkIssue.apply(expr.rightOperand), system.computeConstraints(expr.rightOperand), NumericType))
 			}
 			return system.associate(boolType, expr);
+		}
+		else if(expr.operator instanceof ShiftOperator) {
+			val opQID = switch(expr.operator) {
+				case(ShiftOperator.LEFT): StdlibTypeRegistry.leftShiftFunctionQID
+				case(ShiftOperator.RIGHT): StdlibTypeRegistry.rightShiftFunctionQID
+			}
+			return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
 		}
 		else {
 			return system.associate(new BottomType(expr, println("BinaryExpression not implemented for " + expr.operator)));

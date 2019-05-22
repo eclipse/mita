@@ -17,15 +17,15 @@ import java.util.TreeMap
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.StructureType
 
-import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
 
 class ExpressionUtils {
 	def static getSortedArgumentsAsMap(Iterable<? extends Parameter> parameters, Iterable<Argument> arguments) {

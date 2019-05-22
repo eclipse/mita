@@ -179,11 +179,11 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			.map[x | x.contents.filter(Program).head ]
 			.filterNull
 			.map[x | 
-				val resource = x.eResource;
-				if(resource instanceof MitaBaseResource) {
-					if(resource.latestSolution === null) {
-						x.doType();
-					}
+				val resource = x.eResource;	
+				if(resource instanceof MitaBaseResource) {	
+					if(resource.latestSolution === null) {	
+						x.doType();	
+					}	
 				}
 				val copy = x.copy(copyResourceSet);
 				BaseUtils.ignoreChange(copy, [
@@ -203,7 +203,6 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			doType(it);			
 		]
 		
-		
 		var EObject platformRoot = modelUtils.getPlatform(input, compilationUnits.head);
 		while(platformRoot.eContainer !== null) {
 			platformRoot = platformRoot.eContainer;
@@ -215,7 +214,6 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		
 		val files = new LinkedList<String>();
 		val userTypeFiles = new LinkedList<String>();
-		
 		
 		// generate all the infrastructure bits
 		files += fsa.produceFile('main.c', someProgram, entryPointGenerator.generateMain(context));
@@ -261,6 +259,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			fsa.produceFile('Makefile', someProgram, codefragment);
 	}
 	
+
 	def clearCache(EObject obj) {
 		val resource = obj.eResource;
 		BaseUtils.getCacheAdapters(resource).forEach[
@@ -274,6 +273,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			resource.collectAndSolveTypes(program);
 		}
 	}
+	
 		
 	def Iterable<String> getUserFiles(ResourceSet set) {
         val resource = set.resources.head;   

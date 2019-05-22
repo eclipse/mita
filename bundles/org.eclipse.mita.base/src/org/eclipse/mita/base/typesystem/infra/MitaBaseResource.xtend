@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import com.google.inject.name.Named
 import java.io.IOException
 import java.io.InputStream
+import java.util.ArrayList
 import java.util.Map
 import org.apache.log4j.Logger
 import org.eclipse.emf.common.util.BasicEList
@@ -232,7 +233,19 @@ class MitaBaseResource extends LazyLinkingResource {
 //				val resourceOfObj = resource.resourceSet.getResource(it.trimFragment, true);
 //				return fragmentProvider.getEObject(resourceOfObj, it.fragment, fragmentProviderFallback);
 			])
-		].indexed.map[it.value.modifyNames('''.«it.key»''')].force;
+		]
+		.map[it.instanceCount -> it]
+		// calculate a running sum over all sizes
+		.fold(new ArrayList<Pair<Integer, ConstraintSystem>>() as Iterable<Pair<Integer, ConstraintSystem>> -> 0,
+			// given the old list and a running sum, and a constraint system with its size 
+			[lst_runningSize, size_constraints | 
+				// calculate the new running sum
+				val nextSum = (lst_runningSize.value + size_constraints.key);
+				// concatenate it to the input list, setting the offset to the current sum, and return both the list and the next running sum
+				return (lst_runningSize.key + #[lst_runningSize.value -> size_constraints.value]) -> nextSum
+			]
+		)
+		.key.map[it.value.modifyNames(it.key)].force;
 		timer.stop("deserialize");
 		if (cancelIndicator !== null && cancelIndicator.canceled) {
 			return;
@@ -274,7 +287,7 @@ class MitaBaseResource extends LazyLinkingResource {
 						val uri = it.key;
 						if (uri.trimFragment == resource.URI) {
 							val tv = it.value;
-							val type = solution.solution.substitutions.getOrDefault(tv, tv);
+							val type = solution.solution.content.getOrDefault(tv.idx, tv);
 							val origin = resource.resourceSet.getEObject(uri, false);
 							if (origin !== null) {
 								// we had the object loaded anyways, so we can set the type

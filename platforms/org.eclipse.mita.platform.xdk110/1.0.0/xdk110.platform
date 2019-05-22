@@ -80,17 +80,17 @@ sensor BMA280 {
 	/**
 	 * The X axis of the BMA280
 	 */
-	modality x_axis : int32
+	modality x_axis : int16
 	
 	/**
 	 * The Y axis of the BMA280
 	 */
-	modality y_axis : int32
+	modality y_axis : int16
 	
 	/**
 	 * The Z axis of the BMA280
 	 */ 
-	modality z_axis : int32
+	modality z_axis : int16
 	
 	/**
 	 * The L2 norm of the acceleration vector: sqrt(x^2 + y^2 + z^2)

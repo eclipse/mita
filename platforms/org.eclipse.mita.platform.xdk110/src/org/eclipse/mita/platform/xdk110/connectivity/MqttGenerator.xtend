@@ -28,6 +28,7 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import java.util.stream.Collectors
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 
@@ -348,22 +349,22 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		result.setPreamble('''
 		«IF auth instanceof SumTypeRepr»
 			«IF auth.isLogin()»
-				«val username = auth.properties.get("username")»
-				«val password = auth.properties.get("password")»
+				«val username = auth.properties.get("username").code»
+				«val password = auth.properties.get("password").code»
 				StringDescr_T username;
-				const char* usernameBuf = «username?.code»;
+				const char* usernameBuf = «username»;
 				
 				StringDescr_T password;
-				const char* passwordBuf = «password?.code»;
+				const char* passwordBuf = «password»;
 			«ENDIF»
 		«ENDIF»
 		
 		«IF lastWill instanceof SumTypeRepr»
 			«IF lastWill.hasLastWill»
 				StringDescr_T lastWillTopic;
-				const char* lastWillTopicBuf = «lastWill.properties.get("topic")?.code»;
+				const char* lastWillTopicBuf = «lastWill.properties.get("topic").code»;
 				StringDescr_T lastWillMessage;
-				const char* lastWillMessageBuf = «lastWill.properties.get("message")?.code»;
+				const char* lastWillMessageBuf = «lastWill.properties.get("message").code»;
 			«ENDIF»
 		«ENDIF»
 		''').addHeader("Serval_StringDescr.h", true);
@@ -540,7 +541,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttPublishHandle, 0UL);
-			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, *value, strlen(*value), (uint8_t) «qos», false))
+			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, value->data, value->length, (uint8_t) «qos», false))
 			{
 			    exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 			}

@@ -19,6 +19,12 @@ import java.util.Set
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.Literal
+
+class InterpolatedStringLiteral extends Literal {
+	String[] text
+	contains Expression[] content
+}
 
 class TypeSpecifier {}
 class PresentTypeSpecifier extends TypeSpecifier {

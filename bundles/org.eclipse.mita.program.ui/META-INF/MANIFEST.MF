@@ -3,7 +3,7 @@ Automatic-Module-Name: org.eclipse.mita.program.ui
 Bundle-ManifestVersion: 2
 Bundle-Name: Mita Program Language UI
 Bundle-Vendor: Eclipse.org/Mita
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 0.2.0.qualifier
 Bundle-SymbolicName: org.eclipse.mita.program.ui; singleton:=true
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.mita.program,

@@ -41,7 +41,7 @@ class BaseKind extends AbstractBaseType {
 		return new BaseKind(origin, name, kindOf.replaceProxies(system, resolve));
 	}
 	
-	override modifyNames((String) => String converter) {
+	override modifyNames(NameModifier converter) {
 		return new BaseKind(origin, name, kindOf.modifyNames(converter));
 	}
 	

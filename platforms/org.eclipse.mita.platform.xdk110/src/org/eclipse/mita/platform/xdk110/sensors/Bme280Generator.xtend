@@ -14,7 +14,7 @@
 package org.eclipse.mita.platform.xdk110.sensors
 
 import com.google.inject.Inject
-import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
@@ -81,7 +81,7 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
         .addHeader('XdkSensorHandle.h', true)
     }
     
-    protected def String getOversamplingConstant(Enumerator value) {
+    protected def String getOversamplingConstant(Singleton value) {
         return switch(value?.name) {
             case 'OVERSAMPLE_1X': 'ENVIRONMENTAL_BME280_OVERSAMP_1X'
             case 'OVERSAMPLE_2X': 'ENVIRONMENTAL_BME280_OVERSAMP_2X'

@@ -93,7 +93,7 @@ every 100 milliseconds {
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
 	/* XPECT errors ---
-		"Cannot determine size of element: Unable to infer size from type __args(∗MySensor) → modality<uint32>" at "MySensor.modality01"
+		"Cannot determine size of element: Object does not have a size" at "MySensor.modality01"
 		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
 	--- */
 	let a: modality<uint32> = MySensor.modality01; 
@@ -154,7 +154,7 @@ fn <T> foo2() {
 	let bar5 = new array<int32>(10, 20);
 	let bar6 = new array<int32>(10);
 	/* XPECT errors ---
-		"Cannot determine size of element: size missing" at "new array<int32>()"
+		"Cannot determine size of element: No explicit maximum size was given" at "new array<int32>()"
 		"__args() and __args(uint32) differ in the number of type arguments" at "new array<int32>()"
 	--- */
 	let bar7 = new array<int32>();

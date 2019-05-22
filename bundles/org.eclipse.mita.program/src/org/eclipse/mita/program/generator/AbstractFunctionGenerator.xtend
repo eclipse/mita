@@ -13,13 +13,14 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
-import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin;
+import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
+
 /**
  * Generates code implementing a function call. 
  */
@@ -36,7 +37,7 @@ abstract class AbstractFunctionGenerator implements IGenerator {
 	 * If resultVariableName is null the generator is expected to produce a valid C expression. If the generator
 	 * cannot produce such an expression it should mark an error.
 	 */
-	abstract def CodeFragment generate(EObject target, CodeFragment resultVariableName, ElementReferenceExpression functionCall)
+	abstract def CodeFragment generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression functionCall)
 	
 	/**
 	 * This function allows generators to opt out of the regular function unraveling. This enables function generators

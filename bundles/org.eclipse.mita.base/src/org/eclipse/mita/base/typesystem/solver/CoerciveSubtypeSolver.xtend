@@ -68,6 +68,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
+import org.eclipse.mita.base.typesystem.types.Signedness
 
 /**
  * Solves coercive subtyping as described in 
@@ -121,7 +122,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		if(!simplification1.valid) {
 			issues += simplification1.issues;
-			if(simplification1?.system?.constraints.nullOrEmpty || simplification1?.substitution?.content?.entrySet.nullOrEmpty) {
+			if(simplification1?.system?.constraints.nullOrEmpty || simplification1?.substitution?.content?.int2ObjectEntrySet.nullOrEmpty) {
 				return new ConstraintSolution(currentSystem, simplification1.substitution, simplification1.issues);
 			}
 		}
@@ -197,15 +198,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 		issues += validateSubtypes(currentSystem, typeResolutionOrigin);
 		
-		currentSubstitution.content.entrySet.filter[it.key instanceof TypeHole].forEach[th_t |
-			val origin = if(th_t.key.origin.eIsProxy) {
-				val proxy = th_t.key.origin as BasicEObjectImpl;
+		val content = currentSubstitution.content;
+		currentSubstitution.idxToTypeVariable.values.filter[it instanceof TypeHole].forEach[th |
+			val t = content.get(th.idx);
+			val origin = if(th.origin.eIsProxy) {
+				val proxy = th.origin as BasicEObjectImpl;
 				typeResolutionOrigin.eResource.resourceSet.getEObject(proxy.eProxyURI, true);
 			}
 			else {
-				th_t.key.origin;
+				th.origin;
 			}
-			issues += new ValidationIssue(Severity.INFO, '''«origin» has type «th_t.value»''', th_t.key.origin, null, "") 
+			issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t»''', th.origin, null, "") 
 		]
 		
 		println('''
@@ -216,9 +219,10 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 		
 	def Iterable<ValidationIssue> validateSubtypes(ConstraintSystem system, EObject typeResolutionOrigin) {
+		val renamer = new NicerTypeVariableNamesForErrorMessages;
 		return system.constraints.filter(SubtypeConstraint).flatMap[
 			if(!subtypeChecker.isSubType(system, typeResolutionOrigin, it.subType, it.superType)) {
-				#[it.errorMessage]
+				#[it.modifyNames(renamer).errorMessage]
 			}
 			else {
 				#[]
@@ -268,6 +272,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		var resultSystem = system;
 		var resultSub = substitution;
 		var issues = newArrayList;
+		var AbstractTypeConstraint lastConstraint = null;
 		do {
 			while(resultSystem.hasNonAtomicConstraints()) {
 				debugTimer.start("constraints");
@@ -291,22 +296,25 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				else {
 					debugTimer.start("UnifyCheck");
 					val returnedSub = simplification.substitution;
-					val witnessesNotWeaklyUnifyable = returnedSub.content.entrySet.filter[tv_t | tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]].flatMap[#[it.key, it.value]].force;
+					val witnessesNotWeaklyUnifyable = returnedSub.substitutions.filter[tv_t | 
+						tv_t.key != tv_t.value && tv_t.value.freeVars.exists[it == tv_t.key]
+					].flatMap[#[it.key, it.value]].force;
 					if(!witnessesNotWeaklyUnifyable.empty) {
 						val niceRenamer = new NicerTypeVariableNamesForErrorMessages;
 						issues += witnessesNotWeaklyUnifyable.map[new ValidationIssue(Severity.ERROR, "Types are recursive: " + witnessesNotWeaklyUnifyable.map[it.modifyNames(niceRenamer)].force.toString, it.origin, null, "")]; 
 						witnessesNotWeaklyUnifyable.filter(TypeVariable).forEach[
-							simplification.substitution.content.remove(it);
+							simplification.substitution.content.remove(it.idx);
 						]
 					}
 					debugTimer.stop("UnifyCheck");
 					
 					resultSystem = returnedSub.applyToGraph(simplification.system, debugTimer);
-					resultSub = returnedSub.apply(resultSub);
+					resultSub = returnedSub.applyMutating(resultSub);
 					#["typeClasses", "explicitSubtypeRelations", "constraints", "atomicity", "constraintAssert"].forEach[
 						debugTimer.consolidateByPrefix(it);
 					]
 				}
+				lastConstraint = constraint;
 			}
 			resultSystem = resultSub.applyToAtomics(resultSystem, debugTimer);
 			debugTimer.consolidateByPrefix("constraints");			
@@ -507,8 +515,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				return SimplificationResult.failure(processedResults.head.issues)
 			}
 		}
+		val renamer = new NicerTypeVariableNamesForErrorMessages();
 		return SimplificationResult.failure(#[
-			new ValidationIssue(Severity.ERROR, '''«refType» not instance of «typeClass»''', constraint.errorMessage.target, constraint.errorMessage.feature, constraint.errorMessage.issueCode), 
+			new ValidationIssue(Severity.ERROR, '''«refType» not instance of «typeClass.modifyNames(renamer)»''', constraint.errorMessage.target, constraint.errorMessage.feature, constraint.errorMessage.issueCode), 
 			constraint.errorMessage
 		]);
 	}
@@ -530,7 +539,20 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return Double.POSITIVE_INFINITY;
 	}
 	dispatch def double doComputeDistance(IntegerType type, IntegerType type2) {
-		return Math.abs(type.widthInBytes - type2.widthInBytes);
+		return Math.abs(type.widthInBytes - type2.widthInBytes) + doComputeDistance(type.signedness, type2.signedness);
+	}
+	dispatch def double doComputeDistance(Signedness s1, Signedness s2) {
+		if(s1 == s2) {
+			return 0.0;			
+		}
+		if(s1 == Signedness.DontCare) {
+			return 1;
+		}
+		if(s2 == Signedness.DontCare) {
+			return 1;
+		}
+		return 2;
+		
 	}
 	
 		
@@ -742,7 +764,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				finalState.nonUnifiable
 					.filter[
 						val str = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, it.subType, it.superType);
-						return !str.valid || !str.constraints.empty;
+						return it.subType instanceof TypeVariable || it.superType instanceof TypeVariable || !str.valid || !str.constraints.empty;
 					]
 					.map[it.errorMessage]
 			));
@@ -771,7 +793,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					// assign-sup
 					v.origin.coerceTo(system, supremum);
 					graph.replace(v, supremum);
-					resultSub = resultSub.replace(v, supremum)
 					resultSub.add(v, supremum);
 				} else {
 					//redo for debugging
@@ -780,7 +801,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					supremum !== null && successors.forall[ t | 
 						subtypeChecker.isSubType(system, typeResolutionOrigin, supremum, t)
 					];
-					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
+					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.modifyNames(new NicerTypeVariableNamesForErrorMessages).errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 
 					'''Unable to find valid subtype for «v.name». Candidates «predecessors» don't share a super type (best guess: «supremum ?: "none"»)''', 
 					v.origin, null, "")].toSet);
 					issues += newIssues;
@@ -797,7 +818,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 					// assign-inf
 					v.origin.coerceTo(system, infimum);
 					graph.replace(v, infimum);
-					resultSub = resultSub.replace(v, infimum) 
 					resultSub.add(v, infimum);
 				} else {
 					val newIssues = ((graph.nodeSourceConstraints.get(vIdx)?.map[it.errorMessage]) ?: #[new ValidationIssue(Severity.ERROR, 

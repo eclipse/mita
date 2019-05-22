@@ -152,7 +152,7 @@ class GeneratorUtils {
 		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
 			?:EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration) as EObject
 			?:EcoreUtil2.getContainerOfType(obj, Program) as EObject;
-		val result = funDef?.eAllContents?.filter(obj.class)?.indexed?.findFirst[it.value.equals(obj)]?.key?:(-1);
+		val result = funDef?.eAllContents?.indexed?.findFirst[it.value.equals(obj)]?.key?:(-1);
 		return result + 1;
 	}
 	
@@ -177,17 +177,10 @@ class GeneratorUtils {
 	}
 	
 	private def dispatch String getUniqueIdentifierInternal(ElementReferenceExpression expr) {
-		return expr.reference.uniqueIdentifierInternal;
+		// Erefs should only reference named things, so baseName should always be fine.
+		expr.eContainer.uniqueIdentifierInternal + "Ref" + expr.reference?.baseName?.toFirstUpper;
 	}
-	
-	private def dispatch String getUniqueIdentifierInternal(FeatureCall feature) {
-		if(feature.reference instanceof SignalInstance) {
-			return feature.reference.baseName.toFirstLower;
-		} else {
-			return feature.arguments.head.value.uniqueIdentifierInternal + feature.reference.baseName.toFirstUpper;			
-		}
-	}
-	
+
 	private def dispatch String getUniqueIdentifierInternal(ProgramBlock pb) {
 		pb.eContainer.uniqueIdentifierInternal + pb.eContainer.eAllContents.toList.indexOf(pb).toString;
 	}
