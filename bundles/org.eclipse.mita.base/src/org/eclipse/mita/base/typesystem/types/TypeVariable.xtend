@@ -17,8 +17,9 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.mita.base.util.Left
+import org.eclipse.mita.base.util.Right
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 class TypeVariable extends AbstractType {
 	@Accessors

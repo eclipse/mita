@@ -576,12 +576,12 @@ class StatementGenerator {
 		} else if(reference instanceof NativeFunctionDefinition) {
 			if(reference.checked) {
 				return cf('''
-				«reference.generateNativeFunctionCallChecked(cf('''&«variableName»'''), initialization).noTerminator»;
+				«generateNativeFunctionCallChecked(reference, cf('''&«variableName»'''), initialization).noTerminator»;
 				''')
 			}
 			else {
 				return cf('''
-				«variableName» = «reference.generateNativeFunctionCallUnchecked(initialization).noTerminator»;''')
+				«variableName» = «generateNativeFunctionCallUnchecked(reference, initialization).noTerminator»;''')
 			}
 		}	
 	}
@@ -618,8 +618,6 @@ class StatementGenerator {
 				) {
 					return CodeFragment.EMPTY;
 				}
-			} else {
-				return generator.generateExpression(type, context, target, varName, varName, op, initialization);
 			}
 			return generator.generateExpression(type, context, target, varName, varName, op, initialization);
 		} else if (initialization instanceof ElementReferenceExpression) {

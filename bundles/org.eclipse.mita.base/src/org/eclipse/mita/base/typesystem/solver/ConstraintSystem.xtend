@@ -35,7 +35,6 @@ import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.AbstractType.Either
 import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -43,6 +42,7 @@ import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.Either
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider

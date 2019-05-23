@@ -20,6 +20,8 @@ import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.Left
+import org.eclipse.mita.base.util.Right
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
