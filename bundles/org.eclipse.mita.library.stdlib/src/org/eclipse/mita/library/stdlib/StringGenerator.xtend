@@ -67,7 +67,7 @@ class StringGenerator extends ArrayGenerator {
 	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, PrimitiveValueExpression expr) {
 		return doGenerateLength(temporaryBufferName, valRange, obj, expr, expr.value);
 	}
-	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr, PrimitiveValueExpression expr, InterpolatedStringLiteral l) {
+	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, PrimitiveValueExpression expr, InterpolatedStringLiteral l) {
 		return codeFragmentProvider.create('''
 			«temporaryBufferName»_written
 		''');

@@ -56,8 +56,8 @@ class GeneratedTypeGenerator {
 	}
 	
 	def generateImplementation(CompilationContext context, List<String> userTypeFiles) {
-		val generatorsWithTypeSpecs = context.getAllGeneratedTypesUsed().map[new Pair(it, registry.getGenerator(context.allUnits.head.eResource, it) as AbstractTypeGenerator)].toList;
-		val generators = context.getAllGeneratedTypesUsed().groupBy[it.name].values.map[it.head].map[registry.getGenerator(context.allUnits.head.eResource, it) as AbstractTypeGenerator].toList;
+		val generatedTypes = context.getAllGeneratedTypesUsed().filterNull.force;
+		val generators = generatedTypes.groupBy[it.name].values.map[it.head].map[registry.getGenerator(context.allUnits.head.eResource, it).castOrNull(AbstractTypeGenerator)].filterNull.toList;
 		
 		return codeFragmentProvider.create('''
 			«FOR generator: generators SEPARATOR("\n")» 

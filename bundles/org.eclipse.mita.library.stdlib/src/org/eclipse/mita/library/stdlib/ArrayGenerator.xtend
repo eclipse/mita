@@ -174,7 +174,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		if(right === null) {
 			return codeFragmentProvider.create('''''');
 		}
-		val rightLit = right.castOrNull(PrimitiveValueExpression);
+		val rightLit = right.obj.orNull?.castOrNull(PrimitiveValueExpression);
 		if(rightLit !== null && left.obj.orNull?.castOrNull(VariableDeclaration) !== null) {
 			return CodeFragment.EMPTY;
 		}

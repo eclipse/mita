@@ -27,10 +27,7 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 /**
  * Interface for type generators.
  */
-class AbstractTypeGenerator implements IGenerator {
-
-	@Inject SubtypeChecker subtypeChecker;
-
+abstract class AbstractTypeGenerator implements IGenerator {
 	@Inject
 	protected TypeGenerator typeGenerator
 	

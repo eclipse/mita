@@ -538,7 +538,28 @@ class StatementGenerator {
 
 	@Traced dispatch def IGeneratorNode code(InterpolatedStringLiteral stmt) {
 		// This method seems like dead code!
-		throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.program", "Dead code reached! (InterpolatedStringExpression) Please submit your code at github.com/eclipse/mita/issues"))
+		/*
+		 * InterpolatedStrings are a special case of an expression where the code generation must be devolved to
+		 * the StringGenerator (i.e. the code generator registered at the generated-type string). Inelegantly, we
+		 * explicitly encode this case and devolve code generation the registered code generator of the generated-type. 
+		 */
+		val type = BaseUtils.getType(stmt);
+		val size = sizeInferrer.inferValid(stmt);
+		if (isGeneratedType(stmt.eResource, type)) {
+			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
+			if (generator !== null) {
+				val varName = codeFragmentProvider.create('''«stmt»''');
+				return '''«generator.generateExpression(stmt, varName, new CodeWithContext(type, Optional.absent, varName, size), AssignmentOperator.ASSIGN, null)»''';
+			} else {
+				throw new CoreException(
+					new Status(IStatus.ERROR, "org.eclipse.mita.program",
+						'String generator does not support inline interpolation'));
+			}
+		} else {
+			throw new CoreException(
+				new Status(IStatus.ERROR, "org.eclipse.mita.program",
+					'Interpolated strings should be a generated type'));
+		}
 	}
 
 	@Traced dispatch def IGeneratorNode code(Expression stmt) {
@@ -611,7 +632,7 @@ class StatementGenerator {
 	}
 	def IGeneratorNode initializationCode(EObject context, CodeFragment tempVarName, CodeWithContext left, AssignmentOperator op, CodeWithContext right, boolean alwaysGenerate) {
 		// TODO handle Optional.none
-		val initialization = right.obj.orNull;	
+		val initialization = right?.obj?.orNull;	
 		if (isGeneratedType(context, left.type)) {
 			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
 
@@ -631,7 +652,7 @@ class StatementGenerator {
 			}
 		} else if(initialization instanceof ModalityAccess) {
 			return context.trace('''«tempVarName» «op» «right.code.noTerminator»;''');
-		} else if(alwaysGenerate) {
+		} else if(alwaysGenerate && right !== null) {
 			return context.trace('''«tempVarName» «op» «right.code.noTerminator»;''');
 		}
 		return CodeFragment.EMPTY;
@@ -738,7 +759,8 @@ class StatementGenerator {
 				varName, 
 				new CodeWithContext(type, varDecl.transform[it], varName, size), 
 				AssignmentOperator.ASSIGN, 
-				new CodeWithContext(BaseUtils.getType(initialization), Optional.of(initialization), cf(initialization.code), sizeInferrer.inferValid(initialization)), false
+				if(initialization !== null) { new CodeWithContext(BaseUtils.getType(initialization), Optional.of(initialization), cf(initialization.code), sizeInferrer.inferValid(initialization)) }, 
+				false 
 			).noNewline.noTerminator;
 			result.children += cf('''«";"»''');
 		
