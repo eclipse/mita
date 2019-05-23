@@ -27,6 +27,7 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
@@ -58,10 +59,10 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 		
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
 			
-			return codeFragmentProvider.create('''«resultVariableName» = «variable.generate»''');
+			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«variable.generate»''');
 		}
 		
 	}
@@ -71,9 +72,9 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 	
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
-			val value = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'value');
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
+			val value = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'value');
 			
 			return codeFragmentProvider.create('''«variable.generate» = «value.generate»;''');
 		}

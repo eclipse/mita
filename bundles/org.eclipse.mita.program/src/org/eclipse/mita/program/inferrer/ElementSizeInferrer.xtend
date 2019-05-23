@@ -16,6 +16,8 @@ package org.eclipse.mita.program.inferrer
 import com.google.inject.Inject
 import java.util.LinkedList
 import java.util.List
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.Status
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
@@ -61,6 +63,17 @@ class ElementSizeInferrer {
 	protected PluginResourceLoader loader;
 
 	PreventRecursion preventRecursion = new PreventRecursion;
+
+	def ValidElementSizeInferenceResult inferValid(EObject obj) {
+		val result = obj.infer;
+		if(result instanceof ValidElementSizeInferenceResult) {
+			return result;
+		}
+		else if(result instanceof InvalidElementSizeInferenceResult) {
+			throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.program", '''Wasn't able to infer size for: «obj»(«result.invalidSelfOrChildren»), reason: «result.message»'''));			
+		}
+		throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.program", "Size inference returned null!"));
+	}
 
 	def ElementSizeInferenceResult infer(EObject obj) {
 		if(obj === null) {

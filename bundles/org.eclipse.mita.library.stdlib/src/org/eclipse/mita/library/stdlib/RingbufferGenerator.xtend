@@ -8,23 +8,20 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
+import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
-
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 // https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/
 class RingbufferGenerator extends AbstractTypeGenerator {
@@ -121,10 +118,10 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		extension GeneratorUtils
 		
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val rbRef = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, "self").code;
-			val value = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, "element").code;
-			return generate(rbRef, value, ref);
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val rbRef = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, "self").code;
+			val value = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, "element").code;
+			return generate(rbRef, value, functionCall);
 		}
 		
 		public def generate(IGeneratorNode rbRef, IGeneratorNode value, ElementReferenceExpression ref) {
@@ -146,25 +143,27 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		protected GeneratorRegistry registry
 		
 		@Inject
-		protected AbstractTypeGenerator defaultTypeGenerator;
+		protected ElementSizeInferrer sizeInferrer;
 		
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val rbRef = ref.arguments.head;
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val rbRef = functionCall.arguments.head.value;
 			val rbRefCode = rbRef.code;
-			val innerType = BaseUtils.getType(target.orNull);
-			val assignmentGenerator = if(innerType !== null && TypesUtil.isGeneratedType(target.get, innerType)) {
-				registry.getGenerator(target.get.eResource, innerType).castOrNull(AbstractTypeGenerator);
-			}
-			else {
-				defaultTypeGenerator;
-			}
+			val innerType = resultVariable?.type;
 			
 			return codeFragmentProvider.create('''
 				if(«rbRefCode».length == 0) {
-					«generateExceptionHandler(ref, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»
+					«generateExceptionHandler(functionCall, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»
 				}
 				--«rbRefCode».length;
-				«assignmentGenerator.generateExpression(innerType, resultVariableName, AssignmentOperator.ASSIGN, codeFragmentProvider.create('''«rbRefCode».data[«rbRefCode».read]''')).noTerminator»;
+«««				EObject context, CodeFragment tempVarName, CodeWithContext left, AssignmentOperator op, CodeWithContext right, boolean alwaysGenerate
+				«statementGenerator.initializationCode(
+					functionCall, 
+					resultVariable.code, 
+					resultVariable, 
+					AssignmentOperator.ASSIGN, 
+					new CodeWithContext(innerType, Optional.absent, codeFragmentProvider.create('''«rbRefCode».data[«rbRefCode».read]'''), resultVariable.size), 
+					true
+				)»
 				«rbRefCode».read = ringbuffer_increment(«rbRefCode».read, «rbRefCode».capacity);
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
@@ -175,13 +174,13 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		extension GeneratorUtils
 		
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val rbRef = ref.arguments.head.code;
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val rbRef = functionCall.arguments.head.code;
 			return codeFragmentProvider.create('''
 				if(«rbRef».length == 0) {
-					«generateExceptionHandler(ref, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»
+					«generateExceptionHandler(functionCall, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»
 				}
-				«resultVariableName» = «rbRef».data[«rbRef».read];
+				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».data[«rbRef».read];
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
 	}
@@ -189,10 +188,10 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
 		
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val rbRef = ref.arguments.head.code;
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val rbRef = functionCall.arguments.head.code;
 			return codeFragmentProvider.create('''
-				«resultVariableName» = «rbRef».length;
+				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».length;
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
 	}
@@ -200,10 +199,10 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
 		
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val rbRef = ref.arguments.head.code;
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val rbRef = functionCall.arguments.head.code;
 			return codeFragmentProvider.create('''
-				«resultVariableName» = «rbRef».length == 0;
+				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».length == 0;
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
 	}
@@ -211,10 +210,10 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
 		
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val rbRef = ref.arguments.head.code;
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val rbRef = functionCall.arguments.head.code;
 			return codeFragmentProvider.create('''
-				«resultVariableName» = «rbRef».length == «rbRef».capacity;
+				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».length == «rbRef».capacity;
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
 	}

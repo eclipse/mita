@@ -32,6 +32,7 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.transformation.EscapeWhitespaceInStringStage
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
@@ -52,8 +53,8 @@ class StringGenerator extends ArrayGenerator {
 	@Inject
 	protected extension ProgramDslTraceExtensions
 
-	override CodeFragment generateLength(EObject obj, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr) {
-		return codeFragmentProvider.create('''«doGenerateLength(obj, temporaryBufferName, valRange, objCodeExpr).noNewline»''');
+	override CodeFragment generateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj) {
+		return codeFragmentProvider.create('''«doGenerateLength(temporaryBufferName, valRange, obj, obj.obj.orNull).noNewline»''');
 	}
 	
 
@@ -63,25 +64,28 @@ class StringGenerator extends ArrayGenerator {
 //		''');
 //	}
 	
-	dispatch def CodeFragment doGenerateLength(PrimitiveValueExpression expr, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr) {
-		return doGenerateLength(expr, temporaryBufferName, valRange, objCodeExpr, expr.value);
+	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, PrimitiveValueExpression expr) {
+		return doGenerateLength(temporaryBufferName, valRange, obj, expr, expr.value);
 	}
-	dispatch def CodeFragment doGenerateLength(PrimitiveValueExpression expr, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr, InterpolatedStringLiteral l) {
+	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr, PrimitiveValueExpression expr, InterpolatedStringLiteral l) {
 		return codeFragmentProvider.create('''
 			«temporaryBufferName»_written
 		''');
 	}
-	dispatch def CodeFragment doGenerateLength(PrimitiveValueExpression expr, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr, Literal l) {
-		return super.generateLength(expr, temporaryBufferName, valRange, objCodeExpr);
+	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, PrimitiveValueExpression expr, Literal l) {
+		return super.generateLength(temporaryBufferName, valRange, obj);
 	}
-	dispatch def CodeFragment doGenerateLength(PrimitiveValueExpression expr, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr, Object l) {
-		return super.generateLength(expr, temporaryBufferName, valRange, objCodeExpr);
+	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, PrimitiveValueExpression expr, Object l) {
+		return super.generateLength(temporaryBufferName, valRange, obj);
 	}
-	dispatch def CodeFragment doGenerateLength(PrimitiveValueExpression expr, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr, Void l) {
-		return super.generateLength(expr, temporaryBufferName, valRange, objCodeExpr);
+	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, PrimitiveValueExpression expr, Void l) {
+		return super.generateLength(temporaryBufferName, valRange, obj);
 	}
-	dispatch def CodeFragment doGenerateLength(EObject expr, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr) {
-		return super.generateLength(expr, temporaryBufferName, valRange, objCodeExpr);
+	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, EObject expr) {
+		return super.generateLength(temporaryBufferName, valRange, obj);
+	}
+	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, Void expr) {
+		return super.generateLength(temporaryBufferName, valRange, obj);
 	}
 	
 	override CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init) {
@@ -222,8 +226,8 @@ class StringGenerator extends ArrayGenerator {
 		@Inject
 		protected ElementSizeInferrer sizeInferrer
 	
-		override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {
 				val varref = variable.reference;
 				if(varref instanceof VariableDeclaration) {
@@ -231,7 +235,7 @@ class StringGenerator extends ArrayGenerator {
 				}
 			}
 			
-			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref».length''');
+			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».length''');
 		}
 		
 	}

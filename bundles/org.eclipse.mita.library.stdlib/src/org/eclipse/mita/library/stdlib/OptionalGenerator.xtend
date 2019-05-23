@@ -13,7 +13,6 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
@@ -29,6 +28,7 @@ import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
@@ -65,28 +65,28 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
-	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {		
+	override generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {		
 		if(operator != AssignmentOperator.ASSIGN) {
 			return codeFragmentProvider.create('''ERROR: Unsuported operator: «operator.literal»''')
 		}
 		val haveInit = right !== null;
 				
-		val initIsEref = haveInit && right instanceof ElementReferenceExpression;
-		val initAsEref = if(initIsEref) {
-			right as ElementReferenceExpression;
-		}
+//		val initIsEref = haveInit && right instanceof ElementReferenceExpression;
+//		val initAsEref = if(initIsEref) {
+//			right as ElementReferenceExpression;
+//		}
 		
-		val initIsOperation = initIsEref && initAsEref.reference instanceof Operation
-		val initAsOperation = if(initIsOperation) {
-			initAsEref.reference as Operation;
-		}
+//		val initIsOperation = initIsEref && initAsEref.reference instanceof Operation
+//		val initAsOperation = if(initIsOperation) {
+//			initAsEref.reference as Operation;
+//		}
 		
-		val initIsGeneratedFunction = initAsOperation instanceof GeneratedFunctionDefinition;
-		val initAsGeneratedFunction = if(initIsGeneratedFunction) {
-			initAsOperation as GeneratedFunctionDefinition;
-		}
+//		val initIsGeneratedFunction = initAsOperation instanceof GeneratedFunctionDefinition;
+//		val initAsGeneratedFunction = if(initIsGeneratedFunction) {
+//			initAsOperation as GeneratedFunctionDefinition;
+//		}
 		
-		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, context)») ''');
+		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(left.type, context)») ''');
 		
 		val validInit = if(right !== null) {
 			codeFragmentProvider.create('''«right.code»''');
@@ -98,16 +98,15 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			}''')
 		}
 		
-		val initValueIsNone = right === null || (initIsGeneratedFunction && initAsGeneratedFunction.name == "none");
+		val initValueIsNone = right === null// || (initIsGeneratedFunction && initAsGeneratedFunction.name == "none");
 		
-		val firstTypeArgType = (type as TypeConstructorType).typeArguments.tail.head;
+		val firstTypeArgType = (left.type as TypeConstructorType).typeArguments.tail.head;
 		val firstTypeArgOrigin = firstTypeArgType.origin;
 
 		
-		// if we assigned for example a: int32? = 1, right has integer, left has optional<int32>. so we check if left.args.head ~ right. Also we short-circuit none and some and supply a default value.
-		val initWithImmediate = initIsGeneratedFunction 
-		|| right === null 
-		|| (!(firstTypeArgOrigin instanceof GeneratedType));
+		// Supply a default value and upcast immediates.
+		val initWithImmediate = right === null 
+			|| (!(firstTypeArgOrigin instanceof GeneratedType));
 		
 		
 		val init = if(initWithImmediate) {
@@ -136,7 +135,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			}
 		}
 				
-		codeFragmentProvider.create('''«leftName» = «init.noNewline»''')
+		codeFragmentProvider.create('''«left.code» = «init.noNewline»''')
 	}
 	
 	override CodeFragment generateHeader() {

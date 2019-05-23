@@ -13,9 +13,7 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
@@ -24,6 +22,7 @@ import org.eclipse.mita.library.stdlib.OptionalGenerator.enumOptional
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 
@@ -37,27 +36,27 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected GeneratorRegistry registry
 	
-	override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression ref) {
-		val args = ref.arguments;
+	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+		val args = functionCall.arguments;
 		val valueVarOrExpr = args.head.value;
 		// need the optionalGenerator
-		val funType = BaseUtils.getType(ref);
+		val funType = BaseUtils.getType(functionCall);
 		if(!(funType instanceof TypeConstructorType)) {
 
 			return CodeFragment.EMPTY;
 		}
-		val optGen = registry.getGenerator(ref.eResource, funType).castOrNull(AbstractTypeGenerator);
+		val optGen = registry.getGenerator(functionCall.eResource, funType).castOrNull(AbstractTypeGenerator);
 				
 		codeFragmentProvider.create('''
 
-			«IF resultVariableName === null»
-			(«optGen?.generateTypeSpecifier(funType, ref)») {
+			«IF resultVariable === null»
+			(«optGen?.generateTypeSpecifier(funType, functionCall)») {
 				.«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»,
 				.«OptionalGenerator.OPTIONAL_DATA_MEMBER» = «valueVarOrExpr.code»
 			}
 			«ELSE»
-			«resultVariableName».«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»;
-			«resultVariableName».«OptionalGenerator.OPTIONAL_DATA_MEMBER» = «valueVarOrExpr.code»;
+			«resultVariable.code».«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»;
+			«resultVariable.code».«OptionalGenerator.OPTIONAL_DATA_MEMBER» = «valueVarOrExpr.code»;
 			«ENDIF»
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}

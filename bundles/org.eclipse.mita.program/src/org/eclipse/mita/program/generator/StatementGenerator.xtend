@@ -453,7 +453,12 @@ class StatementGenerator {
 			} else if (ref instanceof FunctionDefinition) {
 				'''«ref.generateFunctionCall(cf('''NULL''').addHeader("stdlib.h", true), stmt)»'''
 			} else if (ref instanceof GeneratedFunctionDefinition) {
-				'''«registry.getGenerator(ref)?.generate(null, cf('''NULL'''), stmt)»''';
+				'''«registry.getGenerator(ref)?.generate(
+					// representation of passing C-NULL
+					// this seems bad?
+					new CodeWithContext(null, Optional.absent, cf('''NULL'''), new ValidElementSizeInferenceResult(null, null, 0)), 
+					stmt
+				)»''';
 			} else if(ref instanceof NativeFunctionDefinition) {
 				if(ref.checked) {
 					'''«ref.generateNativeFunctionCallChecked(cf('''NULL'''), stmt)»'''
@@ -507,7 +512,13 @@ class StatementGenerator {
 		
 		'''
 			«IF hasValue && generatedTypeGenerator !== null»
-				«generatedTypeGenerator.generateExpression(resultType, stmt, Optional.absent, cf('''(*_result)'''), cf('''_result'''), AssignmentOperator.ASSIGN, cf('''«stmt.value»''')).noTerminator»;
+				«generatedTypeGenerator.generateExpression(
+					stmt, 
+					cf('''_result'''), 
+					new CodeWithContext(resultType, Optional.absent, cf('''(*_result)'''), sizeInferrer.inferValid(stmt.value)), 
+					AssignmentOperator.ASSIGN, 
+					new CodeWithContext(resultType, Optional.of(stmt.value), cf('''«stmt.value»'''), sizeInferrer.inferValid(stmt.value))
+				).noTerminator»;
 			«ELSEIF hasValue»
 				*_result = «stmt.value.code.noTerminator»;
 			«ENDIF» 
@@ -527,27 +538,7 @@ class StatementGenerator {
 
 	@Traced dispatch def IGeneratorNode code(InterpolatedStringLiteral stmt) {
 		// This method seems like dead code!
-		/*
-		 * InterpolatedStrings are a special case of an expression where the code generation must be devolved to
-		 * the StringGenerator (i.e. the code generator registered at the generated-type string). Inelegantly, we
-		 * explicitly encode this case and devolve code generation the registered code generator of the generated-type. 
-		 */
-		val type = BaseUtils.getType(stmt);
-		if (isGeneratedType(stmt.eResource, type)) {
-			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
-			if (generator !== null) {
-				val varName = cf('''«stmt»''');
-				return '''«generator.generateExpression(type, stmt, Optional.absent, varName, varName, null, null)»''';
-			} else {
-				throw new CoreException(
-					new Status(IStatus.ERROR, "org.eclipse.mita.program",
-						'String generator does not support inline interpolation'));
-			}
-		} else {
-			throw new CoreException(
-				new Status(IStatus.ERROR, "org.eclipse.mita.program",
-					'Interpolated strings should be a generated type'));
-		}
+		throw new CoreException(new Status(Status.ERROR, "org.eclipse.mita.program", "Dead code reached! (InterpolatedStringExpression) Please submit your code at github.com/eclipse/mita/issues"))
 	}
 
 	@Traced dispatch def IGeneratorNode code(Expression stmt) {
@@ -559,29 +550,29 @@ class StatementGenerator {
 	}
 	
 	
-	def IGeneratorNode generateFunCallStmt(Optional<EObject> target, CodeFragment variableName, AbstractType type, ElementReferenceExpression initialization) {
+	def IGeneratorNode generateFunCallStmt(CodeWithContext left, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
 		if (reference instanceof VirtualFunction) {
 			return cf('''
-				«variableName» = «generateVirtualFunctionCall(initialization, reference, initialization.arguments).noTerminator»;
+				«left.code» = «generateVirtualFunctionCall(initialization, reference, initialization.arguments).noTerminator»;
 			''')
 		} else if (reference instanceof FunctionDefinition) {
 			return cf('''
-				«generateFunctionCall(reference, cf('''&«variableName»'''), initialization).noTerminator»;
+				«generateFunctionCall(reference, cf('''&«left.code»'''), initialization).noTerminator»;
 			''')
 		} else if (reference instanceof GeneratedFunctionDefinition) {
 			return cf('''
-				«registry.getGenerator(reference).generate(target, variableName, initialization).noTerminator»;
+				«registry.getGenerator(reference).generate(left, initialization).noTerminator»;
 			''')
 		} else if(reference instanceof NativeFunctionDefinition) {
 			if(reference.checked) {
 				return cf('''
-				«generateNativeFunctionCallChecked(reference, cf('''&«variableName»'''), initialization).noTerminator»;
+				«generateNativeFunctionCallChecked(reference, cf('''&«left.code»'''), initialization).noTerminator»;
 				''')
 			}
 			else {
 				return cf('''
-				«variableName» = «generateNativeFunctionCallUnchecked(reference, initialization).noTerminator»;''')
+				«left.code» = «generateNativeFunctionCallUnchecked(reference, initialization).noTerminator»;''')
 			}
 		}	
 	}
@@ -592,7 +583,15 @@ class StatementGenerator {
 
 	// TODO: remove code duplication with generateVariableDeclaration(...)
 	dispatch def IGeneratorNode initializationCode(VariableDeclaration stmt) {
-		return initializationCode(BaseUtils.getType(stmt), stmt, Optional.of(stmt), cf('''«stmt.name»'''), AssignmentOperator.ASSIGN, stmt.initialization, false);
+		val varName = cf('''«stmt.name»''');
+		return initializationCode(
+			stmt, 
+			varName, 
+			new CodeWithContext(BaseUtils.getType(stmt), Optional.of(stmt), varName, sizeInferrer.inferValid(stmt)), 
+			AssignmentOperator.ASSIGN, 
+			new CodeWithContext(BaseUtils.getType(stmt.initialization), Optional.of(stmt.initialization), cf(stmt.initialization.code), sizeInferrer.inferValid(stmt.initialization)), 
+			false
+		);
 	}
 	
 //	public def IGeneratorNode initializationCode(EObject target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
@@ -600,37 +599,40 @@ class StatementGenerator {
 // 	}
 
 	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
-		return initializationCode(BaseUtils.getType(expr.varRef), expr.varRef, Optional.of(expr), cf('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
+		val varName = cf('''«expr.varRef.code.noTerminator»''');
+		return initializationCode(
+			expr.varRef, 
+			varName,
+			new CodeWithContext(BaseUtils.getType(expr.varRef), Optional.of(expr.varRef), varName, sizeInferrer.inferValid(expr.varRef)), 
+			expr.operator, 
+			new CodeWithContext(BaseUtils.getType(expr.expression), Optional.of(expr.expression), cf(expr.expression.code), sizeInferrer.inferValid(expr.expression)), 
+			true
+		);
 	}
-	def IGeneratorNode initializationCode(AbstractType type, EObject context, Optional<EObject> target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {		
-		if (isGeneratedType(context, type)) {
-			val generator = registry.getGenerator(context.eResource, type).castOrNull(AbstractTypeGenerator);
+	def IGeneratorNode initializationCode(EObject context, CodeFragment tempVarName, CodeWithContext left, AssignmentOperator op, CodeWithContext right, boolean alwaysGenerate) {
+		// TODO handle Optional.none
+		val initialization = right.obj.orNull;	
+		if (isGeneratedType(context, left.type)) {
+			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
 
 			if (initialization instanceof NewInstanceExpression) {
-				return generator.generateNewInstance(varName, type, initialization);
-			} else if (initialization instanceof ArrayAccessExpression) {
-				return generator.generateExpression(type, context, target, varName, varName, op, initialization);
-			} else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
-				return generateFunCallStmt(target, varName, type, initialization as ElementReferenceExpression);
-			} else if(initialization instanceof PrimitiveValueExpression) {
-				if((initialization.value instanceof ArrayLiteral || initialization.value instanceof StringLiteral) 
-					&& target instanceof VariableDeclaration
-				) {
-					return CodeFragment.EMPTY;
-				}
-			}
-			return generator.generateExpression(type, context, target, varName, varName, op, initialization);
+				return generator.generateNewInstance(left.code, left.type, initialization);
+			} 
+			else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
+				return generateFunCallStmt(left, initialization as ElementReferenceExpression);
+			} 
+			return generator.generateExpression(context, tempVarName, left, op, right);
 		} else if (initialization instanceof ElementReferenceExpression) {
 			if(initialization.isOperationCall) {
-				return generateFunCallStmt(target, varName, type, initialization);	
+				return generateFunCallStmt(left, initialization);	
 			}
 			else {
-				return context.trace('''«varName» «op» «initialization.code.noTerminator»;''');
+				return context.trace('''«tempVarName» «op» «right.code.noTerminator»;''');
 			}
 		} else if(initialization instanceof ModalityAccess) {
-			return context.trace('''«varName» «op» «initialization.code.noTerminator»;''');
+			return context.trace('''«tempVarName» «op» «right.code.noTerminator»;''');
 		} else if(alwaysGenerate) {
-			return context.trace('''«varName» «op» «initialization.code.noTerminator»;''');
+			return context.trace('''«tempVarName» «op» «right.code.noTerminator»;''');
 		}
 		return CodeFragment.EMPTY;
 	}
@@ -731,7 +733,13 @@ class StatementGenerator {
 		if(!initializationDone) {
 			result.children += cf('''«"\n"»''');
 			// TODO: remove code duplication with initializationCode(VariableDeclaration)
-			result.children += initializationCode(type, context, varDecl.transform[it], varName, AssignmentOperator.ASSIGN, initialization, false).noNewline.noTerminator;
+			result.children += initializationCode(
+				context, 
+				varName, 
+				new CodeWithContext(type, varDecl.transform[it], varName, size), 
+				AssignmentOperator.ASSIGN, 
+				new CodeWithContext(BaseUtils.getType(initialization), Optional.of(initialization), cf(initialization.code), sizeInferrer.inferValid(initialization)), false
+			).noNewline.noTerminator;
 			result.children += cf('''«";"»''');
 		
 		}

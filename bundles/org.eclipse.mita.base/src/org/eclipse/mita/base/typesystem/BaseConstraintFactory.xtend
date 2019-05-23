@@ -210,7 +210,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def void computeConstraintsForChildren(ConstraintSystem system, EObject context) {
-		context.eContents.forEach[ system.computeConstraints(it) ]
+		for(EObject child: context.eContents) {
+			system.computeConstraints(child)	
+		}
 	}
 
 	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {

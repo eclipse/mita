@@ -182,7 +182,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		if(event !== null) {
 			system.associate(system.getTypeVariable(event), varDecl);
 		}
-		return system.getTypeVariable(varDecl);
+		return system._computeConstraints(varDecl as VariableDeclaration);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement __) {

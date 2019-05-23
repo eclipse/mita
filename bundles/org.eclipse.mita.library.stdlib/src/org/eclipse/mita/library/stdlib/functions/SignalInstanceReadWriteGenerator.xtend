@@ -15,7 +15,6 @@ package org.eclipse.mita.library.stdlib.functions
 
 import com.google.common.base.Optional
 import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -24,7 +23,7 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
-import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
@@ -42,7 +41,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	protected ElementSizeInferrer sizeInferrer
 	
 	
-	override generate(Optional<EObject> target, CodeFragment resultVariableName, ElementReferenceExpression functionCall) {
+	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 		val firstArg = functionCall.arguments.get(0)?.value;
 		val siginst = if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {
 			(firstArg as ElementReferenceExpression).reference as SignalInstance;
@@ -55,7 +54,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			return codeFragmentProvider.create('''#error No signal instance found in this siginst write call. This should not happen!''')
 		} else if(functionName == 'read') {
 			return codeFragmentProvider.create('''
-			exception = «siginst.readAccessName»(&«resultVariableName»);
+			exception = «siginst.readAccessName»(&«resultVariable.code»);
 			«generateExceptionHandler(functionCall, 'exception')»
 			''')
 			.addHeader(siginst.eContainer.fileBasename + '.h', false)
