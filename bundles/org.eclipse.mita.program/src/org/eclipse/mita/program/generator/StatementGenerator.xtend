@@ -128,7 +128,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import org.eclipse.mita.program.NoopStatement
 import com.google.common.base.Optional
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-
+import org.eclipse.xtend2.lib.StringConcatenationClient
 
 class StatementGenerator {
 
@@ -151,6 +151,13 @@ class StatementGenerator {
 	
 	@Inject
 	protected ElementSizeInferrer sizeInferrer
+
+	private def cf(StringConcatenationClient scc) {
+		codeFragmentProvider.create(scc);
+	}
+	private def cf(IGeneratorNode node) {
+		codeFragmentProvider.create('''«node»''');
+	}
 
 	@Traced dispatch def IGeneratorNode code(Argument stmt) {
 		'''«stmt.value.code»'''
@@ -274,16 +281,16 @@ class StatementGenerator {
 		val arrayLength = '''«variableName».length''';
 		if(arraySelector instanceof ValueRange) {			
 			if(arraySelector.lowerBound !== null) {
-				checks += codeFragmentProvider.create('''«arraySelector.lowerBound.code.noTerminator» < 0''');
+				checks += cf('''«arraySelector.lowerBound.code.noTerminator» < 0''');
 			}
 			if(arraySelector.upperBound !== null) {
-				checks += codeFragmentProvider.create('''«arraySelector.upperBound.code.noTerminator» >= «arrayLength»''');
+				checks += cf('''«arraySelector.upperBound.code.noTerminator» >= «arrayLength»''');
 			}
 			if(arraySelector.lowerBound !== null && arraySelector.upperBound !== null) {				
-				checks += codeFragmentProvider.create('''«arraySelector.lowerBound.code.noTerminator» > «arraySelector.upperBound.code.noTerminator»''');
+				checks += cf('''«arraySelector.lowerBound.code.noTerminator» > «arraySelector.upperBound.code.noTerminator»''');
 			}
 		} else {
-			checks += codeFragmentProvider.create('''«arrayLength» <= «arraySelector.code.noTerminator»''');
+			checks += cf('''«arrayLength» <= «arraySelector.code.noTerminator»''');
 		}
 		
 		return '''
@@ -416,7 +423,7 @@ class StatementGenerator {
 				 .getConstraintSystem(callSite.eResource)
 				?.getUserData(constructingType, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
 			
-			val constructedStruct = codeFragmentProvider.create('''
+			val constructedStruct = cf('''
 			«IF returnTypeIsSumType || needCast»(«dataType»)«ENDIF» {
 				«FOR i_arg: arguments.tail.indexed»
 				«IF hasAccessors»«accessor(callSite, eConstructingType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
@@ -444,12 +451,12 @@ class StatementGenerator {
 			if (ref instanceof VirtualFunction) {
 				'''«generateVirtualFunctionCall(stmt, ref, stmt.arguments)»'''
 			} else if (ref instanceof FunctionDefinition) {
-				'''«ref.generateFunctionCall(codeFragmentProvider.create('''NULL''').addHeader("stdlib.h", true), stmt)»'''
+				'''«ref.generateFunctionCall(cf('''NULL''').addHeader("stdlib.h", true), stmt)»'''
 			} else if (ref instanceof GeneratedFunctionDefinition) {
-				'''«registry.getGenerator(ref)?.generate(null, codeFragmentProvider.create('''NULL'''), stmt)»''';
+				'''«registry.getGenerator(ref)?.generate(null, cf('''NULL'''), stmt)»''';
 			} else if(ref instanceof NativeFunctionDefinition) {
 				if(ref.checked) {
-					'''«ref.generateNativeFunctionCallChecked(codeFragmentProvider.create('''NULL'''), stmt)»'''
+					'''«ref.generateNativeFunctionCallChecked(cf('''NULL'''), stmt)»'''
 				} else {
 					'''«ref.generateNativeFunctionCallUnchecked(stmt)»'''
 				}
@@ -500,7 +507,7 @@ class StatementGenerator {
 		
 		'''
 			«IF hasValue && generatedTypeGenerator !== null»
-				«generatedTypeGenerator.generateExpression(resultType, stmt, Optional.absent, codeFragmentProvider.create('''(*_result)'''), codeFragmentProvider.create('''_result'''), AssignmentOperator.ASSIGN, stmt.value).noTerminator»;
+				«generatedTypeGenerator.generateExpression(resultType, stmt, Optional.absent, cf('''(*_result)'''), cf('''_result'''), AssignmentOperator.ASSIGN, cf('''«stmt.value»''')).noTerminator»;
 			«ELSEIF hasValue»
 				*_result = «stmt.value.code.noTerminator»;
 			«ENDIF» 
@@ -529,7 +536,7 @@ class StatementGenerator {
 		if (isGeneratedType(stmt.eResource, type)) {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (generator !== null) {
-				val varName = codeFragmentProvider.create('''«stmt»''');
+				val varName = cf('''«stmt»''');
 				return '''«generator.generateExpression(type, stmt, Optional.absent, varName, varName, null, null)»''';
 			} else {
 				throw new CoreException(
@@ -555,25 +562,25 @@ class StatementGenerator {
 	def IGeneratorNode generateFunCallStmt(Optional<EObject> target, CodeFragment variableName, AbstractType type, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
 		if (reference instanceof VirtualFunction) {
-			return codeFragmentProvider.create('''
+			return cf('''
 				«variableName» = «generateVirtualFunctionCall(initialization, reference, initialization.arguments).noTerminator»;
 			''')
 		} else if (reference instanceof FunctionDefinition) {
-			return codeFragmentProvider.create('''
-				«generateFunctionCall(reference, codeFragmentProvider.create('''&«variableName»'''), initialization).noTerminator»;
+			return cf('''
+				«generateFunctionCall(reference, cf('''&«variableName»'''), initialization).noTerminator»;
 			''')
 		} else if (reference instanceof GeneratedFunctionDefinition) {
-			return codeFragmentProvider.create('''
+			return cf('''
 				«registry.getGenerator(reference).generate(target, variableName, initialization).noTerminator»;
 			''')
 		} else if(reference instanceof NativeFunctionDefinition) {
 			if(reference.checked) {
-				return codeFragmentProvider.create('''
-				«reference.generateNativeFunctionCallChecked(codeFragmentProvider.create('''&«variableName»'''), initialization).noTerminator»;
+				return cf('''
+				«reference.generateNativeFunctionCallChecked(cf('''&«variableName»'''), initialization).noTerminator»;
 				''')
 			}
 			else {
-				return codeFragmentProvider.create('''
+				return cf('''
 				«variableName» = «reference.generateNativeFunctionCallUnchecked(initialization).noTerminator»;''')
 			}
 		}	
@@ -585,7 +592,7 @@ class StatementGenerator {
 
 	// TODO: remove code duplication with generateVariableDeclaration(...)
 	dispatch def IGeneratorNode initializationCode(VariableDeclaration stmt) {
-		return initializationCode(BaseUtils.getType(stmt), stmt, Optional.of(stmt), codeFragmentProvider.create('''«stmt.name»'''), AssignmentOperator.ASSIGN, stmt.initialization, false);
+		return initializationCode(BaseUtils.getType(stmt), stmt, Optional.of(stmt), cf('''«stmt.name»'''), AssignmentOperator.ASSIGN, stmt.initialization, false);
 	}
 	
 //	public def IGeneratorNode initializationCode(EObject target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
@@ -593,7 +600,7 @@ class StatementGenerator {
 // 	}
 
 	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
-		return initializationCode(BaseUtils.getType(expr.varRef), expr.varRef, Optional.of(expr), codeFragmentProvider.create('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
+		return initializationCode(BaseUtils.getType(expr.varRef), expr.varRef, Optional.of(expr), cf('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
 	}
 	def IGeneratorNode initializationCode(AbstractType type, EObject context, Optional<EObject> target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {		
 		if (isGeneratedType(context, type)) {
@@ -635,7 +642,7 @@ class StatementGenerator {
 	}
   
 	dispatch def IGeneratorNode code(ExceptionBaseVariableDeclaration stmt) {
-		return codeFragmentProvider.create('''
+		return cf('''
 				«exceptionGenerator.exceptionType» «stmt.name» = NO_EXCEPTION;
 				«IF stmt.needsReturnFromTryCatch»
 					bool returnFromWithinTryCatch = false;
@@ -650,7 +657,7 @@ class StatementGenerator {
 			stmt, 
 			Optional.of(stmt),
 			sizeInferrer.infer(stmt) as ValidElementSizeInferenceResult,
-			codeFragmentProvider.create('''«stmt.name»'''), 
+			cf('''«stmt.name»'''), 
 			stmt.initialization,
 			stmt.eContainer instanceof Program
 		);
@@ -684,35 +691,35 @@ class StatementGenerator {
 				// constructors of structural types are done directly
 				!(ref instanceof TypeConstructor)
 			) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName»;''');
+				result.children += cf('''«type.getCtype(context)» «varName»;''');
 			} else {
 				// copy assigmnent
 				// since type != generatedType we can copy with assignment
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = «initialization.code.noTerminator»;''');
+				result.children += cf('''«type.getCtype(context)» «varName» = «initialization.code.noTerminator»;''');
 				initializationDone = true;
 			}
 		// constant assignments and similar get here
 		} else if(initialization instanceof ModalityAccess) {
-			result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName»;''');
+			result.children += cf('''«type.getCtype(context)» «varName»;''');
 		} 
 		else {
 			if (initialization !== null) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = «initialization.code.noTerminator»;''');
+				result.children += cf('''«type.getCtype(context)» «varName» = «initialization.code.noTerminator»;''');
 			} else if (type instanceof ProdType || type instanceof org.eclipse.mita.base.typesystem.types.SumType) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = {0};''');
+				result.children += cf('''«type.getCtype(context)» «varName» = {0};''');
 			} else if (type instanceof NumericType) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = 0;''');
+				result.children += cf('''«type.getCtype(context)» «varName» = 0;''');
 			} else if(type instanceof AtomicType) {
 				// init is zero, type is atomic, but not generated
 				// -> type is bool
 				if(type.name == "bool") {
-					result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = false;''');
+					result.children += cf('''«type.getCtype(context)» «varName» = false;''');
 				}
 				else {
-					result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
+					result.children += cf('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
 				} 
 			} else {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
+				result.children += cf('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
 			}
 			// all of the above did initialization
 			initializationDone = true;
@@ -724,10 +731,10 @@ class StatementGenerator {
 		
 		// generate initialization
 		if(!initializationDone) {
-			result.children += codeFragmentProvider.create('''«"\n"»''');
+			result.children += cf('''«"\n"»''');
 			// TODO: remove code duplication with initializationCode(VariableDeclaration)
 			result.children += initializationCode(type, context, varDecl.transform[it], varName, AssignmentOperator.ASSIGN, initialization, false).noNewline.noTerminator;
-			result.children += codeFragmentProvider.create('''«";"»''');
+			result.children += cf('''«";"»''');
 		
 		}
 		
@@ -753,23 +760,23 @@ class StatementGenerator {
 		if (ModelUtils.isInTryCatchFinally(stmt)) {
 			'''
 				// THROW «stmt.exceptionType.name»
-				exception = «codeFragmentProvider.create('''«stmt.exceptionType.baseName»''').addHeader('MitaExceptions.h', true)»;
+				exception = «cf('''«stmt.exceptionType.baseName»''').addHeader('MitaExceptions.h', true)»;
 				break;
 			'''
 		} else {
 			'''
 				// THROW «stmt.exceptionType.name»
-				return «codeFragmentProvider.create('''«stmt.exceptionType.baseName»''').addHeader('MitaExceptions.h', true)»;
+				return «cf('''«stmt.exceptionType.baseName»''').addHeader('MitaExceptions.h', true)»;
 			'''
 		}
 	}
 	
 	dispatch def IGeneratorNode code(TypeSpecifier type) {
-		return codeFragmentProvider.create('''«getCtype(BaseUtils.getType(type), type)»''');
+		return cf('''«getCtype(BaseUtils.getType(type), type)»''');
 	}
 	
 	@Traced dispatch def IGeneratorNode code(TryStatement stmt) {
-		val bool = codeFragmentProvider.create('''bool''').addHeader('stdbool.h', true);
+		val bool = cf('''bool''').addHeader('stdbool.h', true);
 		'''
 			// TRY
 			returnFromWithinTryCatch = false;
@@ -1088,7 +1095,7 @@ class StatementGenerator {
 
 	private def getCtype(AbstractType type, EObject context) {
 		val result = if(type instanceof TypeVariable) {
-			codeFragmentProvider.create('''void*''') 
+			cf('''void*''') 
 		} 
 		else {
 			typeGenerator.code(context, type);	
