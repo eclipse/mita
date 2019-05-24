@@ -54,7 +54,10 @@ export generated type ringbuffer<T>
 	constructor con(size: static uint32);
 	
 export generated fn <T> push(self: ringbuffer<T>, element: T): void generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PushGenerator";
-export generated fn <T> pop(self: ringbuffer<T>): T generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PopGenerator";
+export generated fn <T> pop(self: ringbuffer<T>): T {
+	generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PopGenerator"
+	sizeInferrer "org.eclipse.mita.library.stdlib.RingbufferGenerator$PopInferrer"
+};
 export generated fn <T> peek(self: ringbuffer<T>): T generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PeekGenerator";
 export generated fn <T> count(self: ringbuffer<T>): uint32 generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$CountGenerator";
 export generated fn <T> empty(self: ringbuffer<T>): bool generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$EmptyGenerator";

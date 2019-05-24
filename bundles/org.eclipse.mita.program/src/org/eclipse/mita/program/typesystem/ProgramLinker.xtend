@@ -12,6 +12,7 @@ class ProgramLinker extends PlatformLinker {
 		|| TypesPackage.eINSTANCE.systemResourceEvent.isSuperTypeOf(classifier)
 		|| TypesPackage.eINSTANCE.event.isSuperTypeOf(classifier)
 		|| PlatformPackage.eINSTANCE.configurationItem.isSuperTypeOf(classifier)
+		|| PlatformPackage.eINSTANCE.hasEvents.isSuperTypeOf(classifier)
 	}
 	
 }

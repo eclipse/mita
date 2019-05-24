@@ -56,8 +56,12 @@ SignalInstance returns program::SignalInstance:
 GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
 	(exported?='export')?
 	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' typeSpecifier=OptionalTypeSpecifier
-	'generator' generator=STRING
-	('validator' validator=STRING)?
+	(('generator' generator=STRING) | ('{'
+			// things separated by '&' means that things must appear once but in any order
+			('generator' generator=STRING) &
+			('sizeInferrer' sizeInferrer=STRING)? &
+			('validator' validator=STRING)?
+		'}'))
 	';'
 ;
 
@@ -109,8 +113,8 @@ enum TimeUnit returns program::TimeUnit:
 	Hour = 'hour' | Hour = 'hours' 
 ;
 
-SystemEventSource returns program::SystemEventSource: 
-	origin=[platform::AbstractSystemResource] '.' source=[types::SystemResourceEvent]
+SystemEventSource returns program::SystemEventSource:
+	origin=[platform::HasEvents] '.' source=[types::SystemResourceEvent]
 ;
 
 ProgramBlock returns program::ProgramBlock:

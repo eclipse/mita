@@ -53,6 +53,7 @@ import static org.eclipse.mita.base.types.TypesUtil.*
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.GeneratedFunctionDefinition
 
 /**
  * Hierarchically infers the size of a data element.
@@ -80,8 +81,11 @@ class ElementSizeInferrer {
 			return obj.doInfer(null);
 		}
 		val type = BaseUtils.getType(obj);
-		if(TypesUtil.isGeneratedType(obj, type)) {
-			return obj._doInferFromType(type);
+		val typeResult = if(TypesUtil.isGeneratedType(obj, type)) {
+			obj._doInferFromType(type);
+		}
+		if(typeResult instanceof ValidElementSizeInferenceResult) {
+			return typeResult;
 		}
 		return obj.doInfer(type);
 	}
@@ -174,9 +178,22 @@ class ElementSizeInferrer {
 	}
 	
 	protected def dispatch ElementSizeInferenceResult doInfer(ElementReferenceExpression obj, AbstractType type) {
-		val inferredSize = obj.inferFromType(type);
+		var inferredSize = obj.inferFromType(type);
 		if (inferredSize instanceof ValidElementSizeInferenceResult) {
 			return inferredSize;
+		}
+		val reference = obj.reference;
+		if(reference instanceof GeneratedFunctionDefinition) {
+			val inferrerCls = reference.sizeInferrer;
+			if(inferrerCls !== null) {
+				val inferrer = loader.loadFromPlugin(obj.eResource, inferrerCls);
+				if(inferrer instanceof ElementSizeInferrer) {
+					inferredSize = inferrer.infer(obj);
+					if(inferredSize instanceof ValidElementSizeInferenceResult) {
+						return inferredSize;
+					}
+				}
+			}
 		}
 		val result = obj.reference.infer;
 		return result.replaceRoot(obj);
@@ -261,7 +278,7 @@ class ElementSizeInferrer {
 				if(obj.isOperationCall && obj.arguments.size > 0) {
 					obj.arguments.head.value; 
 				}
-			}
+			} 
 			if(instance !== null) {
 				if(instance instanceof ElementReferenceExpression) {
 					val resourceRef = instance.arguments.head?.value;

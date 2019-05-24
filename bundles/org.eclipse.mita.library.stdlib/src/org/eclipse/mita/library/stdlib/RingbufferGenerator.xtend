@@ -22,6 +22,8 @@ import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 
 // https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/
 class RingbufferGenerator extends AbstractTypeGenerator {
@@ -167,6 +169,27 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 				«rbRefCode».read = ringbuffer_increment(«rbRefCode».read, «rbRefCode».capacity);
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
+	}
+	static class PopInferrer extends ElementSizeInferrer {
+		
+		override protected _doInfer(ElementReferenceExpression obj, AbstractType type) {
+			if(obj.arguments.size === 1) {
+				val ringBufferRerefence = obj.arguments.head.value;
+				val rbReferenceType = BaseUtils.getType(ringBufferRerefence);
+				if(rbReferenceType.name == "ringbuffer") {
+					val outerResult = ringBufferRerefence.infer;
+					if(outerResult instanceof ValidElementSizeInferenceResult) {
+						if(outerResult.children.size > 0) {
+							return outerResult.children.head;
+						}
+						return new InvalidElementSizeInferenceResult(ringBufferRerefence, rbReferenceType, "Ringbuffer inference was empty");
+					}
+				}				
+			}
+			
+			return super._doInfer(obj, type);
+		}
+		
 	}
 	static class PeekGenerator extends AbstractFunctionGenerator {
 		@Inject

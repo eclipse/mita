@@ -273,10 +273,12 @@ class GeneratorUtils {
 
 	def dispatch getFileBasename(AbstractSystemResource resource) {
 		return '''«resource.baseName?.toFirstUpper»'''
-	}
-		
+	}	
 	def dispatch getFileBasename(SystemResourceSetup setup) {
 		return '''«setup.baseName»'''
+	}
+	def dispatch getFileBasename(EObject obj) {
+		return '''INVALID'''
 	}
 	
 	def dispatch getResourceTypeName(Bus sensor) {

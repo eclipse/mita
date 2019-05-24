@@ -652,6 +652,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					return context.imports.exists[it.importedNamespace.equals(sysSpec)]
 				}
 			}
+			else if(obj instanceof SystemResourceSetup) {
+				return !obj.events.isNullOrEmpty
+			}
 			return false;
 		])
 	}

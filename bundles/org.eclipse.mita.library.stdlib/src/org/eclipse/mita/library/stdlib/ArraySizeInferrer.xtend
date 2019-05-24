@@ -193,7 +193,7 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 			}
 		}
 		
-		return newValidResult(variable, length);
+		return new ValidElementSizeInferenceResult(variable, type, length);
 	}
 	
 	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
