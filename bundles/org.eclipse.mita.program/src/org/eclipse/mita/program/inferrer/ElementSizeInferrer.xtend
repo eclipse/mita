@@ -198,10 +198,10 @@ class ElementSizeInferrer {
 		val eventHandler = variable.eventHandler;
 		val eventSource = eventHandler?.event?.castOrNull(SystemEventSource);
 		val event = eventSource?.source;
-		if(event.sizeInferrer !== null) {
+		if(event?.sizeInferrer !== null) {
 			return loader.loadFromPlugin(variable.eResource, event.sizeInferrer).castOrNull(ElementSizeInferrer)?.inferFromType(variable, type);
 		}
-		if(event.maximumSize !== 0) {
+		if(event !== null && event.maximumSize !== 0) {
 			return newValidResult(variable, event.maximumSize);
 		}
 		

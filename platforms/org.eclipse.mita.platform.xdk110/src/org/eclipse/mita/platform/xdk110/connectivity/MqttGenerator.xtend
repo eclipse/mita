@@ -98,8 +98,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				StringDescr_wrap(&password, passwordBuf);
 			«ENDIF»
 		«ENDIF»
-		«FOR topic: topics»
-		StringDescr_wrap(&«topic.key»Topic, «topic.key»TopicBuf);
+		«FOR topic: topics.indexed»
+		StringDescr_wrap(&topics[«topic.key»], «topic.value.key»TopicBuf);
 		«ENDFOR»
 
 		«servalpalGenerator.generateSetup(isSecure)»
@@ -194,10 +194,14 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		};
 		«ENDIF»
 		
-		«FOR topic: topics»
-		char* «topic.key»TopicBuf = "«topic.value»";
-		StringDescr_T «topic.key»Topic;
+		«FOR topic: topics.indexed»
+		char* «topic.value.key»TopicBuf = "«topic.value.value»";
+		size_t «topic.value.key»TopicIdx = «topic.key»;
 		«ENDFOR»
+		
+		StringDescr_T topics[«topics.size»];
+		Mqtt_qos_t qoss[] = {«FOR topic: setup.signalInstances SEPARATOR(", ")»«getQosFromInt(getQosLevel(topic))»«ENDFOR»};
+		
 		''')
 		.addHeader("Serval_Mqtt.h", true, IncludePath.LOW_PRIORITY)
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
@@ -509,13 +513,10 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_STATUS_ERROR);
 			}
 			
-			Mqtt_qos_t qos;
-			«FOR topic: setup.signalInstances»
 			xSemaphoreTake(mqttSubscribeHandle, 0UL);
-			qos = «StaticValueInferrer.infer(ModelUtils.getArgumentValue(topic, "qos"), [])»;
-			rc = Mqtt_subscribe(&mqttSession, 1, &«topic.name»Topic, &qos);
+			rc = Mqtt_subscribe(&mqttSession, sizeof(topics), topics, qoss);
 			if(RC_OK != rc) {
-				«loggingGenerator.generateLogStatement(LogLevel.Error, '''MQTT_Connect : Failed to subscribe to topic «topic.name»: 0x%d''', codeFragmentProvider.create('''rc'''))»
+				«loggingGenerator.generateLogStatement(LogLevel.Error, '''MQTT_Connect : Failed to subscribe to topics: 0x%d''', codeFragmentProvider.create('''rc'''))»
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_FAILED);
 			}
 			if (pdTRUE != xSemaphoreTake(mqttSubscribeHandle, pdMS_TO_TICKS(30000)))
@@ -524,8 +525,6 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_CB_NOT_RECEIVED);
 			}
 			xSemaphoreGive(mqttSubscribeHandle);
-			
-			«ENDFOR»
 			
 			return RETCODE_OK;
 		}
@@ -568,7 +567,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttPublishHandle, 0UL);
-			if (RC_OK != Mqtt_publish(&mqttSession,«signalInstance.name»Topic, value->data, value->length, (uint8_t) «qos», false))
+			if (RC_OK != Mqtt_publish(&mqttSession,topics[«signalInstance.name»TopicIdx], value->data, value->length, (uint8_t) «qos», false))
 			{
 			    exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 			}
