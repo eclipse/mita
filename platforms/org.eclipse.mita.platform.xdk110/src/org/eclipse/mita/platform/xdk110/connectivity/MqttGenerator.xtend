@@ -88,6 +88,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		}
 		
 		val auth = StaticValueInferrer.infer(configuration.getExpression("authentication"), []);
+		val topics = setup.signalInstances.map[it.name -> it.topicName];
 		
 		val result = codeFragmentProvider.create('''
 		Retcode_T exception = RETCODE_OK;
@@ -97,6 +98,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				StringDescr_wrap(&password, passwordBuf);
 			«ENDIF»
 		«ENDIF»
+		«FOR topic: topics»
+		StringDescr_wrap(&«topic.key»Topic, «topic.key»TopicBuf);
+		«ENDFOR»
 
 		«servalpalGenerator.generateSetup(isSecure)»
 		
@@ -189,6 +193,11 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			.ServerPort = «sntpPort»
 		};
 		«ENDIF»
+		
+		«FOR topic: topics»
+		char* «topic.key»TopicBuf = "«topic.value»";
+		StringDescr_T «topic.key»Topic;
+		«ENDFOR»
 		''')
 		.addHeader("Serval_Mqtt.h", true, IncludePath.LOW_PRIORITY)
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
@@ -445,6 +454,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_REMOVED);
 				break;
 			case MQTT_INCOMING_PUBLISH:
+				printf("Message received: %.*s\n", eventData->publish.length, eventData->publish.payload);
 				break;
 			case MQTT_PUBLISHED_DATA:
 				mqttWasPublished = true;
@@ -492,11 +502,31 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed since Post CB was not received")»
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_CB_NOT_RECEIVED);
 			}
+			xSemaphoreGive(mqttConnectHandle);
 			if (!mqttIsConnected)
 			{
 				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect")»
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_STATUS_ERROR);
 			}
+			
+			Mqtt_qos_t qos;
+			«FOR topic: setup.signalInstances»
+			xSemaphoreTake(mqttSubscribeHandle, 0UL);
+			qos = «StaticValueInferrer.infer(ModelUtils.getArgumentValue(topic, "qos"), [])»;
+			rc = Mqtt_subscribe(&mqttSession, 1, &«topic.name»Topic, &qos);
+			if(RC_OK != rc) {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, '''MQTT_Connect : Failed to subscribe to topic «topic.name»: 0x%d''', codeFragmentProvider.create('''rc'''))»
+				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_FAILED);
+			}
+			if (pdTRUE != xSemaphoreTake(mqttSubscribeHandle, pdMS_TO_TICKS(30000)))
+			{
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Subscribe failed since Post CB was not received")»
+				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_CB_NOT_RECEIVED);
+			}
+			xSemaphoreGive(mqttSubscribeHandle);
+			
+			«ENDFOR»
+			
 			return RETCODE_OK;
 		}
 		''')
@@ -533,15 +563,12 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			}
 			«generatorUtils.generateExceptionHandler(signalInstance, "exception")»
 
-			static StringDescr_T publishTopicDescription;
-			static char *topic = "«getTopicName(signalInstance)»";
-			StringDescr_wrap(&publishTopicDescription, topic);
 
 			mqttWasPublished = false;
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttPublishHandle, 0UL);
-			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, value->data, value->length, (uint8_t) «qos», false))
+			if (RC_OK != Mqtt_publish(&mqttSession,«signalInstance.name»Topic, value->data, value->length, (uint8_t) «qos», false))
 			{
 			    exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 			}
