@@ -100,13 +100,6 @@ public abstract class AbstractTypeSystem implements ITypeSystem {
 				superTypes.add(entry.getValue());
 			}
 		}
-		if (type instanceof TypeParameter) {
-			TypeParameter typeParameter = (TypeParameter) type;
-			Type bound = typeParameter.getBound();
-			if (bound != null) {
-				superTypes.add(bound);
-			}
-		}
 		return superTypes;
 	}
 

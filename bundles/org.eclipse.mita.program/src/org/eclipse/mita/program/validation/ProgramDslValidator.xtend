@@ -82,6 +82,7 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -212,7 +213,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.FAST) 
 	def void checkValidTypesForPresentTypeSpecifier(PresentTypeSpecifier ts) {
 		if(EcoreUtil2.getContainerOfType(ts, SystemResourceSetup) === null) {
-			val typeRef = TypesPackage.eINSTANCE.presentTypeSpecifier_Type;
+			val typeRef = TypesPackage.eINSTANCE.typeReferenceSpecifier_Type;
 			val type = BaseUtils.getType(ts);
 			val eClassName = TypesUtil.getConstraintSystem(ts.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY);
 			if(#[ExceptionTypeDeclaration, Sensor, Connectivity].map[it.simpleName].contains(eClassName)) {
@@ -233,7 +234,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			}
 			// otherwise we didn't get a type for this
 			else if(type instanceof TypeVariable) {
-				val resolvedReference = ts.eGet(TypesPackage.eINSTANCE.presentTypeSpecifier_Type, false);
+				val resolvedReference = ts.eGet(TypesPackage.eINSTANCE.typeReferenceSpecifier_Type, false);
 				if(resolvedReference instanceof EObject) {
 					val genericElement = EcoreUtil2.getContainerOfType(resolvedReference, GenericElement);
 					if(genericElement !== null) {
@@ -279,7 +280,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val sizeInferenceResult = elementSizeInferrer.infer(variable);
 		val invalidElements = sizeInferenceResult.invalidSelfOrChildren;
 		for(invalidElement : invalidElements) {
-			if(invalidElement.typeOf instanceof PresentTypeSpecifier && (invalidElement.typeOf as PresentTypeSpecifier).type.name == "array") {
+			if(invalidElement.typeOf instanceof TypeReferenceSpecifier && (invalidElement.typeOf as TypeReferenceSpecifier).type.name == "array") {
 			}
 			else {
 				val invalidObj = if(invalidElement.root?.eResource == variable.eResource) {

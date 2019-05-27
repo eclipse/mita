@@ -16,15 +16,14 @@ package org.eclipse.mita.library.stdlib
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class OptionalSizeInferrer extends ElementSizeInferrer {
 	

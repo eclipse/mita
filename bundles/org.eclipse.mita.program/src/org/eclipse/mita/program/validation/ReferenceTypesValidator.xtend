@@ -46,6 +46,7 @@ import org.eclipse.xtext.util.Tuples
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.EValidatorRegistrar
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 
 class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {	
 	@Inject ITypeSystem typeSystem
@@ -202,14 +203,19 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		0;
 	}
 	
-	def Optional<Pair<Integer, PresentTypeSpecifier>> typeSpecifierContainsRefRefs(PresentTypeSpecifier ts) {
-		structuralFeatureContainsRefRefs(ts.type).or(
-		if(typeSystem.isSuperType(ts.type, typeSystem.getType(REFERENCE_TYPE))) {
-			typeSpecifierContainsRefRefs(ts.typeArguments.head);
+	def Optional<Pair<Integer, TypeReferenceSpecifier>> typeSpecifierContainsRefRefs(PresentTypeSpecifier ts) {
+		if(ts instanceof TypeReferenceSpecifier) {
+			return structuralFeatureContainsRefRefs(ts.type).or(
+			if(typeSystem.isSuperType(ts.type, typeSystem.getType(REFERENCE_TYPE))) {
+				typeSpecifierContainsRefRefs(ts.typeArguments.head);
+			}
+			else {
+				Optional.absent;
+			})	
 		}
 		else {
-			Optional.absent;
-		})
+			return Optional.absent;
+		}
 	}
 	
 	dispatch def Triple<Integer, Boolean, List<EObject>> innerMostReferences(CoercionExpression e) {
@@ -251,23 +257,23 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	}
 	
 	dispatch def structuralFeatureContainsRefRefs(StructureType s) {
-		s.parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).typeSpecsContainRefRefs
+		s.parameters.map[it.typeSpecifier].filter(TypeReferenceSpecifier).typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(AnonymousProductType s) {
 		s.typeSpecifiers.typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(NamedProductType s) {
-		s.parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).typeSpecsContainRefRefs
+		s.parameters.map[it.typeSpecifier].filter(TypeReferenceSpecifier).typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(EObject e) {
 		Optional.absent;
 	}
 	
-	def typeSpecsContainRefRefs(Iterable<PresentTypeSpecifier> tss) {
+	def typeSpecsContainRefRefs(Iterable<TypeReferenceSpecifier> tss) {
 		for(idx_ts: tss.indexed) {
 			if(typeSystem.isSuperType(idx_ts.value.type, typeSystem.getType(REFERENCE_TYPE))) {
 				val innerType = idx_ts.value.typeArguments.head;
-				if(typeSystem.isSuperType(innerType.type, typeSystem.getType(REFERENCE_TYPE))) {
+				if(innerType instanceof TypeReferenceSpecifier && typeSystem.isSuperType((innerType as TypeReferenceSpecifier).type, typeSystem.getType(REFERENCE_TYPE))) {
 					return Optional.of(idx_ts);
 				}
 			}

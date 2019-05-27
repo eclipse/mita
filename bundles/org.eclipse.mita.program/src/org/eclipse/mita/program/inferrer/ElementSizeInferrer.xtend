@@ -24,13 +24,15 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.CoercionExpression
-import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.FunctionDefinition
@@ -44,9 +46,8 @@ import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
 
 import static org.eclipse.mita.base.types.TypesUtil.*
+
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
-import org.eclipse.mita.base.util.PreventRecursion
-import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 /**
  * Hierarchically infers the size of a data element.
@@ -414,7 +415,7 @@ abstract class ElementSizeInferenceResult {
 	}
 		
 	override toString() {
-		var result = if(typeOf instanceof PresentTypeSpecifier) {
+		var result = if(typeOf instanceof TypeReferenceSpecifier) {
 			typeOf.type.name;
 		} else {
 			""

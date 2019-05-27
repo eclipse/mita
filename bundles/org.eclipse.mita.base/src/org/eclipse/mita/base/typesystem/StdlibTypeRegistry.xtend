@@ -96,14 +96,14 @@ class StdlibTypeRegistry {
 			return null;
 		}
 		val obj = cache.get(qn, context.eResource, [|
-			val scope = cache.get("SCOPE_TYPE", context.eResource, [|scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)]);
+			val scope = cache.get("SCOPE_TYPE", context.eResource, [|scopeProvider.getScope(context, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)]);
 			scope.getSingleElement(qn)?.EObjectOrProxy
 		]);
 		return obj;
 	}
 	def getTypeModelObjectProxy(ConstraintSystem system, EObject context, QualifiedName qn) {
 		if(isLinking) {
-			return system.getTypeVariableProxy(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type, qn);
+			return system.getTypeVariableProxy(context, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type, qn);
 		}
 		return system.getTypeVariable(getTypeModelObject(context, qn));
 	}
@@ -169,7 +169,7 @@ class StdlibTypeRegistry {
 		val cache = new OnChangeEvictingCache();
 		
 		return cache.get("STDLIB_INTEGER_TYPES", context.eResource, [|
-			val typesScopeFiltered = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+			val typesScopeFiltered = scopeProvider.getScope(context, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
 			val typesScope = if(typesScopeFiltered instanceof ExportedFilteredScope) {
 				// we want all integer types, even xint*.
 				typesScopeFiltered.unfilter;

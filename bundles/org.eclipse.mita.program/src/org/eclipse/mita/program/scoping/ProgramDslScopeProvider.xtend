@@ -26,7 +26,6 @@ import org.eclipse.emf.ecore.EcorePackage
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.scoping.TypeKindNormalizer
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
@@ -36,21 +35,21 @@ import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
+import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsDeconstructor
@@ -73,8 +72,8 @@ import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
+
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.platform.SystemSpecification
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
@@ -244,7 +243,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def IScope scope_VariableDeclarationImpl_feature(VariableDeclarationImpl context, EReference reference) {
 		val typeSpecifier = context.getTypeSpecifier();
-		val type = if(typeSpecifier instanceof PresentTypeSpecifier) {
+		val type = if(typeSpecifier instanceof TypeReferenceSpecifier) {
 			typeSpecifier.type;
 		}
 		if(!(type instanceof ComplexType)) return IScope.NULLSCOPE;
@@ -254,7 +253,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 
 	def IScope scope_FeatureValue_feature(VariableDeclaration context, EReference reference) {
 		val typeSpecifier = context.getTypeSpecifier();
-		val type = if(typeSpecifier instanceof PresentTypeSpecifier) {
+		val type = if(typeSpecifier instanceof TypeReferenceSpecifier) {
 			typeSpecifier.type;
 		}
 		if(!(type instanceof ComplexType)) return IScope.NULLSCOPE;
@@ -440,7 +439,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		val parentScope = delegate.getScope(context, ref)
 		return new TypeReferenceScope(new FilteringScope(parentScope, [globalTypeFilter.apply(it.EClass)]), context);
 	}
-	def scope_PresentTypeSpecifier_type(EObject context, EReference ref) {
+	def scope_TypeReferenceSpecifier_type(EObject context, EReference ref) {
 		return scope_TypeSpecifier_type(context, ref);
 	}
 
@@ -536,7 +535,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					return filteredEnumeratorScope(originalScope, itemType);
 				}
 				else {
-					val typeName = BaseUtils.getText(context.parameter.typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+					val typeName = BaseUtils.getText(context.parameter.typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
 					val normalizer = new ImportNormalizer(QualifiedName.create(typeName), true, false);
 					return new ImportScope(#[normalizer], originalScope, null, EcorePackage.eINSTANCE.EObject, false);
 				}
@@ -680,7 +679,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 		// Performance improvement: hard-code well traveled routes
 		
 		val scope = //cache.get(context -> reference, context.eResource, [
-			if (reference == TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE) {
+			if (reference == TypesPackage.Literals.TYPE_REFERENCE_SPECIFIER__TYPE) {
 				scope_TypeSpecifier_type(context, reference);
 			} else if (reference == ExpressionsPackage.Literals.ELEMENT_REFERENCE_EXPRESSION__REFERENCE) {
 				val scope = scope_ElementReferenceExpression_reference(context, reference);

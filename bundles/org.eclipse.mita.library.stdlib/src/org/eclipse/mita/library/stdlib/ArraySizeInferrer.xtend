@@ -64,9 +64,10 @@ class ArraySizeInferrer extends ElementSizeInferrer {
 		if(arraySelector === null) {
 			return _isolatedDoInfer(expr as EObject);
 		}
-		val ownerSize = expr.owner?.isolatedDoInfer?.castOrNull(ValidElementSizeInferenceResult);
+		val ownerSize = expr.owner?.isolatedDoInfer;
+		val validOwnerSize = ownerSize?.castOrNull(ValidElementSizeInferenceResult);
 		val lowerBound = StaticValueInferrer.infer(arraySelector.lowerBound, [])?.castOrNull(Long) ?: (0L);
-		val upperBound = StaticValueInferrer.infer(arraySelector.upperBound, [])?.castOrNull(Long) ?: (if(ownerSize !== null) ownerSize.elementCount as Long);
+		val upperBound = StaticValueInferrer.infer(arraySelector.upperBound, [])?.castOrNull(Long) ?: (if(validOwnerSize !== null) validOwnerSize.elementCount as Long);
 		if(upperBound === null) {
 			return _isolatedDoInfer(expr as EObject);
 		}

@@ -500,7 +500,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NewInstanceExpression newInstanceExpression) {
 		// see computeConstraints(ConstraintSystem, ElementReferenceExpression) for a more detailed explanation
 		val returnType = system.computeConstraints(newInstanceExpression.type);
-		val typeName = BaseUtils.getText(newInstanceExpression.type, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+		val typeName = BaseUtils.getText(newInstanceExpression.type, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
 		val constructorName = "con_" + typeName;
 		val functionTypeVar = system.newTypeVariableProxy(newInstanceExpression, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, QualifiedName.create(typeName, constructorName));
 		val argumentParamsAndValues = newInstanceExpression.arguments.map[

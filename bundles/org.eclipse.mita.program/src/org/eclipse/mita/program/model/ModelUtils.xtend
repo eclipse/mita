@@ -24,6 +24,7 @@ import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.Expression
@@ -31,9 +32,10 @@ import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.Parameter
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeLiteralSpecifier
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
@@ -187,14 +189,14 @@ class ModelUtils {
 		return false;
 	}
 	
-	static def boolean containsAbstractType(PresentTypeSpecifier ts) {
+	static def boolean containsAbstractType(TypeReferenceSpecifier ts) {
 		if(ts === null) {
 			return true;
 		}
 		if(ts.type.abstract) {
 			return true;
 		}
-		ts.typeArguments.fold(false, [b, x | b || x.containsAbstractType])
+		ts.typeArguments.filter(TypeReferenceSpecifier).fold(false, [b, x | b || x.containsAbstractType])
 	}
 
 	/**
@@ -220,7 +222,10 @@ class ModelUtils {
 		return false;
 	}
 
-	static def String typeSpecifierIdentifier(PresentTypeSpecifier x) {
+	static dispatch def String typeSpecifierIdentifier(TypeLiteralSpecifier x) {
+		return x.value.toString;
+	}
+	static dispatch def String typeSpecifierIdentifier(TypeReferenceSpecifier x) {
 		val innerTypes = x.typeArguments.map[typeSpecifierIdentifier].reduce[p1, p2|p1 + ", " + p2];
 		val innerString = if (innerTypes === null) {
 				""
@@ -256,19 +261,29 @@ class ModelUtils {
 	}	
 	
 	
-	def static boolean typeSpecifierEqualsByName(PresentTypeSpecifier ts, Object o) {
-		return typeSpecifierEqualsWith([t1, t2 | t1.name == t2.name], ts, o)
+	def static boolean typeSpecifierEqualsByName(TypeReferenceSpecifier ts, Object o) {
+		return typeSpecifierEqualsWith([t1, t2 | t1.name == t2.name], [t1, t2 | t1 == t2], ts, o)
 	}
-		
-	def static boolean typeSpecifierEqualsWith((Type, Type) => Boolean equalityCheck, PresentTypeSpecifier ts1, Object o) {
-		if(!(o instanceof PresentTypeSpecifier)) {
+	
+	static dispatch def boolean typeSpecifierEqualsWith((Type, Type) => Boolean typeEqualityCheck, (Literal, Literal) => Boolean valueEqualityCheck, TypeLiteralSpecifier ts1, Object o) {
+		if(!(o instanceof TypeLiteralSpecifier)) {
 			return false;
 		}
-		val ts2 = o as PresentTypeSpecifier;
-		if(!equalityCheck.apply(ts1.type, ts2.type) || ts1.typeArguments.length != ts2.typeArguments.length) {
+		val ts2 = o as TypeLiteralSpecifier;
+		if(!valueEqualityCheck.apply(ts1.value, ts2.value)) {
 			return false;
 		}
-		BaseUtils.zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(equalityCheck, tss.key, tss.value)])
+		return true;
+	}
+	static dispatch def boolean typeSpecifierEqualsWith((Type, Type) => Boolean typeEqualityCheck, (Literal, Literal) => Boolean valueEqualityCheck, TypeReferenceSpecifier ts1, Object o) {
+		if(!(o instanceof TypeReferenceSpecifier)) {
+			return false;
+		}
+		val ts2 = o as TypeReferenceSpecifier;
+		if(!typeEqualityCheck.apply(ts1.type, ts2.type) || ts1.typeArguments.length != ts2.typeArguments.length) {
+			return false;
+		}
+		return BaseUtils.zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(typeEqualityCheck, valueEqualityCheck, tss.key, tss.value)])
 	}
 	
 	def static boolean typeInferenceResultEqualsWith((AbstractType, AbstractType) => Boolean equalityCheck, AbstractType ir1, Object o) {

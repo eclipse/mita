@@ -56,7 +56,6 @@ import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.ParameterWithDefaultValue
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructureType
@@ -65,6 +64,7 @@ import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.TypesUtil
@@ -818,12 +818,12 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.associate(system.computeConstraints(expr.expression), expr);
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PresentTypeSpecifier typeSpecifier) {
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeReferenceSpecifier typeSpecifier) {
 		// this is  t<a, b>  in  var x: t<a,  b>
 		val typeArguments = typeSpecifier.typeArguments;
 		
 		// t
-		val type = system.resolveReferenceToSingleAndGetType(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+		val type = system.resolveReferenceToSingleAndGetType(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
 		val typeWithoutModifiers = if(typeArguments.empty) {
 			type;
 		}
@@ -831,9 +831,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 			// this type specifier is an instance of type
 			// compute <a, b>
 			val typeArgs = typeArguments.map[system.computeConstraints(it) as AbstractType].force;
-			val ref = typeSpecifier.eGet(TypesPackage.eINSTANCE.presentTypeSpecifier_Type, false)
+			val ref = typeSpecifier.eGet(TypesPackage.eINSTANCE.typeReferenceSpecifier_Type, false)
 			val reftext = if(ref instanceof EObject && !(ref as EObject).eIsProxy) ref.toString() else null;
-			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)?.head?.text?.trim;
+			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)?.head?.text?.trim;
 			// compute constraints to validate t<a, b> (argument count etc.)
 			val typeInstance = system.nestInType(null, typeArgs, type, typeName);
 			typeInstance;

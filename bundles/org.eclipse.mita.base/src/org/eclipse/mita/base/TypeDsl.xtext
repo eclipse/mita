@@ -93,8 +93,16 @@ GeneratedTypeParameter returns GeneratedTypeParameter:
 ;
 
 TypeParameter returns TypeParameter:
-	name=ID ('extends' bound=[Type])?;
-
+	InstanceTypeParameter | RawTypeParameter
+;
+RawTypeParameter returns RawTypeParameter:
+	{RawTypeParameter}
+	name=ID 
+;
+InstanceTypeParameter returns InstanceTypeParameter:
+	{InstanceTypeParameter}
+	name=ID 'is' ofType=[Type] 
+;
 
 TypeKind returns TypeKind:
 	{TypeKind}
@@ -259,8 +267,19 @@ Argument returns Argument:
 ParenthesizedExpression returns Expression:
 	'(' Expression ')';
 
-TypeSpecifier returns PresentTypeSpecifier:
-	{PresentTypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
+TypeSpecifierArgument returns PresentTypeSpecifier:
+	TypeLiteralSpecifier | TypeSpecifier
+;
+
+TypeLiteralSpecifier returns TypeLiteralSpecifier:
+	value=Literal
+;
+
+TypeSpecifier returns TypeReferenceSpecifier:
+	{TypeReferenceSpecifier} 
+	(referenceModifiers+=('&' | LogicalAndOperator))* 
+	type=[Type|QID] 
+	('<' (typeArguments+=TypeSpecifierArgument (',' typeArguments+=TypeSpecifierArgument)* '>'))? (optional?="?")?;
 
 InterpolatedStringLiteral returns InterpolatedStringLiteral: 
 	{InterpolatedStringLiteral}
