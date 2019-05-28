@@ -48,8 +48,10 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
 import org.eclipse.mita.base.types.InstanceTypeParameter
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 
 @Accessors
 class ConstraintSystem {
@@ -103,8 +105,12 @@ class ConstraintSystem {
 		new TypeHole(obj, instanceCount++)
 	}
 	
-	def DependentTypeVariable newDependentTypeVariable(InstanceTypeParameter obj, AbstractType dependsOn) {
-		return new DependentTypeVariable(obj, instanceCount++, dependsOn);
+	def TypeVariable getDependentTypeVariable(InstanceTypeParameter obj, AbstractType dependsOn) {
+		val uri = EcoreUtil.getURI(obj);
+		
+		getOrCreate(obj, uri, [
+			return new DependentTypeVariable(obj, instanceCount++, dependsOn);
+		]);
 	}
 	
 	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference) {
@@ -410,7 +416,7 @@ class ConstraintSystem {
 		if(tvp.origin === null) {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
-		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
+		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference) && !tvp.origin.eGet(tvp.reference, false)?.castOrNull(BasicEObjectImpl)?.eIsProxy) {
 			return #[BaseUtils.ignoreChange(tvp.origin, [
 					getTypeVariable(tvp.origin.eGet(tvp.reference, false) as EObject)
 				])];

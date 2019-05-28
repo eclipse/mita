@@ -93,14 +93,16 @@ GeneratedTypeParameter returns GeneratedTypeParameter:
 ;
 
 TypeParameter returns TypeParameter:
-	InstanceTypeParameter | RawTypeParameter
+	(InstanceTypeParameter | RawTypeParameter)
 ;
 RawTypeParameter returns RawTypeParameter:
 	{RawTypeParameter}
+	(variance=Variance)?
 	name=ID 
 ;
 InstanceTypeParameter returns InstanceTypeParameter:
 	{InstanceTypeParameter}
+	(variance=Variance)? 
 	name=ID 'is' ofType=[Type] 
 ;
 
@@ -238,6 +240,22 @@ PrimaryExpression returns Expression:
 PrimitiveValueExpression returns Expression:
 	{PrimitiveValueExpression} value=Literal;
 
+TypeExpression returns Expression:
+	  ({NaryTypeAddition} values+=ValueOrSpecifier ('+' values+=ValueOrSpecifier)+)
+	| IntExpression
+;
+
+ValueOrSpecifier returns Literal:
+	IntLiteral | TypeReferenceLiteral
+;
+
+IntExpression returns Expression:
+	{PrimitiveValueExpression} value=IntLiteral
+;
+
+TypeReferenceLiteral returns TypeReferenceLiteral:
+	type=[Type]
+;
 
 arraySelector returns Expression:
 	  Expression ({ValueRange.lowerBound=current} ':' (upperBound=Expression)?)?
@@ -268,11 +286,11 @@ ParenthesizedExpression returns Expression:
 	'(' Expression ')';
 
 TypeSpecifierArgument returns PresentTypeSpecifier:
-	TypeLiteralSpecifier | TypeSpecifier
+	TypeExpressionSpecifier | TypeSpecifier
 ;
 
-TypeLiteralSpecifier returns TypeLiteralSpecifier:
-	value=IntLiteral
+TypeExpressionSpecifier returns TypeExpressionSpecifier:
+	value=TypeExpression
 ;
 
 TypeSpecifier returns TypeReferenceSpecifier:
@@ -327,6 +345,10 @@ BitwiseOrOperator:
 
 BitwiseAndOperator:
 	'&';
+
+enum Variance:
+	Covariant='+' | Contravariant='-' | Invariant
+;
 
 enum PostFixOperator:
 	increment="++" | decrement="--";

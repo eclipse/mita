@@ -67,8 +67,14 @@ abstract class AbstractTypeConstraint {
 	abstract def boolean isAtomic(ConstraintSystem system);
 	
 	def AbstractTypeConstraint replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
-		return map[it.replaceProxies(system, resolve)]
+		var result = this;
+		while(result.hasProxy) {
+			result = result.map[it.replaceProxies(system, resolve)]
+		}
+		return result;
 	}
+	
+	def boolean hasProxy();
 	
 	def AbstractTypeConstraint modifyNames(NameModifier converter) {
 		return map[it.modifyNames(converter)]

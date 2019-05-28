@@ -29,16 +29,16 @@ package stdlib;
  * 
  * A list is an ordered collection of elements which offers random read/write access.
  */
-export generated type array<T>
+export generated type array<T, +Size is uint32>
 	generator "org.eclipse.mita.library.stdlib.ArrayGenerator"
 	size-inferrer "org.eclipse.mita.library.stdlib.ArraySizeInferrer"
 	
-	constructor con(size : static uint32);
+	constructor con();
 
 /*
  * Returns the length of an array.
  */
-export generated fn <T> length(self : array<T>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$LengthGenerator";
+export generated fn <T, S> length(self : array<T, S>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$LengthGenerator";
 
 //
 ///*

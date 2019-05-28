@@ -28,6 +28,7 @@ import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
@@ -116,6 +117,8 @@ class Substitution {
 		if(oldEntries == EMPTY) {
 			return new Substitution(this);
 		}
+		val copyOld = new Substitution(oldEntries);
+		val copyNew = new Substitution(this);
 		val result = oldEntries;
 		val newEntries = this;
 		result.constraintSystemProvider = newEntries.constraintSystemProvider ?: oldEntries.constraintSystemProvider;

@@ -26,6 +26,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -45,6 +46,10 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		superType = top;
 		if(subType === null || superType === null) {
 			throw new NullPointerException;
+		}
+		
+		if(this.toString == "f_1788 ⩽ f_1758") {//"f_1822 ⩽ typeAdd<f_1823>") {
+			print("")
 		}
 	}
 	
@@ -125,8 +130,16 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return this;
 	}
 	
+	override replaceProxies(ConstraintSystem system, (TypeVariableProxy)=>Iterable<AbstractType> resolve) {
+		super.replaceProxies(system, resolve)
+	}
+	
 	override getOperator() {
 		return "⩽"
+	}
+	
+	override hasProxy() {
+		return subType.hasProxy || superType.hasProxy
 	}
 	
 }

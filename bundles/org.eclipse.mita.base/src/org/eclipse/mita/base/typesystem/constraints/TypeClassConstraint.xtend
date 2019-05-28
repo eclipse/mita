@@ -59,4 +59,7 @@ abstract class TypeClassConstraint extends AbstractTypeConstraint {
 	override getMembers() {
 		#[typ, instanceOfQN]
 	}	
+	override hasProxy() {
+		return typ.hasProxy
+	}
 }

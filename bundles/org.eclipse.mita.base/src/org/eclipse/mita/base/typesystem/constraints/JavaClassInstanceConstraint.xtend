@@ -75,4 +75,8 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 		return what instanceof TypeVariable
 	}
 	
+	override hasProxy() {
+		return what.hasProxy
+	}
+	
 }

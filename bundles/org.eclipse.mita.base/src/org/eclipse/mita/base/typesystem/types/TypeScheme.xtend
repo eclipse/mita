@@ -118,4 +118,8 @@ class TypeScheme extends AbstractType {
 		return new TypeScheme(origin, vars, children.head.node.unquote(children.head.children))
 	}
 	
+	override hasProxy() {
+		super.hasProxy() || vars.exists[it instanceof TypeVariableProxy]
+	}
+	
 }

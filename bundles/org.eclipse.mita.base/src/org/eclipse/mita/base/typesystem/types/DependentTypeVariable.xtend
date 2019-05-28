@@ -15,13 +15,15 @@ class DependentTypeVariable extends TypeVariable {
 	protected val AbstractType dependsOn;
 	
 	new(EObject origin, int idx, AbstractType dependsOn) {
-		super(origin, idx);
-		this.dependsOn = dependsOn;
+		this(origin, idx, null, dependsOn);
 	}
 	
 	new(EObject origin, int idx, String name, AbstractType dependsOn) {
 		super(origin, idx, name)
 		this.dependsOn = dependsOn;
+		if(idx === 2) {
+			print("")
+		}
 	}
 	
 	override modifyNames(NameModifier converter) {
@@ -40,6 +42,14 @@ class DependentTypeVariable extends TypeVariable {
 			return new DependentTypeVariable(origin, idx, name, newDependsOn);
 		}
 		return this;
+	}
+	
+	override protected getToStringPrefix() {
+		return 'd_'
+	}
+	
+	override getFreeVars() {
+		return #[this] + dependsOn.freeVars
 	}
 	
 }

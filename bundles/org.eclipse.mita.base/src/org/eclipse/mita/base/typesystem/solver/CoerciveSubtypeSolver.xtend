@@ -72,6 +72,7 @@ import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.NumericAddType
 
 /**
  * Solves coercive subtyping as described in 
@@ -624,6 +625,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 		val result = doSimplify(system, substitution, typeResolutionOrigin, constraint, sub, top);
 		return result;
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, NumericAddType sub, AbstractType top) {
+		sub.typeArguments.forEach[
+			system.plus(new SubtypeConstraint(it, top, constraint._errorMessage));
+		]
+		
+		return SimplificationResult.success(system, Substitution.EMPTY); 
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, LiteralNumberType sub, AbstractType top) {

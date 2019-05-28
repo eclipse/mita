@@ -70,6 +70,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
+import org.eclipse.mita.base.typesystem.types.NumericAddType
 
 class SerializationAdapter {
 	
@@ -228,7 +229,9 @@ class SerializationAdapter {
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
 		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
 	}
-	
+	protected dispatch def AbstractType fromValueObject(SerializedNumericAddType obj) {
+		return new NumericAddType(obj.origin.resolveEObject, obj.name, obj.typeArguments.fromSerializedTypes());
+	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
 		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
@@ -507,6 +510,12 @@ class SerializationAdapter {
 
 	protected dispatch def Object toValueObject(SumType obj) {
 		new SerializedSumType => [ 
+			fill(it, obj)
+		]
+	}
+	
+	protected dispatch def Object toValueObject(NumericAddType obj) {
+		new SerializedNumericAddType => [ 
 			fill(it, obj)
 		]
 	}

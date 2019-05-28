@@ -10,9 +10,7 @@
  */
 package org.eclipse.mita.base.types
 
-import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
@@ -21,7 +19,6 @@ import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.EcoreUtil2
 
 /** 
@@ -65,14 +62,14 @@ class TypesUtil {
 			if(lhs === obj || lhs.eAllContents.exists[it === obj]) {
 				// obj is only on the left hand side of the assignment
 				if(maybeAssignment.operator == AssignmentOperator.ASSIGN) {
-					return Variance.Contravariant;	
+					return Variance.CONTRAVARIANT;	
 				}
 				// other operators are *mutating*, therefore obj is both argument and destination. Hence it must be invariant.
 				else {
-					return Variance.Invariant;					
+					return Variance.INVARIANT;					
 				}
 			}
 		}
-		return Variance.Covariant;
+		return Variance.COVARIANT;
 	}
 }

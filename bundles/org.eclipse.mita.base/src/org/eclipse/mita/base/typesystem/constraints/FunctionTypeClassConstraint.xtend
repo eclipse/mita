@@ -17,23 +17,21 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.infra.CachedBoolean
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
-import com.google.common.base.Optional
-import org.eclipse.mita.base.typesystem.types.TypeScheme
-import org.eclipse.mita.base.typesystem.infra.CachedBoolean
-import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 
 @Accessors
 @EqualsHashCode
@@ -71,15 +69,15 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		}
 		if(at instanceof FunctionType) {
 			val newConstraint = switch(returnTypeVariance) {
-				case Covariant: {
+				case COVARIANT: {
 					// the returned type should be smaller than the expected type so it can be assigned
 					new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s'''));
 				}
-				case Contravariant: {
+				case CONTRAVARIANT: {
 					// if we are the target of an assignment we need to accept superclasses
 					new SubtypeConstraint(returnTypeTV, at.to, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s'''));
 				}
-				case Invariant: {
+				case INVARIANT: {
 					new EqualityConstraint(returnTypeTV, at.to, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not equal to %2$s'''));
 				}
 			}
@@ -141,6 +139,5 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 			return true;
 		}		
 	}
-	
 		
 }

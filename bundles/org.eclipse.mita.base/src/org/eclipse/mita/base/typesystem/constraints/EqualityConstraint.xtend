@@ -33,6 +33,9 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null) {
 			throw new NullPointerException;
 		}
+		if(this.toString == "(10 + 12) ≡ f_1861") {
+			print("")
+		}
 	}
 	
 	override getErrorMessage() {
@@ -76,6 +79,10 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		return false;
+	}
+	
+	override hasProxy() {
+		return left.hasProxy || right.hasProxy
 	}
 	
 }

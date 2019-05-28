@@ -17,9 +17,9 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import java.util.Set
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy.AmbiguityResolutionStrategy
-import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.diagnostics.Severity
 
 final class SerializedConstraintSystem {
@@ -111,6 +111,8 @@ final class SerializedProductType extends SerializedCompoundType {
 }
 
 final class SerializedSumType extends SerializedCompoundType {
+}
+final class SerializedNumericAddType extends SerializedCompoundType {
 }
 
 final class SerializedTypeScheme extends SerializedAbstractType {

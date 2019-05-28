@@ -83,4 +83,8 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		return typeScheme instanceof TypeVariable
 	}
 	
+	override hasProxy() {
+		return instance.hasProxy || typeScheme.hasProxy
+	}
+	
 }

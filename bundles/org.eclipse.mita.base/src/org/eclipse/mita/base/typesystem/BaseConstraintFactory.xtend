@@ -15,7 +15,6 @@ package org.eclipse.mita.base.typesystem
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import com.ibm.icu.impl.locale.KeyTypeData.ValueType
 import java.util.List
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.IStatus
@@ -35,6 +34,7 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.expressions.LogicalOperator
 import org.eclipse.mita.base.expressions.MultiplicativeOperator
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
@@ -53,6 +53,7 @@ import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.InstanceTypeParameter
 import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.NaryTypeAddition
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
@@ -65,8 +66,9 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeExpressionSpecifier
 import org.eclipse.mita.base.types.TypeKind
-import org.eclipse.mita.base.types.TypeLiteralSpecifier
+import org.eclipse.mita.base.types.TypeReferenceLiteral
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
@@ -84,6 +86,8 @@ import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
@@ -104,9 +108,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.expressions.Literal
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
-import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
+import org.eclipse.mita.base.types.Variance
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -421,13 +423,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 		system.addConstraint(new SubtypeConstraint(argumentType, fromTV, issue));
 		val varianceOfResultVar = TypesUtil.getVarianceInAssignment(functionCall);
 		switch(varianceOfResultVar) {
-			case Covariant: {
+			case COVARIANT: {
 				system.addConstraint(new SubtypeConstraint(toTV, resultType, issue));
 			}
-			case Contravariant: {
+			case CONTRAVARIANT: {
 				system.addConstraint(new SubtypeConstraint(resultType, toTV, issue));
 			}
-			case Invariant: {
+			case INVARIANT: {
 				system.addConstraint(new EqualityConstraint(toTV, resultType, issue));
 			}
 			
@@ -707,7 +709,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, InstanceTypeParameter type) {
-		val tv = system.newDependentTypeVariable(type, system.resolveReferenceToSingleAndGetType(type, TypesPackage.eINSTANCE.instanceTypeParameter_OfType));
+		val tv = system.getDependentTypeVariable(type, system.resolveReferenceToSingleAndGetType(type, TypesPackage.eINSTANCE.instanceTypeParameter_OfType));
 		val container = type.eContainer;
 		val containerName = if(container instanceof GeneratedType) {
 			container.name;
@@ -772,9 +774,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
-		val typeArgs = typeParameters.map[
+		val typeArgsAndVariances = typeParameters.map[
 			// assertion: all type parameters translate to a type variable
-			system.translateTypeDeclaration(it) as TypeVariable
+			system.translateTypeDeclaration(it) -> it.variance
 		].force;
 
 		system.computeConstraints(genType.constructor);
@@ -782,7 +784,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			new AtomicType(genType);
 		}
 		else {
-			new TypeScheme(genType, typeArgs, new TypeConstructorType(genType, new AtomicType(genType), typeArgs.map[it as AbstractType].force));
+			new TypeScheme(genType, typeArgsAndVariances.map[it.key as TypeVariable].force, new TypeConstructorType(genType, genType.name, #[new AtomicType(genType) -> Variance.INVARIANT] + typeArgsAndVariances));
 		}
 		
 		system.typeTable.put(QualifiedName.create(genType.name), result);
@@ -839,8 +841,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.associate(system.computeConstraints(expr.expression), expr);
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeLiteralSpecifier typeSpecifier) {
-		return system.associate(system.computeConstraintsForLiteral(typeSpecifier.value), typeSpecifier);
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeExpressionSpecifier typeSpecifier) {
+		return system.associate(system.computeConstraintsForExpression(typeSpecifier.value), typeSpecifier);
 	}
 		
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeReferenceSpecifier typeSpecifier) {
@@ -983,6 +985,20 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Void context) {
 		println('BCF: computeConstraints called on null');
 		return null;
+	}
+	
+	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, NaryTypeAddition e) {
+		return system.associate(new NumericAddType(e, "typeAdd", e.values.map[system.computeConstraintsForLiteral(it) as AbstractType].force), e);
+	}
+	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, PrimitiveValueExpression e) {
+		return system.associate(system.computeConstraintsForLiteral(e.value), e);
+	}
+	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, TypeReferenceLiteral e) {
+		return system.associate(system.resolveReferenceToSingleAndGetType(e, TypesPackage.eINSTANCE.typeReferenceLiteral_Type), e);
+	}
+	
+	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, Expression e) {
+		throw new UnsupportedOperationException("BCF: unimplemented computeConstraintsForExpression for " + e.class.simpleName);
 	}
 	
 	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, IntLiteral literal) {

@@ -28,8 +28,8 @@ class InterpolatedStringLiteral extends Literal {
 
 class TypeSpecifier {}
 abstract class PresentTypeSpecifier extends TypeSpecifier {}
-class TypeLiteralSpecifier extends PresentTypeSpecifier {
-	contains Literal value	
+class TypeExpressionSpecifier extends PresentTypeSpecifier {
+	contains Expression value	
 	op String toString() {
 		return value.toString
 	}
@@ -58,7 +58,12 @@ class TypeReferenceSpecifier extends PresentTypeSpecifier {
 		return refText + args;
 	}
 }
-
+class TypeReferenceLiteral extends Literal {
+	refers Type ^type
+}
+class NaryTypeAddition extends Expression {
+	contains Literal[] values
+}
 class NullTypeSpecifier extends TypeSpecifier {
 	op String toString() {
 		return "NullTypeSpecifier";
@@ -273,7 +278,11 @@ class GenericElement extends NamedElement {
 	contains TypeParameter[] typeParameters
 }
 abstract class TypeParameter extends Type {
-	
+	Variance variance
+}
+
+enum Variance {
+	Covariant, Contravariant, Invariant
 }
 
 class RawTypeParameter extends TypeParameter {

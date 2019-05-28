@@ -442,6 +442,12 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	def scope_TypeReferenceSpecifier_type(EObject context, EReference ref) {
 		return scope_TypeSpecifier_type(context, ref);
 	}
+	def scope_TypeReferenceLiteral_type(EObject context, EReference ref) {
+		return scope_TypeSpecifier_type(context, ref);
+	}
+	def scope_InstanceTypeParameter_ofType(EObject context, EReference ref) {
+		scope_TypeSpecifier_type(context, ref);
+	}
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
@@ -690,7 +696,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				context instanceof SystemResourceSetup) {
 				scope_ConfigurationItemValue_item(context as SystemResourceSetup, reference);
 			} else {
-//				val methodName = "scope_" + reference.getEContainingClass().getName() + "_" + reference.getName();
+				val methodName = "scope_" + reference.getEContainingClass().getName() + "_" + reference.getName();
 //				println(methodName + ' -> ' + context.eClass.name);
 				super.getScope(context, reference);
 			}

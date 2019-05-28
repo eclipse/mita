@@ -34,7 +34,6 @@ import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.TypeLiteralSpecifier
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
@@ -62,6 +61,7 @@ import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.resource.IContainer
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
+import org.eclipse.mita.base.types.TypeExpressionSpecifier
 
 class ModelUtils {
 	@Inject
@@ -222,7 +222,7 @@ class ModelUtils {
 		return false;
 	}
 
-	static dispatch def String typeSpecifierIdentifier(TypeLiteralSpecifier x) {
+	static dispatch def String typeSpecifierIdentifier(TypeExpressionSpecifier x) {
 		return x.value.toString;
 	}
 	static dispatch def String typeSpecifierIdentifier(TypeReferenceSpecifier x) {
@@ -265,17 +265,17 @@ class ModelUtils {
 		return typeSpecifierEqualsWith([t1, t2 | t1.name == t2.name], [t1, t2 | t1 == t2], ts, o)
 	}
 	
-	static dispatch def boolean typeSpecifierEqualsWith((Type, Type) => Boolean typeEqualityCheck, (Literal, Literal) => Boolean valueEqualityCheck, TypeLiteralSpecifier ts1, Object o) {
-		if(!(o instanceof TypeLiteralSpecifier)) {
+	static dispatch def boolean typeSpecifierEqualsWith((Type, Type) => Boolean typeEqualityCheck, (Expression, Expression) => Boolean valueEqualityCheck, TypeExpressionSpecifier ts1, Object o) {
+		if(!(o instanceof TypeExpressionSpecifier)) {
 			return false;
 		}
-		val ts2 = o as TypeLiteralSpecifier;
+		val ts2 = o as TypeExpressionSpecifier;
 		if(!valueEqualityCheck.apply(ts1.value, ts2.value)) {
 			return false;
 		}
 		return true;
 	}
-	static dispatch def boolean typeSpecifierEqualsWith((Type, Type) => Boolean typeEqualityCheck, (Literal, Literal) => Boolean valueEqualityCheck, TypeReferenceSpecifier ts1, Object o) {
+	static dispatch def boolean typeSpecifierEqualsWith((Type, Type) => Boolean typeEqualityCheck, (Expression, Expression) => Boolean valueEqualityCheck, TypeReferenceSpecifier ts1, Object o) {
 		if(!(o instanceof TypeReferenceSpecifier)) {
 			return false;
 		}
