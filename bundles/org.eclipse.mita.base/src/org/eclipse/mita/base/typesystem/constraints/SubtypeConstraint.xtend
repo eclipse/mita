@@ -25,6 +25,7 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -107,7 +108,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	private def isAtomic(AbstractType t) {
-		return t instanceof AbstractBaseType || t instanceof TypeVariable
+		// TODO handle type expressions
+		return (t instanceof AbstractBaseType || t instanceof TypeVariable) && !(t instanceof LiteralNumberType)
 	}
 		
 	override toGraphviz() {

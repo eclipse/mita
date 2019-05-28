@@ -68,6 +68,8 @@ import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
 
 class SerializationAdapter {
 	
@@ -203,6 +205,10 @@ class SerializationAdapter {
 		return new IntegerType(obj.origin.resolveEObject(), obj.widthInBytes, obj.signedness);
 	}
 	
+	protected dispatch def AbstractType fromValueObject(SerializedLiteralNumberType obj) {
+		return new LiteralNumberType(obj.origin.resolveEObject(), obj.name, obj.value, obj.typeOf.fromValueObject as AbstractType);
+	}
+	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeHole obj) {
 		return new TypeHole(obj.origin.resolveEObject(), obj.idx);
 	}
@@ -239,6 +245,10 @@ class SerializationAdapter {
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariable obj) {
 		val origin = obj.origin.resolveEObject();
 		return new TypeVariable(origin, obj.idx);
+	}
+	
+	protected dispatch def AbstractType fromValueObject(SerializedDependentTypeVariable obj) {
+		return new DependentTypeVariable(obj.origin.resolveEObject, obj.idx, obj.dependsOn.fromValueObject as AbstractType)
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeVariableProxy obj) {
@@ -293,6 +303,14 @@ class SerializationAdapter {
 		}
 		return new String(content, "ISO-8859-1");		
 	}
+		
+	protected dispatch def Object toValueObject(LiteralNumberType lit) {
+		return new SerializedLiteralNumberType => [
+			fill(it, lit);
+			it.value = lit.value;
+			it.typeOf = lit.typeOf.toValueObject as SerializedAbstractType;
+		]
+	}	
 		
 	protected dispatch def Object toValueObject(Object nul) {
 		throw new NullPointerException;
@@ -412,7 +430,7 @@ class SerializationAdapter {
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
 		return ctxt;
 	}
-	
+		
 	protected dispatch def Object fill(SerializedAbstractType ctxt, AbstractType obj) {
 		ctxt.name = obj.name;
 		ctxt.origin = if(obj.origin === null) null else EcoreUtil.getURI(obj.origin).toString()
@@ -460,19 +478,20 @@ class SerializationAdapter {
 		]
 	}
 	
+	protected dispatch def Object toValueObject(DependentTypeVariable obj) {
+		new SerializedDependentTypeVariable => [
+			fill(it, obj);
+			it.idx = obj.idx;
+			it.dependsOn = obj.dependsOn.toValueObject as SerializedAbstractType
+		]
+	}
+	
 	protected dispatch def Object fill(SerializedCompoundType ctxt, TypeConstructorType obj) {
 		_fill(ctxt as SerializedAbstractType, obj as AbstractType);
 		ctxt.typeArguments = obj.typeArguments.map[ it.toValueObject as SerializedAbstractType ].toList
 		return ctxt
 	}
-	
-	protected dispatch def Object fill(SerializedTypeScheme ctxt, TypeScheme obj) {
-		_fill(ctxt as SerializedAbstractType, obj as AbstractType);
-		ctxt.vars = obj.vars.map[ it.toValueObject as SerializedTypeVariable ].force;
-		ctxt.on = obj.on.toValueObject as SerializedAbstractType;
-		return ctxt;
-	}
-	
+		
 	protected dispatch def Object toValueObject(FunctionType obj) {
 		new SerializedFunctionType => [
 			fill(it, obj)
@@ -502,7 +521,7 @@ class SerializationAdapter {
 		new SerializedTypeScheme => [
 			fill(it, obj)
 			on = obj.on.toValueObject as SerializedAbstractType
-			vars = obj.vars.map[ it.toValueObject as SerializedTypeVariable ].toList
+			vars = obj.vars.map[ it.toValueObject as SerializedAbstractType ].toList
 		]
 	}
 	

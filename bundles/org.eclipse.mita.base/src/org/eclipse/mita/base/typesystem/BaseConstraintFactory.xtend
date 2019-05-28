@@ -15,6 +15,7 @@ package org.eclipse.mita.base.typesystem
 
 import com.google.inject.Inject
 import com.google.inject.Provider
+import com.ibm.icu.impl.locale.KeyTypeData.ValueType
 import java.util.List
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.IStatus
@@ -50,6 +51,7 @@ import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.InstanceTypeParameter
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.NullTypeSpecifier
@@ -57,13 +59,14 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.PrimitiveType
+import org.eclipse.mita.base.types.RawTypeParameter
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeKind
-import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.TypeLiteralSpecifier
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
@@ -101,6 +104,9 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.expressions.Literal
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -686,7 +692,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return atomicType;
 	}
 
-	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, TypeParameter type) {
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, RawTypeParameter type) {
 		val tv = system.getTypeVariable(type);
 		val container = type.eContainer;
 		val containerName = if(container instanceof GeneratedType) {
@@ -698,6 +704,20 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.typeTable.put(QualifiedName.create(containerName, type.name), tv);
 		}
 		return system.associate(tv);
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, InstanceTypeParameter type) {
+		val tv = system.newDependentTypeVariable(type, system.resolveReferenceToSingleAndGetType(type, TypesPackage.eINSTANCE.instanceTypeParameter_OfType));
+		val container = type.eContainer;
+		val containerName = if(container instanceof GeneratedType) {
+			container.name;
+		} else if(container instanceof Operation) {
+			container.name;
+		}
+		if(containerName !== null) {
+			system.typeTable.put(QualifiedName.create(containerName, type.name), tv);
+		}
+		return tv;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
@@ -753,7 +773,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
 		val typeArgs = typeParameters.map[
-			system.computeConstraints(it)
+			// assertion: all type parameters translate to a type variable
+			system.translateTypeDeclaration(it) as TypeVariable
 		].force;
 
 		system.computeConstraints(genType.constructor);
@@ -818,6 +839,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.associate(system.computeConstraints(expr.expression), expr);
 	}
 	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeLiteralSpecifier typeSpecifier) {
+		return system.associate(system.computeConstraintsForLiteral(typeSpecifier.value), typeSpecifier);
+	}
+		
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeReferenceSpecifier typeSpecifier) {
 		// this is  t<a, b>  in  var x: t<a,  b>
 		val typeArguments = typeSpecifier.typeArguments;
@@ -873,10 +898,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val value = operand.value;
 			if(value instanceof IntLiteral) {
 				if(expr.operator == UnaryOperator.NEGATIVE) {
-					val type = computeConstraints(system, operand, -value.value);
+					val type = translateInteger(system, operand, -value.value);
 					system.associate(type, value);
 					system.associate(type, operand);
-					return system.associate(computeConstraints(system, operand, -value.value), expr);
+					return system.associate(translateInteger(system, operand, -value.value), expr);
 				}
 				println('''BCF: Unhandled operator: «expr.operator»''')	
 			}
@@ -889,7 +914,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IntLiteral lit) {
-		return system.associate(system.computeConstraints(lit, lit.value), lit);
+		return system.associate(system.translateInteger(lit, lit.value), lit);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FloatLiteral lit) {
 		return system.associate(typeRegistry.getTypeModelObjectProxy(system, lit, StdlibTypeRegistry.floatTypeQID), lit);
@@ -909,7 +934,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system._computeConstraints(sParam as TypedElement);
 	}
 
-	protected def TypeVariable computeConstraints(ConstraintSystem system, EObject source, long value) {
+	protected def AbstractType translateInteger(ConstraintSystem system, EObject source, long value) {
 		val sign = if(value < 0) {
 			Signedness.Signed;
 		} else {
@@ -946,9 +971,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 				4;
 			}
 			else {
-				return system.associate(new BottomType(source, "BCF: Value out of bounds: " + value));
+				return new BottomType(source, "BCF: Value out of bounds: " + value);
 			}
-		return system.associate(new IntegerType(source, byteCount, sign));
+		return new IntegerType(source, byteCount, sign);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NullTypeSpecifier context) {
@@ -959,6 +984,15 @@ class BaseConstraintFactory implements IConstraintFactory {
 		println('BCF: computeConstraints called on null');
 		return null;
 	}
+	
+	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, IntLiteral literal) {
+		return system.associate(new LiteralNumberType(literal, String.valueOf(literal.value), literal.value, system.translateInteger(literal, literal.value)), literal);
+	}
+	
+	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, Literal literal) {
+		throw new UnsupportedOperationException("BCF: unimplemented computeConstraintsForLiteral for " + literal.class.simpleName);
+	}
+
 
 	protected def associate(ConstraintSystem system, AbstractType t) {
 		return associate(system, t, t.origin);

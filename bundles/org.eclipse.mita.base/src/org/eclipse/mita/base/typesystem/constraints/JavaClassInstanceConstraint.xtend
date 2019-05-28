@@ -33,7 +33,7 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	override getErrorMessage() {
 		val formatter = new NicerTypeVariableNamesForErrorMessages;
 		val types = this.modifyNames(formatter) as JavaClassInstanceConstraint;
-		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.what, types.javaClass));
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.what, types.javaClass.simpleName));
 	}
 	
 	override getActiveVars() {

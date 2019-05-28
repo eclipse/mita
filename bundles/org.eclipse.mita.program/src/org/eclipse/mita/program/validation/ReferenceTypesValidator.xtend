@@ -194,7 +194,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		}
 		else {
 			0
-		} + s.typeArguments.tail.map[it.maxRefCount].max;
+		} + (#[0] + s.typeArguments.tail.map[it.maxRefCount]).max;
 	}
 	dispatch def Integer maxRefCount(Object o) {
 		0;

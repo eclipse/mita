@@ -272,7 +272,7 @@ TypeSpecifierArgument returns PresentTypeSpecifier:
 ;
 
 TypeLiteralSpecifier returns TypeLiteralSpecifier:
-	value=Literal
+	value=IntLiteral
 ;
 
 TypeSpecifier returns TypeReferenceSpecifier:

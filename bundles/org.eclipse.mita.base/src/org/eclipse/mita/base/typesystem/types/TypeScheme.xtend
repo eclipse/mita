@@ -23,6 +23,9 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
 
 @EqualsHashCode
 @Accessors
@@ -69,6 +72,10 @@ class TypeScheme extends AbstractType {
 		val newVars = new ArrayList<TypeVariable>();
 		val newOn = vars.fold(on, [term, boundVar | 
 			val freeVar = system.newTypeVariable(null);
+			if(boundVar instanceof DependentTypeVariable) {
+				system.addConstraint(new SubtypeConstraint(freeVar, boundVar.dependsOn, new ValidationIssue("%s is not a %s", null)))
+				system.addConstraint(new JavaClassInstanceConstraint(new ValidationIssue("%s is not instanceof %s", null), freeVar, LiteralTypeExpression));
+			}
 			newVars.add(freeVar);
 			term.replace(boundVar, freeVar);
 		]);

@@ -69,6 +69,9 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.mita.base.typesystem.types.NumericType
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 
 /**
  * Solves coercive subtyping as described in 
@@ -621,6 +624,17 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		
 		val result = doSimplify(system, substitution, typeResolutionOrigin, constraint, sub, top);
 		return result;
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, LiteralNumberType sub, AbstractType top) {
+		return SimplificationResult.success(system.plus(new SubtypeConstraint(sub.typeOf, top, constraint._errorMessage)), Substitution.EMPTY);
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, LiteralNumberType sub, LiteralNumberType top) {
+		if(sub.value <= top.value) {
+			return SimplificationResult.success(system, Substitution.EMPTY);
+		}
+		return SimplificationResult.failure(constraint.errorMessage);
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, SumType sub, SumType top) {

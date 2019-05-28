@@ -92,6 +92,11 @@ final class SerializedIntegerType extends SerializedNumericType {
 	public Signedness signedness;
 }
 
+final class SerializedLiteralNumberType extends SerializedAbstractBaseType {
+	public SerializedAbstractType typeOf;
+	public long value;
+}
+
 abstract class SerializedCompoundType extends SerializedAbstractType {
 	public List<SerializedAbstractType> typeArguments = new ArrayList;
 }
@@ -109,12 +114,17 @@ final class SerializedSumType extends SerializedCompoundType {
 }
 
 final class SerializedTypeScheme extends SerializedAbstractType {
-	public List<SerializedTypeVariable> vars;
+	public List<SerializedAbstractType> vars;
 	public SerializedAbstractType on;
 }
 
 final class SerializedTypeVariable extends SerializedAbstractType {
 	public int idx;
+}
+
+final class SerializedDependentTypeVariable extends SerializedAbstractType {
+	public int idx;
+	public SerializedAbstractType dependsOn;
 }
 
 final class SerializedTypeVariableProxy extends SerializedAbstractType {

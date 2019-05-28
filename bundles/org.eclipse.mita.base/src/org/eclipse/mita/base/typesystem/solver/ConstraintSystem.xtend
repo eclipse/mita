@@ -48,6 +48,8 @@ import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
+import org.eclipse.mita.base.types.InstanceTypeParameter
 
 @Accessors
 class ConstraintSystem {
@@ -99,6 +101,10 @@ class ConstraintSystem {
 	
 	def TypeVariable newTypeHole(EObject obj) {
 		new TypeHole(obj, instanceCount++)
+	}
+	
+	def DependentTypeVariable newDependentTypeVariable(InstanceTypeParameter obj, AbstractType dependsOn) {
+		return new DependentTypeVariable(obj, instanceCount++, dependsOn);
 	}
 	
 	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference) {
