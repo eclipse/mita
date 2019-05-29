@@ -282,7 +282,7 @@ abstract class TypeParameter extends Type {
 }
 
 enum Variance {
-	Covariant, Contravariant, Invariant
+	Covariant, Contravariant, Invariant, Unknown
 }
 
 class RawTypeParameter extends TypeParameter {

@@ -682,7 +682,20 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val tIdx = i_t1t2.key;
 			val tSub = i_t1t2.value.key;
 			val tTop = i_t1t2.value.value;
-			system.addConstraint(sub.getVariance(constraint.errorMessage, tIdx, tSub, tTop));
+			val variance = sub.getVariance(top, tIdx);
+			switch(variance) {
+				case COVARIANT: {
+					system.addConstraint(new SubtypeConstraint(tSub, tTop, new ValidationIssue(constraint._errorMessage, '''Incompatible types: %1$s is not subtype of %2$s.''')));
+				}
+				case CONTRAVARIANT: {
+					system.addConstraint(new SubtypeConstraint(tTop, tSub, new ValidationIssue(constraint._errorMessage, '''Incompatible types: %1$s is not subtype of %2$s.''')));
+				}
+				case INVARIANT,
+				case UNKNOWN: {
+					system.addConstraint(new EqualityConstraint(tSub, tTop, new ValidationIssue(constraint._errorMessage, '''Incompatible types: %1$s is not %2$s.''')));
+				}
+				
+			}
 		]
 		
 		return SimplificationResult.success(system, Substitution.EMPTY);

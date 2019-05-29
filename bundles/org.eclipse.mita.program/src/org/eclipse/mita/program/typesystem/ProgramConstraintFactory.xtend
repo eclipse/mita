@@ -88,6 +88,8 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -119,7 +121,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val systemResourceTypeVar = system.newTypeVariable(null);
 		val result = system.getTypeVariable(access);
 		val modalityTypeScheme = typeRegistry.getTypeModelObjectProxy(system, access, StdlibTypeRegistry.modalityTypeQID);
-		val resultInModality = system.nestInType(access, result, modalityTypeScheme, "modality");
+		val resultInModality = system.nestInType(access, #[result -> Variance.INVARIANT], modalityTypeScheme, "modality");
 		val supposedModalityType = new FunctionType(null, new AtomicType(null, BaseUtils.getText(access, feature)), systemResourceTypeVar, resultInModality);
 		system.addConstraint(new EqualityConstraint(modalityTypeVar, supposedModalityType, new ValidationIssue("%s needs to be of type '%s'", access)));
 		return result;
@@ -134,7 +136,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val systemResourceTypeVar = system.newTypeVariable(null);
 		val result = system.newTypeVariable(readAccess);
 		val sigInstTypeScheme = typeRegistry.getTypeModelObjectProxy(system, readAccess, StdlibTypeRegistry.sigInstTypeQID);
-		val resultInSigInst = system.nestInType(readAccess, result, sigInstTypeScheme, "siginst");
+		val resultInSigInst = system.nestInType(readAccess, #[result -> Variance.INVARIANT], sigInstTypeScheme, "siginst");
 		val supposedModalityType = new FunctionType(null, new AtomicType(null, "sigInstReadAccess"), systemResourceTypeVar, resultInSigInst);
 		system.addConstraint(new EqualityConstraint(sigInstTypeVar, supposedModalityType, new ValidationIssue("%s needs to be of type '%s'", readAccess)));
 		return result;
@@ -147,7 +149,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val systemResourceTypeVar = system.newTypeVariable(null);
 		val argumentType = system.newTypeVariable(null);
 		val sigInstTypeScheme = typeRegistry.getTypeModelObjectProxy(system, writeAccess, StdlibTypeRegistry.sigInstTypeQID);
-		val resultInSigInst = system.nestInType(writeAccess, argumentType, sigInstTypeScheme, "siginst");
+		val resultInSigInst = system.nestInType(writeAccess, #[argumentType -> Variance.INVARIANT], sigInstTypeScheme, "siginst");
 		val supposedSigInstType = new FunctionType(null, new AtomicType(null, "sigInstWriteAccess"), systemResourceTypeVar, resultInSigInst);
 		system.addConstraint(new EqualityConstraint(sigInstTypeVar, supposedSigInstType, new ValidationIssue("%s needs to be of type '%s'", writeAccess)));
 		system.addConstraint(new SubtypeConstraint(system.computeConstraints(writeAccess.value), argumentType, new ValidationIssue("%s must be subtype of %s", writeAccess)))
@@ -221,11 +223,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayLiteral arrayLiteral) {
 		val literalTypes = arrayLiteral.values.map[it -> system.computeConstraints(it)];
 		val innerType = system.newTypeVariable(null);
+		val sizeType = new LiteralNumberType(arrayLiteral, arrayLiteral.values.size, typeRegistry.getTypeModelObjectProxy(system, arrayLiteral, StdlibTypeRegistry.u32TypeQID))
 		literalTypes.forEach[
 			system.addConstraint(new SubtypeConstraint(it.value, innerType, new ValidationIssue(Severity.ERROR, '''«it.key» (:: %s) doesn't share a common type with the other members of this array literal''', it.value.origin, null, "")))
 		]
 		val arrayTypeSchemeTV = typeRegistry.getTypeModelObjectProxy(system, arrayLiteral, StdlibTypeRegistry.arrayTypeQID);
-		val outerType = system.nestInType(arrayLiteral, innerType, arrayTypeSchemeTV, "array");
+		val outerType = system.nestInType(arrayLiteral, #[innerType -> Variance.INVARIANT, sizeType -> Variance.COVARIANT], arrayTypeSchemeTV, "array");
 		return system.associate(outerType, arrayLiteral);
 	}
 	
@@ -257,7 +260,8 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		// return null
 		val arrayType = typeRegistry.getTypeModelObjectProxy(system, stmt, StdlibTypeRegistry.arrayTypeQID);
 		val innerType = system.getTypeVariable(stmt.iterator);
-		val supposedExpressionArrayType = nestInType(system, stmt, innerType, arrayType, "array");
+		val sizeType = system.newTypeVariable(stmt);
+		val supposedExpressionArrayType = nestInType(system, stmt, #[innerType -> Variance.INVARIANT, sizeType -> Variance.COVARIANT], arrayType, "array");
 		
 		val refType = system.computeConstraints(stmt.iterable);
 		system.addConstraint(new EqualityConstraint(refType, supposedExpressionArrayType, new ValidationIssue(Severity.ERROR, '''«stmt.iterable» (:: %s) must be of type array<...>''', stmt.iterable)));
@@ -465,7 +469,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		//              ^^^^
 		val innerType = system.computeConstraints(expr.variable);
 		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.referenceTypeQID);
-		return system.associate(nestInType(system, expr, innerType, referenceTypeVarOrigin, "reference"), expr);
+		return system.associate(nestInType(system, expr, #[innerType -> Variance.INVARIANT], referenceTypeVarOrigin, "reference"), expr);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, DereferenceExpression expr) {
 		// var a: &i32; var b: i32 = *a;
@@ -473,7 +477,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.referenceTypeQID);
 		val resultType = system.newTypeVariable(expr);
 		val outerTypeInstance = system.computeConstraints(expr.expression);
-		val nestedType = new TypeConstructorType(null, new AtomicType(null, "reference"), #[resultType]);
+		val nestedType = new TypeConstructorType(null, new AtomicType(null, "reference"), #[resultType -> Variance.INVARIANT]);
 		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, referenceTypeVarOrigin, new ValidationIssue(Severity.ERROR, '''INTERNAL ERROR: failed to instantiate reference<T>''', expr, null, "")));
 		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''INTERNAL ERROR: failed to instantiate reference<T>''', expr, null, "")));
 		return system.associate(resultType, expr);

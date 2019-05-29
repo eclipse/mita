@@ -24,6 +24,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import static extension org.eclipse.mita.base.util.BaseUtils.force;
 
 import static extension org.eclipse.mita.base.util.BaseUtils.zip;
+import org.eclipse.mita.base.types.Variance
 
 @EqualsHashCode
 @Accessors
@@ -31,7 +32,7 @@ class UnorderedArguments extends TypeConstructorType {
 	protected val List<Pair<String, AbstractType>> argParamNamesAndValueTypes = new ArrayList;
 		
 	new(EObject origin, String name, Iterable<Pair<String, AbstractType>> argTypes) {
-		super(origin, new AtomicType(null, name), argTypes.map[it.value])
+		super(origin, new AtomicType(null, name), argTypes.map[it.value -> Variance.INVARIANT])
 		this.argParamNamesAndValueTypes += argTypes;
 	}
 	

@@ -46,42 +46,32 @@ class TypeConstructorType extends AbstractType {
 				.map[TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, it)]
 				.force;
 		val name = typeArgs.head.name;
-		return new TypeConstructorType(null, name, typeArgs);
+		return new TypeConstructorType(null, name, typeArgs.map[it -> Variance.UNKNOWN]);
 	}
 	
 //	def getType() {
 //		return typeArguments.head;
 //	}
 	
-	new(EObject origin, String name, Iterable<?> typeArguments) {
+	new(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArguments) {
 		super(origin, name);
-		if(typeArguments.forall[it instanceof AbstractType]) {
-			this.typeArgumentsAndVariances = typeArguments.map[it as AbstractType -> Variance.INVARIANT].force;
-		}
-		else if(typeArguments.forall[it instanceof Pair] && 
-			typeArguments.forall[(it as Pair<?,?>).key instanceof AbstractType && (it as Pair<?,?>).value instanceof Variance]
-		) {
-			this.typeArgumentsAndVariances = typeArguments.map[it as Pair<AbstractType, Variance>].force;
-		}
-		else {
-			this.typeArgumentsAndVariances = #[];
-			throw new IllegalArgumentException("typeArguments has bad erased inner type");
-		}
+		
+		this.typeArgumentsAndVariances = typeArguments.force;
 		if(this.typeArguments.contains(null)) {
 			throw new NullPointerException;
 		}
 		this._freeVars = getTypeArguments().flatMap[it.freeVars].force;
-		if(this.toString == "array<f_1807, (f_1808 + f_1809)>") {
+		if(this.toString == "array<xint8, uint32>") {
 			print("")
 		}
 	}
-		
-	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
-		this(origin, type.name, #[type] + typeArguments);
+	
+	new(EObject origin, AbstractType type, List<Pair<AbstractType, Variance>> typeArguments) {
+		this(origin, type.name, #[type -> Variance.INVARIANT] + typeArguments);
 	}
 	
-	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
-		this(origin, type.name, #[type] + typeArguments);
+	new(EObject origin, AbstractType type, Iterable<Pair<AbstractType, Variance>> typeArguments) {
+		this(origin, type.name, #[type -> Variance.INVARIANT] + typeArguments);
 	}
 		
 	def getTypeArguments() {
@@ -99,26 +89,13 @@ class TypeConstructorType extends AbstractType {
 		result.children += typeArguments.zip(structure.children).map[it.key.quoteLike(it.value)]
 		return result;
 	}
-	
-	def AbstractTypeConstraint getVariance(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		if(typeArgumentIdx > 0) {
-			return getVarianceForArgs(issue, typeArgumentIdx, tau, sigma);
+		
+	def Variance getVariance(TypeConstructorType other, int typeArgumentIdx) {
+		val selfResult = typeArgumentsAndVariances.get(typeArgumentIdx)?.value ?: Variance.UNKNOWN;
+		if(selfResult != Variance.UNKNOWN) {
+			return selfResult;
 		}
-		return new EqualityConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not %2$s.'''));
-	}
-	protected def AbstractTypeConstraint getVarianceForArgs(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		switch(typeArgumentsAndVariances.get(typeArgumentIdx).value) {
-			case COVARIANT: {
-				return new SubtypeConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
-			}
-			case CONTRAVARIANT: {
-				return new SubtypeConstraint(sigma, tau, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
-			}
-			case INVARIANT: {
-				return new EqualityConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not %2$s.'''));
-			}
-			
-		}
+		return other.typeArgumentsAndVariances.get(typeArgumentIdx)?.value ?: Variance.UNKNOWN;
 	}
 	
 	def void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {

@@ -27,6 +27,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -48,7 +49,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 			throw new NullPointerException;
 		}
 		
-		if(this.toString == "f_1788 ⩽ f_1758") {//"f_1822 ⩽ typeAdd<f_1823>") {
+		if(this.toString == "uint32 ⩽ f_6073") {//"f_1822 ⩽ typeAdd<f_1823>") {
 			print("")
 		}
 	}
@@ -79,9 +80,14 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		if(cachedIsAtomic == CachedBoolean.Uncached) {
-			cachedIsAtomic = CachedBoolean.from((subType.isAtomic && superType.isAtomic) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
+			cachedIsAtomic = CachedBoolean.from((subType.isAtomic && superType.isAtomic && !isLiteralTypeCheck) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
 		}
 	 	return cachedIsAtomic.get();
+	}
+	
+	def boolean isLiteralTypeCheck() {
+		(subType instanceof LiteralTypeExpression<?> || superType instanceof LiteralTypeExpression<?>)
+		&& (!(subType instanceof TypeVariable) && !(superType instanceof TypeVariable))
 	}
 	
 	dispatch def boolean typesAreCommon(AbstractType type, AbstractType type2) {
@@ -114,7 +120,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	private def isAtomic(AbstractType t) {
 		// TODO handle type expressions
-		return (t instanceof AbstractBaseType || t instanceof TypeVariable) && !(t instanceof LiteralNumberType)
+		return (t instanceof AbstractBaseType || t instanceof TypeVariable)
 	}
 		
 	override toGraphviz() {

@@ -6,7 +6,7 @@
       <package
             uri="org.eclipse.mita.base.types"
             class="org.eclipse.mita.base.types.TypesPackage"
-            genModel="src/org/eclipse/mita/base/types/typesystem/types.xcore"/>
+            genModel="model/types.xcore"/>
    </extension>
 
    <extension point="org.eclipse.emf.ecore.generated_package">

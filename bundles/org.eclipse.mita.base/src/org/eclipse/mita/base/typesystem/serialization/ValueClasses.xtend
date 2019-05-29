@@ -98,7 +98,7 @@ final class SerializedLiteralNumberType extends SerializedAbstractBaseType {
 }
 
 abstract class SerializedCompoundType extends SerializedAbstractType {
-	public List<SerializedAbstractType> typeArguments = new ArrayList;
+	public List<Pair<SerializedAbstractType, Variance>> typeArguments = new ArrayList;
 }
 
 final class SerializedTypeConstructorType extends SerializedCompoundType {

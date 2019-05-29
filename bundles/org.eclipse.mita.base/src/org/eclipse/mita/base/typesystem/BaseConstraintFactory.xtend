@@ -499,8 +499,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 			system.getTypeVariable(expr);
 		}
 		
+		val sizeType = system.newTypeVariable(expr);
 
-		val supposedExpressionArrayType = nestInType(system, expr, innerType, arrayType, "array");
+		val supposedExpressionArrayType = nestInType(system, expr, #[innerType -> Variance.INVARIANT, sizeType -> Variance.COVARIANT], arrayType, "array");
 		system.addConstraint(new EqualityConstraint(refType, supposedExpressionArrayType, new ValidationIssue(Severity.ERROR, '''«expr.owner» (:: %s) must be of type array<...>''', expr.owner)));
 		
 		
@@ -784,7 +785,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			new AtomicType(genType);
 		}
 		else {
-			new TypeScheme(genType, typeArgsAndVariances.map[it.key as TypeVariable].force, new TypeConstructorType(genType, genType.name, #[new AtomicType(genType) -> Variance.INVARIANT] + typeArgsAndVariances));
+			new TypeScheme(genType, typeArgsAndVariances.map[it.key as TypeVariable].force, new TypeConstructorType(genType, genType.name, #[new AtomicType(genType) as AbstractType -> Variance.INVARIANT] + typeArgsAndVariances));
 		}
 		
 		system.typeTable.put(QualifiedName.create(genType.name), result);
@@ -824,10 +825,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return new AtomicType(genType, genType.toString);
 	}
 	
-	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, AbstractType inner, AbstractType outerTypeScheme, String outerName) {
-		return system.nestInType(origin, #[inner], outerTypeScheme, outerName);
-	}
-	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, Iterable<AbstractType> inner, AbstractType outerTypeScheme, String outerName) {
+	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, Iterable<Pair<AbstractType, Variance>> inner, AbstractType outerTypeScheme, String outerName) {
 		// given reference to/typevariable \T. c<T>, t and nameof c:
 		// constructs constraints asserting that c<t> instance of \T. c<T> and returns c<t>
 		val outerTypeInstance = system.newTypeVariable(null);
@@ -857,7 +855,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		else {
 			// this type specifier is an instance of type
 			// compute <a, b>
-			val typeArgs = typeArguments.map[system.computeConstraints(it) as AbstractType].force;
+			// since type specifiers reference something we don't know the variance here
+			val typeArgs = typeArguments.map[system.computeConstraints(it) as AbstractType -> Variance.UNKNOWN].force;
 			val ref = typeSpecifier.eGet(TypesPackage.eINSTANCE.typeReferenceSpecifier_Type, false)
 			val reftext = if(ref instanceof EObject && !(ref as EObject).eIsProxy) ref.toString() else null;
 			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)?.head?.text?.trim;
@@ -869,13 +868,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// handle reference modifiers (a: &t)
 		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, typeSpecifier, StdlibTypeRegistry.referenceTypeQID);
 		val typeWithReferenceModifiers = typeSpecifier.referenceModifiers.flatMap[it.split("").toList].fold(typeWithoutModifiers, [t, __ | 
-			nestInType(system, null, t, referenceTypeVarOrigin, "reference");
+			nestInType(system, null, #[t -> Variance.INVARIANT], referenceTypeVarOrigin, "reference");
 		])
 		
 		//handle optional modifier (a: t?)
 		val optionalTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, typeSpecifier, StdlibTypeRegistry.optionalTypeQID);
 		val typeWithOptionalModifier = if(typeSpecifier.optional) {
-			nestInType(system, null, typeWithReferenceModifiers, optionalTypeVarOrigin, "optional");
+			nestInType(system, null, #[typeWithReferenceModifiers -> Variance.INVARIANT], optionalTypeVarOrigin, "optional");
 		}
 		else {
 			typeWithReferenceModifiers;
@@ -988,7 +987,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, NaryTypeAddition e) {
-		return system.associate(new NumericAddType(e, "typeAdd", e.values.map[system.computeConstraintsForLiteral(it) as AbstractType].force), e);
+		return system.associate(new NumericAddType(e, "typeAdd", e.values.map[system.computeConstraintsForLiteral(it) as AbstractType -> Variance.INVARIANT].force), e);
 	}
 	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, PrimitiveValueExpression e) {
 		return system.associate(system.computeConstraintsForLiteral(e.value), e);
@@ -1002,7 +1001,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, IntLiteral literal) {
-		return system.associate(new LiteralNumberType(literal, String.valueOf(literal.value), literal.value, system.translateInteger(literal, literal.value)), literal);
+		return system.associate(new LiteralNumberType(literal, literal.value, system.translateInteger(literal, literal.value)), literal);
 	}
 	
 	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, Literal literal) {

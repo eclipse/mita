@@ -10,8 +10,8 @@ class LiteralNumberType extends AbstractBaseType implements LiteralTypeExpressio
 	val long value;
 	val AbstractType typeOf;
 	
-	new(EObject origin, String name, long value, AbstractType typeOf) {
-		super(origin, name)
+	new(EObject origin, long value, AbstractType typeOf) {
+		super(origin, String.valueOf(value))
 		this.value = value;
 		this.typeOf = typeOf;
 	}
@@ -20,18 +20,18 @@ class LiteralNumberType extends AbstractBaseType implements LiteralTypeExpressio
 		return typeOf.freeVars
 	}
 	
-	override eval() {
-		return value;
-	}
-	
-	override simplify() {
-		return this;
-	}
+//	override eval() {
+//		return value;
+//	}
+//	
+//	override simplify() {
+//		return this;
+//	}
 	
 	override replace(Substitution sub) {
 		val newTypeOf = typeOf.replace(sub);
 		if(newTypeOf !== typeOf) {
-			return new LiteralNumberType(origin, name, value, typeOf);
+			return new LiteralNumberType(origin, value, typeOf);
 		}
 		return this;
 	}
@@ -39,7 +39,7 @@ class LiteralNumberType extends AbstractBaseType implements LiteralTypeExpressio
 	override replace(TypeVariable from, AbstractType with) {
 		val newTypeOf = typeOf.replace(from, with);
 		if(newTypeOf !== typeOf) {
-			return new LiteralNumberType(origin, name, value, typeOf);
+			return new LiteralNumberType(origin, value, typeOf);
 		}
 		return this;
 	}
@@ -47,7 +47,7 @@ class LiteralNumberType extends AbstractBaseType implements LiteralTypeExpressio
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy)=>Iterable<AbstractType> resolve) {
 		val newTypeOf = typeOf.replaceProxies(system, resolve);
 		if(newTypeOf !== typeOf) {
-			return new LiteralNumberType(origin, name, value, typeOf);
+			return new LiteralNumberType(origin, value, newTypeOf);
 		}
 		return this;
 	}

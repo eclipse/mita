@@ -71,6 +71,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
 import org.eclipse.mita.base.typesystem.types.NumericAddType
+import org.eclipse.mita.base.types.Variance
 
 class SerializationAdapter {
 	
@@ -207,7 +208,7 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedLiteralNumberType obj) {
-		return new LiteralNumberType(obj.origin.resolveEObject(), obj.name, obj.value, obj.typeOf.fromValueObject as AbstractType);
+		return new LiteralNumberType(obj.origin.resolveEObject(), obj.value, obj.typeOf.fromValueObject as AbstractType);
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeHole obj) {
@@ -218,7 +219,7 @@ class SerializationAdapter {
 		return new FunctionType(
 			obj.origin.resolveEObject(),
 			obj.name,
-			obj.typeArguments.fromSerializedTypes()
+			obj.typeArguments.fromSerializedTypeArguments()
 		);
 	}
 	
@@ -227,18 +228,18 @@ class SerializationAdapter {
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
-		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
+		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypeArguments());
 	}
 	protected dispatch def AbstractType fromValueObject(SerializedNumericAddType obj) {
-		return new NumericAddType(obj.origin.resolveEObject, obj.name, obj.typeArguments.fromSerializedTypes());
+		return new NumericAddType(obj.origin.resolveEObject, obj.name, obj.typeArguments.fromSerializedTypeArguments());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
-		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
+		return new SumType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypeArguments());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeConstructorType obj) {
-		return new TypeConstructorType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypes());
+		return new TypeConstructorType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypeArguments());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedTypeScheme obj) {
@@ -263,6 +264,10 @@ class SerializationAdapter {
 	
 	protected def Iterable<AbstractType> fromSerializedTypes(Iterable<SerializedAbstractType> obj) {
 		return obj.map[ it.fromValueObject() as AbstractType ].toList();
+	}
+	
+	protected def Iterable<Pair<AbstractType, Variance>> fromSerializedTypeArguments(Iterable<Pair<SerializedAbstractType, Variance>> obj) {
+		return obj.map[ it.key.fromValueObject() as AbstractType -> it.value ].toList();
 	}
 	
 	protected def resolveEObject(String uri) {
@@ -491,7 +496,7 @@ class SerializationAdapter {
 	
 	protected dispatch def Object fill(SerializedCompoundType ctxt, TypeConstructorType obj) {
 		_fill(ctxt as SerializedAbstractType, obj as AbstractType);
-		ctxt.typeArguments = obj.typeArguments.map[ it.toValueObject as SerializedAbstractType ].toList
+		ctxt.typeArguments = obj.typeArgumentsAndVariances.map[ it.key.toValueObject as SerializedAbstractType -> it.value ].toList
 		return ctxt
 	}
 		
