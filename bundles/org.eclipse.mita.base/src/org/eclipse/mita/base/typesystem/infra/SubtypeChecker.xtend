@@ -46,6 +46,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
 import java.util.HashMap
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 
 class SubtypeChecker {
 	
@@ -193,6 +194,10 @@ class SubtypeChecker {
 	
 	protected def SubtypeCheckResult checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
 		return (bSub <= bTop).subtypeMsgFromBoolean('''«top.name» is too small for «sub.name»''');
+	}
+	
+	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, LiteralNumberType sub, LiteralNumberType top) {
+		return (sub.value <= top.value).subtypeMsgFromBoolean('''«top.name» is bigger than «sub.name»''');
 	}
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, FloatingType sub, FloatingType top) {

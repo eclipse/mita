@@ -4,6 +4,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 
 @Accessors
 class LiteralNumberType extends AbstractBaseType implements LiteralTypeExpression<Long> {
@@ -20,13 +21,13 @@ class LiteralNumberType extends AbstractBaseType implements LiteralTypeExpressio
 		return typeOf.freeVars
 	}
 	
-//	override eval() {
-//		return value;
-//	}
-//	
-//	override simplify() {
-//		return this;
-//	}
+	override eval(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+		return value;
+	}
+	
+	override simplify(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+		return this;
+	}
 	
 	override replace(Substitution sub) {
 		val newTypeOf = typeOf.replace(sub);

@@ -9,6 +9,7 @@ import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 
 class NumericAddType extends TypeConstructorType implements LiteralTypeExpression<Long> {
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
@@ -29,24 +30,25 @@ class NumericAddType extends TypeConstructorType implements LiteralTypeExpressio
 		super(origin, name, typeArguments)
 	}
 	
-//	override eval() {
-//		val maybeResults = (simplify() as NumericAddType).typeArguments;
-//		if(maybeResults.size === 1) {
-//			val maybeResult = maybeResults.head;
-//			if(maybeResult instanceof LiteralNumberType) {
-//				return maybeResult.value;
-//			}
-//		}
-//		
-//		return -1L;
-//	}
-//	
-//	override simplify() {
-//		val simpleNumbers = typeArguments.filter(LiteralNumberType).force;
-//		val simplifiedValue = simpleNumbers.fold(0L, [t, v| v.eval + t]);            // TODO actually put in a type here ---------\/
-//		val simplification =  new LiteralNumberType(simpleNumbers.head.origin, String.valueOf(simplifiedValue), simplifiedValue, null);
-//		return new NumericAddType(origin, name, typeArguments.filter[!(it instanceof LiteralNumberType)] + #[simplification]);
-//	}
+	override eval(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+		val maybeResults = (simplify(subtypeChecker, s, typeResolutionOrigin) as NumericAddType).typeArguments;
+		if(maybeResults.size === 1) {
+			val maybeResult = maybeResults.head;
+			if(maybeResult instanceof LiteralNumberType) {
+				return maybeResult.value;
+			}
+		}
+		
+		return -1L;
+	}
+	
+	override simplify(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+		val simpleNumbers = typeArguments.filter(LiteralNumberType).force;
+		val simplifiedValue = simpleNumbers.fold(0L, [t, v| v.eval(subtypeChecker, s, typeResolutionOrigin) + t]);
+		val unifiedTypeOf = subtypeChecker.getSupremum(s, simpleNumbers.map[it.typeOf], typeResolutionOrigin);
+		val simplification =  new LiteralNumberType(simpleNumbers.head.origin, simplifiedValue, unifiedTypeOf) as AbstractType;
+		return new NumericAddType(origin, name, typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)] + #[simplification -> Variance.UNKNOWN]);
+	}
 	
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
