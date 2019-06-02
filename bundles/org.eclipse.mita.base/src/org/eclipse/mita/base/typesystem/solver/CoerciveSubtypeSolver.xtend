@@ -814,9 +814,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		for(vIdx : varIdxs) {
 			val v = graph.nodeIndex.get(vIdx) as TypeVariable;
 			val predecessors = graph.getBaseTypePredecessors(vIdx);
-			val supremum = graph.getSupremum(system, predecessors);
+			val supremum = subtypeChecker.getSupremum(system, predecessors, typeResolutionOrigin);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);
-			val infimum = graph.getInfimum(system, successors);
+			val infimum = subtypeChecker.getInfimum(system, successors, typeResolutionOrigin);
+			if(predecessors.exists[it instanceof LiteralTypeExpression] || successors.exists[it instanceof LiteralTypeExpression]) {
+				print("")
+			}
 			val supremumIsValid = supremum !== null && successors.forall[ t | subtypeChecker.isSubType(system, typeResolutionOrigin, supremum, t) ];
 			val infimumIsValid = infimum !== null && predecessors.forall[ t | subtypeChecker.isSubType(system, typeResolutionOrigin, t, infimum) ];
 			
@@ -833,7 +836,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				} else {
 					//redo for debugging
 					graph.getBaseTypePredecessors(vIdx);
-					graph.getSupremum(system, predecessors);
+					subtypeChecker.getSupremum(system, predecessors, typeResolutionOrigin);
 					supremum !== null && successors.forall[ t | 
 						subtypeChecker.isSubType(system, typeResolutionOrigin, supremum, t)
 					];
@@ -847,7 +850,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				if(infimumIsValid) {
 					if(infimum instanceof BottomType) {
 						graph.getBaseTypeSuccecessors(vIdx);
-						graph.getInfimum(system, successors);
+						subtypeChecker.getInfimum(system, successors, typeResolutionOrigin);
 						val successorsBottomType = successors.filter(BottomType).head
 						infimum.message = successorsBottomType?.message ?: ("Couldn't find a good subtype for " + successors.join(" and "))
 					}
