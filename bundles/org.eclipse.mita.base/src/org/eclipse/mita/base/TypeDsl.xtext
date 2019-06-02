@@ -97,6 +97,7 @@ TypeParameter returns TypeParameter:
 ;
 RawTypeParameter returns RawTypeParameter:
 	{RawTypeParameter}
+	// since Invariant is the first=default value of Variance this assigns invariance on no match
 	(variance=Variance)?
 	name=ID 
 ;
@@ -347,8 +348,7 @@ BitwiseAndOperator:
 	'&';
 
 enum Variance:
-	Covariant='+' | Contravariant='-' | Invariant
-;
+	Covariant | Contravariant;
 
 enum PostFixOperator:
 	increment="++" | decrement="--";

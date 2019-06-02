@@ -61,7 +61,7 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		val newWhat = what.map(f);
+		val newWhat = f.apply(what);
 		if(what !== newWhat) {
 			return new JavaClassInstanceConstraint(_errorMessage, what.map(f), javaClass);
 		}

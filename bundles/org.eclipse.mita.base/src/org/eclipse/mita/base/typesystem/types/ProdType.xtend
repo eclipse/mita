@@ -13,21 +13,15 @@
 
 package org.eclipse.mita.base.typesystem.types
 
-import java.util.List
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.typesystem.infra.Tree
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.types.Variance
 
 @EqualsHashCode
 @Accessors
@@ -51,31 +45,16 @@ class ProdType extends TypeConstructorType {
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
 		super(origin, type, typeArguments.map[it -> Variance.COVARIANT]);
 	}
-			
+	
+	override constructor(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArguments) {
+		new ProdType(origin, name, typeArguments);
+	}
+		
 	override toString() {
 		(name ?: "") + "(" + typeArguments.tail.join(", ") + ")"
 	}
-	
-	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
-		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newPType = new ProdType(origin, name, newTypeVars.zip(typeArgumentsAndVariances.map[it.value]));
-		s.add(tv, newPType);
-	}
-	
+		
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
-	}
-	
-	override map((AbstractType)=>AbstractType f) {
-		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new ProdType(origin, name, newTypeArgs.zip(typeArgumentsAndVariances.map[it.value]));
-		}
-		return this;
-	}
-	
-	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new ProdType(origin, name, children.map[it.node.unquote(it.children)].zip(typeArgumentsAndVariances.map[it.value]));
-	}
-	
+	}	
 }

@@ -29,6 +29,8 @@ import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 
 @Accessors
 class TypeConstructorType extends AbstractType {
@@ -53,17 +55,14 @@ class TypeConstructorType extends AbstractType {
 //		return typeArguments.head;
 //	}
 	
-	new(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArguments) {
+	new(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArgumentsAndVariances) {
 		super(origin, name);
 		
-		this.typeArgumentsAndVariances = typeArguments.force;
+		this.typeArgumentsAndVariances = typeArgumentsAndVariances.force;
 		if(this.typeArguments.contains(null)) {
 			throw new NullPointerException;
 		}
 		this._freeVars = getTypeArguments().flatMap[it.freeVars].force;
-		if(this.toString == "array<xint8, uint32>") {
-			print("")
-		}
 	}
 	
 	new(EObject origin, AbstractType type, List<Pair<AbstractType, Variance>> typeArguments) {
@@ -77,6 +76,16 @@ class TypeConstructorType extends AbstractType {
 	def getTypeArguments() {
 		return typeArgumentsAndVariances.map[it.key]
 	}	
+	
+	/* if you override this you don't need to implement:
+	 * - map
+	 * - replaceProxies
+	 * - unquote
+	 * - expand
+	 */
+	protected def TypeConstructorType constructor(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArgumentsAndVariances) {
+		return new TypeConstructorType(origin, name, typeArgumentsAndVariances);
+	}
 		
 	override Tree<AbstractType> quote() {
 		val result = new Tree<AbstractType>(this);
@@ -100,7 +109,7 @@ class TypeConstructorType extends AbstractType {
 	
 	def void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newCType = new TypeConstructorType(origin, name, newTypeVars.zip(typeArgumentsAndVariances.map[it.value]));
+		val newCType = this.constructor(origin, name, newTypeVars.zip(typeArgumentsAndVariances.map[it.value]));
 		s.add(tv, newCType);
 	}
 		
@@ -123,13 +132,34 @@ class TypeConstructorType extends AbstractType {
 	override map((AbstractType)=>AbstractType f) {
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new TypeConstructorType(origin, name, newTypeArgs.zip(typeArgumentsAndVariances.map[it.value]));
+			return this.constructor(origin, name, newTypeArgs.zip(typeArgumentsAndVariances.map[it.value]));
 		}
 		return this;
 	}
 	
+	override replaceProxies(ConstraintSystem system, (TypeVariableProxy)=>Iterable<AbstractType> resolve) {
+		val result = super.replaceProxies(system, resolve);
+		// if we successfully resolved a type with parameters, get its variances
+		if(result instanceof TypeConstructorType) {
+			val variancesStr = system.getUserData(this, BaseConstraintFactory.VARIANCES_KEY)
+			if(variancesStr !== null) {
+				// split at every character
+				val variances = variancesStr.split("").map[
+					Variance.get(it);
+				]
+				if(variances.length == result.typeArguments.tail.length) {
+					val resultWithVariances = result.constructor(origin, result.name, result.typeArguments.zip(
+						#[Variance.INVARIANT] + variances
+					));
+					return resultWithVariances;
+				}
+			}
+		}
+		return result;
+	}
+	
 	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new TypeConstructorType(origin, name, children.map[it.node.unquote(it.children)].zip(typeArgumentsAndVariances.map[it.value]).force);
+		return this.constructor(origin, name, children.map[it.node.unquote(it.children)].zip(typeArgumentsAndVariances.map[it.value]).force);
 	}
 	
 	override boolean equals(Object obj) {

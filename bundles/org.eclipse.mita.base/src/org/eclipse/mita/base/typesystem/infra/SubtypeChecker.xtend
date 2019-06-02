@@ -14,6 +14,7 @@
 package org.eclipse.mita.base.typesystem.infra
 
 import com.google.inject.Inject
+import java.util.HashMap
 import java.util.HashSet
 import java.util.List
 import java.util.Set
@@ -26,27 +27,26 @@ import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
-import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.diagnostics.Severity
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
-import java.util.HashMap
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 
 class SubtypeChecker {
 	
@@ -199,6 +199,15 @@ class SubtypeChecker {
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, LiteralNumberType sub, LiteralNumberType top) {
 		return (sub.value <= top.value).subtypeMsgFromBoolean('''«top.name» is bigger than «sub.name»''');
 	}
+	
+//	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, NumericAddType sub, NumericAddType top) {
+//		val subDecomp = sub.decompose(this, s, context);
+//		val topDecomp = top.decompose(this, s, context);
+//		
+//		
+//		
+//		return null;
+//	}
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, FloatingType sub, FloatingType top) {
 		return (sub.widthInBytes <= top.widthInBytes).subtypeMsgFromBoolean(sub, top);

@@ -282,7 +282,9 @@ abstract class TypeParameter extends Type {
 }
 
 enum Variance {
-	Covariant, Contravariant, Invariant, Unknown
+	// invariant should match if nothing else matches
+	// therefore it needs to be the first enum value so it's the default value
+	Invariant as "=", Covariant as "+", Contravariant as "-", Unknown as "?"
 }
 
 class RawTypeParameter extends TypeParameter {

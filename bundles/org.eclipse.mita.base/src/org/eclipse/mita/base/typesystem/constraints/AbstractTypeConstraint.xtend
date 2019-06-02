@@ -67,10 +67,13 @@ abstract class AbstractTypeConstraint {
 	abstract def boolean isAtomic(ConstraintSystem system);
 	
 	def AbstractTypeConstraint replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
-		var result = this;
-		while(result.hasProxy) {
-			result = result.map[it.replaceProxies(system, resolve)]
+		if(this.toString == "f_11 ≡ array<f_4, f_7>") {
+			print("")
 		}
+		var result = this;
+		do {
+			result = result.map[it.replaceProxies(system, resolve)]
+		} while(result.hasProxy);
 		return result;
 	}
 	

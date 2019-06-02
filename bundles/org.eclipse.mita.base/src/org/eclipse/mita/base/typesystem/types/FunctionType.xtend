@@ -46,6 +46,10 @@ class FunctionType extends TypeConstructorType {
 		super(origin, name, typeArgs);
 	}
 	
+	override constructor(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArguments) {
+		new FunctionType(origin, name, typeArguments);
+	}
+	
 	def AbstractType getFrom() {
 		return typeArguments.get(1);
 	}
@@ -57,26 +61,8 @@ class FunctionType extends TypeConstructorType {
 		from + " → " + to
 	}
 		
-	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
-		val newFType = new FunctionType(origin, typeArguments.head, system.newTypeVariable(from.origin), system.newTypeVariable(to.origin));
-		s.add(tv, newFType);
-	}
-	
 	override toGraphviz() {
 		'''"«to»" -> "«this»"; "«this»" -> "«from»"; «to.toGraphviz» «from.toGraphviz»''';
-	}
-	
-
-	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new FunctionType(origin, name, children.map[it.node.unquote(it.children)].zip(typeArgumentsAndVariances.map[it.value]));
-	}
-	
-	override map((AbstractType)=>AbstractType f) {
-		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new FunctionType(origin, name, newTypeArgs.zip(typeArgumentsAndVariances.map[it.value]));
-		}
-		return this;
 	}
 	
 }

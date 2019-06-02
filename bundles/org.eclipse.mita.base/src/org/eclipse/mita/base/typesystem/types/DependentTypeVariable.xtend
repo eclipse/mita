@@ -21,9 +21,6 @@ class DependentTypeVariable extends TypeVariable {
 	new(EObject origin, int idx, String name, AbstractType dependsOn) {
 		super(origin, idx, name)
 		this.dependsOn = dependsOn;
-		if(idx === 2) {
-			print("")
-		}
 	}
 	
 	override modifyNames(NameModifier converter) {

@@ -7,7 +7,7 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 
 @Accessors
-class LiteralNumberType extends AbstractBaseType implements LiteralTypeExpression<Long> {
+class LiteralNumberType extends AbstractBaseType implements PrimitiveLiteralType<Long> {
 	val long value;
 	val AbstractType typeOf;
 	
@@ -27,6 +27,10 @@ class LiteralNumberType extends AbstractBaseType implements LiteralTypeExpressio
 	
 	override simplify(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
 		return this;
+	}
+	
+	override decompose(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+		return this -> #[];
 	}
 	
 	override replace(Substitution sub) {

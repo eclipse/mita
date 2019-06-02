@@ -48,6 +48,7 @@ import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
@@ -73,6 +74,7 @@ import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
@@ -108,7 +110,8 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.Variance
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.types.StructuralType
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -131,6 +134,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	public static final String DEFINING_RESOURCE_KEY = "definingResource";
 	public static final String INCLUDE_HEADER_KEY = "includeHeader";
 	public static final String INCLUDE_IS_USER_INCLUDE_KEY = "includeIsUserInclude";
+	public static final String VARIANCES_KEY = "variances";
 
 	public static final String FUNCTION_CANNOT_BE_USED_HERE = "FUNCTION_CANNOT_BE_USED_HERE";
 	
@@ -667,8 +671,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 
 	protected def AbstractType translateTypeDeclaration(ConstraintSystem system, EObject obj) {
 		val typeTrans = system.doTranslateTypeDeclaration(obj);
+		system.defineUserData(obj, typeTrans);
 		system.associate(typeTrans, obj);
-		system.putUserData(typeTrans, ECLASS_KEY, obj.eClass.name);
 		if(obj instanceof Type) {
 			if(obj.typeKind !== null) {
 				system.computeConstraints(obj.typeKind);
@@ -679,13 +683,21 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return typeTrans;
 	}
 
-	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, NativeType type) {
-		val nativeType = typeRegistry.translateNativeType(type);
-		system.typeTable.put(QualifiedName.create(type.name), nativeType);
+
+	protected dispatch def void defineUserData(ConstraintSystem system, EObject obj, AbstractType typeTrans) {
+		system.putUserData(typeTrans, ECLASS_KEY, obj.eClass.name);
+	}
+
+	protected dispatch def void defineUserData(ConstraintSystem system, NativeType type, AbstractType nativeType) {
 		if(!type.header.nullOrEmpty) {
 			system.putUserData(nativeType, INCLUDE_HEADER_KEY, type.header);
 			system.putUserData(nativeType, INCLUDE_IS_USER_INCLUDE_KEY, "false");
 		}
+		system._defineUserData(type as PrimitiveType, nativeType);
+	}
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, NativeType type) {
+		val nativeType = typeRegistry.translateNativeType(type);
+		system.typeTable.put(QualifiedName.create(type.name), nativeType);
 		return nativeType;
 	}
 	
@@ -723,6 +735,11 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return tv;
 	}
 	
+	protected dispatch def void defineUserData(ConstraintSystem system, ComplexType cType, AbstractType result) {
+		system.putUserData(result, DEFINING_RESOURCE_KEY, cType.eResource.URI.lastSegment);
+		system.putUserData(result, VARIANCES_KEY, cType.typeParameters.map[it.variance.literal].join)
+		system._defineUserData(cType as Type, result);
+	}
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
 		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
 		system.computeConstraints(structType.constructor);
@@ -733,7 +750,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 		 */
 		val result = new ProdType(structType, new AtomicType(structType), types);
 		system.typeTable.put(QualifiedName.create(structType.name), result);
-		system.putUserData(result, DEFINING_RESOURCE_KEY, structType.eResource.URI.lastSegment);
 		return result;
 	}
 	
@@ -743,10 +759,16 @@ class BaseConstraintFactory implements IConstraintFactory {
 		].force;
 		val result = new org.eclipse.mita.base.typesystem.types.SumType(sumType, new AtomicType(sumType), subTypes);
 		system.typeTable.put(QualifiedName.create(sumType.name), result);
-		system.putUserData(result, DEFINING_RESOURCE_KEY, sumType.eResource.URI.lastSegment);
 		return result;	
 	}
-		
+	
+	protected dispatch def void defineUserData(ConstraintSystem system, SumAlternative sumAlt, AbstractType result) {
+		val sumType = sumAlt.eContainer;
+		if(sumType instanceof SumType) {
+			system.putUserData(result, PARENT_NAME_KEY, sumType.name);
+		}
+		system._defineUserData(sumAlt as StructuralType, result);
+	}
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
 		val sumType = sumAlt.eContainer;
 		if(sumType instanceof SumType) {
@@ -765,14 +787,18 @@ class BaseConstraintFactory implements IConstraintFactory {
 			
 			system.typeTable.put(QualifiedName.create(sumTypeName, sumAlt.name), prodType);
 			
-			system.putUserData(prodType, PARENT_NAME_KEY, sumTypeName);
-			system.putUserData(prodType, DEFINING_RESOURCE_KEY, sumAlt.eResource.URI.lastSegment);
-			
 			return prodType;	
 		}
 		throw new CoreException(new Status(IStatus.ERROR, null, 'Broken model: parent of sum alternative is not a sum type'));
 	}
 	
+	protected dispatch def void defineUserData(ConstraintSystem system, GeneratedType genType, AbstractType result) {
+		system.putUserData(result, GENERATOR_KEY, genType.generator)
+		if(genType.sizeInferrer !== null) {
+			system.putUserData(result, SIZE_INFERRER_KEY, genType.sizeInferrer)
+		}
+		system._defineUserData(genType as ComplexType, result);
+	}
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
 		val typeParameters = genType.typeParameters;
 		val typeArgsAndVariances = typeParameters.map[
@@ -789,12 +815,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		}
 		
 		system.typeTable.put(QualifiedName.create(genType.name), result);
-		
-		system.putUserData(result, GENERATOR_KEY, genType.generator)
-		if(genType.sizeInferrer !== null) {
-			system.putUserData(result, SIZE_INFERRER_KEY, genType.sizeInferrer)
-		}
-		
+				
 		return result;
 	}
 	
@@ -826,10 +847,13 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, Iterable<Pair<AbstractType, Variance>> inner, AbstractType outerTypeScheme, String outerName) {
+		return nestInType(system, origin, new AtomicType(origin, outerName), inner, outerTypeScheme, outerName);	
+	}
 		// given reference to/typevariable \T. c<T>, t and nameof c:
+	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, AbstractType typeReference, Iterable<Pair<AbstractType, Variance>> inner, AbstractType outerTypeScheme, String outerName) {
 		// constructs constraints asserting that c<t> instance of \T. c<T> and returns c<t>
 		val outerTypeInstance = system.newTypeVariable(null);
-		val nestedType = new TypeConstructorType(origin, new AtomicType(origin, outerName), inner.force);
+		val nestedType = new TypeConstructorType(origin, typeReference, inner.force);
 		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %s''', origin, null, "")));
 		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %s''', origin, null, "")));
 		return nestedType;
@@ -853,15 +877,17 @@ class BaseConstraintFactory implements IConstraintFactory {
 			type;
 		}
 		else {
+			val eRef = TypesPackage.eINSTANCE.typeReferenceSpecifier_Type;
 			// this type specifier is an instance of type
 			// compute <a, b>
-			// since type specifiers reference something we don't know the variance here
-			val typeArgs = typeArguments.map[system.computeConstraints(it) as AbstractType -> Variance.UNKNOWN].force;
-			val ref = typeSpecifier.eGet(TypesPackage.eINSTANCE.typeReferenceSpecifier_Type, false)
+			val ref = typeSpecifier.eGet(eRef, false)
 			val reftext = if(ref instanceof EObject && !(ref as EObject).eIsProxy) ref.toString() else null;
 			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)?.head?.text?.trim;
+			val typeArgTypes = typeArguments.map[system.computeConstraints(it) as AbstractType];
+			// since type specifiers reference something we don't always know the variance here
+			val typeArgs = typeArgTypes.map[it -> Variance.UNKNOWN].force;
 			// compute constraints to validate t<a, b> (argument count etc.)
-			val typeInstance = system.nestInType(null, typeArgs, type, typeName);
+			val typeInstance = system.nestInType(null, new AtomicType(typeSpecifier.eGet(eRef, false) as EObject, typeName), typeArgs, type, typeName);
 			typeInstance;
 		}
 		

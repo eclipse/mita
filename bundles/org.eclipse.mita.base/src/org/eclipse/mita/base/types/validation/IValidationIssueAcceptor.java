@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Types (10 + 12) and 24 are not the same.";
+			return "Types 3 and 10 are not the same.";
 		}
 		private static boolean testFun(String s) {
 			return s.equals(getTestString());

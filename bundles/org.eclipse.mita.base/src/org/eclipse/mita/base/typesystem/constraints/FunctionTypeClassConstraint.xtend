@@ -90,7 +90,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		val newType = typ.map(f);
+		val newType = f.apply(typ);
 		if(newType !== typ) {
 			return new FunctionTypeClassConstraint(_errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, returnTypeVariance, constraintSystemProvider);	
 		}

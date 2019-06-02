@@ -33,7 +33,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null) {
 			throw new NullPointerException;
 		}
-		if(this.toString == "(10 + 12) ≡ f_1861") {
+		if(this.toString == "f_11 ≡ array<f_4, f_7>") {
 			print("")
 		}
 	}
@@ -65,8 +65,8 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	}
 			
 	override map((AbstractType)=>AbstractType f) {
-		val newL = left.map(f);
-		val newR = right.map(f);
+		val newL = f.apply(left);
+		val newR = f.apply(right);
 		if(left !== newL || right !== newR) {
 			return new EqualityConstraint(newL, newR, _errorMessage);
 		} 

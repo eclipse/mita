@@ -49,7 +49,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 			throw new NullPointerException;
 		}
 		
-		if(this.toString == "uint32 ⩽ f_6073") {//"f_1822 ⩽ typeAdd<f_1823>") {
+		if(this.toString == "array<int8, 3> ⩽ array<int8, 10>") {
 			print("")
 		}
 	}
@@ -128,8 +128,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		val newL = subType.map(f);
-		val newR = superType.map(f);
+		val newL = f.apply(subType);
+		val newR = f.apply(superType);
 		if(subType !== newL || superType !== newR) {
 			return new SubtypeConstraint(newL, newR, _errorMessage);
 		}

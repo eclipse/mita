@@ -52,30 +52,20 @@ class SumType extends TypeConstructorType {
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
 		super(origin, type, typeArguments.map[it -> Variance.COVARIANT]);
 	}
+	
+	override constructor(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArguments) {
+		new SumType(origin, name, typeArguments);
+	}
 			
 	override toString() {
 		(name ?: "") + "(" + typeArguments.tail.join(" | ") + ")"
 	}
 	
-	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
-		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newSType = new SumType(origin, name, newTypeVars.zip(typeArgumentsAndVariances.map[it.value]));
-		s.add(tv, newSType);
-	}
+	
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
 	}
 		
-	override map((AbstractType)=>AbstractType f) {
-		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new SumType(origin, name, newTypeArgs.zip(typeArgumentsAndVariances.map[it.value]));	
-		}
-		return this;
-	}
 	
-	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new SumType(origin, name, children.map[it.node.unquote(it.children)].zip(typeArgumentsAndVariances.map[it.value]));
-	}
 	
 }

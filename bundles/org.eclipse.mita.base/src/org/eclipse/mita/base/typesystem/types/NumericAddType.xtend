@@ -11,7 +11,7 @@ import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 
-class NumericAddType extends TypeConstructorType implements LiteralTypeExpression<Long> {
+class NumericAddType extends TypeConstructorType implements CompositeLiteralType<Long> {
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
 		// if not all sum types have the same number of arguments, return a new TV
 		if(instances.map[it as TypeConstructorType].map[it.typeArguments.size].groupBy[it].size > 1) {
@@ -43,11 +43,17 @@ class NumericAddType extends TypeConstructorType implements LiteralTypeExpressio
 	}
 	
 	override simplify(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+		val decomposition = decompose(subtypeChecker, s, typeResolutionOrigin);
+		return new NumericAddType(origin, name, typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)] + #[decomposition.key as AbstractType -> Variance.UNKNOWN]);
+	}
+	
+	override decompose(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
 		val simpleNumbers = typeArguments.filter(LiteralNumberType).force;
 		val simplifiedValue = simpleNumbers.fold(0L, [t, v| v.eval(subtypeChecker, s, typeResolutionOrigin) + t]);
 		val unifiedTypeOf = subtypeChecker.getSupremum(s, simpleNumbers.map[it.typeOf], typeResolutionOrigin);
-		val simplification =  new LiteralNumberType(simpleNumbers.head.origin, simplifiedValue, unifiedTypeOf) as AbstractType;
-		return new NumericAddType(origin, name, typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)] + #[simplification -> Variance.UNKNOWN]);
+		val simplification =  new LiteralNumberType(simpleNumbers.head.origin, simplifiedValue, unifiedTypeOf);
+		val rest = typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)].map[it.key as CompositeLiteralType<Long>];
+		return simplification -> rest;
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
@@ -60,6 +66,10 @@ class NumericAddType extends TypeConstructorType implements LiteralTypeExpressio
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {
 		return new NumericAddType(origin, name, children.map[it.node.unquote(it.children)].zip(typeArgumentsAndVariances.map[it.value]));
+	}
+	
+	override replaceProxies(ConstraintSystem system, (TypeVariableProxy)=>Iterable<AbstractType> resolve) {
+		return map[it.replaceProxies(system, resolve)];
 	}
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
