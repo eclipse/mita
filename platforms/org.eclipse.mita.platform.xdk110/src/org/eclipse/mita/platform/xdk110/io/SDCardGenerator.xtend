@@ -47,7 +47,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			
 			«FOR sigInst : setup.signalInstances»
 				«IF sigInst.instanceOf.name.startsWith("resuming")»
-					static uint16_t «sigInst.name»FilePosition = 0UL;
+					static uint32_t «sigInst.name»FilePosition = 0UL;
 				«ENDIF»
 			«ENDFOR»
 			
@@ -201,7 +201,7 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 			#if _USE_LFN
 			sdCardFileInfo.lfname = NULL;
 			#endif
-			uint16_t «fileSeekIndex»;
+			uint32_t «fileSeekIndex»;
 			«ENDIF»
 			fileOpenReturn = f_open(&fileWriteHandle, «filename», «fileOpenMode»);
 			«IF isAppending»
