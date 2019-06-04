@@ -31,6 +31,7 @@ import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
@@ -42,6 +43,7 @@ import org.eclipse.mita.base.typesystem.infra.ConstraintGraph
 import org.eclipse.mita.base.typesystem.infra.ConstraintGraphProvider
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.infra.TypeClassUnifier
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
@@ -51,6 +53,7 @@ import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
 import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
@@ -66,13 +69,6 @@ import org.eclipse.xtext.util.CancelIndicator
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.BaseConstraintFactory
-import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
-import org.eclipse.mita.base.typesystem.types.Signedness
-import org.eclipse.mita.base.typesystem.types.NumericType
-import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
-import org.eclipse.mita.base.typesystem.types.NumericAddType
 
 /**
  * Solves coercive subtyping as described in 
@@ -144,7 +140,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				]
 				val msg = typeClass.mostSpecificGeneralization;
 				val funTypeInstance = if(msg instanceof TypeScheme) {
-					msg.instantiate(currentSystem).value;	
+					msg.instantiate(currentSystem, null).value;	
 				}
 				if(funTypeInstance instanceof FunctionType) {
 					val typeThatShouldBeInstance = tcc.typ;
@@ -336,7 +332,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ExplicitInstanceConstraint constraint) {
 		val ts = constraint.typeScheme;
 		if(ts instanceof TypeScheme) {
-			val instance = ts.instantiate(system);
+			val instance = ts.instantiate(system, constraint.instance.origin);
 			val instanceType = instance.value
 			val resultSystem = system.plus(
 				new EqualityConstraint(constraint.instance, instanceType, constraint.errorMessage)
@@ -412,7 +408,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 				val EObject fun = k_v.value;
 				// typRaw might be a typeScheme (int32 -> b :: id: \T.T -> T)
 				val typ_distance = if(typRaw instanceof TypeScheme) {
-					typRaw.instantiate(system).value -> Double.POSITIVE_INFINITY
+					typRaw.instantiate(system, constraint.typ.origin).value -> Double.POSITIVE_INFINITY
 				} else {
 					typRaw -> 0.0;
 				}
@@ -626,26 +622,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		val result = doSimplify(system, substitution, typeResolutionOrigin, constraint, sub, top);
 		return result;
 	}
-	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, NumericAddType sub, AbstractType top) {
-		sub.typeArguments.forEach[
-			system.plus(new SubtypeConstraint(it, top, constraint._errorMessage));
-		]
-		
-		return SimplificationResult.success(system, Substitution.EMPTY); 
-	}
-	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, LiteralNumberType sub, AbstractType top) {
-		return SimplificationResult.success(system.plus(new SubtypeConstraint(sub.typeOf, top, constraint._errorMessage)), Substitution.EMPTY);
-	}
-	
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, LiteralNumberType sub, LiteralNumberType top) {
-		if(sub.value <= top.value) {
-			return SimplificationResult.success(system, Substitution.EMPTY);
-		}
-		return SimplificationResult.failure(constraint.errorMessage);
-	}
-	
+			
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, SumType sub, SumType top) {
 		return system._doSimplify(substitution, typeResolutionOrigin, constraint, sub as TypeConstructorType, top as TypeConstructorType);
 	}
@@ -741,12 +718,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			return SimplificationResult.success(system, Substitution.EMPTY);
 		}
 	}
-	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeScheme sub, AbstractType top) {
-		val vars_instance = sub.instantiate(system)
-		val newSystem = system.plus(new SubtypeConstraint(vars_instance.value, top, constraint._errorMessage));
-		return SimplificationResult.success(newSystem, Substitution.EMPTY);
-	}
-	
+		
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, Object sub, Object top) {
 		SimplificationResult.failure(new ValidationIssue(Severity.ERROR, println('''INTERNAL ERROR: doSimplify.SubtypeConstraint not implemented for «sub.class.simpleName» and «top.class.simpleName»'''), ""))
 	}
@@ -817,9 +789,6 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			val supremum = subtypeChecker.getSupremum(system, predecessors, typeResolutionOrigin);
 			val successors = graph.getBaseTypeSuccecessors(vIdx);
 			val infimum = subtypeChecker.getInfimum(system, successors, typeResolutionOrigin);
-			if(predecessors.exists[it instanceof LiteralTypeExpression] || successors.exists[it instanceof LiteralTypeExpression]) {
-				print("")
-			}
 			val supremumIsValid = supremum !== null && successors.forall[ t | subtypeChecker.isSubType(system, typeResolutionOrigin, supremum, t) ];
 			val infimumIsValid = infimum !== null && predecessors.forall[ t | subtypeChecker.isSubType(system, typeResolutionOrigin, t, infimum) ];
 			

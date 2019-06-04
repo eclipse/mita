@@ -92,11 +92,6 @@ final class SerializedIntegerType extends SerializedNumericType {
 	public Signedness signedness;
 }
 
-final class SerializedLiteralNumberType extends SerializedAbstractBaseType {
-	public SerializedAbstractType typeOf;
-	public long value;
-}
-
 abstract class SerializedCompoundType extends SerializedAbstractType {
 	public List<Pair<SerializedAbstractType, Variance>> typeArguments = new ArrayList;
 }
@@ -112,9 +107,6 @@ final class SerializedProductType extends SerializedCompoundType {
 
 final class SerializedSumType extends SerializedCompoundType {
 }
-final class SerializedNumericAddType extends SerializedCompoundType {
-}
-
 final class SerializedTypeScheme extends SerializedAbstractType {
 	public List<SerializedAbstractType> vars;
 	public SerializedAbstractType on;

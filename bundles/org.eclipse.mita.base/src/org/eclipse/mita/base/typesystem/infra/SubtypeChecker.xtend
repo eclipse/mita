@@ -35,8 +35,6 @@ import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FloatingType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
-import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.SumType
@@ -129,7 +127,7 @@ class SubtypeChecker {
 				return realType;
 			];
 		].force;
-		val ta_t = s.getOptionalType(typeResolveOrigin ?: t.origin).instantiate(s);
+		val ta_t = s.getOptionalType(typeResolveOrigin ?: t.origin).instantiate(s, t.origin);
 		val ta = ta_t.key.head;
 		val optionalType = ta_t.value
 		return explicitSuperTypes.flatMap[s.doGetSuperTypes(it, typeResolveOrigin ?: it.origin)].flatMap[#[it, optionalType.replace(ta, it)]].toSet;
@@ -195,11 +193,7 @@ class SubtypeChecker {
 	protected def SubtypeCheckResult checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
 		return (bSub <= bTop).subtypeMsgFromBoolean('''«top.name» is too small for «sub.name»''');
 	}
-	
-	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, LiteralNumberType sub, LiteralNumberType top) {
-		return (sub.value <= top.value).subtypeMsgFromBoolean('''«top.name» is bigger than «sub.name»''');
-	}
-	
+		
 //	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, NumericAddType sub, NumericAddType top) {
 //		val subDecomp = sub.decompose(this, s, context);
 //		val topDecomp = top.decompose(this, s, context);

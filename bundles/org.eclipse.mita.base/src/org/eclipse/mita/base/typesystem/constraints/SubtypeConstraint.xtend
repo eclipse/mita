@@ -23,11 +23,9 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
-import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
-import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -80,16 +78,11 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		if(cachedIsAtomic == CachedBoolean.Uncached) {
-			cachedIsAtomic = CachedBoolean.from((subType.isAtomic && superType.isAtomic && !isLiteralTypeCheck) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
+			cachedIsAtomic = CachedBoolean.from((subType.isAtomic && superType.isAtomic) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
 		}
 	 	return cachedIsAtomic.get();
 	}
-	
-	def boolean isLiteralTypeCheck() {
-		(subType instanceof LiteralTypeExpression<?> || superType instanceof LiteralTypeExpression<?>)
-		&& (!(subType instanceof TypeVariable) && !(superType instanceof TypeVariable))
-	}
-	
+		
 	dispatch def boolean typesAreCommon(AbstractType type, AbstractType type2) {
 		return false
 	}

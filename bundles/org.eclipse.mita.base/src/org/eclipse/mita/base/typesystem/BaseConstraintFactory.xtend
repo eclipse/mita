@@ -54,7 +54,6 @@ import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.InstanceTypeParameter
 import org.eclipse.mita.base.types.NamedElement
-import org.eclipse.mita.base.types.NaryTypeAddition
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
@@ -63,6 +62,7 @@ import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.RawTypeParameter
 import org.eclipse.mita.base.types.StructuralParameter
+import org.eclipse.mita.base.types.StructuralType
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
@@ -88,8 +88,6 @@ import org.eclipse.mita.base.typesystem.types.BaseKind
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
-import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.NumericType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
@@ -110,8 +108,7 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.types.StructuralType
+import org.eclipse.mita.base.types.NaryTypeAddition
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -621,7 +618,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		system.addConstraint(new SubtypeConstraint(falseTV, commonTV, mkIssue.apply("", " (:: %s)", expr.falseCase)));		
 		return system.associate(commonTV);
 	}
-	
+		
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BinaryExpression expr) {
 		if(expr.operator instanceof LogicalOperator) {
 			val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
@@ -663,6 +660,19 @@ class BaseConstraintFactory implements IConstraintFactory {
 		
 		val resultType = system.computeConstraintsForFunctionCall(expr, null, opQID.lastSegment, operands, operations);
 		return system.associate(resultType, expr);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NaryTypeAddition expr) {
+		// for now assume that operations on types are always T* -> T
+		val result = system.getTypeVariable(expr);
+		expr.values.forEach[
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(it), result, new ValidationIssue(Severity.ERROR, '''«it» (:: %s) doesn't share a common type with the other members of this expression''', it, null, "")))
+		]
+		return result;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeReferenceLiteral expr) {
+		return system.associate(system.getTypeVariableProxy(expr, TypesPackage.eINSTANCE.typeReferenceLiteral_Type))
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Type type) {
@@ -864,7 +874,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeExpressionSpecifier typeSpecifier) {
-		return system.associate(system.computeConstraintsForExpression(typeSpecifier.value), typeSpecifier);
+		return system.associate(system.computeConstraints(typeSpecifier.value), typeSpecifier);
 	}
 		
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeReferenceSpecifier typeSpecifier) {
@@ -887,7 +897,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			// since type specifiers reference something we don't always know the variance here
 			val typeArgs = typeArgTypes.map[it -> Variance.UNKNOWN].force;
 			// compute constraints to validate t<a, b> (argument count etc.)
-			val typeInstance = system.nestInType(null, new AtomicType(typeSpecifier.eGet(eRef, false) as EObject, typeName), typeArgs, type, typeName);
+			val typeInstance = system.nestInType(typeSpecifier, new AtomicType(typeSpecifier.eGet(eRef, false) as EObject, typeName), typeArgs, type, typeName);
 			typeInstance;
 		}
 		
@@ -1011,29 +1021,6 @@ class BaseConstraintFactory implements IConstraintFactory {
 		println('BCF: computeConstraints called on null');
 		return null;
 	}
-	
-	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, NaryTypeAddition e) {
-		return system.associate(new NumericAddType(e, "typeAdd", e.values.map[system.computeConstraintsForLiteral(it) as AbstractType -> Variance.INVARIANT].force), e);
-	}
-	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, PrimitiveValueExpression e) {
-		return system.associate(system.computeConstraintsForLiteral(e.value), e);
-	}
-	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, TypeReferenceLiteral e) {
-		return system.associate(system.resolveReferenceToSingleAndGetType(e, TypesPackage.eINSTANCE.typeReferenceLiteral_Type), e);
-	}
-	
-	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, Expression e) {
-		throw new UnsupportedOperationException("BCF: unimplemented computeConstraintsForExpression for " + e.class.simpleName);
-	}
-	
-	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, IntLiteral literal) {
-		return system.associate(new LiteralNumberType(literal, literal.value, system.translateInteger(literal, literal.value)), literal);
-	}
-	
-	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, Literal literal) {
-		throw new UnsupportedOperationException("BCF: unimplemented computeConstraintsForLiteral for " + literal.class.simpleName);
-	}
-
 
 	protected def associate(ConstraintSystem system, AbstractType t) {
 		return associate(system, t, t.origin);

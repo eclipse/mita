@@ -20,6 +20,9 @@ import java.io.InputStream
 import java.util.ArrayList
 import java.util.Map
 import org.apache.log4j.Logger
+import org.eclipse.core.runtime.IProgressMonitor
+import org.eclipse.core.runtime.Status
+import org.eclipse.core.runtime.jobs.Job
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
@@ -174,6 +177,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		typeLinker.doActuallyClearReferences(model);
 		typeLinker.linkModel(model, diagnosticsConsumer);
 		typeDependentLinker.linkModel(model, diagnosticsConsumer);
+
 		collectAndSolveTypes(model);
 	}
 

@@ -29,6 +29,7 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
@@ -88,8 +89,6 @@ import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.types.Variance
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 
 class ProgramConstraintFactory extends PlatformConstraintFactory {	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
@@ -223,7 +222,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayLiteral arrayLiteral) {
 		val literalTypes = arrayLiteral.values.map[it -> system.computeConstraints(it)];
 		val innerType = system.newTypeVariable(null);
-		val sizeType = new LiteralNumberType(arrayLiteral, arrayLiteral.values.size, typeRegistry.getTypeModelObjectProxy(system, arrayLiteral, StdlibTypeRegistry.u32TypeQID))
+		val sizeType = system.newTypeVariable(null);
 		literalTypes.forEach[
 			system.addConstraint(new SubtypeConstraint(it.value, innerType, new ValidationIssue(Severity.ERROR, '''«it.key» (:: %s) doesn't share a common type with the other members of this array literal''', it.value.origin, null, "")))
 		]

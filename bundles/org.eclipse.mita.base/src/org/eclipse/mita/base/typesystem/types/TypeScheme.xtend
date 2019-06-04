@@ -26,6 +26,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 @EqualsHashCode
 @Accessors
@@ -37,6 +38,9 @@ class TypeScheme extends AbstractType {
 		super(origin, on.name);
 		this.vars = vars;
 		this.on = on;
+		if(this.toString == "∀[f_366, f_367, f_368].__args(array<f_1855, uint32>, array<f_1855, uint32>) → array<f_1855, f_1856>") {
+			print("")
+		}
 	}
 	
 	override Tree<AbstractType> quote() {
@@ -68,13 +72,12 @@ class TypeScheme extends AbstractType {
 		return on.freeVars.filter(TypeVariable).reject[vars.contains(it)];
 	}
 	
-	def instantiate(ConstraintSystem system) {
+	def instantiate(ConstraintSystem system, EObject origin) {
 		val newVars = new ArrayList<TypeVariable>();
 		val newOn = vars.fold(on, [term, boundVar | 
-			val freeVar = system.newTypeVariable(null);
+			val freeVar = system.newTypeVariable(origin);
 			if(boundVar instanceof DependentTypeVariable) {
-				system.addConstraint(new SubtypeConstraint(freeVar, boundVar.dependsOn, new ValidationIssue("%s is not a %s", null)))
-				system.addConstraint(new JavaClassInstanceConstraint(new ValidationIssue("%s is not instanceof %s", null), freeVar, LiteralTypeExpression));
+				system.addConstraint(new SubtypeConstraint(freeVar, boundVar.dependsOn, new ValidationIssue("%s is not a %s", origin)))
 			}
 			newVars.add(freeVar);
 			term.replace(boundVar, freeVar);
@@ -95,7 +98,7 @@ class TypeScheme extends AbstractType {
 				return this;
 			}
 			return new TypeScheme(origin, this.vars, 
-				on.replace(sub.filter[vars.contains(it)])
+				on.replace(sub.filter[!vars.contains(it)])
 			);
 		} else {
 			return new TypeScheme(origin, this.vars, this.on.replace(sub));			
@@ -111,6 +114,9 @@ class TypeScheme extends AbstractType {
 	}
 	
 	override modifyNames(NameModifier converter) {
+		if(converter instanceof NicerTypeVariableNamesForErrorMessages) {
+			print("");
+		}
 		return new TypeScheme(origin, vars.map[modifyNames(converter) as TypeVariable].force, on.modifyNames(converter));
 	}
 	

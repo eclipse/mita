@@ -98,12 +98,13 @@ TypeParameter returns TypeParameter:
 RawTypeParameter returns RawTypeParameter:
 	{RawTypeParameter}
 	// since Invariant is the first=default value of Variance this assigns invariance on no match
-	(variance=Variance)?
+	//(variance=Variance)?
 	name=ID 
 ;
 InstanceTypeParameter returns InstanceTypeParameter:
 	{InstanceTypeParameter}
-	(variance=Variance)? 
+	// since Invariant is the first=default value of Variance this assigns invariance on no match
+	//(variance=Variance)? 
 	name=ID 'is' ofType=[Type] 
 ;
 

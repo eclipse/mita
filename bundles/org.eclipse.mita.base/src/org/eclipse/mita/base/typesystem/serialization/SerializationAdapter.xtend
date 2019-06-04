@@ -37,6 +37,7 @@ import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.EcoreFactory
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
@@ -68,10 +69,7 @@ import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
-import org.eclipse.mita.base.typesystem.types.NumericAddType
-import org.eclipse.mita.base.types.Variance
 
 class SerializationAdapter {
 	
@@ -206,11 +204,7 @@ class SerializationAdapter {
 	protected dispatch def AbstractType fromValueObject(SerializedIntegerType obj) {
 		return new IntegerType(obj.origin.resolveEObject(), obj.widthInBytes, obj.signedness);
 	}
-	
-	protected dispatch def AbstractType fromValueObject(SerializedLiteralNumberType obj) {
-		return new LiteralNumberType(obj.origin.resolveEObject(), obj.value, obj.typeOf.fromValueObject as AbstractType);
-	}
-	
+		
 	protected dispatch def AbstractType fromValueObject(SerializedTypeHole obj) {
 		return new TypeHole(obj.origin.resolveEObject(), obj.idx);
 	}
@@ -229,9 +223,6 @@ class SerializationAdapter {
 	
 	protected dispatch def AbstractType fromValueObject(SerializedProductType obj) {
 		return new ProdType(obj.origin.resolveEObject(), obj.name, obj.typeArguments.fromSerializedTypeArguments());
-	}
-	protected dispatch def AbstractType fromValueObject(SerializedNumericAddType obj) {
-		return new NumericAddType(obj.origin.resolveEObject, obj.name, obj.typeArguments.fromSerializedTypeArguments());
 	}
 	
 	protected dispatch def AbstractType fromValueObject(SerializedSumType obj) {
@@ -311,15 +302,7 @@ class SerializationAdapter {
 		}
 		return new String(content, "ISO-8859-1");		
 	}
-		
-	protected dispatch def Object toValueObject(LiteralNumberType lit) {
-		return new SerializedLiteralNumberType => [
-			fill(it, lit);
-			it.value = lit.value;
-			it.typeOf = lit.typeOf.toValueObject as SerializedAbstractType;
-		]
-	}	
-		
+			
 	protected dispatch def Object toValueObject(Object nul) {
 		throw new NullPointerException;
 	}
@@ -494,6 +477,7 @@ class SerializationAdapter {
 		]
 	}
 	
+		
 	protected dispatch def Object fill(SerializedCompoundType ctxt, TypeConstructorType obj) {
 		_fill(ctxt as SerializedAbstractType, obj as AbstractType);
 		ctxt.typeArguments = obj.typeArgumentsAndVariances.map[ it.key.toValueObject as SerializedAbstractType -> it.value ].toList
@@ -518,13 +502,7 @@ class SerializationAdapter {
 			fill(it, obj)
 		]
 	}
-	
-	protected dispatch def Object toValueObject(NumericAddType obj) {
-		new SerializedNumericAddType => [ 
-			fill(it, obj)
-		]
-	}
-	
+		
 	protected dispatch def Object toValueObject(TypeConstructorType obj) {
 		new SerializedTypeConstructorType => [
 			fill(it, obj)
