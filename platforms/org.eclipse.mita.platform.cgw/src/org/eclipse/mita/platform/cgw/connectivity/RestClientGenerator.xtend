@@ -30,65 +30,18 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		val radioUsername = StaticValueInferrer.infer(radioSetup.getConfigurationItemValue("username"), [])?.castOrNull(String);
 		val radioPassword = StaticValueInferrer.infer(radioSetup.getConfigurationItemValue("password"), [])?.castOrNull(String);
 		
-		return codeFragmentProvider.create('''
-			Retcode_T exception = NO_EXCEPTION;
-
-			
-			powerOnDone = xSemaphoreCreateBinary();
-			registerDone = xSemaphoreCreateBinary();
-			dataActivated = xSemaphoreCreateBinary();
-			if(dataActivated == NULL) {
-				exception = RETCODE_FAILURE;
-			}
-			«generateLoggingExceptionHandler("HttpRestClient", "Semaphore creation")»
-
-			xSemaphoreTake(powerOnDone, 0);
-			xSemaphoreTake(registerDone, 0);
-			xSemaphoreTake(dataActivated, 0);
-			
-			
-			exception = Cellular_Initialize(HandleStateChanged);
-			«generateLoggingExceptionHandler("HttpRestClient", "Cellular Initialize")»
-
-			
-			Cellular_PowerUpParameters_T powerUpParam;
-			powerUpParam.SimPin = NULL;
-			exception = Cellular_PowerOn(&powerUpParam);
-			«generateLoggingExceptionHandler("HttpRestClient", "Cellular Power on")»
-
-			exception = Cellular_QueryIccid(iccid, &iccidLen);
-			
-			if (RETCODE_OK != exception)
-			{
-				LOG_ERROR("Cellular failure: 0x%"PRIx32, exception);
-				Retcode_RaiseError(exception);
-			}
-			else {
-				LOG_DEBUG("SIM ICCID: %.*s", (int) iccidLen, iccid);
-			}
-			
-			return exception;
-		''')
+		return codeFragmentProvider.create('''''')
 		.setPreamble('''
 			static void ReceiveData(void* param, uint32_t len);
 			
 			static void OnDataReady(CellularSocket_Handle_T socket, uint32_t numBytesAvailable);
 			
-			static Retcode_T ActivateDataContext(void* param, uint32_t len);
-			
-			static void HandleStateChanged(Cellular_State_T oldState, Cellular_State_T newState, void* param, uint32_t len);
-			
-			static const Cellular_DataContext_T* DataContext;
-			static CellularSocket_Handle_T Socket;
-			static uint32_t BytesReceived = 0;
 			extern CmdProcessor_T Mita_EventQueue;
 			
-			static QueueHandle_t httpEvent;
-			
+			static QueueHandle_t httpEvent;			
+			static uint32_t BytesReceived = 0;
 			static char iccid[CELLULAR_ICCID_MAX_LENGTH];
 			static uint32_t iccidLen = sizeof(iccid);
-			
-			static SemaphoreHandle_t powerOnDone, registerDone, dataActivated;
 			
 			static void ReceiveData(void* param, uint32_t len)
 			{
@@ -205,93 +158,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			
 			
 			uint8_t httpBuffer[1024];
-			
-			static Retcode_T ActivateDataContext(void* param, uint32_t len)
-			{
-				BCDS_UNUSED(param);
-				BCDS_UNUSED(len);
-			
-				Retcode_T retcode = RETCODE_OK;
-			
-				retcode = Cellular_ActivateDataContext(0, &DataContext);
-			
-				if (RETCODE_OK != retcode)
-				{
-					LOG_ERROR("Error during data-context activation (0x%08x)!", retcode);
-					Retcode_RaiseError(retcode);
-				}
-				return retcode;
-			}
-			
-			static Retcode_T Register(void* param, uint32_t len)
-			{
-				BCDS_UNUSED(param);
-				BCDS_UNUSED(len);
-				Retcode_T retcode = RETCODE_OK;
-				Cellular_DataContextParameters_T ctxParam;
-				ctxParam.Type = CELLULAR_DATACONTEXTTYPE_INTERNAL;
-				ctxParam.ApnSettings.ApnName =  «IF radioApn !== null»"«radioApn»"«ELSE»NULL«ENDIF»;
-				ctxParam.ApnSettings.AuthMethod = CELLULAR_APNAUTHMETHOD_NONE;
-				ctxParam.ApnSettings.Username = «IF radioUsername !== null»"«radioUsername»"«ELSE»NULL«ENDIF»;
-				ctxParam.ApnSettings.Password = «IF radioPassword !== null»"«radioPassword»"«ELSE»NULL«ENDIF»;
-				retcode = Cellular_ConfigureDataContext(0, &ctxParam);
-			
-				if (RETCODE_OK == retcode)
-				{ 
-					Cellular_NetworkParameters_T networkParam;
-«««										 possible values: CAT_M1, NB_IoT 
-					networkParam.AcT = «IF radioStandard.name == "NB_IoT"»CELLULAR_RAT_LTE_CAT_NB1«ELSE»CELLULAR_RAT_LTE_CAT_M1«ENDIF»;
-					retcode = Cellular_RegisterOnNetwork(&networkParam);
-				}
-			
-				if (RETCODE_OK != retcode)
-				{
-					LOG_ERROR("Error during registering (0x%08x)!", retcode);
-					Retcode_RaiseError(retcode);
-				}
-				return retcode;
-			}
-			
-			static void HandleStateChanged(Cellular_State_T oldState, Cellular_State_T newState, void* param, uint32_t len)
-			{
-				BCDS_UNUSED(param);
-				BCDS_UNUSED(len);
-			
-				Retcode_T retcode = RETCODE_OK;
-				if (oldState == CELLULAR_STATE_REGISTERING && newState==CELLULAR_STATE_POWERON)
-				{
-					return;
-				}
-			
-				LOG_INFO("State changed; old=%d, new=%d", oldState, newState);
-			
-				switch (newState)
-				{
-				case CELLULAR_STATE_POWERON:
-					if(xSemaphoreGive(powerOnDone) == pdFALSE) {
-						retcode = RETCODE_FAILURE;
-					}
-					break;
-				case CELLULAR_STATE_REGISTERED:
-					if(xSemaphoreGive(registerDone) == pdFALSE) {
-						retcode = RETCODE_FAILURE;
-					}
-					break;
-				case CELLULAR_STATE_DATAACTIVE:
-					if(xSemaphoreGive(dataActivated) == pdFALSE) {
-						retcode = RETCODE_FAILURE;
-					}
-					break;
-				default:
-					break;
-				}
-			
-				if (RETCODE_OK != retcode)
-				{
-					LOG_ERROR("Error during state-handling (0x%08x)!", retcode);
-					Retcode_RaiseError(retcode);
-				}
-			}
+
 		''')
 		.addHeader("FreeRTOS.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("semphr.h", true)
@@ -301,7 +168,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("BCDS_Logging.h", true)
 		.addHeader("BCDS_MCU_UART.h", true)
 		.addHeader("BCDS_CmdProcessor.h", true)
-		//.addHeader("BCDS_CellularInterface.h", true)
 		.addHeader("BCDS_Cellular.h", true)
 		.addHeader("BCDS_CellularSocketService.h", true)
 		.addHeader("BCDS_CellularDnsService.h", true)
@@ -314,24 +180,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	override generateEnable() {
 		return codeFragmentProvider.create('''
 			Retcode_T exception = NO_EXCEPTION;
-			if(xSemaphoreTake(powerOnDone, 10000) == pdFALSE) {
-				exception = RETCODE_FAILURE;
-			}
-			«generateLoggingExceptionHandler("HttpRestClient", "finish power on")»
-			exception = Register(NULL, 0);
-			«generateLoggingExceptionHandler("HttpRestClient", "Register")»
-
-			if(xSemaphoreTake(registerDone, 600000) == pdFALSE) {
-				exception = RETCODE_FAILURE;
-			}
-			«generateLoggingExceptionHandler("HttpRestClient", "finish registering")»
-			exception = ActivateDataContext(NULL, 0);
-			«generateLoggingExceptionHandler("HttpRestClient", "activate data context")»
 			
-			if(xSemaphoreTake(dataActivated, 120000) == pdFALSE) {
-				exception = RETCODE_FAILURE;
-			}
-			«generateLoggingExceptionHandler("HttpRestClient", "finish data context activation")»
 			httpEvent = xQueueCreate(1, sizeof(HttpResult_T));
 			CellularHttp_Initialize(HttpEventCallback);
 			

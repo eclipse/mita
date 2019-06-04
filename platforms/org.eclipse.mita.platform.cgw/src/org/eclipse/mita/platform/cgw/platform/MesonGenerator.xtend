@@ -37,21 +37,6 @@ class MesonGenerator extends PlatformMesonGenerator {
 		(context.findPlatformSetup()?.configurationItemValues?.findFirst[it.item.name == configName]?.value) ?:
 		(context.findPlatformDefinition()?.configurationItems?.findFirst[it.name == configName]?.defaultValue)
 	}
-
-	override getMesonExecutable(CompilationContext context) {
-		val mesonConfig = StaticValueInferrer.infer(getPlatformSetupConfigExpression(context, "buildSystem"), [])?.castOrNull(SumTypeRepr);
-		if(mesonConfig?.name == "Relative") {
-			return "../python/Scripts/meson";
-		}
-		return super.getMesonExecutable(context)
-	}
-	override getNinjaExecutable(CompilationContext context) {
-		val mesonConfig = StaticValueInferrer.infer(getPlatformSetupConfigExpression(context, "buildSystem"), [])?.castOrNull(SumTypeRepr);
-		if(mesonConfig?.name == "Relative") {
-			return "../ninja";
-		}
-		return super.getNinjaExecutable(context)
-	}
 	
 	override generateMeson(CompilationContext context, List<String> sourceFiles) {
 		return codeFragmentProvider.create('''
@@ -84,7 +69,7 @@ class MesonGenerator extends PlatformMesonGenerator {
 			  install : true)
 			
 			run_target(
-				'hex', 
+				'«compileTarget»', 
 				command: [
 					meson.get_cross_property('objcopy'),
 					meson.get_cross_property('objcopy_args'),
@@ -99,6 +84,10 @@ class MesonGenerator extends PlatformMesonGenerator {
 	
 	override getConfigureArgs() {
 		return "-Db_pch=false -Db_staticpic=false"
+	}
+	
+	override getCompileTarget() {
+		return "hex"
 	}
 	
 }

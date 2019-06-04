@@ -21,17 +21,20 @@ abstract class PlatformMesonGenerator extends PlatformBuildSystemGenerator {
 			traceExtensions.generateTracedFile(fsa, 'meson.build', root);		
 		}
 		val crossFileLocation = crossFile;
+		val configureArgs = getConfigureArgs;
 		traceExtensions.generateTracedFile(fsa, 'Makefile', codeFragmentProvider.create('''
 			all:
 				«context.mesonExecutable» debug«IF !crossFileLocation.nullOrEmpty» --cross-file "«crossFile»"«ENDIF»
-				cd debug && «context.mesonExecutable» configure «getConfigureArgs»
-				cd debug && «context.ninjaExecutable» hex
+				«IF !configureArgs.nullOrEmpty»cd debug && «context.mesonExecutable» configure «configureArgs»«ENDIF»
+				cd debug && «context.ninjaExecutable» «compileTarget»
 		'''))
 	}
 	
 	def String getCrossFile();
 	
 	def String getConfigureArgs();
+	
+	def String getCompileTarget();
 	
 	def String getMesonExecutable(CompilationContext context) {
 		return "meson";
