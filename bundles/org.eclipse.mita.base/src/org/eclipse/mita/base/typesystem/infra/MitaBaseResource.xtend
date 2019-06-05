@@ -88,6 +88,9 @@ class MitaBaseResource extends LazyLinkingResource {
 
 	@Inject
 	protected XtextFragmentProvider fragmentProvider;
+	
+	@Inject
+	protected AbstractSizeInferrer sizeInferrer;
 
 	override toString() {
 		val str = URI.toString;
@@ -262,8 +265,11 @@ class MitaBaseResource extends LazyLinkingResource {
 				return;
 			}
 			timer.start("solve");
-			val solution = constraintSolver.solve(preparedSystem, obj);
+			val solutionTypes = constraintSolver.solve(preparedSystem, obj);
 			timer.stop("solve");
+			timer.start("size-inference");
+			val solution = sizeInferrer.inferSizes(solutionTypes, this);
+			timer.stop("size-inference");
 			println("report for:" + resource.URI.lastSegment + "\n" + timer.toString);
 			if (solution !== null) {
 				solution.constraintSystem.coercions.entrySet.filter [

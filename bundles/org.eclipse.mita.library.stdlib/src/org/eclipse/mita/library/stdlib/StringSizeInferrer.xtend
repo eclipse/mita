@@ -25,73 +25,73 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 
 class StringSizeInferrer extends ArraySizeInferrer {
 	
-	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression, AbstractType type) {
-		return newValidResult(expression, expression.value.length);
-	}
-	
-	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression, AbstractType type) {
-		return expression.value.infer;
-	}
-
-	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringLiteral expr, AbstractType type) {
-		expr.isolatedDoInfer
-	}
-	
-	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr, AbstractType type) {
-		expr.inferFixedSize
-	}
-
-		
-	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(StringLiteral expression) {
-		newValidResult(expression, expression.value.length);		
-	}
-	
-	protected override dispatch ElementSizeInferenceResult isolatedDoInfer(PrimitiveValueExpression expression) {
-		val value = expression.value;
-		return value.isolatedDoInfer;
-	}
-	
-	protected def dispatch isolatedDoInfer(InterpolatedStringLiteral expr) {
-		var length = expr.sumTextParts
-		
-		// sum expression value part
-		for(subexpr : expr.content) {
-			val type = BaseUtils.getType(subexpr);
-			var typeLengthInBytes = switch(type?.name) {
-				case 'uint32': 10L
-				case 'uint16':  5L
-				case 'uint8' :  3L
-				case 'int32' : 11L
-				case 'int16' :  6L
-				case 'int8'  :  4L
-				case 'xint32': 11L
-				case 'xint16':  6L
-				case 'xint8' :  4L
-				case 'bool'  :  1L
-				// https://stackoverflow.com/a/1934253
-				case 'double': StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
-				case 'float':  StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
-				case 'string':    {
-					val stringSize = super.infer(subexpr);
-					if(stringSize instanceof ValidElementSizeInferenceResult) {
-						stringSize.elementCount;
-					} else {
-						// stringSize inference was not valid
-						return stringSize;
-					}
-				}
-				default: null
-			}
-			
-			if(typeLengthInBytes === null) {
-				return newInvalidResult(subexpr, "Cannot interpolate expressions of type " + type);
-			} else {
-				length += typeLengthInBytes;
-			}
-		}
-
-		return newValidResult(expr, length);
-	}
+//	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression, AbstractType type) {
+//		return newValidResult(expression, expression.value.length);
+//	}
+//	
+//	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression, AbstractType type) {
+//		return expression.value.infer;
+//	}
+//
+//	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringLiteral expr, AbstractType type) {
+//		expr.isolatedDoInfer
+//	}
+//	
+//	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr, AbstractType type) {
+//		expr.inferFixedSize
+//	}
+//
+//		
+//	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(StringLiteral expression) {
+//		newValidResult(expression, expression.value.length);		
+//	}
+//	
+//	protected override dispatch ElementSizeInferenceResult isolatedDoInfer(PrimitiveValueExpression expression) {
+//		val value = expression.value;
+//		return value.isolatedDoInfer;
+//	}
+//	
+//	protected def dispatch isolatedDoInfer(InterpolatedStringLiteral expr) {
+//		var length = expr.sumTextParts
+//		
+//		// sum expression value part
+//		for(subexpr : expr.content) {
+//			val type = BaseUtils.getType(subexpr);
+//			var typeLengthInBytes = switch(type?.name) {
+//				case 'uint32': 10L
+//				case 'uint16':  5L
+//				case 'uint8' :  3L
+//				case 'int32' : 11L
+//				case 'int16' :  6L
+//				case 'int8'  :  4L
+//				case 'xint32': 11L
+//				case 'xint16':  6L
+//				case 'xint8' :  4L
+//				case 'bool'  :  1L
+//				// https://stackoverflow.com/a/1934253
+//				case 'double': StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+//				case 'float':  StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+//				case 'string':    {
+//					val stringSize = super.infer(subexpr);
+//					if(stringSize instanceof ValidElementSizeInferenceResult) {
+//						stringSize.elementCount;
+//					} else {
+//						// stringSize inference was not valid
+//						return stringSize;
+//					}
+//				}
+//				default: null
+//			}
+//			
+//			if(typeLengthInBytes === null) {
+//				return newInvalidResult(subexpr, "Cannot interpolate expressions of type " + type);
+//			} else {
+//				length += typeLengthInBytes;
+//			}
+//		}
+//
+//		return newValidResult(expr, length);
+//	}
 		
 	protected def long sumTextParts(InterpolatedStringLiteral expr) {
 		val texts = StringGenerator.getOriginalTexts(expr)

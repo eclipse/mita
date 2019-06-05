@@ -50,8 +50,7 @@ class NumericAddType extends TypeConstructorType implements CompositeLiteralType
 	override decompose(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
 		val simpleNumbers = typeArguments.filter(LiteralNumberType).force;
 		val simplifiedValue = simpleNumbers.fold(0L, [t, v| v.eval(subtypeChecker, s, typeResolutionOrigin) + t]);
-		val unifiedTypeOf = subtypeChecker.getSupremum(s, simpleNumbers.map[it.typeOf], typeResolutionOrigin);
-		val simplification =  new LiteralNumberType(simpleNumbers.head.origin, simplifiedValue, unifiedTypeOf);
+		val simplification =  new LiteralNumberType(simpleNumbers.head.origin, simplifiedValue);
 		val rest = typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)].map[it.key as CompositeLiteralType<Long>];
 		return simplification -> rest;
 	}

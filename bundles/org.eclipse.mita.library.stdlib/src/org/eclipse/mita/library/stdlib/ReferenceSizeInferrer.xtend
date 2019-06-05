@@ -13,27 +13,33 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
-class ReferenceSizeInferrer extends ElementSizeInferrer {
+class ReferenceSizeInferrer implements ElementSizeInferrer {
 	
-	@Inject
-	protected StdlibTypeRegistry typeRegistry;
+//	@Inject
+//	protected StdlibTypeRegistry typeRegistry;
+//	
+//	protected dispatch def doInferFromType(EObject obj, TypeConstructorType type) {
+//		if(type instanceof TypeConstructorType) {
+//			if(type.name == "reference") {
+//				return new ValidElementSizeInferenceResult(obj, type, 1);
+//			}
+//		}
+//		return super.doInferFromType(obj, type);
+//	}
 	
-	protected dispatch def doInferFromType(EObject obj, TypeConstructorType type) {
-		if(type instanceof TypeConstructorType) {
-			if(type.name == "reference") {
-				return new ValidElementSizeInferenceResult(obj, type, 1);
-			}
-		}
-		return super.doInferFromType(obj, type);
+	override infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override setDelegate(ElementSizeInferrer delegate) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
 }

@@ -13,6 +13,7 @@
 
 package org.eclipse.mita.program.generator
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.LinkedList
 import java.util.List
@@ -97,6 +98,7 @@ import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.NoopStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ReferenceExpression
@@ -109,7 +111,7 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.mita.program.WhileStatement
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
+import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
@@ -123,9 +125,6 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.program.NoopStatement
-import com.google.common.base.Optional
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 class StatementGenerator {
 
@@ -146,9 +145,6 @@ class StatementGenerator {
 	@Inject
 	protected GeneratorRegistry registry
 	
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
-
 	@Traced dispatch def IGeneratorNode code(Argument stmt) {
 		'''«stmt.value.code»'''
 	}
@@ -637,7 +633,7 @@ class StatementGenerator {
 			BaseUtils.getType(stmt), 
 			stmt, 
 			Optional.of(stmt),
-			sizeInferrer.infer(stmt) as ValidElementSizeInferenceResult,
+			new ValidElementSizeInferenceResult(stmt, BaseUtils.getType(stmt), 1)/*sizeInferrer.infer(stmt) as ValidElementSizeInferenceResult*/,
 			codeFragmentProvider.create('''«stmt.name»'''), 
 			stmt.initialization,
 			stmt.eContainer instanceof Program

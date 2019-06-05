@@ -20,10 +20,12 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.VariableDeclaration
@@ -32,21 +34,16 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.transformation.EscapeWhitespaceInStringStage
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.expressions.ValueRange
 
 class StringGenerator extends ArrayGenerator {
 	
 	static public val DOUBLE_PRECISION = 6L;
-		
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
 
 	@Inject
 	protected extension ProgramDslTraceExtensions

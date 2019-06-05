@@ -40,6 +40,8 @@ import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.IResourceValidator
+import org.eclipse.mita.base.typesystem.infra.AbstractSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.NullSizeInferrer
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 
@@ -55,6 +57,7 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(PlatformLinker);
+		binder.bind(AbstractSizeInferrer).to(NullSizeInferrer);
 	}
 
 	override bindIGlobalScopeProvider() {

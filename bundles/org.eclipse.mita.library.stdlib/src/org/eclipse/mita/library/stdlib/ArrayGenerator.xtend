@@ -23,6 +23,7 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -31,7 +32,6 @@ import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
@@ -40,7 +40,7 @@ import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
+import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
@@ -48,8 +48,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.base.types.Expression
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -58,10 +56,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	@Inject
 	protected extension GeneratorUtils generatorUtils
-	
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
-	
+		
 	@Inject 
 	protected extension StatementGenerator statementGenerator
 	
@@ -70,12 +65,12 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		
 	private def long getFixedSize(EObject stmt) {
-		val inference = sizeInferrer.infer(stmt);
-		return if(inference instanceof ValidElementSizeInferenceResult) {
-			inference.elementCount;
-		} else {
+//		val inference = sizeInferrer.infer(stmt);
+//		return if(inference instanceof ValidElementSizeInferenceResult) {
+//			inference.elementCount;
+//		} else {
 			return -1;
-		}
+//		}
 	}
 	
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
@@ -215,8 +210,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			temporaryBufferName;	
 		}
 		
-		val sizeResLeft = left.transform[sizeInferrer.infer(it)].or(new InvalidElementSizeInferenceResult(null, null, ""));
-		val sizeResRight = sizeInferrer.infer(right);
+		val sizeResLeft = /*left.transform[sizeInferrer.infer(it)].or(*/new InvalidElementSizeInferenceResult(null, null, "")/*)*/;
+		val sizeResRight = new InvalidElementSizeInferenceResult(null, null, "")//sizeInferrer.infer(right);
 		
 		// if we can infer the sizes we don't need to check bounds 
 		// (validation prevents out of bounds compilation for known sizes)
@@ -268,10 +263,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 		
-		@Inject
-		protected ElementSizeInferrer sizeInferrer
-	
-
 		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
 			val varref = if(variable instanceof ElementReferenceExpression) {

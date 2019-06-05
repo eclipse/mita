@@ -63,7 +63,7 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = getTypeArguments().flatMap[it.freeVars].force;
-		if(this.toString == "foo<f_6>") {
+		if(this.toString == "array<xint8, array<xint8, 3>>") {
 			print("")
 		}
 	}

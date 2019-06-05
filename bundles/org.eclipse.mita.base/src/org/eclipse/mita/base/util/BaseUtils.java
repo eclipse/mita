@@ -37,7 +37,10 @@ import org.eclipse.mita.base.types.TypeKind;
 import org.eclipse.mita.base.types.TypesPackage;
 import org.eclipse.mita.base.types.TypesUtil;
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter;
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem;
+import org.eclipse.mita.base.typesystem.solver.Substitution;
 import org.eclipse.mita.base.typesystem.types.AbstractType;
+import org.eclipse.mita.base.typesystem.types.TypeVariable;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.util.OnChangeEvictingCache;
@@ -52,7 +55,6 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-@SuppressWarnings("all")
 public class BaseUtils {
 	public static String getText(final EObject obj, final EStructuralFeature feature) {
 		Object _xifexpression = null;
@@ -369,6 +371,11 @@ public class BaseUtils {
 
 	public static AbstractType getType(final EObject obj) {
 		return TypeAdapter.get(obj);
+	}
+	
+	public static AbstractType getType(final ConstraintSystem system, final Substitution sub, final EObject obj) {
+		final TypeVariable tv = system.getTypeVariable(obj);
+		return sub.apply(tv);
 	}
 
 	public static EObject computeOrigin(final EObject obj) {

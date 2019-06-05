@@ -34,6 +34,7 @@ class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
 	@Accessors
 	protected Int2ObjectMap<AbstractType> content = new Int2ObjectOpenHashMap();
+	@Accessors
 	protected Int2ObjectMap<TypeVariable> idxToTypeVariable = new Int2ObjectOpenHashMap();
 	protected Int2ObjectMap<IntSet> tvHasThisFreeVar = new Int2ObjectOpenHashMap();
 	
@@ -176,9 +177,6 @@ class Substitution {
 	}
 	
 	def void addToContent(TypeVariable tv, AbstractType typ) {
-		if(tv.idx === 39 || tv.idx === 41) {
-			print("")
-		}
 		content.put(tv.idx, typ);
 		idxToTypeVariable.put(tv.idx, tv);
 		val freeVars = typ.freeVars;

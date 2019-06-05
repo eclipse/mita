@@ -13,35 +13,39 @@
 
 package org.eclipse.mita.platform.unittest
 
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
-class SomeTypeSizeInferrer extends ElementSizeInferrer {
+class SomeTypeSizeInferrer implements ElementSizeInferrer {
 	
-	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
-		val parentType = BaseUtils.getType(obj.eContainer);
-
-		if(parentType instanceof TypeVariable || parentType instanceof BottomType) {
-			return new InvalidElementSizeInferenceResult(obj, parentType, "parent type unknown: " + parentType);
-		} else {
-			val staticSizeValue = 1;
-			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
-			val result = new ValidElementSizeInferenceResult(obj, parentType, staticSizeValue as Integer);
-			result.children.add(super.inferFromType(typeOfChildren.origin, typeOfChildren));
-			return result;
-		}
+//	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
+//		val parentType = BaseUtils.getType(obj.eContainer);
+//
+//		if(parentType instanceof TypeVariable || parentType instanceof BottomType) {
+//			return new InvalidElementSizeInferenceResult(obj, parentType, "parent type unknown: " + parentType);
+//		} else {
+//			val staticSizeValue = 1;
+//			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
+//			val result = new ValidElementSizeInferenceResult(obj, parentType, staticSizeValue as Integer);
+//			result.children.add(super.inferFromType(typeOfChildren.origin, typeOfChildren));
+//			return result;
+//		}
+//	}
+//		
+//	override protected dispatch doInfer(VariableDeclaration obj, AbstractType type) {
+//		return newValidResult(obj, 0);
+//	}
+	
+	override infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
-		
-	override protected dispatch doInfer(VariableDeclaration obj, AbstractType type) {
-		return newValidResult(obj, 0);
+	
+	override setDelegate(ElementSizeInferrer delegate) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
 }

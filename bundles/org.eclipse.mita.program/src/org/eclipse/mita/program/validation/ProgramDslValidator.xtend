@@ -39,6 +39,7 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.TypesUtil
@@ -69,7 +70,6 @@ import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
@@ -82,7 +82,6 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
-import org.eclipse.mita.base.types.TypeReferenceSpecifier
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -162,7 +161,6 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Inject ITypeSystem typeSystem
 	@Inject PluginResourceLoader loader
-	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
 		
 	def featureOrNull(EStructuralFeature ref, EObject object) {
@@ -194,21 +192,21 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		]
 	}
 	
-	@Check(CheckType.NORMAL)
-	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {
-		val item = expr.owner;
-		val sizeInfRes = elementSizeInferrer.infer(item);
-				
-		val staticVal = StaticValueInferrer.infer(expr.arraySelector, [x|]);
-		val isInferred = (sizeInfRes instanceof ValidElementSizeInferenceResult) && staticVal instanceof Long;
-		if(isInferred) {
-			val idx = staticVal as Long;
-			val len = (sizeInfRes as ValidElementSizeInferenceResult).elementCount;
-			if(idx < 0 || len <= idx) {
-				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ExpressionsPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
-			}
-		}
-	}
+//	@Check(CheckType.NORMAL)
+//	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {
+//		val item = expr.owner;
+//		val sizeInfRes = elementSizeInferrer.infer(item);
+//				
+//		val staticVal = StaticValueInferrer.infer(expr.arraySelector, [x|]);
+//		val isInferred = (sizeInfRes instanceof ValidElementSizeInferenceResult) && staticVal instanceof Long;
+//		if(isInferred) {
+//			val idx = staticVal as Long;
+//			val len = (sizeInfRes as ValidElementSizeInferenceResult).elementCount;
+//			if(idx < 0 || len <= idx) {
+//				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ExpressionsPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
+//			}
+//		}
+//	}
 	
 	@Check(CheckType.FAST) 
 	def void checkValidTypesForPresentTypeSpecifier(PresentTypeSpecifier ts) {
@@ -273,31 +271,31 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 	}
 	
-	@Check(CheckType.NORMAL)
-	def checkElementSizeInference(VariableDeclaration variable) {[|
-		if(EcoreUtil2.getContainerOfType(variable, SystemResourceSetup) !== null) return;
-		
-		val sizeInferenceResult = elementSizeInferrer.infer(variable);
-		val invalidElements = sizeInferenceResult.invalidSelfOrChildren;
-		for(invalidElement : invalidElements) {
-			if(invalidElement.typeOf instanceof TypeReferenceSpecifier && (invalidElement.typeOf as TypeReferenceSpecifier).type.name == "array") {
-			}
-			else {
-				val invalidObj = if(invalidElement.root?.eResource == variable.eResource) {
-					invalidElement.root
-				} else {
-					variable
-				}
-				
-				val invalidRef = if(invalidObj instanceof VariableDeclaration) {
-					TypesPackage.eINSTANCE.namedElement_Name
-				}
-				
-				error('Cannot determine size of element: ' + (invalidElement as InvalidElementSizeInferenceResult).message,
-					invalidObj, invalidRef)		
-			}
-		}
-	].apply()}
+//	@Check(CheckType.NORMAL)
+//	def checkElementSizeInference(VariableDeclaration variable) {[|
+//		if(EcoreUtil2.getContainerOfType(variable, SystemResourceSetup) !== null) return;
+//		
+//		val sizeInferenceResult = elementSizeInferrer.infer(variable);
+//		val invalidElements = sizeInferenceResult.invalidSelfOrChildren;
+//		for(invalidElement : invalidElements) {
+//			if(invalidElement.typeOf instanceof TypeReferenceSpecifier && (invalidElement.typeOf as TypeReferenceSpecifier).type.name == "array") {
+//			}
+//			else {
+//				val invalidObj = if(invalidElement.root?.eResource == variable.eResource) {
+//					invalidElement.root
+//				} else {
+//					variable
+//				}
+//				
+//				val invalidRef = if(invalidObj instanceof VariableDeclaration) {
+//					TypesPackage.eINSTANCE.namedElement_Name
+//				}
+//				
+//				error('Cannot determine size of element: ' + (invalidElement as InvalidElementSizeInferenceResult).message,
+//					invalidObj, invalidRef)		
+//			}
+//		}
+//	].apply()}
 	
 	@Check(CheckType.NORMAL)
 	def checkSiginstOrModalityIsUsedImediately(ElementReferenceExpression featureCall) {[|
@@ -428,23 +426,23 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			.forEach [ error(VOID_OP_CANNOT_RETURN_VALUE_MSG, it, null) ];
 	}
 	
-	// Forbid returning structs/generics etc. (allow void, primitive) (via validator), until implemented.
-	@Check(CheckType.NORMAL)
-	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {[|
-		val operationType = BaseUtils.getType(op.typeSpecifier); 
-		if(!(op instanceof GeneratedFunctionDefinition) && (op instanceof AtomicType && op.name == "void") || ModelUtils.isPrimitiveType(operationType, op)) {
-			return;
-		}
-		
-		// TODO: At the moment we allow too much. Reduce this to strings/arrays/structs and implement the rules described
-		//       in #120.
-		val opSize = elementSizeInferrer.infer(op);
-		if(!(opSize instanceof ValidElementSizeInferenceResult)) {
-			error(SIZE_INFERENCE_FAILED_FOR_RETURN, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
-			return;
-		}
-		warning(FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
-	].apply()}
+//	// Forbid returning structs/generics etc. (allow void, primitive) (via validator), until implemented.
+//	@Check(CheckType.NORMAL)
+//	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {[|
+//		val operationType = BaseUtils.getType(op.typeSpecifier); 
+//		if(!(op instanceof GeneratedFunctionDefinition) && (op instanceof AtomicType && op.name == "void") || ModelUtils.isPrimitiveType(operationType, op)) {
+//			return;
+//		}
+//		
+//		// TODO: At the moment we allow too much. Reduce this to strings/arrays/structs and implement the rules described
+//		//       in #120.
+//		val opSize = elementSizeInferrer.infer(op);
+//		if(!(opSize instanceof ValidElementSizeInferenceResult)) {
+//			error(SIZE_INFERENCE_FAILED_FOR_RETURN, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
+//			return;
+//		}
+//		warning(FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
+//	].apply()}
 	
 	@Check(CheckType.NORMAL)
 	def checkVariableDeclaration(VariableDeclaration varDecl){
@@ -564,40 +562,40 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 	}
 		
-	@Check(CheckType.NORMAL)
-	def arrayRangeChecks(ValueRange range) {
-		val errorFun1 = [String s | error(s, range, null)];
-		val errorFun2 = [String s | error(String.format(ARRAY_RANGE_INVALID, s), range, null)];
-		val expr = EcoreUtil2.getContainerOfType(range, ArrayAccessExpression).owner;
-		
-		val lengthOfArrayIR = elementSizeInferrer.infer(expr);
-		val lengthOfArray = if(lengthOfArrayIR instanceof ValidElementSizeInferenceResult) {
-			lengthOfArrayIR.elementCount;
-		}
-		val lowerBound = StaticValueInferrer.infer(range.lowerBound, [x|])?:0L
-		val upperBound = StaticValueInferrer.infer(range.upperBound, [x|])?:lengthOfArray
-				
-		if((lowerBound as Long) < 0) {
-			errorFun2.apply("Lower bound must be positive or zero");
-		}
-		
-		if(upperBound !== null) {
-			val size = elementSizeInferrer.infer(expr);
-			if(size.valid) {
-				if((upperBound as Long) > (size as ValidElementSizeInferenceResult).elementCount) {
-					errorFun2.apply(String.format("Upper bound must be less than or equal to array size (%s)", (size as ValidElementSizeInferenceResult).elementCount));
-				}
-				else if((upperBound as Long) <= 0) {
-					errorFun2.apply("Upper bound must be strictly positive");
-				}
-			}
-		}
-		if(lowerBound !== null && upperBound !== null) {
-			if(lowerBound as Long >= upperBound as Long) {
-				errorFun2.apply("Lower bound must be smaller than upper bound");
-			}
-		}
-	}
+//	@Check(CheckType.NORMAL)
+//	def arrayRangeChecks(ValueRange range) {
+//		val errorFun1 = [String s | error(s, range, null)];
+//		val errorFun2 = [String s | error(String.format(ARRAY_RANGE_INVALID, s), range, null)];
+//		val expr = EcoreUtil2.getContainerOfType(range, ArrayAccessExpression).owner;
+//		
+//		val lengthOfArrayIR = elementSizeInferrer.infer(expr);
+//		val lengthOfArray = if(lengthOfArrayIR instanceof ValidElementSizeInferenceResult) {
+//			lengthOfArrayIR.elementCount;
+//		}
+//		val lowerBound = StaticValueInferrer.infer(range.lowerBound, [x|])?:0L
+//		val upperBound = StaticValueInferrer.infer(range.upperBound, [x|])?:lengthOfArray
+//				
+//		if((lowerBound as Long) < 0) {
+//			errorFun2.apply("Lower bound must be positive or zero");
+//		}
+//		
+//		if(upperBound !== null) {
+//			val size = elementSizeInferrer.infer(expr);
+//			if(size.valid) {
+//				if((upperBound as Long) > (size as ValidElementSizeInferenceResult).elementCount) {
+//					errorFun2.apply(String.format("Upper bound must be less than or equal to array size (%s)", (size as ValidElementSizeInferenceResult).elementCount));
+//				}
+//				else if((upperBound as Long) <= 0) {
+//					errorFun2.apply("Upper bound must be strictly positive");
+//				}
+//			}
+//		}
+//		if(lowerBound !== null && upperBound !== null) {
+//			if(lowerBound as Long >= upperBound as Long) {
+//				errorFun2.apply("Lower bound must be smaller than upper bound");
+//			}
+//		}
+//	}
 	
 	@Check(CheckType.FAST) 
 	def void checkLeftHandAssignment(AssignmentExpression expression) {

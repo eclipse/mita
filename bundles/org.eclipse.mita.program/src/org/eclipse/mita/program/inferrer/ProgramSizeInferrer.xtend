@@ -14,9 +14,11 @@
 package org.eclipse.mita.program.inferrer
 
 import com.google.inject.Inject
+import java.util.HashMap
 import java.util.LinkedList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
@@ -27,15 +29,21 @@ import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.AbstractSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
+import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.PreventRecursion
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnStatement
@@ -48,44 +56,28 @@ import org.eclipse.xtext.EcoreUtil2
 import static org.eclipse.mita.base.types.TypesUtil.*
 
 import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+import java.util.HashSet
+import com.google.common.base.Optional
+import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.mita.base.typesystem.infra.NullSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 /**
  * Hierarchically infers the size of a data element.
  */
-class ElementSizeInferrer {
+class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInferrer {
 
 	@Inject
 	protected PluginResourceLoader loader;
 
 	PreventRecursion preventRecursion = new PreventRecursion;
-
-	def ElementSizeInferenceResult infer(EObject obj) {
-		val type = BaseUtils.getType(obj);
-		if(TypesUtil.isGeneratedType(obj, type)) {
-			return obj._doInferFromType(type);
-		}
-		return obj.doInfer(type);
-	}
 	
-	private static class Combination extends ElementSizeInferrer {
-		final ElementSizeInferrer i1;
-		final ElementSizeInferrer i2;
-		new(ElementSizeInferrer i1, ElementSizeInferrer i2) {
-			super();
-			this.i1 = i1;
-			this.i2 = i2;
-			this.loader = i1?.loader ?: i2?.loader;
-		}
-		
-		override infer(EObject obj) {
-			i1.infer(obj).orElse([| i2.infer(obj)]);
-		}
-		
-		override protected doInfer(Object obj, AbstractType type) {
-			i1.doInfer(obj, type).orElse([| i2.doInfer(obj, type)])
-		}
-		
-	}
+	@Accessors 
+	ElementSizeInferrer delegate = new NullSizeInferrer();
 	
 	static def ElementSizeInferrer orElse(ElementSizeInferrer i1, ElementSizeInferrer i2) {
 		if(i1 !== null && i2 !== null) {
@@ -96,6 +88,133 @@ class ElementSizeInferrer {
 		}
 	}
 	
+	override ConstraintSolution inferSizes(ConstraintSolution cs, Resource r) {
+		val system = new ConstraintSystem(cs.constraintSystem);
+		val sub = new Substitution(cs.solution);
+		val toBeInferred = unbindSizes(system, sub, r).force;
+		/* All modified types need to have their size inferred.
+		 * Size inferrers may only recurse on contained objects, but may otherwise follow references freely.
+		 * That means that infer(ElementReferenceExpression r) may not call infer(r.reference), but may look at all other already available information.
+		 * This means that sometimes it may not be possible to infer the size for something right now, we are waiting for another size to be inferred.
+		 * In that case infer returns its arguments and they are added to the end of the queue.
+		 * To prevent endless loops we require that in each full run of the queue there are less objects re-inserted than removed.
+		 * For this we keep track of all re-inserted elements and clear this set whenever we didn't reinsert something. 
+		 */
+		val reInserted = new HashSet<Pair<EObject, AbstractType>>();
+		while(!toBeInferred.empty && reInserted.size < toBeInferred.size) {
+			val obj_type = toBeInferred.remove(0);
+			if(obj_type.value.toString.contains("1940") || obj_type.value.toString.contains("2009")) {
+				print("")
+			}
+			val toReInsert = infer(system, sub, r, MitaBaseResource.resolveProxy(r, obj_type.key), obj_type.value);
+			if(toReInsert.present) {
+				toBeInferred.add(toReInsert.get);
+				reInserted.add(toReInsert.get);
+			}
+			else {
+				reInserted.clear();
+			}
+		}
+		
+		return new ConstraintSolution(system, sub, cs.issues);	
+	}
+	
+	def Iterable<Pair<EObject, AbstractType>> unbindSizes(ConstraintSystem system, Substitution sub, Resource r) {
+		val unbindings = new HashMap<TypeVariable, AbstractType>();
+		sub.content.forEach[int i, t | 
+			if(TypesUtil.isGeneratedType(system, t)) {
+				val typeInferrerCls = system.getUserData(t, BaseConstraintFactory.SIZE_INFERRER_KEY);
+				val typeInferrer = loader.loadFromPlugin(r, typeInferrerCls)?.castOrNull(ElementSizeInferrer);
+				if(typeInferrer !== null) {
+					val newType = typeInferrer.unbindSize(system, t);
+					if(newType !== t) {
+						unbindings.put(sub.idxToTypeVariable.get(i), newType);
+					}
+				}
+			}
+		]
+		sub.add(unbindings);
+		
+		return unbindings.entrySet.map[it.key.origin -> it.value].filter[it.key !== null];
+	}
+	
+	def getInferrer(ConstraintSystem system, Resource r, EObject objOrProxy, AbstractType type) {
+		val obj = MitaBaseResource.resolveProxy(r, objOrProxy);
+		val typeInferrerCls = if(TypesUtil.isGeneratedType(system, type)) {
+			system.getUserData(type, BaseConstraintFactory.SIZE_INFERRER_KEY);
+		}
+		val typeInferrer = if(typeInferrerCls !== null) { 
+			loader.loadFromPlugin(r, typeInferrerCls)?.castOrNull(ElementSizeInferrer) => [
+				it?.setDelegate(this)]
+		}
+		
+		// all generated elements may supply an inferrer
+		// function calls
+		val functionInferrerCls = if(obj instanceof ElementReferenceExpression) {
+			if(obj.operationCall) {
+				val ref = obj.reference;
+				if(ref instanceof GeneratedFunctionDefinition) {
+					ref.sizeInferrer;
+				}
+			}
+		}
+		val functionInferrer = if(functionInferrerCls !== null) { 
+			loader.loadFromPlugin(obj.eResource, typeInferrerCls)?.castOrNull(ElementSizeInferrer) => [
+				it?.setDelegate(this)
+			]
+		};
+		
+//		// system resources
+//		val systemResourceInferrerCls = obj.getRelevantSystemResource()?.sizeInferrer;
+//		val systemResourceInferrer = if(systemResourceInferrerCls !== null) { loader.loadFromPlugin(obj.eResource, systemResourceInferrerCls) };
+		
+		return functionInferrer.orElse(typeInferrer)
+	}
+	
+	// only generated types have special needs for size inference for now
+	override Optional<Pair<EObject, AbstractType>> infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {		
+		val inferrer = getInferrer(system, r, obj, type);
+		
+		// the result of the first argument to ?: is null iff both inferrers are null (or the inferrer didn't follow the contract).
+		// Then nobody wants to infer anything for this type and we return success.
+		// from how this function is called that should never happen, since somebody unbound a type,
+		// but its better to reason locally and not introduce a global dependency.
+		return inferrer?.infer(system, sub, r, obj, type) ?: Optional.absent;
+	}
+	
+//	/*
+//	 * Walks to referenced system resources.
+//	 * Which kinds of ways are there to do this?
+//	 * a.b.read()
+//	 */
+//	
+//	dispatch def AbstractSystemResource getRelevantSystemResource(ElementReferenceExpression ref) {
+//		
+//	}
+//
+//	dispatch def AbstractSystemResource getRelevantSystemResource(EObject ref) {
+//		
+//	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	def ElementSizeInferenceResult infer(EObject obj) {
+		val type = BaseUtils.getType(obj);
+		if(TypesUtil.isGeneratedType(obj, type)) {
+			return obj._doInferFromType(type);
+		}
+		return obj.doInfer(type);
+	}
+		
 	protected def dispatch ElementSizeInferenceResult doInfer(CoercionExpression expr, AbstractType type) {
 		return expr.value.infer;
 	}
@@ -269,16 +388,17 @@ class ElementSizeInferrer {
 			val finalInferrer = inferrer;
 			if (finalInferrer === null) {
 				return new InvalidElementSizeInferenceResult(obj, type, "Type has no size inferrer");
-			} else {
-				
-				return PreventRecursion.preventRecursion(this.class.simpleName -> obj, 
-				[|
-					return finalInferrer.doInfer(obj, type);
-				], [|
-					val renamer = new NicerTypeVariableNamesForErrorMessages();
-					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type.modifyNames(renamer)»".''')
-				])
-			}
+			} 
+//			else {
+//				
+//				return PreventRecursion.preventRecursion(this.class.simpleName -> obj, 
+//				[|
+//					return finalInferrer.doInfer(obj, type);
+//				], [|
+//					val renamer = new NicerTypeVariableNamesForErrorMessages();
+//					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type.modifyNames(renamer)»".''')
+//				])
+//			}
 		}
 		val renamer = new NicerTypeVariableNamesForErrorMessages;
 		return newInvalidResult(obj, "Unable to infer size from type " + type.modifyNames(renamer));
@@ -337,6 +457,38 @@ class ElementSizeInferrer {
 	protected def newInvalidResult(EObject root, String message) {
 		val type = BaseUtils.getType(root);
 		return new InvalidElementSizeInferenceResult(root, type, message);
+	}
+	
+}
+
+@FinalFieldsConstructor
+class Combination implements ElementSizeInferrer {
+	final ElementSizeInferrer i1;
+	final ElementSizeInferrer i2;		
+					
+	override infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
+		val r1 = i1.infer(system, sub, r, obj, type);
+		if(r1.present) {
+			val r2 = i2.infer(system, sub, r, obj, type);
+			if(r2.present) {
+				// neither can handle this right now. Which pair do we return?
+				// In theory both should return the same pair, but this might change.
+				return r1;
+			}
+			else {
+				return r2;
+			}
+		}
+		else {
+			return r1;
+		}
+	}
+	
+	override unbindSize(ConstraintSystem system, AbstractType t) {
+		return i2.unbindSize(system, i1.unbindSize(system, t));
+	}
+	
+	override setDelegate(ElementSizeInferrer delegate) {
 	}
 	
 }

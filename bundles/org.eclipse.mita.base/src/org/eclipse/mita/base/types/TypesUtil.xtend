@@ -38,8 +38,11 @@ class TypesUtil {
 		return obj;
 	}
 	
+	static def boolean isGeneratedType(ConstraintSystem system, AbstractType type) {
+		return system?.getUserData(type)?.containsKey(BaseConstraintFactory.GENERATOR_KEY);
+	}
 	static def boolean isGeneratedType(Resource res, AbstractType type) {
-		return res.constraintSolution?.getConstraintSystem?.getUserData(type)?.containsKey(BaseConstraintFactory.GENERATOR_KEY);
+		return res.constraintSolution?.getConstraintSystem?.isGeneratedType(type);
 	}
 	static def boolean isGeneratedType(EObject context, AbstractType type) {
 		return context.eResource.isGeneratedType(type);
