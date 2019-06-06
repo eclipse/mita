@@ -46,8 +46,8 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
-import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	

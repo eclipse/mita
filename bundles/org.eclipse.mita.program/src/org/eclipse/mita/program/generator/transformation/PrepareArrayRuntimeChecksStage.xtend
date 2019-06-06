@@ -31,7 +31,7 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 
-import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
+import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 
 class PrepareArrayRuntimeChecksStage extends AbstractTransformationStage {	
 	@Inject

@@ -35,7 +35,7 @@ import org.eclipse.mita.base.types.NamedElement;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeKind;
 import org.eclipse.mita.base.types.TypesPackage;
-import org.eclipse.mita.base.types.TypesUtil;
+import org.eclipse.mita.base.types.TypeUtils;
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter;
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem;
 import org.eclipse.mita.base.typesystem.solver.Substitution;
@@ -452,7 +452,7 @@ public class BaseUtils {
 		Object _eGet = container.eGet(TypesPackage.Literals.NAMED_ELEMENT__NAME);
 		String name = ((String) _eGet);
 		if ((name != null)) {
-			id.insert(0, TypesUtil.ID_SEPARATOR);
+			id.insert(0, TypeUtils.ID_SEPARATOR);
 			id.insert(0, name);
 		}
 	}
@@ -475,7 +475,7 @@ public class BaseUtils {
 			} else {
 				name = feature.getName();
 			}
-			id.insert(0, TypesUtil.ID_SEPARATOR);
+			id.insert(0, TypeUtils.ID_SEPARATOR);
 			id.insert(0, name);
 		}
 	}

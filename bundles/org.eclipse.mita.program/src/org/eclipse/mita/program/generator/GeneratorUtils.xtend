@@ -37,7 +37,6 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -77,6 +76,7 @@ import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.base.types.TypeUtils
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -377,7 +377,7 @@ class GeneratorUtils {
 	}
 	
 	dispatch def CodeFragment getEnumName(ProdType prodType, EObject context) {
-		val parentName = TypesUtil.getConstraintSystem(context.eResource).getUserData(prodType, BaseConstraintFactory.PARENT_NAME_KEY);
+		val parentName = TypeUtils.getConstraintSystem(context.eResource).getUserData(prodType, BaseConstraintFactory.PARENT_NAME_KEY);
 		if(parentName !== null) {
 			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''').addHeaderIncludes(context, prodType);
 		}
@@ -433,7 +433,7 @@ class GeneratorUtils {
 	}
 
 	dispatch def CodeFragment getStructType(AtomicType singleton, EObject context) {
-		if(TypesUtil.getConstraintSystem(context.eResource).getUserData(singleton, BaseConstraintFactory.ECLASS_KEY) == "Singleton") {
+		if(TypeUtils.getConstraintSystem(context.eResource).getUserData(singleton, BaseConstraintFactory.ECLASS_KEY) == "Singleton") {
 			//singletons don't contain actual data
 			return codeFragmentProvider.create('''void''').addHeaderIncludes(context, singleton);
 		}
@@ -451,7 +451,7 @@ class GeneratorUtils {
 	}
 	
 	def CodeFragment addHeaderIncludes(CodeFragment fragment, EObject context, AbstractType type) {
-		val constraintSystem = TypesUtil.getConstraintSystem(context.eResource);
+		val constraintSystem = TypeUtils.getConstraintSystem(context.eResource);
 		if(constraintSystem === null) {
 			return fragment;
 		}

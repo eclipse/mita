@@ -26,6 +26,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -78,15 +79,25 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		if(cachedIsAtomic == CachedBoolean.Uncached) {
-			cachedIsAtomic = CachedBoolean.from((subType.isAtomic && superType.isAtomic) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
+			cachedIsAtomic = CachedBoolean.from(
+				(
+					(subType.isAtomic && superType.isAtomic && !literalTypeCheck) || 
+					system.canHaveSuperTypes(subType) || 
+					system.hasSubtypes(superType)) && 
+				!(typesAreCommon(subType, superType))
+			);
 		}
 	 	return cachedIsAtomic.get();
 	}
 		
+	def boolean isLiteralTypeCheck() {
+		(subType instanceof LiteralTypeExpression<?>)
+	}
+
 	dispatch def boolean typesAreCommon(AbstractType type, AbstractType type2) {
 		return false
 	}
-	
+		
 	// for example t1 and t2 are sum type constructors. Then previously this was tv <= t2, now it's t1 <= t2. Then someone else already did what this constraint would have done. 
 	dispatch def boolean typesAreCommon(TypeConstructorType type1, TypeConstructorType type2) {
 		return type1.class == type2.class

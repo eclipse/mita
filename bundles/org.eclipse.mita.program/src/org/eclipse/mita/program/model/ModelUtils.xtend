@@ -35,7 +35,6 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -62,6 +61,7 @@ import org.eclipse.xtext.resource.IContainer
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
+import org.eclipse.mita.base.types.TypeUtils
 
 class ModelUtils {
 	@Inject
@@ -140,7 +140,7 @@ class ModelUtils {
 	}
 	
 	static def dispatch AbstractType getRealType(EObject context, ProdType sumConstructor) {
-		if(TypesUtil.getConstraintSystem(context.eResource).getUserData(sumConstructor, BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
+		if(TypeUtils.getConstraintSystem(context.eResource).getUserData(sumConstructor, BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
 			val children = sumConstructor.typeArguments.tail;
 			if(children.length == 1) {
 				return getRealType(context, children.head);
@@ -337,7 +337,7 @@ class ModelUtils {
 	
 	static def boolean isPrimitiveType(AbstractType type, EObject context) {
 		if (type instanceof AtomicType) {
-			return !TypesUtil.isGeneratedType(context, type);
+			return !TypeUtils.isGeneratedType(context, type);
 		}
 		if (type instanceof AbstractBaseType) {
 			return true;

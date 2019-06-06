@@ -39,8 +39,8 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.types.TypeUtils
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
@@ -78,7 +78,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		println("----------------------")
 		val constraints = cs?.constraints?.filter(SubtypeConstraint);
 		
-		val constraintSystem = TypesUtil.getConstraintSystem(program.computeOrigin.eResource);
+		val constraintSystem = TypeUtils.getConstraintSystem(program.computeOrigin.eResource);
 		
 		constraints?.forEach[c |
 			// we want to resolve only one copySourceAdapter here since that's the program we were passed

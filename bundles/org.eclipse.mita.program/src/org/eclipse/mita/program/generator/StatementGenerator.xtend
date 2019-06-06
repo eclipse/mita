@@ -63,7 +63,6 @@ import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeConstructor
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -118,13 +117,14 @@ import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.Traced
 
-import static org.eclipse.mita.base.types.TypesUtil.*
 import static org.eclipse.mita.program.model.ModelUtils.*
 
 import static extension org.eclipse.emf.common.util.ECollections.asEList
-import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
-import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static org.eclipse.mita.base.types.TypeUtils.*
+import org.eclipse.mita.base.types.TypeUtils
+import static extension org.eclipse.mita.base.types.TypeUtils.getConstraintSystem
+import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 
 class StatementGenerator {
 
@@ -313,7 +313,7 @@ class StatementGenerator {
 				'''
 			}
 		}
-		if(TypesUtil.isGeneratedType(expr, coercedType)) {
+		if(TypeUtils.isGeneratedType(expr, coercedType)) {
 			val generator = registry.getGenerator(expr.eResource, coercedType) as AbstractTypeGenerator;
 			return '''«generator.generateCoercion(expr, expressionType, coercedType)»''';
 		}
@@ -405,7 +405,7 @@ class StatementGenerator {
 			
 			val returnTypeIsSumType = constructedType instanceof org.eclipse.mita.base.typesystem.types.SumType;
 			
-			val constructingTypeIsSingleton = TypesUtil
+			val constructingTypeIsSingleton = TypeUtils
 				 .getConstraintSystem(callSite.eResource)
 				?.getUserData(constructingType, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
 			
@@ -642,7 +642,7 @@ class StatementGenerator {
 	def IGeneratorNode generateVariableDeclaration(AbstractType type, EObject context, Optional<VariableDeclaration> varDecl, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		var result = context.trace;
 		
-		val typeIsSingleton = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
+		val typeIsSingleton = TypeUtils.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
 		if(typeIsSingleton) {
 			// singletons have no representation in C for now since they are just some tag in enums with empty data.
 			return result;
@@ -1073,8 +1073,8 @@ class StatementGenerator {
 		else {
 			typeGenerator.code(context, type);	
 		}
-		val includeHeader = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.INCLUDE_HEADER_KEY);
-		val userIncludeStr = TypesUtil.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.INCLUDE_IS_USER_INCLUDE_KEY);
+		val includeHeader = TypeUtils.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.INCLUDE_HEADER_KEY);
+		val userIncludeStr = TypeUtils.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.INCLUDE_IS_USER_INCLUDE_KEY);
 		val userInclude = if(!userIncludeStr.nullOrEmpty) {
 			Boolean.getBoolean(userIncludeStr);
 		}

@@ -28,7 +28,8 @@ interface ElementSizeInferrer {
 	
 	/**
 	 * allows delegating calls to global implementation. 
-	 * May only call delegate.infer on contained objects, not on references, containers or the passed EObject.
+	 * May only call delegate.infer on the passed EObject and its contained objects, not on references or containers.
+	 * In fact, calling delegate.infer should be the default action of inferrers that are not some kind of "main" inferrer.
 	 */
 	def void setDelegate(ElementSizeInferrer delegate);
 }

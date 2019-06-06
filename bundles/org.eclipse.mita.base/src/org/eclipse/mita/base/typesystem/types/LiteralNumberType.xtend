@@ -9,26 +9,36 @@ import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 @Accessors
 class LiteralNumberType extends AbstractBaseType implements PrimitiveLiteralType<Long> {
 	val long value;
+	val AbstractType typeOf;
 	
-	new(EObject origin, long value) {
+	new(EObject origin, long value, AbstractType typeOf) {
 		super(origin, String.valueOf(value))
 		this.value = value;
+		this.typeOf = typeOf;
 	}
 		
-	override eval(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+	override eval() {
 		return value;
 	}
 	
-	override simplify(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+	override simplify() {
 		return this;
 	}
 	
-	override decompose(SubtypeChecker subtypeChecker, ConstraintSystem s, EObject typeResolutionOrigin) {
+	override map((AbstractType)=>AbstractType f) {
+		val newTypeOf = typeOf.map(f);
+		if(newTypeOf !== typeOf) {
+			return new LiteralNumberType(origin, value, newTypeOf);
+		}
+		return this;
+	}
+	
+	override decompose() {
 		return this -> #[];
 	}
 		
 	override getFreeVars() {
-		return #[];
+		return typeOf.freeVars;
 	}
 	
 }

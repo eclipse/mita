@@ -42,7 +42,6 @@ import org.eclipse.mita.base.types.TypeParameter
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
@@ -82,6 +81,7 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
+import org.eclipse.mita.base.types.TypeUtils
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -172,7 +172,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.FAST)
 	def attachTypingIssues(Program program) {
 		val resource = program.eResource;
-		val solution = TypesUtil.getConstraintSolution(resource);
+		val solution = TypeUtils.getConstraintSolution(resource);
 		if(solution === null) {
 			return;
 		}
@@ -213,7 +213,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		if(EcoreUtil2.getContainerOfType(ts, SystemResourceSetup) === null) {
 			val typeRef = TypesPackage.eINSTANCE.typeReferenceSpecifier_Type;
 			val type = BaseUtils.getType(ts);
-			val eClassName = TypesUtil.getConstraintSystem(ts.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY);
+			val eClassName = TypeUtils.getConstraintSystem(ts.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY);
 			if(#[ExceptionTypeDeclaration, Sensor, Connectivity].map[it.simpleName].contains(eClassName)) {
 				error('''Cannot use «eClassName» as type here''', ts, typeRef);
 			}
@@ -512,7 +512,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		var containsReferenceTypesNext = containsReferenceTypes;
 
 		val subTypes = if(type instanceof TypeConstructorType) {
-			if(TypesUtil.isGeneratedType(obj, type)) {
+			if(TypeUtils.isGeneratedType(obj, type)) {
 				if(type.name == "reference") {
 					if(hasGeneratedTypeNext) {
 						error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
