@@ -962,7 +962,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		return system.associate(typeRegistry.getTypeModelObjectProxy(system, lit, StdlibTypeRegistry.doubleTypeQID), lit);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StringLiteral lit) {
-		return system.associate(typeRegistry.getTypeModelObjectProxy(system, lit, StdlibTypeRegistry.stringTypeQID), lit);
+		val sizeType = system.newTypeVariable(null);
+		val stringTypeSchemeTV = typeRegistry.getTypeModelObjectProxy(system, lit, StdlibTypeRegistry.stringTypeQID);
+		val outerType = system.nestInType(lit, #[sizeType -> Variance.COVARIANT], stringTypeSchemeTV, "string");
+		return system.associate(outerType, lit);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructuralParameter sParam) {
 		/*

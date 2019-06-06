@@ -33,7 +33,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null) {
 			throw new NullPointerException;
 		}
-		if(this.toString == "f_11 ≡ array<f_4, f_7>") {
+		if(this.toString == "f_191 ≡ p_190") {
 			print("")
 		}
 	}

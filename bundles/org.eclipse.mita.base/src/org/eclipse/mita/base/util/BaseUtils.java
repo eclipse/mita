@@ -368,6 +368,15 @@ public class BaseUtils {
 		}
 		return Lists.<T>newArrayList(list);
 	}
+	
+	public static <T extends Object> ArrayList<T> force(final Iterator<T> list) {
+		Class<? extends Iterator> _class = list.getClass();
+		boolean _equals = Objects.equal(_class, ArrayList.class);
+		if (_equals) {
+			return ((ArrayList<T>) list);
+		}
+		return Lists.<T>newArrayList(list);
+	}
 
 	public static AbstractType getType(final EObject obj) {
 		return TypeAdapter.get(obj);

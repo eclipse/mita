@@ -58,9 +58,14 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 	ElementSizeInferrer delegate = new NullSizeInferrer();
 	
 	static def Optional<Long> getSize(AbstractType type) {
-		Optional.fromNullable(type?.castOrNull(TypeConstructorType)
+		return Optional.fromNullable(type?.castOrNull(TypeConstructorType)
 				?.typeArguments?.last?.castOrNull(LiteralTypeExpression)
 				?.eval()?.castOrNull(Long))
+	}
+	
+	// you should always pass a array<T, ...> here
+	static def AbstractType getDataType(AbstractType type) {
+		return type?.castOrNull(TypeConstructorType)?.typeArguments?.tail?.head;
 	}
 		
 	protected def AbstractType replaceLastTypeArgument(Substitution sub, TypeConstructorType t, AbstractType typeArg) {
@@ -86,9 +91,15 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 		return doInfer(system, sub, r, obj, type);
 	}
 	
-	// TODO: call maximum on literal types for first type argument.
 	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, ArrayLiteral expression, TypeConstructorType type) {
-		replaceLastTypeArgument(sub, type, new LiteralNumberType(expression, expression.values.length, type.typeArguments.last));
+		val dataTypeMax = delegate.max(system, r, expression, expression.values.map[BaseUtils.getType(system, sub, it)]);
+		if(!dataTypeMax.present) {
+			return Optional.of(expression as EObject -> type as AbstractType);
+		}
+		sub.add(system.getTypeVariable(expression), new TypeConstructorType(expression, type.typeArguments.head,
+			#[dataTypeMax.get -> Variance.INVARIANT, 
+			new LiteralNumberType(expression, expression.values.length, type.typeArguments.last) -> Variance.COVARIANT]
+		));
 		return Optional.absent();
 	}
 	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, NewInstanceExpression obj, TypeConstructorType type) {	
@@ -149,8 +160,11 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 		)
 		
 		var arrayHasFixedSize = false;
+		val initialType = if(initialization !== null) {
+			BaseUtils.getType(system, sub, initialization);
+		}
 		val initialLength = if(initialization !== null) {
-			getSize(BaseUtils.getType(system, sub, initialization))
+			getSize(initialType)
 		} 
 		else {
 			Optional.absent();
@@ -158,6 +172,7 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 		if(!initialLength.present) {
 			return Optional.of(variable as EObject -> type as AbstractType);
 		}
+		var typeArg = initialType.castOrNull(TypeConstructorType)?.typeArguments.tail.head;
 		var length = initialLength.get;
 
 		/*
@@ -189,8 +204,19 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 			 */
 			var allowedInLoop = arrayHasFixedSize;
 			if(expr instanceof AssignmentExpression) {
+				val exprType = BaseUtils.getType(system, sub, expr.expression);
+				val biggerTypeArg = getDataType(exprType);
+				val mbLargerType = delegate.max(system, r, variable, #[typeArg, biggerTypeArg]);
+				if(mbLargerType.present) {
+					typeArg = mbLargerType.get
+				}
+				else {
+					// try again later, couldn't get max
+					return Optional.of(variable as EObject -> type as AbstractType);
+				}
+				
 				if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
-					val additionLength = getSize(BaseUtils.getType(system, sub, expr.expression));
+					val additionLength = getSize(exprType);
 					// try again later
 					if(!additionLength.present) return Optional.of(variable as EObject -> type as AbstractType);
 					
@@ -255,21 +281,6 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 //		
 //	}
 //	
-//	def protected dispatch doInfer(ArrayLiteral obj, AbstractType type) {
-//		val parentType = BaseUtils.getType(obj.eContainer);
-//		
-//		val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
-//		
-//		val result = new ValidElementSizeInferenceResult(obj, parentType, obj.values.length);
-//		 
-//		if(typeOfChildren.name == StdlibTypeRegistry.arrayTypeQID.lastSegment) {
-//			result.children.add(infer(obj.values.head));	
-//		}
-//		else {
-//			result.children.add(super.infer(obj.values.head));	
-//		}
-//		return result;			
-//	}
 //	
 //	override protected dispatch doInfer(ElementReferenceExpression obj, AbstractType type) {
 //		val arraySelectors = obj.arraySelector.map[it.ignoreCoercions];
@@ -310,5 +321,26 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 			}				
 		}
 		return null;
-	}	
+	}
+	
+	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> _types) {
+		val types = _types.filter(TypeConstructorType);
+		val firstArg = delegate.max(system, r, objOrProxy, types.map[it.typeArguments.tail.head]);
+		if(firstArg.present) {
+			val sndArgCandidates = types.map[it.typeArguments.last];
+			if(sndArgCandidates.forall[it instanceof LiteralTypeExpression<?>]) {
+				val sndArgValues = sndArgCandidates.map[(it as LiteralTypeExpression<?>).eval()];
+				if(sndArgValues.forall[it instanceof Long && (it as Long) >= 0]) {
+					val sndArgValue = sndArgValues.filter(Long).max;
+					return Optional.of(new TypeConstructorType(null, types.head.typeArguments.head, #[
+						firstArg.get -> Variance.INVARIANT,
+						new LiteralNumberType(null, sndArgValue, sndArgCandidates.head.castOrNull(LiteralTypeExpression).typeOf) -> Variance.COVARIANT
+					]))
+				}
+			}			
+		}
+
+		return Optional.absent;
+	}
+	
 }

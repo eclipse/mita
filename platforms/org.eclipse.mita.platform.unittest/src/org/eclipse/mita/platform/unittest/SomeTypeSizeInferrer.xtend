@@ -48,4 +48,8 @@ class SomeTypeSizeInferrer implements ElementSizeInferrer {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
+	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
 }

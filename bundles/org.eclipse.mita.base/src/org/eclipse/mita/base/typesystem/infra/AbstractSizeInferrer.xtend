@@ -32,6 +32,13 @@ interface ElementSizeInferrer {
 	 * In fact, calling delegate.infer should be the default action of inferrers that are not some kind of "main" inferrer.
 	 */
 	def void setDelegate(ElementSizeInferrer delegate);
+	
+	/**
+	 * Finds the maximum size of all passed types.
+	 * 
+	 * @return Optional.absent, if its not (yet) possible to compute the maximum.
+	 */
+	def Optional<AbstractType> max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types);
 }
 
 class NullSizeInferrer extends AbstractSizeInferrer implements ElementSizeInferrer {
@@ -45,6 +52,10 @@ class NullSizeInferrer extends AbstractSizeInferrer implements ElementSizeInferr
 	}
 	
 	override setDelegate(ElementSizeInferrer delegate) {
+	}
+	
+	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
+		return Optional.absent;
 	}
 	
 }

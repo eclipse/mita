@@ -38,6 +38,10 @@ class OptionalSizeInferrer implements ElementSizeInferrer {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
+	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
 //	override protected dispatch doInfer(VariableDeclaration obj, AbstractType type) {
 //		val result = obj.initialization?.infer;
 //		if(result instanceof ValidElementSizeInferenceResult) { 

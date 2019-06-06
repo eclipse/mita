@@ -177,6 +177,9 @@ class Substitution {
 	}
 	
 	def void addToContent(TypeVariable tv, AbstractType typ) {
+		if(tv.idx == 191 && typ.toString.contains("[d_217]")) {
+			print("")
+		}
 		content.put(tv.idx, typ);
 		idxToTypeVariable.put(tv.idx, tv);
 		val freeVars = typ.freeVars;
