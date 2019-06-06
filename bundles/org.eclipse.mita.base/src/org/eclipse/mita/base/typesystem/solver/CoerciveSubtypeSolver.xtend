@@ -576,6 +576,22 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return system.doSimplify(substitution, typeResolutionOrigin, constraint, t1, t2);
 	}
 	
+	// interface is sadly checked after classes... otherwise the following 4 could be a single dispatch method
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, LiteralNumberType t1, AbstractType t2) {
+		return SimplificationResult.success(system, Substitution.EMPTY);		
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, AbstractType t1, LiteralNumberType  t2) {
+		return SimplificationResult.success(system, Substitution.EMPTY);		
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, NumericAddType t1, AbstractType t2) {
+		return SimplificationResult.success(system, Substitution.EMPTY);		
+	}
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, AbstractType t1, NumericAddType  t2) {
+		return SimplificationResult.success(system, Substitution.EMPTY);		
+	}
+	
+	
+	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, EqualityConstraint constraint, TypeScheme t1, AbstractType t2) {
 		val unification = mguComputer.compute(constraint._errorMessage, t1, t2);
 		if(unification.valid) {

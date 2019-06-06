@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "10 is not a uint32";
+			return "Types xint8 and uint32 are not the same.";
 		}
 		private static boolean testFun(String s) {
 			return s.equals(getTestString());

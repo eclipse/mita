@@ -51,6 +51,8 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
+import org.eclipse.mita.base.expressions.AdditiveOperator
 
 class ArraySizeInferrer implements ElementSizeInferrer {
 	
@@ -102,6 +104,7 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 		));
 		return Optional.absent();
 	}
+		
 	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, NewInstanceExpression obj, TypeConstructorType type) {	
 		val lastTypespecifierArg = obj.type.typeArguments.last;
 		if(lastTypespecifierArg instanceof TypeReferenceSpecifier) {
@@ -172,7 +175,7 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 		if(!initialLength.present) {
 			return Optional.of(variable as EObject -> type as AbstractType);
 		}
-		var typeArg = initialType.castOrNull(TypeConstructorType)?.typeArguments.tail.head;
+		var typeArg = getDataType(initialType);
 		var length = initialLength.get;
 
 		/*
@@ -275,35 +278,6 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
 		return Optional.of(obj as EObject -> type as AbstractType);
 	}
-
-
-//	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
-//		
-//	}
-//	
-//	
-//	override protected dispatch doInfer(ElementReferenceExpression obj, AbstractType type) {
-//		val arraySelectors = obj.arraySelector.map[it.ignoreCoercions];
-//		if(obj.arrayAccess && arraySelectors.head instanceof ValueRange) {
-//			val valRange = arraySelectors.head as ValueRange;
-//			
-//			val parentType = BaseUtils.getType(obj);
-//			val typeOfChildren = (parentType as TypeConstructorType).typeArguments.tail.head;
-//			
-//			val lowerBound = StaticValueInferrer.infer(valRange.lowerBound, [x |]);
-//			val upperBound = StaticValueInferrer.infer(valRange.upperBound, [x |]);
-//			if(!(lowerBound instanceof Integer && upperBound instanceof Integer)) {
-//				return new InvalidElementSizeInferenceResult(obj, parentType, "can not infer size for this range");
-//			}
-//			val elCount = (upperBound as Integer) - (lowerBound as Integer) + 1;
-//			
-//			val result = new ValidElementSizeInferenceResult(obj, parentType, elCount);
-//			result.children.add(obj.inferFromType(typeOfChildren));
-//			return result;
-//		} else {
-//			return super._doInfer(obj, type);
-//		}
-//	}
 	
 	/**
 	 * Finds a loop ancestor of expr which shares a common ancestor with other.
@@ -325,7 +299,7 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 	
 	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> _types) {
 		val types = _types.filter(TypeConstructorType);
-		val firstArg = delegate.max(system, r, objOrProxy, types.map[it.typeArguments.tail.head]);
+		val firstArg = delegate.max(system, r, objOrProxy, types.map[getDataType(it)]);
 		if(firstArg.present) {
 			val sndArgCandidates = types.map[it.typeArguments.last];
 			if(sndArgCandidates.forall[it instanceof LiteralTypeExpression<?>]) {
