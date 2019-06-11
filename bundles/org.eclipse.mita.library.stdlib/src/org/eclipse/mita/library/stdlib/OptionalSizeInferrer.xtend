@@ -13,28 +13,22 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.common.base.Optional
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.GeneratedFunctionDefinition
-import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
+import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.xtend.lib.annotations.Accessors
 
 class OptionalSizeInferrer implements ElementSizeInferrer {
+	@Accessors
+	ElementSizeInferrer delegate;
 	
-	override infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
 	
-	override setDelegate(ElementSizeInferrer delegate) {
+	override Optional<InferenceContext> infer(InferenceContext c) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	

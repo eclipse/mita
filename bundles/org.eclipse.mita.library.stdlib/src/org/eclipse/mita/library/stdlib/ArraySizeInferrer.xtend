@@ -16,16 +16,23 @@ package org.eclipse.mita.library.stdlib
 import com.google.common.base.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.infra.NullSizeInferrer
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -34,6 +41,7 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.AbstractLoopStatement
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -42,17 +50,6 @@ import org.eclipse.xtext.EcoreUtil2
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.init
-import org.eclipse.mita.program.Program
-import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
-import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.expressions.IntLiteral
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
-import org.eclipse.mita.base.expressions.AdditiveOperator
 
 class ArraySizeInferrer implements ElementSizeInferrer {
 	
@@ -81,74 +78,83 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 		return t.typeArguments.last.castOrNull(TypeVariable) -> new TypeConstructorType(t.origin, t.name, t.typeArgumentsAndVariances.init + #[typeArg -> Variance.COVARIANT])
 	}	
 		
-	override unbindSize(ConstraintSystem system, AbstractType t) {
-		if(t instanceof TypeConstructorType) {
-			return replaceLastTypeArgument(t, system.newTypeVariable(t.origin)).value;
+	override Iterable<InferenceContext> unbindSize(InferenceContext c) {
+		val type = c.type;
+		if(type instanceof TypeConstructorType) {
+			return #[new InferenceContext(c, replaceLastTypeArgument(type, c.system.newTypeVariable(c.obj)).value)];
 		}
 		
-		return ElementSizeInferrer.super.unbindSize(system, t);
+		return ElementSizeInferrer.super.unbindSize(c);
 	}
 	
-	override Optional<Pair<EObject, AbstractType>> infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
-		return doInfer(system, sub, r, obj, type);
+	override Optional<InferenceContext> infer(InferenceContext c) {
+		return doInfer(c, c.obj, c.type);
 	}
 	
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, ArrayLiteral expression, TypeConstructorType type) {
-		val dataTypeMax = delegate.max(system, r, expression, expression.values.map[BaseUtils.getType(system, sub, it)]);
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, ArrayLiteral expression, TypeConstructorType type) {
+		val dataTypeMax = delegate.max(c.system, c.r, expression, expression.values.map[BaseUtils.getType(c.system, c.sub, it)]);
 		if(!dataTypeMax.present) {
-			return Optional.of(expression as EObject -> type as AbstractType);
+			return Optional.of(c);
 		}
-		sub.add(system.getTypeVariable(expression), new TypeConstructorType(expression, type.typeArguments.head,
+		c.sub.add(c.system.getTypeVariable(expression), new TypeConstructorType(expression, type.typeArguments.head,
 			#[dataTypeMax.get -> Variance.INVARIANT, 
 			new LiteralNumberType(expression, expression.values.length, type.typeArguments.last) -> Variance.COVARIANT]
 		));
 		return Optional.absent();
 	}
 		
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, NewInstanceExpression obj, TypeConstructorType type) {	
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, NewInstanceExpression obj, TypeConstructorType type) {	
 		val lastTypespecifierArg = obj.type.typeArguments.last;
 		if(lastTypespecifierArg instanceof TypeReferenceSpecifier) {
-			replaceLastTypeArgument(sub, type, BaseUtils.getType(system, sub, lastTypespecifierArg));
+			replaceLastTypeArgument(c.sub, type, BaseUtils.getType(c.system, c.sub, lastTypespecifierArg));
 			return Optional.absent();
 		}
 		else if(lastTypespecifierArg instanceof TypeExpressionSpecifier) {
-			replaceLastTypeArgument(sub, type, BaseUtils.getType(system, sub, lastTypespecifierArg));
+			replaceLastTypeArgument(c.sub, type, BaseUtils.getType(c.system, c.sub, lastTypespecifierArg));
 			return Optional.absent();
 		}
 		
-		return Optional.of(obj as EObject -> type as AbstractType);
+		return Optional.of(c);
 	}
 	
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, ArrayAccessExpression expr, TypeConstructorType type) {
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, ArrayAccessExpression expr, TypeConstructorType type) {
 		val arraySelector = expr.arraySelector.ignoreCoercions?.castOrNull(ValueRange);
 		if(arraySelector !== null) {
-			val ownerType = BaseUtils.getType(system, sub, expr.owner);
+			val ownerType = BaseUtils.getType(c.system, c.sub, expr.owner);
 			val ownerSize = getSize(ownerType);
 			val lowerBound = StaticValueInferrer.infer(arraySelector.lowerBound, [])?.castOrNull(Long) ?: 0L;
 			val upperBound = StaticValueInferrer.infer(arraySelector.upperBound, [])?.castOrNull(Long) ?: ownerSize.orNull;
 			if(upperBound === null) {
-				return Optional.of(expr as EObject -> type as AbstractType);
+				return Optional.of(c);
 			}
-			replaceLastTypeArgument(sub, type, new LiteralNumberType(expr, upperBound - lowerBound, type.typeArguments.last));
+			replaceLastTypeArgument(c.sub, type, new LiteralNumberType(expr, upperBound - lowerBound, type.typeArguments.last));
 			return Optional.absent;
 		}
-		Optional.of(expr as EObject -> type as AbstractType);
+		Optional.of(c);
 	}
 	
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, VariableDeclaration variable, TypeConstructorType type) {
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, VariableDeclaration variable, TypeConstructorType type) {
 		if(!variable.writeable) {
-			return delegate.infer(system, sub, r, variable, type);
+			return delegate.infer(c);
 		}
 		/*
 		 * Find initial size
 		 */
 		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
 		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
-		val fixedSize = getSize(BaseUtils.getType(system, sub, variable.typeSpecifier))
+		val varTypeSpec = variable.typeSpecifier;
+		val shouldHaveFixedSize = if(varTypeSpec instanceof TypeReferenceSpecifier) {
+			val lastTypeArg = varTypeSpec.typeArguments.last;
+			lastTypeArg instanceof TypeExpressionSpecifier;
+		}
+		val fixedSize = getSize(BaseUtils.getType(c.system, c.sub, variable.typeSpecifier))
 		if(fixedSize.present) {
-			replaceLastTypeArgument(sub, type, new LiteralNumberType(variable, fixedSize.get, type.typeArguments.last))
+			replaceLastTypeArgument(c.sub, type, new LiteralNumberType(variable, fixedSize.get, type.typeArguments.last))
 			return Optional.absent();
-		}	
+		}
+		else if(shouldHaveFixedSize) {
+			return Optional.of(c);
+		}
 		
 		val initialization = variable.initialization ?: (
 			referencesToVariable
@@ -164,7 +170,7 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 		
 		var arrayHasFixedSize = false;
 		val initialType = if(initialization !== null) {
-			BaseUtils.getType(system, sub, initialization);
+			BaseUtils.getType(c.system, c.sub, initialization);
 		}
 		val initialLength = if(initialization !== null) {
 			getSize(initialType)
@@ -173,7 +179,7 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 			Optional.absent();
 		}
 		if(!initialLength.present) {
-			return Optional.of(variable as EObject -> type as AbstractType);
+			return Optional.of(c);
 		}
 		var typeArg = getDataType(initialType);
 		var length = initialLength.get;
@@ -207,33 +213,33 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 			 */
 			var allowedInLoop = arrayHasFixedSize;
 			if(expr instanceof AssignmentExpression) {
-				val exprType = BaseUtils.getType(system, sub, expr.expression);
+				val exprType = BaseUtils.getType(c.system, c.sub, expr.expression);
 				val biggerTypeArg = getDataType(exprType);
-				val mbLargerType = delegate.max(system, r, variable, #[typeArg, biggerTypeArg]);
+				val mbLargerType = delegate.max(c.system, c.r, variable, #[typeArg, biggerTypeArg]);
 				if(mbLargerType.present) {
 					typeArg = mbLargerType.get
 				}
 				else {
 					// try again later, couldn't get max
-					return Optional.of(variable as EObject -> type as AbstractType);
+					return Optional.of(c);
 				}
 				
 				if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
 					val additionLength = getSize(exprType);
 					// try again later
-					if(!additionLength.present) return Optional.of(variable as EObject -> type as AbstractType);
+					if(!additionLength.present) return Optional.of(c);
 					
 					length = length + additionLength.get;
 				} else if(expr.operator == AssignmentOperator.ASSIGN) {
-					val additionLength = getSize(BaseUtils.getType(system, sub, expr.expression));
+					val additionLength = getSize(BaseUtils.getType(c.system, c.sub, expr.expression));
 					// try again later
-					if(!additionLength.present) return Optional.of(variable as EObject -> type as AbstractType);
+					if(!additionLength.present) return Optional.of(c);
 					
 					allowedInLoop = true;
 					length = Math.max(length, additionLength.get);
 				} else {
 					// can't infer the length due to unknown operator
-					replaceLastTypeArgument(sub, type, new BottomType(expr, '''Cannot infer size when using the «expr.operator.getName()» operator'''));
+					replaceLastTypeArgument(c.sub, type, new BottomType(expr, '''Cannot infer size when using the «expr.operator.getName()» operator'''));
 					return Optional.absent();
 				}
 			}
@@ -246,37 +252,37 @@ class ArraySizeInferrer implements ElementSizeInferrer {
 			if(!allowedInLoop) {
 				val loopContainer = expr.getSharedLoopContainer(variable);
 				if(loopContainer !== null) {
-					replaceLastTypeArgument(sub, type, new BottomType(expr, '''Cannot infer «type.name» length in loops'''));
+					replaceLastTypeArgument(c.sub, type, new BottomType(expr, '''Cannot infer «type.name» length in loops'''));
 					return Optional.absent();
 				}	
 			}
 		}
 		
-		replaceLastTypeArgument(sub, type, new LiteralNumberType(variable, length, type.typeArguments.last));
+		replaceLastTypeArgument(c.sub, type, new LiteralNumberType(variable, length, type.typeArguments.last));
 		return Optional.absent();
 	}
 	
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, TypeReferenceSpecifier obj, TypeConstructorType type) {
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType type) {
 		val sizeArg = obj.typeArguments.last;
 		val sizeType = if(sizeArg instanceof TypeExpressionSpecifier) {
 			val e = sizeArg.value;
-			system.getTypeVariable(sizeArg.value);
+			c.system.getTypeVariable(sizeArg.value);
 		}
 		else {
-			system.getTypeVariable(sizeArg);
+			c.system.getTypeVariable(sizeArg);
 		}
-		replaceLastTypeArgument(sub, type, sizeType);
+		replaceLastTypeArgument(c.sub, type, sizeType);
 		return Optional.absent();
 	}
 	
 	// call delegate for other things
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, TypeConstructorType type) {
-		return delegate.infer(system, sub, r, obj, type);
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, EObject obj, TypeConstructorType type) {
+		return delegate.infer(c);
 	}
 	
-	// error/wait if type is not typeConstructorType
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
-		return Optional.of(obj as EObject -> type as AbstractType);
+	// error/wait if type is not TypeConstructorType
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, EObject obj, AbstractType type) {
+		return Optional.of(c);
 	}
 	
 	/**

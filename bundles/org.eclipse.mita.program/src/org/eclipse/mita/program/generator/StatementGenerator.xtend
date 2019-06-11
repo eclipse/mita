@@ -483,7 +483,7 @@ class StatementGenerator {
 		if(hasValue) {
 			val value = stmt.value;
 			val expressionType = BaseUtils.getType(value);
-			if (isGeneratedType(stmt.eResource, expressionType)) {
+			if (TypeUtils.isGeneratedType(stmt.eResource, expressionType)) {
 				_generatedTypeGenerator = registry.getGenerator(stmt.eResource, expressionType).castOrNull(AbstractTypeGenerator);
 				_resultType = expressionType;
 			}
@@ -519,7 +519,7 @@ class StatementGenerator {
 		 * explicitly encode this case and devolve code generation the registered code generator of the generated-type. 
 		 */
 		val type = BaseUtils.getType(stmt);
-		if (isGeneratedType(stmt.eResource, type)) {
+		if (TypeUtils.isGeneratedType(stmt.eResource, type)) {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (generator !== null) {
 				val varName = codeFragmentProvider.create('''«stmt»''');
@@ -581,7 +581,7 @@ class StatementGenerator {
 		return initializationCode(BaseUtils.getType(expr.varRef), expr.varRef, Optional.of(expr), codeFragmentProvider.create('''«expr.varRef.code.noTerminator»'''), expr.operator, expr.expression, true);
 	}
 	def IGeneratorNode initializationCode(AbstractType type, EObject context, Optional<EObject> target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {		
-		if (isGeneratedType(context, type)) {
+		if (TypeUtils.isGeneratedType(context, type)) {
 			val generator = registry.getGenerator(context.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (initialization instanceof NewInstanceExpression) {
 				return generator.generateNewInstance(type, initialization);
@@ -654,7 +654,7 @@ class StatementGenerator {
 		// generate declaration
 		// generated types
 
-		if (isGeneratedType(context, type)) {
+		if (TypeUtils.isGeneratedType(context, type)) {
 			val generator = registry.getGenerator(context.eResource, type).castOrNull(AbstractTypeGenerator);
 			result.children += generator.generateVariableDeclaration(type, context, size, varName, initialization, isTopLevel);
 			if(initialization instanceof PrimitiveValueExpression && (

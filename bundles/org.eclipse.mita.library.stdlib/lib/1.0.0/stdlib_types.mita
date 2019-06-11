@@ -135,7 +135,7 @@ export native unchecked function __POSTDECREMENT__(x: uint8 ): uint8  header "ma
 export native unchecked function __POSTDECREMENT__(x: float ): float  header "math.h";
 export native unchecked function __POSTDECREMENT__(x: double): double header "math.h";
 
-export generated type string<+Size is uint32>
+export generated type string<Size is uint32>
 	generator "org.eclipse.mita.library.stdlib.StringGenerator"
 	size-inferrer "org.eclipse.mita.library.stdlib.StringSizeInferrer"
 	

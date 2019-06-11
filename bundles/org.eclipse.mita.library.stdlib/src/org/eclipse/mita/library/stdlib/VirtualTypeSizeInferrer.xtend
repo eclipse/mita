@@ -13,25 +13,100 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.common.base.Optional
+import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.resource.PluginResourceLoader
+import org.eclipse.xtend.lib.annotations.Accessors
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.inferrer.ProgramSizeInferrer
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class VirtualTypeSizeInferrer implements ElementSizeInferrer {
+	// implements inference for modality and siginst
+	@Accessors 
+	ElementSizeInferrer delegate;
+	@Inject
+	protected PluginResourceLoader loader;
 	
-	override infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	// you should always pass a modality/siginst<T, ...> here
+	static def AbstractType getDataType(AbstractType type) {
+		return type?.castOrNull(TypeConstructorType)?.typeArguments?.tail?.head;
 	}
 	
-	override setDelegate(ElementSizeInferrer delegate) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	// you should always pass a modality/siginst<T, ...> here
+	static def AbstractType setDataType(AbstractType type, AbstractType inner) {
+		if(type instanceof TypeConstructorType) {
+			return new TypeConstructorType(type.origin, type.typeArguments.head, #[inner -> Variance.INVARIANT] + type.typeArgumentsAndVariances.drop(2));
+			
+		}
 	}
 	
+	override unbindSize(InferenceContext c) {
+		val oldDataType = getDataType(c.type);
+		val intermediate = c.system.newTypeVariable(null);
+		val unbindings = delegate.unbindSize(new InferenceContext(c, intermediate, oldDataType));
+		if(unbindings.size > 0) {
+			return #[
+				new InferenceContext(c, intermediate, setDataType(c.type, intermediate))
+			] + unbindings;
+		}
+		return #[];
+	}
+	 
+	override Optional<InferenceContext> infer(InferenceContext c) {
+		return doInfer(c, c.obj, c.type);
+	}
+	
+	// siginsts are on SignalInstances
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, ElementReferenceExpression ref, TypeConstructorType type) {
+		val obj = ref.eContainer;
+		if(obj instanceof SignalInstance) {
+			// call platform inferrer
+			val resource = (obj.eContainer as SystemResourceSetup).type;
+			val sizeInferrerCls = resource.sizeInferrer;
+			val sizeInferrer = loader.loadFromPlugin(c.r, sizeInferrerCls)?.castOrNull(ElementSizeInferrer);
+			if(sizeInferrer === null) {
+				c.sub.add(c.tv, new BottomType(obj, '''«obj.name» does not specify a size inferrer'''));
+				return Optional.absent;
+			}
+			sizeInferrer.delegate = this;
+			val inferenceResult = sizeInferrer.infer(new InferenceContext(c, obj, getDataType(type)));
+			return inferenceResult;	
+		}
+		return delegate.infer(c);
+	}
+	
+	// call delegate for other things
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, EObject obj, TypeConstructorType type) {
+		return delegate.infer(c);
+	}
+	
+	// error/wait if type is not TypeConstructorType
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, EObject obj, AbstractType type) {
+		return Optional.of(c);
+	}
+		
 	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		if(types.size == 0 || !types.forall[it instanceof TypeConstructorType]) {
+			return Optional.absent;
+		}
+		val x = types.head as TypeConstructorType;
+		return delegate.max(system, r, objOrProxy, types.map[getDataType]).transform[
+			new TypeConstructorType(null, x.typeArguments.head, #[it -> Variance.INVARIANT])		
+		]
 	}
 		
 }

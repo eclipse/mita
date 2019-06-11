@@ -34,6 +34,7 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.FloatLiteral
 import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.expressions.LogicalOperator
 import org.eclipse.mita.base.expressions.MultiplicativeOperator
 import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
@@ -68,6 +69,7 @@ import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
+import org.eclipse.mita.base.types.TypeHole
 import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.base.types.TypeReferenceLiteral
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
@@ -110,7 +112,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.expressions.Literal
 
 class BaseConstraintFactory implements IConstraintFactory {
 	
@@ -255,6 +256,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		}		
 		
 		return paramType -> valueType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeHole arg) {
+		system.associate(system.newTypeHole(arg));
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument arg) {

@@ -209,7 +209,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 //	}
 	
 	@Check(CheckType.FAST) 
-	def void checkValidTypesForPresentTypeSpecifier(PresentTypeSpecifier ts) {
+	def void checkValidTypesForPresentTypeSpecifier(TypeReferenceSpecifier ts) {
 		if(EcoreUtil2.getContainerOfType(ts, SystemResourceSetup) === null) {
 			val typeRef = TypesPackage.eINSTANCE.typeReferenceSpecifier_Type;
 			val type = BaseUtils.getType(ts);

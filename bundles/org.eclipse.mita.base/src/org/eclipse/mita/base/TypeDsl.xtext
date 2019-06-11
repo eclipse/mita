@@ -288,7 +288,12 @@ ParenthesizedExpression returns Expression:
 	'(' Expression ')';
 
 TypeSpecifierArgument returns PresentTypeSpecifier:
-	TypeExpressionSpecifier | TypeSpecifier
+	TypeExpressionSpecifier | TypeSpecifier | TypeHole
+;
+
+TypeHole returns TypeHole:
+	{TypeHole}
+	HOLE
 ;
 
 TypeExpressionSpecifier returns TypeExpressionSpecifier:
@@ -474,7 +479,8 @@ ReservedSymbols:
 	'=' | '==' |
 	'!' | '<' | 
 	'>' | '<=' |
-	'>=' | '!='
+	'>=' | '!=' |
+	HOLE
 ;
 
 
@@ -488,7 +494,9 @@ ReservedSymbols:
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-terminal ID: '^'?('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+// _ only if followed by something
+terminal ID: ('a'..'z'|'A'..'Z') | (('a'..'z'|'A'..'Z' | '_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')+);
+terminal HOLE: '_';
 terminal LONG returns ecore::ELong: ('0'..'9')+;
 terminal STRING:
 			'"' ( '\\' . /* 'b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\' */ | !('\\'|'"') )* '"' |

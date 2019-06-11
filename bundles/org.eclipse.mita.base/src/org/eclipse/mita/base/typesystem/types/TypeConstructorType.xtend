@@ -63,6 +63,9 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = getTypeArguments().flatMap[it.freeVars].force;
+		if(this.toString == "array<int8, uint32>") {
+			print("")
+		}
 	}
 	
 	new(EObject origin, AbstractType type, List<Pair<AbstractType, Variance>> typeArguments) {

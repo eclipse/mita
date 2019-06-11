@@ -177,7 +177,7 @@ class Substitution {
 	}
 	
 	def void addToContent(TypeVariable tv, AbstractType typ) {
-		if(tv.idx == 191 && typ.toString.contains("[d_217]")) {
+		if(tv.idx == 102) {
 			print("")
 		}
 		content.put(tv.idx, typ);

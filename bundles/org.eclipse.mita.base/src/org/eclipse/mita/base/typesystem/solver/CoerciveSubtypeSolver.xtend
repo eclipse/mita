@@ -200,20 +200,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		debugTimer.stop("solveloop")
 		
 		issues += validateSubtypes(currentSystem, typeResolutionOrigin);
-		
-		val content = currentSubstitution.content;
-		currentSubstitution.idxToTypeVariable.values.filter[it instanceof TypeHole].forEach[th |
-			val t = content.get(th.idx);
-			val origin = if(th.origin.eIsProxy) {
-				val proxy = th.origin as BasicEObjectImpl;
-				typeResolutionOrigin.eResource.resourceSet.getEObject(proxy.eProxyURI, true);
-			}
-			else {
-				th.origin;
-			}
-			issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t»''', th.origin, null, "") 
-		]
-		
+				
 		println('''
 		solve timing («typeResolutionOrigin.eResource.URI.lastSegment»):
 		«debugTimer»''')

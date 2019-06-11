@@ -25,7 +25,7 @@ import org.eclipse.xtext.EcoreUtil2
  * @author Thomas Kutz - Initial contribution and API
  * @author Simon Wegendt - Some methods
  */
-class TypeUtils {
+class TypeUtils { 
 	public static final String ID_SEPARATOR = "."
 	
 	static dispatch def EObject ignoreCoercions(CoercionExpression expr) {

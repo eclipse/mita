@@ -57,6 +57,7 @@ import org.eclipse.xtext.util.Triple
 import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.types.TypeHole
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -265,7 +266,7 @@ class MitaBaseResource extends LazyLinkingResource {
 				return;
 			}
 			timer.start("solve");
-			val solutionTypes = constraintSolver.solve(preparedSystem, obj);
+			val solutionTypes = constraintSolver.solve(new ConstraintSystem(preparedSystem), obj);
 			timer.stop("solve");
 			timer.start("size-inference");
 			val solution = sizeInferrer.inferSizes(solutionTypes, this);
@@ -317,8 +318,21 @@ class MitaBaseResource extends LazyLinkingResource {
 								}
 							}
 						}
+					];
+					
+					val substitution = solution.solution;
+					substitution.idxToTypeVariable.values.filter[it instanceof TypeHole].forEach[th |
+						val t = substitution.content.get(th.idx);
+						val origin = if(th.origin.eIsProxy) {
+							val proxy = th.origin as BasicEObjectImpl;
+							resourceSet.getEObject(proxy.eProxyURI, true);
+						}
+						else {
+							th.origin;
+						}
+						solution.issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t»''', th.origin, null, "") 
 					]
-
+					
 					resource.latestSolution = solution;
 					resource.cancelIndicator.canceled = true;
 				}

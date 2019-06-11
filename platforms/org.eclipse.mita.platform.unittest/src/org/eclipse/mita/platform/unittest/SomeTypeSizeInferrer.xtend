@@ -13,15 +13,28 @@
 
 package org.eclipse.mita.platform.unittest
 
+import com.google.common.base.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.xtend.lib.annotations.Accessors
 
 class SomeTypeSizeInferrer implements ElementSizeInferrer {
+	@Accessors
+	ElementSizeInferrer delegate;
 	
+	
+	override Optional<InferenceContext> infer(InferenceContext c) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}	
 //	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
 //		val parentType = BaseUtils.getType(obj.eContainer);
 //
@@ -39,17 +52,5 @@ class SomeTypeSizeInferrer implements ElementSizeInferrer {
 //	override protected dispatch doInfer(VariableDeclaration obj, AbstractType type) {
 //		return newValidResult(obj, 0);
 //	}
-	
-	override infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
-	override setDelegate(ElementSizeInferrer delegate) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
-	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
+		
 }

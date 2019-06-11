@@ -21,33 +21,28 @@ import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 
 class StringSizeInferrer extends ArraySizeInferrer {
 	@Inject
 	StdlibTypeRegistry typeRegistry;
-		
-	protected override replaceLastTypeArgument(TypeConstructorType t, AbstractType typeArg) {
-		// hardcoding variance isnt *nice*, but convenient. If need be make this a function argument/default argument.
-		return t.typeArguments.last.castOrNull(TypeVariable) -> new TypeConstructorType(t.origin, t.name, #[t.typeArgumentsAndVariances.head, typeArg -> Variance.COVARIANT])
-	}
-		
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, StringLiteral expression, TypeConstructorType type) {
-		replaceLastTypeArgument(sub, type, new LiteralNumberType(expression, expression.value.length, typeRegistry.getIntegerTypes(expression).findFirst[it.name == "uint32"]));
+				
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, StringLiteral expression, TypeConstructorType type) {
+		replaceLastTypeArgument(c.sub, type, new LiteralNumberType(expression, expression.value.length, typeRegistry.getIntegerTypes(expression).findFirst[it.name == "uint32"]));
 		return Optional.absent;
 	}
 
-	protected dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, InterpolatedStringLiteral expr, TypeConstructorType type) {
+	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, InterpolatedStringLiteral expr, TypeConstructorType type) {
 		var length = expr.sumTextParts
 		
 		// sum expression value part
@@ -68,25 +63,25 @@ class StringSizeInferrer extends ArraySizeInferrer {
 				case 'double': StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
 				case 'float':  StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
 				case 'string':    {
-					val stringSize = getSize(BaseUtils.getType(system, sub, subexpr));
+					val stringSize = getSize(BaseUtils.getType(c.system, c.sub, subexpr));
 					if(stringSize.present) {
 						stringSize.get;
 					} else {
-						return Optional.of(expr as EObject -> type as AbstractType);
+						return Optional.of(c);
 					}
 				}
 				default: null
 			}
 			
 			if(typeLengthInBytes === null) {
-				sub.add(system.getTypeVariable(subexpr), new BottomType(subexpr, "Cannot interpolate expressions of type " + tsub))
+				c.sub.add(c.system.getTypeVariable(subexpr), new BottomType(subexpr, "Cannot interpolate expressions of type " + tsub))
 				return Optional.absent;
 			} else {
 				length += typeLengthInBytes;
 			}
 		}
 
-		replaceLastTypeArgument(sub, type, new LiteralNumberType(expr, length, typeRegistry.getIntegerTypes(expr).findFirst[it.name == "uint32"]));
+		replaceLastTypeArgument(c.sub, type, new LiteralNumberType(expr, length, typeRegistry.getIntegerTypes(expr).findFirst[it.name == "uint32"]));
 		return Optional.absent();
 	}
 		

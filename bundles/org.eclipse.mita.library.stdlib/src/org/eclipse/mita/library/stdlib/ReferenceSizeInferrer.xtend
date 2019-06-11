@@ -13,12 +13,15 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.common.base.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.xtend.lib.annotations.Accessors
 
 class ReferenceSizeInferrer implements ElementSizeInferrer {
 	
@@ -34,11 +37,11 @@ class ReferenceSizeInferrer implements ElementSizeInferrer {
 //		return super.doInferFromType(obj, type);
 //	}
 	
-	override infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
+	@Accessors
+	ElementSizeInferrer delegate;
 	
-	override setDelegate(ElementSizeInferrer delegate) {
+	
+	override Optional<InferenceContext> infer(InferenceContext c) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	

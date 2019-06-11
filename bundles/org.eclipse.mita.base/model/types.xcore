@@ -26,8 +26,9 @@ class InterpolatedStringLiteral extends Literal {
 	contains Expression[] content
 }
 
-class TypeSpecifier {}
+abstract class TypeSpecifier {}
 abstract class PresentTypeSpecifier extends TypeSpecifier {}
+class TypeHole extends PresentTypeSpecifier {}
 class TypeExpressionSpecifier extends PresentTypeSpecifier {
 	contains Expression value	
 	op String toString() {

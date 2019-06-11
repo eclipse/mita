@@ -953,7 +953,7 @@ enum I2CMode {
 bus many I2C {
 	generator "org.eclipse.mita.platform.xdk110.buses.I2CGenerator"
 	validator "org.eclipse.mita.platform.xdk110.buses.I2CValidator"
-	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
+	sizeInferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
 	
 	required configuration-item deviceAddress: uint8
 	

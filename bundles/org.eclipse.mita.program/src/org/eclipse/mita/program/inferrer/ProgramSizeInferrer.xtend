@@ -57,6 +57,12 @@ import org.eclipse.xtext.EcoreUtil2
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.xtext.util.Triple
+import org.eclipse.xtext.util.Tuples
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import java.util.Map
+import org.eclipse.mita.base.types.Operation
 
 /**
  * Hierarchically infers the size of a data element.
@@ -65,8 +71,6 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 
 	@Inject
 	protected PluginResourceLoader loader;
-
-	PreventRecursion preventRecursion = new PreventRecursion;
 	
 	@Accessors 
 	ElementSizeInferrer delegate = new NullSizeInferrer();
@@ -79,7 +83,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 			return i1?:i2;
 		}
 	}
-	
+		
 	override ConstraintSolution inferSizes(ConstraintSolution cs, Resource r) {
 		val system = new ConstraintSystem(cs.constraintSystem);
 		val sub = new Substitution(cs.solution);
@@ -92,48 +96,49 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 		 * To prevent endless loops we require that in each full run of the queue there are less objects re-inserted than removed.
 		 * For this we keep track of all re-inserted elements and clear this set whenever we didn't reinsert something. 
 		 */
-		val reInserted = new HashSet<Pair<EObject, AbstractType>>();
-		while(!toBeInferred.empty && reInserted.size < toBeInferred.size) {
-			val obj_type = toBeInferred.remove(0);
-			val toReInsert = startInference(system, sub, r, MitaBaseResource.resolveProxy(r, obj_type.key), sub.applyToType(obj_type.value));
+		var reinsertionCount = 0;
+		while(!toBeInferred.empty && reinsertionCount < toBeInferred.size) {
+			val c = toBeInferred.remove(0);
+			val toReInsert = startInference(c);
 			if(toReInsert.present) {
 				toBeInferred.add(toReInsert.get);
-				reInserted.add(toReInsert.get);
+				reinsertionCount++;
 			}
 			else {
-				reInserted.clear();
+				reinsertionCount = 0;
 			}
 		}
 		
 		return new ConstraintSolution(system, sub, cs.issues);	
 	}
 	
-	def Iterable<Pair<EObject, AbstractType>> unbindSizes(ConstraintSystem system, Substitution sub, Resource r) {
-		val unbindings = new HashMap<TypeVariable, AbstractType>();
-		sub.content.forEach[int i, t | 
-			if(TypeUtils.isGeneratedType(system, t)) {
-				val typeInferrerCls = system.getUserData(t, BaseConstraintFactory.SIZE_INFERRER_KEY);
-				val typeInferrer = loader.loadFromPlugin(r, typeInferrerCls)?.castOrNull(ElementSizeInferrer);
-				if(typeInferrer !== null) {
-					val newType = typeInferrer.unbindSize(system, t);
-					if(newType !== t) {
-						unbindings.put(sub.idxToTypeVariable.get(i), newType);
-					}
-				}
+	override Iterable<InferenceContext> unbindSize(InferenceContext c) {
+		if(TypeUtils.isGeneratedType(c.system, c.type)) {
+			val inferrer = getInferrer(c)
+			if(inferrer !== null) {
+				inferrer.delegate = this;
+				return inferrer.unbindSize(c);
 			}
-		]
-		sub.add(unbindings);
-		
-		return unbindings.entrySet.map[it.key.origin -> it.value].filter[it.key !== null];
+		}
+		return #[];
 	}
 	
-	def getInferrer(ConstraintSystem system, Resource r, EObject objOrProxy, AbstractType type) {
-		val obj = MitaBaseResource.resolveProxy(r, objOrProxy);
-		val typeInferrerCls = if(TypeUtils.isGeneratedType(system, type)) {
-			system.getUserData(type, BaseConstraintFactory.SIZE_INFERRER_KEY);
+	def Iterable<InferenceContext> unbindSizes(ConstraintSystem system, Substitution sub, Resource r) {
+		return r.contents.flatMap[it.eAllContents.toIterable].flatMap[
+			val tv = system.getTypeVariable(it);
+			val type = sub.apply(tv);
+			val unitsOfWork = unbindSize(new InferenceContext(system, sub, r, it, tv, type));
+			return unitsOfWork;
+		]
+	}
+	
+	def getInferrer(InferenceContext c) {
+		val obj = c.obj;
+		val typeInferrerCls = if(TypeUtils.isGeneratedType(c.system, c.type)) {
+			c.system.getUserData(c.type, BaseConstraintFactory.SIZE_INFERRER_KEY);
 		}
 		val typeInferrer = if(typeInferrerCls !== null) { 
-			loader.loadFromPlugin(r, typeInferrerCls)?.castOrNull(ElementSizeInferrer) => [
+			loader.loadFromPlugin(c.r, typeInferrerCls)?.castOrNull(ElementSizeInferrer) => [
 				it?.setDelegate(this)]
 		}
 		
@@ -161,35 +166,54 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 	}
 	
 	// only generated types have special needs for size inference for now
-	def Optional<Pair<EObject, AbstractType>> startInference(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {		
-		val inferrer = getInferrer(system, r, obj, type);
+	def Optional<InferenceContext> startInference(InferenceContext c) {		
+		val inferrer = getInferrer(c);
 		
-		// the result of the first argument to ?: is null iff both inferrers are null (or the inferrer didn't follow the contract).
+		// the result of the first argument to ?: is null iff the inferrer are null (or the inferrer didn't follow the contract).
 		// Then nobody wants to infer anything for this type and we return success.
 		// from how this function is called that should never happen, since somebody unbound a type,
 		// but its better to reason locally and not introduce a global dependency.
-		return inferrer?.infer(system, sub, r, obj, type) ?: Optional.absent;
+		return inferrer?.infer(c) ?: Optional.absent;
 	}
 	
 	def void inferUnmodifiedFrom(ConstraintSystem system, Substitution sub, EObject target, EObject delegate) {
 		sub.add(system.getTypeVariable(target), system.getTypeVariable(delegate));
 	}
 	
-	override Optional<Pair<EObject, AbstractType>> infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
-		doInfer(system, sub, r, obj, type);
+	override Optional<InferenceContext> infer(InferenceContext c) {
+		doInfer(c, c.obj);
 	}
 	
-	dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, ElementReferenceExpression obj, AbstractType type) {
-		inferUnmodifiedFrom(system, sub, obj, obj.reference);
+	dispatch def Optional<InferenceContext> doInfer(InferenceContext c, ElementReferenceExpression obj) {
+		if(obj.isOperationCall) {
+			val fun = obj.reference;
+			if(fun instanceof GeneratedFunctionDefinition) {
+				val inferrerCls = fun.sizeInferrer;
+				val inferrer = loader.loadFromPlugin(c.r, inferrerCls)?.castOrNull(ElementSizeInferrer);
+				if(inferrer !== null) { 
+					inferrer.delegate = this;
+					return inferrer.infer(c);
+				}
+				else {
+					c.sub.add(c.tv, c.type)
+					return Optional.absent();
+				}
+			}
+			else if(fun instanceof Operation) {
+				inferUnmodifiedFrom(c.system, c.sub, obj, fun.typeSpecifier);
+				return Optional.absent();
+			}
+		}
+		inferUnmodifiedFrom(c.system, c.sub, obj, obj.reference);
 		return Optional.absent();
 	}
 	
-	dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, CoercionExpression obj, AbstractType type) {
-		inferUnmodifiedFrom(system, sub, obj, obj.value);
+	dispatch def Optional<InferenceContext> doInfer(InferenceContext c, CoercionExpression obj) {
+		inferUnmodifiedFrom(c.system, c.sub, obj, obj.value);
 		return Optional.absent();
 	}
 	
-	dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, VariableDeclaration variable, AbstractType type) {
+	dispatch def Optional<InferenceContext> doInfer(InferenceContext c, VariableDeclaration variable) {
 		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
 		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
 		val typeOrigin = (variable.typeSpecifier.castOrNull(PresentTypeSpecifier) ?: variable.initialization) ?: (
@@ -204,27 +228,27 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 				.head
 		)
 		if(typeOrigin !== null) {
-			inferUnmodifiedFrom(system, sub, variable, typeOrigin);
+			inferUnmodifiedFrom(c.system, c.sub, variable, typeOrigin);
 		}
 		return Optional.absent();
 	}
 	
-	dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, PrimitiveValueExpression obj, AbstractType type) {
-		inferUnmodifiedFrom(system, sub, obj, obj.value);
+	dispatch def Optional<InferenceContext> doInfer(InferenceContext c, PrimitiveValueExpression obj) {
+		inferUnmodifiedFrom(c.system, c.sub, obj, obj.value);
 		return Optional.absent();
 	}
 	
-	dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, ReturnStatement obj, AbstractType type) {
-		inferUnmodifiedFrom(system, sub, obj, obj.value);
+	dispatch def Optional<InferenceContext> doInfer(InferenceContext c, ReturnStatement obj) {
+		inferUnmodifiedFrom(c.system, c.sub, obj, obj.value);
 		return Optional.absent();
 	}
 	
-	dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, NewInstanceExpression obj, AbstractType type) {
-		inferUnmodifiedFrom(system, sub, obj, obj.type);
+	dispatch def Optional<InferenceContext> doInfer(InferenceContext c, NewInstanceExpression obj) {
+		inferUnmodifiedFrom(c.system, c.sub, obj, obj.type);
 		return Optional.absent();
 	}
 	
-	dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
+	dispatch def Optional<InferenceContext> doInfer(InferenceContext c, EObject obj) {
 		return Optional.absent();
 	}
 	
@@ -244,106 +268,37 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 	
 
 		
-	dispatch def Optional<Pair<EObject, AbstractType>> doInfer(ConstraintSystem system, Substitution sub, Resource r, FunctionDefinition obj, AbstractType type) {
+	dispatch def Optional<InferenceContext> doInfer(InferenceContext c, FunctionDefinition obj) {
 		val explicitType = obj.typeSpecifier.castOrNull(PresentTypeSpecifier);
 		if(explicitType !== null) {
-			inferUnmodifiedFrom(system, sub, obj, explicitType);
+			inferUnmodifiedFrom(c.system, c.sub, obj, explicitType);
 			return Optional.absent();
 		}
 		
 		val returnedTypes = obj.eAllContents.filter(ReturnStatement).map[x | 
-			BaseUtils.getType(system, sub, x);
+			BaseUtils.getType(c.system, c.sub, x);
 		].force;
 		if(returnedTypes.empty) {
 			// can't infer anything if there are no return statements
 			return Optional.absent();
 		}
-		val maxType = max(system, r, obj, returnedTypes);
+		val maxType = max(c.system, c.r, obj, returnedTypes);
 		if(maxType.present) {
-			sub.add(system.getTypeVariable(obj), maxType.get);
+			c.sub.add(c.system.getTypeVariable(obj), maxType.get);
 			return Optional.absent();
 		}
 		
-		return Optional.of(obj as EObject -> type);
+		return Optional.of(c);
 	}
 	
 	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
-		val typeInferrer = getInferrer(system, r, objOrProxy, types.head);
+		val typeInferrer = getInferrer(new InferenceContext(system, Substitution.EMPTY, r, objOrProxy, system.getTypeVariable(objOrProxy), types.head));
 		if(typeInferrer !== null) {
 			return typeInferrer.max(system, r, objOrProxy, types);
 		}
 		
 		return Optional.of(types.head);
 	}
-
-	
-//	protected dispatch def ElementSizeInferenceResult doInferFromType(EObject obj, AbstractType type) {
-//		// this expression has an immediate value (akin to the StaticValueInferrer)
-//		if (ModelUtils.isPrimitiveType(type, obj) || type?.name == "Exception") {
-//			// it's a primitive type
-//			return new ValidElementSizeInferenceResult(obj, type, 1);
-//		} else if (isGeneratedType(obj, type)) {
-//			// it's a generated type, so we must load the inferrer
-//			var ElementSizeInferrer inferrer = null;
-//			
-//			// if its a platform component, the component specifies its own inferrer
-//			val instance = if(obj instanceof ElementReferenceExpression) {
-//				if(obj.isOperationCall && obj.arguments.size > 0) {
-//					obj.arguments.head.value; 
-//				}
-//			}
-//			if(instance !== null) {
-//				if(instance instanceof ElementReferenceExpression) {
-//					val resourceRef = instance.arguments.head?.value;
-//					if(resourceRef instanceof ElementReferenceExpression) {
-//						var resourceSetup = resourceRef.reference;
-//						var Object loadedInferrer = null;
-//						if(resourceSetup instanceof SystemResourceAlias) {
-//							resourceSetup = resourceSetup.delegate;
-//						}
-//						if(resourceSetup instanceof SystemResourceSetup) {
-//							val resource = resourceSetup.type;
-//							loadedInferrer = loader.loadFromPlugin(resource.eResource, resource.sizeInferrer);	
-//						}
-//						else if(resourceSetup instanceof AbstractSystemResource) {
-//							loadedInferrer = loader.loadFromPlugin(resourceSetup.eResource, resourceSetup.sizeInferrer);	
-//						}
-//						// we're done loading, let's see if we actually loaded an ESI
-//						if(loadedInferrer instanceof ElementSizeInferrer) {
-//							inferrer = loadedInferrer;
-//						}
-//						// if we got something else we should warn about this. We could either throw an exception or try to recover by deferring to the default inferrer, but log a warning.
-//						else if(loadedInferrer !== null) {
-//							println('''[WARNING] Expected an instance of ElementSizeInferrer, got: «loadedInferrer.class.simpleName»''')
-//						}
-//					}
-//				}
-//			}
-//			
-//			val loadedTypeInferrer = loader.loadFromPlugin(obj.eResource, TypeUtils.getConstraintSystem(obj.eResource).getUserData(type, BaseConstraintFactory.SIZE_INFERRER_KEY));
-//			
-//			if(loadedTypeInferrer instanceof ElementSizeInferrer) {			
-//				inferrer = inferrer.orElse(loadedTypeInferrer);	
-//			}
-//			
-//			val finalInferrer = inferrer;
-//			if (finalInferrer === null) {
-//				return new InvalidElementSizeInferenceResult(obj, type, "Type has no size inferrer");
-//			} 
-////			else {
-////				
-////				return PreventRecursion.preventRecursion(this.class.simpleName -> obj, 
-////				[|
-////					return finalInferrer.doInfer(obj, type);
-////				], [|
-////					val renamer = new NicerTypeVariableNamesForErrorMessages();
-////					return newInvalidResult(obj, '''Cannot infer size of "«obj.class.simpleName»" of type "«type.modifyNames(renamer)»".''')
-////				])
-////			}
-//		}
-//		val renamer = new NicerTypeVariableNamesForErrorMessages;
-//		return newInvalidResult(obj, "Unable to infer size from type " + type.modifyNames(renamer));
-//	}
 }
 
 @FinalFieldsConstructor
@@ -351,10 +306,10 @@ class Combination implements ElementSizeInferrer {
 	final ElementSizeInferrer i1;
 	final ElementSizeInferrer i2;		
 					
-	override infer(ConstraintSystem system, Substitution sub, Resource r, EObject obj, AbstractType type) {
-		val r1 = i1.infer(system, sub, r, obj, type);
+	override infer(InferenceContext c) {
+		val r1 = i1.infer(c);
 		if(r1.present) {
-			val r2 = i2.infer(system, sub, r, obj, type);
+			val r2 = i2.infer(c);
 			if(r2.present) {
 				// neither can handle this right now. Which pair do we return?
 				// In theory both should return the same pair, but this might change.
@@ -369,11 +324,15 @@ class Combination implements ElementSizeInferrer {
 		}
 	}
 	
-	override unbindSize(ConstraintSystem system, AbstractType t) {
-		return i2.unbindSize(system, i1.unbindSize(system, t));
+	override unbindSize(InferenceContext c) {
+		return i1.unbindSize(c).fold(#[], [Iterable<InferenceContext> r1, c1 |
+			 r1 + i2.unbindSize(c1);
+		])
 	}
 	
 	override setDelegate(ElementSizeInferrer delegate) {
+		i1.delegate = delegate;
+		i2.delegate = delegate;
 	}
 	
 	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {

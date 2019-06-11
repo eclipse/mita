@@ -48,7 +48,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 			throw new NullPointerException;
 		}
 		
-		if(this.toString == "array<int8, 3> ⩽ array<int8, 10>") {
+		if(this.toString == "f_2515 ⩽ f_102") {
 			print("")
 		}
 	}

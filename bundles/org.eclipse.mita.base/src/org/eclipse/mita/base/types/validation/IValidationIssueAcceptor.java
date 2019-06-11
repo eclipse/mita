@@ -38,13 +38,13 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean shouldTest() {
-			return false;
+			return true;
 		}
 		private static String getTestString() {
-			return "Types xint8 and uint32 are not the same.";
+			return "__args(siginst<string<h_842>>) not instance of read";
 		}
 		private static boolean testFun(String s) {
-			return s.equals(getTestString());
+			return s.startsWith(getTestString());
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");
