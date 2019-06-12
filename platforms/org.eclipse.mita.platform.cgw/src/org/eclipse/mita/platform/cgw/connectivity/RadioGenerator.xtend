@@ -34,7 +34,7 @@ class RadioGenerator extends AbstractSystemResourceGenerator {
 			if(dataActivated == NULL) {
 				exception = RETCODE_FAILURE;
 			}
-			«generateLoggingExceptionHandler("HttpRestClient", "Semaphore creation")»
+			«generateLoggingExceptionHandler("Radio", "Semaphore creation")»
 
 			xSemaphoreTake(powerOnDone, 0);
 			xSemaphoreTake(registerDone, 0);
@@ -42,13 +42,13 @@ class RadioGenerator extends AbstractSystemResourceGenerator {
 			
 			
 			exception = Cellular_Initialize(HandleStateChanged);
-			«generateLoggingExceptionHandler("HttpRestClient", "Cellular Initialize")»
+			«generateLoggingExceptionHandler("Radio", "Cellular Initialize")»
 
 			
 			Cellular_PowerUpParameters_T powerUpParam;
 			powerUpParam.SimPin = NULL;
 			exception = Cellular_PowerOn(&powerUpParam);
-			«generateLoggingExceptionHandler("HttpRestClient", "Cellular Power on")»
+			«generateLoggingExceptionHandler("Radio", "Cellular Power on")»
 
 			exception = Cellular_QueryIccid(iccid, &iccidLen);
 			
@@ -68,8 +68,9 @@ class RadioGenerator extends AbstractSystemResourceGenerator {
 			static void HandleStateChanged(Cellular_State_T oldState, Cellular_State_T newState, void* param, uint32_t len);
 			
 			static const Cellular_DataContext_T* DataContext;
-			static CellularSocket_Handle_T Socket;
 			static SemaphoreHandle_t powerOnDone, registerDone, dataActivated;
+			static char iccid[CELLULAR_ICCID_MAX_LENGTH];
+			static uint32_t iccidLen = sizeof(iccid);
 			
 			static Retcode_T ActivateDataContext(void* param, uint32_t len)
 			{
@@ -176,24 +177,25 @@ class RadioGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateEnable() {
 		return codeFragmentProvider.create('''
+			Retcode_T exception = NO_EXCEPTION;
 			if(xSemaphoreTake(powerOnDone, 10000) == pdFALSE) {
 				exception = RETCODE_FAILURE;
 			}
-			«generateLoggingExceptionHandler("HttpRestClient", "finish power on")»
+			«generateLoggingExceptionHandler("Radio", "finish power on")»
 			exception = Register(NULL, 0);
-			«generateLoggingExceptionHandler("HttpRestClient", "Register")»
+			«generateLoggingExceptionHandler("Radio", "Register")»
 
 			if(xSemaphoreTake(registerDone, 600000) == pdFALSE) {
 				exception = RETCODE_FAILURE;
 			}
-			«generateLoggingExceptionHandler("HttpRestClient", "finish registering")»
+			«generateLoggingExceptionHandler("Radio", "finish registering")»
 			exception = ActivateDataContext(NULL, 0);
-			«generateLoggingExceptionHandler("HttpRestClient", "activate data context")»
+			«generateLoggingExceptionHandler("Radio", "activate data context")»
 			
 			if(xSemaphoreTake(dataActivated, 120000) == pdFALSE) {
 				exception = RETCODE_FAILURE;
 			}
-			«generateLoggingExceptionHandler("HttpRestClient", "finish data context activation")»
+			«generateLoggingExceptionHandler("Radio", "finish data context activation")»
 			return exception;
 		''')
 	}

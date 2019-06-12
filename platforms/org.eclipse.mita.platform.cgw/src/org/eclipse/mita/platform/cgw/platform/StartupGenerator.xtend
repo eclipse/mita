@@ -36,7 +36,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		
 		codeFragmentProvider.create('''
 		/* Mapping Default Error Handling function */
-		Retcode_T returnValue = Retcode_initialize(ErrorHandler);
+		Retcode_T returnValue = Retcode_Initialize(ErrorHandler);
 		if (RETCODE_OK == returnValue)
 		{
 		    returnValue = systemStartup();

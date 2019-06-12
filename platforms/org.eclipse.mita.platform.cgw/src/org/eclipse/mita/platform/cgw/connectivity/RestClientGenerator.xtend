@@ -38,10 +38,9 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 			
 			extern CmdProcessor_T Mita_EventQueue;
 			
-			static QueueHandle_t httpEvent;			
+			static QueueHandle_t httpEvent;
+			static CellularSocket_Handle_T Socket;
 			static uint32_t BytesReceived = 0;
-			static char iccid[CELLULAR_ICCID_MAX_LENGTH];
-			static uint32_t iccidLen = sizeof(iccid);
 			
 			static void ReceiveData(void* param, uint32_t len)
 			{
