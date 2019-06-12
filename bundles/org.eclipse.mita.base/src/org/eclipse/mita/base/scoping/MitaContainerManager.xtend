@@ -144,8 +144,6 @@ class MitaContainerManager extends StateBasedContainerManager {
 			}
 		} else {
 			return super.createContainer(handle, resourceDescriptions);
-		}
-		
-	}
-	
+		}		
+	}	
 }
