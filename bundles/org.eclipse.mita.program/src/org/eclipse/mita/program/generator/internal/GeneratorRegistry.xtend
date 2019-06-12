@@ -62,14 +62,23 @@ class GeneratorRegistry {
 	}
 
 	def getGenerator(AbstractSystemResource resource) {
+		if(resource?.generator === null) {
+			return null;
+		}
 		generatorCache.get(resource.eResource -> resource.generator).orNull as AbstractSystemResourceGenerator;
 	}
 
 	def AbstractTypeGenerator getGenerator(GeneratedType type) {
+		if(type?.generator === null) {
+			return null;
+		}
 		generatorCache.get(type.eResource -> type.generator).orNull as AbstractTypeGenerator;
 	}
 
 	def AbstractFunctionGenerator getGenerator(GeneratedFunctionDefinition function) {
+		if(function?.generator === null) {
+			return null;
+		}
 		generatorCache.get(function.eResource -> function.generator).orNull as AbstractFunctionGenerator;
 	}
 }
