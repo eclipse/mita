@@ -618,7 +618,7 @@ class StatementGenerator {
 	}
 	
 
-	dispatch def IGeneratorNode code(ReturnParameterDeclaration __) {
+	dispatch def IGeneratorNode code(ReturnParameterDeclaration stmt) {
 		return CodeFragment.EMPTY;
 	}
 	
