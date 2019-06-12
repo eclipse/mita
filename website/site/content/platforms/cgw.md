@@ -82,7 +82,7 @@ setup net: Radio {
 
 Using REST you can easily talk to servers over HTTP. REST defines a stateless interface with a simple URL scheme. Normally a REST server consists of a versioned endpoint like `http://api.github.com/v3` which then provides different resources, for example `api.github.com/v3/repos/eclipse/mita/branches` and `/repos/eclipse/mita/issues`.
 
-Currently only writing some content types and POST method is supported. There is a special resource available for BCX for talking to the Bosch IoT Cloud, `BcxHttpRestClient`.
+Currently only writing some content types and POST method is supported.
 
 #### Example
 
