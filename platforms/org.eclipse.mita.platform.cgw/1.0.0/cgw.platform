@@ -150,7 +150,7 @@ sensor BME280 {
 	 * Reduces noise in the humidity measurement by over sampling.
 	 * Higher over sampling settings reduce noise but increase measurement time and power consumption.
 	 */
-	configuration-item humidity_oversampling : BME280_Oversampling = BME280_Oversampling.OVERSAMPLE_12X
+	configuration-item humidity_oversampling : BME280_Oversampling = BME280_Oversampling.OVERSAMPLE_2X
 	
 	/**
 	 * The temperature in centi-celcius

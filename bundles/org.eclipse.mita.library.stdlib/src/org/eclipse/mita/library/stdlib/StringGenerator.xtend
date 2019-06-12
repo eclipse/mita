@@ -51,21 +51,21 @@ class StringGenerator extends ArrayGenerator {
 	@Inject
 	protected extension ProgramDslTraceExtensions
 
-	override CodeFragment getFixedSize(CodeFragment bufferName, EObject stmt) {
-		doGetFixedSize(bufferName, stmt);
+	override CodeFragment getUsedSize(CodeFragment bufferName, EObject stmt) {
+		doGetUsedSize(bufferName, stmt);
 	}
 	
-	dispatch def CodeFragment doGetFixedSize(CodeFragment bufferName, PrimitiveValueExpression stmt) {
-		return doGetFixedSize(bufferName, stmt, stmt.value);
+	dispatch def CodeFragment doGetUsedSize(CodeFragment bufferName, PrimitiveValueExpression stmt) {
+		return doGetUsedSize(bufferName, stmt, stmt.value);
 	}
-	dispatch def CodeFragment doGetFixedSize(CodeFragment bufferName, PrimitiveValueExpression stmt, InterpolatedStringLiteral value) {
+	dispatch def CodeFragment doGetUsedSize(CodeFragment bufferName, PrimitiveValueExpression stmt, InterpolatedStringLiteral value) {
 		return codeFragmentProvider.create('''«bufferName»_written''');
 	}
-	dispatch def CodeFragment doGetFixedSize(CodeFragment bufferName, PrimitiveValueExpression stmt, EObject value) {
-		super.getFixedSize(bufferName, stmt);
+	dispatch def CodeFragment doGetUsedSize(CodeFragment bufferName, PrimitiveValueExpression stmt, EObject value) {
+		super.getUsedSize(bufferName, stmt);
 	}
-	dispatch def CodeFragment doGetFixedSize(CodeFragment bufferName, EObject stmt) {
-		super.getFixedSize(bufferName, stmt);
+	dispatch def CodeFragment doGetUsedSize(CodeFragment bufferName, EObject stmt) {
+		super.getUsedSize(bufferName, stmt);
 	}
 
 
