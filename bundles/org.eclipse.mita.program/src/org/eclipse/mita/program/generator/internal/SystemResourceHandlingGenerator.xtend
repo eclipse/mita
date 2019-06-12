@@ -61,8 +61,9 @@ class SystemResourceHandlingGenerator {
 		val internalGenerator = registry.getGenerator(component);
 		if(internalGenerator !== null) {
 			internalGenerator.prepare(context, component, setup, getConfiguration(context, component, setup), getRelevantEventHandler(context, component));			
+			return internalGenerator.generateAdditionalFiles(fsa);
 		}
-		internalGenerator.generateAdditionalFiles(fsa);
+		return #[];
 	}
 
 	def generateHeader(CompilationContext context, EObject obj) {

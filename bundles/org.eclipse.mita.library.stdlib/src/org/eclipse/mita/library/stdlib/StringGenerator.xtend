@@ -223,7 +223,7 @@ class StringGenerator extends ArrayGenerator {
 	}
 
 	override CodeFragment getBufferType(EObject context, AbstractType type) {
-		return codeFragmentProvider.create('''char''')
+		return codeFragmentProvider.create('''char''').addHeader("string.h", true);
 	}
 
 	protected def CompositeGeneratorNode removeAllNewLines(CompositeGeneratorNode node) {
