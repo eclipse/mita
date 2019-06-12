@@ -300,12 +300,6 @@ class Parameter extends TypedElement, NamedElement {
 	boolean optional
 	
 	op String toString() {
-		val optionalModifier = if(optional) {
-			"?"
-		}
-		else {
-			""
-		}
 		return name + ": " + typeSpecifier
 	}
 }

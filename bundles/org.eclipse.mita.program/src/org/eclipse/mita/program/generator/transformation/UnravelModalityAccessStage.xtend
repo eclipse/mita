@@ -13,13 +13,13 @@
 
 package org.eclipse.mita.program.generator.transformation
 
+import org.eclipse.mita.base.expressions.AbstractStatement
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
-import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.ProgramFactory
