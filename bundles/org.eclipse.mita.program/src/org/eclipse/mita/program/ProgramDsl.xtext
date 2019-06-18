@@ -82,7 +82,7 @@ FunctionDefinition returns program::FunctionDefinition:
 		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
 	')' 
 	typeSpecifier=OptionalTypeSpecifier
-	(body = ProgramBlock)?
+	body = FunctionProgramBlock
 ;
 
 OptionalTypeSpecifier returns types::TypeSpecifier:
@@ -118,7 +118,7 @@ SystemEventSource returns program::SystemEventSource:
 ;
 
 ReturnParameterDeclaration returns program::ReturnParameterDeclaration:
-	{program::ReturnParameterDeclaration}
+	{program::ReturnParameterDeclaration} typeSpecifier=NullTypeSpecifier
 ;
 
 FunctionProgramBlock returns program::ProgramBlock:

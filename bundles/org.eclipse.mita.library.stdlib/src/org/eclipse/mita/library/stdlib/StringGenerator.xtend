@@ -44,8 +44,6 @@ import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 
 class StringGenerator extends ArrayGenerator {
 	
-	static public val DOUBLE_PRECISION = 6L;
-
 	@Inject
 	protected extension ProgramDslTraceExtensions
 
@@ -163,8 +161,8 @@ class StringGenerator extends ArrayGenerator {
 				case 'xint32':  '%" PRId32 "'
 				case 'xint16':  '%" PRId16 "'
 				case 'xint8':   '%" PRId8 "'
-				case 'f32':  '%.' + DOUBLE_PRECISION + 'g'
-				case 'f64': '%.' + DOUBLE_PRECISION + 'g'
+				case 'f32':  '%.' + BaseUtils.DOUBLE_PRECISION + 'g'
+				case 'f64': '%.' + BaseUtils.DOUBLE_PRECISION + 'g'
 				case 'bool':   '%" PRIu8 "'
 				case 'string': if(sub.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(StringLiteral) !== null) {
 						'%s'

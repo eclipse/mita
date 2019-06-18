@@ -272,10 +272,12 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return null;
 	}
 	
-	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, InterpolatedStringLiteral expr) {
-		system.computeConstraintsForChildren(expr);
-		val stringType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.stringTypeQID);
-		return system.associate(stringType, expr);
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, InterpolatedStringLiteral lit) {
+		system.computeConstraintsForChildren(lit);
+		val sizeType = system.newTypeVariable(null);
+		val stringTypeSchemeTV = typeRegistry.getTypeModelObjectProxy(system, lit, StdlibTypeRegistry.stringTypeQID);
+		val outerType = system.nestInType(lit, #[sizeType -> Variance.COVARIANT], stringTypeSchemeTV, "string");
+		return system.associate(outerType, lit);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae) {

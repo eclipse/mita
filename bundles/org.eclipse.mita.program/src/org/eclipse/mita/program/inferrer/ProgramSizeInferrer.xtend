@@ -278,7 +278,34 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		inferUnmodifiedFrom(c.system, typeSpecifier, typeSpecifier.value);
 	}
 	
+	dispatch def void doCreateConstraints(InferenceContext c, NullTypeSpecifier typeSpecifier) {
+		if(typeSpecifier.eContainer instanceof FunctionDefinition) {
+			/* we are not dispatching here, since no one can specify a size inferrer for 
+			 * - object FunctionDefinition
+			 * - type   FunctionType
+			 * 
+			 * If at some point user specified size inferrers are implemented this probably changes?
+			 */
+			 
+			 val functionContext = new InferenceContext(c, typeSpecifier.eContainer, c.system.getTypeVariable(typeSpecifier.eContainer));
+			 _doCreateConstraints(functionContext, typeSpecifier.eContainer as FunctionDefinition);
+			 return;
+		}
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, TypeReferenceSpecifier typeSpecifier) {
+		if(typeSpecifier.eContainer instanceof FunctionDefinition) {
+			/* we are not dispatching here, since no one can specify a size inferrer for 
+			 * - object FunctionDefinition
+			 * - type   FunctionType
+			 * 
+			 * If at some point user specified size inferrers are implemented this probably changes?
+			 */
+			 
+			 val functionContext = new InferenceContext(c, typeSpecifier.eContainer, c.system.getTypeVariable(typeSpecifier.eContainer));
+			 _doCreateConstraints(functionContext, typeSpecifier.eContainer as FunctionDefinition);
+			 return;
+		}
 		// this is  t<a, b>  in  var x: t<a,  b>
 		val typeArguments = typeSpecifier.typeArguments;
 		val _typeConsType = c.type;
@@ -320,30 +347,17 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	
 	dispatch def void doCreateConstraints(InferenceContext c, EObject obj) {
 	}
-	
-//	/*
-//	 * Walks to referenced system resources.
-//	 * Which kinds of ways are there to do this?
-//	 * a.b.read()
-//	 */
-//	
-//	dispatch def AbstractSystemResource getRelevantSystemResource(ElementReferenceExpression ref) {
-//		
-//	}
-//
-//	dispatch def AbstractSystemResource getRelevantSystemResource(EObject ref) {
-//		
-//	}
-	
-
-		
+			
 	dispatch def void doCreateConstraints(InferenceContext c, FunctionDefinition obj) {
 		val explicitType = obj.typeSpecifier.castOrNull(PresentTypeSpecifier);
 		if(explicitType !== null) {
 			inferUnmodifiedFrom(c.system, obj, explicitType);
+			if(isFixedSize(explicitType)) {
+				return;
+			}
 		}
 		
-		val returnedTypes = obj.eAllContents.filter(ReturnStatement).map[x | 
+		val returnedTypes = obj.eAllContents.filter(ReturnValueExpression).map[x | 
 			c.system.getTypeVariable(x) as AbstractType;
 		].force;
 		if(returnedTypes.empty) {
@@ -351,6 +365,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		}
 		val maxTypeVar = c.system.newTypeVariable(obj);
 		c.system.addConstraint(new MaxConstraint(maxTypeVar, returnedTypes, null));
+		c.system.associate(maxTypeVar, obj.typeSpecifier);
 	}
 	
 	override void createConstraintsForMax(ConstraintSystem system, Resource r, MaxConstraint constraint) {

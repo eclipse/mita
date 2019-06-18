@@ -56,6 +56,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 public class BaseUtils {
+	static public Long DOUBLE_PRECISION = 6L;
+	
 	public static String getText(final EObject obj, final EStructuralFeature feature) {
 		Object _xifexpression = null;
 		boolean _contains = obj.eClass().getEAllStructuralFeatures().contains(feature);

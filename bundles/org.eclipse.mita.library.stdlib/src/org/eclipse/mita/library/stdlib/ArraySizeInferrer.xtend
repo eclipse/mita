@@ -83,18 +83,6 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		]), lit);
 	}
 
-//	protected dispatch def void doInfer(InferenceContext c, NewInstanceExpression obj, TypeConstructorType type) {	
-//		val lastTypespecifierArg = obj.type.typeArguments.last;
-//		if(lastTypespecifierArg instanceof TypeReferenceSpecifier) {
-//			replaceLastTypeArgument(c.sub, type, BaseUtils.getType(c.system, c.sub, lastTypespecifierArg));
-//		}
-//		else if(lastTypespecifierArg instanceof TypeExpressionSpecifier) {
-//			replaceLastTypeArgument(c.sub, type, BaseUtils.getType(c.system, c.sub, lastTypespecifierArg));
-//		}
-//		
-//		return Optional.of(c);
-//	}
-//	
 	dispatch def void doCreateConstraints(InferenceContext c, ArrayAccessExpression expr, TypeConstructorType type) {
 		val arraySelector = expr.arraySelector.ignoreCoercions?.castOrNull(ValueRange);
 		if(arraySelector !== null) {
@@ -114,56 +102,5 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		}
 		c.system.associate(type, expr);
 	}
-//	
-//	
-//	protected dispatch def void doInfer(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType type) {
-//		val sizeArg = obj.typeArguments.last;
-//		val sizeType = if(sizeArg instanceof TypeExpressionSpecifier) {
-//			val e = sizeArg.value;
-//			c.system.getTypeVariable(sizeArg.value);
-//		}
-//		else {
-//			c.system.getTypeVariable(sizeArg);
-//		}
-//		replaceLastTypeArgument(c.sub, type, sizeType);
-//	}
-//	//	
-//	/**
-//	 * Finds a loop ancestor of expr which shares a common ancestor with other.
-//	 */
-//	protected static def getSharedLoopContainer(EObject expr, EObject other) {
-//		val loopContainer = EcoreUtil2.getContainerOfType(expr, AbstractLoopStatement);
-//		if(loopContainer !== null) {
-//			/* We found a loop containing the modifying expression. Let's make sure they share a parent with the variable declaration. */
-//			val variableContainer = other.eContainer;
-//			val sharedAncestor = EcoreUtil2.getAllContainers(loopContainer).findFirst[c | c == variableContainer];
-//			
-//			if(variableContainer == loopContainer || sharedAncestor !== null) {
-//				/* We have a found a string manipulation in a loop. We won't bother trying to infer the new string length. */
-//				return loopContainer;
-//			}				
-//		}
-//		return null;
-//	}
-//	
-//	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> _types) {
-//		val types = _types.filter(TypeConstructorType);
-//		val firstArg = delegate.max(system, r, objOrProxy, types.map[getDataType(it)]);
-//		if(firstArg.present) {
-//			val sndArgCandidates = types.map[it.typeArguments.last];
-//			if(sndArgCandidates.forall[it instanceof LiteralTypeExpression<?>]) {
-//				val sndArgValues = sndArgCandidates.map[(it as LiteralTypeExpression<?>).eval()];
-//				if(sndArgValues.forall[it instanceof Long && (it as Long) >= 0]) {
-//					val sndArgValue = sndArgValues.filter(Long).max;
-//					return Optional.of(new TypeConstructorType(null, types.head.typeArguments.head, #[
-//						firstArg.get -> Variance.INVARIANT,
-//						new LiteralNumberType(null, sndArgValue, sndArgCandidates.head.castOrNull(LiteralTypeExpression).typeOf) -> Variance.COVARIANT
-//					]))
-//				}
-//			}			
-//		}
-//
-//		return Optional.absent;
-//	}
 	
 }

@@ -25,6 +25,11 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip;
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.SumConstraint
+import org.eclipse.mita.base.typesystem.constraints.InterpolatedStringExpressionConstraint
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 // handles equality and max
 class SizeConstraintSolver implements IConstraintSolver {
@@ -32,6 +37,8 @@ class SizeConstraintSolver implements IConstraintSolver {
 	MostGenericUnifierComputer mguComputer;
 	@Inject
 	ProgramSizeInferrer programSizeInferrer;
+	@Inject
+	StdlibTypeRegistry typeRegistry;
 	
 	override solve(ConstraintSolution inputSolution, EObject typeResolutionOrigin) {
 		val issues = inputSolution.issues;
@@ -86,6 +93,42 @@ class SizeConstraintSolver implements IConstraintSolver {
 			
 		} while(resultSystem.hasNonAtomicConstraints());
 		return new SimplificationResult(resultSub, issues, resultSystem);
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, InterpolatedStringExpressionConstraint constraint) {
+		val u32 = typeRegistry.getTypeModelObject(typeResolutionOrigin, StdlibTypeRegistry.u32TypeQID);
+		val u32Type = system.getTypeVariable(u32);
+		val tsub = constraint.matchType;
+		var typeLength = switch(tsub?.name) {
+			case 'uint32': 10L
+			case 'uint16':  5L
+			case 'uint8' :  3L
+			case 'int32' : 11L
+			case 'int16' :  6L
+			case 'int8'  :  4L
+			case 'xint32': 11L
+			case 'xint16':  6L
+			case 'xint8' :  4L
+			case 'bool'  :  1L
+			// https://stackoverflow.com/a/1934253
+			case 'double': BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+			case 'float':  BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+			case 'string':    {
+				val stringSize = (tsub as TypeConstructorType).typeArguments.last;
+				stringSize;
+			}
+			default: new BottomType(constraint.origin, "Cannot interpolate expressions of type " + tsub)
+		}
+		
+		val typeLengthType = if(typeLength instanceof Long) {
+			new LiteralNumberType(constraint.origin, typeLength, u32Type)
+		}
+		else {
+			typeLength as AbstractType;
+		}
+		
+		system.addConstraint(new EqualityConstraint(constraint.target, typeLengthType, constraint._errorMessage));
+		return SimplificationResult.success(system, Substitution.EMPTY);
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, ExplicitInstanceConstraint constraint) {
