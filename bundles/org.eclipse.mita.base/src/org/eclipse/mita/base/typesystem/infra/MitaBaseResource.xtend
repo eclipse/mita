@@ -58,6 +58,8 @@ import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.types.TypeHole
+import org.eclipse.mita.base.typesystem.solver.Substitution
+import com.google.inject.Provider
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -66,8 +68,11 @@ class MitaBaseResource extends LazyLinkingResource {
 	@Accessors
 	protected MitaCancelInidicator cancelIndicator;
 
-	@Inject
+	@Inject @Named("mainSolver")
 	protected IConstraintSolver constraintSolver;
+	
+	@Inject @Named("sizeSolver")
+	protected IConstraintSolver sizeConstraintSolver;
 
 	@Inject
 	protected IContainer.Manager containerManager;
@@ -92,6 +97,9 @@ class MitaBaseResource extends LazyLinkingResource {
 	
 	@Inject
 	protected AbstractSizeInferrer sizeInferrer;
+	
+	@Inject 
+	protected Provider<Substitution> substitutionProvider;
 
 	override toString() {
 		val str = URI.toString;
@@ -266,14 +274,20 @@ class MitaBaseResource extends LazyLinkingResource {
 				return;
 			}
 			timer.start("solve");
-			val solutionTypes = constraintSolver.solve(new ConstraintSystem(preparedSystem), obj);
+			val solutionTypes = constraintSolver.solve(new ConstraintSolution(new ConstraintSystem(preparedSystem), substitutionProvider.get, newArrayList), obj);
 			timer.stop("solve");
 			timer.start("size-inference");
-			val solution = sizeInferrer.inferSizes(solutionTypes, this);
+			val solution = if(solutionTypes.issues.forall[it.severity != Severity.ERROR]) {
+				val sizeConstraints = sizeInferrer.createSizeConstraints(solutionTypes, this);
+				sizeConstraintSolver.solve(sizeConstraints, obj);				
+			}
+			else {
+				solutionTypes;
+			}
 			timer.stop("size-inference");
 			println("report for:" + resource.URI.lastSegment + "\n" + timer.toString);
 			if (solution !== null) {
-				solution.constraintSystem.coercions.entrySet.filter [
+				solution.system.coercions.entrySet.filter [
 					val resourceUri = it.key.trimFragment;
 					return resourceUri == resource.URI;
 				].forEach [
@@ -289,11 +303,11 @@ class MitaBaseResource extends LazyLinkingResource {
 				]
 
 				if (resource instanceof MitaBaseResource) {
-					solution.constraintSystem.symbolTable.entrySet.forEach [
+					solution.system.symbolTable.entrySet.forEach [
 						val uri = it.key;
 						if (uri.trimFragment == resource.URI) {
 							val tv = it.value;
-							val type = solution.solution.content.getOrDefault(tv.idx, tv);
+							val type = solution.substitution.content.getOrDefault(tv.idx, tv);
 							val origin = resource.resourceSet.getEObject(uri, false);
 							if (origin !== null) {
 								// we had the object loaded anyways, so we can set the type
@@ -320,15 +334,20 @@ class MitaBaseResource extends LazyLinkingResource {
 						}
 					];
 					
-					val substitution = solution.solution;
+					val substitution = solution.substitution;
 					substitution.idxToTypeVariable.values.filter[it instanceof TypeHole].forEach[th |
-						val t = substitution.content.get(th.idx);
 						val origin = if(th.origin.eIsProxy) {
 							val proxy = th.origin as BasicEObjectImpl;
 							resourceSet.getEObject(proxy.eProxyURI, true);
 						}
 						else {
 							th.origin;
+						}
+						val t = if(origin === null) {
+							substitution.content.get(th.idx);
+						}
+						else {
+							substitution.content.get(solution.system.getTypeVariable(origin).idx);
 						}
 						solution.issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t»''', th.origin, null, "") 
 					]

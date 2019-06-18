@@ -33,6 +33,6 @@ public class SignalInstanceTest extends AbstractXpectTest {
 	private ElementSizeInferrer elementSizeInferrer;
 	@Xpect
 	public void inferredSize(@StringExpectation IStringExpectation expectation, @ThisOffset EObject expr) {
-		expectation.assertEquals(((ValidElementSizeInferenceResult) elementSizeInferrer.infer(expr)).toString());
+		expectation.assertEquals(((ValidElementSizeInferenceResult) elementSizeInferrer.createConstraints(expr)).toString());
 	}
 }

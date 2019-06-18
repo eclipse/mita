@@ -172,7 +172,8 @@ export generated type siginst<T>
  * Reads a value from the signal instance. Note that even two consecutive reads on a modality might yield different values.
  */
 export generated fn <T> read(self : siginst<T>) : T
-	generator "org.eclipse.mita.library.stdlib.functions.SignalInstanceReadWriteGenerator";
+	generator "org.eclipse.mita.library.stdlib.functions.SignalInstanceReadWriteGenerator"
+	size-inferrer "org.eclipse.mita.library.stdlib.functions.SignalInstanceSizeInferrer";
 
 /**
  * Writes a value to the signal instance. Depending on the type of signal this write might take considerable time or trigger an event

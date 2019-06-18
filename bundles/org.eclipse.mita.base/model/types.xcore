@@ -28,7 +28,11 @@ class InterpolatedStringLiteral extends Literal {
 
 abstract class TypeSpecifier {}
 abstract class PresentTypeSpecifier extends TypeSpecifier {}
-class TypeHole extends PresentTypeSpecifier {}
+class TypeHole extends PresentTypeSpecifier {
+	op String toString() {
+		return "_"
+	}
+}
 class TypeExpressionSpecifier extends PresentTypeSpecifier {
 	contains Expression value	
 	op String toString() {

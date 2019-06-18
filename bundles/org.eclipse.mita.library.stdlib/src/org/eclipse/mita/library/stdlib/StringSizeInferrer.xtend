@@ -36,54 +36,64 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 class StringSizeInferrer extends ArraySizeInferrer {
 	@Inject
 	StdlibTypeRegistry typeRegistry;
+	
+	override getDataTypeIndexes() {
+		return #[];
+	}
+	
+	override getSizeTypeIndexes() {
+		return #[1];
+	}
 				
-	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, StringLiteral expression, TypeConstructorType type) {
-		replaceLastTypeArgument(c.sub, type, new LiteralNumberType(expression, expression.value.length, typeRegistry.getIntegerTypes(expression).findFirst[it.name == "uint32"]));
-		return Optional.absent;
+	dispatch def void doCreateConstraints(InferenceContext c, StringLiteral lit, TypeConstructorType type) {
+		c.system.associate(new TypeConstructorType(lit, type.name, #[
+			type.typeArguments.head -> Variance.INVARIANT, 
+			new LiteralNumberType(lit, lit.value.length, type.typeArguments.last) -> Variance.COVARIANT
+		]), lit);
 	}
-
-	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, InterpolatedStringLiteral expr, TypeConstructorType type) {
-		var length = expr.sumTextParts
-		
-		// sum expression value part
-		for(subexpr : expr.content) {
-			val tsub = BaseUtils.getType(subexpr);
-			var typeLengthInBytes = switch(tsub?.name) {
-				case 'uint32': 10L
-				case 'uint16':  5L
-				case 'uint8' :  3L
-				case 'int32' : 11L
-				case 'int16' :  6L
-				case 'int8'  :  4L
-				case 'xint32': 11L
-				case 'xint16':  6L
-				case 'xint8' :  4L
-				case 'bool'  :  1L
-				// https://stackoverflow.com/a/1934253
-				case 'double': StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
-				case 'float':  StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
-				case 'string':    {
-					val stringSize = getSize(BaseUtils.getType(c.system, c.sub, subexpr));
-					if(stringSize.present) {
-						stringSize.get;
-					} else {
-						return Optional.of(c);
-					}
-				}
-				default: null
-			}
-			
-			if(typeLengthInBytes === null) {
-				c.sub.add(c.system.getTypeVariable(subexpr), new BottomType(subexpr, "Cannot interpolate expressions of type " + tsub))
-				return Optional.absent;
-			} else {
-				length += typeLengthInBytes;
-			}
-		}
-
-		replaceLastTypeArgument(c.sub, type, new LiteralNumberType(expr, length, typeRegistry.getIntegerTypes(expr).findFirst[it.name == "uint32"]));
-		return Optional.absent();
-	}
+//
+//	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, InterpolatedStringLiteral expr, TypeConstructorType type) {
+//		var length = expr.sumTextParts
+//		
+//		// sum expression value part
+//		for(subexpr : expr.content) {
+//			val tsub = BaseUtils.getType(subexpr);
+//			var typeLengthInBytes = switch(tsub?.name) {
+//				case 'uint32': 10L
+//				case 'uint16':  5L
+//				case 'uint8' :  3L
+//				case 'int32' : 11L
+//				case 'int16' :  6L
+//				case 'int8'  :  4L
+//				case 'xint32': 11L
+//				case 'xint16':  6L
+//				case 'xint8' :  4L
+//				case 'bool'  :  1L
+//				// https://stackoverflow.com/a/1934253
+//				case 'double': StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+//				case 'float':  StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+//				case 'string':    {
+//					val stringSize = getSize(BaseUtils.getType(c.system, c.sub, subexpr));
+//					if(stringSize.present) {
+//						stringSize.get;
+//					} else {
+//						return Optional.of(c);
+//					}
+//				}
+//				default: null
+//			}
+//			
+//			if(typeLengthInBytes === null) {
+//				c.sub.add(c.system.getTypeVariable(subexpr), new BottomType(subexpr, "Cannot interpolate expressions of type " + tsub))
+//				return Optional.absent;
+//			} else {
+//				length += typeLengthInBytes;
+//			}
+//		}
+//
+//		replaceLastTypeArgument(c.sub, type, new LiteralNumberType(expr, length, typeRegistry.getIntegerTypes(expr).findFirst[it.name == "uint32"]));
+//		return Optional.absent();
+//	}
 		
 	protected def long sumTextParts(InterpolatedStringLiteral expr) {
 		val texts = StringGenerator.getOriginalTexts(expr)
@@ -94,21 +104,21 @@ class StringSizeInferrer extends ArraySizeInferrer {
 		}
 	}
 	
-	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> _types) {
-		val types = _types.filter(TypeConstructorType);
-		val sndArgCandidates = types.map[it.typeArguments.last];
-		if(sndArgCandidates.forall[it instanceof LiteralTypeExpression<?>]) {
-			val sndArgValues = sndArgCandidates.map[(it as LiteralTypeExpression<?>).eval()];
-			if(sndArgValues.forall[it instanceof Long && (it as Long) >= 0]) {
-				val sndArgValue = sndArgValues.filter(Long).max;
-				return Optional.of(new TypeConstructorType(null, types.head.typeArguments.head, #[
-					new LiteralNumberType(null, sndArgValue, sndArgCandidates.head.castOrNull(LiteralTypeExpression).typeOf) -> Variance.COVARIANT
-				]))
-			}
-		}			
-		
-
-		return Optional.absent;
-	}		
+//	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> _types) {
+//		val types = _types.filter(TypeConstructorType);
+//		val sndArgCandidates = types.map[it.typeArguments.last];
+//		if(sndArgCandidates.forall[it instanceof LiteralTypeExpression<?>]) {
+//			val sndArgValues = sndArgCandidates.map[(it as LiteralTypeExpression<?>).eval()];
+//			if(sndArgValues.forall[it instanceof Long && (it as Long) >= 0]) {
+//				val sndArgValue = sndArgValues.filter(Long).max;
+//				return Optional.of(new TypeConstructorType(null, types.head.typeArguments.head, #[
+//					new LiteralNumberType(null, sndArgValue, sndArgCandidates.head.castOrNull(LiteralTypeExpression).typeOf) -> Variance.COVARIANT
+//				]))
+//			}
+//		}			
+//		
+//
+//		return Optional.absent;
+//	}		
 	
 }

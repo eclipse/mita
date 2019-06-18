@@ -15,7 +15,7 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 @Accessors
-class NumericAddType extends TypeConstructorType implements CompositeLiteralType<Long> {
+class NumericMaxType extends TypeConstructorType implements CompositeLiteralType<Long> {
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
 		// if not all sum types have the same number of arguments, return a new TV
 		if(instances.map[it as TypeConstructorType].map[it.typeArguments.size].groupBy[it].size > 1) {
@@ -26,7 +26,7 @@ class NumericAddType extends TypeConstructorType implements CompositeLiteralType
 				.map[TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, it)]
 				.force;
 		val name = typeArgs.head.name;
-		return new NumericAddType(null, name, typeArgs.head.castOrNull(NumericAddType)?.typeOf, typeArgs.map[it -> Variance.UNKNOWN]);
+		return new NumericMaxType(null, name, typeArgs.head.castOrNull(NumericMaxType)?.typeOf, typeArgs.map[it -> Variance.UNKNOWN]);
 	}
 	
 	val AbstractType typeOf;
@@ -37,7 +37,7 @@ class NumericAddType extends TypeConstructorType implements CompositeLiteralType
 	}
 	
 	override eval() {
-		val maybeResults = (simplify() as NumericAddType).typeArguments;
+		val maybeResults = (simplify() as NumericMaxType).typeArguments;
 		if(maybeResults.size === 1) {
 			val maybeResult = maybeResults.head;
 			if(maybeResult instanceof LiteralNumberType) {
@@ -53,12 +53,12 @@ class NumericAddType extends TypeConstructorType implements CompositeLiteralType
 		if(decomposition.value.empty) {
 			return decomposition.key;
 		}
-		return new NumericAddType(origin, name, typeOf, typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)] + #[decomposition.key as AbstractType -> Variance.UNKNOWN]);
+		return new NumericMaxType(origin, name, typeOf, typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)] + #[decomposition.key as AbstractType -> Variance.UNKNOWN]);
 	}
 	
 	override decompose() {
 		val simpleNumbers = typeArguments.filter(LiteralNumberType).force;
-		val simplifiedValue = simpleNumbers.fold(0L, [t, v| v.eval() + t]);
+		val simplifiedValue = simpleNumbers.map[it.eval].max();
 		val simplification =  new LiteralNumberType(simpleNumbers.head?.origin, simplifiedValue, typeOf);
 		val rest = typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType) && (it.key instanceof LiteralTypeExpression)].map[it.key as CompositeLiteralType<Long>];
 		return simplification -> rest;
@@ -68,13 +68,13 @@ class NumericAddType extends TypeConstructorType implements CompositeLiteralType
 		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
 		val newTypeOf = typeOf.map(f);
 		if(typeOf !== newTypeOf || typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new NumericAddType(origin, name, newTypeOf, newTypeArgs.zip(typeArgumentsAndVariances.map[it.value]));
+			return new NumericMaxType(origin, name, newTypeOf, newTypeArgs.zip(typeArgumentsAndVariances.map[it.value]));
 		}
 		return this;
 	}
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new NumericAddType(origin, name, typeOf, children.map[it.node.unquote(it.children)].zip(typeArgumentsAndVariances.map[it.value]));
+		return new NumericMaxType(origin, name, typeOf, children.map[it.node.unquote(it.children)].zip(typeArgumentsAndVariances.map[it.value]));
 	}
 	
 	override replaceProxies(ConstraintSystem system, (TypeVariableProxy)=>Iterable<AbstractType> resolve) {
@@ -83,18 +83,17 @@ class NumericAddType extends TypeConstructorType implements CompositeLiteralType
 	
 	override void expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
 		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].zip(typeArgumentsAndVariances.map[it.value]);
-		val newCType = new NumericAddType(origin, name, typeOf, newTypeVars);
+		val newCType = new NumericMaxType(origin, name, typeOf, newTypeVars);
 		s.add(tv, newCType);
 	}
 	
 	override toString() {
 		val simpl = simplify();
-		if(simpl instanceof NumericAddType) {
-			return '''(«typeArguments.join(" + ")»)'''			
+		if(simpl instanceof NumericMaxType) {
+			return '''max(«typeArguments.join(", ")»)'''	
 		}
 		return simpl.toString;
 	}
-	
 	override getTypeArgument() {
 		return Long;
 	}

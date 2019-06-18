@@ -515,7 +515,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			if(TypeUtils.isGeneratedType(obj, type)) {
 				if(type.name == "reference") {
 					if(hasGeneratedTypeNext) {
-						error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
+						//error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
 						return;
 					}
 					else {
@@ -523,7 +523,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					}
 				}
 				else if(hasGeneratedTypeNext || containsReferenceTypesNext) {
-					error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
+					//error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
 					return;
 				}
 				else {

@@ -63,7 +63,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		val delegateType = system.resolveReferenceToSingleAndGetType(alias, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate);
 		val delegateName = BaseUtils.getText(alias, PlatformPackage.eINSTANCE.systemResourceAlias_Delegate) ?: "";
 		val aliasKind = new BaseKind(alias.typeKind, delegateName, delegateType);
-		system.associate(aliasKind);
+		system.associate(aliasKind, alias.typeKind);
 		system.typeTable.put(QualifiedName.create(alias.name), delegateType);
 		system.typeTable.put(QualifiedName.create(alias.typeKind.toString), aliasKind);
 		system.putUserData(delegateType, ECLASS_KEY, alias.eClass.name);
@@ -82,7 +82,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		val systemResource = modality.eContainer as AbstractSystemResource;
 		
 		val resultType = new FunctionType(modality, new AtomicType(modality, modality.name), new ProdType(null, new AtomicType(modality, modality.argName), #[system.getTypeVariable(systemResource.typeKind)]), modalityWithType);
-		return system.associate(resultType);
+		return system.associate(resultType, modality);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Signal sig) {
@@ -114,6 +114,6 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 			), 
 			sigInstSetupType
 		);
-		return system.associate(resultType);
+		return system.associate(resultType, sig);
 	}
 }

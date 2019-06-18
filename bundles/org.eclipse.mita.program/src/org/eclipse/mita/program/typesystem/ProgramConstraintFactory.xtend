@@ -127,7 +127,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ExceptionBaseVariableDeclaration exception) {
-		system.associate(new AtomicType(exception, "Exception"));
+		system.associate(new AtomicType(exception, "Exception"), exception);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SignalInstanceReadAccess readAccess) {
@@ -159,7 +159,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		system.computeConstraints(eventHandler.block);
 		
 		val voidType = typeRegistry.getTypeModelObjectProxy(system, eventHandler, StdlibTypeRegistry.voidTypeQID);
-		return system.associate(new FunctionType(eventHandler, new AtomicType(eventHandler.event, eventHandler.event.toString), voidType, voidType));
+		return system.associate(new FunctionType(eventHandler, new AtomicType(eventHandler.event, eventHandler.event.toString), voidType, voidType), eventHandler);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement __) {
@@ -204,7 +204,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, GeneratedFunctionDefinition fundef) {
 		val result = computeTypeForOperation(system, fundef);
 		system.putUserData(result, GENERATOR_KEY, fundef.generator);
-		return system.associate(result);
+		return system.associate(result, fundef);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PostFixUnaryExpression expr) {
@@ -540,7 +540,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val enclosingFunction = EcoreUtil2.getContainerOfType(statement, FunctionDefinition);
 		val enclosingEventHandler = EcoreUtil2.getContainerOfType(statement, EventHandlerDeclaration);
 		if(enclosingFunction === null && enclosingEventHandler === null) {
-			return system.associate(new BottomType(statement, "PCF: Return outside of a function"));
+			return system.associate(new BottomType(statement, "PCF: Return outside of a function"), statement);
 		}
 		
 		val functionReturnVar = if(enclosingFunction === null) {

@@ -13,28 +13,19 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
-import org.eclipse.mita.base.typesystem.infra.InferenceContext
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.xtend.lib.annotations.Accessors
-
-class OptionalSizeInferrer implements ElementSizeInferrer {
-	@Accessors
-	ElementSizeInferrer delegate;
+class OptionalSizeInferrer extends GenericContainerSizeInferrer {
 	
-	
-	override Optional<InferenceContext> infer(InferenceContext c) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	override getDataTypeIndexes() {
+		return #[1];
 	}
 	
-	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	override getSizeTypeIndexes() {
+		return #[];
 	}
+	
+//	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
+//		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+//	}
 	
 //	override protected dispatch doInfer(VariableDeclaration obj, AbstractType type) {
 //		val result = obj.initialization?.infer;

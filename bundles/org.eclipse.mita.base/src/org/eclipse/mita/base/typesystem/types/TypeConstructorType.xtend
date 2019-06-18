@@ -51,10 +51,12 @@ class TypeConstructorType extends AbstractType {
 		return new TypeConstructorType(null, name, typeArgs.map[it -> Variance.UNKNOWN]);
 	}
 	
-//	def getType() {
-//		return typeArguments.head;
-//	}
+	override getName() {
+		super.getName() ?: typeArguments.head.name
+	}
 	
+	// the first argument is an atomic type referencing the type definition itself (or null), for example:
+	// array<int32, 10> -> first argument is new AtomicType(\T, S. array<T, S>, "array")	
 	new(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArgumentsAndVariances) {
 		super(origin, name);
 		
@@ -63,7 +65,7 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = getTypeArguments().flatMap[it.freeVars].force;
-		if(this.toString == "array<int8, uint32>") {
+		if(name === null) {
 			print("")
 		}
 	}

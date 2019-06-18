@@ -42,7 +42,7 @@ class TypeUtils {
 		return system?.getUserData(type)?.containsKey(BaseConstraintFactory.GENERATOR_KEY);
 	}
 	static def boolean isGeneratedType(Resource res, AbstractType type) {
-		return res.constraintSolution?.getConstraintSystem?.isGeneratedType(type);
+		return res.constraintSolution?.getSystem?.isGeneratedType(type);
 	}
 	static def boolean isGeneratedType(EObject context, AbstractType type) {
 		return context.eResource.isGeneratedType(type);
@@ -55,7 +55,7 @@ class TypeUtils {
 		return null;
 	}
 	static def ConstraintSystem getConstraintSystem(Resource res) {
-		return res.constraintSolution?.getConstraintSystem;
+		return res.constraintSolution?.getSystem;
 	}
 	
 	static def getVarianceInAssignment(EObject obj) {

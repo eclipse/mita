@@ -38,10 +38,10 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean shouldTest() {
-			return true;
+			return false;
 		}
 		private static String getTestString() {
-			return "__args(siginst<string<h_842>>) not instance of read";
+			return "Types __args and vci03_inst__args are not the same.";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

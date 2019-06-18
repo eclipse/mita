@@ -55,9 +55,17 @@ SignalInstance returns program::SignalInstance:
 
 GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
 	(exported?='export')?
-	'generated' ('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' typeSpecifier=OptionalTypeSpecifier
-	'generator' generator=STRING
-	('validator' validator=STRING)?
+	'generated' ('fn' | 'function') 
+	('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
+	name=ID '(' 
+		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
+	')' 
+	typeSpecifier=OptionalTypeSpecifier
+	(
+		('generator' generator=STRING) &
+		('validator' validator=STRING)? &
+		('size-inferrer' sizeInferrer=STRING)?
+	)
 	';'
 ;
 

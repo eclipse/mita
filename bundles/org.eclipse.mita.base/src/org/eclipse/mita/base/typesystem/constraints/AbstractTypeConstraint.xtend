@@ -46,11 +46,7 @@ abstract class AbstractTypeConstraint {
 	def AbstractTypeConstraint replace(Substitution sub) {
 		return map[it.replace(sub)];
 	}
-	
-	abstract def Iterable<TypeVariable> getActiveVars();
-	
-	abstract def Iterable<EObject> getOrigins();
-	
+		
 	/**
 	 * @return all types involved in this constraint
 	 */
@@ -67,9 +63,6 @@ abstract class AbstractTypeConstraint {
 	abstract def boolean isAtomic(ConstraintSystem system);
 	
 	def AbstractTypeConstraint replaceProxies(ConstraintSystem system, (TypeVariableProxy) => Iterable<AbstractType> resolve) {
-		if(this.toString == "f_11 ≡ array<f_4, f_7>") {
-			print("")
-		}
 		var result = this;
 		do {
 			result = result.map[it.replaceProxies(system, resolve)]

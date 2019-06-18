@@ -33,7 +33,7 @@ public class StringsTest extends AbstractXpectTest {
 	
 	@Xpect
 	public void inferredStringLength(@StringExpectation IStringExpectation expectation, @ThisOffset EObject expr) {
-		expectation.assertEquals(elementSizeInferrer.infer(expr));
+		expectation.assertEquals(elementSizeInferrer.createConstraints(expr));
 	}
 	
 }

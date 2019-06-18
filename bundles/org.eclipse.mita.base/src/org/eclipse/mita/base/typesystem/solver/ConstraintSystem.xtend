@@ -17,7 +17,6 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.ArrayList
 import java.util.HashMap
-import java.util.HashSet
 import java.util.List
 import java.util.Map
 import org.eclipse.core.runtime.CoreException
@@ -27,9 +26,13 @@ import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.InternalEObject
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.InstanceTypeParameter
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
@@ -38,20 +41,19 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AbstractType.Either
 import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
-import org.eclipse.mita.base.types.InstanceTypeParameter
-import org.eclipse.emf.ecore.impl.BasicEObjectImpl
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 @Accessors
 class ConstraintSystem {
@@ -333,6 +335,18 @@ class ConstraintSystem {
 	def plus(AbstractTypeConstraint constraint) {
 		this.addConstraint(constraint);
 		return this;
+	}
+		
+	public def associate(AbstractType t, EObject typeVarOrigin) {
+		if(typeVarOrigin === null) {
+			throw new UnsupportedOperationException("BCF: Associating a type variable without origin is not supported (on purpose)!");
+		}
+		
+		val typeVar = getTypeVariable(typeVarOrigin);
+		if(typeVar != t && t !== null) { 
+			addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» must be of type "%2$s"''', typeVarOrigin, null, "")));
+		}
+		return typeVar;	
 	}
 	
 	def static combine(Iterable<ConstraintSystem> systems) {

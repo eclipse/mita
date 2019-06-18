@@ -48,14 +48,6 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		this.typeScheme = typeScheme;
 	}
 		
-	override getActiveVars() {
-		return instance.freeVars + typeScheme.freeVars;
-	}
-	
-	override getOrigins() {
-		return #[instance, typeScheme].map[ it.origin ];
-	}
-	
 	override getTypes() {
 		return #[instance, typeScheme];
 	}

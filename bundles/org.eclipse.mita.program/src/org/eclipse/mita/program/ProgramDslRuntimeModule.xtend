@@ -53,6 +53,7 @@ import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.validation.CompositeEValidator
 import org.eclipse.xtext.validation.IResourceValidator
+import org.eclipse.mita.program.inferrer.SizeConstraintSolver
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 
@@ -66,7 +67,8 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IResourceValidator).to(BaseResourceValidator);
 		
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
-		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
+		binder.bind(IConstraintSolver).annotatedWith(Names.named("mainSolver")).to(CoerciveSubtypeSolver);
+		binder.bind(IConstraintSolver).annotatedWith(Names.named("sizeSolver")).to(SizeConstraintSolver);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(ProgramLinker);
 		binder.bind(AbstractSizeInferrer).to(ProgramSizeInferrer);

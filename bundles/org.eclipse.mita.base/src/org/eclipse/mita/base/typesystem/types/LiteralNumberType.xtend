@@ -12,7 +12,7 @@ class LiteralNumberType extends AbstractBaseType implements PrimitiveLiteralType
 	val AbstractType typeOf;
 	
 	new(EObject origin, long value, AbstractType typeOf) {
-		super(origin, String.valueOf(value))
+		super(origin, "'" + String.valueOf(value))
 		this.value = value;
 		this.typeOf = typeOf;
 	}
@@ -38,7 +38,11 @@ class LiteralNumberType extends AbstractBaseType implements PrimitiveLiteralType
 	}
 		
 	override getFreeVars() {
-		return typeOf.freeVars;
+		return typeOf?.freeVars ?: #[];
+	}
+	
+	override getTypeArgument() {
+		return Long;
 	}
 	
 }

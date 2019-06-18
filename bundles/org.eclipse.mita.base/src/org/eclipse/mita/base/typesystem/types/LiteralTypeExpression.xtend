@@ -5,6 +5,7 @@ import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 
 interface LiteralTypeExpression<T> {
+	def Class<T> getTypeArgument();
 	def AbstractType getTypeOf();
 	def T eval();
 	def LiteralTypeExpression<T> simplify();	
@@ -12,9 +13,7 @@ interface LiteralTypeExpression<T> {
 }
 
 interface PrimitiveLiteralType<T> extends LiteralTypeExpression<T> {
-	
 }
 
 interface CompositeLiteralType<T> extends LiteralTypeExpression<T> {
-	
 }

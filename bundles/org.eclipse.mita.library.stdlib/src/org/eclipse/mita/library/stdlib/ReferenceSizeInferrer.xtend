@@ -13,15 +13,14 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
 
 class ReferenceSizeInferrer implements ElementSizeInferrer {
 	
@@ -40,12 +39,15 @@ class ReferenceSizeInferrer implements ElementSizeInferrer {
 	@Accessors
 	ElementSizeInferrer delegate;
 	
-	
-	override Optional<InferenceContext> infer(InferenceContext c) {
+	// references are a safe border for sizes	
+	override unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
+	override createConstraints(InferenceContext c) {
+		return;
+	}
 	
-	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
+	override createConstraintsForMax(ConstraintSystem system, Resource r, MaxConstraint constraint) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	

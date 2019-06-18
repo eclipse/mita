@@ -36,14 +36,6 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.what, types.javaClass.simpleName));
 	}
 	
-	override getActiveVars() {
-		return what.freeVars;
-	}
-	
-	override getOrigins() {
-		return #[what.origin];
-	}
-	
 	override getTypes() {
 		return #[what];
 	}

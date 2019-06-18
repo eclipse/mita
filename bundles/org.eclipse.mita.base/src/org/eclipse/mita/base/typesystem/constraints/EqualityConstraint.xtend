@@ -33,7 +33,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null) {
 			throw new NullPointerException;
 		}
-		if(this.toString == "f_102 ≡ uint32") {
+		if(this.toString == "f_8 ≡ __args(f_2227) → f_2543") { 
 			print("")
 		}
 	}
@@ -48,14 +48,6 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		left + " ≡ " + right
 	}
 		
-	override getActiveVars() {
-		return left.freeVars + right.freeVars;
-	}
-	
-	override getOrigins() {
-		return #[left, right].map[ it.origin ];
-	}
-	
 	override getTypes() {
 		return #[left, right];
 	}

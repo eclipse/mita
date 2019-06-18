@@ -105,17 +105,18 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		return null;
 	}
 	
-	override ConstraintSolution solve(ConstraintSystem system, EObject typeResolutionOrigin) {
+	override ConstraintSolution solve(ConstraintSolution _solution, EObject typeResolutionOrigin) {
+		val system = _solution.system;
 		debugTimer = new DebugTimer(true);
 				
 		val cancelInidicator = typeResolutionOrigin.eResource.getCancelIndicatorOrNull;		
 		var currentSystem = system;
-		var currentSubstitution = Substitution.EMPTY;
+		var currentSubstitution = _solution.substitution;
 		if(typeResolutionOrigin.eIsProxy) {
 			return new ConstraintSolution(system, currentSubstitution, #[new ValidationIssue(Severity.ERROR, "INTERNAL ERROR: typeResolutionOrigin must not be a proxy", typeResolutionOrigin, null, "")]);
 		}
 		var ConstraintSolution result = null;
-		val issues = newArrayList;
+		val issues = _solution.issues;
 
 		// do one simplification pass to solve equalities etc. then unify type classes
 		debugTimer.start("simplify.1");
@@ -185,16 +186,16 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 			if(!solution.issues.empty) {
 				issues += solution.issues;
-				if(solution?.constraintSystem?.constraints.nullOrEmpty || solution?.solution?.content?.entrySet.nullOrEmpty) {
+				if(solution?.system?.constraints.nullOrEmpty || solution?.substitution?.content?.entrySet.nullOrEmpty) {
 					return new ConstraintSolution(simplifiedSystem, simplifiedSubst, issues);
 				}
 			}
 			result = solution;
-			currentSubstitution = result.solution;
+			currentSubstitution = result.substitution;
 			debugTimer.stop("solveSubtypeConstraints." + (i + 2));
 			
 			debugTimer.start("substitute." + (i + 2));
-			currentSystem = currentSubstitution.apply(result.constraintSystem);
+			currentSystem = currentSubstitution.apply(result.system);
 			debugTimer.stop("substitute." + (i + 2));
 		}
 		debugTimer.stop("solveloop")

@@ -48,7 +48,7 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 			throw new NullPointerException;
 		}
 		
-		if(this.toString == "f_2515 ⩽ f_102") {
+		if(this.toString == "f_1977 ⩽ f_242") {
 			print("")
 		}
 	}
@@ -63,14 +63,6 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		subType + " ⩽ " + superType
 	}
 		
-	override getActiveVars() {
-		return subType.freeVars + superType.freeVars;
-	}
-	
-	override getOrigins() {
-		return #[subType, superType].map[ it.origin ];
-	}
-	
 	override getTypes() {
 		return #[subType, superType];
 	}

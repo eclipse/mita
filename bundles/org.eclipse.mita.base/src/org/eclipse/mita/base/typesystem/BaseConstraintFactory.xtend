@@ -259,7 +259,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeHole arg) {
-		system.associate(system.newTypeHole(arg));
+		system.associate(system.newTypeHole(arg), arg);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument arg) {
@@ -309,7 +309,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			val txt = BaseUtils.getText(varOrFun, featureToResolve);
 			val candidates = system.resolveReferenceToTypes(varOrFun, featureToResolve);	
 			if(candidates.empty) {
-				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''));
+				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''), varOrFun);
 			}
 			
 			val argumentParamsAndValues = varOrFun.arguments.indexed.map[
@@ -581,7 +581,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
 		val result = computeTypeForOperation(system, function);
-		return system.associate(result);
+		return system.associate(result, function);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalMultiplyDivideExpression expr) {
@@ -623,7 +623,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		val mkIssue = [String f1, String f2, Expression e | new ValidationIssue(Severity.ERROR, '''«expr.trueCase»«f1» and «expr.falseCase»«f2» don't share a common type''', e, null, "")];
 		system.addConstraint(new SubtypeConstraint(trueTV, commonTV, mkIssue.apply(" (:: %s)", "", expr.trueCase)));
 		system.addConstraint(new SubtypeConstraint(falseTV, commonTV, mkIssue.apply("", " (:: %s)", expr.falseCase)));		
-		return system.associate(commonTV);
+		return system.associate(commonTV, expr);
 	}
 		
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BinaryExpression expr) {
@@ -658,7 +658,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
 		}
 		else {
-			return system.associate(new BottomType(expr, println("BinaryExpression not implemented for " + expr.operator)));
+			return system.associate(new BottomType(expr, println("BinaryExpression not implemented for " + expr.operator)), expr);
 		}
 	}
 	
@@ -679,7 +679,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeReferenceLiteral expr) {
-		return system.associate(system.getTypeVariableProxy(expr, TypesPackage.eINSTANCE.typeReferenceLiteral_Type))
+		return system.associate(system.getTypeVariableProxy(expr, TypesPackage.eINSTANCE.typeReferenceLiteral_Type), expr)
 	}
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Type type) {
@@ -735,7 +735,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(containerName !== null) {
 			system.typeTable.put(QualifiedName.create(containerName, type.name), tv);
 		}
-		return system.associate(tv);
+		return system.associate(tv, type);
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, InstanceTypeParameter type) {
@@ -1057,23 +1057,5 @@ class BaseConstraintFactory implements IConstraintFactory {
 	
 	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, Literal literal) {
 		throw new UnsupportedOperationException("BCF: unimplemented computeConstraintsForLiteral for " + literal.class.simpleName);
-	}
-
-	protected def associate(ConstraintSystem system, AbstractType t) {
-		return associate(system, t, t.origin);
-	}
-	
-	protected def associate(ConstraintSystem system, AbstractType t, EObject typeVarOrigin) {
-		if(typeVarOrigin === null) {
-			throw new UnsupportedOperationException("BCF: Associating a type variable without origin is not supported (on purpose)!");
-		}
-		
-		val typeVar = system.getTypeVariable(typeVarOrigin);
-		if(typeVar != t && t !== null) { 
-			system.addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» must be of type "%2$s"''', typeVarOrigin, null, "")));
-		}
-		return typeVar;	
-	}
-	
-	
+	}	
 }
