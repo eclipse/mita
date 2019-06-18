@@ -89,7 +89,6 @@ every 100 milliseconds {
 	let bar: uint32? = 10;
 	let barp: uint16? = 10;
 	let bar2 = bar;
-	// XPECT errors --> "Nested generated types are not supported yet." at "let bar3 = &bar2;"
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
 	/* XPECT errors ---
@@ -144,7 +143,6 @@ every 100 milliseconds {
 fn <T> foo2() {
 	let bar: optional<T>; 
 	let bar2 =  bar;
-	// XPECT errors --> "Nested generated types are not supported yet." at "let bar3 = &bar2;"
 	let bar3 = &bar2;
 	let bar4 = *bar3; 
 	/* XPECT errors ---

@@ -97,7 +97,7 @@ function testOptionalsFail(){
 }
 function testOptionalReturnFail() :bool {
 	var x : bool? = false;
-	//XPECT errors --> "Can't return x (:: optional<bool>) since it's not of a subtype of bool" at "return x;"
+	//XPECT errors --> "Can't return x (:: optional<bool>) since it's not of a subtype of bool" at "x"
 	return x;
 }
 

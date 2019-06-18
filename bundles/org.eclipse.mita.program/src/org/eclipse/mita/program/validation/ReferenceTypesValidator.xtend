@@ -38,7 +38,8 @@ import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.FunctionParameterDeclaration
 import org.eclipse.mita.program.ReferenceExpression
-import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnParameterDeclaration
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.util.Triple
@@ -83,7 +84,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	    // This also means you can't reference function parameter references
 	    // This also means you can't copy reference references from function parameters
 	@Check
-	def checkAssignmentExpression(AssignmentExpression e) {
+	def checkAssignmentStatement(AssignmentExpression e) {
 		if(e.expression !== null) {
 			checkRHS1(e, e.expression)
 			checkLHS1(e, e.varRef)
@@ -91,6 +92,9 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	}
 	@Check
 	def checkVariableDeclaration(VariableDeclaration e) {
+		if(e instanceof ReturnParameterDeclaration) {
+			return;
+		}
 		if(e.initialization !== null) {
 			checkRHS1(e, e.initialization)	
 		}
@@ -120,7 +124,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		checkNoFunCall(variable, e);
 	}
 	@Check
-	def forbiddenReferenceReturn(ReturnStatement stmt) {
+	def forbiddenReferenceReturn(ReturnValueExpression stmt) {
 		val funDecl = EcoreUtil2.getContainerOfType(stmt, FunctionDefinition);
 		val funDeclTypeIR = BaseUtils.getType(funDecl.typeSpecifier);
 		if(hasReferenceInType(funDeclTypeIR)) {

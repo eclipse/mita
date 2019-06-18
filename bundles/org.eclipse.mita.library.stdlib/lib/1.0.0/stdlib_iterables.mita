@@ -38,7 +38,9 @@ export generated type array<T, Size is uint32>
 /*
  * Returns the length of an array.
  */
+
 export generated fn <T, S> length(self : array<T, S>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$LengthGenerator";
+export generated fn <S> length(self : string<S>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$LengthGenerator";
 
 //
 ///*

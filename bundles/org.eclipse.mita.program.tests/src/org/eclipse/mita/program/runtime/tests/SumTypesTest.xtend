@@ -23,7 +23,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 class SumTypesTest extends AbstractRuntimeTest {
 	@Test
 	def testMe() {
-		val projectPath = setup("helloWorld", '''
+		val projectPath = setup("sumTypesTest", '''
 			package my.pkg;
 			
 			import platforms.x86;

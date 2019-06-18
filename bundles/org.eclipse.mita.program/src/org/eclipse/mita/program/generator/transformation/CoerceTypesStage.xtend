@@ -16,11 +16,13 @@ package org.eclipse.mita.program.generator.transformation
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.PostFixUnaryExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
@@ -31,21 +33,17 @@ import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.ReturnStatement
-import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
-import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.types.TypeUtils
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
 	@Inject IConstraintFactory constraintFactory
-	@Inject GeneratorUtils generatorUtils
 	@Inject IScopeProvider scopeProvider
 	@Inject ProgramCopier copier
 	@Inject MostGenericUnifierComputer mguComputer
@@ -57,7 +55,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 	
 	def explicitlyConvertAll(EObject obj) {
 		return obj.computeOrigin.eAdapters.filter(CoercionAdapter).head !== null 
-			|| #[AssignmentExpression, Argument, ReturnStatement].exists[it.isAssignableFrom(obj.class)]
+			|| #[AssignmentExpression, Argument, ReturnValueExpression].exists[it.isAssignableFrom(obj.class)]
 	}
 	
 	override transform(ITransformationPipelineInfoProvider pipeline, Program program) {
@@ -179,10 +177,14 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		standardCoercionCreation(c, exp, parent);
 	}
 	
-	dispatch def void doTransform(ConstraintSystem c, ReturnStatement stmt) {
-		val expr = stmt.value;
+	dispatch def void doTransform(ConstraintSystem c, ReturnValueExpression stmt) {
+		val expr = stmt.expression;
 		val parent = EcoreUtil2.getContainerOfType(stmt, Operation);
 		standardCoercionCreation(c, expr, parent.typeSpecifier);
+	}
+	
+	dispatch def void doTransform(ConstraintSystem c, EObject stmt) {
+		throw new IllegalArgumentException("Didn't expect " + stmt.eClass)
 	}
 	
 	override protected void _doTransform(EObject obj) {

@@ -48,10 +48,12 @@ import org.eclipse.xtext.EcoreUtil2
 
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+
 import static extension org.eclipse.mita.base.util.BaseUtils.init
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
+import org.eclipse.mita.program.EventHandlerDeclaration
 
 class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		

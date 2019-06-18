@@ -41,6 +41,7 @@ import org.eclipse.xtext.generator.trace.node.NewLineNode
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 
+
 class StringGenerator extends ArrayGenerator {
 	
 	static public val DOUBLE_PRECISION = 6L;
@@ -77,7 +78,7 @@ class StringGenerator extends ArrayGenerator {
 		val value = init?.value;
 		return doGenerateBufferStmt(context, arrayType, bufferName, size, init, value);
 	}
-	
+	 
 	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, InterpolatedStringLiteral l) {
 		// need to allocate size+1 since snprintf always writes a zero byte at the end.
 		codeFragmentProvider.create('''
@@ -104,8 +105,17 @@ class StringGenerator extends ArrayGenerator {
 	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Literal l) {
 		return codeFragmentProvider.create('''UNKNOWN LITERAL: «l.eClass»''')
 	}
-		
+	
 	dispatch def IGeneratorNode getDataHandleForPrintf(Expression e) {
+		val type = BaseUtils.getType(e);
+		if(type !== null) {
+			if(type.name == "string") {
+				return codeFragmentProvider.create('''«e.code».length, «e.code».data''')
+			}
+		}
+		return e.code;
+	}
+	dispatch def IGeneratorNode getDataHandleForPrintf(PrimitiveValueExpression e) {
 		return e.code;
 	}
 	dispatch def IGeneratorNode getDataHandleForPrintf(ElementReferenceExpression ref) {
@@ -155,7 +165,7 @@ class StringGenerator extends ArrayGenerator {
 				case 'xint8':   '%" PRId8 "'
 				case 'f32':  '%.' + DOUBLE_PRECISION + 'g'
 				case 'f64': '%.' + DOUBLE_PRECISION + 'g'
-				case 'bool':   '%d'
+				case 'bool':   '%" PRIu8 "'
 				case 'string': if(sub.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(StringLiteral) !== null) {
 						'%s'
 					}

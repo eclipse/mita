@@ -17,6 +17,7 @@ import java.util.List
 import org.eclipse.core.runtime.Assert
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ExpressionStatement
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.PostFixOperator
 import org.eclipse.mita.base.expressions.PostFixUnaryExpression
@@ -58,7 +59,6 @@ import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
-import org.eclipse.mita.program.ExpressionStatement
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
@@ -74,7 +74,10 @@ import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.ReferenceExpression
+import org.eclipse.mita.program.ReturnParameterDeclaration
+import org.eclipse.mita.program.ReturnParameterReference
 import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SignalInstanceReadAccess
 import org.eclipse.mita.program.SignalInstanceWriteAccess
@@ -90,7 +93,7 @@ import org.eclipse.xtext.naming.QualifiedName
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
-class ProgramConstraintFactory extends PlatformConstraintFactory {	
+class ProgramConstraintFactory extends PlatformConstraintFactory {		
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Program program) {
 		println('''Computing constraints «program.eResource.URI.lastSegment» (rss «program.eResource.resourceSet.hashCode»)''');
 		system.computeConstraintsForChildren(program);
@@ -276,13 +279,16 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae) {
+		return computeConstraints(system, ae, '''Assignment operator '=' may only be applied on compatible types, not on %2$s and %1$s.''');
+	}
+	protected def TypeVariable computeConstraints(ConstraintSystem system, AssignmentExpression ae, String errorMessage) {
 		val resultType = if(ae.operator == AssignmentOperator.ASSIGN) {
 			val exprType = system.computeConstraints(ae.expression);
 			val varRefType = system.computeConstraints(ae.varRef);
 			system.addConstraint(new SubtypeConstraint(
 				exprType, 
 				varRefType, 
-				new ValidationIssue(Severity.ERROR, '''Assignment operator '=' may only be applied on compatible types, not on %2$s and %1$s.''', ae, null, "")
+				new ValidationIssue(Severity.ERROR, errorMessage, ae, null, "")
 			));
 			varRefType;
 		}
@@ -314,8 +320,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return system.associate(resultType, ae);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ExpressionStatement se) {
-		system.associate(system.computeConstraints(se.expression), se);
-		return null;
+		return system.associate(system.computeConstraints(se.expression), se);
 	}
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ThrowExceptionStatement stmt) {
 		val reference = ProgramPackage.eINSTANCE.throwExceptionStatement_ExceptionType;
@@ -350,7 +355,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FunctionDefinition function) {
 		system.computeConstraints(function.body);
-		if(function.eAllContents.filter(ReturnStatement).empty && function.typeSpecifier instanceof NullTypeSpecifier) {
+		if(function.eAllContents.filter(ReturnValueExpression).empty && function.typeSpecifier instanceof NullTypeSpecifier) {
 			// explicitly set return type to void since there is nothing to infer this from.
 			// otherwise the return type would stay unbound.
 			val voidType = typeRegistry.getTypeModelObjectProxy(system, function, StdlibTypeRegistry.voidTypeQID);
@@ -535,7 +540,29 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 	}
 	
 	
-			
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnParameterDeclaration decl) {
+		val enclosingFunction = EcoreUtil2.getContainerOfType(decl, FunctionDefinition);
+		val enclosingEventHandler = EcoreUtil2.getContainerOfType(decl, EventHandlerDeclaration);
+		if(enclosingFunction === null && enclosingEventHandler === null) {
+			return system.associate(new BottomType(decl, "PCF: Return outside of a function"));
+		}
+		
+		val functionReturnTypeVar = if(enclosingFunction === null) {
+			// enclosingFunction === null ==> enclosingEventHandler !== null because of control flow
+			typeRegistry.getTypeModelObjectProxy(system, decl, StdlibTypeRegistry.voidTypeQID);
+		} else {
+			system.getTypeVariable(enclosingFunction.typeSpecifier)
+		}
+
+		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, decl, StdlibTypeRegistry.referenceTypeQID);
+		val resultVarType = nestInType(system, null, functionReturnTypeVar, referenceTypeVarOrigin, "reference");
+		return system.associate(resultVarType, decl);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnValueExpression expr) {
+		return computeConstraints(system, expr, '''Can't return «expr.expression» (:: %s) since it's not of a subtype of %s''');
+	}
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnStatement statement) {
 		val enclosingFunction = EcoreUtil2.getContainerOfType(statement, FunctionDefinition);
 		val enclosingEventHandler = EcoreUtil2.getContainerOfType(statement, EventHandlerDeclaration);
@@ -549,13 +576,17 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		} else {
 			system.getTypeVariable(enclosingFunction.typeSpecifier)
 		}
-		val returnValVar = if(statement.value === null) {
-			system.associate(typeRegistry.getTypeModelObjectProxy(system, statement, StdlibTypeRegistry.voidTypeQID), statement);
-		} else {
-			system.associate(system.computeConstraints(statement.value), statement);
-		}
-
-		system.addConstraint(new SubtypeConstraint(returnValVar, functionReturnVar, new ValidationIssue(Severity.ERROR, '''Can't return «statement.value» (:: %s) since it's not of a subtype of %s''', statement, null, "")));
-		return returnValVar;	
+		val returnValVar = system.associate(typeRegistry.getTypeModelObjectProxy(system, statement, StdlibTypeRegistry.voidTypeQID), statement);
+		
+		system.addConstraint(new EqualityConstraint(returnValVar, functionReturnVar, new ValidationIssue(Severity.ERROR, '''Can't return nothing in a function returing something''', statement, null, "")));
+		return returnValVar;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ReturnParameterReference ref) {
+		// ref is special in that it returns it's reference without linking, just by its context.
+		return system.associate(system.getTypeVariable(ref.reference), ref);
 	}
 }
+
+
+

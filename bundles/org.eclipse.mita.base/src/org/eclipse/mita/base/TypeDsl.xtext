@@ -171,11 +171,11 @@ ProductMember returns ProductMember:
  * 
  */
 Expression:
-	AssignmentExpression;
-
+	ConditionalExpression;
+	
 AssignmentExpression returns Expression:
-	ConditionalExpression ({AssignmentExpression.varRef=current} operator=AssignmentOperator
-	expression=ConditionalExpression)*;
+	ConditionalExpression ({AssignmentExpression.varRef=current} operator=AssignmentOperator expression=Expression)?
+;
 
 ConditionalExpression returns Expression:
 	LogicalOrExpression ({ConditionalExpression.condition=current} '?' trueCase=LogicalOrExpression ':'

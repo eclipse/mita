@@ -163,7 +163,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		'''
 			«IF objLit !== null»«getFixedSize(obj)»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«objCodeExpr».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»
 		''');
-	}
+	} 
 
 	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject _right) {
 		val right = _right.ignoreCoercions;
@@ -171,7 +171,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			return codeFragmentProvider.create('''''');
 		}
 		val rightLit = right.castOrNull(PrimitiveValueExpression);
-		
+
 		val rightRef = if(right instanceof ArrayAccessExpression) {
 			right.owner
 		} else {
@@ -262,14 +262,14 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
-		
+				
+		@Inject
+		protected extension StatementGenerator
+
 		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
-			val varref = if(variable instanceof ElementReferenceExpression) {
-				val varref = variable.reference;
-				if(varref instanceof NamedElement) {
-					varref.name
-				}
+			val varref = if(variable !== null) {
+				variable.code;
 			}
 			
 			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref».length''').addHeader('MitaGeneratedTypes.h', false);

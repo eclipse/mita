@@ -77,7 +77,11 @@ NativeFunctionDefinition returns program::NativeFunctionDefinition:
 
 FunctionDefinition returns program::FunctionDefinition:
 	(exported?='export')?
-	('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' typeSpecifier=OptionalTypeSpecifier
+	('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
+	name=ID '(' 
+		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
+	')' 
+	typeSpecifier=OptionalTypeSpecifier
 	(body = ProgramBlock)?
 ;
 
@@ -113,12 +117,21 @@ SystemEventSource returns program::SystemEventSource:
 	origin=[platform::AbstractSystemResource] '.' source=[types::Event]
 ;
 
+ReturnParameterDeclaration returns program::ReturnParameterDeclaration:
+	{program::ReturnParameterDeclaration}
+;
+
+FunctionProgramBlock returns program::ProgramBlock:
+	{program::ProgramBlock}
+	'{' content+=ReturnParameterDeclaration (content+=AbstractStatement)* '}'
+;
+
 ProgramBlock returns program::ProgramBlock:
 	{program::ProgramBlock}
 	'{' (content+=AbstractStatement)* '}'
 ;
 
-AbstractStatement returns program::AbstractStatement:
+AbstractStatement returns expressions::AbstractStatement:
 	(
 	  VariableDeclaration 
 	| ExpressionStatement
@@ -132,9 +145,12 @@ AbstractStatement returns program::AbstractStatement:
 	| WhereIsStatement
 	)
 ;
+ExpressionStatementWithoutTerminator returns expressions::AbstractStatement:
+	{expressions::ExpressionStatement} expression=AssignmentExpression
+;
 
-ExpressionStatement returns program::ExpressionStatement:
-	expression=Expression ';'
+ExpressionStatement returns expressions::AbstractStatement:
+	ExpressionStatementWithoutTerminator ';'
 ;
 
 @Override
@@ -182,7 +198,7 @@ AbstractLoopStatement returns program::AbstractLoopStatement:
 		( {program::ForEachStatement} iterator=ForEachLoopIteratorVariableDeclaration =>'in' iterable=Expression )
 		| ({program::ForStatement} (loopVariables += ForLoopVariableDeclaration (',' loopVariables += ForLoopVariableDeclaration)*)? ';'
 			condition = Expression ';'
-			(postLoopStatements += (Expression) (',' postLoopStatements += (Expression))*)? )
+			(postLoopStatements += (ExpressionStatementWithoutTerminator) (',' postLoopStatements += (ExpressionStatementWithoutTerminator))*)? )
 	)')' body=ProgramBlock
 ;
 
@@ -208,13 +224,30 @@ WhileStatement returns program::WhileStatement:
 	'while' '(' condition=Expression ')' body=ProgramBlock
 ;
 
-ReturnStatement returns program::ReturnStatement:
-	{program::ReturnStatement} 
-	'return' (value=Expression)? ';'
+ReturnStatement returns expressions::AbstractStatement: 
+	'return' (
+		(ReturnValueStatement) | 
+		({program::ReturnStatement})
+	) ';'
+;
+
+ReturnValueStatement returns expressions::ExpressionStatement:
+	{expressions::ExpressionStatement} expression=ReturnValueExpression
+;
+ReturnValueExpression returns program::ReturnValueExpression:
+	{program::ReturnValueExpression} expression=Expression 
+	// the following constructs a proxy to the return parameter. It doesn't consume any tokens.
+	varRef=ReturnParameterDereference
+;
+ReturnParameterDereference returns program::DereferenceExpression:
+	{program::DereferenceExpression} expression=(ReturnParameterReference)
+;
+ReturnParameterReference returns program::ReturnParameterReference:
+	{program::ReturnParameterReference}
 ;
 
 WhereIsStatement returns program::WhereIsStatement:
-	'where' '(' matchElement=ElementReferenceExpression ')' '{'
+	'where' '(' matchElement=Expression ')' '{'
 		(isCases += IsCase)*
 	'}'
 ;
