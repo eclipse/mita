@@ -45,6 +45,11 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.transpose
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.AbstractLoopStatement
+import org.eclipse.mita.base.typesystem.types.BottomType
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -56,7 +61,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	@Accessors
 	TypeSizeInferrer delegate;
 	@Inject
-	StdlibTypeRegistry typeRegistry
+	protected StdlibTypeRegistry typeRegistry
 	
 	/**
 	 * return indexes specifying which type arguments of appropriate TypeConstructorTypes are data and which are size.
@@ -294,6 +299,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 				], [it], [t, innerTs |
 					t
 				])
+			return result;
 		}
 		return skeleton;
 	}
@@ -314,7 +320,8 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	 * x = y;
 	 * x += z;
 	 * x should have type max(y + z + z, y + z).
-	 * on data parameters the same is done.
+	 * on data parameters the same is done with the exception that for += we also take the maximum, since data is added but not expanded:
+	 * ["asdf"] + ["foobar"] is array<string<6>, 2>, not array<string<10>, 2>.
 	 */
 	dispatch def void doCreateConstraints(InferenceContext c, VariableDeclaration variable, TypeConstructorType type) {
 		ProgramSizeInferrer.inferUnmodifiedFrom(c.system, variable, variable.typeSpecifier);
@@ -367,6 +374,17 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 			])
 		}
 		
+		
+		def boolean variableReferenceIsInLoop(VariableDeclaration declaration, EObject context) {
+			if(declaration.eContainer instanceof PackageAssociation) {
+				return EcoreUtil2.getContainerOfType(context, Operation) !== null
+					|| EcoreUtil2.getContainerOfType(context, EventHandlerDeclaration) !== null;
+			}
+			else {
+				return EcoreUtil2.getContainerOfType(context, AbstractLoopStatement) !== null;
+			}
+		}
+		
 		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext c, VariableDeclaration variable, Set<Integer> variableSizes, AbstractType runningSize, AssignmentExpression expr) {
 			val varRef = expr.varRef;			
 			if(varRef.castOrNull(ElementReferenceExpression)?.reference === variable) {
@@ -390,7 +408,12 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 						val t2 = t1_t2.value;
 						if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
 							if(sizeTypeIndexes.contains(i)) {
-								c.system.addConstraint(new SumConstraint(tr, #[t1, t2], new ValidationIssue('''1''', expr)));
+								if(variableReferenceIsInLoop(variable, expr)) {
+									c.system.addConstraint(new EqualityConstraint(c.system.newTypeVariable(expr.varRef), new BottomType(expr, '''Cannot infer sizes on append in loops'''), new ValidationIssue('''Cannot infer sizes on append in loops''', expr)))
+								}
+								else {
+									c.system.addConstraint(new SumConstraint(tr, #[t1, t2], new ValidationIssue('''1''', expr)));
+								}
 							}
 							else {
 								c.system.addConstraint(new MaxConstraint(tr, #[t1, t2], new ValidationIssue('''2''', expr)))
@@ -408,7 +431,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 				return runningSize;	
 			}
 		}
-		
+				
 		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext c, VariableDeclaration variable, Set<Integer> variableSizes, AbstractType runningSize, EObject object) {
 			return createConstraintsForMutating(c, variable, variableSizes, object.eContents, runningSize);
 		}

@@ -54,6 +54,8 @@ import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		
@@ -80,32 +82,7 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 			new LiteralNumberType(lit, lit.values.length, t.typeArguments.last) -> Variance.COVARIANT
 		]), lit);
 	}
-	
-//	static def Optional<Long> getSize(AbstractType type) {
-//		return Optional.fromNullable(type?.castOrNull(TypeConstructorType)
-//				?.typeArguments?.last?.castOrNull(LiteralTypeExpression)
-//				?.eval()?.castOrNull(Long))
-//	}
-//	
-//	// you should always pass a array<T, ...> here
-//	static def AbstractType getDataType(AbstractType type) {
-//		return type?.castOrNull(TypeConstructorType)?.typeArguments?.tail?.head;
-//	}	
-//		
-//	override Iterable<InferenceContext> unbindSize(InferenceContext c) {
-//		val type = c.type;
-//		if(type instanceof TypeConstructorType) {
-//			return #[new InferenceContext(c, replaceLastTypeArgument(type, c.system.newTypeVariable(c.obj)).value)];
-//		}
-//		
-//		return ElementSizeInferrer.super.unbindSize(c);
-//	}
-//	
-//	override createConstraints(InferenceContext c) {
-//		return doInfer(c, c.obj, c.type);
-//	}
-//	
-//		
+
 //	protected dispatch def void doInfer(InferenceContext c, NewInstanceExpression obj, TypeConstructorType type) {	
 //		val lastTypespecifierArg = obj.type.typeArguments.last;
 //		if(lastTypespecifierArg instanceof TypeReferenceSpecifier) {
@@ -118,20 +95,25 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 //		return Optional.of(c);
 //	}
 //	
-//	protected dispatch def void doInfer(InferenceContext c, ArrayAccessExpression expr, TypeConstructorType type) {
-//		val arraySelector = expr.arraySelector.ignoreCoercions?.castOrNull(ValueRange);
-//		if(arraySelector !== null) {
-//			val ownerType = BaseUtils.getType(c.system, c.sub, expr.owner);
-//			val ownerSize = getSize(ownerType);
-//			val lowerBound = StaticValueInferrer.infer(arraySelector.lowerBound, [])?.castOrNull(Long) ?: 0L;
-//			val upperBound = StaticValueInferrer.infer(arraySelector.upperBound, [])?.castOrNull(Long) ?: ownerSize.orNull;
-//			if(upperBound === null) {
-//				return Optional.of(c);
-//			}
-//			replaceLastTypeArgument(c.sub, type, new LiteralNumberType(expr, upperBound - lowerBound, type.typeArguments.last));
-//		}
-//		Optional.of(c);
-//	}
+	dispatch def void doCreateConstraints(InferenceContext c, ArrayAccessExpression expr, TypeConstructorType type) {
+		val arraySelector = expr.arraySelector.ignoreCoercions?.castOrNull(ValueRange);
+		if(arraySelector !== null) {
+			val u32 = typeRegistry.getTypeModelObject(expr, StdlibTypeRegistry.u32TypeQID);
+			val u32Type = c.system.getTypeVariable(u32);
+			val ownerSize = typeVariableToTypeConstructorType(c, c.system.getTypeVariable(expr.owner), type).typeArguments.last;
+			val lowerBound = new LiteralNumberType(arraySelector.lowerBound, -1 * (StaticValueInferrer.infer(arraySelector.lowerBound, [])?.castOrNull(Long) ?: 0L), u32Type);
+			val upperBoundInferred = StaticValueInferrer.infer(arraySelector.upperBound, [])?.castOrNull(Long);
+			val upperBound = if(upperBoundInferred !== null) {
+				new LiteralNumberType(arraySelector.upperBound, upperBoundInferred, u32Type);
+			}
+			else {
+				ownerSize	
+			}
+			val exprSizeType = typeVariableToTypeConstructorType(c, c.system.getTypeVariable(expr), type).typeArguments.last as TypeVariable;
+			c.system.addConstraint(new SumConstraint(exprSizeType, #[upperBound, lowerBound], new ValidationIssue('''''', expr)));
+		}
+		c.system.associate(type, expr);
+	}
 //	
 //	
 //	protected dispatch def void doInfer(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType type) {

@@ -60,6 +60,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import com.google.inject.Provider
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -303,7 +304,11 @@ class MitaBaseResource extends LazyLinkingResource {
 				]
 
 				if (resource instanceof MitaBaseResource) {
-					solution.system.symbolTable.entrySet.forEach [
+					solution.substitution.idxToTypeVariable.values
+					.filter[it.origin !== null]
+					.map[EcoreUtil.getURI(it.origin) -> it]
+					.filter[!encoder.isCrossLinkFragment(this, it.key.fragment)]
+					.forEach [
 						val uri = it.key;
 						if (uri.trimFragment == resource.URI) {
 							val tv = it.value;
