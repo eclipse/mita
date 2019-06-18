@@ -37,15 +37,19 @@ class NumericMaxType extends TypeConstructorType implements CompositeLiteralType
 	}
 	
 	override eval() {
-		val maybeResults = (simplify() as NumericMaxType).typeArguments;
-		if(maybeResults.size === 1) {
-			val maybeResult = maybeResults.head;
-			if(maybeResult instanceof LiteralNumberType) {
-				return maybeResult.value;
+		val maybeResults = simplify;
+		if(maybeResults instanceof NumericMaxType) {
+			if(maybeResults.typeArguments.size === 1) {
+				val maybeResult = maybeResults.typeArguments.head;
+				if(maybeResult instanceof LiteralNumberType) {
+					return maybeResult.value;
+				}
 			}
 		}
-		
-		return -1L;
+		else if(maybeResults instanceof LiteralNumberType) {
+			return maybeResults.value;
+		}	
+		return null;
 	}
 	
 	override simplify() {

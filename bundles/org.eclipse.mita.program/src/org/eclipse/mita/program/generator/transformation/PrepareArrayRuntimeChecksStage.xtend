@@ -26,9 +26,7 @@ import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.WhileStatement
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
@@ -50,7 +48,6 @@ class PrepareArrayRuntimeChecksStage extends AbstractTransformationStage {
 		expression.transformChildren();
 		
 		// precondition: we can't infer the dimensions of the array and the access ourselves
-		val sizeInfRes = new InvalidElementSizeInferenceResult(null, null, "");
 		val arraySelector = expression.arraySelector.ignoreCoercions as Expression;
 		val staticVal = StaticValueInferrer.infer(arraySelector, [x|]);
 		val canInferStatically = false && staticVal !== null;

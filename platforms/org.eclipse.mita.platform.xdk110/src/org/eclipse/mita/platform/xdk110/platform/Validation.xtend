@@ -29,15 +29,14 @@ import org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.mita.program.validation.MethodCall
 import org.eclipse.mita.program.validation.MethodCall.MethodCallModality
 import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
+import org.eclipse.mita.library.stdlib.ArrayGenerator
 
 class Validation implements IResourceValidator {		
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
@@ -189,13 +188,12 @@ class Validation implements IResourceValidator {
 		val specifiedLength = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "length"), []);
 		if(specifiedLength instanceof Integer) {
 			val argumentArray = ExpressionUtils.getArgumentValue(writeMethod, source, "value");
-			val arraySize = new InvalidElementSizeInferenceResult(null, null, "");//sizeInferrer.infer(argumentArray);
-//			if(arraySize instanceof ValidElementSizeInferenceResult) {
-//				val actualLength = arraySize.elementCount;
-//				if(actualLength != specifiedLength) {
-//					acceptor.acceptError("passed array has invalid size: " + actualLength + ", should be: " + specifiedLength, argumentArray, null, 0, "PASSED_ARRAY_HAS_INVALID_SIZE")
-//				}
-//			}	
+			val arraySize = ArrayGenerator.getInferredSize(argumentArray)?.eval;
+			if(arraySize !== null) {
+				if(arraySize != specifiedLength) {
+					acceptor.acceptError("passed array has invalid size: " + arraySize + ", should be: " + specifiedLength, argumentArray, null, 0, "PASSED_ARRAY_HAS_INVALID_SIZE")
+				}
+			}	
 		}
 		
 	}

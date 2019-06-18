@@ -13,10 +13,10 @@
 
 package org.eclipse.mita.program.generator
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.LinkedList
 import java.util.List
+import java.util.Optional
 import java.util.function.Function
 import org.eclipse.core.runtime.CoreException
 import org.eclipse.core.runtime.IStatus
@@ -113,7 +113,6 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.mita.program.WhileStatement
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
@@ -512,7 +511,7 @@ class StatementGenerator {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (generator !== null) {
 				val varName = codeFragmentProvider.create('''«stmt»''');
-				return '''«generator.generateExpression(type, stmt, Optional.absent, varName, varName, null, null)»''';
+				return '''«generator.generateExpression(type, stmt, Optional.empty, varName, varName, null, null)»''';
 			} else {
 				throw new CoreException(
 					new Status(IStatus.ERROR, "org.eclipse.mita.program",
@@ -589,7 +588,7 @@ class StatementGenerator {
 				return generateFunCallStmt(varName, type, initialization as ElementReferenceExpression);
 			} else if(initialization instanceof PrimitiveValueExpression) {
 				if((initialization.value instanceof ArrayLiteral || initialization.value instanceof StringLiteral) 
-					&& target instanceof VariableDeclaration
+					&& target.orElse(null) instanceof VariableDeclaration
 				) {
 					return CodeFragment.EMPTY;
 				}
@@ -636,13 +635,12 @@ class StatementGenerator {
 			BaseUtils.getType(stmt), 
 			stmt, 
 			Optional.of(stmt),
-			new ValidElementSizeInferenceResult(stmt, BaseUtils.getType(stmt), 1)/*sizeInferrer.infer(stmt) as ValidElementSizeInferenceResult*/,
 			codeFragmentProvider.create('''«stmt.name»'''), 
 			stmt.initialization,
 			stmt.eContainer instanceof Program
 		);
 	}
-	def IGeneratorNode generateVariableDeclaration(AbstractType type, EObject context, Optional<VariableDeclaration> varDecl, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	def IGeneratorNode generateVariableDeclaration(AbstractType type, EObject context, Optional<VariableDeclaration> varDecl, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		var result = context.trace;
 		
 		val typeIsSingleton = TypeUtils.getConstraintSystem(context.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
@@ -659,7 +657,7 @@ class StatementGenerator {
 
 		if (TypeUtils.isGeneratedType(context, type)) {
 			val generator = registry.getGenerator(context.eResource, type).castOrNull(AbstractTypeGenerator);
-			result.children += generator.generateVariableDeclaration(type, context, size, varName, initialization, isTopLevel);
+			result.children += generator.generateVariableDeclaration(type, context, varName, initialization, isTopLevel);
 			if(initialization instanceof PrimitiveValueExpression && (
 				type.name == MitaTypeSystem.ARRAY_TYPE || type.name == MitaTypeSystem.STRING)) {
 				initializationDone = true;
@@ -713,7 +711,7 @@ class StatementGenerator {
 		if(!initializationDone) {
 			result.children += codeFragmentProvider.create('''«"\n"»''');
 			// TODO: remove code duplication with initializationCode(VariableDeclaration)
-			result.children += initializationCode(type, context, varDecl.transform[it], varName, varName, AssignmentOperator.ASSIGN, initialization, false).noNewline.noTerminator;
+			result.children += initializationCode(type, context, varDecl.map[it], varName, varName, AssignmentOperator.ASSIGN, initialization, false).noNewline.noTerminator;
 			result.children += codeFragmentProvider.create('''«";"»''');
 		
 		}

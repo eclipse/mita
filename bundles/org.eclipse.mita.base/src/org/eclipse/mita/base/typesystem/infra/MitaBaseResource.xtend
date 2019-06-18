@@ -314,7 +314,8 @@ class MitaBaseResource extends LazyLinkingResource {
 							val tv = it.value;
 							val type = solution.substitution.content.getOrDefault(tv.idx, tv);
 							val origin = resource.resourceSet.getEObject(uri, false);
-							if (origin !== null) {
+							// only set types for those entries that are the main one
+							if (origin !== null && tv == solution.system.getTypeVariable(origin)) {
 								// we had the object loaded anyways, so we can set the type
 								TypeAdapter.set(origin, type);
 							}

@@ -13,49 +13,22 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
-import org.eclipse.mita.base.expressions.AssignmentExpression
-import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ValueRange
-import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.TypeExpressionSpecifier
-import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
-import org.eclipse.mita.base.typesystem.infra.NullSizeInferrer
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
-import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.AbstractLoopStatement
 import org.eclipse.mita.program.ArrayLiteral
-import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtext.EcoreUtil2
 
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-
-import static extension org.eclipse.mita.base.util.BaseUtils.init
-import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
-import org.eclipse.mita.program.EventHandlerDeclaration
-import org.eclipse.mita.base.typesystem.constraints.SumConstraint
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		

@@ -68,6 +68,7 @@ import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.types.TypeHole
+import org.eclipse.mita.base.expressions.ExpressionStatement
 
 /**
  * Hierarchically infers the size of a data element.
@@ -262,6 +263,14 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		}
 	}
 	
+	dispatch def void doCreateConstraints(InferenceContext c, ExpressionStatement stmt) {
+		inferUnmodifiedFrom(c.system, stmt, stmt.expression);
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, AssignmentExpression expr) {
+		inferUnmodifiedFrom(c.system, expr, expr.varRef);
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, PrimitiveValueExpression obj) {
 		inferUnmodifiedFrom(c.system, obj, obj.value);
 	}
@@ -415,179 +424,6 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			return typeInferrer.getZeroSizeType(c, skeleton);
 		}
 		return skeleton;
-	}
-	
-}
-
-
-
-
-
-
-
-// ---------------------------------------------------
-/**
- * The inference result of the ElementSizeInferrer
- */
-abstract class ElementSizeInferenceResult {
-	val EObject root;
-	val AbstractType typeOf;
-	val List<ElementSizeInferenceResult> children;
-	
-	def ElementSizeInferenceResult orElse(ElementSizeInferenceResult esir){
-		return orElse([| esir]);
-	}
-	abstract def ElementSizeInferenceResult orElse(() => ElementSizeInferenceResult esirProvider);
-	
-	/**
-	 * Creates a new valid inference result for an element, its type and the
-	 * required element count.
-	 */
-	protected new(EObject root, AbstractType typeOf) {
-		this.root = root;
-		this.typeOf = typeOf;
-		this.children = new LinkedList<ElementSizeInferenceResult>();
-	}
-	
-	abstract def ElementSizeInferenceResult replaceRoot(EObject root);
-	
-	/**
-	 * Checks if this size inference and its children are valid/complete.
-	 */
-	def boolean isValid() {
-		return invalidSelfOrChildren.empty;
-	}
-	
-	/**
-	 * Returns true if this particular result node is valid.
-	 */
-	abstract def boolean isSelfValid();
-	
-	/**
-	 * Returns a list of invalid/incomplete inference nodes which can be used for validation
-	 * and user feedback.
-	 */
-	def Iterable<InvalidElementSizeInferenceResult> getInvalidSelfOrChildren() {
-		return (if(isSelfValid) #[] else #[this as InvalidElementSizeInferenceResult]) + children.map[x | x.invalidSelfOrChildren ].flatten;
-	}
-	
-	/**
-	 * Returns a list of valid/complete inference nodes.
-	 */
-	def Iterable<ValidElementSizeInferenceResult> getValidSelfOrChildren() {
-		return (if(isSelfValid) #[this as ValidElementSizeInferenceResult] else #[]) + children.map[x | x.validSelfOrChildren ].flatten;
-	}
-	
-	/**
-	 * The root element this size inference was made from.
-	 */
-	def EObject getRoot() {
-		return root;
-	}
-	
-	/**
-	 * The data type we require elements of.
-	 */
-	def AbstractType getTypeOf() {
-		return typeOf;
-	}
-	
-	/**
-	 * Any children we require as part of the type (i.e. through type parameters or struct members).
-	 */
-	def List<ElementSizeInferenceResult> getChildren() {
-		return children;
-	}
-		
-	override toString() {
-		var result = if(typeOf instanceof TypeReferenceSpecifier) {
-			typeOf.type.name;
-		} else {
-			""
-		}
-		result += ' {' + children.map[x | x.toString ].join(', ') + '}';
-		return result;
-	}
-	
-}
-
-class ValidElementSizeInferenceResult extends ElementSizeInferenceResult {
-	
-	val long elementCount;
-	
-	new(EObject root, AbstractType typeOf, long elementCount) {
-		super(root, typeOf);
-		this.elementCount = elementCount;
-	}
-	
-	/**
-	 * The number of elements of this type we require.
-	 */
-	def long getElementCount() {
-		return elementCount;
-	}
-	
-	override isSelfValid() {
-		return true;
-	}
-		
-	override toString() {
-		var result = typeOf?.toString;
-		result += '::' + elementCount;
-		if(!children.empty) {
-			result += 'of{' + children.map[x | x.toString ].join(', ') + '}';			
-		}
-		return result;
-	}
-		
-	override orElse(() => ElementSizeInferenceResult esirProvider) {
-		return this;
-	}
-	
-	override replaceRoot(EObject root) {
-		val result = new ValidElementSizeInferenceResult(root, this.typeOf, this.elementCount);
-		result.children += children;
-		return result;
-	}
-	
-}
-
-class InvalidElementSizeInferenceResult extends ElementSizeInferenceResult {
-	
-	val String message;
-	
-	new(EObject root, AbstractType typeOf, String message) {
-		super(root, typeOf);
-		this.message = message;
-	}
-	
-	def String getMessage() {
-		return message;
-	}
-	
-	override isSelfValid() {
-		return false;
-	}
-	
-	override toString() {
-		return "INVALID:" + message + "@" + super.toString();
-	}
-	
-	override orElse(() => ElementSizeInferenceResult esirProvider) {
-		var esir = esirProvider?.apply();
-		if(esir === null) {
-			return this;
-		}
-		if(esir instanceof InvalidElementSizeInferenceResult) {
-			esir = new InvalidElementSizeInferenceResult(esir.root, esir.typeOf, message + "\n" + esir.message);
-		}
-		return esir;
-	}
-	
-	override replaceRoot(EObject root) {
-		val result = new InvalidElementSizeInferenceResult(root, this.typeOf, this.message);
-		result.children += children;
-		return result;
 	}
 	
 }
