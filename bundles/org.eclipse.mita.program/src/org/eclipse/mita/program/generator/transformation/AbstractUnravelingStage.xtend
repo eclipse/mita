@@ -28,6 +28,7 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.TypesFactory
 
 abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 
@@ -224,6 +225,7 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 		val resultVariableName = getUniqueVariableName(unravelingObject).toFirstLower;
 		val resultVariable = ProgramFactory.eINSTANCE.createVariableDeclaration;
 		resultVariable.name = resultVariableName;
+		resultVariable.typeSpecifier = TypesFactory.eINSTANCE.createNullTypeSpecifier;
 		return resultVariable;
 	}
 

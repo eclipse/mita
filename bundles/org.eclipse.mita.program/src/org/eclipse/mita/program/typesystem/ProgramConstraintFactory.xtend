@@ -544,7 +544,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		val enclosingFunction = EcoreUtil2.getContainerOfType(decl, FunctionDefinition);
 		val enclosingEventHandler = EcoreUtil2.getContainerOfType(decl, EventHandlerDeclaration);
 		if(enclosingFunction === null && enclosingEventHandler === null) {
-			return system.associate(new BottomType(decl, "PCF: Return outside of a function"));
+			return system.associate(new BottomType(decl, "PCF: Return outside of a function"), decl);
 		}
 		
 		val functionReturnTypeVar = if(enclosingFunction === null) {
@@ -555,7 +555,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		}
 
 		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, decl, StdlibTypeRegistry.referenceTypeQID);
-		val resultVarType = nestInType(system, null, functionReturnTypeVar, referenceTypeVarOrigin, "reference");
+		val resultVarType = nestInType(system, null, #[functionReturnTypeVar -> Variance.INVARIANT], referenceTypeVarOrigin, "reference");
 		return system.associate(resultVarType, decl);
 	}
 	

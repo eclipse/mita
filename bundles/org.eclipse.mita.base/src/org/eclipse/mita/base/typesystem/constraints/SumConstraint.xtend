@@ -14,7 +14,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 
 @Accessors
-class MaxConstraint extends AbstractTypeConstraint {
+class SumConstraint extends AbstractTypeConstraint {
 	val TypeVariable target;
 	val Iterable<AbstractType> arguments;
 	
@@ -28,7 +28,7 @@ class MaxConstraint extends AbstractTypeConstraint {
 	override map((AbstractType)=>AbstractType f) {
 		val newArgs = arguments.map[it.map(f)].force;
 		if(arguments.zip(newArgs).exists[it.key !== it.value]) {
-			return new MaxConstraint(target, newArgs, _errorMessage);
+			return new SumConstraint(target, newArgs, _errorMessage);
 		}
 		return this;
 	}
@@ -38,7 +38,7 @@ class MaxConstraint extends AbstractTypeConstraint {
 	}
 	
 	override getOperator() {
-		return " = max "
+		return " = sum "
 	}
 	
 	override toString() {

@@ -2,7 +2,9 @@ package org.eclipse.mita.base.typesystem.infra
 
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -10,7 +12,6 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.mita.base.types.TypeSpecifier
 
 abstract class AbstractSizeInferrer {
 	def ConstraintSolution createSizeConstraints(ConstraintSolution cs, Resource r);
@@ -39,8 +40,14 @@ interface TypeSizeInferrer extends FunctionSizeInferrer {
 	 * Finds the maximum size of all passed types.
 	 */
 	def void createConstraintsForMax(ConstraintSystem system, Resource r, MaxConstraint constraint);
+	/**
+	 * Finds the sum of all passed type sizes.
+	 */
+	def void createConstraintsForSum(ConstraintSystem system, Resource r, SumConstraint constraint);
 	
 	def boolean isFixedSize(TypeSpecifier ts);
+	
+	def AbstractType getZeroSizeType(InferenceContext c, AbstractType skeleton);
 }
 
 @FinalFieldsConstructor
@@ -101,7 +108,14 @@ class NullSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferrer 
 	}
 	
 	override isFixedSize(TypeSpecifier ts) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		return false;
+	}
+	
+	override createConstraintsForSum(ConstraintSystem system, Resource r, SumConstraint constraint) {
+	}
+	
+	override getZeroSizeType(InferenceContext c, AbstractType skeleton) {
+		return skeleton;
 	}
 	
 }

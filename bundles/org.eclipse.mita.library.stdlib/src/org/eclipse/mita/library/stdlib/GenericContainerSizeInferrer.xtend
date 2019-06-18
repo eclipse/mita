@@ -1,51 +1,50 @@
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.ArrayList
 import java.util.Collections
+import java.util.HashSet
 import java.util.List
+import java.util.Set
 import java.util.function.BiFunction
 import java.util.function.Function
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.NaryTypeAddition
+import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ProgramSizeInferrer
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.EcoreUtil2
 
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.transpose
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.NullTypeSpecifier
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import java.util.HashSet
-import java.util.Set
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -235,6 +234,32 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		}
 	}
 	
+	// create sum constraints for all sizes
+	override createConstraintsForSum(ConstraintSystem system, Resource r, SumConstraint constraint) {
+		if(constraint.arguments.forall[it instanceof TypeConstructorType]) {
+			// constraint ~ f1 = max(array<f2, f3>, array<f4, f5>)
+			// create f1 := array<f6, f7>, f6 = max(f2, f4), f7 = max(f3, f5)
+			val target = constraint.target;
+			val exampleType = constraint.types.head as TypeConstructorType;
+			// take first arg without modification
+			val targetTypeWithHoles = new TypeConstructorType(null, exampleType.typeArguments.head, exampleType.typeArgumentsAndVariances.tail.map[t_v|
+				val type = t_v.key;
+				val variance = t_v.value;
+				val tv = system.newTypeVariable(null);
+				return tv as AbstractType -> variance;
+			]);
+			system.addConstraint(new EqualityConstraint(target, targetTypeWithHoles, constraint._errorMessage))
+			// [array<_, 1>, array<_, 2>]  => [[array, array], [_, _], [1, 2]]; 
+			val typeArgumentsTransposed = constraint.arguments.map[it as TypeConstructorType].map[it.typeArguments].transpose;
+			typeArgumentsTransposed.zip(targetTypeWithHoles.typeArguments).tail.forEach[ts_tv |
+				// targetTypeWithHoles is created with all new type variables
+				val tv = ts_tv.value as TypeVariable;
+				val types = ts_tv.key;
+				system.addConstraint(new SumConstraint(tv, types, constraint._errorMessage))
+			]
+		}
+	}
+	
 	override isFixedSize(TypeSpecifier ts) {
 		return dispatchIsFixedSize(ts);
 	}
@@ -248,6 +273,21 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	}
 	dispatch def boolean dispatchIsFixedSize(NullTypeSpecifier ts) {
 		return false;
+	}
+	
+	override getZeroSizeType(InferenceContext c, AbstractType skeleton) {
+		if(skeleton instanceof TypeConstructorType) {
+			val result = setTypeArguments(
+				skeleton, 
+				[i, t| 
+					delegate.getZeroSizeType(c, t);
+				], [i, t|
+					new LiteralNumberType(t.origin, 0, t);
+				], [it], [t, innerTs |
+					t
+				])
+		}
+		return skeleton;
 	}
 	
 	/* Typing the following:
@@ -287,7 +327,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		
 		if(variableSizes.empty || !variable.writeable) {
 			if(variable.initialization !== null) {	
-				ProgramSizeInferrer.inferUnmodifiedFrom(c.system, variable, variable.typeSpecifier);
+				ProgramSizeInferrer.inferUnmodifiedFrom(c.system, variable, variable.initialization);
 			}
 			return;
 		}
@@ -295,7 +335,12 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
 		
 		val variableContainer = variable.eContainer;
-		val initialSize = c.system.getTypeVariable(variable);
+		val initialSize = if(variable.initialization !== null) {
+			c.system.getTypeVariable(variable.initialization);	
+		} 
+		else {
+			getZeroSizeType(c, type);
+		}
 		
 		val subsequentStatements = if(variableContainer instanceof Program) {
 			variableContainer.functionDefinitions + variableContainer.eventHandlers;
@@ -305,23 +350,38 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 			variableContainer.eContents.dropWhile[it !== variable].tail
 		}
 		val totalSize = createConstraintsForMutating(c, variable, variableSizes, subsequentStatements, initialSize);
+		c.system.associate(totalSize, variable);
 	}
 		
-		def AbstractType createConstraintsForMutating(InferenceContext context, VariableDeclaration variable, Set<Integer> variableSizes, Iterable<EObject> objects, AbstractType runningSize) {
+		def AbstractType createConstraintsForMutating(InferenceContext c, VariableDeclaration variable, Set<Integer> variableSizes, Iterable<EObject> objects, AbstractType runningSize) {
 			objects.fold(runningSize, [ rs, obj |
-				doCreateConstraintsForMutating(context, variable, variableSizes, rs, obj);
+				doCreateConstraintsForMutating(c, variable, variableSizes, rs, obj);
 			])
 		}
 		
-		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext context, VariableDeclaration declaration, Set<Integer> integers, AbstractType runningSize, AssignmentExpression object) {
-			val varRef = object.varRef;
-			if(varRef instanceof ElementReferenceExpression) {
-				
+		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext c, VariableDeclaration variable, Set<Integer> variableSizes, AbstractType runningSize, AssignmentExpression expr) {
+			val varRef = expr.varRef;			
+			if(varRef.castOrNull(ElementReferenceExpression)?.reference === variable) {
+				val varRefContext = new InferenceContext(c, varRef);
+				delegate.createConstraints(varRefContext);
+				val result = c.system.newTypeVariable(variable);
+				val initSize = c.system.getTypeVariable(expr.expression);
+				if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
+					c.system.addConstraint(new SumConstraint(result, #[runningSize, initSize], new ValidationIssue('''''', expr)))
+					return result;
+				}
+				else if(expr.operator == AssignmentOperator.ASSIGN) {
+					c.system.addConstraint(new MaxConstraint(result, #[runningSize, initSize], new ValidationIssue('''''', expr)))
+					return result;
+				}
+			}
+			else {
+				return runningSize;	
 			}
 		}
 		
-		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext context, VariableDeclaration declaration, Set<Integer> integers, AbstractType runningSize, EObject object) {
-			return runningSize;
+		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext c, VariableDeclaration variable, Set<Integer> variableSizes, AbstractType runningSize, EObject object) {
+			return createConstraintsForMutating(c, variable, variableSizes, object.eContents, runningSize);
 		}
 		
 		

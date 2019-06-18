@@ -21,6 +21,8 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
 import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 
 class SomeTypeSizeInferrer implements TypeSizeInferrer {
 	@Accessors
@@ -40,6 +42,14 @@ class SomeTypeSizeInferrer implements TypeSizeInferrer {
 	}
 	
 	override createConstraintsForMax(ConstraintSystem system, Resource r, MaxConstraint constraint) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override isFixedSize(TypeSpecifier ts) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override createConstraintsForSum(ConstraintSystem system, Resource r, SumConstraint constraint) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	

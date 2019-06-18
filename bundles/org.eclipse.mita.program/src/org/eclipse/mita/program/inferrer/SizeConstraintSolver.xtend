@@ -24,6 +24,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force;
 import static extension org.eclipse.mita.base.util.BaseUtils.zip;
 import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 
 // handles equality and max
 class SizeConstraintSolver implements IConstraintSolver {
@@ -102,6 +103,11 @@ class SizeConstraintSolver implements IConstraintSolver {
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, MaxConstraint constraint) {
 		programSizeInferrer.createConstraintsForMax(system, typeResolutionOrigin.eResource, constraint);
+		return SimplificationResult.success(system, Substitution.EMPTY);
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SumConstraint constraint) {
+		programSizeInferrer.createConstraintsForSum(system, typeResolutionOrigin.eResource, constraint);
 		return SimplificationResult.success(system, Substitution.EMPTY);
 	}
 	

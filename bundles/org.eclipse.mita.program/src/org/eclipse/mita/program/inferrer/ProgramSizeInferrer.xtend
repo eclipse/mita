@@ -55,6 +55,7 @@ import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -63,6 +64,9 @@ import org.eclipse.xtext.EcoreUtil2
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.types.NumericAddType
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 
 /**
  * Hierarchically infers the size of a data element.
@@ -83,6 +87,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			
 	override ConstraintSolution createSizeConstraints(ConstraintSolution cs, Resource r) {
 		val system = new ConstraintSystem(cs.getSystem);
+		system.atomicConstraints.removeIf[it instanceof SubtypeConstraint];
 		val sub = new Substitution(cs.getSubstitution);
 		val toBeInferred = unbindSizes(system, sub, r).force;
 		toBeInferred.forEach[c| startCreatingConstraints(c)];
@@ -257,8 +262,8 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		inferUnmodifiedFrom(c.system, obj, obj.value);
 	}
 	
-	dispatch def void doCreateConstraints(InferenceContext c, ReturnStatement obj) {
-		inferUnmodifiedFrom(c.system, obj, obj.value);
+	dispatch def void doCreateConstraints(InferenceContext c, ReturnValueExpression obj) {
+		inferUnmodifiedFrom(c.system, obj, obj.expression);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, NewInstanceExpression obj) {
@@ -364,6 +369,35 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			system.addConstraint(new EqualityConstraint(constraint.target, maxType, constraint._errorMessage));
 		}
 	}
+	override void createConstraintsForSum(ConstraintSystem system, Resource r, SumConstraint constraint) {
+		val typeInferrer = getInferrer(r, system, constraint.types.head); 
+		if(typeInferrer !== null) {
+			typeInferrer.createConstraintsForSum(system, r, constraint);
+		}
+		else {
+			// exists instead of forall:
+			// assume that constraints are well formed at this point, so mostly all the same. 
+			// Some array constraints for example are max(1,2,3,uint32). For those we need to ignore uint32: 
+			// its there as a type hint for other max terms such as [1,2,3]: array<*uint32*, 3>. 
+			val sumType = if(constraint.arguments.exists[it instanceof LiteralTypeExpression && (it as LiteralTypeExpression<?>).getTypeArgument === Long]) {
+				val u32 = typeRegistry.getTypeModelObject(r.contents.head, StdlibTypeRegistry.u32TypeQID);
+				new NumericAddType(constraint.arguments.head.origin, "sumType", system.getTypeVariable(u32), constraint.arguments.map[it -> Variance.UNKNOWN]);
+			}
+			else {
+				subtypeChecker.getSupremum(system, constraint.types, r.contents.head);
+			}
+			system.addConstraint(new EqualityConstraint(constraint.target, sumType, constraint._errorMessage));
+		}
+	}
+	
+	override getZeroSizeType(InferenceContext c, AbstractType skeleton) {
+		val typeInferrer = getInferrer(c.r, c.system, skeleton);
+		if(typeInferrer !== null) {
+			return typeInferrer.getZeroSizeType(c, skeleton);
+		}
+		return skeleton;
+	}
+	
 }
 
 
