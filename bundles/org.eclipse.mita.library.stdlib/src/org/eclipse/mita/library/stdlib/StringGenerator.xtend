@@ -25,7 +25,6 @@ import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.VariableDeclaration
@@ -40,6 +39,7 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 
 class StringGenerator extends ArrayGenerator {
 	
@@ -209,7 +209,7 @@ class StringGenerator extends ArrayGenerator {
 		protected CodeFragmentProvider codeFragmentProvider
 		
 		@Inject
-		protected ElementSizeInferrer sizeInferrer
+		protected TypeSizeInferrer sizeInferrer
 	
 		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
 			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');

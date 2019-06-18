@@ -10,6 +10,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.types.TypeSpecifier
 
 abstract class AbstractSizeInferrer {
 	def ConstraintSolution createSizeConstraints(ConstraintSolution cs, Resource r);
@@ -21,14 +22,14 @@ interface FunctionSizeInferrer {
 	 * May only call delegate.infer on the passed EObject and its contained objects, not on references or containers.
 	 * In fact, calling delegate.infer should be the default action of inferrers that are not some kind of "main" inferrer.
 	 */
-	def void setDelegate(ElementSizeInferrer delegate);
+	def void setDelegate(TypeSizeInferrer delegate);
 	/**
 	 * Infers the size for EObject obj with type type. It does this by inserting constraints into c.system.
 	 */
 	def void createConstraints(InferenceContext c);
 }
 
-interface ElementSizeInferrer extends FunctionSizeInferrer {
+interface TypeSizeInferrer extends FunctionSizeInferrer {
 	/**
 	 * Unbinds size parameters in types of objects.
 	 */
@@ -38,6 +39,8 @@ interface ElementSizeInferrer extends FunctionSizeInferrer {
 	 * Finds the maximum size of all passed types.
 	 */
 	def void createConstraintsForMax(ConstraintSystem system, Resource r, MaxConstraint constraint);
+	
+	def boolean isFixedSize(TypeSpecifier ts);
 }
 
 @FinalFieldsConstructor
@@ -78,12 +81,12 @@ class InferenceContext {
 	}
 }
 
-class NullSizeInferrer extends AbstractSizeInferrer implements ElementSizeInferrer {
+class NullSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferrer {
 		
 	override createConstraints(InferenceContext c) {
 	}
 	
-	override setDelegate(ElementSizeInferrer delegate) {
+	override setDelegate(TypeSizeInferrer delegate) {
 	}
 		
 	override createSizeConstraints(ConstraintSolution cs, Resource r) {
@@ -95,6 +98,10 @@ class NullSizeInferrer extends AbstractSizeInferrer implements ElementSizeInferr
 	}
 	
 	override createConstraintsForMax(ConstraintSystem system, Resource r, MaxConstraint constraint) {
+	}
+	
+	override isFixedSize(TypeSpecifier ts) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
 }

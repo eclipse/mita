@@ -14,17 +14,17 @@
 package org.eclipse.mita.platform.unittest
 
 import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 
-class SomeTypeSizeInferrer implements ElementSizeInferrer {
+class SomeTypeSizeInferrer implements TypeSizeInferrer {
 	@Accessors
-	ElementSizeInferrer delegate;
+	TypeSizeInferrer delegate;
 	
 	
 	override void createConstraints(InferenceContext c) {

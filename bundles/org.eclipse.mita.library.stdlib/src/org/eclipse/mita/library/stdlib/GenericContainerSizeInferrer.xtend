@@ -1,5 +1,6 @@
 package org.eclipse.mita.library.stdlib
 
+import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.ArrayList
 import java.util.Collections
@@ -8,6 +9,10 @@ import java.util.function.BiFunction
 import java.util.function.Function
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.AssignmentExpression
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.NaryTypeAddition
@@ -15,23 +20,32 @@ import org.eclipse.mita.base.types.TypeExpressionSpecifier
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
-import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ProgramSizeInferrer
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtext.EcoreUtil2
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import static extension org.eclipse.mita.base.util.BaseUtils.transpose
-import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.mita.program.VariableDeclaration
+import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.NullTypeSpecifier
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import java.util.HashSet
+import java.util.Set
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -39,9 +53,9 @@ import org.eclipse.mita.program.VariableDeclaration
  * createConstraints dispatches on InferenceContext.obj, and .type,
  * create doCreateConstraints(InferenceContext c, ? extends EObject obj, ? extends AbstractType t) to implement.
  */
-abstract class GenericContainerSizeInferrer implements ElementSizeInferrer {
+abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	@Accessors
-	ElementSizeInferrer delegate;
+	TypeSizeInferrer delegate;
 	@Inject
 	StdlibTypeRegistry typeRegistry
 	
@@ -221,128 +235,94 @@ abstract class GenericContainerSizeInferrer implements ElementSizeInferrer {
 		}
 	}
 	
-//	dispatch def void doCreateConstraints(InferenceContext c, VariableDeclaration variable, TypeConstructorType type) {
-//		if(!variable.writeable) {
-//			delegate.createConstraints(c);
-//		}
-//		/*
-//		 * Find initial size
-//		 */
-//		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
-//		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
-//		val varTypeSpec = variable.typeSpecifier;
-//		val shouldHaveFixedSize = if(varTypeSpec instanceof TypeReferenceSpecifier) {
-//			val lastTypeArg = varTypeSpec.typeArguments.last;
-//			lastTypeArg instanceof TypeExpressionSpecifier;
-//		}
-//		val fixedSize = getSize(BaseUtils.getType(c.system, c.sub, variable.typeSpecifier))
-//		if(fixedSize.present) {
-//			replaceLastTypeArgument(c.sub, type, new LiteralNumberType(variable, fixedSize.get, type.typeArguments.last))
-//		}
-//		else if(shouldHaveFixedSize) {
-//			return Optional.of(c);
-//		}
-//		
-//		val initialization = variable.initialization ?: (
-//			referencesToVariable
-//				.map[it.eContainer]
-//				.filter(AssignmentExpression)
-//				.filter[ae |
-//					val left = ae.varRef; 
-//					left instanceof ElementReferenceExpression && (left as ElementReferenceExpression).reference === variable 
-//				]
-//				.map[it.expression]
-//				.head
-//		)
-//		
-//		var arrayHasFixedSize = false;
-//		val initialType = if(initialization !== null) {
-//			BaseUtils.getType(c.system, c.sub, initialization);
-//		}
-//		val initialLength = if(initialization !== null) {
-//			getSize(initialType)
-//		} 
-//		else {
-//			Optional.absent();
-//		}
-//		if(!initialLength.present) {
-//			return Optional.of(c);
-//		}
-//		var typeArg = getDataType(initialType);
-//		var length = initialLength.get;
-//
-//		/*
-//		 * Strategy is to find all places where this variable is modified and try to infer the length there.
-//		 */		
-//		val modifyingExpressions = referencesToVariable.map[ref | 
-//			val refContainer = ref.eContainer;
-//			
-//			if(refContainer instanceof AssignmentExpression) {
-//				if(refContainer.varRef == ref) {
-//					// we're actually assigning to this reference, thus modifying it
-//					refContainer					
-//				} else {
-//					// the variable reference is just on the right side. No modification happening
-//					null
-//				}
-//			} else {
-//				null
-//			}
-//		]
-//		.filterNull;
-//		
-//		/*
-//		 * Check if we can infer the length across all modifications
-//		 */
-//		for(expr : modifyingExpressions) {
-//			/*
-//			 * First, let's see if we can infer the array length after the modification.
-//			 */
-//			var allowedInLoop = arrayHasFixedSize;
-//			if(expr instanceof AssignmentExpression) {
-//				val exprType = BaseUtils.getType(c.system, c.sub, expr.expression);
-//				val biggerTypeArg = getDataType(exprType);
-//				val mbLargerType = delegate.max(c.system, c.r, variable, #[typeArg, biggerTypeArg]);
-//				if(mbLargerType.present) {
-//					typeArg = mbLargerType.get
-//				}
-//				else {
-//					// try again later, couldn't get max
-//					return Optional.of(c);
-//				}
-//				
-//				if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
-//					val additionLength = getSize(exprType);
-//					// try again later
-//					if(!additionLength.present) return Optional.of(c);
-//					
-//					length = length + additionLength.get;
-//				} else if(expr.operator == AssignmentOperator.ASSIGN) {
-//					val additionLength = getSize(BaseUtils.getType(c.system, c.sub, expr.expression));
-//					// try again later
-//					if(!additionLength.present) return Optional.of(c);
-//					
-//					allowedInLoop = true;
-//					length = Math.max(length, additionLength.get);
-//				} else {
-//					// can't infer the length due to unknown operator
-//					replaceLastTypeArgument(c.sub, type, new BottomType(expr, '''Cannot infer size when using the «expr.operator.getName()» operator'''));
-//				}
-//			}
-//			
-//			/*
-//			 * Second, see if the modification happens in a loop. In that case we don't bother with trying to infer the length.
-//			 * Because of block scoping we just have to find a loop container of the modifyingExpression and then make sure that
-//			 * the loop container and the variable definition are/share a common ancestor.
-//			 */
-//			if(!allowedInLoop) {
-//				val loopContainer = expr.getSharedLoopContainer(variable);
-//				if(loopContainer !== null) {
-//					replaceLastTypeArgument(c.sub, type, new BottomType(expr, '''Cannot infer «type.name» length in loops'''));
-//				}	
-//			}
-//		}
-//		
-//		replaceLastTypeArgument(c.sub, type, new LiteralNumberType(variable, length, type.typeArguments.last));
-//	}
+	override isFixedSize(TypeSpecifier ts) {
+		return dispatchIsFixedSize(ts);
+	}
+	
+	dispatch def boolean dispatchIsFixedSize(TypeExpressionSpecifier ts) {
+		return StaticValueInferrer.infer(ts.value, []) !== null
+	}
+	dispatch def boolean dispatchIsFixedSize(TypeReferenceSpecifier ts) {
+		val handledArgs = (dataTypeIndexes + sizeTypeIndexes).toSet;
+		return ts.typeArguments.indexed.filter[handledArgs.contains(it.key)].forall[delegate.isFixedSize(it.value)];
+	}
+	dispatch def boolean dispatchIsFixedSize(NullTypeSpecifier ts) {
+		return false;
+	}
+	
+	/* Typing the following:
+	 * type T<d1, ..., dn, s1 is T1, ..., sn is Tn>  // so d1 to dn are data parameters, s1 to sn are size parameters
+	 * var x: T<d1, ..., dn, 10, _, ..., _, 20>
+	 * var y: T<d1, ..., dn, 10, _, ..., _, 20>
+	 * x += y;
+	 * x = y;
+	 * 
+	 * size parameters:
+	 * if si is bound in the type specifier of x, assign that
+	 * else assign si to the max of all subsequent additions, so in a sequence
+	 * x = y;
+	 * x += z;
+	 * x += z;
+	 * x = y;
+	 * x += z;
+	 * x should have type max(y + z + z, y + z).
+	 * on data parameters the same is done.
+	 */
+	dispatch def void doCreateConstraints(InferenceContext c, VariableDeclaration variable, TypeConstructorType type) {
+		ProgramSizeInferrer.inferUnmodifiedFrom(c.system, variable, variable.typeSpecifier);
+		val handledArgs = (dataTypeIndexes + sizeTypeIndexes).toSet;
+		val variableTypeSpecifier = variable.typeSpecifier;
+		val fixedSizes = if(variableTypeSpecifier instanceof TypeReferenceSpecifier) {
+			type.typeArguments.tail.zip(variableTypeSpecifier.typeArguments).indexed
+				.map[(it.key + 1) -> it.value]
+				.filter[handledArgs.contains(it.key + 1)]
+				.filter[delegate.isFixedSize(it.value.value)]
+				.map[it.key]
+				.toSet
+		}
+		else {
+			#{};
+		}
+		val variableSizes = new HashSet(handledArgs) => [removeAll(fixedSizes)];
+		
+		if(variableSizes.empty || !variable.writeable) {
+			if(variable.initialization !== null) {	
+				ProgramSizeInferrer.inferUnmodifiedFrom(c.system, variable, variable.typeSpecifier);
+			}
+			return;
+		}
+		
+		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
+		
+		val variableContainer = variable.eContainer;
+		val initialSize = c.system.getTypeVariable(variable);
+		
+		val subsequentStatements = if(variableContainer instanceof Program) {
+			variableContainer.functionDefinitions + variableContainer.eventHandlers;
+		}
+		else {
+			// the container contains variable, so we can drop until we find the variable, then skip the variable itself
+			variableContainer.eContents.dropWhile[it !== variable].tail
+		}
+		val totalSize = createConstraintsForMutating(c, variable, variableSizes, subsequentStatements, initialSize);
+	}
+		
+		def AbstractType createConstraintsForMutating(InferenceContext context, VariableDeclaration variable, Set<Integer> variableSizes, Iterable<EObject> objects, AbstractType runningSize) {
+			objects.fold(runningSize, [ rs, obj |
+				doCreateConstraintsForMutating(context, variable, variableSizes, rs, obj);
+			])
+		}
+		
+		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext context, VariableDeclaration declaration, Set<Integer> integers, AbstractType runningSize, AssignmentExpression object) {
+			val varRef = object.varRef;
+			if(varRef instanceof ElementReferenceExpression) {
+				
+			}
+		}
+		
+		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext context, VariableDeclaration declaration, Set<Integer> integers, AbstractType runningSize, EObject object) {
+			return runningSize;
+		}
+		
+		
 }

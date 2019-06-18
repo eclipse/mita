@@ -23,31 +23,32 @@ import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.CoercionExpression
-import org.eclipse.mita.base.types.NaryTypeAddition
+import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
-import org.eclipse.mita.base.types.TypeReferenceLiteral
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.types.TypedElement
-import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.types.Variance
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.AbstractSizeInferrer
-import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.FunctionSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.infra.NullSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
-import org.eclipse.mita.base.typesystem.types.NumericAddType
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
+import org.eclipse.mita.base.typesystem.types.NumericMaxType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.GeneratedFunctionDefinition
@@ -58,21 +59,15 @@ import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.xtext.diagnostics.Severity
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
-import org.eclipse.mita.base.typesystem.types.NumericMaxType
-import org.eclipse.mita.base.typesystem.infra.FunctionSizeInferrer
 
 /**
  * Hierarchically infers the size of a data element.
  */
-class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInferrer {
+class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferrer {
 
 	@Inject
 	protected PluginResourceLoader loader;
@@ -84,7 +79,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 	SubtypeChecker subtypeChecker;
 	
 	@Accessors 
-	ElementSizeInferrer delegate = new NullSizeInferrer();
+	TypeSizeInferrer delegate = new NullSizeInferrer();
 			
 	override ConstraintSolution createSizeConstraints(ConstraintSolution cs, Resource r) {
 		val system = new ConstraintSystem(cs.getSystem);
@@ -97,7 +92,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 	
 	override Pair<AbstractType, Iterable<EObject>> unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {
 		val inferrer = getInferrer(r, null, system, type);
-		if(inferrer instanceof ElementSizeInferrer) {
+		if(inferrer instanceof TypeSizeInferrer) {
 			inferrer.delegate = this;
 			return inferrer.unbindSize(r, system, obj, type);
 		}
@@ -139,7 +134,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 	}
 	
 	def getInferrer(Resource r, ConstraintSystem system, AbstractType type) {
-		return getInferrer(r, null, system, type)?.castOrNull(ElementSizeInferrer);
+		return getInferrer(r, null, system, type)?.castOrNull(TypeSizeInferrer);
 	}
 	 
 	/** 
@@ -151,7 +146,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 			system.getUserData(type, BaseConstraintFactory.SIZE_INFERRER_KEY);
 		}
 		val typeInferrer = if(typeInferrerCls !== null) { 
-			loader.loadFromPlugin(r, typeInferrerCls)?.castOrNull(ElementSizeInferrer) => [
+			loader.loadFromPlugin(r, typeInferrerCls)?.castOrNull(TypeSizeInferrer) => [
 				it?.setDelegate(this)]
 		}
 		
@@ -191,6 +186,20 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements ElementSizeInf
 	static dispatch def void bindTypeToTypeSpecifier(ConstraintSystem s, EObject obj, AbstractType t) {
 	}
 	
+	
+	override isFixedSize(TypeSpecifier ts) {
+		return dispatchIsFixedSize(ts);
+	}
+	
+	dispatch def boolean dispatchIsFixedSize(TypeExpressionSpecifier ts) {
+		return StaticValueInferrer.infer(ts.value, []) !== null
+	}
+	dispatch def boolean dispatchIsFixedSize(TypeReferenceSpecifier ts) {
+		return ts.typeArguments.forall[delegate.isFixedSize(it)];
+	}
+	dispatch def boolean dispatchIsFixedSize(NullTypeSpecifier ts) {
+		return false;
+	}
 	
 	
 	override createConstraints(InferenceContext c) {

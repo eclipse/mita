@@ -2,7 +2,6 @@ package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.FunctionSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.platform.AbstractSystemResource
@@ -26,10 +25,11 @@ import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 
 class SignalInstanceSizeInferrer implements FunctionSizeInferrer {
 	@Accessors
-	ElementSizeInferrer delegate
+	TypeSizeInferrer delegate
 	
 	@Inject
 	protected PluginResourceLoader loader

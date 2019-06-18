@@ -7,7 +7,6 @@ import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.FunctionSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.types.AbstractType
@@ -29,6 +28,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.library.stdlib.functions.SignalInstanceSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 
 /**
  * This inferrer can handle all types in the stdlib, so if you're returning 
@@ -37,10 +37,10 @@ import org.eclipse.mita.library.stdlib.functions.SignalInstanceSizeInferrer
  * Just override getLengthParameterName with the name of your length parameter.
  */
 class GenericPlatformSizeInferrer implements FunctionSizeInferrer {
-	@Inject
+	@Inject 
 	ArraySizeInferrer arrayDelegate;
 	@Accessors
-	ElementSizeInferrer delegate;
+	TypeSizeInferrer delegate;
 	@Inject
 	StdlibTypeRegistry typeRegistry;
 	
@@ -102,7 +102,7 @@ class GenericPlatformSizeInferrer implements FunctionSizeInferrer {
 		delegate.createConstraints(c);
 	}
 		
-	override setDelegate(ElementSizeInferrer delegate) {
+	override setDelegate(TypeSizeInferrer delegate) {
 		this.delegate = delegate;
 		arrayDelegate.delegate = delegate;
 	}	

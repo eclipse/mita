@@ -26,7 +26,6 @@ import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.Variance
-import org.eclipse.mita.base.typesystem.infra.ElementSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.infra.NullSizeInferrer
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
@@ -52,6 +51,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.init
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 
 class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		
@@ -143,16 +143,7 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 //		}
 //		replaceLastTypeArgument(c.sub, type, sizeType);
 //	}
-//	
-//	// call delegate for other things
-//	protected dispatch def void doInfer(InferenceContext c, EObject obj, TypeConstructorType type) {
-//		delegate.createConstraints(c);
-//	}
-//	
-//	// error/wait if type is not TypeConstructorType
-//	protected dispatch def void doInfer(InferenceContext c, EObject obj, AbstractType type) {
-//	}
-//	
+//	//	
 //	/**
 //	 * Finds a loop ancestor of expr which shares a common ancestor with other.
 //	 */
