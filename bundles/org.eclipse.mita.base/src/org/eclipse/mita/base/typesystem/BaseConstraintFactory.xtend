@@ -874,8 +874,8 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// constructs constraints asserting that c<t> instance of \T. c<T> and returns c<t>
 		val outerTypeInstance = system.newTypeVariable(null);
 		val nestedType = new TypeConstructorType(origin, typeReference, inner.force);
-		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %s''', origin, null, "")));
-		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin» (:: %s) is not instance of %s''', origin, null, "")));
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin?.toString?.replace("%", "%%")» (:: %s) is not instance of %s''', origin, null, "")));
+		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin?.toString?.replace("%", "%%")» (:: %s) is not instance of %s''', origin, null, "")));
 		return nestedType;
 	}
 	

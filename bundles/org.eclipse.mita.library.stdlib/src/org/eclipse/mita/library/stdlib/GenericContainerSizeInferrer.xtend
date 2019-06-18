@@ -62,8 +62,8 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	 * return indexes specifying which type arguments of appropriate TypeConstructorTypes are data and which are size.
 	 * remember that the first argument of TCTs are atomic types that just reference the constructor.
 	 */
-	def Iterable<Integer> getDataTypeIndexes();
-	def Iterable<Integer> getSizeTypeIndexes();
+	def List<Integer> getDataTypeIndexes();
+	def List<Integer> getSizeTypeIndexes();
 		
 	def <T, S> S setTypeArguments(
 		AbstractType type, 
@@ -77,8 +77,8 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		}
 		val argType = type as TypeConstructorType; 
 		
-		val sizeTypeIndexes = sizeTypeIndexes.force;
-		val dataTypeIndexes = dataTypeIndexes.force;
+		val sizeTypeIndexes = sizeTypeIndexes;
+		val dataTypeIndexes = dataTypeIndexes;
 		val changed = new Object {
 			boolean value = false;
 		}
@@ -150,6 +150,14 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		return type -> #[];
 	}
 	
+	static def typeVariableToTypeConstructorType(InferenceContext c, AbstractType t, TypeConstructorType skeleton) {
+		val result = new TypeConstructorType(t.origin, skeleton.name, skeleton.typeArgumentsAndVariances.map[
+			c.system.newTypeVariable(null) as AbstractType -> it.value;
+		])
+		c.system.addConstraint(new EqualityConstraint(t, result, new ValidationIssue("%s is not a composite type", t.origin)))
+		return result;
+	}
+		
 	override void createConstraints(InferenceContext c) {
 		doCreateConstraints(c, c.obj, c.type);
 	}
@@ -184,8 +192,8 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	
 	dispatch def void doCreateConstraints(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType t) {
 		// recurse on sizes
-		val sizeTypeIndexes = sizeTypeIndexes.force;
-		val dataTypeIndexes = dataTypeIndexes.force;
+		val sizeTypeIndexes = sizeTypeIndexes;
+		val dataTypeIndexes = dataTypeIndexes;
 		(obj.typeArguments).indexed.zip(t.typeArguments.tail).forEach[ i_mt__tv |
 			val i_mt = i_mt__tv.key;
 			val i = i_mt.key + 1;
@@ -365,15 +373,36 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 				val varRefContext = new InferenceContext(c, varRef);
 				delegate.createConstraints(varRefContext);
 				val result = c.system.newTypeVariable(variable);
+				val resultTCT = typeVariableToTypeConstructorType(c, result, c.type as TypeConstructorType);
 				val initSize = c.system.getTypeVariable(expr.expression);
-				if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
-					c.system.addConstraint(new SumConstraint(result, #[runningSize, initSize], new ValidationIssue('''''', expr)))
-					return result;
-				}
-				else if(expr.operator == AssignmentOperator.ASSIGN) {
-					c.system.addConstraint(new MaxConstraint(result, #[runningSize, initSize], new ValidationIssue('''''', expr)))
-					return result;
-				}
+				val runningSizeTCT = typeVariableToTypeConstructorType(c, runningSize, c.type as TypeConstructorType);
+				val initSizeTCT = typeVariableToTypeConstructorType(c, initSize, c.type as TypeConstructorType);
+				
+				resultTCT.typeArguments.zip(runningSizeTCT.typeArguments.zip(initSizeTCT.typeArguments)).indexed
+					.filter[variableSizes.contains(it.key)]
+					.forEach[i___tr__t1_t2 | 
+						val i = i___tr__t1_t2.key
+						val tr__t1_t2 = i___tr__t1_t2.value
+						// resultTCT is a new TCT with only type vars, see typeVariableToTypeConstructorType
+						val tr = tr__t1_t2.key as TypeVariable;
+						val t1_t2 = tr__t1_t2.value;
+						val t1 = t1_t2.key;
+						val t2 = t1_t2.value;
+						if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
+							if(sizeTypeIndexes.contains(i)) {
+								c.system.addConstraint(new SumConstraint(tr, #[t1, t2], new ValidationIssue('''1''', expr)));
+							}
+							else {
+								c.system.addConstraint(new MaxConstraint(tr, #[t1, t2], new ValidationIssue('''2''', expr)))
+							}
+						}
+						else if(expr.operator == AssignmentOperator.ASSIGN) {
+							c.system.addConstraint(new MaxConstraint(tr, #[t1, t2], new ValidationIssue('''3''', expr)))
+						}
+					]
+
+				return result;
+				
 			}
 			else {
 				return runningSize;	

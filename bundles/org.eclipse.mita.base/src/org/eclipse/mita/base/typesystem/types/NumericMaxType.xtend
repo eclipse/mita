@@ -58,7 +58,12 @@ class NumericMaxType extends TypeConstructorType implements CompositeLiteralType
 	
 	override decompose() {
 		val simpleNumbers = typeArguments.filter(LiteralNumberType).force;
-		val simplifiedValue = simpleNumbers.map[it.eval].max();
+		val simplifiedValue = if(simpleNumbers.empty) {
+			-1L;
+		}
+		else {
+			simpleNumbers.map[it.eval].max();	
+		}
 		val simplification =  new LiteralNumberType(simpleNumbers.head?.origin, simplifiedValue, typeOf);
 		val rest = typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType) && (it.key instanceof LiteralTypeExpression)].map[it.key as CompositeLiteralType<Long>];
 		return simplification -> rest;

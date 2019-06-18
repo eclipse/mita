@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Types __args and vci03_inst__args are not the same.";
+			return "2";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

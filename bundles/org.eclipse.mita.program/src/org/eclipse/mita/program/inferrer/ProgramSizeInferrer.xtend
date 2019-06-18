@@ -67,6 +67,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.types.TypeHole
 
 /**
  * Hierarchically infers the size of a data element.
@@ -200,10 +201,13 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		return StaticValueInferrer.infer(ts.value, []) !== null
 	}
 	dispatch def boolean dispatchIsFixedSize(TypeReferenceSpecifier ts) {
-		return ts.typeArguments.forall[delegate.isFixedSize(it)];
+		return ts.typeArguments.forall[isFixedSize(it)];
 	}
 	dispatch def boolean dispatchIsFixedSize(NullTypeSpecifier ts) {
 		return false;
+	}
+	dispatch def boolean dispatchIsFixedSize(TypeHole th) {
+		return false; 
 	}
 	
 	
