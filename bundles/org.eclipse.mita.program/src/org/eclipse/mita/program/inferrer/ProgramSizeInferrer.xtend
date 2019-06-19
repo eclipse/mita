@@ -14,19 +14,19 @@
 package org.eclipse.mita.program.inferrer
 
 import com.google.inject.Inject
-import java.util.LinkedList
-import java.util.List
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ExpressionStatement
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
+import org.eclipse.mita.base.types.TypeHole
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypeUtils
@@ -36,6 +36,8 @@ import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 import org.eclipse.mita.base.typesystem.infra.AbstractSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.FunctionSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
@@ -48,13 +50,14 @@ import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
+import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.NumericMaxType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.resource.PluginResourceLoader
@@ -64,11 +67,10 @@ import org.eclipse.xtext.EcoreUtil2
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.types.NumericAddType
-import org.eclipse.mita.base.typesystem.constraints.SumConstraint
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
-import org.eclipse.mita.base.types.TypeHole
-import org.eclipse.mita.base.expressions.ExpressionStatement
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 
 /**
  * Hierarchically infers the size of a data element.
@@ -86,7 +88,17 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	
 	@Accessors 
 	TypeSizeInferrer delegate = new NullSizeInferrer();
-			
+	
+	static def typeVariableToTypeConstructorType(InferenceContext c, AbstractType t, TypeConstructorType skeleton) {
+		val result = new TypeConstructorType(t.origin, skeleton.name, 
+			#[skeleton.typeArgumentsAndVariances.head] + 
+			skeleton.typeArgumentsAndVariances.tail.map[
+				c.system.newTypeVariable(null) as AbstractType -> it.value;
+			])
+		c.system.addConstraint(new EqualityConstraint(t, result, new ValidationIssue("%s is not a composite type", t.origin)))
+		return result;
+	}
+	
 	override ConstraintSolution createSizeConstraints(ConstraintSolution cs, Resource r) {
 		val system = new ConstraintSystem(cs.getSystem);
 		system.atomicConstraints.removeIf[it instanceof SubtypeConstraint];
@@ -274,11 +286,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	dispatch def void doCreateConstraints(InferenceContext c, PrimitiveValueExpression obj) {
 		inferUnmodifiedFrom(c.system, obj, obj.value);
 	}
-	
-	dispatch def void doCreateConstraints(InferenceContext c, ReturnValueExpression obj) {
-		inferUnmodifiedFrom(c.system, obj, obj.expression);
-	}
-	
+			
 	dispatch def void doCreateConstraints(InferenceContext c, NewInstanceExpression obj) {
 		inferUnmodifiedFrom(c.system, obj, obj.type);
 	}
@@ -354,6 +362,15 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		c.system.associate(typeWithOptionalModifier, typeSpecifier);
 	}
 	
+	dispatch def void doCreateConstraints(InferenceContext c, DereferenceExpression expr) {
+		val referenceTypeScheme = typeRegistry.getReferenceType(c.system, expr);
+		val referenceType = typeVariableToTypeConstructorType(c, 
+			c.system.getTypeVariable(expr.expression),
+			referenceTypeScheme.instantiate(c.system, expr).value as TypeConstructorType
+		)
+		c.system.associate(referenceType.typeArguments.get(1), expr);
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, EObject obj) {
 	}
 			
@@ -424,6 +441,38 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			return typeInferrer.getZeroSizeType(c, skeleton);
 		}
 		return skeleton;
+	}
+	
+	override wrap(InferenceContext c, EObject obj, AbstractType inner) {
+		return doWrap(c, inner, obj);
+	}
+	
+	dispatch def AbstractType doWrap(InferenceContext c, AbstractType inner, DereferenceExpression obj) {
+		val referenceTypeDef = typeRegistry.getTypeModelObject(obj, StdlibTypeRegistry.referenceTypeQID);
+		val referenceTypeScheme = c.system.getTypeVariable(referenceTypeDef);
+		val referenceTypeInstance = c.system.newTypeVariable(obj);
+		c.system.addConstraint(new ExplicitInstanceConstraint(referenceTypeInstance, referenceTypeScheme, new ValidationIssue("%s is not instance of %s", obj)));
+		val result = new TypeConstructorType(obj, new AtomicType(referenceTypeDef, "reference"), #[inner].map[it -> Variance.INVARIANT]);
+		c.system.addConstraint(new EqualityConstraint(result, referenceTypeInstance, new ValidationIssue("%s is not %s", obj)))
+		return result;	
+	}
+	dispatch def AbstractType doWrap(InferenceContext c, AbstractType inner, ArrayAccessExpression obj) {
+		if(obj.arraySelector instanceof ValueRange) {
+			// no unwrapping, its a subarray
+			// TODO does this influence sizes?
+			return inner;
+		}
+		val arrayTypeDef = typeRegistry.getTypeModelObject(obj, StdlibTypeRegistry.arrayTypeQID);
+		val arrayTypeScheme = c.system.getTypeVariable(arrayTypeDef);
+		val arrayTypeInstance = c.system.newTypeVariable(obj);
+		c.system.addConstraint(new ExplicitInstanceConstraint(arrayTypeInstance, arrayTypeScheme, new ValidationIssue("%s is not instance of %s", obj)));
+		val result = new TypeConstructorType(obj, new AtomicType(arrayTypeDef, "array"), #[inner, c.system.newTypeVariable(null)].map[it -> Variance.INVARIANT]);
+		c.system.addConstraint(new EqualityConstraint(result, arrayTypeInstance, new ValidationIssue("%s is not %s", obj)))
+		return result;	
+	}
+	
+	dispatch def AbstractType doWrap(InferenceContext c, AbstractType inner, EObject obj) {
+		return inner;
 	}
 	
 }

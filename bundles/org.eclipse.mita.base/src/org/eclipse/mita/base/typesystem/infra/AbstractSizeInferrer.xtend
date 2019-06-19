@@ -48,6 +48,17 @@ interface TypeSizeInferrer extends FunctionSizeInferrer {
 	def boolean isFixedSize(TypeSpecifier ts);
 	
 	def AbstractType getZeroSizeType(InferenceContext c, AbstractType skeleton);
+	
+	/**
+	 * wraps inner type by unwrapping obj.
+	 * Example:
+	 *   wrap((*a)[0], array<u8, 3>)
+	 * = wrap((*a), array<array<u8, 3>, f1>)
+	 * = wrap(a, &array<array<u8, 3>, f1>)
+	 * 
+	 * most size inferrers should implement this by calling delegate.wrap.
+	 */
+	def AbstractType wrap(InferenceContext c, EObject obj, AbstractType inner);
 }
 
 @FinalFieldsConstructor
@@ -116,6 +127,10 @@ class NullSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferrer 
 	
 	override getZeroSizeType(InferenceContext c, AbstractType skeleton) {
 		return skeleton;
+	}
+	
+	override wrap(InferenceContext c, EObject obj, AbstractType inner) {
+		return inner;
 	}
 	
 }

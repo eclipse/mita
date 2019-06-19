@@ -70,12 +70,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}	
 	
 	private def long getFixedSize(EObject stmt) {
-//		val inference = sizeInferrer.infer(stmt);
-//		return if(inference instanceof ValidElementSizeInferenceResult) {
-//			inference.elementCount;
-//		} else {
-			return -1;
-//		}
+		return stmt.inferredSize?.eval ?: -1L
 	}
 	
 	override CodeFragment generateHeader(EObject context, AbstractType type) {

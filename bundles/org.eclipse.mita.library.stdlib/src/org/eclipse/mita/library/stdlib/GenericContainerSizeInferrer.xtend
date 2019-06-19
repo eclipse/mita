@@ -17,6 +17,8 @@ import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.NaryTypeAddition
 import org.eclipse.mita.base.types.NullTypeSpecifier
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
@@ -30,10 +32,13 @@ import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.program.AbstractLoopStatement
+import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.inferrer.ProgramSizeInferrer
@@ -41,15 +46,11 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.EcoreUtil2
 
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static org.eclipse.mita.program.inferrer.ProgramSizeInferrer.*
+
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.transpose
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.types.PackageAssociation
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.program.EventHandlerDeclaration
-import org.eclipse.mita.program.AbstractLoopStatement
-import org.eclipse.mita.base.typesystem.types.BottomType
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -155,13 +156,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		return type -> #[];
 	}
 	
-	static def typeVariableToTypeConstructorType(InferenceContext c, AbstractType t, TypeConstructorType skeleton) {
-		val result = new TypeConstructorType(t.origin, skeleton.name, skeleton.typeArgumentsAndVariances.map[
-			c.system.newTypeVariable(null) as AbstractType -> it.value;
-		])
-		c.system.addConstraint(new EqualityConstraint(t, result, new ValidationIssue("%s is not a composite type", t.origin)))
-		return result;
-	}
+	
 		
 	override void createConstraints(InferenceContext c) {
 		doCreateConstraints(c, c.obj, c.type);
@@ -374,6 +369,11 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 			])
 		}
 		
+		def boolean isOnLeftHandSide(VariableDeclaration v, AssignmentExpression assignment) {
+			return (#[assignment.varRef] + assignment.varRef.eAllContents.toIterable)
+				.filter(ElementReferenceExpression)
+				.exists[it.reference == v]
+		}
 		
 		def boolean variableReferenceIsInLoop(VariableDeclaration declaration, EObject context) {
 			if(declaration.eContainer instanceof PackageAssociation) {
@@ -387,12 +387,12 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		
 		dispatch def AbstractType doCreateConstraintsForMutating(InferenceContext c, VariableDeclaration variable, Set<Integer> variableSizes, AbstractType runningSize, AssignmentExpression expr) {
 			val varRef = expr.varRef;			
-			if(varRef.castOrNull(ElementReferenceExpression)?.reference === variable) {
+			if(isOnLeftHandSide(variable, expr)) {
 				val varRefContext = new InferenceContext(c, varRef);
 				delegate.createConstraints(varRefContext);
 				val result = c.system.newTypeVariable(variable);
 				val resultTCT = typeVariableToTypeConstructorType(c, result, c.type as TypeConstructorType);
-				val initSize = c.system.getTypeVariable(expr.expression);
+				val initSize = delegate.wrap(c, varRef, c.system.getTypeVariable(expr.expression));
 				val runningSizeTCT = typeVariableToTypeConstructorType(c, runningSize, c.type as TypeConstructorType);
 				val initSizeTCT = typeVariableToTypeConstructorType(c, initSize, c.type as TypeConstructorType);
 				
@@ -436,5 +436,9 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 			return createConstraintsForMutating(c, variable, variableSizes, object.eContents, runningSize);
 		}
 		
+		
+		override wrap(InferenceContext c, EObject obj, AbstractType inner) {
+			return delegate.wrap(c, obj, inner);
+		}
 		
 }

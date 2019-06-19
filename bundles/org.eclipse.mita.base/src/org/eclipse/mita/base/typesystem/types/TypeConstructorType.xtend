@@ -65,7 +65,7 @@ class TypeConstructorType extends AbstractType {
 			throw new NullPointerException;
 		}
 		this._freeVars = getTypeArguments().flatMap[it.freeVars].force;
-		if(name === null) {
+		if(name == "array" && typeArgumentsAndVariances.head.key.toString == "f_2349") {
 			print("")
 		}
 	}

@@ -27,6 +27,8 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 
+import static org.eclipse.mita.program.inferrer.ProgramSizeInferrer.*
+
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 

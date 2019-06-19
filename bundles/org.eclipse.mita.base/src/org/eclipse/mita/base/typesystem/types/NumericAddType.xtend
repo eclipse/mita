@@ -61,10 +61,18 @@ class NumericAddType extends TypeConstructorType implements CompositeLiteralType
 	}
 	
 	override decompose() {
-		val simpleNumbers = typeArguments.filter(LiteralNumberType).force;
+		val simplTypeArgs = typeArguments
+			.filter(LiteralTypeExpression)
+			.map[simplify];
+		val simpleNumbers = simplTypeArgs
+			.filter(LiteralNumberType).force;
 		val simplifiedValue = simpleNumbers.fold(0L, [t, v| v.eval() + t]);
 		val simplification =  new LiteralNumberType(simpleNumbers.head?.origin, simplifiedValue, typeOf);
-		val rest = typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType) && (it.key instanceof LiteralTypeExpression)].map[it.key as CompositeLiteralType<Long>];
+		val rest = typeArgumentsAndVariances
+			.filter[!(it.key instanceof LiteralNumberType) && (it.key instanceof LiteralTypeExpression)]
+			.map[(it.key as LiteralTypeExpression<Long>).simplify]
+			.filter(CompositeLiteralType)
+			.map[it as CompositeLiteralType<Long>];
 		return simplification -> rest;
 	}
 	

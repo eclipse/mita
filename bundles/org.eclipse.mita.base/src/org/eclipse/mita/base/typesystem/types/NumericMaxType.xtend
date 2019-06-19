@@ -57,11 +57,15 @@ class NumericMaxType extends TypeConstructorType implements CompositeLiteralType
 		if(decomposition.value.empty) {
 			return decomposition.key;
 		}
-		return new NumericMaxType(origin, name, typeOf, typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)] + #[decomposition.key as AbstractType -> Variance.UNKNOWN]);
+		return new NumericAddType(origin, name, typeOf, typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType)] + #[decomposition.key as AbstractType -> Variance.UNKNOWN]);
 	}
 	
 	override decompose() {
-		val simpleNumbers = typeArguments.filter(LiteralNumberType).force;
+		val simplTypeArgs = typeArguments
+			.filter(LiteralTypeExpression)
+			.map[simplify];
+		val simpleNumbers = simplTypeArgs
+			.filter(LiteralNumberType).force;
 		val simplifiedValue = if(simpleNumbers.empty) {
 			-1L;
 		}
@@ -69,7 +73,11 @@ class NumericMaxType extends TypeConstructorType implements CompositeLiteralType
 			simpleNumbers.map[it.eval].max();	
 		}
 		val simplification =  new LiteralNumberType(simpleNumbers.head?.origin, simplifiedValue, typeOf);
-		val rest = typeArgumentsAndVariances.filter[!(it.key instanceof LiteralNumberType) && (it.key instanceof LiteralTypeExpression)].map[it.key as CompositeLiteralType<Long>];
+		val rest = typeArgumentsAndVariances
+			.filter[!(it.key instanceof LiteralNumberType) && (it.key instanceof LiteralTypeExpression)]
+			.map[(it.key as LiteralTypeExpression<Long>).simplify]
+			.filter(CompositeLiteralType)
+			.map[it as CompositeLiteralType<Long>];
 		return simplification -> rest;
 	}
 	

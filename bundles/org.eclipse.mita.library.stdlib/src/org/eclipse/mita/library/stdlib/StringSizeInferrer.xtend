@@ -13,30 +13,20 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.Variance
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
-import org.eclipse.mita.base.typesystem.infra.InferenceContext
-import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.BottomType
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
-import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.util.BaseUtils
-
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.typesystem.constraints.SumConstraint
-import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.InterpolatedStringExpressionConstraint
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+
+import static org.eclipse.mita.program.inferrer.ProgramSizeInferrer.*
 
 class StringSizeInferrer extends ArraySizeInferrer {
 	@Inject

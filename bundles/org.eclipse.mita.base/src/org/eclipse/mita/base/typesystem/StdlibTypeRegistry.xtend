@@ -107,12 +107,7 @@ class StdlibTypeRegistry {
 		val voidType = getTypeModelObject(context, StdlibTypeRegistry.voidTypeQID);
 		return new AtomicType(voidType, "void");
 	}
-	
-	protected def getStringType(EObject context) {
-		val stringType = getTypeModelObject(context, StdlibTypeRegistry.stringTypeQID);
-		return new AtomicType(stringType, "string");
-	}
-	
+		
 	protected def getFloatType(EObject context) {
 		val floatType = getTypeModelObject(context, StdlibTypeRegistry.floatTypeQID);
 		if(floatType === null) {
