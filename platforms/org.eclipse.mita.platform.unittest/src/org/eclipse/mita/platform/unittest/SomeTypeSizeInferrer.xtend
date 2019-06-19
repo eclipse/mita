@@ -38,7 +38,7 @@ class SomeTypeSizeInferrer implements TypeSizeInferrer {
 //	}
 	
 	override unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+		return type -> #[];
 	}
 	
 	override createConstraintsForMax(ConstraintSystem system, Resource r, MaxConstraint constraint) {

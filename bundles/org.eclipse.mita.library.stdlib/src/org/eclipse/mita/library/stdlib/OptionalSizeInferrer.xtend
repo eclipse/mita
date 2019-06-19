@@ -13,6 +13,13 @@
 
 package org.eclipse.mita.library.stdlib
 
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+
 class OptionalSizeInferrer extends GenericContainerSizeInferrer {
 	
 	override getDataTypeIndexes() {
@@ -22,4 +29,15 @@ class OptionalSizeInferrer extends GenericContainerSizeInferrer {
 	override getSizeTypeIndexes() {
 		return #[];
 	}	
+	
+	dispatch override Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, TypeReferenceSpecifier typeSpecifier, TypeConstructorType type) {
+		return setTypeArguments(type, 
+			[i, t| 
+				delegate.unbindSize(r, system, if(typeSpecifier.typeArguments.size > i) {typeSpecifier.typeArguments.get(i - 1)}, t)
+			], 
+			[i, t| system.newTypeVariable(t.origin) as AbstractType -> #[typeSpecifier.typeArguments.get(i - 1)] + typeSpecifier.typeArguments.get(i - 1).eAllContents.toIterable],
+			[t_objs | t_objs.key],
+			[t, objs| t -> objs.flatMap[it.value]]
+		);
+	}
 }

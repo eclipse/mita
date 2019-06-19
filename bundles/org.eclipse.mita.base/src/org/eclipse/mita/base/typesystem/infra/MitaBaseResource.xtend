@@ -190,6 +190,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		typeLinker.doActuallyClearReferences(model);
 		typeLinker.linkModel(model, diagnosticsConsumer);
 		typeDependentLinker.linkModel(model, diagnosticsConsumer);
+		this.errors += diagnosticsConsumer.getResult(Severity.ERROR);
 
 		collectAndSolveTypes(model);
 	}

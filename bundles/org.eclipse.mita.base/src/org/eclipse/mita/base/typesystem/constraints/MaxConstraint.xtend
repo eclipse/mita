@@ -57,7 +57,7 @@ class MaxConstraint extends AbstractTypeConstraint {
 			return !arguments.forall[it instanceof TypeConstructorType];
 		}
 		else {
-			return !arguments.exists[it instanceof AbstractBaseType || it instanceof LiteralTypeExpression]
+			return !(arguments.forall[it instanceof AbstractBaseType] || arguments.exists[it instanceof LiteralTypeExpression])
 		}
 	}
 		

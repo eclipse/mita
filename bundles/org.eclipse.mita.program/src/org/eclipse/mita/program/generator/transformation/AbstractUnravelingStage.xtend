@@ -223,9 +223,6 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 
 	protected def AbstractStatement createResultVariable(Expression unravelingObject) {
 		val resultVariableName = getUniqueVariableName(unravelingObject).toFirstLower;
-		if(resultVariableName == "my_pkgHandleEvery1Second12S1RefFoo_140") {
-			print("")
-		}
 		val resultVariable = ProgramFactory.eINSTANCE.createVariableDeclaration;
 		resultVariable.name = resultVariableName;
 		resultVariable.typeSpecifier = TypesFactory.eINSTANCE.createNullTypeSpecifier;

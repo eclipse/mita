@@ -390,8 +390,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			return;
 		}
 		
-		// TODO: At the moment we allow too much. Reduce this to strings/arrays/structs and implement the rules described
-		//       in #120.
+		// TODO: At the moment we allow too much. Reduce this to strings/arrays/structs.
 		warning(FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 	].apply()}
 	

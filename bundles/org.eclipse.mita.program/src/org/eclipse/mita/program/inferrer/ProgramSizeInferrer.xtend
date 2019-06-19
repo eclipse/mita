@@ -71,6 +71,9 @@ import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.Validatio
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 
 /**
  * Hierarchically infers the size of a data element.
@@ -109,7 +112,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		return new ConstraintSolution(system, sub, cs.issues);	
 	}
 	
-	override Pair<AbstractType, Iterable<EObject>> unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {
+	override Pair<AbstractType, Iterable<EObject>> unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {		
 		val inferrer = getInferrer(r, null, system, type);
 		if(inferrer instanceof TypeSizeInferrer) {
 			inferrer.delegate = this;
@@ -131,7 +134,6 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			val newType_blankUnbindings = unbindSize(r, system, it, type);
 			val newType = newType_blankUnbindings.key;
 			additionalUnbindings += newType_blankUnbindings.value;
-			//TODO
 			if(type !== newType) {
 				// this is equivalent to removing tv from sub
 				sub.addToContent(tv, tv);
@@ -190,7 +192,12 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	// only generated types have special needs for size inference for now
 	def void startCreatingConstraints(InferenceContext c) {		
 		val inferrer = getInferrer(c.r, c.obj, c.system, c.type);
-		inferrer?.createConstraints(c);
+		if(inferrer !== null) {
+			inferrer.createConstraints(c);
+		}
+		else {
+			createConstraints(c);
+		}
 	}
 	
 	static def AbstractType inferUnmodifiedFrom(ConstraintSystem system, EObject target, EObject delegate) {
@@ -226,6 +233,20 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	
 	override createConstraints(InferenceContext c) {
 		doCreateConstraints(c, c.obj);
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, Operation op) {
+		val typeArgs = op.typeParameters.map[c.system.getTypeVariable(it)].force()
+			
+		val fromType = (c.type as FunctionType).from;
+		val toType = c.system.getTypeVariable(op.typeSpecifier);
+		val funType = new FunctionType(op, new AtomicType(op), fromType, toType);
+		
+		c.system.associate(if(typeArgs.empty) {
+			funType
+		} else {
+			new TypeScheme(op, typeArgs, funType);	
+		}, op);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, ElementReferenceExpression obj) {
@@ -377,7 +398,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	dispatch def void doCreateConstraints(InferenceContext c, FunctionDefinition obj) {
 		val explicitType = obj.typeSpecifier.castOrNull(PresentTypeSpecifier);
 		if(explicitType !== null) {
-			inferUnmodifiedFrom(c.system, obj, explicitType);
+			_doCreateConstraints(c, obj as Operation);
 			if(isFixedSize(explicitType)) {
 				return;
 			}

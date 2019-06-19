@@ -16,9 +16,9 @@ package org.eclipse.mita.library.stdlib
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
-import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.constraints.InterpolatedStringExpressionConstraint
 import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
@@ -43,10 +43,8 @@ class StringSizeInferrer extends ArraySizeInferrer {
 	dispatch def void doCreateConstraints(InferenceContext c, StringLiteral lit, TypeConstructorType type) {
 		val u32 = typeRegistry.getTypeModelObject(lit, StdlibTypeRegistry.u32TypeQID);
 		val u32Type = c.system.getTypeVariable(u32);
-		c.system.associate(new TypeConstructorType(lit, type.name, #[
-			type.typeArguments.head -> Variance.INVARIANT, 
-			new LiteralNumberType(lit, lit.value.length, u32Type) -> Variance.COVARIANT
-		]), lit);
+		c.system.associate(type, lit);
+		c.system.addConstraint(new EqualityConstraint(type.typeArguments.last, new LiteralNumberType(lit, lit.value.length, u32Type), new ValidationIssue("%s is not %s", lit)))
 	}
 
 	dispatch def void doCreateConstraints(InferenceContext c, InterpolatedStringLiteral expr, TypeConstructorType type) {

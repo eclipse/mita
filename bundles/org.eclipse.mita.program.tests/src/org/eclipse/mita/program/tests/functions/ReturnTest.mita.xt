@@ -111,28 +111,29 @@ fn returnSumType9(): anyVec {
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray1"
+//XPECT infos --> "_ has type '4" at "_"
 fn returnArray1(): array<int32, _> {
+	//XPECT infos --> "_ has type '4" at "_"
 	var res: array<int32, _> = [1,2,3,4];
 	return res;
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray2"
+//XPECT infos --> "_ has type '4" at "_"
 fn returnArray2(): array<int32, _> {
 	return [1,2,3,4];
 }
 
-//XPECT errors --> "Could not infer the size of the function's return." at "returnArrayBad"
-fn returnArrayBad(s: uint32): array<int32, s> {
-	return new array<int32, s>();
-}
-
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString1"
-fn returnString1(): string {
-	var res: string = "abc";
+//XPECT infos --> "_ has type '3" at "_"
+fn returnString1(): string<_> {
+	//XPECT infos --> "_ has type '3" at "_"
+	var res: string<_> = "abc";
 	return res;
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString2"
-fn returnString2(): string {
+//XPECT infos --> "_ has type '3" at "_"
+fn returnString2(): string<_> {
 	return "abc";
 }
 
