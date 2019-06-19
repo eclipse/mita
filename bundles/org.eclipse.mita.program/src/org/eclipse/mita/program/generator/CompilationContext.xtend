@@ -144,9 +144,6 @@ class CompilationContext {
 			(program.eAllContents).map[
 				it -> BaseUtils.getType(it)
 			].filter[
-				if(it.value?.toString == "array") {
-					print("")
-				}
 				!(it.value instanceof TypeScheme) && it.value?.freeVars?.empty && TypeUtils.isGeneratedType(program.eResource, it.value)
 			].map[it.value].toIterable
 		].groupBy[it.toString].entrySet.map[it.value.head];

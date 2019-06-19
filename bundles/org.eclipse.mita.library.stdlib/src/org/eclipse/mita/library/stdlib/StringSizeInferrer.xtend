@@ -41,9 +41,11 @@ class StringSizeInferrer extends ArraySizeInferrer {
 	}
 				
 	dispatch def void doCreateConstraints(InferenceContext c, StringLiteral lit, TypeConstructorType type) {
+		val u32 = typeRegistry.getTypeModelObject(lit, StdlibTypeRegistry.u32TypeQID);
+		val u32Type = c.system.getTypeVariable(u32);
 		c.system.associate(new TypeConstructorType(lit, type.name, #[
 			type.typeArguments.head -> Variance.INVARIANT, 
-			new LiteralNumberType(lit, lit.value.length, type.typeArguments.last) -> Variance.COVARIANT
+			new LiteralNumberType(lit, lit.value.length, u32Type) -> Variance.COVARIANT
 		]), lit);
 	}
 

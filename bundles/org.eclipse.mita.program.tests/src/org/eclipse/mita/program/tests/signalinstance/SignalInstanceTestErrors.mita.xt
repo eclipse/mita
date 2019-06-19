@@ -49,11 +49,11 @@ fn useSiginstCorrectly() {
 	var x2 = connectivity.signal_instance01.read();
 	
 	// XPECT inferredType ---> string
-	// XPECT inferredSize ---> string::5
+	// XPECT inferredSize ---> string<'5>
 	var x3 = connectivity.signal_instance03.read();
 	
 	// XPECT inferredType ---> array<int32>
-	// XPECT inferredSize ---> array<int32>::6
+	// XPECT inferredSize ---> array<int32, '6>
 	let x4 = connectivity.signal_instance04.read();
 	
 	// this should work
