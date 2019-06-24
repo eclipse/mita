@@ -14,15 +14,14 @@
 package org.eclipse.mita.base.typesystem.infra
 
 import com.google.inject.Inject
+import com.google.inject.Provider
 import com.google.inject.name.Named
 import java.io.IOException
 import java.io.InputStream
 import java.util.ArrayList
+import java.util.List
 import java.util.Map
 import org.apache.log4j.Logger
-import org.eclipse.core.runtime.IProgressMonitor
-import org.eclipse.core.runtime.Status
-import org.eclipse.core.runtime.jobs.Job
 import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
@@ -30,6 +29,7 @@ import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
+import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.scoping.BaseResourceDescriptionStrategy
 import org.eclipse.mita.base.types.GeneratedObject
 import org.eclipse.mita.base.types.NullTypeSpecifier
@@ -40,7 +40,9 @@ import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.IConstraintSolver
+import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.DebugTimer
 import org.eclipse.xtend.lib.annotations.Accessors
@@ -57,10 +59,6 @@ import org.eclipse.xtext.util.Triple
 import org.eclipse.xtext.xtext.XtextFragmentProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.types.TypeHole
-import org.eclipse.mita.base.typesystem.solver.Substitution
-import com.google.inject.Provider
-import org.eclipse.emf.ecore.util.EcoreUtil
 
 //class MitaBaseResource extends XtextResource {
 class MitaBaseResource extends LazyLinkingResource {
@@ -101,6 +99,8 @@ class MitaBaseResource extends LazyLinkingResource {
 	
 	@Inject 
 	protected Provider<Substitution> substitutionProvider;
+	
+	List<Diagnostic> typeLinkingErrors = new ArrayList();
 
 	override toString() {
 		val str = URI.toString;
@@ -190,7 +190,10 @@ class MitaBaseResource extends LazyLinkingResource {
 		typeLinker.doActuallyClearReferences(model);
 		typeLinker.linkModel(model, diagnosticsConsumer);
 		typeDependentLinker.linkModel(model, diagnosticsConsumer);
-		this.errors += diagnosticsConsumer.getResult(Severity.ERROR);
+		// size inference expects fully linked types, 
+		// whereas type inference can handle missing links, since it operates on proxies that resolve gracefully.
+		this.typeLinkingErrors.clear();
+		this.typeLinkingErrors += diagnosticsConsumer.getResult(Severity.ERROR);
 
 		collectAndSolveTypes(model);
 	}
@@ -206,7 +209,7 @@ class MitaBaseResource extends LazyLinkingResource {
 		if (!errors.nullOrEmpty) {
 			return;
 		}
-
+		
 		timer.start("resourceDescriptions");
 		if (!resourceSet.loadOptions.containsKey(ResourceDescriptionsProvider.NAMED_BUILDER_SCOPE)) {
 			resourceSet.loadOptions.put(ResourceDescriptionsProvider.LIVE_SCOPE, true);
@@ -263,6 +266,9 @@ class MitaBaseResource extends LazyLinkingResource {
 		if (cancelIndicator !== null && cancelIndicator.canceled) {
 			return;
 		}
+		
+		// attach type linking errors after creating resource descriptions
+		this.errors += typeLinkingErrors;
 
 		timer.start("combine");
 		val combinedSystem = ConstraintSystem.combine(allConstraintSystems);
@@ -279,7 +285,7 @@ class MitaBaseResource extends LazyLinkingResource {
 			val solutionTypes = constraintSolver.solve(new ConstraintSolution(new ConstraintSystem(preparedSystem), substitutionProvider.get, newArrayList), obj);
 			timer.stop("solve");
 			timer.start("size-inference");
-			val solution = if(solutionTypes.issues.forall[it.severity != Severity.ERROR]) {
+			val solution = if(typeLinkingErrors.empty && solutionTypes.issues.forall[it.severity != Severity.ERROR]) {
 				val sizeConstraints = sizeInferrer.createSizeConstraints(solutionTypes, this);
 				sizeConstraintSolver.solve(sizeConstraints, obj);				
 			}
