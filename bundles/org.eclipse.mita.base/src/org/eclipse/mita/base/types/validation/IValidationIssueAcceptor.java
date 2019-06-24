@@ -38,10 +38,10 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean shouldTest() {
-			return false;
+			return true;
 		}
 		private static String getTestString() {
-			return "2";
+			return "prim»i»8 (:: xint8) has a different type than f (:: string<A>)";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

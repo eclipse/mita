@@ -32,6 +32,7 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.mita.base.typesystem.types.TypeHole
 
 @Accessors
 @EqualsHashCode
@@ -105,8 +106,10 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		val typeClass = system.typeClasses.get(instanceOfQN);
-		if(false || typeClass.mostSpecificGeneralization === null || typ.freeVars.empty) {	
-			return !typ.freeVars.empty
+		// we don't need to consider TypeHoles as free variables since they never will get bound anyway 
+		val freeVars = typ.freeVars.filter[!(it instanceof TypeHole)];
+		if(false || typeClass.mostSpecificGeneralization === null || freeVars.empty) {	
+			return !freeVars.empty
 		}
 		if(cachedIsAtomic == CachedBoolean.Uncached) {
 			cachedIsAtomic = CachedBoolean.from(!typ.isMoreSpecificThan(typeClass.mostSpecificGeneralization));

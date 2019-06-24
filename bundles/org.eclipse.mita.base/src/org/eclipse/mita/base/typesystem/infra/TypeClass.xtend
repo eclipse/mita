@@ -25,6 +25,8 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
 
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+
 @Accessors
 class TypeClass {
 	val Map<AbstractType, EObject> instances;
@@ -47,9 +49,10 @@ class TypeClass {
 	}
 	
 	override toString() {
+		val instancesSorted = instances.entrySet.map[it.key.toString -> it.value.toString].sortBy[it.key].force;
 		return '''
 		«instances.values.filter(NamedElement).head?.name»
-			«FOR t_o: instances.entrySet.sortBy[it.key.toString]»
+			«FOR t_o: instancesSorted»
 			«t_o.key» = «t_o.value»
 			«ENDFOR»
 		'''; 

@@ -84,7 +84,7 @@ function variableInferenceGenerated() {
     
     //XPECT inferredType --> xint8
     var xs = 42;
-    //XPECT inferredType --> string
+    //XPECT inferredType --> string<'4>
     var ys = `${xs}`;
     
     //XPECT inferredType --> array<xint8, '4>

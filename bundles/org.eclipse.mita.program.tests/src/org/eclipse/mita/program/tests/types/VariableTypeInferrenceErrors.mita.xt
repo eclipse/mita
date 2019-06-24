@@ -84,7 +84,7 @@ function variableInferenceGenerated() {
     
     //XPECT inferredType --> xint8
     var xs = 42;
-    //XPECT inferredType --> string
+    //XPECT inferredType --> string<uint32>
     var ys = `${xs}`;
     
     //XPECT inferredType --> array<xint8, uint32>
@@ -119,9 +119,8 @@ function noCommonType() {
 	var x : int32 = 10;
 	var y : uint32 = 10;
 	/* XPECT errors --- 
-		"Cannot determine size of element: Unable to infer size from type A" at "x + y"
 		"Function __PLUS__ cannot be used here" at "x + y"
-		"__args(int32, uint32) not instance of __PLUS__\r\n	__args(f32, f32) → f32 = __PLUS__([x: float, y: float])\r\n	__args(f64, f64) → f64 = __PLUS__([x: double, y: double])\r\n	__args(int16, int16) → int16 = __PLUS__([x: int16, y: int16])\r\n	__args(int32, int32) → int32 = __PLUS__([x: int32, y: int32])\r\n	__args(int8, int8) → int8 = __PLUS__([x: int8, y: int8])\r\n	__args(string, string) → string = __PLUS__([x: string, y: string])\r\n	__args(uint16, uint16) → uint16 = __PLUS__([x: uint16, y: uint16])\r\n	__args(uint32, uint32) → uint32 = __PLUS__([x: uint32, y: uint32])\r\n	__args(uint8, uint8) → uint8 = __PLUS__([x: uint8, y: uint8])\r\n	__args(xint16, xint16) → xint16 = __PLUS__([x: xint16, y: xint16])\r\n	__args(xint32, xint32) → xint32 = __PLUS__([x: xint32, y: xint32])\r\n	__args(xint8, xint8) → xint8 = __PLUS__([x: xint8, y: xint8])\r\n	∀[A].__args(array<A>, array<A>) → array<A> = __PLUS__<T>([x: array<T>, y: array<T>])\r\n" at "x + y"
+		"__args(int32, uint32) not instance of __PLUS__\n	__args(f32, f32) → f32 = __PLUS__([x: float, y: float])\n	__args(f64, f64) → f64 = __PLUS__([x: double, y: double])\n	__args(int16, int16) → int16 = __PLUS__([x: int16, y: int16])\n	__args(int32, int32) → int32 = __PLUS__([x: int32, y: int32])\n	__args(int8, int8) → int8 = __PLUS__([x: int8, y: int8])\n	__args(uint16, uint16) → uint16 = __PLUS__([x: uint16, y: uint16])\n	__args(uint32, uint32) → uint32 = __PLUS__([x: uint32, y: uint32])\n	__args(uint8, uint8) → uint8 = __PLUS__([x: uint8, y: uint8])\n	__args(xint16, xint16) → xint16 = __PLUS__([x: xint16, y: xint16])\n	__args(xint32, xint32) → xint32 = __PLUS__([x: xint32, y: xint32])\n	__args(xint8, xint8) → xint8 = __PLUS__([x: xint8, y: xint8])\n	∀[A, B].__args(string<A>, string<B>) → string<uint32> = __PLUS__<S1 (variance: =), S2 (variance: =)>([x: string<S1>, y: string<S2>])\n	∀[C, D, E].__args(array<C, D>, array<C, E>) → array<C, uint32> = __PLUS__<T (variance: =), S1 (variance: =), S2 (variance: =)>([x: array<T, S1>, y: array<T, S2>])\n" at "x + y"
 		--- */
 	var z = x + y;  
 }

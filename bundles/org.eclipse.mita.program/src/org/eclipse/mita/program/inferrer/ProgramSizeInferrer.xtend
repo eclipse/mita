@@ -244,7 +244,9 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		val typeArgs = op.typeParameters.map[c.system.getTypeVariable(it)].force()
 		var type = c.type;
 		if(type instanceof TypeScheme) {
-			type = type.instantiate(c.system, op).value;
+			c.system.associate(c.type, op);
+			return;
+			//type = type.instantiate(c.system, op).value;
 		}
 		val fromType = (type as FunctionType).from;
 		val toType = c.system.getTypeVariable(op.typeSpecifier);
@@ -440,7 +442,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			return;
 		}
 		val maxTypeVar = c.system.newTypeVariable(obj);
-		c.system.addConstraint(new MaxConstraint(maxTypeVar, returnedTypes, null));
+		c.system.addConstraint(new MaxConstraint(maxTypeVar, returnedTypes, new ValidationIssue("", null)));
 		c.system.associate(maxTypeVar, obj.typeSpecifier);
 	}
 	

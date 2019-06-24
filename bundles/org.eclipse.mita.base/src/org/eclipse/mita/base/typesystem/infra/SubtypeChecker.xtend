@@ -255,7 +255,8 @@ class SubtypeChecker {
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, ProdType sub, ProdType top) {
 		if(sub.typeArguments.length != top.typeArguments.length) {
-			return SubtypeCheckResult.invalid('''«sub» and «top» differ in the number of type arguments''')
+			val renamer = new NicerTypeVariableNamesForErrorMessages;
+			return SubtypeCheckResult.invalid('''«sub.modifyNames(renamer)» and «top.modifyNames(renamer)» differ in the number of type arguments''')
 		}
 		val result = sub.typeArguments.tail.zip(top.typeArguments.tail).map[isSubtypeOf(s, context, it.key, it.value)].fold(SubtypeCheckResult.valid, [scr1, scr2 | scr1.orElse(scr2)])
 		if(result.invalid) {

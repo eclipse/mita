@@ -26,6 +26,9 @@ class MaxConstraint extends AbstractTypeConstraint {
 		if(this.arguments.empty) {
 			throw new IllegalArgumentException;
 		}
+		if(_errorMessage === null) {
+			throw new NullPointerException;
+		}
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
