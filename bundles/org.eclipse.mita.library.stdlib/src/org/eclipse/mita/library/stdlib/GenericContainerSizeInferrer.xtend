@@ -285,12 +285,14 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	
 	override getZeroSizeType(InferenceContext c, AbstractType skeleton) {
 		if(skeleton instanceof TypeConstructorType) {
+			val u32 = typeRegistry.getTypeModelObject(c.obj, StdlibTypeRegistry.u32TypeQID);
+			val u32Type = c.system.getTypeVariable(u32);
 			val result = setTypeArguments(
 				skeleton, 
 				[i, t| 
 					delegate.getZeroSizeType(c, t);
 				], [i, t|
-					new LiteralNumberType(t.origin, 0, t);
+					new LiteralNumberType(t.origin, 0, u32Type);
 				], [it], [t, innerTs |
 					t
 				])

@@ -237,8 +237,11 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	
 	dispatch def void doCreateConstraints(InferenceContext c, Operation op) {
 		val typeArgs = op.typeParameters.map[c.system.getTypeVariable(it)].force()
-			
-		val fromType = (c.type as FunctionType).from;
+		var type = c.type;
+		if(type instanceof TypeScheme) {
+			type = type.instantiate(c.system, op).value;
+		}
+		val fromType = (type as FunctionType).from;
 		val toType = c.system.getTypeVariable(op.typeSpecifier);
 		val funType = new FunctionType(op, new AtomicType(op), fromType, toType);
 		
@@ -397,8 +400,8 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			
 	dispatch def void doCreateConstraints(InferenceContext c, FunctionDefinition obj) {
 		val explicitType = obj.typeSpecifier.castOrNull(PresentTypeSpecifier);
+		_doCreateConstraints(c, obj as Operation);
 		if(explicitType !== null) {
-			_doCreateConstraints(c, obj as Operation);
 			if(isFixedSize(explicitType)) {
 				return;
 			}
@@ -409,6 +412,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		].force;
 		if(returnedTypes.empty) {
 			// can't infer anything if there are no return statements
+			return;
 		}
 		val maxTypeVar = c.system.newTypeVariable(obj);
 		c.system.addConstraint(new MaxConstraint(maxTypeVar, returnedTypes, null));

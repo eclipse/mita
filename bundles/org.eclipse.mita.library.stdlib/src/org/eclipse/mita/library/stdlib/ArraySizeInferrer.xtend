@@ -45,6 +45,8 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 	dispatch def void doCreateConstraints(InferenceContext c, ArrayLiteral lit, TypeConstructorType t) {	
 		val innerDataType = c.system.newTypeVariable(lit);
 		val oldDataType = t.typeArguments.get(1)
+		val u32 = typeRegistry.getTypeModelObject(lit, StdlibTypeRegistry.u32TypeQID);
+		val u32Type = c.system.getTypeVariable(u32);
 		c.system.addConstraint(new MaxConstraint(innerDataType, lit.values.map[
 				c.system.getTypeVariable(it)
 			] 
@@ -54,7 +56,7 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		c.system.associate(new TypeConstructorType(lit, t.name, #[
 			t.typeArguments.head -> Variance.INVARIANT, 
 			innerDataType -> Variance.INVARIANT, 
-			new LiteralNumberType(lit, lit.values.length, t.typeArguments.last) -> Variance.COVARIANT
+			new LiteralNumberType(lit, lit.values.length, u32Type) -> Variance.COVARIANT
 		]), lit);
 	}
 

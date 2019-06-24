@@ -185,7 +185,7 @@ NewInstanceExpression returns program::NewInstanceExpression:
 ;
 
 UnqualifiedPresentTypeSpecifier returns types::TypeReferenceSpecifier:
-	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))?
+	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifierArgument (WS? ',' WS? typeArguments+=TypeSpecifierArgument)* WS? '>'))?
 ;
 
 

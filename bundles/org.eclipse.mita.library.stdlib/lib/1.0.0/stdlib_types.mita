@@ -183,6 +183,17 @@ export generated fn <T> write(self : siginst<T>, value : T) : void
 	generator "org.eclipse.mita.library.stdlib.functions.SignalInstanceReadWriteGenerator";
 
 /*
+ * # Optionals
+ * 
+ * A container object which may or may not contain a non-null value. 
+ * If a value is present, hasValue() will return true and value() will return the value.
+ */
+export generated type optional<T>
+	generator "org.eclipse.mita.library.stdlib.OptionalGenerator"
+	size-inferrer "org.eclipse.mita.library.stdlib.OptionalSizeInferrer"
+	constructor con();
+
+/*
  * Base of all exceptions.
  */
 export exception Exception;

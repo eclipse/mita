@@ -96,11 +96,21 @@ class GenerationTest {
 				val Resource resource = createProgram(contextObject)
 				
 				project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor())
-				if (resource instanceof MitaBaseResource) {
+				
+				// first type the root so dependencies are loaded
+				if(resource instanceof MitaBaseResource) {
 					if(resource.latestSolution === null) {
 						resource.collectAndSolveTypes(resource.contents.head);
 					}
 				}
+				// then type everything else, otherwise we modify resources while we are iterating => ConcurrentModificationException
+				resource.resourceSet.resources.forEach[
+					if(it instanceof MitaBaseResource) {
+						if(it.latestSolution === null) {
+							it.generateLinkAndType(it.contents.head);
+						}
+					}
+				]
 				resource.save(Collections.emptyMap())
 				project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor())
 				assertGeneratedCodeExists(project, resource)
