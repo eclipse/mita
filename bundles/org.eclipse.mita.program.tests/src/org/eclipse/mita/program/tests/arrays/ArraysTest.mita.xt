@@ -9,10 +9,10 @@ package test;
 import platforms.unittest;
 
 // Arrays are value types
-var foo = new array<uint8>(size = 10);
+var foo = new array<uint8, 10>();
 
 // Arrays can be initialized with brackets
-var foo2: array<uint8> = [1, 2, 3, 4, 5];
+var foo2: array<uint8, _> = [1, 2, 3, 4, 5];
 
 /* XPECT errors ---
 "prim»i»1 (:: xint8) doesn't share a common type with the other members of this array literal" at "1"
@@ -30,25 +30,25 @@ fn works() {
 	foo2[2] = 10;
 	
 	// arrays can be copied
-	var a = new array<uint16>(size = 10);
-	var b = new array<uint16>(size = 8);
+	var a = new array<uint16, 10>();
+	var b = new array<uint16, 8>();
 	b = a;
 	// TODO: it's not possible right now to have a circular assignment.
 	// To fix this we need to take into account only previous statements when calculating the size of an EREF.  
 	//a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<xint8>
+	// XPECT inferredType --> array<xint8, 5>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
-	// XPECT inferredLength --> 4
+	// XPECT inferredType --> array<xint8, 4>
 	var v2 = v1[1:];
-	// XPECT inferredLength --> 2
+	// XPECT inferredType --> array<xint8, 2>
 	var v3 = v1[:2];
-	// XPECT inferredLength --> 5
+	// XPECT inferredType --> array<xint8, 5>
 	var v4 = v1[:];
-	// XPECT inferredLength --> 2
+	// XPECT inferredType --> array<xint8, 2>
 	var v5 = v1[1:3];
 	
 	var l = v1.length();
@@ -82,25 +82,25 @@ fn blabla() {
 	foo2[10] = 10;
 	
 	// arrays can be copied
-	var a = new array<uint16>(size = 10);
-	var b = new array<uint16>(size = 8);
+	var a = new array<uint16, 10>();
+	var b = new array<uint16, 8>();
 	b = a;
 	// TODO: it's not possible right now to have a circular assignment.
 	// To fix this we need to take into account only previous statements when calculating the size of an EREF.  
 	//a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<xint8>
+	// XPECT inferredType --> array<xint8, 5>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
-	// XPECT inferredLength --> 4
+	// XPECT inferredType --> array<xint8, 4>
 	var v2 = v1[1:];
-	// XPECT inferredLength --> 2
+	// XPECT inferredType --> array<xint8, 2>
 	var v3 = v1[:2];
-	// XPECT inferredLength --> 5
+	// XPECT inferredType --> array<xint8, 5>
 	var v4 = v1[:];
-	// XPECT inferredLength --> 2
+	// XPECT inferredType --> array<xint8, 2>
 	var v5 = v1[1:3];
 	
 	// slices on the left are forbidden
@@ -141,17 +141,17 @@ every 100 milliseconds {
 	//a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<xint8>
+	// XPECT inferredType --> array<xint8, 5>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
-	// XPECT inferredLength --> 4
+// XPECT inferredType --> array<xint8, 4>
 	var v2 = v1[1:];
-	// XPECT inferredLength --> 2
+	// XPECT inferredType --> array<xint8, 2>
 	var v3 = v1[:2];
-	// XPECT inferredLength --> 5
+	// XPECT inferredType --> array<xint8, 5>
 	var v4 = v1[:];
-	// XPECT inferredLength --> 2
+	// XPECT inferredType --> array<xint8, 2>
 	var v5 = v1[1:3];
 	
 	// slices on the left are forbidden
@@ -162,7 +162,7 @@ every 100 milliseconds {
 }
 
 fn errors() {
-	var a = new array<uint16>(size = 5);
+	var a = new array<uint16, 5>();
 	// XPECT errors --> "Array range is invalid: Lower bound must be smaller than upper bound" at "2:1"
 	var b = a[2:1];
 	// XPECT errors --> "Array range is invalid: Lower bound must be smaller than upper bound" at "6:"
@@ -173,7 +173,7 @@ fn errors() {
 
 // XPECT noCompileErrors
 // XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayLiteral"
-fn returnArrayLiteral() : array<uint8> {
+fn returnArrayLiteral() : array<uint8, _> {
 	return [1,2,3,4];
 }
 

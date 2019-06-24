@@ -17,7 +17,7 @@ enum Foo {
 
 setup my_sensor00 {
     cfg00 = true;
-    // XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1" 
+    // XPECT infos --> "<auto>.CFG_VAL_1() has type CFG_VAL_1()" at ".CFG_VAL_1"
     cfg03 = .CFG_VAL_1;
 }
 
