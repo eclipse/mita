@@ -10,7 +10,6 @@ import platforms.unittest;
 
 fn accessWithoutRead() {
 	/* XPECT errors ---
-		"Cannot determine size of element: Object does not have a size" at "my_sensor00.modality00"
 		"Modalities must be used immediately. Add .read() after modality00" at "modality00"
 	--- */
 	var x1 = my_sensor00.modality00;
@@ -20,7 +19,7 @@ fn accessWithoutRead() {
 fn functionWithModalityParameter(p : modality<uint32>) { 
 }
 
-// XPECT warnings ---> Returning non-primitive values from functions is experimental and might result in invalid C code.
+// XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "functionReturningModality"
 fn functionReturningModality() : modality<int16> {
 	// XPECT errors ---> "Modalities must be used immediately. Add .read() after modality00" at "modality00"
 	return my_sensor00.modality00;

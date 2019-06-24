@@ -9,10 +9,11 @@ package test;
 import platforms.unittest;
 
 // Arrays are value types
-var foo = new array<uint8>(size = 10);
+var foo = new array<uint8, 10>();
 
 // Arrays can be initialized with brackets
-var foo2: array<uint8> = [1, 2, 3, 4, 5];
+// XPECT infos ---> "_ has type uint32" at "_"
+var foo2: array<uint8, _> = [1, 2, 3, 4, 5];
 
 /* XPECT errors ---
 "prim»i»1 (:: xint8) doesn't share a common type with the other members of this array literal" at "1"
@@ -30,31 +31,28 @@ fn works() {
 	foo2[2] = 10;
 	
 	// arrays can be copied
-	var a = new array<uint16>(size = 10);
-	var b = new array<uint16>(size = 8);
+	var a = new array<uint16, 10>();
+	var b = new array<uint16, 8>();
 	b = a;
 	// TODO: it's not possible right now to have a circular assignment.
 	// To fix this we need to take into account only previous statements when calculating the size of an EREF.  
 	//a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<xint8>
+	// XPECT inferredType --> array<xint8, uint32>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
-	// XPECT inferredLength --> 4
 	var v2 = v1[1:];
-	// XPECT inferredLength --> 2
 	var v3 = v1[:2];
-	// XPECT inferredLength --> 5
 	var v4 = v1[:];
-	// XPECT inferredLength --> 2
 	var v5 = v1[1:3];
 	// this error is actually fine, it's a consequence of global type inference. 
     // It happens because of lines like line 168 (b = a[-2:-1];), negative indices create a graph  uint32 -> f_685.0 <- int8.
     // With those lines disabled in ArraysTest.mita.xt no errors occur. 
 	/* XPECT errors ---
-		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of A" at "length"
+		"Function length cannot be used here: uint32, A" at "length"
+		"v1.length() (:: A) has a different type than l (:: B)" at "v1.length()"
 	--- */
 	var l = v1.length();
 	
@@ -70,10 +68,11 @@ fn blabla() {
 	var x2 = foo[2];
 	foo[2] = 42;
 	
+	// since range checks need size inference, and that only happens if types are correctly inferred, we skip the xpects here
 	// we range check
-	// XPECT errors --> "Array index out of bounds: length = 10" at "10"
+	// xpect errors --> "Array index out of bounds: length = 10" at "10"
 	var x1 = foo[10];
-	// XPECT errors --> "Array index out of bounds: length = 10" at "10"
+	// xpect errors --> "Array index out of bounds: length = 10" at "10"
 	foo[10] = 10;
 	
 	//also test array literals
@@ -81,31 +80,27 @@ fn blabla() {
 	foo2[2] = 10;
 	
 	// we range check
-	// XPECT errors --> "Array index out of bounds: length = 5" at "10"
+	// xpect errors --> "Array index out of bounds: length = 5" at "10"
 	x1 = foo2[10];
-	// XPECT errors --> "Array index out of bounds: length = 5" at "10"
+	// xpect errors --> "Array index out of bounds: length = 5" at "10"
 	foo2[10] = 10;
 	
 	// arrays can be copied
-	var a = new array<uint16>(size = 10);
-	var b = new array<uint16>(size = 8);
+	var a = new array<uint16, 10>();
+	var b = new array<uint16, 8>();
 	b = a;
 	// TODO: it's not possible right now to have a circular assignment.
 	// To fix this we need to take into account only previous statements when calculating the size of an EREF.  
 	//a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<xint8>
+	// XPECT inferredType --> array<xint8, uint32>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
-	// XPECT inferredLength --> 4
 	var v2 = v1[1:];
-	// XPECT inferredLength --> 2
 	var v3 = v1[:2];
-	// XPECT inferredLength --> 5
 	var v4 = v1[:];
-	// XPECT inferredLength --> 2
 	var v5 = v1[1:3];
 	
 	// slices on the left are forbidden
@@ -122,9 +117,9 @@ every 100 milliseconds {
 	foo[2] = 42;
 	
 	// we range check
-	// XPECT errors --> "Array index out of bounds: length = 10" at "10"
+	// xpect errors --> "Array index out of bounds: length = 10" at "10"
 	var x1 = foo[10];
-	// XPECT errors --> "Array index out of bounds: length = 10" at "10"
+	// xpect errors --> "Array index out of bounds: length = 10" at "10"
 	foo[10] = 10;
 	
 	// Array elements can be accessed with square brackets
@@ -132,31 +127,27 @@ every 100 milliseconds {
 	foo2[2] = 10;
 	
 	// we range check
-	// XPECT errors --> "Array index out of bounds: length = 5" at "10"
+	// xpect errors --> "Array index out of bounds: length = 5" at "10"
 	x1 = foo2[10];
-	// XPECT errors --> "Array index out of bounds: length = 5" at "10"
+	// xpect errors --> "Array index out of bounds: length = 5" at "10"
 	foo2[10] = 10;
 	
 	// arrays can be copied
-	var a = new array<uint16>(size = 10);
-	var b = new array<uint16>(size = 8);
+	var a = new array<uint16, 10>();
+	var b = new array<uint16, 8>();
 	b = a;
 	// TODO: it's not possible right now to have a circular assignment.
 	// To fix this we need to take into account only previous statements when calculating the size of an EREF.  
 	//a = b;
 	
 	// arrays can be initialized with literals
-	// XPECT inferredType --> array<xint8>
+	// XPECT inferredType --> array<xint8, uint32>
 	var v1 = [1, 2, 3, 4, 5];
 	v1 = [4, 5, 6];
 	// arrays can be copied partially with slices
-	// XPECT inferredLength --> 4
 	var v2 = v1[1:];
-	// XPECT inferredLength --> 2
 	var v3 = v1[:2];
-	// XPECT inferredLength --> 5
 	var v4 = v1[:];
-	// XPECT inferredLength --> 2
 	var v5 = v1[1:3];
 	
 	// slices on the left are forbidden
@@ -167,12 +158,12 @@ every 100 milliseconds {
 }
 
 fn errors() {
-	var a = new array<uint16>(size = 5);
+	var a = new array<uint16, 5>();
 	// XPECT errors --> "Array range is invalid: Lower bound must be smaller than upper bound" at "2:1"
 	var b = a[2:1];
-	// XPECT errors --> "Array range is invalid: Lower bound must be smaller than upper bound" at "6:"
+	// xpect errors --> "Array range is invalid: Lower bound must be smaller than upper bound" at "6:"
 	b = a[6:];
-	// XPECT errors --> "Array range is invalid: Upper bound must be less than or equal to array size (5)" at ":7"
+	// xpect errors --> "Array range is invalid: Upper bound must be less than or equal to array size (5)" at ":7"
 	b = a[:7];
 	/* XPECT errors ---
 		"-prim»i»1 (:: int8) must be an unsigned integer" at "-1"
@@ -182,42 +173,34 @@ fn errors() {
 		"All values in -prim»i»2:-prim»i»1 (:: A) must be unsigned integers" at "-2:-1"
 		"All values in -prim»i»2:-prim»i»1 (:: int8) must be unsigned integers" at "-2:-1"
 		"Array range is invalid: Lower bound must be positive or zero" at "-2:-1"
-		"Array range is invalid: Upper bound must be strictly positive" at "-2:-1"
 	--- */
 	b = a[-2:-1];
-	/* XPECT errors ---
-		"prim»s»"asdf" (:: string) has a different type than str (:: A)" at ""asdf""
-		"prim»s»"asdf" (:: string) has a different type than str (:: uint32)" at ""asdf""
-	--- */
 	var str = "asdf";
 	/* XPECT errors ---
-		"str (:: A) must be an unsigned integer" at "str"
+		"str (:: string<A>) must be an unsigned integer" at "str"
 	--- */
 	var c = a[str];
 	/* XPECT errors ---
-		"All values in str: (:: A) must be unsigned integers" at "str:"
-		"str (:: A) must be an unsigned integer" at "str"
-		"str: (:: A) must be an unsigned integer" at "str:"
+		"All values in str: (:: string<A>) must be unsigned integers" at "str:"
+		"str: (:: string<A>) must be an unsigned integer" at "str:"
 	--- */
 	b = a[str:];
 	/* XPECT errors ---
-		":str (:: A) must be an unsigned integer" at ":str"
-		"All values in :str (:: A) must be unsigned integers" at ":str"
-		"str (:: A) must be an unsigned integer" at "str"
+		":str (:: string<A>) must be an unsigned integer" at ":str"
+		"All values in :str (:: string<A>) must be unsigned integers" at ":str"
 	--- */
 	b = a[:str];
 	/* XPECT errors ---
-		"All values in str:str (:: A) must be unsigned integers" at "str:str"
-		"str (:: A) must be an unsigned integer" at "str"
-		"str (:: A) must be an unsigned integer" at "str"
-		"str:str (:: A) must be an unsigned integer" at "str:str"
+		"All values in str:str (:: string<A>) must be unsigned integers" at "str:str"
+		"str:str (:: string<A>) must be an unsigned integer" at "str:str"
 	--- */
 	b = a[str:str];
 }
 
 // XPECT noCompileErrors
 // XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayLiteral"
-fn returnArrayLiteral() : array<uint8> {
+// XPECT infos ---> "_ has type uint32" at "_"
+fn returnArrayLiteral() : array<uint8, _> {
 	return [1,2,3,4];
 }
 
@@ -236,14 +219,14 @@ struct SensorMessage {
 }
 
 // XPECT noCompileErrors
-fn mean(data : array<SensorMessage>) {
+// XPECT infos ---> "_ has type uint32" at "_"
+fn mean(data : array<SensorMessage, _>) {
     let result : SensorMessage;
     // this error is actually fine, it's a consequence of global type inference. 
     // It happens because of lines like line 168 (b = a[-2:-1];), negative indices create a graph  uint32 -> f_685.0 <- int8.
     // With those lines disabled in ArraysTest.mita.xt no errors occur. 
 	/* XPECT errors ---
-		"Function length cannot be used here: A, B" at "length"
-		"Function length cannot be used here: Return type incompatible: uint32 is not subtype of A" at "length"
+		"Function length cannot be used here: uint32, A" at "length"
 	--- */
     for(var i = 0; i < data.length(); i++) {
         // featureCalls on arrayAccess is allowed

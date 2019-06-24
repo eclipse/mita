@@ -29,6 +29,7 @@ fn functionWithSiginstParameter(p : siginst<uint32>) {
 }
 
 // XPECT errors ---> "Could not infer the size of the function's return." at "functionReturningSiginst"
+// XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "functionReturningSiginst"
 fn functionReturningSiginst() : siginst<bool> {
 	// XPECT errors --> "Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
 	return connectivity.signal_instance00;
