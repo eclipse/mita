@@ -29,7 +29,7 @@ class ArraysTest extends AbstractRuntimeTest {
 		native unchecked fn exit(status: int16): void header "stdlib.h";
 		
 		every x86.startup {
-			let ar = new array<int8>(100);
+			let ar = new array<int8, 100>();
 			try {
 				let a0 = foo0();
 				printarray(a0);
@@ -87,7 +87,7 @@ class ArraysTest extends AbstractRuntimeTest {
 			exit(0);
 		}
 		 
-		fn printarray(a: array<int8>) {
+		fn printarray(a: array<int8, _>) {
 			print("[");
 			for(var i = 0; i < a.length(); i++) {
 				print(`${a[i]}`);

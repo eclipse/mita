@@ -81,11 +81,11 @@ class ReferencesTest extends AbstractRuntimeTest {
 				}
 			} 
 			
-			fn printRef(x: &string) {
+			fn printRef(x: &string<_>) {
 				println(`${*x}`);
 			}
 			
-			fn printRef(x: &array<int32>) {
+			fn printRef(x: &array<int32, _>) {
 				for(var i = 0; i < (*x).length(); i++) {
 					print(`${(*x)[i]}`);
 				}
