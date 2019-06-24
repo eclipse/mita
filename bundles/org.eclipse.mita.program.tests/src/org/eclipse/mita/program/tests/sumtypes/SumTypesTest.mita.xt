@@ -109,38 +109,24 @@ fn incVecs(a: anyVec) {
         	b = anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2);
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type A" at "x"
-            "Cannot determine size of element: Unable to infer size from type A" at "y"
             "Wrong number of deconstructors, expected 1." at "x"
             "vec1d(int32) and vec1d(A, B) don't fit together" at "is(anyVec.vec1d -> x, y) {  		}"
         --- */
         is(anyVec.vec1d -> x, y) {
 		}
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type A" at "x"
-            "Cannot determine size of element: Unable to infer size from type A" at "y"
-            "Cannot determine size of element: Unable to infer size from type A" at "z"
             "Wrong number of deconstructors, expected 1." at "x"
             "vec2d(vec2d_t(int32, int32)) and vec2d(A, B, C) don't fit together" at "is(anyVec.vec2d -> x, y, z) {          }"
         --- */
         is(anyVec.vec2d -> x, y, z) {
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type A" at "w"
-            "Cannot determine size of element: Unable to infer size from type A" at "x"
-            "Cannot determine size of element: Unable to infer size from type A" at "y"
-            "Cannot determine size of element: Unable to infer size from type A" at "z"
             "Wrong number of deconstructors, expected 3." at "x"
             "vec3d(int32, int32, int32) and vec3d(A, B, C, D) don't fit together" at "is(anyVec.vec3d -> x, y, z, w) {          }"
         --- */
         is(anyVec.vec3d -> x, y, z, w) {
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type A" at "v"
-            "Cannot determine size of element: Unable to infer size from type A" at "w"
-            "Cannot determine size of element: Unable to infer size from type A" at "x"
-            "Cannot determine size of element: Unable to infer size from type A" at "y"
-            "Cannot determine size of element: Unable to infer size from type A" at "z"
             "Wrong number of deconstructors, expected 4." at "x"
             "vec4d(int32, int32, int32, int32) and vec4d(A, B, C, D, E) don't fit together" at "is(anyVec.vec4d -> x, y, z, w, v) {          }"
         --- */
@@ -156,7 +142,6 @@ fn incVecs(a: anyVec) {
     	    "Can't deconstruct singletons" at "is(anyVec.vec0d -> x) {      	}"
     	    "Cannot determine size of element: Unable to infer size from type A" at "x"
     	    "Wrong number of deconstructors, expected 0." at "x"
-    	    "vec0d() and vec0d(A) don't fit together" at "is(anyVec.vec0d -> x) {      	}"
     	--- */
     	is(anyVec.vec0d -> x) {
     	}

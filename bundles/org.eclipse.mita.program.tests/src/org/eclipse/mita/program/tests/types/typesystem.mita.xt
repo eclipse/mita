@@ -37,11 +37,11 @@ fn id(x: int32?): int32? {
 fn id(x: int32): int32 {
 	return x;  
 }      
-//XPECT inferredType --> __args(string) → string
+//XPECT inferredType --> \A. __args(string<A>) → string<A>
 /*XPECT errors ---
 "Could not infer the size of the function's return." at "id"
 --- */
-fn id(x: string): string {
+fn <Size> id(x: string<Size>): string<Size> {
 	return x;
 }   
 
@@ -50,11 +50,11 @@ fn id2(x: int32, y: int8): int32 {
 	return x;  
 }      
   
-//XPECT inferredType --> __args(string, int8) → string
+//XPECT inferredType --> \A. __args(string<A>, int8) → string<A>
 /*XPECT errors ---
 "Could not infer the size of the function's return." at "id2"
 --- */
-fn id2(x: string, y: int8): string {
+fn <Size> id2(x: string<Size>, y: int8): string<Size> {
 	return x;
 }
     
@@ -73,7 +73,7 @@ every 100 milliseconds {
 	let e = "asdf";     
 	let f = 8;
 	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "id(e)"
-	let g: string = id(e);          
+	let g: string<_> = id(e);          
 	let h = id(f); 
 	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "id2(y=0, x=e)"
 	let h2 = id2(y=0, x=e);
@@ -149,14 +149,14 @@ fn <T> foo2() {
 		"Function con_array cannot be used here: arguments don't fit (__args(A, B) != __args(uint32))" at "new array<int32>(10, 20)"
 		"__args(xint8, xint8) and __args(uint32) differ in the number of type arguments" at "new array<int32>(10, 20)"
 	--- */
-	let bar5 = new array<int32>(10, 20);
-	let bar6 = new array<int32>(10);
+	let bar5 = new array<int32, 10, 20>(30, 40);
+	let bar6 = new array<int32, 10>();
 	/* XPECT errors ---
 		"Cannot determine size of element: No explicit maximum size was given" at "new array<int32>()"
 		"__args() and __args(uint32) differ in the number of type arguments" at "new array<int32>()"
 	--- */
 	let bar7 = new array<int32>();
-	let bar8 = new array<int32>(size=10);
+	let bar8 = new array<int32, 10>();
 	/* XPECT errors ---
 		"Couldn't resolve reference to Parameter 'foo'." at "foo"
 		"Function con_array cannot be used here" at "new array<int32>(foo=10)"

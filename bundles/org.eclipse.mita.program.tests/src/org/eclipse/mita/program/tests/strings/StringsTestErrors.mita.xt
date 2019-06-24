@@ -1,0 +1,32 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.strings.StringsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// Strings are one-byte ASCII strings (not UTF8, not ISO8859-1)
+// Strings have a maximum length fixed at compile time
+
+function someExternalFunction() : int32 {
+	return 5;
+}
+
+
+function notSupportedArrayUsage(): void {
+	/* XPECT errors ---
+		"prim»s»"hello world" (:: string<A>) has a different type than foo (:: array<B, C>)" at ""hello world""
+		"string<A> and array<B, C> differ in their type arguments" at ""hello world""
+	--- */
+	var foo = "hello world";
+	// We don't support direct access yet
+	// the error that is produced here manifests at `var foo`: 
+	// [1:3] creates the very strong type constraint that foo :: array<T>.
+	// The solver therefore sees the problem in initializing foo with a string.
+	var bar = foo[1];
+	var bar2 = foo[1:3];
+}
+

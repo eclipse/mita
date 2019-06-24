@@ -396,6 +396,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, EObject obj) {
+		c.system.associate(c.type, obj);
 	}
 			
 	dispatch def void doCreateConstraints(InferenceContext c, FunctionDefinition obj) {

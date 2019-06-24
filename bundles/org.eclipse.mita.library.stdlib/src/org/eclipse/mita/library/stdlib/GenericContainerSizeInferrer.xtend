@@ -420,7 +420,8 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 						if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
 							if(sizeTypeIndexes.contains(i)) {
 								if(variableReferenceIsInLoop(variable, expr)) {
-									c.system.addConstraint(new EqualityConstraint(c.system.newTypeVariable(expr.varRef), new BottomType(expr, '''Cannot infer sizes on append in loops'''), new ValidationIssue('''Cannot infer sizes on append in loops''', expr)))
+									val msg = '''Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "«variable.name»"''';
+									c.system.addConstraint(new EqualityConstraint(c.system.newTypeVariable(expr.varRef), new BottomType(expr, msg), new ValidationIssue(msg, expr)))
 								}
 								else {
 									c.system.addConstraint(new SumConstraint(tr, #[t1, t2], new ValidationIssue('''1''', expr)));

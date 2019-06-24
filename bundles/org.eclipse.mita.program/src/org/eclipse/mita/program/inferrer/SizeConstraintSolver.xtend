@@ -137,7 +137,7 @@ class SizeConstraintSolver implements IConstraintSolver {
 			val instance = ts.instantiate(system, constraint.instance.origin);
 			val instanceType = instance.value
 			val resultSystem = system.plus(
-				new EqualityConstraint(constraint.instance, instanceType, constraint.errorMessage)
+				new EqualityConstraint(constraint.instance, instanceType, constraint._errorMessage)
 			)
 			return SimplificationResult.success(resultSystem, Substitution.EMPTY);	
 		}

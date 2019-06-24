@@ -12,6 +12,7 @@ import platforms.unittest;
 var foo = new array<uint8, 10>();
 
 // Arrays can be initialized with brackets
+// XPECT infos --> "_ has type " at "_"
 var foo2: array<uint8, _> = [1, 2, 3, 4, 5];
 
 /* XPECT errors ---
@@ -192,7 +193,7 @@ struct SensorMessage {
 }
 
 // XPECT noCompileErrors
-fn mean(data : array<SensorMessage>) {
+fn mean(data : array<SensorMessage, _>) {
     let result : SensorMessage;
     for(var i = 0; i < data.length(); i++) {
         // featureCalls on arrayAccess is allowed

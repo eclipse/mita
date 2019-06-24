@@ -17,15 +17,15 @@ function someExternalFunction() : int32 {
 
 // XPECT noCompileErrors
 function stringTestSuccess() : void {
-	// XPECT inferredType --> string<14>
+	// XPECT inferredType --> string<'14>
 	var bar = "this is a test";
 
-	// XPECT inferredType --> string<24>
+	// XPECT inferredType --> string<'24>
 	var foo = "hello world";
 	foo = "this is my long sentence"; // This is ok. At compile time we can determine that foo is max 24 characters.
 	
 	// The length of a string can be set explicitly
-	// XPECT inferredType --> string<300>
+	// XPECT inferredType --> string<'300>
 	// XPECT infos --> "_ has type '300" at "_"
 	var foo2 : string<_> = new string<300>();
 	foo2 = "bla";
@@ -37,14 +37,14 @@ function stringTestSuccess() : void {
 	} 
 	
 	// Strings can be concatenated using +
-	// XPECT inferredType --> string<18>
+	// XPECT inferredType --> string<'18>
 	var foo3 = "bla bla";
 	foo3 += "hello world";
 
 	// Strings can be interpolated
 	let bla = 42;
 	let greeting = "good sir";
-	// XPECT inferredType --> string<30>
+	// XPECT inferredType --> string<'30>
 	let baz = `my variable: ${bla} and ${greeting}`;
 	
 	let x10 = `${bla}`;
@@ -66,22 +66,9 @@ function stringTestFail() : void {
 // XPECT inferredType --> string<A>
 	var foo = "hello world";
 	for(var i: uint16 = 0; i < someExternalFunction(); i=i++) { //TODO: Increment Operator i++
-		// XPECT errors --> "Cannot determine size of element: Cannot infer string length in loops" at "foo += "hello""
-		foo += "hello"; // compiler error: Cannot determine the length of foo. Please set the length explicitly.
+		// XPECT errors --> "Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "foo"" at "foo += "hello""
+		foo += "hello"; 
 	}
 }
-function notSupportedArrayUsage(): void {
-	/* XPECT errors ---
-		"Cannot determine size of element: Cannot infer string length of s»"hello world"" at ""hello world""
-		"prim»s»"hello world" (:: string) has a different type than foo (:: array<A>)" at ""hello world""
-	--- */
-	var foo = "hello world";
-	// We don't support direct access yet
-	// XPECT errors --> "Cannot determine size of element: Unable to infer size from type A" at "foo[1]"
-	var bar = foo[1];
-	// the error that is produced here manifests at `var foo`: 
-	// [1:3] creates the very strong type constraint that foo :: array<T>.
-	// The solver therefore sees the problem in initializing foo with a string.
-	var bar2 = foo[1:3];
-}
+
 
