@@ -259,7 +259,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeHole arg) {
-		system.associate(system.newTypeHole(arg), arg);
+		system.associate(system.getTypeHole(arg), arg);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument arg) {
@@ -350,6 +350,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 					system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
 				]
 				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
+					// here we make a *new* type hole instead of getting the one of FCWF, since the type hole is not the singular identifying type variable of the FCWF.
 					val tv = system.newTypeHole(varOrFun) as AbstractType;
 					(#[new UnorderedArgsInformation("self", null, null, tv, tv)] + argumentParamTypesAndValueTypes).force;
 				}

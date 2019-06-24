@@ -144,7 +144,7 @@ class CompilationContext {
 			(program.eAllContents).map[
 				it -> BaseUtils.getType(it)
 			].filter[
-				!(it.value instanceof TypeScheme) && it.value?.freeVars?.empty && TypeUtils.isGeneratedType(program.eResource, it.value)
+				!(it.value instanceof TypeScheme) && TypeUtils.isGeneratedType(program.eResource, it.value)
 			].map[it.value].toIterable
 		].groupBy[it.toString].entrySet.map[it.value.head];
 	}

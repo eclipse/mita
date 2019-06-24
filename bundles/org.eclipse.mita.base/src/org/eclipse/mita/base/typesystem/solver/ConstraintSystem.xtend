@@ -132,6 +132,14 @@ class ConstraintSystem {
 		])
 	}
 	
+	def TypeVariable getTypeHole(EObject obj) {
+		val uri = EcoreUtil.getURI(obj);
+
+		getOrCreate(obj, uri, [ 
+			newTypeHole(it)
+		]);
+	}
+	
 	def TypeVariable getTypeVariable(EObject obj) {
 		val uri = EcoreUtil.getURI(obj);
 
