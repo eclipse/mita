@@ -285,6 +285,7 @@ class MitaBaseResource extends LazyLinkingResource {
 			val solutionTypes = constraintSolver.solve(new ConstraintSolution(new ConstraintSystem(preparedSystem), substitutionProvider.get, newArrayList), obj);
 			timer.stop("solve");
 			timer.start("size-inference");
+			// we don't do size inference because it creates way less specific type constraints, which would remove issues we find in typing, by unassigning bottom types.
 			val solution = if(typeLinkingErrors.empty && solutionTypes.issues.forall[it.severity != Severity.ERROR]) {
 				val sizeConstraints = sizeInferrer.createSizeConstraints(solutionTypes, this);
 				sizeConstraintSolver.solve(sizeConstraints, obj);				
@@ -362,7 +363,7 @@ class MitaBaseResource extends LazyLinkingResource {
 						else {
 							substitution.content.get(solution.system.getTypeVariable(origin).idx);
 						}
-						solution.issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t»''', th.origin, null, "") 
+						solution.issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t.modifyNames(new NicerTypeVariableNamesForErrorMessages)»''', th.origin, null, "") 
 					]
 					
 					resource.latestSolution = solution;

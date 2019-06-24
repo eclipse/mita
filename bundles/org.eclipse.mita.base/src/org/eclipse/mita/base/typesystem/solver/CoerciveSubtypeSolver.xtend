@@ -661,11 +661,12 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	}
 	
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint, TypeConstructorType sub, TypeConstructorType top) {
+		val renamer = new NicerTypeVariableNamesForErrorMessages;
 		if(sub.typeArguments.length !== top.typeArguments.length) {
-			return SimplificationResult.failure(#[new ValidationIssue(constraint.errorMessage, '''«sub» and «top» differ in their type arguments'''), constraint.errorMessage]);
+			return SimplificationResult.failure(#[new ValidationIssue(constraint.errorMessage, '''«sub.modifyNames(renamer)» and «top.modifyNames(renamer)» differ in their type arguments'''), constraint.errorMessage]);
 		}
 		if(sub.class != top.class) {
-			return SimplificationResult.failure(#[new ValidationIssue(constraint.errorMessage, '''«sub» and «top» are not constructed the same'''), constraint.errorMessage]);
+			return SimplificationResult.failure(#[new ValidationIssue(constraint.errorMessage, '''«sub.modifyNames(renamer)» and «top.modifyNames(renamer)» are not constructed the same'''), constraint.errorMessage]);
 		}
 		
 		val typeArgs = sub.typeArguments.zip(top.typeArguments).indexed;

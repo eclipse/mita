@@ -24,6 +24,7 @@ import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
 
 class VirtualTypeSizeInferrer extends GenericContainerSizeInferrer {
 	// implements inference for modality and siginst
@@ -45,35 +46,6 @@ class VirtualTypeSizeInferrer extends GenericContainerSizeInferrer {
 		return superResult;
 	}
 	
-//	// you should always pass a modality/siginst<T, ...> here
-//	static def AbstractType getDataType(AbstractType type) {
-//		return type?.castOrNull(TypeConstructorType)?.typeArguments?.tail?.head;
-//	}
-//	
-//	// you should always pass a modality/siginst<T, ...> here
-//	static def AbstractType setDataType(AbstractType type, AbstractType inner) {
-//		if(type instanceof TypeConstructorType) {
-//			return new TypeConstructorType(type.origin, type.typeArguments.head, #[inner -> Variance.INVARIANT] + type.typeArgumentsAndVariances.drop(2));
-//			
-//		}
-//	}
-//	
-//	override unbindSize(InferenceContext c) {
-//		val oldDataType = getDataType(c.type);
-//		val intermediate = c.system.newTypeVariable(null);
-//		val unbindings = delegate.unbindSize(new InferenceContext(c, intermediate, oldDataType));
-//		if(unbindings.size > 0) {
-//			return #[
-//				new InferenceContext(c, intermediate, setDataType(c.type, intermediate))
-//			] + unbindings;
-//		}
-//		return #[];
-//	}
-//	 
-//	override Optional<InferenceContext> createConstraints(InferenceContext c) {
-//		return doInfer(c, c.obj, c.type);
-//	}
-//	
 //	// siginsts are on SignalInstances
 //	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, ElementReferenceExpression ref, TypeConstructorType type) {
 //		val obj = ref.eContainer;

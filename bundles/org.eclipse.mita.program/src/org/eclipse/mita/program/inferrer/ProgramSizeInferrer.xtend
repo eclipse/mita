@@ -74,6 +74,11 @@ import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.FunctionParameterDeclaration
+import org.eclipse.mita.base.types.Parameter
 
 /**
  * Hierarchically infers the size of a data element.
@@ -279,6 +284,11 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		inferUnmodifiedFrom(c.system, obj, obj.value);
 	}
 	
+	dispatch def void doCreateConstraints(InferenceContext c, SignalInstance siginst) {
+		// do nothing, special case where call sites create constraints
+		// otherwise we need to create a special case for unbinding these, and its easier like this	
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, VariableDeclaration variable) {
 		val variableRoot = EcoreUtil2.getContainerOfType(variable, Program);
 		val referencesToVariable = UsageCrossReferencer.find(variable, variableRoot).map[e | e.EObject ];
@@ -296,6 +306,15 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			bindTypeToTypeSpecifier(c.system, variable, 
 				inferUnmodifiedFrom(c.system, variable, typeOrigins.head)
 			);
+		}
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, IntLiteral lit) {
+		if(EcoreUtil2.getContainerOfType(lit, TypeSpecifier) !== null) {
+			c.system.associate(new LiteralNumberType(lit, lit.value, c.type), lit);
+		}
+		else {
+			_doCreateConstraints(c, lit as EObject);
 		}
 	}
 	
@@ -320,7 +339,8 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, NullTypeSpecifier typeSpecifier) {
-		if(typeSpecifier.eContainer instanceof FunctionDefinition) {
+		val funDef = typeSpecifier.eContainer;
+		if(funDef instanceof FunctionDefinition) {
 			/* we are not dispatching here, since no one can specify a size inferrer for 
 			 * - object FunctionDefinition
 			 * - type   FunctionType
@@ -328,7 +348,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			 * If at some point user specified size inferrers are implemented this probably changes?
 			 */
 			 
-			 val functionContext = new InferenceContext(c, typeSpecifier.eContainer, c.system.getTypeVariable(typeSpecifier.eContainer));
+			 val functionContext = new InferenceContext(c, typeSpecifier.eContainer, c.system.getTypeVariable(typeSpecifier.eContainer), new FunctionType(funDef, new AtomicType(funDef, funDef.name), c.system.newTypeVariable(funDef), c.type));
 			 _doCreateConstraints(functionContext, typeSpecifier.eContainer as FunctionDefinition);
 			 return;
 		}
@@ -395,8 +415,12 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		c.system.associate(referenceType.typeArguments.get(1), expr);
 	}
 	
+	dispatch def void doCreateConstraints(InferenceContext c, Parameter obj) {
+		inferUnmodifiedFrom(c.system, obj, obj.typeSpecifier);
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, EObject obj) {
-		c.system.associate(c.type, obj);
+		println('''ProgramSizeInferrer: Unhandled: «obj.class.simpleName» («obj»)''')
 	}
 			
 	dispatch def void doCreateConstraints(InferenceContext c, FunctionDefinition obj) {
