@@ -51,6 +51,7 @@ import static org.eclipse.mita.program.inferrer.ProgramSizeInferrer.*
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.transpose
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.program.NewInstanceExpression
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -301,6 +302,15 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		return skeleton;
 	}
 	
+	def getFixedSizes(Set<Integer> handledArgs, TypeReferenceSpecifier typeSpecifier, TypeConstructorType type) {
+		return type.typeArguments.tail.zip(typeSpecifier.typeArguments).indexed
+				.map[(it.key + 1) -> it.value]
+				.filter[handledArgs.contains(it.key)]
+				.filter[delegate.isFixedSize(it.value.value)]
+				.map[it.key]
+				.toSet
+	}
+	
 	/* Typing the following:
 	 * type T<d1, ..., dn, s1 is T1, ..., sn is Tn>  // so d1 to dn are data parameters, s1 to sn are size parameters
 	 * var x: T<d1, ..., dn, 10, _, ..., _, 20>
@@ -324,13 +334,12 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		ProgramSizeInferrer.inferUnmodifiedFrom(c.system, variable, variable.typeSpecifier);
 		val handledArgs = (dataTypeIndexes + sizeTypeIndexes).toSet;
 		val variableTypeSpecifier = variable.typeSpecifier;
+		val initialization = variable.initialization;
 		val fixedSizes = if(variableTypeSpecifier instanceof TypeReferenceSpecifier) {
-			type.typeArguments.tail.zip(variableTypeSpecifier.typeArguments).indexed
-				.map[(it.key + 1) -> it.value]
-				.filter[handledArgs.contains(it.key + 1)]
-				.filter[delegate.isFixedSize(it.value.value)]
-				.map[it.key]
-				.toSet
+			getFixedSizes(handledArgs, variableTypeSpecifier, type);
+		}
+		else if(initialization instanceof NewInstanceExpression) {
+			getFixedSizes(handledArgs, initialization.type, type);
 		}
 		else {
 			#{};
