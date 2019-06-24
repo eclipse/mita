@@ -357,13 +357,8 @@ class MitaBaseResource extends LazyLinkingResource {
 						else {
 							th.origin;
 						}
-						val t = if(origin === null) {
-							substitution.content.get(th.idx);
-						}
-						else {
-							substitution.content.get(solution.system.getTypeVariable(origin).idx);
-						}
-						solution.issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t.modifyNames(new NicerTypeVariableNamesForErrorMessages)»''', th.origin, null, "") 
+						val t = substitution.content.get(th.idx);
+						solution.issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t.modifyNames(new NicerTypeVariableNamesForErrorMessages)»''', origin, null, "") 
 					]
 					
 					resource.latestSolution = solution;
