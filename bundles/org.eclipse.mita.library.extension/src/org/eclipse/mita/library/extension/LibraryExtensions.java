@@ -167,7 +167,6 @@ public class LibraryExtensions {
 		private String id;
 		private String name;
 		private String description;
-		// TODO: Move the version class to a non-ui plugin
 		private Version version;
 		private List<URI> resourceUris;
 		private boolean optional;
