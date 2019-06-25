@@ -72,6 +72,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.types.NamedElement
 
 /**
  * Solves coercive subtyping as described in 
@@ -429,7 +430,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 								null
 							}
 							else {
-								new EqualityConstraint(uoaType, assignedType, null) as AbstractTypeConstraint;
+								new EqualityConstraint(uoaType, assignedType, new ValidationIssue("%s is not %s", it.value.origin)) as AbstractTypeConstraint;
 							}
 						].filterNull.force -> new ProdType(refType.origin, new AtomicType(fun, BaseConstraintFactory.argName(fun)), sortedArgs.map[it.value]);
 					}
@@ -507,8 +508,14 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			}
 		}
 		val renamer = new NicerTypeVariableNamesForErrorMessages();
+		val msg = '''
+			«refType» not instance of «typeClass.instances.values.filter(NamedElement).head?.name». Valid instances are:
+				«FOR t: typeClass.instances.entrySet.sortBy[it.value.toString].map[it.key.modifyNames(renamer) -> it.value]»
+				«t.value»: «t.key»
+				«ENDFOR»
+		'''
 		return SimplificationResult.failure(#[
-			new ValidationIssue(Severity.ERROR, '''«refType» not instance of «typeClass.modifyNames(renamer)»''', constraint.errorMessage.target, constraint.errorMessage.feature, constraint.errorMessage.issueCode), 
+			new ValidationIssue(Severity.ERROR, msg, constraint.errorMessage.target, constraint.errorMessage.feature, constraint.errorMessage.issueCode), 
 			constraint.errorMessage
 		]);
 	}

@@ -52,10 +52,13 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.transpose
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.program.ReturnParameterReference
 
 /**
  * Automatic unbinding of size types and recursion of data types.
- * Can only handle TypeConstructorTypes.
+ * Can only handle TypeConstructorTypes and sizes that are uint*.
  * createConstraints dispatches on InferenceContext.obj, and .type,
  * create doCreateConstraints(InferenceContext c, ? extends EObject obj, ? extends AbstractType t) to implement.
  */
@@ -451,6 +454,61 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		
 		override wrap(InferenceContext c, EObject obj, AbstractType inner) {
 			return delegate.wrap(c, obj, inner);
+		}
+		
+		// can be overriden to explicitly enable/disable validation for certain eobjects
+		def alwaysValid(EObject origin) {
+			// function parameters normally don't need their size inferred,
+			// since they are allocated from outside.
+			// copying them will create issues at the place where they are copied.
+			if(EcoreUtil2.getContainerOfType(origin, Parameter) !== null) {
+				return true;
+			}
+			// references don't need to validate, since their reference already validates --> less errors for user
+			// except for function calls and return statements
+			if(origin instanceof ElementReferenceExpression) {
+				if(origin instanceof ReturnParameterReference) {
+					return false;
+				}
+				if(!origin.operationCall) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		override validateSizeInference(Resource r, ConstraintSystem system, EObject origin, AbstractType type) {
+			if(alwaysValid(origin)) {
+				return #[];
+			}
+			if(type instanceof TypeConstructorType) {
+				val sizeTypeIndexes = getSizeTypeIndexes;
+				val dataTypeIndexes = getDataTypeIndexes;
+				
+				return type.typeArguments.indexed.flatMap[
+					if(sizeTypeIndexes.contains(it.key)) {
+						val innerType = it.value;
+						if(innerType instanceof LiteralTypeExpression<?>) {
+							val value = innerType.eval;
+							if(value instanceof Long) {
+								if(value >= 0) {
+									return #[];
+								}
+							}
+						}
+						return #[new ValidationIssue('''Couldn't infer size''', origin)]
+					}
+					else if(dataTypeIndexes.contains(it.key)) {
+						return delegate.validateSizeInference(r, system, origin, it.value);
+					}
+					else {
+						return #[];
+					}
+				]
+			}
+			else {
+				return #[];
+			}	
 		}
 		
 }

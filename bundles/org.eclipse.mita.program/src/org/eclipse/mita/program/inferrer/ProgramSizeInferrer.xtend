@@ -117,6 +117,26 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		return new ConstraintSolution(system, sub, cs.issues);	
 	}
 	
+		
+	override validateSolution(ConstraintSolution cs, Resource r) {
+		val sizeIssues = r.contents.flatMap[it.eAllContents.toIterable].flatMap[
+			val tv = cs.system.getTypeVariable(it);
+			val type = cs.substitution.apply(tv);
+			return validateSizeInference(r, cs.system, it, type);
+		].filterNull;
+		
+		return new ConstraintSolution(cs.system, cs.substitution, (cs.issues + sizeIssues).force);
+	}
+	
+		
+	override validateSizeInference(Resource r, ConstraintSystem system, EObject origin, AbstractType type) {
+		val inferrer = getInferrer(r, system, type);
+		if(inferrer !== null) {
+			return inferrer.validateSizeInference(r, system, origin, type);
+		}
+		return #[];
+	}
+	
 	override Pair<AbstractType, Iterable<EObject>> unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {		
 		val inferrer = getInferrer(r, null, system, type);
 		if(inferrer instanceof TypeSizeInferrer) {
@@ -525,6 +545,5 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	
 	dispatch def AbstractType doWrap(InferenceContext c, AbstractType inner, EObject obj) {
 		return inner;
-	}
-	
+	}	
 }

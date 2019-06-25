@@ -64,9 +64,17 @@ function stringTestSuccess() : void {
 
 function stringTestFail() : void {
 // XPECT inferredType --> string<A>
+	/*XPECT errors ---
+		"Couldn't infer size" at ""
+		"Couldn't infer size" at "var foo = "hello world";"
+	--- */
 	var foo = "hello world";
 	for(var i: uint16 = 0; i < someExternalFunction(); i=i++) { //TODO: Increment Operator i++
-		// XPECT errors --> "Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "foo"" at "foo"
+		/* XPECT errors ---
+			"Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "foo"" at "foo"
+			"Couldn't infer size" at "foo += "hello""
+			"Couldn't infer size" at "foo += "hello""
+		--- */
 		foo += "hello"; 
 	}
 }

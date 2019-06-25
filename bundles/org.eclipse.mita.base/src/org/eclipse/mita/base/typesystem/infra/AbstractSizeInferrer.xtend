@@ -12,9 +12,12 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 
 abstract class AbstractSizeInferrer {
 	def ConstraintSolution createSizeConstraints(ConstraintSolution cs, Resource r);
+	
+	def ConstraintSolution validateSolution(ConstraintSolution cs, Resource r);
 }
 
 interface FunctionSizeInferrer {
@@ -59,6 +62,8 @@ interface TypeSizeInferrer extends FunctionSizeInferrer {
 	 * most size inferrers should implement this by calling delegate.wrap.
 	 */
 	def AbstractType wrap(InferenceContext c, EObject obj, AbstractType inner);
+	
+	def Iterable<ValidationIssue> validateSizeInference(Resource r, ConstraintSystem system, EObject origin, AbstractType type);
 }
 
 @FinalFieldsConstructor
@@ -131,6 +136,14 @@ class NullSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferrer 
 	
 	override wrap(InferenceContext c, EObject obj, AbstractType inner) {
 		return inner;
+	}
+	
+	override validateSolution(ConstraintSolution cs, Resource r) {
+		return cs;
+	}
+	
+	override validateSizeInference(Resource r, ConstraintSystem system, EObject origin, AbstractType type) {
+		return #[];
 	}
 	
 }

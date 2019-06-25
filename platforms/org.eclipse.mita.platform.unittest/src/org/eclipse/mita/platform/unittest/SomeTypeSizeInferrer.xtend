@@ -61,6 +61,10 @@ class SomeTypeSizeInferrer implements TypeSizeInferrer {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
+	override validateSizeInference(Resource r, ConstraintSystem system, EObject origin, AbstractType type) {
+		return #[];
+	}
+	
 //	override protected dispatch doInfer(NewInstanceExpression obj, AbstractType type) {
 //		val parentType = BaseUtils.getType(obj.eContainer);
 //

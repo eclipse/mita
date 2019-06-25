@@ -153,9 +153,15 @@ every 100 milliseconds {
 
 fn errors() {
 	var a = new array<uint16, 5>();
-	// XPECT errors --> "Array range is invalid: Lower bound must be smaller than upper bound" at "2:1"
+	/* XPECT errors ---
+		"Array range is invalid: Lower bound must be smaller than upper bound" at "2:1"
+		"Couldn't infer size" at "a[2:1]"
+	--- */
 	var b = a[2:1];
-	// XPECT errors --> "Array range is invalid: Lower bound must be smaller than upper bound" at "6:"
+	/* XPECT errors ---
+		"Array range is invalid: Lower bound must be smaller than upper bound" at "6:"
+		"Couldn't infer size" at "a[6:]"
+	--- */
 	b = a[6:];
 	// XPECT errors --> "Array range is invalid: Upper bound must be less than or equal to array size (5)" at ":7"
 	b = a[:7];

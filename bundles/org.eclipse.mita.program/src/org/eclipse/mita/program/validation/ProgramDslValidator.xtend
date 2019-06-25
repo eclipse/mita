@@ -82,6 +82,8 @@ import org.eclipse.xtext.validation.ComposedChecks
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.ReturnParameterDeclaration
+import org.eclipse.mita.base.types.Operation
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -180,7 +182,8 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			.map[MitaBaseResource.resolveProxy(program.eResource, it.target) -> it]
 			.filter[it.key !== null]
 			.groupBy[it.value.message->EcoreUtil.getURI(it.key)].values.map[it.head]
-			.filter[it.key.eResource == program.eResource];
+			.filter[it.key.eResource == program.eResource]
+			.map[it.key.improveOrigin -> it.value];
 		issues.toSet.filter[it.value.severity == Severity.ERROR].forEach[
 			error(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
 		]
@@ -191,6 +194,14 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			info(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
 		]
 	}
+	
+	dispatch def EObject improveOrigin(EObject object) {
+		return object
+	}
+	dispatch def EObject improveOrigin(ReturnParameterDeclaration object) {
+		return EcoreUtil2.getContainerOfType(object, Operation).typeSpecifier;
+	}
+	
 		
 	@Check(CheckType.FAST) 
 	def void checkValidTypesForPresentTypeSpecifier(TypeReferenceSpecifier ts) {

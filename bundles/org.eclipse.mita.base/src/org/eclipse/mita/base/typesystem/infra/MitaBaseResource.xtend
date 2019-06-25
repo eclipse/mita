@@ -288,7 +288,8 @@ class MitaBaseResource extends LazyLinkingResource {
 			// we don't do size inference because it creates way less specific type constraints, which would remove issues we find in typing, by unassigning bottom types.
 			val solution = if(typeLinkingErrors.empty && solutionTypes.issues.forall[it.severity != Severity.ERROR]) {
 				val sizeConstraints = sizeInferrer.createSizeConstraints(solutionTypes, this);
-				sizeConstraintSolver.solve(sizeConstraints, obj);				
+				val sizeResult = sizeConstraintSolver.solve(sizeConstraints, obj);
+				sizeInferrer.validateSolution(sizeResult, this);	
 			}
 			else {
 				solutionTypes;
