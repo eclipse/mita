@@ -67,6 +67,21 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 					// don't unravel void function calls
 					return false;
 				}
+
+				if(expression.eContainer instanceof ReturnValueExpression) {
+					// don't unravel direct returns
+					return false;
+				}
+
+				// some virtual functions can be translated to expressions
+				if(ref instanceof VirtualFunction) {
+					if(ref instanceof TypeConstructor && !(ref instanceof GeneratedTypeConstructor)) {
+						return false;
+					}
+					if(ref instanceof TypeAccessor) {
+						return false;
+					}
+				}
 				
 				if(expression.eContainer instanceof ExpressionStatement) {
 					// do unravel function calls made as standalone expression (not part of an assignment/call/condition),
@@ -78,20 +93,7 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 					// since we we would transform to the exact same thing
 					return true;
 				}
-				if(expression.eContainer instanceof ReturnValueExpression) {
-					// don't unravel direct returns
-					return false;
-				}
 				
-				if(ref instanceof VirtualFunction) {
-					if(ref instanceof TypeConstructor && !(ref instanceof GeneratedTypeConstructor)) {
-						return false;
-					}
-					if(ref instanceof TypeAccessor) {
-						return false;
-					}
-					return true;
-				}
 				// unravel all operations that are not generated, void, virtual or top level.
 				return true;
 			}

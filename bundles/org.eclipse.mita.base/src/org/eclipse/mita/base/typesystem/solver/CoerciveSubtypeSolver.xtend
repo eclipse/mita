@@ -123,7 +123,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		debugTimer.start("simplify.1");
 		val simplification1 = currentSystem.simplify(currentSubstitution, typeResolutionOrigin);
 		if(cancelInidicator !== null && cancelInidicator.isCanceled()) {
-			return null;
+			return _solution;
 		}
 		if(!simplification1.valid) {
 			issues += simplification1.issues;
