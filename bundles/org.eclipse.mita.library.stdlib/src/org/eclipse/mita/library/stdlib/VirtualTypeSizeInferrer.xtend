@@ -35,6 +35,7 @@ class VirtualTypeSizeInferrer extends GenericContainerSizeInferrer {
 		super.unbindSize(r, system, obj, type)
 	}
 	
+	// TODO modalities once we have any with dynamically sized types
 	dispatch def Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, ElementReferenceExpression obj, TypeConstructorType type) {
 		val superResult = super._doUnbindSize(r, system, obj, type);
 		if(type.name == "siginst") {
@@ -45,46 +46,7 @@ class VirtualTypeSizeInferrer extends GenericContainerSizeInferrer {
 		
 		return superResult;
 	}
-	
-//	// siginsts are on SignalInstances
-//	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, ElementReferenceExpression ref, TypeConstructorType type) {
-//		val obj = ref.eContainer;
-//		if(obj instanceof SignalInstance) {
-//			// call platform inferrer
-//			val resource = (obj.eContainer as SystemResourceSetup).type;
-//			val sizeInferrerCls = resource.sizeInferrer;
-//			val sizeInferrer = loader.loadFromPlugin(c.r, sizeInferrerCls)?.castOrNull(ElementSizeInferrer);
-//			if(sizeInferrer === null) {
-//				c.sub.add(c.tv, new BottomType(obj, '''«obj.name» does not specify a size inferrer'''));
-//				return Optional.absent;
-//			}
-//			sizeInferrer.delegate = this;
-//			val inferenceResult = sizeInferrer.createConstraints(new InferenceContext(c, obj, getDataType(type)));
-//			return inferenceResult;	
-//		}
-//		return delegate.createConstraints(c);
-//	}
-//	
-//	// call delegate for other things
-//	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, EObject obj, TypeConstructorType type) {
-//		return delegate.createConstraints(c);
-//	}
-//	
-//	// error/wait if type is not TypeConstructorType
-//	protected dispatch def Optional<InferenceContext> doInfer(InferenceContext c, EObject obj, AbstractType type) {
-//		return Optional.of(c);
-//	}
-//		
-//	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> types) {
-//		if(types.size == 0 || !types.forall[it instanceof TypeConstructorType]) {
-//			return Optional.absent;
-//		}
-//		val x = types.head as TypeConstructorType;
-//		return delegate.max(system, r, objOrProxy, types.map[getDataType]).transform[
-//			new TypeConstructorType(null, x.typeArguments.head, #[it -> Variance.INVARIANT])		
-//		]
-//	}
-		
+			
 	override getDataTypeIndexes() {
 		return #[1];
 	}

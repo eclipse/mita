@@ -47,10 +47,6 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		if(subType === null || superType === null) {
 			throw new NullPointerException;
 		}
-		
-		if(this.toString == "xint8 ⩽ string<f_3253>") {
-			print("")
-		}
 	}
 	
 	override getErrorMessage() {

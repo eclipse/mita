@@ -234,11 +234,8 @@ class MitaBaseResource extends LazyLinkingResource {
 			it.exportedObjects
 		].force);
 		val jsons = exportedObjects.map [
-			if (it.EObjectURI.toString.contains("stdlib_print")) {
-				print("")
-			}
 			it.EObjectURI -> it.getUserData(BaseResourceDescriptionStrategy.CONSTRAINTS)
-		].filter[it.value !== null].groupBy[it.key].values.map[it.head.value]// .map[GZipper.decompress(it)]
+		].filter[it.value !== null].groupBy[it.key].values.map[it.head.value]
 		.force;
 		timer.stop("resourceDescriptions");
 		timer.start("deserialize");
@@ -246,8 +243,6 @@ class MitaBaseResource extends LazyLinkingResource {
 			constraintSerializationAdapter.deserializeConstraintSystemFromJSON(it, [
 				val res = resource.resourceSet.getEObject(it, true);
 				return res;
-//				val resourceOfObj = resource.resourceSet.getResource(it.trimFragment, true);
-//				return fragmentProvider.getEObject(resourceOfObj, it.fragment, fragmentProviderFallback);
 			])
 		]
 		.map[it.instanceCount -> it]

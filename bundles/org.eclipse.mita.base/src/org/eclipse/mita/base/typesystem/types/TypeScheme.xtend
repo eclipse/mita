@@ -38,9 +38,6 @@ class TypeScheme extends AbstractType {
 		super(origin, on.name);
 		this.vars = vars;
 		this.on = on;
-		if(this.toString == "∀[f_366, f_367, f_368].__args(array<f_1855, uint32>, array<f_1855, uint32>) → array<f_1855, f_1856>") {
-			print("")
-		}
 	}
 	
 	override Tree<AbstractType> quote() {
@@ -114,9 +111,6 @@ class TypeScheme extends AbstractType {
 	}
 	
 	override modifyNames(NameModifier converter) {
-		if(converter instanceof NicerTypeVariableNamesForErrorMessages) {
-			print("");
-		}
 		return new TypeScheme(origin, vars.map[modifyNames(converter) as TypeVariable].force, on.modifyNames(converter));
 	}
 	

@@ -70,23 +70,5 @@ class StringSizeInferrer extends ArraySizeInferrer {
 		} else {
 			texts.map[x | x.length as long ].reduce[x1, x2| x1 + x2 ];
 		}
-	}
-	
-//	override max(ConstraintSystem system, Resource r, EObject objOrProxy, Iterable<AbstractType> _types) {
-//		val types = _types.filter(TypeConstructorType);
-//		val sndArgCandidates = types.map[it.typeArguments.last];
-//		if(sndArgCandidates.forall[it instanceof LiteralTypeExpression<?>]) {
-//			val sndArgValues = sndArgCandidates.map[(it as LiteralTypeExpression<?>).eval()];
-//			if(sndArgValues.forall[it instanceof Long && (it as Long) >= 0]) {
-//				val sndArgValue = sndArgValues.filter(Long).max;
-//				return Optional.of(new TypeConstructorType(null, types.head.typeArguments.head, #[
-//					new LiteralNumberType(null, sndArgValue, sndArgCandidates.head.castOrNull(LiteralTypeExpression).typeOf) -> Variance.COVARIANT
-//				]))
-//			}
-//		}			
-//		
-//
-//		return Optional.absent;
-//	}		
-	
+	}		
 }

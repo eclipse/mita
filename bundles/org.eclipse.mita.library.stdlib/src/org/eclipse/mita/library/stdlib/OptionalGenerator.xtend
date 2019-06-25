@@ -159,9 +159,6 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	
 	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
 		// this should be a coercion 1 -> some(1).
-		if(from instanceof TypeConstructorType) {
-			print("")
-		}
 		val needCast = EcoreUtil2.getContainerOfType(expr, ProgramBlock) !== null;
 		return codeFragmentProvider.create('''
 			«IF needCast»(«generateTypeSpecifier(to, expr)»)«ENDIF» {

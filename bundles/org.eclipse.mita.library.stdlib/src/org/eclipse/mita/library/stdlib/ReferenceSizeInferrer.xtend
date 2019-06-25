@@ -53,13 +53,5 @@ class ReferenceSizeInferrer extends GenericContainerSizeInferrer {
 		return superResult.key -> #[
 			EcoreUtil2.getContainerOfType(variable, Operation) as EObject
 		]
-	}
-	
-	dispatch def void doCreateConstraints(InferenceContext c, ReferenceExpression expr, AbstractType t) {	
-		print("")
-	}
-	dispatch def void doCreateConstraints(InferenceContext c, DereferenceExpression expr, AbstractType t) {	
-		print("")
-	}
-	
+	}	
 }

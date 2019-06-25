@@ -193,15 +193,6 @@ class SubtypeChecker {
 	protected def SubtypeCheckResult checkByteWidth(IntegerType sub, IntegerType top, int bSub, int bTop) {
 		return (bSub <= bTop).subtypeMsgFromBoolean('''«top.name» is too small for «sub.name»''');
 	}
-		
-//	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, NumericAddType sub, NumericAddType top) {
-//		val subDecomp = sub.decompose(this, s, context);
-//		val topDecomp = top.decompose(this, s, context);
-//		
-//		
-//		
-//		return null;
-//	}
 	
 	dispatch def SubtypeCheckResult isSubtypeOf(ConstraintSystem s, EObject context, FloatingType sub, FloatingType top) {
 		return (sub.widthInBytes <= top.widthInBytes).subtypeMsgFromBoolean(sub, top);
