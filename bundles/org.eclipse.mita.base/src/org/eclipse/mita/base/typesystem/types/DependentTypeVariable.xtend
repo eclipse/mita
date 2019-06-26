@@ -4,6 +4,8 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.InstanceTypeParameter
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.util.Left
+import org.eclipse.mita.base.util.Right
 
 @Accessors
 class DependentTypeVariable extends TypeVariable {

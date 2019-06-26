@@ -48,22 +48,24 @@ export generated fn <S> length(self : string<S>) : uint32 generator "org.eclipse
 // * 
 // * A list is an ordered collection of elements which offers random read/write access.
 // */
-export generated type ringbuffer<T>
+export generated type ringbuffer<T, Size is uint32>
 	generator "org.eclipse.mita.library.stdlib.RingbufferGenerator"
 	size-inferrer "org.eclipse.mita.library.stdlib.ArraySizeInferrer"
 	validator "org.eclipse.mita.library.stdlib.RingbufferValidator"
 	
-	constructor con(size: static uint32);
+	constructor con();
 	
-export generated fn <T> push(self: ringbuffer<T>, element: T): void generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PushGenerator";
-export generated fn <T> pop(self: ringbuffer<T>): T {
+export generated fn <T, S> push(self: ringbuffer<T, S>, element: T): void generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PushGenerator";
+export generated fn <T, S> pop(self: ringbuffer<T, S>): T 
 	generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PopGenerator"
-	sizeInferrer "org.eclipse.mita.library.stdlib.RingbufferGenerator$PopInferrer"
-};
-export generated fn <T> peek(self: ringbuffer<T>): T generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PeekGenerator";
-export generated fn <T> count(self: ringbuffer<T>): uint32 generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$CountGenerator";
-export generated fn <T> empty(self: ringbuffer<T>): bool generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$EmptyGenerator";
-export generated fn <T> full(self: ringbuffer<T>): bool generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$FullGenerator";
+	size-inferrer "org.eclipse.mita.library.stdlib.RingbufferGenerator$PopInferrer"
+;
+export generated fn <T, S> peek(self: ringbuffer<T, S>): T 
+	generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$PeekGenerator"
+	size-inferrer "org.eclipse.mita.library.stdlib.RingbufferGenerator$PopInferrer";
+export generated fn <T, S> count(self: ringbuffer<T, S>): uint32 generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$CountGenerator";
+export generated fn <T, S> empty(self: ringbuffer<T, S>): bool generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$EmptyGenerator";
+export generated fn <T, S> full(self: ringbuffer<T, S>): bool generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$FullGenerator";
 
 ///*
 // * # Stacks

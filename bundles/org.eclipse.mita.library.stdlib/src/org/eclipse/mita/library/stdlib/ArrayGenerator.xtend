@@ -38,18 +38,15 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.program.generator.CodeWithContext
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -70,7 +67,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	static def getInferredSize(AbstractType type) {
 		return type?.castOrNull(TypeConstructorType)?.typeArguments?.last?.castOrNull(LiteralTypeExpression) as LiteralTypeExpression<Long>
-	}	
+	}
 	
 	private def long getFixedSize(EObject stmt) {
 		return stmt.inferredSize?.eval ?: -1L

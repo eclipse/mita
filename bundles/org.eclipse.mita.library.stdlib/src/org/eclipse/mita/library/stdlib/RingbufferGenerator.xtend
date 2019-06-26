@@ -1,7 +1,7 @@
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
+import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -10,6 +10,7 @@ import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
@@ -18,12 +19,14 @@ import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
+import org.eclipse.mita.base.typesystem.infra.FunctionSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import org.eclipse.xtend.lib.annotations.Accessors
+
+import static extension org.eclipse.mita.library.stdlib.ArrayGenerator.getInferredSize
 
 // https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/
 class RingbufferGenerator extends AbstractTypeGenerator {
@@ -72,24 +75,24 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		if(type instanceof TypeConstructorType) {
 			if(isTopLevel) {
 				if(initialization instanceof NewInstanceExpression) {
 					val occurrence = getOccurrence(context);
 					return codeFragmentProvider.create('''
-						«typeGenerator.code(context, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«size.elementCount»];
+						«typeGenerator.code(context, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«type.inferredSize»];
 						«typeGenerator.code(context, type)» «varName» = {
 							.data = data_«varName»_«occurrence»,
 							.read = 0,
 							.length = 0,
-							.capacity = «size.elementCount»
+							.capacity = «type.inferredSize?.eval»
 						};
 					''')
 				}
 			}
 		}
-		return super.generateVariableDeclaration(type, context, size, varName, initialization, isTopLevel);
+		return super.generateVariableDeclaration(type, context, varName, initialization, isTopLevel);
 	}
 	
 	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
@@ -99,7 +102,7 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 			if(isGlobalVariable) {
 				return codeFragmentProvider.create('''''');
 			}
-			val size = StaticValueInferrer.infer(ExpressionUtils.getArgumentValue(expr.reference as Operation, expr, "size"), []);
+			val size = type.inferredSize?.eval;
 			val occurrence = getOccurrence(parent);
 			
 			return codeFragmentProvider.create('''
@@ -144,8 +147,6 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected GeneratorRegistry registry
 		
-		@Inject
-		protected ElementSizeInferrer sizeInferrer;
 		
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 			val rbRef = functionCall.arguments.head.value;
@@ -163,31 +164,38 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 					resultVariable.code, 
 					resultVariable, 
 					AssignmentOperator.ASSIGN, 
-					new CodeWithContext(innerType, Optional.absent, codeFragmentProvider.create('''«rbRefCode».data[«rbRefCode».read]'''), resultVariable.size), 
+					new CodeWithContext(innerType, Optional.empty, codeFragmentProvider.create('''«rbRefCode».data[«rbRefCode».read]''')), 
 					true
 				)»
 				«rbRefCode».read = ringbuffer_increment(«rbRefCode».read, «rbRefCode».capacity);
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
 	}
-	static class PopInferrer extends ElementSizeInferrer {
+	static class PopInferrer implements FunctionSizeInferrer {
 		
-		override protected _doInfer(ElementReferenceExpression obj, AbstractType type) {
-			if(obj.arguments.size === 1) {
-				val ringBufferRerefence = obj.arguments.head.value;
-				val rbReferenceType = BaseUtils.getType(ringBufferRerefence);
-				if(rbReferenceType.name == "ringbuffer") {
-					val outerResult = ringBufferRerefence.infer;
-					if(outerResult instanceof ValidElementSizeInferenceResult) {
-						if(outerResult.children.size > 0) {
-							return outerResult.children.head;
-						}
-						return new InvalidElementSizeInferenceResult(ringBufferRerefence, rbReferenceType, "Ringbuffer inference was empty");
-					}
-				}				
-			}
-			
-			return super._doInfer(obj, type);
+		@Accessors
+		TypeSizeInferrer delegate;
+		
+//		override protected _doInfer(ElementReferenceExpression obj, AbstractType type) {
+//			if(obj.arguments.size === 1) {
+//				val ringBufferRerefence = obj.arguments.head.value;
+//				val rbReferenceType = BaseUtils.getType(ringBufferRerefence);
+//				if(rbReferenceType.name == "ringbuffer") {
+//					val outerResult = ringBufferRerefence.infer;
+//					if(outerResult instanceof ValidElementSizeInferenceResult) {
+//						if(outerResult.children.size > 0) {
+//							return outerResult.children.head;
+//						}
+//						return new InvalidElementSizeInferenceResult(ringBufferRerefence, rbReferenceType, "Ringbuffer inference was empty");
+//					}
+//				}				
+//			}
+//			
+//			return super._doInfer(obj, type);
+//		}
+				
+		override createConstraints(InferenceContext c) {
+			throw new UnsupportedOperationException("TODO: auto-generated method stub")
 		}
 		
 	}
