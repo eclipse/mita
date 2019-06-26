@@ -13,27 +13,45 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
+import org.eclipse.mita.program.DereferenceExpression
+import org.eclipse.mita.program.ReferenceExpression
+import org.eclipse.mita.program.ReturnParameterDeclaration
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.types.Operation
 
-class ReferenceSizeInferrer extends ElementSizeInferrer {
+class ReferenceSizeInferrer extends GenericContainerSizeInferrer {
 	
-	@Inject
-	protected StdlibTypeRegistry typeRegistry;
-	
-	protected dispatch def doInferFromType(EObject obj, TypeConstructorType type) {
-		if(type instanceof TypeConstructorType) {
-			if(type.name == "reference") {
-				return new ValidElementSizeInferenceResult(obj, type, 1);
-			}
-		}
-		return super.doInferFromType(obj, type);
+	override getDataTypeIndexes() {
+		return #[1];
 	}
 	
+	override getSizeTypeIndexes() {
+		return #[];
+	}
+		
+	dispatch override Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, TypeReferenceSpecifier typeSpecifier, TypeConstructorType type) {
+		return setTypeArguments(type, 
+			[i, t| 
+				delegate.unbindSize(r, system, if(typeSpecifier.typeArguments.size > i) {typeSpecifier.typeArguments.get(i - 1)}, t)
+			], 
+			[i, t| system.newTypeVariable(t.origin) as AbstractType -> #[typeSpecifier.typeArguments.get(i - 1)] + typeSpecifier.typeArguments.get(i - 1).eAllContents.toIterable],
+			[t_objs | t_objs.key],
+			[t, objs| t -> objs.flatMap[it.value]]
+		);
+	}
+	
+	dispatch def Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, ReturnParameterDeclaration variable, TypeConstructorType type) {
+		val superResult = _doUnbindSize(r, system, variable as EObject, type);
+		
+		return superResult.key -> #[
+			EcoreUtil2.getContainerOfType(variable, Operation) as EObject
+		]
+	}	
 }

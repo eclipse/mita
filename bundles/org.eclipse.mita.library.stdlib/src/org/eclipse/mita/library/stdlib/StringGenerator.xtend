@@ -13,7 +13,6 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import java.util.LinkedList
 import org.eclipse.emf.ecore.EObject
@@ -26,6 +25,7 @@ import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.VariableDeclaration
@@ -35,7 +35,6 @@ import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.transformation.EscapeWhitespaceInStringStage
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
@@ -45,25 +44,13 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class StringGenerator extends ArrayGenerator {
 	
-	static public val DOUBLE_PRECISION = 6L;
-		
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
-
 	@Inject
 	protected extension ProgramDslTraceExtensions
 
 	override CodeFragment generateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj) {
-		return codeFragmentProvider.create('''«doGenerateLength(temporaryBufferName, valRange, obj, obj.obj.orNull).noNewline»''');
+		return codeFragmentProvider.create('''«doGenerateLength(temporaryBufferName, valRange, obj, obj.obj.orElse(null)).noNewline»''');
 	}
-	
-
-//	override generateExpression(AbstractType type, CodeFragment left, AssignmentOperator operator, CodeFragment right) {
-//		return codeFragmentProvider.create('''
-//			memcpy(«left», «right», strlen(«right»));
-//		''');
-//	}
-	
+		
 	dispatch def CodeFragment doGenerateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj, PrimitiveValueExpression expr) {
 		return doGenerateLength(temporaryBufferName, valRange, obj, expr, expr.value);
 	}
@@ -92,7 +79,7 @@ class StringGenerator extends ArrayGenerator {
 		val value = init?.value;
 		return doGenerateBufferStmt(context, arrayType, bufferName, size, init, value);
 	}
-	
+	 
 	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, InterpolatedStringLiteral l) {
 		// need to allocate size+1 since snprintf always writes a zero byte at the end.
 		codeFragmentProvider.create('''
@@ -119,8 +106,17 @@ class StringGenerator extends ArrayGenerator {
 	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Literal l) {
 		return codeFragmentProvider.create('''UNKNOWN LITERAL: «l.eClass»''')
 	}
-		
+	
 	dispatch def IGeneratorNode getDataHandleForPrintf(Expression e) {
+		val type = BaseUtils.getType(e);
+		if(type !== null) {
+			if(type.name == "string") {
+				return codeFragmentProvider.create('''«e.code».length, «e.code».data''')
+			}
+		}
+		return e.code;
+	}
+	dispatch def IGeneratorNode getDataHandleForPrintf(PrimitiveValueExpression e) {
 		return e.code;
 	}
 	dispatch def IGeneratorNode getDataHandleForPrintf(ElementReferenceExpression ref) {
@@ -168,9 +164,9 @@ class StringGenerator extends ArrayGenerator {
 				case 'xint32':  '%" PRId32 "'
 				case 'xint16':  '%" PRId16 "'
 				case 'xint8':   '%" PRId8 "'
-				case 'f32':  '%.' + DOUBLE_PRECISION + 'g'
-				case 'f64': '%.' + DOUBLE_PRECISION + 'g'
-				case 'bool':   '%d'
+				case 'f32':  '%.' + BaseUtils.DOUBLE_PRECISION + 'g'
+				case 'f64': '%.' + BaseUtils.DOUBLE_PRECISION + 'g'
+				case 'bool':   '%" PRIu8 "'
 				case 'string': if(sub.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(StringLiteral) !== null) {
 						'%s'
 					}
@@ -224,7 +220,7 @@ class StringGenerator extends ArrayGenerator {
 		protected CodeFragmentProvider codeFragmentProvider
 		
 		@Inject
-		protected ElementSizeInferrer sizeInferrer
+		protected TypeSizeInferrer sizeInferrer
 	
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');

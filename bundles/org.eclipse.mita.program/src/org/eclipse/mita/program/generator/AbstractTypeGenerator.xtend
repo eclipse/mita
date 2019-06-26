@@ -13,21 +13,18 @@
 
 package org.eclipse.mita.program.generator
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 /**
  * Interface for type generators.
  */
-abstract class AbstractTypeGenerator implements IGenerator {
+abstract class AbstractTypeGenerator implements IGenerator { 
 	@Inject
 	protected TypeGenerator typeGenerator
 	
@@ -44,7 +41,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a variable declaration for a variable of a generated type
 	 */
-	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	

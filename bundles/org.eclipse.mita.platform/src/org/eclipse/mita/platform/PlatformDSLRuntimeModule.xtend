@@ -42,6 +42,9 @@ import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.ui.editor.DirtyStateManager
 import org.eclipse.xtext.ui.editor.IDirtyStateManager
 import org.eclipse.xtext.validation.IResourceValidator
+import org.eclipse.mita.base.typesystem.infra.AbstractSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.NullSizeInferrer
+import org.eclipse.mita.base.typesystem.solver.NullSolver
 
 class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 
@@ -54,10 +57,12 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(IResourceValidator).to(BaseResourceValidator);
 	
 		binder.bind(IConstraintFactory).to(PlatformConstraintFactory);
-		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
+		binder.bind(IConstraintSolver).annotatedWith(Names.named("mainSolver")).to(CoerciveSubtypeSolver);
+		binder.bind(IConstraintSolver).annotatedWith(Names.named("sizeSolver")).to(NullSolver);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(PlatformLinker);
 		binder.bind(IDirtyStateManager).to(DirtyStateManager);
+		binder.bind(AbstractSizeInferrer).to(NullSizeInferrer);
 	}
 
 	override bindIGlobalScopeProvider() {

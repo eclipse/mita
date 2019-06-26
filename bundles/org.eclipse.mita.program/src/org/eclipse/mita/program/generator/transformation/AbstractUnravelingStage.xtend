@@ -15,12 +15,12 @@ package org.eclipse.mita.program.generator.transformation
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AbstractStatement
 import org.eclipse.mita.base.expressions.BinaryExpression
 import org.eclipse.mita.base.expressions.ConditionalExpression
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.expressions.LogicalOperator
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramFactory
@@ -28,7 +28,7 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.types.TypesFactory
 
 abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 
@@ -203,7 +203,7 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 		val initializationExpr = ExpressionsFactory.eINSTANCE.createAssignmentExpression();
 		initializationExpr.varRef = varRef;
 		initializationExpr.expression = initialization;		
-		val initializationStmt = ProgramFactory.eINSTANCE.createExpressionStatement();
+		val initializationStmt = ExpressionsFactory.eINSTANCE.createExpressionStatement();
 		initializationStmt.expression = initializationExpr;
 		return initializationStmt;
 	}
@@ -225,6 +225,8 @@ abstract class AbstractUnravelingStage extends AbstractTransformationStage {
 		val resultVariableName = getUniqueVariableName(unravelingObject).toFirstLower;
 		val resultVariable = ProgramFactory.eINSTANCE.createVariableDeclaration;
 		resultVariable.name = resultVariableName;
+		resultVariable.typeSpecifier = TypesFactory.eINSTANCE.createNullTypeSpecifier;
+		resultVariable.writeable = true;
 		return resultVariable;
 	}
 

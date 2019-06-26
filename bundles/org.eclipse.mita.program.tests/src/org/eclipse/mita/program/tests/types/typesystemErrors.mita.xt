@@ -1,0 +1,158 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+setup net : MySingletonConnectivity { 
+} 
+    
+setup backend : MyConnectivity {
+	cfg00 = "mqtt://192.168.137.1";
+	cfg04 = net;
+	var t = vci01(p01=10);
+}        
+   
+struct mData {
+	var x: int32;
+	var y: int32; 
+	var z: int32;
+	var r: uint16;
+}     
+   
+alt anyVec {
+	vec0d | vec1d: {x: int32} | vec2d: {x: int32, y: bool?}
+}   
+
+//XPECT inferredType --> __args(optional<int32>) → optional<int32>
+fn id(x: int32?): int32? {
+	return x;
+}
+
+//XPECT inferredType --> __args(int32) → int32
+fn id(x: int32): int32 {
+	return x;  
+}      
+//XPECT inferredType --> ∀[A].__args(string<A>) → string<A>
+//XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "id"
+fn <Size> id(x: string<Size>): string<Size> {
+	return x;
+}   
+
+//XPECT inferredType --> __args(int32, int8) → int32
+fn id2(x: int32, y: int8): int32 {
+	return x;  
+}      
+  
+//XPECT inferredType --> ∀[A].__args(string<A>, int8) → string<A>
+//XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "id2"
+fn <Size> id2(x: string<Size>, y: int8): string<Size> {
+	return x;
+}
+    
+native checked fn C_Magnetometer_init(): void header "magnetometer.h";
+native checked fn C_Magnetometer_read(): mData header "magnetometer.h";
+
+every 100 milliseconds {
+	let a : int32? = 0;
+	let b = a.id();   
+}
+
+every 100 milliseconds { 
+	// XPECT infos --> "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec1d(10)"
+	let c = .vec1d(10); 
+	let d = c.x(); 
+	let e = "asdf";     
+	// this happens because later on we compare (f == g), where g is a string.
+	// XPECT errors --> "prim»i»8 (:: xint8) has a different type than f (:: string<A>)" at "8"
+	let f = 8;
+	// XPECT infos --> "_ has type uint32" at "_"
+	let g: string<_> = id(e);          
+	let h = id(f); 
+	let h2 = id2(y=0, x=e);
+	let h3 = id2(y=0, x=f);    
+	let m = C_Magnetometer_read();
+	/* XPECT errors ---
+		"Types with references must be initialized" at "let asdf: &&int32;"
+	--- */
+	let asdf: &&int32;    
+	let wert: int32?;
+	let foo: modality<uint16>;   
+	let bar: uint32? = 10;
+	let barp: uint16? = 10;
+	let bar2 = bar;
+	let bar3 = &bar2; 
+	let bar4 = 1 == 1? *bar3: bar; 
+	/* XPECT errors ---
+		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
+	--- */
+	let a: modality<uint32> = MySensor.modality01; 
+	let asdfgasd = true && false;
+	// XPECT errors --> "f and prim»i»10 as  int32 (:: int32) don't share a common type" at "10 as int32"
+	let a2 = f == (10 as int32); 
+	/* XPECT infos ---
+	 	 "<auto>.vec0d() has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec0d"
+	 	 "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec1d(10)"
+	 --- */
+	let a3 = true? .vec0d: .vec1d(10);
+	where(a3) {  
+		is(anyVec.vec0d) { 
+			  
+		} 
+		is(anyVec.vec1d -> x) {
+			 
+		} 
+		is(anyVec.vec2d -> a1=vec2d.y, b1=vec2d.x) {
+ 
+		}
+		is(anyVec.vec2d -> a1=vec2d.y) {
+		 
+		} 
+		is(anyVec.vec2d -> a1, b2) {
+		
+		}
+		/*XPECT errors ---
+			"vec2d(int32, optional<bool>) and vec2d(A) don't fit together" at "is(anyVec.vec2d -> a1) { 		  		}"
+		--- */
+		is(anyVec.vec2d -> a1) {
+		 
+		}
+		is(x: anyVec.vec1d) {
+			
+		} 
+	}
+	let a4 = f == g;
+//	let k = m.x;    
+	//backend.t.write(`[${m.x}, ${m.y}, ${m.z}, ${m.r}]`);
+}   
+    
+fn <T> foo2() {
+	let bar: optional<T>; 
+	let bar2 =  bar;
+	let bar3 = &bar2;
+	let bar4 = *bar3; 
+	/* XPECT errors ---
+		"Function con_array cannot be used here: arguments don't fit (__args(A, B) != __args())" at "new array<int32, 10, 20>(30, 40)"
+		"__args(xint8, xint8) and __args() differ in the number of type arguments" at "new array<int32, 10, 20>(30, 40)"
+		"array<int32, prim»i»10, prim»i»20> (:: array<int32, A, B>) is not instance of ∀[C, D].array<C, D>" at "array<int32, 10, 20>"
+	--- */
+	let bar5 = new array<int32, 10, 20>(30, 40);
+	let bar6 = new array<int32, 10>();
+	/* XPECT errors ---
+		"array<int32> (:: array<int32>) is not instance of ∀[A, B].array<A, B>" at "array<int32>"
+	--- */
+	let bar7 = new array<int32>();
+	let bar8 = new array<int32, 10>();
+	/* XPECT errors ---
+		"Couldn't resolve reference to Parameter 'foo'." at "foo"
+		"array<int32> (:: array<int32>) is not instance of ∀[A, B].array<A, B>" at "array<int32>"
+		"prim»i»10 (:: xint8) not compatible with foo (:: ⊥ (Couldn't resolve reference to Parameter 'foo'.))" at "foo=10"
+	--- */
+	let bar9 = new array<int32>(foo=10);
+	return;  
+} 
+ 

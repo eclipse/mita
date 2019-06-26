@@ -13,7 +13,6 @@
 
 package org.eclipse.mita.platform.unittest
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -28,20 +27,13 @@ import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CodeWithContext
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 class SomeTypeGenerator extends AbstractTypeGenerator {
 	
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 	
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
-
-	
-	
-	override generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)» «varName»;''');
 	}
 	

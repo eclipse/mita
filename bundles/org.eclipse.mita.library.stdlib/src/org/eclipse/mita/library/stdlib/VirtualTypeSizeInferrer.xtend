@@ -13,14 +13,46 @@
 
 package org.eclipse.mita.library.stdlib
 
+import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.program.resource.PluginResourceLoader
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
+import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
 
-class VirtualTypeSizeInferrer extends ElementSizeInferrer {
+class VirtualTypeSizeInferrer extends GenericContainerSizeInferrer {
+	// implements inference for modality and siginst
+	@Inject
+	protected PluginResourceLoader loader;
 	
-	override protected dispatch doInfer(EObject obj, AbstractType type) {
-		return newInvalidResult(obj, "Object does not have a size");
+	override unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {
+		super.unbindSize(r, system, obj, type)
 	}
 	
+	// TODO modalities once we have any with dynamically sized types
+	dispatch def Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, ElementReferenceExpression obj, TypeConstructorType type) {
+		val superResult = super._doUnbindSize(r, system, obj, type);
+		if(type.name == "siginst") {
+			val sigInst = obj.reference?.castOrNull(SignalInstance); 
+			
+			return superResult.key -> (superResult.value + #[sigInst]);
+		}
+		
+		return superResult;
+	}
+			
+	override getDataTypeIndexes() {
+		return #[1];
+	}
+	
+	override getSizeTypeIndexes() {
+		return #[];
+	}
+		
 }

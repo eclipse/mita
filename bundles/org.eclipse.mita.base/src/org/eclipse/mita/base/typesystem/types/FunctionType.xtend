@@ -25,6 +25,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.types.Variance
 
 @EqualsHashCode
 @Accessors
@@ -38,11 +39,15 @@ class FunctionType extends TypeConstructorType {
 	}
 			
 	new(EObject origin, AbstractType type, AbstractType from, AbstractType to) {
-		this(origin, type.name, #[type, from, to]);
+		this(origin, type.name, #[type -> Variance.INVARIANT, from -> Variance.CONTRAVARIANT, to -> Variance.COVARIANT]);
 	}
 	
-	new(EObject origin, String name, Iterable<AbstractType> typeArgs) {
+	new(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArgs) {
 		super(origin, name, typeArgs);
+	}
+	
+	override constructor(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArguments) {
+		new FunctionType(origin, name, typeArguments);
 	}
 	
 	def AbstractType getFrom() {
@@ -56,36 +61,8 @@ class FunctionType extends TypeConstructorType {
 		from + " → " + to
 	}
 		
-	override getVarianceForArgs(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		if(typeArgumentIdx == 2) {
-			return new SubtypeConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
-		}
-		else {
-			// function arguments are contravariant
-			return new SubtypeConstraint(sigma, tau, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
-		}
-	}
-	
-	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
-		val newFType = new FunctionType(origin, typeArguments.head, system.newTypeVariable(from.origin), system.newTypeVariable(to.origin));
-		s.add(tv, newFType);
-	}
-	
 	override toGraphviz() {
 		'''"«to»" -> "«this»"; "«this»" -> "«from»"; «to.toGraphviz» «from.toGraphviz»''';
-	}
-	
-
-	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new FunctionType(origin, name, children.map[it.node.unquote(it.children)].force);
-	}
-	
-	override map((AbstractType)=>AbstractType f) {
-		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new FunctionType(origin, name, newTypeArgs);
-		}
-		return this;
 	}
 	
 }

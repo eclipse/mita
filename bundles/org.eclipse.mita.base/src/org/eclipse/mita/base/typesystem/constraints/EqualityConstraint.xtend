@@ -30,7 +30,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		super(source);
 		this.left = left;
 		this.right = right;
-		if(left === null || right === null) {
+		if(left === null || right === null || source === null) {
 			throw new NullPointerException;
 		}
 	}
@@ -45,14 +45,6 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		left + " ≡ " + right
 	}
 		
-	override getActiveVars() {
-		return left.freeVars + right.freeVars;
-	}
-	
-	override getOrigins() {
-		return #[left, right].map[ it.origin ];
-	}
-	
 	override getTypes() {
 		return #[left, right];
 	}
@@ -62,8 +54,8 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	}
 			
 	override map((AbstractType)=>AbstractType f) {
-		val newL = left.map(f);
-		val newR = right.map(f);
+		val newL = f.apply(left);
+		val newR = f.apply(right);
 		if(left !== newL || right !== newR) {
 			return new EqualityConstraint(newL, newR, _errorMessage);
 		} 
@@ -76,6 +68,10 @@ class EqualityConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		return false;
+	}
+	
+	override hasProxy() {
+		return left.hasProxy || right.hasProxy
 	}
 	
 }

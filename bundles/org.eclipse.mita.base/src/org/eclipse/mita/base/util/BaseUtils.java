@@ -35,9 +35,12 @@ import org.eclipse.mita.base.types.NamedElement;
 import org.eclipse.mita.base.types.Type;
 import org.eclipse.mita.base.types.TypeKind;
 import org.eclipse.mita.base.types.TypesPackage;
-import org.eclipse.mita.base.types.TypesUtil;
+import org.eclipse.mita.base.types.TypeUtils;
 import org.eclipse.mita.base.typesystem.infra.TypeAdapter;
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem;
+import org.eclipse.mita.base.typesystem.solver.Substitution;
 import org.eclipse.mita.base.typesystem.types.AbstractType;
+import org.eclipse.mita.base.typesystem.types.TypeVariable;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.util.OnChangeEvictingCache;
@@ -52,8 +55,9 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
-@SuppressWarnings("all")
 public class BaseUtils {
+	static public Long DOUBLE_PRECISION = 6L;
+	
 	public static String getText(final EObject obj, final EStructuralFeature feature) {
 		Object _xifexpression = null;
 		boolean _contains = obj.eClass().getEAllStructuralFeatures().contains(feature);
@@ -366,9 +370,23 @@ public class BaseUtils {
 		}
 		return Lists.<T>newArrayList(list);
 	}
+	
+	public static <T extends Object> ArrayList<T> force(final Iterator<T> list) {
+		Class<? extends Iterator> _class = list.getClass();
+		boolean _equals = Objects.equal(_class, ArrayList.class);
+		if (_equals) {
+			return ((ArrayList<T>) list);
+		}
+		return Lists.<T>newArrayList(list);
+	}
 
 	public static AbstractType getType(final EObject obj) {
 		return TypeAdapter.get(obj);
+	}
+	
+	public static AbstractType getType(final ConstraintSystem system, final Substitution sub, final EObject obj) {
+		final TypeVariable tv = system.getTypeVariable(obj);
+		return sub.apply(tv);
 	}
 
 	public static EObject computeOrigin(final EObject obj) {
@@ -444,8 +462,16 @@ public class BaseUtils {
 	private static void prependNamedElementName(final StringBuilder id, final EObject container) {
 		Object _eGet = container.eGet(TypesPackage.Literals.NAMED_ELEMENT__NAME);
 		String name = ((String) _eGet);
-		if ((name != null)) {
-			id.insert(0, TypesUtil.ID_SEPARATOR);
+		if (name != null) {
+			EStructuralFeature feature = container.eContainingFeature();
+			Object elements = container.eContainer().eGet(feature);
+			int index = 0;
+			if ((elements instanceof BasicEList)) {
+				BasicEList<?> elementList = ((BasicEList<?>) elements);
+				index = elementList.indexOf(container);
+				name = name + index;
+			}
+			id.insert(0, TypeUtils.ID_SEPARATOR);
 			id.insert(0, name);
 		}
 	}
@@ -468,7 +494,7 @@ public class BaseUtils {
 			} else {
 				name = feature.getName();
 			}
-			id.insert(0, TypesUtil.ID_SEPARATOR);
+			id.insert(0, TypeUtils.ID_SEPARATOR);
 			id.insert(0, name);
 		}
 	}

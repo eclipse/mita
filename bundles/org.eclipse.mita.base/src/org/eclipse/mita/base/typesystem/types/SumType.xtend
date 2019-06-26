@@ -27,6 +27,7 @@ import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.types.Variance
 
 @EqualsHashCode
 @Accessors
@@ -42,46 +43,29 @@ class SumType extends TypeConstructorType {
 				.map[TypeClassUnifier.INSTANCE.unifyTypeClassInstancesStructure(system, it)]
 				.force;
 		val name = typeArgs.head.name;
-		return new SumType(null, name, typeArgs);
+		return new SumType(null, name, typeArgs.map[it -> Variance.UNKNOWN]);
 	}
 	
-	new(EObject origin, String name, Iterable<AbstractType> typeArguments) {
+	new(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArguments) {
 		super(origin, name, typeArguments)
 	}
-	new(EObject origin, AbstractType type, List<AbstractType> typeArguments) {
-		super(origin, type, typeArguments);
-	}
 	new(EObject origin, AbstractType type, Iterable<AbstractType> typeArguments) {
-		super(origin, type, typeArguments);
+		super(origin, type, typeArguments.map[it -> Variance.COVARIANT]);
+	}
+	
+	override constructor(EObject origin, String name, Iterable<Pair<AbstractType, Variance>> typeArguments) {
+		new SumType(origin, name, typeArguments);
 	}
 			
 	override toString() {
 		(name ?: "") + "(" + typeArguments.tail.join(" | ") + ")"
 	}
-				
-	override getVarianceForArgs(ValidationIssue issue, int typeArgumentIdx, AbstractType tau, AbstractType sigma) {
-		return new SubtypeConstraint(tau, sigma, new ValidationIssue(issue, '''Incompatible types: %1$s is not subtype of %2$s.'''));
-	}
 	
-	override expand(ConstraintSystem system, Substitution s, TypeVariable tv) {
-		val newTypeVars = typeArguments.map[ system.newTypeVariable(it.origin) as AbstractType ].force;
-		val newSType = new SumType(origin, name, newTypeVars);
-		s.add(tv, newSType);
-	}
+	
 	override toGraphviz() {
 		'''«FOR t: typeArguments»"«t»" -> "«this»"; «t.toGraphviz»«ENDFOR»''';
 	}
 		
-	override map((AbstractType)=>AbstractType f) {
-		val newTypeArgs = typeArguments.map[ it.map(f) ].force;
-		if(typeArguments.zip(newTypeArgs).exists[it.key !== it.value]) {
-			return new SumType(origin, name, newTypeArgs);	
-		}
-		return this;
-	}
 	
-	override unquote(Iterable<Tree<AbstractType>> children) {
-		return new SumType(origin, name, children.map[it.node.unquote(it.children)].force);
-	}
 	
 }

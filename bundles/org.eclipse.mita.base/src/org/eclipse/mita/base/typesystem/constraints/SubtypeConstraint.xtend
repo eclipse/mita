@@ -23,8 +23,10 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 
 /**
  * Corresponds to subtype relationship sub <: sup as defined in
@@ -57,14 +59,6 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		subType + " ⩽ " + superType
 	}
 		
-	override getActiveVars() {
-		return subType.freeVars + superType.freeVars;
-	}
-	
-	override getOrigins() {
-		return #[subType, superType].map[ it.origin ];
-	}
-	
 	override getTypes() {
 		return #[subType, superType];
 	}
@@ -73,15 +67,25 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		if(cachedIsAtomic == CachedBoolean.Uncached) {
-			cachedIsAtomic = CachedBoolean.from((subType.isAtomic && superType.isAtomic) || (system.canHaveSuperTypes(subType) || system.hasSubtypes(superType)) && !(typesAreCommon(subType, superType)));
+			cachedIsAtomic = CachedBoolean.from(
+				(
+					(subType.isAtomic && superType.isAtomic && !literalTypeCheck) || 
+					system.canHaveSuperTypes(subType) || 
+					system.hasSubtypes(superType)) && 
+				!(typesAreCommon(subType, superType))
+			);
 		}
 	 	return cachedIsAtomic.get();
 	}
-	
+		
+	def boolean isLiteralTypeCheck() {
+		(subType instanceof LiteralTypeExpression<?>)
+	}
+
 	dispatch def boolean typesAreCommon(AbstractType type, AbstractType type2) {
 		return false
 	}
-	
+		
 	// for example t1 and t2 are sum type constructors. Then previously this was tv <= t2, now it's t1 <= t2. Then someone else already did what this constraint would have done. 
 	dispatch def boolean typesAreCommon(TypeConstructorType type1, TypeConstructorType type2) {
 		return type1.class == type2.class
@@ -107,7 +111,8 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 	
 	private def isAtomic(AbstractType t) {
-		return t instanceof AbstractBaseType || t instanceof TypeVariable
+		// TODO handle type expressions
+		return (t instanceof AbstractBaseType || t instanceof TypeVariable)
 	}
 		
 	override toGraphviz() {
@@ -115,16 +120,24 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 	}
 		
 	override map((AbstractType)=>AbstractType f) {
-		val newL = subType.map(f);
-		val newR = superType.map(f);
+		val newL = f.apply(subType);
+		val newR = f.apply(superType);
 		if(subType !== newL || superType !== newR) {
 			return new SubtypeConstraint(newL, newR, _errorMessage);
 		}
 		return this;
 	}
 	
+	override replaceProxies(ConstraintSystem system, (TypeVariableProxy)=>Iterable<AbstractType> resolve) {
+		super.replaceProxies(system, resolve)
+	}
+	
 	override getOperator() {
 		return "⩽"
+	}
+	
+	override hasProxy() {
+		return subType.hasProxy || superType.hasProxy
 	}
 	
 }

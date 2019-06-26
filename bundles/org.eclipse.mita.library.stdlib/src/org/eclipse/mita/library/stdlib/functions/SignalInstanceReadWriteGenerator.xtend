@@ -13,7 +13,6 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.NamedElement
@@ -26,8 +25,6 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
@@ -36,9 +33,6 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
 	@Inject
 	protected TypeGenerator typeGenerator
-	
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
 	
 	
 	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
@@ -65,7 +59,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			val siginstType = BaseUtils.getType(siginst).sigInstTypeArg;
 			
 			return codeFragmentProvider.create('''
-			«statementGenerator.generateVariableDeclaration(siginstType, functionCall, Optional.absent, sizeInferrer.infer(functionCall) as ValidElementSizeInferenceResult, variableName, value, false)»
+«««			«statementGenerator.generateVariableDeclaration(siginstType, functionCall, Optional.absent, sizeInferrer.infer(functionCall) as ValidElementSizeInferenceResult, variableName, value, false)»
 			exception = «siginst.writeAccessName»(&«variableName»);
 			«generateExceptionHandler(functionCall, 'exception')»
 			''')

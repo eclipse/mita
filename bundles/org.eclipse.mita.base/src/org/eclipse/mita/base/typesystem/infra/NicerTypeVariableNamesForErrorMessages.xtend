@@ -13,8 +13,7 @@
 
 package org.eclipse.mita.base.typesystem.infra
 
-import java.util.HashMap
-import java.util.Map
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap
 import java.util.Random
 import java.util.stream.Collectors
 import java.util.stream.IntStream
@@ -24,8 +23,7 @@ import org.eclipse.mita.base.util.Either
 
 class NicerTypeVariableNamesForErrorMessages extends NameModifier {
 	
-	
-	Map<Integer, String> seenNames = new HashMap();
+	Int2ObjectOpenHashMap<String> seenNames = new Int2ObjectOpenHashMap();
 	
 	var nextSuffix = 1;
 	var state = getAlphabet("").iterator;
@@ -45,10 +43,10 @@ class NicerTypeVariableNamesForErrorMessages extends NameModifier {
 	}
 	
 	override apply(int varIdx) {
-		if(!seenNames.containsKey(Integer.valueOf(varIdx))) {
-			seenNames.put(Integer.valueOf(varIdx), nextName());
+		if(!seenNames.containsKey(varIdx)) {
+			seenNames.put(varIdx, nextName());
 		}
-		return Either.right(seenNames.get(Integer.valueOf(varIdx)));
+		return Either.right(seenNames.get(varIdx));
 	}
 	
 	def static void main(String[] args) {

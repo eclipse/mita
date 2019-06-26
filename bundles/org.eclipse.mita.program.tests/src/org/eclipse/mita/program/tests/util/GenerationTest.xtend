@@ -40,10 +40,10 @@ import org.eclipse.emf.ecore.util.EcoreUtil.Copier
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.scoping.ILibraryProvider
 import org.eclipse.mita.base.types.ImportStatement
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypeKind
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.util.CopySourceAdapter
 import org.eclipse.mita.program.Program
@@ -96,11 +96,21 @@ class GenerationTest {
 				val Resource resource = createProgram(contextObject)
 				
 				project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor())
-				if (resource instanceof MitaBaseResource) {
+				
+				// first type the root so dependencies are loaded
+				if(resource instanceof MitaBaseResource) {
 					if(resource.latestSolution === null) {
 						resource.collectAndSolveTypes(resource.contents.head);
 					}
 				}
+				// then type everything else, otherwise we modify resources while we are iterating => ConcurrentModificationException
+				resource.resourceSet.resources.forEach[
+					if(it instanceof MitaBaseResource) {
+						if(it.latestSolution === null) {
+							it.generateLinkAndType(it.contents.head);
+						}
+					}
+				]
 				resource.save(Collections.emptyMap())
 				project.build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor())
 				assertGeneratedCodeExists(project, resource)
@@ -205,8 +215,8 @@ class GenerationTest {
 					copyReferences(referencedObject, copier, program)
 				}
 			}
-			if (next instanceof PresentTypeSpecifier) {
-				var Type type = ((next as PresentTypeSpecifier)).getType()
+			if (next instanceof TypeReferenceSpecifier) {
+				var Type type = next.getType()
 				if (copyObject(type) && EcoreUtil.equals(getRootContainer(contextObject), getRootContainer(type))) {
 					program.getTypes().add((copier.get(type) as Type))
 				}

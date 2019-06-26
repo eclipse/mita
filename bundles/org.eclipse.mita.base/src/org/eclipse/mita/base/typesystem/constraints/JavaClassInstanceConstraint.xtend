@@ -33,15 +33,7 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	override getErrorMessage() {
 		val formatter = new NicerTypeVariableNamesForErrorMessages;
 		val types = this.modifyNames(formatter) as JavaClassInstanceConstraint;
-		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.what, types.javaClass));
-	}
-	
-	override getActiveVars() {
-		return what.freeVars;
-	}
-	
-	override getOrigins() {
-		return #[what.origin];
+		return new ValidationIssue(_errorMessage, String.format(_errorMessage.message, types.what, types.javaClass.simpleName));
 	}
 	
 	override getTypes() {
@@ -61,7 +53,7 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		val newWhat = what.map(f);
+		val newWhat = f.apply(what);
 		if(what !== newWhat) {
 			return new JavaClassInstanceConstraint(_errorMessage, what.map(f), javaClass);
 		}
@@ -73,6 +65,10 @@ class JavaClassInstanceConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		return what instanceof TypeVariable
+	}
+	
+	override hasProxy() {
+		return what.hasProxy
 	}
 	
 }

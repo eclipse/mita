@@ -55,34 +55,38 @@ SignalInstance returns program::SignalInstance:
 
 GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
 	(exported?='export')?
-	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' typeSpecifier=OptionalTypeSpecifier
-	(('generator' generator=STRING) | ('{'
-			// things separated by '&' means that things must appear once but in any order
-			('generator' generator=STRING) &
-			('sizeInferrer' sizeInferrer=STRING)? &
-			('validator' validator=STRING)?
-		'}'))
+	'generated' ('fn' | 'function') 
+	('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
+	name=ID '(' 
+		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
+	')' 
+	typeSpecifier=OptionalTypeSpecifier
+	(
+		('generator' generator=STRING) &
+		('validator' validator=STRING)? &
+		('size-inferrer' sizeInferrer=STRING)?
+	)
 	';'
 ;
 
 NativeFunctionDefinition returns program::NativeFunctionDefinition:
 	(exported?='export')?
-	'native' (checked?='checked' | 'unchecked') ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
+	'native' (checked?='checked' | 'unchecked') ('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
 	'header' header=STRING ';'
 ;
 
 FunctionDefinition returns program::FunctionDefinition:
 	(exported?='export')?
-	('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' typeSpecifier=OptionalTypeSpecifier
-	(body = ProgramBlock)?
+	('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
+	name=ID '(' 
+		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
+	')' 
+	typeSpecifier=OptionalTypeSpecifier
+	body = FunctionProgramBlock
 ;
 
 OptionalTypeSpecifier returns types::TypeSpecifier:
 	(':' TypeSpecifier) | ({types::NullTypeSpecifier})
-;
-
-GenericFunctionTypeParameter returns types::TypeParameter: 
-	name=ID ('<:' bound=[types::Type])?
 ;
 
 FunctionParameterDeclaration returns program::FunctionParameterDeclaration:
@@ -117,12 +121,21 @@ SystemEventSource returns program::SystemEventSource:
 	origin=[platform::HasEvents] '.' source=[types::SystemResourceEvent]
 ;
 
+ReturnParameterDeclaration returns program::ReturnParameterDeclaration:
+	{program::ReturnParameterDeclaration} typeSpecifier=NullTypeSpecifier
+;
+
+FunctionProgramBlock returns program::ProgramBlock:
+	{program::ProgramBlock}
+	'{' content+=ReturnParameterDeclaration (content+=AbstractStatement)* '}'
+;
+
 ProgramBlock returns program::ProgramBlock:
 	{program::ProgramBlock}
 	'{' (content+=AbstractStatement)* '}'
 ;
 
-AbstractStatement returns program::AbstractStatement:
+AbstractStatement returns expressions::AbstractStatement:
 	(
 	  VariableDeclaration 
 	| ExpressionStatement
@@ -136,9 +149,12 @@ AbstractStatement returns program::AbstractStatement:
 	| WhereIsStatement
 	)
 ;
+ExpressionStatementWithoutTerminator returns expressions::AbstractStatement:
+	{expressions::ExpressionStatement} expression=AssignmentExpression
+;
 
-ExpressionStatement returns program::ExpressionStatement:
-	expression=Expression ';'
+ExpressionStatement returns expressions::AbstractStatement:
+	ExpressionStatementWithoutTerminator ';'
 ;
 
 @Override
@@ -172,8 +188,8 @@ NewInstanceExpression returns program::NewInstanceExpression:
 	'new' type=UnqualifiedPresentTypeSpecifier '(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
 ;
 
-UnqualifiedPresentTypeSpecifier returns types::PresentTypeSpecifier:
-	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))?
+UnqualifiedPresentTypeSpecifier returns types::TypeReferenceSpecifier:
+	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifierArgument (WS? ',' WS? typeArguments+=TypeSpecifierArgument)* WS? '>'))?
 ;
 
 
@@ -186,7 +202,7 @@ AbstractLoopStatement returns program::AbstractLoopStatement:
 		( {program::ForEachStatement} iterator=ForEachLoopIteratorVariableDeclaration =>'in' iterable=Expression )
 		| ({program::ForStatement} (loopVariables += ForLoopVariableDeclaration (',' loopVariables += ForLoopVariableDeclaration)*)? ';'
 			condition = Expression ';'
-			(postLoopStatements += (Expression) (',' postLoopStatements += (Expression))*)? )
+			(postLoopStatements += (ExpressionStatementWithoutTerminator) (',' postLoopStatements += (ExpressionStatementWithoutTerminator))*)? )
 	)')' body=ProgramBlock
 ;
 
@@ -212,13 +228,30 @@ WhileStatement returns program::WhileStatement:
 	'while' '(' condition=Expression ')' body=ProgramBlock
 ;
 
-ReturnStatement returns program::ReturnStatement:
-	{program::ReturnStatement} 
-	'return' (value=Expression)? ';'
+ReturnStatement returns expressions::AbstractStatement: 
+	'return' (
+		(ReturnValueStatement) | 
+		({program::ReturnStatement})
+	) ';'
+;
+
+ReturnValueStatement returns expressions::ExpressionStatement:
+	{expressions::ExpressionStatement} expression=ReturnValueExpression
+;
+ReturnValueExpression returns program::ReturnValueExpression:
+	{program::ReturnValueExpression} expression=Expression 
+	// the following constructs a proxy to the return parameter. It doesn't consume any tokens.
+	varRef=ReturnParameterDereference
+;
+ReturnParameterDereference returns program::DereferenceExpression:
+	{program::DereferenceExpression} expression=(ReturnParameterReference)
+;
+ReturnParameterReference returns program::ReturnParameterReference:
+	{program::ReturnParameterReference}
 ;
 
 WhereIsStatement returns program::WhereIsStatement:
-	'where' '(' matchElement=ElementReferenceExpression ')' '{'
+	'where' '(' matchElement=Expression ')' '{'
 		(isCases += IsCase)*
 	'}'
 ;

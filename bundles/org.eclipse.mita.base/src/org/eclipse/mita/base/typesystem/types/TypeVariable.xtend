@@ -21,6 +21,11 @@ import org.eclipse.mita.base.util.Left
 import org.eclipse.mita.base.util.Right
 import org.eclipse.xtend.lib.annotations.Accessors
 
+/*
+ * Info: TypeVariable.name is null unless an explicit display name is set.
+ * toString is derived from idx, unless name is set.
+ * This is used for nicer displaying of type variables.
+ */
 class TypeVariable extends AbstractType {
 	@Accessors
 	protected val int idx;

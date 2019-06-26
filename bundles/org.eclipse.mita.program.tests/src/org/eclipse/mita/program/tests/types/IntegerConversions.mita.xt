@@ -157,7 +157,6 @@ struct Name { var x : Name; }
 
 function useRecursiveTypeDef() {
 	/* XPECT errors ---
-		"Cannot determine size of element: Unable to infer size from type A" at "myStruct"
 		"Couldn't resolve reference to Type 'Name'." at "Name"
 	--- */
     var myStruct : Name;

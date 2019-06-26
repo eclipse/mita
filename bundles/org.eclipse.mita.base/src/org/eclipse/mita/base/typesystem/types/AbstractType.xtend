@@ -97,4 +97,8 @@ abstract class AbstractType {
 	public static abstract class NameModifier implements IntFunction<Either<Integer, String>> {
 	}
 	
+	def boolean hasProxy() {
+		return freeVars.exists[it instanceof TypeVariableProxy];
+	}
+	
 }

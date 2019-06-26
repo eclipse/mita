@@ -16,12 +16,11 @@ package org.eclipse.mita.program.scoping
 import java.util.ArrayList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AbstractStatement
 import org.eclipse.mita.base.types.PackageAssociation
-import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeKind
-import org.eclipse.mita.program.AbstractStatement
+import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
@@ -29,8 +28,10 @@ import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
+import org.eclipse.mita.program.ReturnParameterDeclaration
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.AbstractScope
@@ -38,8 +39,6 @@ import org.eclipse.xtext.util.SimpleAttributeResolver
 
 import static extension org.eclipse.emf.ecore.util.EcoreUtil.*
 import static extension org.eclipse.xtext.EcoreUtil2.*
-import org.eclipse.xtext.resource.IEObjectDescription
-import org.eclipse.mita.program.EventHandlerDeclaration
 
 class ElementReferenceScope extends AbstractScope {
 
@@ -127,9 +126,9 @@ class ElementReferenceScope extends AbstractScope {
 		if (programBlock !== null) {
 			var index = programBlock.content.indexOf(object.getContainerOfType(AbstractStatement))
 			if (index >= 0) {
-				result += programBlock.content.subList(0, index).filter(VariableDeclaration)
+				result += programBlock.content.subList(0, index).filter(VariableDeclaration).filter[!(it instanceof ReturnParameterDeclaration)]
 			} else {
-				result += programBlock.content.filter(VariableDeclaration)
+				result += programBlock.content.filter(VariableDeclaration).filter[!(it instanceof ReturnParameterDeclaration)]
 			}
 			addProgramBlocks(result, programBlock.eContainer)
 		}

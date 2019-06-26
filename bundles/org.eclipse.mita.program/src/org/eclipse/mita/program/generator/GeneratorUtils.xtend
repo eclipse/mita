@@ -13,10 +13,7 @@
 
 package org.eclipse.mita.program.generator
 
-import com.google.inject.Guice
 import com.google.inject.Inject
-import com.google.inject.Module
-import com.google.inject.name.Named
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.file.Files
@@ -29,7 +26,6 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.plugin.EcorePlugin
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
@@ -40,7 +36,7 @@ import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SystemResourceEvent
-import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -62,7 +58,7 @@ import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
-import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.SystemResourceSetup
@@ -77,7 +73,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
-import org.eclipse.xtext.service.DefaultRuntimeModule
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
@@ -185,7 +180,7 @@ class GeneratorUtils {
 		pb.eContainer.uniqueIdentifierInternal + pb.eContainer.eAllContents.toList.indexOf(pb).toString;
 	}
 	
-	private def dispatch String getUniqueIdentifierInternal(ReturnStatement rt) {
+	private def dispatch String getUniqueIdentifierInternal(ReturnValueExpression rt) {
 		return rt.eContainer.uniqueIdentifierInternal + "_result";
 	}
 	
@@ -382,7 +377,7 @@ class GeneratorUtils {
 	}
 	
 	dispatch def CodeFragment getEnumName(ProdType prodType, EObject context) {
-		val parentName = TypesUtil.getConstraintSystem(context.eResource).getUserData(prodType, BaseConstraintFactory.PARENT_NAME_KEY);
+		val parentName = TypeUtils.getConstraintSystem(context.eResource).getUserData(prodType, BaseConstraintFactory.PARENT_NAME_KEY);
 		if(parentName !== null) {
 			return codeFragmentProvider.create('''«parentName»_«prodType.name»_e''').addHeaderIncludes(context, prodType);
 		}
@@ -438,7 +433,7 @@ class GeneratorUtils {
 	}
 
 	dispatch def CodeFragment getStructType(AtomicType singleton, EObject context) {
-		if(TypesUtil.getConstraintSystem(context.eResource).getUserData(singleton, BaseConstraintFactory.ECLASS_KEY) == "Singleton") {
+		if(TypeUtils.getConstraintSystem(context.eResource).getUserData(singleton, BaseConstraintFactory.ECLASS_KEY) == "Singleton") {
 			//singletons don't contain actual data
 			return codeFragmentProvider.create('''void''').addHeaderIncludes(context, singleton);
 		}
@@ -456,7 +451,7 @@ class GeneratorUtils {
 	}
 	
 	def CodeFragment addHeaderIncludes(CodeFragment fragment, EObject context, AbstractType type) {
-		val constraintSystem = TypesUtil.getConstraintSystem(context.eResource);
+		val constraintSystem = TypeUtils.getConstraintSystem(context.eResource);
 		if(constraintSystem === null) {
 			return fragment;
 		}

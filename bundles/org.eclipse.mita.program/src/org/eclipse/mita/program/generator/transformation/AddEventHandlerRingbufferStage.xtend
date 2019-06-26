@@ -93,7 +93,7 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		popCallExpression.operationCall = true;
 		
 		val popCallStmts = if(decl.payload === null) {
-			val stmt = pf.createExpressionStatement;
+			val stmt = ef.createExpressionStatement;
 			stmt.expression = popCallExpression;
 			#[stmt];
 		}
@@ -136,7 +136,7 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 			return null;
 		}
 		
-		val scope = scopeProvider.getScope(decl, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+		val scope = scopeProvider.getScope(decl, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
 		val rbTypeDescription = scope.getElements(QualifiedName.create("ringbuffer")).head;
 		val rbType = rbTypeDescription?.EObjectOrProxy?.castOrNull(Type);
 		if(rbType === null || rbType instanceof NullTypeSpecifier) {
@@ -151,7 +151,7 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		rbDeclaration.name = "rb_" + decl.baseName;
 		
 		val rbInit = pf.createNewInstanceExpression;
-		val rbTypeSpecifier = tf.createPresentTypeSpecifier;
+		val rbTypeSpecifier = tf.createTypeReferenceSpecifier;
 		rbTypeSpecifier.type = rbType;
 		rbTypeSpecifier.typeArguments += EcoreUtil.copy(eventTypeSpec) as PresentTypeSpecifier;
 		rbInit.type = rbTypeSpecifier;

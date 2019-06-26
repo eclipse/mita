@@ -41,10 +41,10 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "Function __PLUS__ cannot be used here: Return type incompatible: int8 is not subtype of uint8";
+			return "prim»i»8 (:: xint8) has a different type than f (:: string<A>)";
 		}
 		private static boolean testFun(String s) {
-			return s.equals(getTestString());
+			return s.startsWith(getTestString());
 		}
 		private static void singleBreakpoint() {
 			System.out.print("");

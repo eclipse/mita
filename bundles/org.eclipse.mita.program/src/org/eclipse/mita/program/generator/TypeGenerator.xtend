@@ -15,7 +15,6 @@ package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
@@ -27,7 +26,8 @@ import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 
-import static extension org.eclipse.mita.base.types.TypesUtil.getConstraintSystem
+import static extension org.eclipse.mita.base.types.TypeUtils.getConstraintSystem
+import org.eclipse.mita.base.types.TypeUtils
 
 /**
  * Facade for generating types.
@@ -53,7 +53,7 @@ class TypeGenerator implements IGenerator {
 		return codeFragmentProvider.create('''NOT IMPLEMENTED FOR NULL''')
 	}
 	public dispatch def CodeFragment code(EObject context, AtomicType type) {
-		if(TypesUtil.isGeneratedType(context, type)) {
+		if(TypeUtils.isGeneratedType(context, type)) {
 			val generator = generatorRegistry.getGenerator(context.eResource, type);
 			if(generator instanceof AbstractTypeGenerator) {
 				return generator.generateTypeSpecifier(type, context);
@@ -79,7 +79,7 @@ class TypeGenerator implements IGenerator {
 	}
 	
 	public dispatch def CodeFragment code(EObject context, TypeConstructorType type) {
-		if(TypesUtil.isGeneratedType(context, type)) {
+		if(TypeUtils.isGeneratedType(context, type)) {
 			val generator = generatorRegistry.getGenerator(context.eResource, type);
 			if(generator instanceof AbstractTypeGenerator) {
 				return generator.generateTypeSpecifier(type, context);

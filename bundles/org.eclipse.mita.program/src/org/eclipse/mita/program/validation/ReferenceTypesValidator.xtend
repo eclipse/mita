@@ -38,7 +38,8 @@ import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.FunctionParameterDeclaration
 import org.eclipse.mita.program.ReferenceExpression
-import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnParameterDeclaration
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.util.Triple
@@ -46,6 +47,7 @@ import org.eclipse.xtext.util.Tuples
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.EValidatorRegistrar
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 
 class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {	
 	@Inject ITypeSystem typeSystem
@@ -82,7 +84,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	    // This also means you can't reference function parameter references
 	    // This also means you can't copy reference references from function parameters
 	@Check
-	def checkAssignmentExpression(AssignmentExpression e) {
+	def checkAssignmentStatement(AssignmentExpression e) {
 		if(e.expression !== null) {
 			checkRHS1(e, e.expression)
 			checkLHS1(e, e.varRef)
@@ -90,6 +92,9 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	}
 	@Check
 	def checkVariableDeclaration(VariableDeclaration e) {
+		if(e instanceof ReturnParameterDeclaration) {
+			return;
+		}
 		if(e.initialization !== null) {
 			checkRHS1(e, e.initialization)	
 		}
@@ -119,7 +124,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		checkNoFunCall(variable, e);
 	}
 	@Check
-	def forbiddenReferenceReturn(ReturnStatement stmt) {
+	def forbiddenReferenceReturn(ReturnValueExpression stmt) {
 		val funDecl = EcoreUtil2.getContainerOfType(stmt, FunctionDefinition);
 		val funDeclTypeIR = BaseUtils.getType(funDecl.typeSpecifier);
 		if(hasReferenceInType(funDeclTypeIR)) {
@@ -193,7 +198,7 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		}
 		else {
 			0
-		} + s.typeArguments.tail.map[it.maxRefCount].max;
+		} + (#[0] + s.typeArguments.tail.map[it.maxRefCount]).max;
 	}
 	dispatch def Integer maxRefCount(Object o) {
 		0;
@@ -202,14 +207,19 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 		0;
 	}
 	
-	def Optional<Pair<Integer, PresentTypeSpecifier>> typeSpecifierContainsRefRefs(PresentTypeSpecifier ts) {
-		structuralFeatureContainsRefRefs(ts.type).or(
-		if(typeSystem.isSuperType(ts.type, typeSystem.getType(REFERENCE_TYPE))) {
-			typeSpecifierContainsRefRefs(ts.typeArguments.head);
+	def Optional<Pair<Integer, TypeReferenceSpecifier>> typeSpecifierContainsRefRefs(PresentTypeSpecifier ts) {
+		if(ts instanceof TypeReferenceSpecifier) {
+			return structuralFeatureContainsRefRefs(ts.type).or(
+			if(typeSystem.isSuperType(ts.type, typeSystem.getType(REFERENCE_TYPE))) {
+				typeSpecifierContainsRefRefs(ts.typeArguments.head);
+			}
+			else {
+				Optional.absent;
+			})	
 		}
 		else {
-			Optional.absent;
-		})
+			return Optional.absent;
+		}
 	}
 	
 	dispatch def Triple<Integer, Boolean, List<EObject>> innerMostReferences(CoercionExpression e) {
@@ -251,23 +261,23 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	}
 	
 	dispatch def structuralFeatureContainsRefRefs(StructureType s) {
-		s.parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).typeSpecsContainRefRefs
+		s.parameters.map[it.typeSpecifier].filter(TypeReferenceSpecifier).typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(AnonymousProductType s) {
 		s.typeSpecifiers.typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(NamedProductType s) {
-		s.parameters.map[it.typeSpecifier].filter(PresentTypeSpecifier).typeSpecsContainRefRefs
+		s.parameters.map[it.typeSpecifier].filter(TypeReferenceSpecifier).typeSpecsContainRefRefs
 	}
 	dispatch def structuralFeatureContainsRefRefs(EObject e) {
 		Optional.absent;
 	}
 	
-	def typeSpecsContainRefRefs(Iterable<PresentTypeSpecifier> tss) {
+	def typeSpecsContainRefRefs(Iterable<TypeReferenceSpecifier> tss) {
 		for(idx_ts: tss.indexed) {
 			if(typeSystem.isSuperType(idx_ts.value.type, typeSystem.getType(REFERENCE_TYPE))) {
 				val innerType = idx_ts.value.typeArguments.head;
-				if(typeSystem.isSuperType(innerType.type, typeSystem.getType(REFERENCE_TYPE))) {
+				if(innerType instanceof TypeReferenceSpecifier && typeSystem.isSuperType((innerType as TypeReferenceSpecifier).type, typeSystem.getType(REFERENCE_TYPE))) {
 					return Optional.of(idx_ts);
 				}
 			}

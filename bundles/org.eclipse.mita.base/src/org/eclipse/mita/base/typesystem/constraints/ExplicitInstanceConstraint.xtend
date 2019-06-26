@@ -48,14 +48,6 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 		this.typeScheme = typeScheme;
 	}
 		
-	override getActiveVars() {
-		return instance.freeVars + typeScheme.freeVars;
-	}
-	
-	override getOrigins() {
-		return #[instance, typeScheme].map[ it.origin ];
-	}
-	
 	override getTypes() {
 		return #[instance, typeScheme];
 	}
@@ -67,8 +59,8 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 	
 	
 	override map((AbstractType)=>AbstractType f) {
-		val newL = instance.map(f);
-		val newR = typeScheme.map(f);
+		val newL = f.apply(instance);
+		val newR = f.apply(typeScheme);
 		if(instance !== newL || instance !== newR) {
 			return new ExplicitInstanceConstraint(newL, newR, _errorMessage);
 		} 
@@ -81,6 +73,10 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		return typeScheme instanceof TypeVariable
+	}
+	
+	override hasProxy() {
+		return instance.hasProxy || typeScheme.hasProxy
 	}
 	
 }

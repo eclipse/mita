@@ -29,7 +29,10 @@ import org.eclipse.emf.ecore.InternalEObject
 import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.InstanceTypeParameter
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
@@ -37,6 +40,7 @@ import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -44,6 +48,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.Either
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
@@ -102,6 +107,14 @@ class ConstraintSystem {
 		new TypeHole(obj, instanceCount++)
 	}
 	
+	def TypeVariable getDependentTypeVariable(InstanceTypeParameter obj, AbstractType dependsOn) {
+		val uri = EcoreUtil.getURI(obj);
+		
+		getOrCreate(obj, uri, [
+			return new DependentTypeVariable(obj, instanceCount++, dependsOn);
+		]);
+	}
+	
 	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference) {
 		return new TypeVariableProxy(origin, instanceCount++, reference);
 	}
@@ -117,6 +130,14 @@ class ConstraintSystem {
 		return getOrCreate(obj, subUri, [
 			newTypeVariable(it)
 		])
+	}
+	
+	def TypeVariable getTypeHole(EObject obj) {
+		val uri = EcoreUtil.getURI(obj);
+
+		getOrCreate(obj, uri, [ 
+			newTypeHole(it)
+		]);
 	}
 	
 	def TypeVariable getTypeVariable(EObject obj) {
@@ -323,6 +344,18 @@ class ConstraintSystem {
 		this.addConstraint(constraint);
 		return this;
 	}
+		
+	public def associate(AbstractType t, EObject typeVarOrigin) {
+		if(typeVarOrigin === null) {
+			throw new UnsupportedOperationException("BCF: Associating a type variable without origin is not supported (on purpose)!");
+		}
+		
+		val typeVar = getTypeVariable(typeVarOrigin);
+		if(typeVar != t && t !== null) { 
+			addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» must be of type "%2$s"''', typeVarOrigin, null, "")));
+		}
+		return typeVar;	
+	}
 	
 	def static combine(Iterable<ConstraintSystem> systems) {
 		if(systems.empty) {
@@ -405,7 +438,7 @@ class ConstraintSystem {
 		if(tvp.origin === null) {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
-		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference) && !tvp.origin.eGet(tvp.reference, false).castOrNull(BasicEObjectImpl).eIsProxy) {
+		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference) && !tvp.origin.eGet(tvp.reference, false)?.castOrNull(BasicEObjectImpl)?.eIsProxy) {
 			return #[BaseUtils.ignoreChange(tvp.origin, [
 					getTypeVariable(tvp.origin.eGet(tvp.reference, false) as EObject)
 				])];

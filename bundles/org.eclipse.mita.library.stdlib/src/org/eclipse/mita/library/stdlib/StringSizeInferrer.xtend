@@ -13,84 +13,54 @@
 
 package org.eclipse.mita.library.stdlib
 
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
-import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.inferrer.ElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.InterpolatedStringExpressionConstraint
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+
+import static org.eclipse.mita.program.inferrer.ProgramSizeInferrer.*
 
 class StringSizeInferrer extends ArraySizeInferrer {
+	@Inject
+	StdlibTypeRegistry typeRegistry;
 	
-	protected dispatch def ElementSizeInferenceResult doInfer(StringLiteral expression, AbstractType type) {
-		return newValidResult(expression, expression.value.length);
+	override getDataTypeIndexes() {
+		return #[];
 	}
 	
-	protected dispatch override ElementSizeInferenceResult doInfer(PrimitiveValueExpression expression, AbstractType type) {
-		return expression.value.infer;
+	override getSizeTypeIndexes() {
+		return #[1];
+	}
+				
+	dispatch def void doCreateConstraints(InferenceContext c, StringLiteral lit, TypeConstructorType type) {
+		val u32 = typeRegistry.getTypeModelObject(lit, StdlibTypeRegistry.u32TypeQID);
+		val u32Type = c.system.getTypeVariable(u32);
+		c.system.associate(type, lit);
+		c.system.addConstraint(new EqualityConstraint(type.typeArguments.last, new LiteralNumberType(lit, lit.value.length, u32Type), new ValidationIssue("%s is not %s", lit)))
 	}
 
-	protected dispatch def ElementSizeInferenceResult doInfer(InterpolatedStringLiteral expr, AbstractType type) {
-		expr.isolatedDoInfer
-	}
-	
-	protected dispatch override ElementSizeInferenceResult doInfer(NewInstanceExpression expr, AbstractType type) {
-		expr.inferFixedSize
-	}
-
-		
-	protected def dispatch ElementSizeInferenceResult isolatedDoInfer(StringLiteral expression) {
-		newValidResult(expression, expression.value.length);		
-	}
-	
-	protected override dispatch ElementSizeInferenceResult isolatedDoInfer(PrimitiveValueExpression expression) {
-		val value = expression.value;
-		return value.isolatedDoInfer;
-	}
-	
-	protected def dispatch isolatedDoInfer(InterpolatedStringLiteral expr) {
-		var length = expr.sumTextParts
+	dispatch def void doCreateConstraints(InferenceContext c, InterpolatedStringLiteral expr, TypeConstructorType type) {
+		val u32 = typeRegistry.getTypeModelObject(expr, StdlibTypeRegistry.u32TypeQID);
+		val u32Type = c.system.getTypeVariable(u32);
+		val lengthText = new LiteralNumberType(expr, expr.sumTextParts, u32Type);
 		
 		// sum expression value part
-		for(subexpr : expr.content) {
-			val type = BaseUtils.getType(subexpr);
-			var typeLengthInBytes = switch(type?.name) {
-				case 'uint32': 10L
-				case 'uint16':  5L
-				case 'uint8' :  3L
-				case 'int32' : 11L
-				case 'int16' :  6L
-				case 'int8'  :  4L
-				case 'xint32': 11L
-				case 'xint16':  6L
-				case 'xint8' :  4L
-				case 'bool'  :  1L
-				// https://stackoverflow.com/a/1934253
-				case 'double': StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
-				case 'float':  StringGenerator.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
-				case 'string':    {
-					val stringSize = super.infer(subexpr);
-					if(stringSize instanceof ValidElementSizeInferenceResult) {
-						stringSize.elementCount;
-					} else {
-						// stringSize inference was not valid
-						return stringSize;
-					}
-				}
-				default: null
-			}
-			
-			if(typeLengthInBytes === null) {
-				return newInvalidResult(subexpr, "Cannot interpolate expressions of type " + type);
-			} else {
-				length += typeLengthInBytes;
-			}
-		}
+		val sublengths = expr.content.map[subexpr |
+			val result = c.system.newTypeVariable(subexpr);
+			c.system.addConstraint(new InterpolatedStringExpressionConstraint(new ValidationIssue("", subexpr), subexpr, result, c.system.getTypeVariable(subexpr)));
+			result;
+		]
 
-		return newValidResult(expr, length);
+		c.system.associate(type, expr);
+		c.system.addConstraint(new SumConstraint(typeVariableToTypeConstructorType(c, c.system.getTypeVariable(expr), type).typeArguments.last as TypeVariable, #[lengthText] + sublengths, new ValidationIssue("", expr)))
 	}
 		
 	protected def long sumTextParts(InterpolatedStringLiteral expr) {
@@ -101,5 +71,4 @@ class StringSizeInferrer extends ArraySizeInferrer {
 			texts.map[x | x.length as long ].reduce[x1, x2| x1 + x2 ];
 		}
 	}		
-	
 }

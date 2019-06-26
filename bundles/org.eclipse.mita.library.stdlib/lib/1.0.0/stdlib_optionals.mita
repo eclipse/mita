@@ -19,10 +19,6 @@ package stdlib;
  * A container object which may or may not contain a non-null value. 
  * If a value is present, hasValue() will return true and value() will return the value.
  */
-export generated type optional<T>
-	generator "org.eclipse.mita.library.stdlib.OptionalGenerator"
-	size-inferrer "org.eclipse.mita.library.stdlib.OptionalSizeInferrer"
-	constructor con();
 
 /**
  * Returns true if a value is present, false otherwise

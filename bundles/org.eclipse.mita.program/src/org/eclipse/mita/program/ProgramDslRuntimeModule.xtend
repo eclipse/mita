@@ -28,6 +28,7 @@ import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.IConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.AbstractSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.infra.MitaLinker
 import org.eclipse.mita.base.typesystem.infra.MitaTypeLinker
@@ -37,6 +38,8 @@ import org.eclipse.mita.base.validation.BaseResourceValidator
 import org.eclipse.mita.program.formatting.ProgramDslFormatter
 import org.eclipse.mita.program.generator.ProgramDslGenerator
 import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
+import org.eclipse.mita.program.inferrer.ProgramSizeInferrer
+import org.eclipse.mita.program.inferrer.SizeConstraintSolver
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.mita.program.typesystem.ProgramConstraintFactory
@@ -66,10 +69,12 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IResourceValidator).to(BaseResourceValidator);
 		
 		binder.bind(IConstraintFactory).to(ProgramConstraintFactory);
-		binder.bind(IConstraintSolver).to(CoerciveSubtypeSolver);
+		binder.bind(IConstraintSolver).annotatedWith(Names.named("mainSolver")).to(CoerciveSubtypeSolver);
+		binder.bind(IConstraintSolver).annotatedWith(Names.named("sizeSolver")).to(SizeConstraintSolver);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(ProgramLinker);
 		binder.bind(IDirtyStateManager).to(DirtyStateManager);
+		binder.bind(AbstractSizeInferrer).to(ProgramSizeInferrer);
 	}
 	override configureIScopeProviderDelegate(Binder binder) {
 		binder.bind(IScopeProvider).annotatedWith(Names.named(AbstractDeclarativeScopeProvider.NAMED_DELEGATE)).to(
