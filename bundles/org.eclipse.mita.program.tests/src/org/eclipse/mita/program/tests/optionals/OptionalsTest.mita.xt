@@ -43,7 +43,7 @@ function testOptionalsSuccess() {
 }
 
 function testOptionalOfOptionalError() {
-	/*xpect errors ---
+	/*XPECT errors ---
 		"Nested generated types are not supported yet." at "optional<int32?>"
 		"Nested generated types are not supported yet." at "var optionalOfOptional : optional<int32?> = 10;"
 	--- */
@@ -66,7 +66,7 @@ function testOptionalsFail(){
 	var optional : uint32?; 
 	
 	functionWithOptionals(42, 10);
-	/*xpect errors ---
+	/*XPECT errors ---
 		"Nested generated types are not supported yet." at "optional<int32?>"
 		"Nested generated types are not supported yet." at "var optionalOfOptional : optional<int32?> = 10;"
 	--- */

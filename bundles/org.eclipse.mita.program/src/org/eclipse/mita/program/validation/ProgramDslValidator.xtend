@@ -474,14 +474,11 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		val subTypes = if(type instanceof TypeConstructorType) {
 			if(TypeUtils.isGeneratedType(obj, type)) {
 				if(type.name == "reference") {
-					if(hasGeneratedTypeNext) {
-						//error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
-						return;
-					} 
+					// references are a clean and supported way for nested generated types, since refs are value types and easily copied.
+					return;
 				}
 				else if(hasGeneratedTypeNext) {
-					//error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
-					// references are a clean and supported way for nested generated types, since refs are value types and easily copied.
+					error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
 					return;
 				}
 				else {
