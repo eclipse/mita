@@ -495,7 +495,7 @@ ReservedSymbols:
  *******************************************************************************/
 
 // _ only if followed by something
-terminal ID: ('a'..'z'|'A'..'Z') | (('a'..'z'|'A'..'Z' | '_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')+);
+terminal ID: '^'? (('a'..'z'|'A'..'Z') | (('a'..'z'|'A'..'Z' | '_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')+));
 terminal HOLE: '_';
 terminal LONG returns ecore::ELong: ('0'..'9')+;
 terminal STRING:

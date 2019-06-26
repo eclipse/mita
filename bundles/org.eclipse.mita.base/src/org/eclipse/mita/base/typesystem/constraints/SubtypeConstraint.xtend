@@ -128,10 +128,6 @@ class SubtypeConstraint extends AbstractTypeConstraint {
 		return this;
 	}
 	
-	override replaceProxies(ConstraintSystem system, (TypeVariableProxy)=>Iterable<AbstractType> resolve) {
-		super.replaceProxies(system, resolve)
-	}
-	
 	override getOperator() {
 		return "⩽"
 	}
