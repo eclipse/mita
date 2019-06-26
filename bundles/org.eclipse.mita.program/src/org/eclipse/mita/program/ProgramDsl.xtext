@@ -98,7 +98,7 @@ VariableDeclaration returns program::VariableDeclaration:
 ;
 
 EventHandlerVariableDeclaration returns program::EventHandlerVariableDeclaration:
-	name=ID
+	name=ID typeSpecifier=NullTypeSpecifier
 ;
 
 EventHandlerDeclaration returns program::EventHandlerDeclaration: 

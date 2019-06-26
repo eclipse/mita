@@ -55,6 +55,7 @@ import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.program.ReturnParameterReference
+import org.eclipse.mita.program.SystemEventSource
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -124,6 +125,11 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	
 	override Pair<AbstractType, Iterable<EObject>> unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {
 		return doUnbindSize(r, system, obj, type);
+	}
+	
+	dispatch def Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, SystemEventSource obj, AbstractType type) {
+		val basicResult = doUnbindSize(r, system, null, type);
+		return basicResult.key -> (basicResult.value + #[obj.source as EObject] + obj.source.eAllContents.toIterable);
 	}
 	
 	dispatch def Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, TypeReferenceSpecifier typeSpecifier, TypeConstructorType type) {
@@ -198,21 +204,36 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		// recurse on sizes
 		val sizeTypeIndexes = sizeTypeIndexes;
 		val dataTypeIndexes = dataTypeIndexes;
-		(obj.typeArguments).indexed.zip(t.typeArguments.tail).forEach[ i_mt__tv |
-			val i_mt = i_mt__tv.key;
-			val i = i_mt.key + 1;
-			val modelType = i_mt.value;
-			val tv = i_mt__tv.value;
-			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), tv);
-			if(sizeTypeIndexes.contains(i)) {
-				createConstraints(innerContext);
-			}
-			else if(dataTypeIndexes.contains(i)) {
-				delegate.createConstraints(innerContext);
-			}
-			c.system.associate(tv, modelType);
-		]
-		c.system.associate(t, obj);
+		val newType = setTypeArguments(t, [i, t1| 
+			val modelType = obj.typeArguments.get(i - 1);
+			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), t1);
+			createConstraints(innerContext);
+			val result = c.system.newTypeVariable(t1.origin) as AbstractType
+			c.system.associate(result, modelType)
+			result;
+		], [i, t1|
+			val modelType = obj.typeArguments.get(i - 1);
+			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), t1);
+			delegate.createConstraints(innerContext);
+			val result = c.system.newTypeVariable(t1.origin) as AbstractType
+			c.system.associate(result, modelType)
+			result;
+		], [it], [t1, xs | t1])
+//		(obj.typeArguments).indexed.zip(t.typeArguments.tail).forEach[ i_mt__tv |
+//			val i_mt = i_mt__tv.key;
+//			val i = i_mt.key + 1;
+//			val modelType = i_mt.value;
+//			val tv = i_mt__tv.value;
+//			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), tv);
+//			if(sizeTypeIndexes.contains(i)) {
+//				createConstraints(innerContext);
+//			}
+//			else if(dataTypeIndexes.contains(i)) {
+//				delegate.createConstraints(innerContext);
+//			}
+//			c.system.associate(tv, modelType);
+//		]
+		c.system.associate(newType, obj);
 	}
 	
 	// default: delegate
@@ -504,7 +525,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 					else {
 						return #[];
 					}
-				]
+				].force
 			}
 			else {
 				return #[];

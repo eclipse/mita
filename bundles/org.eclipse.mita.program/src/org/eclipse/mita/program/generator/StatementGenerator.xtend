@@ -579,12 +579,15 @@ class StatementGenerator {
 	// TODO: remove code duplication with generateVariableDeclaration(...)
 	dispatch def IGeneratorNode initializationCode(VariableDeclaration stmt) {
 		val varName = cf('''«stmt.name»''');
+		val rightSide = if(stmt.initialization !== null) {
+			new CodeWithContext(BaseUtils.getType(stmt.initialization), Optional.of(stmt.initialization), cf(stmt.initialization.code));
+		}
 		return initializationCode(
 			stmt, 
 			varName, 
 			new CodeWithContext(BaseUtils.getType(stmt), Optional.of(stmt), varName), 
 			AssignmentOperator.ASSIGN, 
-			new CodeWithContext(BaseUtils.getType(stmt.initialization), Optional.of(stmt.initialization), cf(stmt.initialization.code)), 
+			rightSide,
 			false
 		);
 	}

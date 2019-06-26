@@ -503,12 +503,12 @@ connectivity named-singleton BLE {
 	/**
 	 * The name of the device as advertised via GAP.
 	 */
-	configuration-item deviceName : string
+	configuration-item deviceName : string<_>
 	
 	/**
 	 * MAC Address to be configured. Format: "FC:D6:BD:xx:xx:xx" or "FC-D6-BD-xx-xx-xx".
 	 */
-	configuration-item macAddress : string
+	configuration-item macAddress : string<_>
 
 	/**
 	 * The last four bytes of the UUID of the GATT service we'll create.
@@ -656,14 +656,14 @@ alt WlanAuthentication {
      * WPA(2) with PSK (pre-shared key) 
      */
 	| Personal : {
-		psk : string
+		psk : string<_>
 	}  
 	/**
 	 * WPA(2) Enterprise with username/password
 	 */
 	| Enterprise : {
-		username : string,
-		password : string
+		username : string<_>,
+		password : string<_>
 	}
 }
 
@@ -673,22 +673,22 @@ alt IpConfiguration {
 	     * The static IP address to use. This field has to be in the number-dot
 	     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
 	     */
-		ip : string,   
+		ip : string<_>,   
 	    /**
 	     * The IP address of the default Subnet Mask. This field has to be in the number-dot
 	     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
 	     */
-		subnetMask : string,
+		subnetMask : string<_>,
 		/**
 	     * The IP address of the default gateway. This field has to be in the number-dot
 	     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
 		 */
-		gateway : string,
+		gateway : string<_>,
 		/**
 	     * The IP address of the default DNS server. This field has to be in the number-dot
 	     * customary for IPv4 addresses (see IETF draft-main-ipaddr-text-rep-02).
 	     */
-		dns : string
+		dns : string<_>
 	}
 }
 
@@ -720,10 +720,10 @@ connectivity named-singleton LoRa {
     validator "org.eclipse.mita.platform.xdk110.connectivity.LoraValidator"
 
 	required configuration-item region: Region
-	required configuration-item loraAppKey: array<uint8>
-	required configuration-item loraAppEui: array<uint8>
+	required configuration-item loraAppKey: array<uint8, 16>
+	required configuration-item loraAppEui: array<uint8, 8>
 	
-	configuration-item loraDeviceEui: array<uint8>
+	configuration-item loraDeviceEui: array<uint8, 8>
 	configuration-item adaptiveDataRate: bool = true
 	
 	configuration-item bandFrequency: uint16
@@ -733,8 +733,8 @@ connectivity named-singleton LoRa {
 	
 	
 	
-	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8>
-	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload>
+	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8, _>
+	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload, _>
 }
 
 /**
@@ -752,7 +752,7 @@ connectivity named-singleton WLAN {
     /**
      * The SSID of the WLAN network we want to connect to
      */
-    required configuration-item ssid : string
+    required configuration-item ssid : string<_>
        
     /**
      * If true server certificate will be uploaded to the WiFi chip CC3100. 
@@ -770,11 +770,11 @@ connectivity named-singleton WLAN {
 exception MqttException;
 
 alt MqttAuthentication {
-	None | Login: {username: string, password: string}
+	None | Login: {username: string<_>, password: string<_>}
 }
 
 alt MqttWill {
-	NoWill | LastWill: {topic: string, message: string, qos: uint8} 
+	NoWill | LastWill: {topic: string<_>, message: string<_>, qos: uint8} 
 }
 
 /**
@@ -794,24 +794,24 @@ connectivity many MQTT {
 	/**
 	 * The URL pointing to the MQTT broker, for example: mqtt://does-not.exist:8000
 	 */
-	required configuration-item url : string
+	required configuration-item url : string<_>
 	
 	/**
 	 * A time server to use to get the current time. This is needed to allow certificate validation for MQTTS.
 	 */
-	configuration-item sntpServer: string = "sntp://pool.ntp.org:123"
+	configuration-item sntpServer: string<_> = "sntp://pool.ntp.org:123"
 	
 	/**
 	 * The path to the server's public certificate to use for authentication. PEM format. Absolute or relative to the project root.
 	 */
-	configuration-item certificatePath: string
+	configuration-item certificatePath: string<_>
 	
 	/**
 	 * The client identifier (here: clientID) is a identifier of each MQTT client
      * connecting to a MQTT broker. It needs to be unique for the broker to
      * know the state of the client. 
 	 */
-	required configuration-item clientId : string
+	required configuration-item clientId : string<_>
 	
 	configuration-item lastWill: MqttWill = MqttWill.NoWill()
 	
@@ -835,16 +835,14 @@ connectivity many MQTT {
 	/**
 	 * Publishes a message to a particular topic. 
 	 */
-	signal topic(name : string, qos : uint32 = 0) : string
+	signal topic(name : string<_>, qos : uint32 = 0) : string<_>
 	
-	event msgReceived: string {
-		maximum-size 500
-	}
+	event msgReceived: string<500>
 }
 
 alt HonoAuthentication {
-	Authenticated: { username: string, password: string }
-	| Unauthenticated: { tenant: string, deviceId: string }
+	Authenticated: { username: string<_>, password: string<_> }
+	| Unauthenticated: { tenant: string<_>, deviceId: string<_> }
 }
 
 connectivity many HonoMqtt {
@@ -860,36 +858,36 @@ connectivity many HonoMqtt {
 	/**
 	 * The URL pointing to the MQTT broker, for example: mqtt://does-not.exist:8000
 	 */
-	required configuration-item url : string
+	required configuration-item url : string<_>
 	
 	/**
 	 * A time server to use to get the current time. This is needed to allow certificate validation for MQTTS.
 	 */
-	configuration-item sntpServer: string = "sntp://pool.ntp.org:123"
+	configuration-item sntpServer: string<_> = "sntp://pool.ntp.org:123"
 	
 	/**
 	 * The client identifier (here: clientID) is a identifier of each MQTT client
      * connecting to a MQTT broker. It needs to be unique for the broker to
      * know the state of the client. 
 	 */
-	required configuration-item clientId : string
+	required configuration-item clientId : string<_>
 	
 	/**
 	 * The path to the server's public certificate to use for authentication. PEM format. Absolute or relative to the project root.
 	 */
-	configuration-item certificatePath: string
+	configuration-item certificatePath: string<_>
 	
 	required configuration-item authentication: HonoAuthentication
 	
 	/**
 	 * Publishes a Hono telemetry message 
 	 */
-	signal telemetry(qos: uint32 = 0) : string
+	signal telemetry(qos: uint32 = 0) : string<_>
 	
 	/**
 	 * Publishes a Hono event. 
 	 */
-	signal ^event() : string
+	signal ^event() : string<_>
 }
 
 /**
@@ -920,15 +918,15 @@ connectivity many HttpRestClient {
 	/**
 	 * The part of the endpoint URL common to all requests, e.g. http://foobar.com/api/v1
 	 */
-	required configuration-item endpointBase : string
+	required configuration-item endpointBase : string<_>
 	
 	/**
 	 * A custom header which is added to each HTTP request. Example:
 	 *   X-Auth: MySecretToken\nX-Version: 1.0 
 	 */
-	configuration-item headerContent : string
+	configuration-item headerContent : string<_>
 
-	signal resource(endpoint : string, contentType : string = "application/json", writeMethod : HttpMethod = HttpMethod.POST, readMethod : HttpMethod = HttpMethod.GET) : string
+	signal resource(endpoint : string<_>, contentType : string<_> = "application/json", writeMethod : HttpMethod = HttpMethod.POST, readMethod : HttpMethod = HttpMethod.GET) : string<_>
 	
 }
 
@@ -970,12 +968,12 @@ bus many I2C {
 	
 	configuration-item byteOrder : ByteOrder = ByteOrder.LittleEndian
 	
-	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint8>
-	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int8>
-	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint16>
-	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int16>
-	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint32>
-	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int32>
+	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint8, _>
+	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int8, _>
+	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint16, _>
+	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int16, _>
+	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint32, _>
+	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int32, _>
 	
 	signal register_uint8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint8
 	signal register_int8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int8
@@ -1054,17 +1052,17 @@ io named-singleton SDCard {
 	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
 	sizeInferrer "org.eclipse.mita.platform.xdk110.io.SDCardSizeInferrer"
 
-	signal resumingBinaryRead(filePath: string, blockSize: uint32) : array<uint8>
-	signal appendingBinaryWrite(filePath: string) : array<uint8>
+	signal resumingBinaryRead(filePath: string<_>, blockSize: uint32) : array<uint8, _>
+	signal appendingBinaryWrite(filePath: string<_>) : array<uint8, _>
 
-	signal resumingTextRead(filePath: string, blockSize: uint32) : string
-	signal appendingTextWrite(filePath: string) : string
+	signal resumingTextRead(filePath: string<_>, blockSize: uint32) : string<_>
+	signal appendingTextWrite(filePath: string<_>) : string<_>
 
-	signal rewindingBinaryRead(filePath: string, fileSize: uint32) : array<uint8>
-	signal rewindingBinaryWrite(filePath: string) : array<uint8>
+	signal rewindingBinaryRead(filePath: string<_>, fileSize: uint32) : array<uint8, _>
+	signal rewindingBinaryWrite(filePath: string<_>) : array<uint8, _>
 
-	signal rewindingTextRead(filePath: string, fileSize: uint32) : string
-	signal rewindingTextWrite(filePath: string) : string
+	signal rewindingTextRead(filePath: string<_>, fileSize: uint32) : string<_>
+	signal rewindingTextWrite(filePath: string<_>) : string<_>
 }
 
 
@@ -1111,7 +1109,7 @@ platform XDK110 {
 	
 	has SDCard
 
-	configuration-item applicationName : string = "EclipseMitaApplication"
+	configuration-item applicationName : string<_> = "EclipseMitaApplication"
 	/**
 	 * Enabling this powers the 2.5V and 3.3V external power on the extension bus. 
 	 */

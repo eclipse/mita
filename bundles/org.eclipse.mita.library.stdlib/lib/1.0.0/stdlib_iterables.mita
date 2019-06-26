@@ -67,6 +67,9 @@ export generated fn <T, S> count(self: ringbuffer<T, S>): uint32 generator "org.
 export generated fn <T, S> empty(self: ringbuffer<T, S>): bool generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$EmptyGenerator";
 export generated fn <T, S> full(self: ringbuffer<T, S>): bool generator "org.eclipse.mita.library.stdlib.RingbufferGenerator$FullGenerator";
 
+export native unchecked function <T, S1, S2> __PLUS__(x: array<T, S1>, y: array<T, S2>): array<T, S1 + S2> header "string.h";
+
+
 ///*
 // * # Stacks
 // * 

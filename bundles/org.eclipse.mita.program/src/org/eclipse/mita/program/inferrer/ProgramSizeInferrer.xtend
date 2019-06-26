@@ -79,6 +79,8 @@ import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.FunctionParameterDeclaration
 import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.program.SystemEventSource
+import org.eclipse.mita.base.types.SystemResourceEvent
 
 /**
  * Hierarchically infers the size of a data element.
@@ -146,7 +148,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		
 		return type -> #[];
 	}
-	
+		
 	def Iterable<InferenceContext> unbindSizes(ConstraintSystem system, Substitution sub, Resource r) {
 		val additionalUnbindings = newHashSet();
 		// unbind sizes from all eobjects
@@ -259,7 +261,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	override createConstraints(InferenceContext c) {
 		doCreateConstraints(c, c.obj);
 	}
-	
+		
 	dispatch def void doCreateConstraints(InferenceContext c, Operation op) {
 		val typeArgs = op.typeParameters.map[c.system.getTypeVariable(it)].force()
 		var type = c.type;
@@ -307,8 +309,11 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, SignalInstance siginst) {
-		// do nothing, special case where call sites create constraints
-		// otherwise we need to create a special case for unbinding these, and its easier like this	
+		inferUnmodifiedFrom(c.system, siginst, siginst.initialization);	
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, SystemEventSource eventSource) {
+		inferUnmodifiedFrom(c.system, eventSource, eventSource.source);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, VariableDeclaration variable) {
@@ -438,6 +443,10 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, Parameter obj) {
+		inferUnmodifiedFrom(c.system, obj, obj.typeSpecifier);
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, TypedElement obj) {
 		inferUnmodifiedFrom(c.system, obj, obj.typeSpecifier);
 	}
 	

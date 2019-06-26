@@ -101,18 +101,9 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 			val vdecl = pf.createEventHandlerVariableDeclaration;
 			vdecl.name = decl.payload.name;	
 			vdecl.initialization = popCallExpression;
-
-//			val assignmentExpr = ef.createAssignmentExpression;
-//			assignmentExpr.expression = popCallExpression;
-//			
-//			val varReference = ef.createElementReferenceExpression;
-//			varReference.reference = vdecl;
-//			assignmentExpr.varRef = varReference;
-//			
-//			val assignmentStmt = pf.createExpressionStatement;
-//			assignmentStmt.expression = assignmentExpr;
+			vdecl.typeSpecifier = tf.createNullTypeSpecifier;
 			
-			#[vdecl as VariableDeclaration/*, assignmentStmt*/];
+			#[vdecl as VariableDeclaration];
 		}
 		
 		block.content.addAll(0, popCallStmts);
@@ -147,25 +138,29 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		val pf = ProgramFactory.eINSTANCE;
 		val tf = TypesFactory.eINSTANCE;
 		val ef = ExpressionsFactory.eINSTANCE;
+		
+		// let rb_everyButtonOnePressed...
 		val rbDeclaration = pf.createVariableDeclaration;
 		rbDeclaration.name = "rb_" + decl.baseName;
+		rbDeclaration.writeable = false;
 		
-		val rbInit = pf.createNewInstanceExpression;
+		// : ringbuffer<...
 		val rbTypeSpecifier = tf.createTypeReferenceSpecifier;
 		rbTypeSpecifier.type = rbType;
+		// bool, ...
 		rbTypeSpecifier.typeArguments += EcoreUtil.copy(eventTypeSpec) as PresentTypeSpecifier;
-		rbInit.type = rbTypeSpecifier;
-
-		val sizeArg = ef.createArgument;
+		
+		// 10>;
+		val sizeTypeSpecifier = tf.createTypeExpressionSpecifier;
 		val sizeExpression = ef.createPrimitiveValueExpression;
 		val sizeLiteral = ef.createIntLiteral;
 		sizeLiteral.value = queueSizeProvider.getEventHandlerPayloadQueueSize(decl);
 		sizeExpression.value = sizeLiteral;
-		sizeArg.value = sizeExpression;
-		rbInit.arguments += sizeArg;
+		sizeTypeSpecifier.value = sizeExpression;
+		rbTypeSpecifier.typeArguments += sizeTypeSpecifier;
 		
-		rbDeclaration.initialization = rbInit;
-		
+		rbDeclaration.typeSpecifier = rbTypeSpecifier;
+				
 		program.globalVariables += rbDeclaration;
 		
 		return rbDeclaration;

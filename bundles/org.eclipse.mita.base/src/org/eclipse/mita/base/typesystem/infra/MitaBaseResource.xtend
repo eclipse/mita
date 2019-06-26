@@ -188,10 +188,12 @@ class MitaBaseResource extends LazyLinkingResource {
 
 	public def generateLinkAndType(EObject model) {
 		val diagnosticsConsumer = new ListBasedDiagnosticConsumer();
-		model.eAllContents.filter(GeneratedObject).forEach [
-			it.generateMembers()
-		]
-		typeLinker.doActuallyClearReferences(model);
+		BaseUtils.ignoreChange(model, [
+			typeLinker.doActuallyClearReferences(model);
+			model.eAllContents.filter(GeneratedObject).forEach [
+				it.generateMembers()
+			]
+		])
 		typeLinker.linkModel(model, diagnosticsConsumer);
 		typeDependentLinker.linkModel(model, diagnosticsConsumer);
 		// size inference expects fully linked types, 

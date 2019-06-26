@@ -25,6 +25,7 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
+import java.util.Optional
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
@@ -56,10 +57,10 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			val value = functionCall.arguments.get(1).value;
 			val variableName = codeFragmentProvider.create('''_new«firstArg.uniqueIdentifier.toFirstUpper»''');
 			
-			val siginstType = BaseUtils.getType(siginst).sigInstTypeArg;
+			val variableType = BaseUtils.getType(value);
 			
 			return codeFragmentProvider.create('''
-«««			«statementGenerator.generateVariableDeclaration(siginstType, functionCall, Optional.absent, sizeInferrer.infer(functionCall) as ValidElementSizeInferenceResult, variableName, value, false)»
+			«statementGenerator.generateVariableDeclaration(variableType, functionCall, Optional.empty, variableName, value, false)»
 			exception = «siginst.writeAccessName»(&«variableName»);
 			«generateExceptionHandler(functionCall, 'exception')»
 			''')

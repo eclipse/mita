@@ -27,6 +27,12 @@ import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.library.stdlib.ArrayGenerator.getInferredSize
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.types.Variance
 
 // https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/
 class RingbufferGenerator extends AbstractTypeGenerator {
@@ -78,18 +84,16 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		if(type instanceof TypeConstructorType) {
 			if(isTopLevel) {
-				if(initialization instanceof NewInstanceExpression) {
-					val occurrence = getOccurrence(context);
-					return codeFragmentProvider.create('''
-						«typeGenerator.code(context, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«type.inferredSize»];
-						«typeGenerator.code(context, type)» «varName» = {
-							.data = data_«varName»_«occurrence»,
-							.read = 0,
-							.length = 0,
-							.capacity = «type.inferredSize?.eval»
-						};
-					''')
-				}
+				val occurrence = getOccurrence(context);
+				return codeFragmentProvider.create('''
+					«typeGenerator.code(context, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«type.inferredSize?.eval»];
+					«typeGenerator.code(context, type)» «varName» = {
+						.data = data_«varName»_«occurrence»,
+						.read = 0,
+						.length = 0,
+						.capacity = «type.inferredSize?.eval»
+					};
+				''')
 			}
 		}
 		return super.generateVariableDeclaration(type, context, varName, initialization, isTopLevel);
@@ -158,7 +162,6 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 					«generateExceptionHandler(functionCall, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»
 				}
 				--«rbRefCode».length;
-«««				EObject context, CodeFragment tempVarName, CodeWithContext left, AssignmentOperator op, CodeWithContext right, boolean alwaysGenerate
 				«statementGenerator.initializationCode(
 					functionCall, 
 					resultVariable.code, 
@@ -173,8 +176,25 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 	}
 	static class PopInferrer implements FunctionSizeInferrer {
 		
+		static def wrapInRingbuffer(InferenceContext c, StdlibTypeRegistry typeRegistry, AbstractType t) {
+			val ringbufferTypeObject = typeRegistry.getTypeModelObject(c.obj, StdlibTypeRegistry.ringbufferTypeQID);
+			// \T S. ringbuffer<T, S>
+			val ringbufferType = c.system.getTypeVariable(ringbufferTypeObject);
+			// t0 ~ ringbuffer<t, s>
+			val ringbufferInstance = c.system.newTypeVariable(c.obj);
+			// t0 instanceof \T S. ringbuffer<T, S> => creates t0 := ringbuffer<t1, t2>
+			c.system.addConstraint(new ExplicitInstanceConstraint(ringbufferInstance, ringbufferType, new ValidationIssue('''%s is not instance of %s''', c.obj)));
+			// bind sigInst<t> to t0
+			c.system.addConstraint(new EqualityConstraint(ringbufferInstance, new TypeConstructorType(c.obj, "ringbuffer", #[new AtomicType(ringbufferTypeObject, "ringbuffer") -> Variance.INVARIANT, t -> Variance.INVARIANT, c.system.newTypeVariable(null) -> Variance.COVARIANT]), new ValidationIssue('''%s is not instance of %s''', c.obj)))
+			// return t0 ~ sigInst<t>
+			return ringbufferInstance;
+		}
+		
 		@Accessors
 		TypeSizeInferrer delegate;
+		
+		@Inject
+		StdlibTypeRegistry typeRegistry;
 		
 //		override protected _doInfer(ElementReferenceExpression obj, AbstractType type) {
 //			if(obj.arguments.size === 1) {
@@ -195,7 +215,16 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 //		}
 				
 		override createConstraints(InferenceContext c) {
-			throw new UnsupportedOperationException("TODO: auto-generated method stub")
+			val funCall = c.obj;
+			if(funCall instanceof ElementReferenceExpression) {
+				if(funCall.arguments.size > 0) {
+					val innerType = c.type;
+					c.system.associate(innerType, c.obj);
+					val rbType = wrapInRingbuffer(c, typeRegistry, innerType);
+					val argument = funCall.arguments.head.value;
+					c.system.associate(rbType, argument); 	
+				}
+			}
 		}
 		
 	}

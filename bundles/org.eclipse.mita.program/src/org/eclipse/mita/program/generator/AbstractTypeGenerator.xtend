@@ -51,17 +51,6 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	def CodeFragment generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
 		return CodeFragment.EMPTY;
 	}
-//
-//	/**
-//	 * Checks if this type supports a particular expression within its type hierarchy
-//	 */
-//	def boolean checkExpressionSupport(EObject context, AbstractType type, AssignmentOperator operator, AbstractType otherType) {
-//		val resource = context.eResource;
-//		val cs = if(resource instanceof MitaBaseResource) resource.latestSolution.getConstraintSystem;
-//		return operator == AssignmentOperator.ASSIGN && subtypeChecker.isSubType(cs, context, otherType, type);
-//	}
-//	def CodeFragment generateNewInstance(AbstractType type, NewInstanceExpression expr);
-
 	
 	/**
 	 * Produces code which implements an assignment operation. 
@@ -70,7 +59,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 * leftName might be a C expression (for example `(*_result)`), to generate temporary variable names use cVariablePrefix. 
 	 */
 	def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {
-		return codeFragmentProvider.create('''«left.code» «operator.literal» «right.code»;''');
+		return codeFragmentProvider.create('''«left.code»«IF right !== null» «operator.literal» «right.code»«ENDIF»;''');
 	}
 	
 	/**
