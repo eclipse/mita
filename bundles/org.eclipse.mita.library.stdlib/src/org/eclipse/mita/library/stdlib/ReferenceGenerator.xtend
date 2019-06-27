@@ -34,11 +34,7 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	
 	@Inject
 	protected extension GeneratorUtils
-	
-	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
-		CodeFragment.EMPTY;
-	}
-	
+
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		if(type instanceof TypeConstructorType) {
 			val realType = type.typeArguments.tail.head;
@@ -58,6 +54,14 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	override generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {
 		codeFragmentProvider.create('''«left.code» «operator.literal» «right.code»;''')
 		
+	}
+	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
 }

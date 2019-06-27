@@ -280,7 +280,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			new TypeScheme(op, typeArgs, funType);	
 		}, op);
 	}
-	
+		
 	dispatch def void doCreateConstraints(InferenceContext c, ElementReferenceExpression obj) {
 		if(obj.isOperationCall) {
 			val fun = obj.reference;

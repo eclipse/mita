@@ -37,12 +37,12 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.SignalInstance

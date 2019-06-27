@@ -490,7 +490,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 					return;
 				}
 				else if(hasGeneratedTypeNext) {
-					error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
+//					error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
 					return;
 				}
 				else {

@@ -56,6 +56,7 @@ import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.program.ReturnParameterReference
 import org.eclipse.mita.program.SystemEventSource
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -494,6 +495,10 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 				if(!origin.operationCall) {
 					return true;
 				}
+			}
+			// same goes for array access expression
+			if(origin instanceof ArrayAccessExpression) {
+				return true;
 			}
 			return false;
 		}

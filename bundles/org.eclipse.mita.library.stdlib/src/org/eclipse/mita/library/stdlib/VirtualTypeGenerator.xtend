@@ -23,6 +23,7 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
+import org.eclipse.mita.program.generator.CodeWithContext
 
 class VirtualTypeGenerator extends AbstractTypeGenerator {
 		
@@ -30,8 +31,12 @@ class VirtualTypeGenerator extends AbstractTypeGenerator {
 		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}
 	
-	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
-		return codeFragmentProvider.create('''''');
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}
 	
 }

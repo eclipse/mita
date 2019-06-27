@@ -128,6 +128,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypeUtils.getConstraintSystem
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 
 class StatementGenerator {
 
@@ -193,9 +194,13 @@ class StatementGenerator {
 			.addHeader('stdbool.h', true);
 		return '''«result»''';
 	}
-	
+		
 	@Traced dispatch def IGeneratorNode code(ArrayLiteral stmt) {
-		'''{«FOR value: stmt.values SEPARATOR(', ')»«value.code»«ENDFOR»}'''
+		'''«IF EcoreUtil2.getContainerOfType(stmt, Operation) !== null»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
+			.data = («typeGenerator.code(stmt, (BaseUtils.getType(stmt) as TypeConstructorType).typeArguments.get(1))»[«stmt.values.length»]) {«FOR value: stmt.values SEPARATOR(', ')»«value.code»«ENDFOR»},
+			.capacity = «stmt.values.length»,
+			.length = «stmt.values.length»,
+		}'''
 	}
 	
 	@Traced dispatch def IGeneratorNode code(Literal stmt) {
@@ -256,6 +261,27 @@ class StatementGenerator {
 
 	@Traced dispatch def IGeneratorNode code(ArrayAccessExpression stmt) {		
 		'''«stmt.owner.code».data[«stmt.arraySelector.code.noTerminator»]'''
+	}
+	
+	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		if(isGeneratedType(context, left.type)) {
+			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
+			
+			return generator.generateBulkAllocation(context, cVariablePrefix, left, count);
+		}
+		return cf('''''')
+	}
+	def CodeFragment generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		if(isGeneratedType(context, left.type)) {
+			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
+			
+			return generator.generateBulkCopyStatements(context, i, left, right, count);
+		}
+		val typeSize = cf('''sizeof(«typeGenerator.code(context, left.type)»)''')
+		return cf('''
+			/* «left.code» = «right.code» */
+			memcpy(«left.code», «right.code», «typeSize» * «count»);
+		''')
 	}
 	
 	@Traced dispatch def IGeneratorNode code(ArrayRuntimeCheckStatement stmt) {
@@ -446,7 +472,7 @@ class StatementGenerator {
 				'''«registry.getGenerator(ref)?.generate(
 					// representation of passing C-NULL
 					// this seems bad?
-					new CodeWithContext(null, Optional.empty, cf('''NULL''')), 
+					null, 
 					stmt
 				)»''';
 			} else if(ref instanceof NativeFunctionDefinition) {
@@ -612,11 +638,8 @@ class StatementGenerator {
 		val initialization = right?.obj?.orElse(null);	
 		if (isGeneratedType(context, left.type)) {
 			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
-
-			if (initialization instanceof NewInstanceExpression) {
-				return generator.generateNewInstance(left.code, left.type, initialization);
-			} 
-			else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
+ 
+			if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
 				return generateFunCallStmt(left, initialization as ElementReferenceExpression);
 			} 
 			return generator.generateExpression(context, tempVarName, left, op, right);
@@ -682,10 +705,6 @@ class StatementGenerator {
 		if (TypeUtils.isGeneratedType(context, type)) {
 			val generator = registry.getGenerator(context.eResource, type).castOrNull(AbstractTypeGenerator);
 			result.children += generator.generateVariableDeclaration(type, context, varName, initialization, isTopLevel);
-			if(initialization instanceof PrimitiveValueExpression && (
-				type.name == MitaTypeSystem.ARRAY_TYPE || type.name == MitaTypeSystem.STRING)) {
-				initializationDone = true;
-			}
 		} else if (initialization instanceof ElementReferenceExpression) {
 			val ref = initialization.reference;
 			// Assignment from functions is done by declaring, then passing in a reference

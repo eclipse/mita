@@ -914,7 +914,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			// compute <a, b>
 			val ref = typeSpecifier.eGet(eRef, false)
 			val reftext = if(ref instanceof EObject && !(ref as EObject).eIsProxy) ref.toString() else null;
-			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)?.head?.text?.trim;
+			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(BaseUtils.computeOrigin(typeSpecifier), TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)?.head?.text?.trim;
 			val typeArgTypes = typeArguments.map[system.computeConstraints(it) as AbstractType];
 			// since type specifiers reference something we don't always know the variance here
 			val typeArgs = typeArgTypes.map[it -> Variance.UNKNOWN].force;

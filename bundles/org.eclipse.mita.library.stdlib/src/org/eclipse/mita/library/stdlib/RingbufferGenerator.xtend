@@ -8,9 +8,19 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.infra.FunctionSizeInferrer
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
@@ -19,35 +29,34 @@ import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
-import org.eclipse.mita.base.typesystem.infra.FunctionSizeInferrer
-import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
-import org.eclipse.mita.base.typesystem.infra.InferenceContext
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 import static extension org.eclipse.mita.library.stdlib.ArrayGenerator.getInferredSize
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
-import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
-import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.typesystem.types.AtomicType
-import org.eclipse.mita.base.types.Variance
 
 // https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/
 class RingbufferGenerator extends AbstractTypeGenerator {
 	@Inject
 	extension GeneratorUtils
 	
-	override generateHeader(EObject context, AbstractType type) {
+	@Inject
+	protected StatementGenerator statementGenerator;
+	
+	
+	override CodeFragment generateHeader(EObject context, AbstractType type) {
+		codeFragmentProvider.create('''typedef struct «typeGenerator.code(context, type)» «typeGenerator.code(context, type)»;''')
+	}
+	
+	override generateTypeImplementations(EObject context, AbstractType type) {
 		if(type instanceof TypeConstructorType) {
 			codeFragmentProvider.create('''
-				typedef struct {
+				struct «typeGenerator.code(context, type)» {
 					«typeGenerator.code(context, type.typeArguments.tail.head)»* data;
 					uint32_t read;
 					uint32_t length;
 					uint32_t capacity;
-				} «typeGenerator.code(context, type)»;
+				};
 			''').addHeader('inttypes.h', true);
 		}
 	}
@@ -81,42 +90,27 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
-	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {	
 		if(type instanceof TypeConstructorType) {
-			if(isTopLevel) {
-				val occurrence = getOccurrence(context);
-				return codeFragmentProvider.create('''
-					«typeGenerator.code(context, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«type.inferredSize?.eval»];
-					«typeGenerator.code(context, type)» «varName» = {
-						.data = data_«varName»_«occurrence»,
-						.read = 0,
-						.length = 0,
-						.capacity = «type.inferredSize?.eval»
-					};
-				''')
-			}
-		}
-		return super.generateVariableDeclaration(type, context, varName, initialization, isTopLevel);
-	}
-	
-	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
-		if(type instanceof TypeConstructorType) {
-			val parent = expr.eContainer;
-			val isGlobalVariable = !needsCast(expr);
-			if(isGlobalVariable) {
-				return codeFragmentProvider.create('''''');
-			}
-			val size = type.inferredSize?.eval;
-			val occurrence = getOccurrence(parent);
-			
+			val occurrence = getOccurrence(context);
+			val bufferName = codeFragmentProvider.create('''data_«varName»_«occurrence»''')
+			val size = codeFragmentProvider.create('''«type.inferredSize?.eval»''');
+			val dataType = type.typeArguments.get(1);
+				
 			return codeFragmentProvider.create('''
-				«typeGenerator.code(expr, type.typeArguments.tail.head)» data_«varName»_«occurrence»[«size»];
-				«varName» = («typeGenerator.code(expr, type)») {
-					.data = data_«varName»_«occurrence»,
+				«typeGenerator.code(context, type.typeArguments.tail.head)» «bufferName»[«size»];
+				«typeGenerator.code(context, type)» «varName» = («typeGenerator.code(context, type)») {
+					.data = «bufferName»,
 					.read = 0,
 					.length = 0,
 					.capacity = «size»
 				};
+				«statementGenerator.generateBulkAllocation(
+					context, 
+					codeFragmentProvider.create('''«varName»_rb'''),
+					new CodeWithContext(dataType, Optional.empty, bufferName),
+					size
+				)»
 			''')
 		}
 	}
@@ -277,7 +271,32 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
 	}
-
+	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		val type = left.type as TypeConstructorType;
+		val dataType = type.typeArguments.get(1);
+		val size = codeFragmentProvider.create('''«type.inferredSize?.eval»''');
+		val i = codeFragmentProvider.create('''«cVariablePrefix»_i''');
+		codeFragmentProvider.create('''
+			«typeGenerator.code(context, type.typeArguments.tail.head)» «cVariablePrefix»_buf[«count»*«size»];
+			for(size_t «i» = 0; «i» < «count»; ++«i») {
+				«left.code»[«i»] = («typeGenerator.code(context, type)») {
+					.data = &«cVariablePrefix»_buf[«i»*«size»],
+					.length = 0,
+					.capacity = «size»
+				};
+			}
+			«statementGenerator.generateBulkAllocation(
+				context, 
+				codeFragmentProvider.create('''«cVariablePrefix»_array'''),
+				new CodeWithContext(dataType, Optional.empty, codeFragmentProvider.create('''«cVariablePrefix»_buf''')),
+				codeFragmentProvider.create('''«count»*«size»''')
+			)»''').addHeader("stddef.h", true)
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
 	
 }
 

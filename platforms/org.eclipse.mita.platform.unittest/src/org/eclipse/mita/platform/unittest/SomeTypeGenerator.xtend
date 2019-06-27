@@ -40,11 +40,7 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''')
 	}
-	
-	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
-		CodeFragment.EMPTY;
-	}
-	
+		
 		
 	static class GetElementGenerator extends AbstractFunctionGenerator {
 		
@@ -71,6 +67,14 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 			return codeFragmentProvider.create('''«variable.generate» = «value.generate»;''');
 		}
 		
+	}
+	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
 }

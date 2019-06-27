@@ -75,6 +75,10 @@ import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -309,7 +313,26 @@ class GeneratorUtils {
 	}
 	
 	def dispatch String getBaseName(Operation element) {
-		return '''«element.name»«FOR p : element.parameters BEFORE '_' SEPARATOR '_'»«p.type.name»«ENDFOR»'''
+		return '''«element.name»«FOR p : element.parameters BEFORE '_' SEPARATOR '_'»«val t = p.typeSpecifier»«t.toFunctionNamePart(t.separator)»«ENDFOR»'''
+	}
+	
+	def String getSeparator(TypeSpecifier t) {
+		return new String(newCharArrayOfSize(doGetSeparator(t))).replace(0 as char, "_");
+	}
+	
+	def dispatch int doGetSeparator(TypeSpecifier t) {
+		return 0;
+	}
+	def dispatch int doGetSeparator(TypeReferenceSpecifier t) {
+		return (#[-1] + t.typeArguments.map[doGetSeparator]).max + 1
+	}
+	
+	def dispatch String toFunctionNamePart(TypeSpecifier t, String separator) {
+		""
+	}
+	def dispatch String toFunctionNamePart(TypeReferenceSpecifier t, String separator) {
+		val typeArgs = t.typeArguments.map[it.toFunctionNamePart(separator.substring(1))].filter[!nullOrEmpty].force;
+		(#[t.type.name] + typeArgs).join(separator)
 	}
 	
 	def dispatch String getBaseName(AbstractSystemResource resource) {

@@ -61,21 +61,25 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 	}
 
 	dispatch def void doCreateConstraints(InferenceContext c, ArrayAccessExpression expr, TypeConstructorType type) {
-		val arraySelector = expr.arraySelector.ignoreCoercions?.castOrNull(ValueRange);
-		if(arraySelector !== null) {
+		val arraySelectorRange = expr.arraySelector.ignoreCoercions?.castOrNull(ValueRange);
+		if(arraySelectorRange !== null) {
 			val u32 = typeRegistry.getTypeModelObject(expr, StdlibTypeRegistry.u32TypeQID);
 			val u32Type = c.system.getTypeVariable(u32);
 			val ownerSize = typeVariableToTypeConstructorType(c, c.system.getTypeVariable(expr.owner), type).typeArguments.last;
-			val lowerBound = new LiteralNumberType(arraySelector.lowerBound, -1 * (StaticValueInferrer.infer(arraySelector.lowerBound, [])?.castOrNull(Long) ?: 0L), u32Type);
-			val upperBoundInferred = StaticValueInferrer.infer(arraySelector.upperBound, [])?.castOrNull(Long);
+			val lowerBound = new LiteralNumberType(arraySelectorRange.lowerBound, -1 * (StaticValueInferrer.infer(arraySelectorRange.lowerBound, [])?.castOrNull(Long) ?: 0L), u32Type);
+			val upperBoundInferred = StaticValueInferrer.infer(arraySelectorRange.upperBound, [])?.castOrNull(Long);
 			val upperBound = if(upperBoundInferred !== null) {
-				new LiteralNumberType(arraySelector.upperBound, upperBoundInferred, u32Type);
+				new LiteralNumberType(arraySelectorRange.upperBound, upperBoundInferred, u32Type);
 			}
 			else {
 				ownerSize	
 			}
 			val exprSizeType = typeVariableToTypeConstructorType(c, c.system.getTypeVariable(expr), type).typeArguments.last as TypeVariable;
 			c.system.addConstraint(new SumConstraint(exprSizeType, #[upperBound, lowerBound], new ValidationIssue('''''', expr)));
+		}
+		else {
+			val ownerSizeType = typeVariableToTypeConstructorType(c, c.system.getTypeVariable(expr.owner), type);
+			c.system.associate(ownerSizeType.typeArguments.get(1), expr);
 		}
 		c.system.associate(type, expr);
 	}

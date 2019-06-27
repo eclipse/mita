@@ -75,15 +75,15 @@ class StringGenerator extends ArrayGenerator {
 		return super.generateLength(temporaryBufferName, valRange, obj);
 	}
 	
-	override CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init) {
+	override CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init) {
 		val value = init?.value;
 		return doGenerateBufferStmt(context, arrayType, bufferName, size, init, value);
 	}
 	 
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, InterpolatedStringLiteral l) {
-		// need to allocate size+1 since snprintf always writes a zero byte at the end.
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, InterpolatedStringLiteral l) {
 		codeFragmentProvider.create('''
-				«getBufferType(context, arrayType)» «bufferName»[«size + 1»] = {0};
+				// need to allocate size+1 since snprintf always writes a zero byte at the end.
+				«getBufferType(context, arrayType)» «bufferName»[«size» + 1] = {0};
 				int «bufferName»_written = snprintf(«bufferName», sizeof(«bufferName»), "«l.pattern»"«FOR x : l.content BEFORE ', ' SEPARATOR ', '»«x.getDataHandleForPrintf»«ENDFOR»);
 				if(«bufferName»_written > «size») {
 					«generateExceptionHandler(context, "EXCEPTION_STRINGFORMATEXCEPTION")»
@@ -93,17 +93,17 @@ class StringGenerator extends ArrayGenerator {
 			.addHeader('inttypes.h', true)
 	}
 	
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, StringLiteral l) {
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, StringLiteral l) {
 		return super.generateBufferStmt(context, arrayType, bufferName, size, init);
 	}
 
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Object l) {
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, Object l) {
 		return super.generateBufferStmt(context, arrayType, bufferName, size, init);
 	}
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Void l) {
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, Void l) {
 		return super.generateBufferStmt(context, arrayType, bufferName, size, init);
 	}
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Literal l) {
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, Literal l) {
 		return codeFragmentProvider.create('''UNKNOWN LITERAL: «l.eClass»''')
 	}
 	

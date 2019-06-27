@@ -52,11 +52,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	}
 	public static final String OPTIONAL_FLAG_MEMBER = "flag";
 	public static final String OPTIONAL_DATA_MEMBER = "data";
-	
-	override generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
-		CodeFragment.EMPTY;
-	}
-	
+		
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
@@ -168,5 +164,12 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		''');
 	}
 	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
 	
 }

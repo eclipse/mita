@@ -44,14 +44,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
-	
-	/**
-	 * Produces a new instance of the type
-	 */
-	def CodeFragment generateNewInstance(CodeFragment varName, AbstractType type, NewInstanceExpression expr) {
-		return CodeFragment.EMPTY;
-	}
-	
+		
 	/**
 	 * Produces code which implements an assignment operation. 
 	 * Every generator should be able to at least handle AssignmentOperator.ASSIGN. 
@@ -61,6 +54,18 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {
 		return codeFragmentProvider.create('''«left.code»«IF right !== null» «operator.literal» «right.code»«ENDIF»;''');
 	}
+	
+	/**
+	 * Produces code that reserves static memory (global/stack) for *count* instances and assigns them in left.
+	 * Left is a C-array of length at least *count*.
+	 * Produced C-code is always in a function context.
+	 */
+	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count);
+	
+	/**
+	 * Produces code that bulk copies data from C-array to C-array.
+	 */
+	def CodeFragment generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count);
 	
 	/**
 	 * Produces header definitions. Called only once.
@@ -86,6 +91,12 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 * Produces header definitions, called per different instance of type arguments.
 	 */
 	def CodeFragment generateHeader(EObject context, AbstractType type) {
+		return CodeFragment.EMPTY;
+	}
+	/**
+	 * Produces header type implementations, called per different instance of type arguments.
+	 */
+	def CodeFragment generateTypeImplementations(EObject context, AbstractType type) {
 		return CodeFragment.EMPTY;
 	}
 }
