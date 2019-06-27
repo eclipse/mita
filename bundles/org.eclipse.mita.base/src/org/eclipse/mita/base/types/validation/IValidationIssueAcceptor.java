@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "prim»i»8 (:: xint8) has a different type than f (:: string<A>)";
+			return "a: array<string<_>, _> must be of type \"string<string<C>>\"";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

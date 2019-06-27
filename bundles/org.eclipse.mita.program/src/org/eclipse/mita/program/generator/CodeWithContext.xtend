@@ -19,4 +19,8 @@ class CodeWithContext {
 		this.code = code;
 	}
 	
+	override toString() {
+		return code + ": " + type
+	}
+	
 }

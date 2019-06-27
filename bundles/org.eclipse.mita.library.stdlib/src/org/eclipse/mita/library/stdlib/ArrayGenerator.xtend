@@ -159,6 +159,9 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	// returns null if it can't generate this
 	dispatch def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right, ArrayLiteral lit) {
+		if(operator != AssignmentOperator.ASSIGN) {
+			return null;
+		}
 		val dataType = left.type.dataType;
 		if(!TypeUtils.isGeneratedType(context, dataType)) {
 			return cf('''
@@ -192,7 +195,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 
 	override generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {
 		if(right === null) {
-			throw new NullPointerException;
+			return cf('''''')
 		}
 		val rightLit = right.obj.orElse(null)?.castOrNull(PrimitiveValueExpression)?.value;
 		val literalResult = generateExpression(context, cVariablePrefix, left, operator, right, rightLit);
@@ -219,7 +222,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			cf('''«left.code».data''');
 		}
 		else if(operator == AssignmentOperator.ADD_ASSIGN) {
-			cf('''&«left.code».data[«left.code».length]''');
+			cf('''(&«left.code».data[«left.code».length])''');
 		}
 		val dataRight = cf('''
 			«IF valRange?.lowerBound !== null»&«ENDIF»«codeRightExpr».data«IF valRange?.lowerBound !== null»[«valRange.lowerBound.code.noTerminator»]«ENDIF»

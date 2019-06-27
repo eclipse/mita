@@ -165,7 +165,22 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(StringLiteral stmt) {
-		'''"«stmt.value»"'''
+		val context = stmt
+			?.eContainer?.castOrNull(PrimitiveValueExpression)
+			?.eContainer?.castOrNull(Argument)
+			?.eContainer?.castOrNull(ElementReferenceExpression)
+			?.reference?.castOrNull(GeneratedFunctionDefinition)
+			?.name
+		if(context == "print" || context == "println") {
+			'''"«stmt.value»"'''
+		}
+		else {
+			'''«IF EcoreUtil2.getContainerOfType(stmt, Operation) !== null»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
+				.data = "«stmt.value»",
+				.capacity = «stmt.value.length»,
+				.length = «stmt.value.length»,
+			}'''
+		}
 	}
 
 	@Traced dispatch def code(NullLiteral stmt) {

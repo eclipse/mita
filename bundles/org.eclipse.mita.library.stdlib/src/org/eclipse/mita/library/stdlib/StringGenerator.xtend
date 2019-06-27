@@ -16,6 +16,7 @@ package org.eclipse.mita.library.stdlib
 import com.google.inject.Inject
 import java.util.LinkedList
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
@@ -41,11 +42,51 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import java.util.Optional
 
 class StringGenerator extends ArrayGenerator {
 	
 	@Inject
 	protected extension ProgramDslTraceExtensions
+
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		return cf('''
+			for(size_t «i» = 0; «i» < «count»; ++«i») {
+				memcpy(«left.code»[«i»].data, «right.code»[«i»].data, sizeof(char) * «right.code»[«i»].length);
+				«left.code»[«i»].length = «right.code»[«i»].length;
+			}
+		''')
+	}
+
+	dispatch def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right, StringLiteral lit) {	
+		if(operator != AssignmentOperator.ASSIGN) {
+			return null;
+		}
+		return cf('''
+			char «cVariablePrefix»_temp[«lit.value.length»] = "«lit.value»";
+			memcpy(«left.code».data, «cVariablePrefix»_temp, sizeof(char)*«lit.value.length»);
+			«left.code».length = «lit.value.length»;
+		''').addHeader("string.h", true)
+	}
+
+	dispatch def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right, InterpolatedStringLiteral lit) {	
+		if(operator != AssignmentOperator.ASSIGN) {
+			return null;
+		}
+		val bufferName = cf('''«cVariablePrefix»_temp''');
+		val size = left.type.inferredSize?.eval
+		// need to allocate size+1 since snprintf always writes a zero byte at the end.
+		return cf('''
+			«getBufferType(context, left.type)» «bufferName»[«size + 1»] = {0};
+			int «bufferName»_written = snprintf(«bufferName», sizeof(«bufferName»), "«lit.pattern»"«FOR x : lit.content BEFORE ', ' SEPARATOR ', '»«x.getDataHandleForPrintf»«ENDFOR»);
+			if(«bufferName»_written > «size») {
+				«generateExceptionHandler(context, "EXCEPTION_STRINGFORMATEXCEPTION")»
+			}
+			memcpy(«left.code».data, «bufferName», sizeof(char)*«bufferName»_written);
+			«left.code».length = «bufferName»_written;
+		''').addHeader("string.h", true)
+	}
 
 	override CodeFragment generateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj) {
 		return codeFragmentProvider.create('''«doGenerateLength(temporaryBufferName, valRange, obj, obj.obj.orElse(null)).noNewline»''');

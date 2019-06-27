@@ -216,6 +216,9 @@ class VariableDeclaration extends Property, AbstractStatement {
 
 class ArrayLiteral extends Literal {
 	contains Expression[] values
+	op String toString() {
+		return "[" + values.join(", ") + "]";
+	}
 }
 
 abstract class AbstractLoopStatement extends AbstractStatement {
