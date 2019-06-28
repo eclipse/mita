@@ -25,6 +25,7 @@ import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
@@ -47,7 +48,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.types.TypeVariable
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
