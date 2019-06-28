@@ -49,7 +49,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		
 	public static final String ENUM_NAME = "enumOptional";
 	static enum enumOptional {
-		Some, None
+		None, Some
 	}
 	public static final String OPTIONAL_FLAG_MEMBER = "flag";
 	public static final String OPTIONAL_DATA_MEMBER = "data";
@@ -67,21 +67,6 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			return codeFragmentProvider.create('''ERROR: Unsuported operator: «operator.literal»''')
 		}
 		val haveInit = right !== null;
-				
-//		val initIsEref = haveInit && right instanceof ElementReferenceExpression;
-//		val initAsEref = if(initIsEref) {
-//			right as ElementReferenceExpression;
-//		}
-		
-//		val initIsOperation = initIsEref && initAsEref.reference instanceof Operation
-//		val initAsOperation = if(initIsOperation) {
-//			initAsEref.reference as Operation;
-//		}
-		
-//		val initIsGeneratedFunction = initAsOperation instanceof GeneratedFunctionDefinition;
-//		val initAsGeneratedFunction = if(initIsGeneratedFunction) {
-//			initAsOperation as GeneratedFunctionDefinition;
-//		}
 		
 		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(left.type, context)») ''');
 		
@@ -132,7 +117,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			}
 		}
 				
-		codeFragmentProvider.create('''«left.code» = «init.noNewline»''')
+		return codeFragmentProvider.create('''«left.code» = «init.noNewline»''')
 	}
 	
 	override CodeFragment generateHeader() {

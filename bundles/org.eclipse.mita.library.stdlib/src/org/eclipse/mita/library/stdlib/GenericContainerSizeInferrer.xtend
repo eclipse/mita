@@ -223,20 +223,6 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 			c.system.associate(result, modelType)
 			result;
 		], [it], [t1, xs | t1])
-//		(obj.typeArguments).indexed.zip(t.typeArguments.tail).forEach[ i_mt__tv |
-//			val i_mt = i_mt__tv.key;
-//			val i = i_mt.key + 1;
-//			val modelType = i_mt.value;
-//			val tv = i_mt__tv.value;
-//			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), tv);
-//			if(sizeTypeIndexes.contains(i)) {
-//				createConstraints(innerContext);
-//			}
-//			else if(dataTypeIndexes.contains(i)) {
-//				delegate.createConstraints(innerContext);
-//			}
-//			c.system.associate(tv, modelType);
-//		]
 		c.system.associate(newType, obj);
 	}
 	

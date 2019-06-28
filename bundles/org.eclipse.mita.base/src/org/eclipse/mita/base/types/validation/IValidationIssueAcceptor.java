@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "a: array<string<_>, _> must be of type \"string<string<C>>\"";
+			return "array<uint32, prim»i»2>? must be of type \"optional<array<uint32, '2>>\"";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

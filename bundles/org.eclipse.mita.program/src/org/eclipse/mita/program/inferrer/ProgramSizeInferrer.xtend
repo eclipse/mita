@@ -420,6 +420,9 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			val typeInstance = new TypeConstructorType(typeSpecifier, new AtomicType(typeSpecifier.type, typeName), typeArgs);
 			typeInstance;
 		}
+		else {
+			type
+		}
 		
 		// handle reference modifiers (a: &t)
 		val referenceTypeVarOrigin = typeRegistry.getTypeModelObject(typeSpecifier, StdlibTypeRegistry.referenceTypeQID);
@@ -430,7 +433,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		//handle optional modifier (a: t?)
 		val optionalTypeVarOrigin = typeRegistry.getTypeModelObject(typeSpecifier, StdlibTypeRegistry.optionalTypeQID);
 		val typeWithOptionalModifier = if(typeSpecifier.optional) {
-			new TypeConstructorType(null, new AtomicType(optionalTypeVarOrigin, "reference"), #[typeWithReferenceModifiers -> Variance.INVARIANT]);
+			new TypeConstructorType(null, new AtomicType(optionalTypeVarOrigin, "optional"), #[typeWithReferenceModifiers -> Variance.INVARIANT]);
 		}
 		else {
 			typeWithReferenceModifiers;

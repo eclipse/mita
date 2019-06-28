@@ -146,6 +146,46 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		}
 	}
 	
+		override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		val type = left.type as TypeConstructorType;
+		val dataType = type.typeArguments.get(1);
+		val size = codeFragmentProvider.create('''«type.inferredSize?.eval»''');
+		return codeFragmentProvider.create('''
+			«typeGenerator.code(context, type.typeArguments.tail.head)» «cVariablePrefix»_buf[«count»*«size»];
+			«statementGenerator.generateBulkAllocation(
+				context, 
+				codeFragmentProvider.create('''«cVariablePrefix»_array'''),
+				new CodeWithContext(dataType, Optional.empty, codeFragmentProvider.create('''«cVariablePrefix»_buf''')),
+				codeFragmentProvider.create('''«count»*«size»'''),
+				isTopLevel
+			)»''').addHeader("stddef.h", true)
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		val type = left.type as TypeConstructorType;
+		val dataType = type.typeArguments.get(1);
+		val i = codeFragmentProvider.create('''«cVariablePrefix»_i''');
+		val size = codeFragmentProvider.create('''«type.inferredSize?.eval»''');
+		return codeFragmentProvider.create('''
+		for(size_t «i» = 0; «i» < «count»; ++«i») {
+			«left.code»[«i»] = («typeGenerator.code(context, type)») {
+				.data = &«cVariablePrefix»_buf[«i»*«size»],
+				.length = 0,
+				.capacity = «size»
+			};
+		}
+		«statementGenerator.generateBulkAssignment(
+			context, 
+			codeFragmentProvider.create('''«cVariablePrefix»_array'''),
+			new CodeWithContext(dataType, Optional.empty, codeFragmentProvider.create('''«cVariablePrefix»_buf''')),
+			codeFragmentProvider.create('''«count»*«size»''')
+		)»''').addHeader("stddef.h", true)
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
 	static class PushGenerator extends AbstractFunctionGenerator {
 		@Inject
 		protected extension StatementGenerator;
@@ -239,25 +279,7 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		
 		@Inject
 		StdlibTypeRegistry typeRegistry;
-		
-//		override protected _doInfer(ElementReferenceExpression obj, AbstractType type) {
-//			if(obj.arguments.size === 1) {
-//				val ringBufferRerefence = obj.arguments.head.value;
-//				val rbReferenceType = BaseUtils.getType(ringBufferRerefence);
-//				if(rbReferenceType.name == "ringbuffer") {
-//					val outerResult = ringBufferRerefence.infer;
-//					if(outerResult instanceof ValidElementSizeInferenceResult) {
-//						if(outerResult.children.size > 0) {
-//							return outerResult.children.head;
-//						}
-//						return new InvalidElementSizeInferenceResult(ringBufferRerefence, rbReferenceType, "Ringbuffer inference was empty");
-//					}
-//				}				
-//			}
-//			
-//			return super._doInfer(obj, type);
-//		}
-				
+						
 		override createConstraints(InferenceContext c) {
 			val funCall = c.obj;
 			if(funCall instanceof ElementReferenceExpression) {
@@ -280,11 +302,19 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 			val rbRef = functionCall.arguments.head.code;
+			val innerType = resultVariable?.type;
 			return codeFragmentProvider.create('''
 				if(«rbRef».length == 0) {
 					«generateExceptionHandler(functionCall, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»
 				}
-				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».data[«rbRef».read];
+				«statementGenerator.initializationCode(
+					functionCall, 
+					resultVariable.code, 
+					resultVariable, 
+					AssignmentOperator.ASSIGN, 
+					new CodeWithContext(innerType, Optional.empty, codeFragmentProvider.create('''«rbRef».data[«rbRef».read]''')), 
+					true
+				)»
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
 	}
@@ -292,6 +322,7 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
 		
+		// no need to recurse, empty has type uint32
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 			val rbRef = functionCall.arguments.head.code;
 			return codeFragmentProvider.create('''
@@ -303,6 +334,7 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
 		
+		// no need to recurse, empty has type bool
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 			val rbRef = functionCall.arguments.head.code;
 			return codeFragmentProvider.create('''
@@ -314,54 +346,14 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
 		
+		// no need to recurse, empty has type bool
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 			val rbRef = functionCall.arguments.head.code;
 			return codeFragmentProvider.create('''
 				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».length == «rbRef».capacity;
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
-	}
-	
-	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
-		val type = left.type as TypeConstructorType;
-		val dataType = type.typeArguments.get(1);
-		val size = codeFragmentProvider.create('''«type.inferredSize?.eval»''');
-		return codeFragmentProvider.create('''
-			«typeGenerator.code(context, type.typeArguments.tail.head)» «cVariablePrefix»_buf[«count»*«size»];
-			«statementGenerator.generateBulkAllocation(
-				context, 
-				codeFragmentProvider.create('''«cVariablePrefix»_array'''),
-				new CodeWithContext(dataType, Optional.empty, codeFragmentProvider.create('''«cVariablePrefix»_buf''')),
-				codeFragmentProvider.create('''«count»*«size»'''),
-				isTopLevel
-			)»''').addHeader("stddef.h", true)
-	}
-	
-	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
-		val type = left.type as TypeConstructorType;
-		val dataType = type.typeArguments.get(1);
-		val i = codeFragmentProvider.create('''«cVariablePrefix»_i''');
-		val size = codeFragmentProvider.create('''«type.inferredSize?.eval»''');
-		return codeFragmentProvider.create('''
-		for(size_t «i» = 0; «i» < «count»; ++«i») {
-			«left.code»[«i»] = («typeGenerator.code(context, type)») {
-				.data = &«cVariablePrefix»_buf[«i»*«size»],
-				.length = 0,
-				.capacity = «size»
-			};
-		}
-		«statementGenerator.generateBulkAssignment(
-			context, 
-			codeFragmentProvider.create('''«cVariablePrefix»_array'''),
-			new CodeWithContext(dataType, Optional.empty, codeFragmentProvider.create('''«cVariablePrefix»_buf''')),
-			codeFragmentProvider.create('''«count»*«size»''')
-		)»''').addHeader("stddef.h", true)
-	}
-	
-	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
-		throw new UnsupportedOperationException("TODO: auto-generated method stub")
-	}
-	
+	}	
 }
 
 
