@@ -39,12 +39,19 @@ fn stringDemo() {
 ```
 
 There are cases where we cannot infer the length of a string, for example when it's modified within a loop.
-In such cases you will have to explicitly tell us how long your string can be in the worst-case: 
+In such cases you will have to explicitly tell us how long your string can be in the worst-case by specifying its size in the type of the variable: 
 ```TypeScript
-var msg = new string(100);
+var msg: string<100>;
 for(var i = 0; i < 5; i++) {
 	msg += `${i} `;
 }
+println(msg);
+```
+
+If you just want to specify that a variable holds a string and let the compiler infer its size, you can put an underscore in the place of the size argument:
+
+```TypeScript
+var msg: string<_> = "foobar"; // msg is inferred as string<6>
 println(msg);
 ```
 
@@ -204,36 +211,33 @@ alt DeviceState {
 }
 ```
 
-The code for `deviceState` changes slightly, since `vec3d_t`'s members have different names now. Constructing a `DeviceState.Movement` therefore looks like this:
+The code for `deviceState` changes slightly, since `vec3d_t`'s members have different names. Constructing a `DeviceState.Movement` therefore looks like this:
 
 ```TypeScript
-state = DeviceState.Movement(
+state = DeviceState.Movement(vec3d_t(
     x = accelerometer.x_axis.read(),
     y = accelerometer.y_axis.read(),
-    z = accelerometer.z_axis.read());
+    z = accelerometer.z_axis.read()));
 ```
-
-However you don't need to pass in a member of the struct at all; it is "imported" to 
-`DeviceState.Movement`. Binding data contained in the alternative works just as before as well.
 
 Some more things you can do are:
 
-- You can directly bind the whole element that was matched. This is especially useful for embedded types, since you get a variable of the embedded type instead of the sum type. The syntax for this is:
+- You can directly bind the whole element that was matched. The resulting variable will have the type of just that constructor. The syntax for this is:
 
 ```TypeScript
 is(v : DeviceState.Movement) {
-    /* v has type vec3d_t here */
+    /* v has type DeviceState.Movement here */
 }
 ```
 
-- You can bind using named parameters, e.g. the `DeviceState.Movement` above has the named parameters `accelerationX`, `accelerationY` and `accelerationZ`. This looks like this:
+- You can bind using named parameters, e.g. the first `DeviceState.Movement` declaration above has the named parameters `accelerationX`, `accelerationY` and `accelerationZ`. This looks like this:
 
 ```TypeScript
 is(DeviceState.Movement -> 
     x = vec3d.accelerationX, 
     z = vec3d.accelerationZ, 
     y = vec3d.accelerationY) {
-    /* Use a, b and c here */  
+    /* Use x, y and z here */  
 }
 ```
 
@@ -268,12 +272,13 @@ fn incVecs(a: anyVec) {
         is(anyVec.vec1d -> x) {
            b = anyVec.vec1d(x + 1);
         }
-        is(v: anyVec.vec2d) {
+        is(anyVec.vec2d -> v) {
           /* v is of type vec2d_t */
-          b = anyVec.vec2d(v.x + 1, v.y + 1);
+          b = anyVec.vec2d(vec2d_t(v.x + 1, v.y + 1));
         }
-        is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
-           b = anyVec.vec3d(x + 1, y + 1, z + 1);
+        is(v: anyVec.vec3d) {
+            /* v is of type anyVec.vec3d */
+           b = anyVec.vec3d(v.x + 1, v.y + 1, v.z + 1);
         }
         is(anyVec.vec4d -> x, y, z, w) {
            b = anyVec.vec4d(x + 1, y + 1, z + 1, w + 1);

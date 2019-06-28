@@ -82,7 +82,7 @@ package main;
 import platforms.xdk110;
 
 setup light {
-	integration_time = MS_12_5;
+	integration_time = .MS_12_5;
 }
 ```
 

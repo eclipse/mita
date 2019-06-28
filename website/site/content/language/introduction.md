@@ -21,7 +21,7 @@ It allows developers to inspect the generated code, learn from it and when they 
 Further, once you leave the prototyping phase or feel that you need more control over your system, you can always fall back to the C level and go from there.
 
 ## Anatomy of an Mita program
-Mita programs live in files ending with `.x`, for example `application.x`. Let's have a look at an example which implements a simple Bluetooth enabled shock detector:
+Mita programs live in files ending with `.mita`, for example `application.mita`. Let's have a look at an example which implements a simple Bluetooth enabled shock detector:
 ```TypeScript
 package main;
 
