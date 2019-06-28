@@ -34,6 +34,7 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class OptionalGenerator extends AbstractTypeGenerator {
 	
@@ -145,9 +146,13 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	}
 	
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
+		val dataType = (type as TypeConstructorType).typeArguments.tail.head;
+		if(dataType instanceof TypeVariable) {
+			return CodeFragment.EMPTY;
+		}
 		codeFragmentProvider.create('''
 		typedef struct { 
-			«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)» «OPTIONAL_DATA_MEMBER»;
+			«typeGenerator.code(context, dataType)» «OPTIONAL_DATA_MEMBER»;
 			«ENUM_NAME» «OPTIONAL_FLAG_MEMBER»;
 		} «typeGenerator.code(context, type)»;
 		''').addHeader('MitaGeneratedTypes.h', false);

@@ -84,7 +84,7 @@ class StringGenerator extends ArrayGenerator {
 		val size = left.type.inferredSize?.eval
 		// need to allocate size+1 since snprintf always writes a zero byte at the end.
 		return cf('''
-			«getBufferType(context, left.type)» «bufferName»[«size + 1»] = {0};
+			«getDataTypeCCode(context, left.type)» «bufferName»[«size + 1»] = {0};
 			int «bufferName»_written = snprintf(«bufferName», sizeof(«bufferName»), "«lit.pattern»"«FOR x : lit.content BEFORE ', ' SEPARATOR ', '»«x.getDataHandleForPrintf»«ENDFOR»);
 			if(«bufferName»_written > «size») {
 				«generateExceptionHandler(context, "EXCEPTION_STRINGFORMATEXCEPTION")»
@@ -130,7 +130,7 @@ class StringGenerator extends ArrayGenerator {
 	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, InterpolatedStringLiteral l) {
 		codeFragmentProvider.create('''
 				// need to allocate size+1 since snprintf always writes a zero byte at the end.
-				«getBufferType(context, arrayType)» «bufferName»[«size» + 1] = {0};
+				«getDataTypeCCode(context, arrayType)» «bufferName»[«size» + 1] = {0};
 				int «bufferName»_written = snprintf(«bufferName», sizeof(«bufferName»), "«l.pattern»"«FOR x : l.content BEFORE ', ' SEPARATOR ', '»«x.getDataHandleForPrintf»«ENDFOR»);
 				if(«bufferName»_written > «size») {
 					«generateExceptionHandler(context, "EXCEPTION_STRINGFORMATEXCEPTION")»
@@ -250,7 +250,7 @@ class StringGenerator extends ArrayGenerator {
 		return results.map[x | EscapeWhitespaceInStringStage.replaceSpecialCharacters(x) ];
 	}
 
-	override CodeFragment getBufferType(EObject context, AbstractType type) {
+	override CodeFragment getDataTypeCCode(EObject context, AbstractType type) {
 		return codeFragmentProvider.create('''char''')
 	}
 
