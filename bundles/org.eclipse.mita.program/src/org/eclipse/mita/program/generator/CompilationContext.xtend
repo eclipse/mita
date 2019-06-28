@@ -145,8 +145,9 @@ class CompilationContext {
 				it -> BaseUtils.getType(it)
 			].filter[
 				!(it.value instanceof TypeScheme) && TypeUtils.isGeneratedType(program.eResource, it.value)
-			].map[it.value].toIterable
-		].groupBy[it.toString].entrySet.map[it.value.head];
+			].toIterable
+		].groupBy[it.value.toString].entrySet
+		.map[it.value.head.value];
 	}
 	
 	def getResourceGraph() {

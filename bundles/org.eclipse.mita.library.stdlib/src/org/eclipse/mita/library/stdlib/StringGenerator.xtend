@@ -80,7 +80,7 @@ class StringGenerator extends ArrayGenerator {
 	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, InterpolatedStringLiteral l) {
 		// need to allocate size+1 since snprintf always writes a zero byte at the end.
 		codeFragmentProvider.create('''
-				«getBufferType(context, arrayType)» «bufferName»[«size + 1»] = {0};
+				«getDataTypeCCode(context, arrayType)» «bufferName»[«size + 1»] = {0};
 				int «bufferName»_written = snprintf(«bufferName», sizeof(«bufferName»), "«l.pattern»"«FOR x : l.content BEFORE ', ' SEPARATOR ', '»«x.getDataHandleForPrintf»«ENDFOR»);
 				if(«bufferName»_written > «size») {
 					«generateExceptionHandler(context, "EXCEPTION_STRINGFORMATEXCEPTION")»
@@ -200,7 +200,7 @@ class StringGenerator extends ArrayGenerator {
 		return results.map[x | EscapeWhitespaceInStringStage.replaceSpecialCharacters(x) ];
 	}
 
-	override CodeFragment getBufferType(EObject context, AbstractType type) {
+	override CodeFragment getDataTypeCCode(EObject context, AbstractType type) {
 		return codeFragmentProvider.create('''char''')
 	}
 

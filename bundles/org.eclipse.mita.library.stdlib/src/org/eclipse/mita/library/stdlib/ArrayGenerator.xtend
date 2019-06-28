@@ -47,6 +47,7 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.base.types.TypeVariable
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -74,9 +75,12 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
+		if(getDataType(type) instanceof TypeVariable) {
+			return CodeFragment.EMPTY;
+		}
 		codeFragmentProvider.create('''
 		typedef struct {
-			«getBufferType(context, type)»* data;
+			«getDataTypeCCode(context, type)»* data;
 			uint32_t length;
 			uint32_t capacity;
 		} «typeGenerator.code(context, type)»;
@@ -92,7 +96,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	protected def CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init) {
 		return codeFragmentProvider.create('''
-			«getBufferType(context, arrayType)» «bufferName»[«size»]«IF init !== null» = «statementGenerator.code(init)»«ENDIF»;
+			«getDataTypeCCode(context, arrayType)» «bufferName»[«size»]«IF init !== null» = «statementGenerator.code(init)»«ENDIF»;
 		''')
 	}
 	
@@ -123,12 +127,16 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return cf;
 	}
 	
-	def CodeFragment getBufferType(EObject context, AbstractType type) {
-		typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head);
+	def getDataType(AbstractType type) {
+		(type as TypeConstructorType).typeArguments.tail.head;
+	}
+	
+	def CodeFragment getDataTypeCCode(EObject context, AbstractType type) {
+		typeGenerator.code(context, type.dataType);
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''array_«getBufferType(context, type)»''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''array_«getDataTypeCCode(context, type)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
 	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
@@ -244,7 +252,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			«lengthLeft» «operator.literal» «lengthRight»«IF valRange !== null»«IF valRange.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«IF valRange.upperBound !== null» - («lengthRight» - «valRange.upperBound.code.noTerminator»)«ENDIF»«ENDIF»;
 		''');
 				
-		val typeSize = codeFragmentProvider.create('''sizeof(«getBufferType(context, type)»)''')
+		val typeSize = codeFragmentProvider.create('''sizeof(«getDataTypeCCode(context, type)»)''')
 		
 		codeFragmentProvider.create('''
 		«IF rightExprIsValueLit»
