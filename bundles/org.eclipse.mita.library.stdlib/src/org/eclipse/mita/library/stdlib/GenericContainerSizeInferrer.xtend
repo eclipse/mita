@@ -57,6 +57,7 @@ import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.program.ReturnParameterReference
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
+import org.eclipse.mita.program.EventHandlerVariableDeclaration
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -201,10 +202,12 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		c.system.associate(summationType, obj);
 	}
 	
+	dispatch def void doCreateConstraints(InferenceContext c, EventHandlerVariableDeclaration variable, AbstractType t) {
+		inferUnmodifiedFrom(c.system, variable, EcoreUtil2.getContainerOfType(variable, EventHandlerDeclaration).event);
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType t) {
 		// recurse on sizes
-		val sizeTypeIndexes = sizeTypeIndexes;
-		val dataTypeIndexes = dataTypeIndexes;
 		val newType = setTypeArguments(t, [i, t1| 
 			val modelType = obj.typeArguments.get(i - 1);
 			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), t1);

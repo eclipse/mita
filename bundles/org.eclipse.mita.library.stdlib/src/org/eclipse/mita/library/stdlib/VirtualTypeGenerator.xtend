@@ -31,11 +31,15 @@ class VirtualTypeGenerator extends AbstractTypeGenerator {
 		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}
 	
-	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
 		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}
 	
-	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
 		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}
 	

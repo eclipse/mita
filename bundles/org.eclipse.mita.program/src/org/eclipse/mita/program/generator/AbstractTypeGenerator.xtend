@@ -44,6 +44,13 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
+	
+	/**
+	 * Produces initialization code that cannot be put globally.
+	 */
+	def CodeFragment generateGlobalInitialization(AbstractType type, EObject context, CodeFragment varName, Expression initialization) {
+		CodeFragment.EMPTY;
+	}
 		
 	/**
 	 * Produces code which implements an assignment operation. 
@@ -56,11 +63,18 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	}
 	
 	/**
-	 * Produces code that reserves static memory (global/stack) for *count* instances and assigns them in left.
+	 * Produces code that reserves static memory (global/stack) for *count* instances.
+	 * Left is a C-array of length at least *count*.
+	 * Produced C-code might be global.
+	 */
+	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel);
+	
+	/**
+	 * Produces code that assigns *count* instances in left.
 	 * Left is a C-array of length at least *count*.
 	 * Produced C-code is always in a function context.
 	 */
-	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count);
+	def CodeFragment generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count);
 	
 	/**
 	 * Produces code that bulk copies data from C-array to C-array.

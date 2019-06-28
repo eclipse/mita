@@ -81,6 +81,8 @@ import org.eclipse.mita.program.FunctionParameterDeclaration
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.base.types.SystemResourceEvent
+import org.eclipse.mita.program.EventHandlerVariableDeclaration
+import org.eclipse.mita.program.EventHandlerDeclaration
 
 /**
  * Hierarchically infers the size of a data element.
@@ -363,6 +365,10 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	
 	dispatch def void doCreateConstraints(InferenceContext c, TypeExpressionSpecifier typeSpecifier) {
 		inferUnmodifiedFrom(c.system, typeSpecifier, typeSpecifier.value);
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, EventHandlerVariableDeclaration variable) {
+		inferUnmodifiedFrom(c.system, variable, EcoreUtil2.getContainerOfType(variable, EventHandlerDeclaration).event);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, NullTypeSpecifier typeSpecifier) {

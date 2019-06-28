@@ -129,6 +129,8 @@ import static extension org.eclipse.mita.base.types.TypeUtils.getConstraintSyste
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
+import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.ConfigurationItemValue
 
 class StatementGenerator {
 
@@ -165,22 +167,29 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(StringLiteral stmt) {
-		val context = stmt
+		val printContext = stmt
 			?.eContainer?.castOrNull(PrimitiveValueExpression)
 			?.eContainer?.castOrNull(Argument)
 			?.eContainer?.castOrNull(ElementReferenceExpression)
 			?.reference?.castOrNull(GeneratedFunctionDefinition)
 			?.name
-		if(context == "print" || context == "println") {
-			'''"«stmt.value»"'''
+		val setupContext = EcoreUtil2.getContainerOfType(stmt, SystemResourceSetup) as EObject ?:
+						   EcoreUtil2.getContainerOfType(stmt, ConfigurationItemValue)
+		// don't create complicated stuff for:
+		// - print (nicer code)
+		// - setup (easier usage in platform components)
+		if(printContext == "print" || printContext == "println" || setupContext !== null) {
+			return '''"«stmt.value»"'''
 		}
-		else {
-			'''«IF EcoreUtil2.getContainerOfType(stmt, Operation) !== null»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
+
+		return '''
+			«IF EcoreUtil2.getContainerOfType(stmt, Operation) !== null»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
 				.data = "«stmt.value»",
 				.capacity = «stmt.value.length»,
 				.length = «stmt.value.length»,
-			}'''
-		}
+			}
+		'''
+		
 	}
 
 	@Traced dispatch def code(NullLiteral stmt) {
@@ -278,11 +287,19 @@ class StatementGenerator {
 		'''«stmt.owner.code».data[«stmt.arraySelector.code.noTerminator»]'''
 	}
 	
-	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
 		if(isGeneratedType(context, left.type)) {
 			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
 			
-			return generator.generateBulkAllocation(context, cVariablePrefix, left, count);
+			return generator.generateBulkAllocation(context, cVariablePrefix, left, count, isTopLevel);
+		}
+		return cf('''''')
+	}
+	def CodeFragment generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		if(isGeneratedType(context, left.type)) {
+			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
+			
+			return generator.generateBulkAssignment(context, cVariablePrefix, left, count);
 		}
 		return cf('''''')
 	}
@@ -663,12 +680,12 @@ class StatementGenerator {
 				return generateFunCallStmt(left, initialization);	
 			}
 			else {
-				return context.trace('''«tempVarName» «op» «right.code.noTerminator»;''');
+				return context.trace('''«left.code» «op» «right.code.noTerminator»;''');
 			}
 		} else if(initialization instanceof ModalityAccess) {
-			return context.trace('''«tempVarName» «op» «right.code.noTerminator»;''');
+			return context.trace('''«left.code» «op» «right.code.noTerminator»;''');
 		} else if(alwaysGenerate && right !== null) {
-			return context.trace('''«tempVarName» «op» «right.code.noTerminator»;''');
+			return context.trace('''«left.code» «op» «right.code.noTerminator»;''');
 		}
 		return CodeFragment.EMPTY;
 	}

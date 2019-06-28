@@ -20,23 +20,23 @@ import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
-import org.eclipse.mita.program.generator.MainSystemResourceGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
 
 class UserCodeFileGenerator { 
@@ -163,7 +163,11 @@ class UserCodeFileGenerator {
 				val type = BaseUtils.getType(it);
 				return !ModelUtils.isStructuralType(type, it);
 			]»
-			«statementGenerator.initializationCode(variable)»
+			«val type = BaseUtils.getType(variable)»
+			«val generator = generatorRegistry.getGenerator(program.eResource, type)?.castOrNull(AbstractTypeGenerator)»
+			«IF generator !== null»
+			«generator.generateGlobalInitialization(type, variable, codeFragmentProvider.create('''«variable.name»'''), variable.initialization)»
+			«ENDIF»
 			«generateExceptionHandler(null, "exception")»
 			
 			«ENDFOR»

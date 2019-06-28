@@ -58,6 +58,12 @@ class StringGenerator extends ArrayGenerator {
 			}
 		''')
 	}
+	
+	override CodeFragment copyContents(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		return cf('''
+			memcpy(«left.code», «right.code», sizeof(char) * «count»);
+		''')
+	}
 
 	dispatch def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right, StringLiteral lit) {	
 		if(operator != AssignmentOperator.ASSIGN) {

@@ -107,6 +107,20 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		''')
 	}
 	
+	override generateGlobalInitialization(AbstractType type, EObject context, CodeFragment varName, Expression initialization) {
+		val capacity = type.inferredSize?.eval
+		val occurrence = getOccurrence(context);
+		val bufferName = cf('''data_«varName»_«occurrence»''');
+		return cf('''
+			«statementGenerator.generateBulkAssignment(
+				context, 
+				codeFragmentProvider.create('''«varName»_array'''),
+				new CodeWithContext((type as TypeConstructorType).typeArguments.get(1), Optional.empty, bufferName),
+				cf('''«capacity»''')
+			)»
+		''')
+	}
+	
 	override CodeFragment generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		val capacity = type.inferredSize?.eval
 		// if we are top-level, we must do initialization if there is any
@@ -132,8 +146,12 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			context, 
 			codeFragmentProvider.create('''«varName»_array'''),
 			new CodeWithContext((type as TypeConstructorType).typeArguments.get(1), Optional.empty, bufferName),
-			cf('''«capacity»''')
+			cf('''«capacity»'''),
+			isTopLevel
 		)»
+		«IF !isTopLevel»
+		«generateGlobalInitialization(type, context, varName, initialization)»
+		«ENDIF»
 		''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
@@ -268,7 +286,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		cf('''
 		«capacityCheck»
 		/* «left.code» «operator.literal» «codeRightExpr» */
-		«statementGenerator.generateBulkCopyStatements(
+		«copyContents(
 			context, 
 			cf('''«cVariablePrefix»_i'''),
 			new CodeWithContext((left.type as TypeConstructorType).typeArguments.get(1), Optional.empty, dataLeft),
@@ -279,6 +297,12 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		«lengthModifyStmt»
 		''').addHeader("string.h", true)
 		.addHeader('MitaGeneratedTypes.h', false);
+	}
+	
+	def CodeFragment copyContents(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		cf('''
+			«statementGenerator.generateBulkCopyStatements(context, i,	left, right, count)»
+		''')
 	}
 	
 	static class LengthGenerator extends AbstractFunctionGenerator {
@@ -312,13 +336,29 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return cf('''CANT COERCE «inner.eClass.name»''');
 	}
 	
-	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		val arrayType = left.type as TypeConstructorType;
+		val dataType = arrayType.typeArguments.get(1);
+		val size = cf('''«arrayType.inferredSize?.eval»''');
+		return cf('''
+			«generateBufferStmt(context, arrayType, cf('''«cVariablePrefix»_buf'''), cf('''«count»*«size»'''), null)»
+			
+			«statementGenerator.generateBulkAllocation(
+				context, 
+				codeFragmentProvider.create('''«cVariablePrefix»_array'''),
+				new CodeWithContext(dataType, Optional.empty, cf('''«cVariablePrefix»_buf''')),
+				cf('''«count»*«size»'''),
+				isTopLevel
+			)»
+		''').addHeader("stddef.h", true)
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
 		val arrayType = left.type as TypeConstructorType;
 		val dataType = arrayType.typeArguments.get(1);
 		val size = cf('''«arrayType.inferredSize?.eval»''');
 		val i = cf('''«cVariablePrefix»_i''');
 		return cf('''
-			«generateBufferStmt(context, arrayType, cf('''«cVariablePrefix»_buf'''), cf('''«count»*«size»'''), null)»
 			for(size_t «i» = 0; «i» < «count»; ++«i») {
 				«left.code»[«i»] = («typeGenerator.code(context, arrayType)») {
 					.data = &«cVariablePrefix»_buf[«i»*«size»],
@@ -326,13 +366,13 @@ class ArrayGenerator extends AbstractTypeGenerator {
 					.capacity = «size»
 				};
 			}
-			«statementGenerator.generateBulkAllocation(
+			«statementGenerator.generateBulkAssignment(
 				context, 
 				codeFragmentProvider.create('''«cVariablePrefix»_array'''),
 				new CodeWithContext(dataType, Optional.empty, cf('''«cVariablePrefix»_buf''')),
 				cf('''«count»*«size»''')
 			)»
-		''').addHeader("stddef.h", true)
+		''')
 	}
 	
 	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {

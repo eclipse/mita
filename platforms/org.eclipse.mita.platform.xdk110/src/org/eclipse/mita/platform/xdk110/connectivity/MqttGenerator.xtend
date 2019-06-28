@@ -15,6 +15,8 @@ package org.eclipse.mita.platform.xdk110.connectivity
 
 import com.google.inject.Inject
 import java.net.URI
+import java.util.stream.Collectors
+import org.eclipse.mita.library.stdlib.RingbufferGenerator.PushGenerator
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
@@ -27,8 +29,13 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.IFileSystemAccess2
-import java.util.stream.Collectors
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import java.util.Optional
+import org.eclipse.mita.program.generator.CodeWithContext
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.library.stdlib.RingbufferGenerator
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 
@@ -42,7 +49,13 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	protected extension StatementGenerator statementGenerator
 	
 	@Inject
-	protected GeneratorUtils generatorUtils
+	protected extension GeneratorUtils generatorUtils
+	
+	@Inject
+	protected PushGenerator pushGenerator
+	
+	@Inject
+	StdlibTypeRegistry typeRegistry
 	
 	override generateAdditionalFiles(IFileSystemAccess2 fsa) {
 		val brokerUri = new URI(configuration.getString("url"));
@@ -304,7 +317,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		«generatorUtils.generateExceptionHandler(setup, "exception")»
 
 		mqttSession.MQTTVersion = 4;
-		mqttSession.keepAliveInterval = 60;
+		mqttSession.keepAliveInterval = «configuration.getExpression("keepAliveInterval")?.code ?: 60»;
 		mqttSession.cleanSession = false;
 		«IF lastWill instanceof SumTypeRepr»
 			«IF lastWill.hasLastWill»
@@ -397,6 +410,10 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	override generateAdditionalImplementation() {
 		codeFragmentProvider.create('''
+		«FOR handler: eventHandler»
+		extern ringbuffer_array_char rb_«handler.baseName»;
+		«ENDFOR»
+		
 		/**
 		 * @brief Callback function used by the stack to communicate events to the application.
 		 * Each event will bring with it specialized data that will contain more information.
@@ -457,9 +474,26 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			case MQTT_SUBSCRIPTION_REMOVED:
 				exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_REMOVED);
 				break;
-			case MQTT_INCOMING_PUBLISH:
-				printf("Message received: %.*s\n", eventData->publish.length, eventData->publish.payload);
+			case MQTT_INCOMING_PUBLISH: {
+				array_char msg = (array_char) {
+					.data = eventData->publish.payload,
+					.capacity = eventData->publish.length,
+					.length = eventData->publish.length
+				};
+				«FOR handler: eventHandler»
+				«pushGenerator.generate(
+					handler,
+					new CodeWithContext(RingbufferGenerator.wrapInRingbuffer(typeRegistry, handler, BaseUtils.getType(handler.payload)), Optional.empty, codeFragmentProvider.create('''rb_«handler.baseName»''')),
+					codeFragmentProvider.create('''msg''')
+				)»
+				exception = CmdProcessor_enqueue(&Mita_EventQueue, «handler.handlerName», NULL, 0);
+				if(exception != RETCODE_OK)
+				{
+					Retcode_RaiseError(exception);
+				}
+				«ENDFOR»
 				break;
+			}
 			case MQTT_PUBLISHED_DATA:
 				mqttWasPublished = true;
 				if (pdTRUE != xSemaphoreGive(mqttPublishHandle))
@@ -514,7 +548,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			}
 			
 			xSemaphoreTake(mqttSubscribeHandle, 0UL);
-			rc = Mqtt_subscribe(&mqttSession, sizeof(topics), topics, qoss);
+			rc = Mqtt_subscribe(&mqttSession, sizeof(topics)/sizeof(StringDescr_T), topics, qoss);
 			if(RC_OK != rc) {
 				«loggingGenerator.generateLogStatement(LogLevel.Error, '''MQTT_Connect : Failed to subscribe to topics: 0x%d''', codeFragmentProvider.create('''rc'''))»
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_SUBSCRIBE_FAILED);
@@ -533,6 +567,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		static retcode_t MqttEventHandler(MqttSession_T* session, MqttEvent_t event, const MqttEventData_t* eventData);
 		static Retcode_T connectToBackend(void);
 		''')
+		.addHeader("MitaGeneratedTypes.h", false)
+		.addHeader('MitaEvents.h', false)
 	}
 
 	def getQosFromInt(int qos) {

@@ -219,6 +219,8 @@ class SystemResourceHandlingGenerator {
 				eventSource.eContainer as AbstractSystemResource;
 			} else if(eventSource instanceof AbstractSystemResource) {
 				eventSource;
+			} else if(eventSource instanceof SystemResourceSetup) {
+				eventSource.type
 			} else {
 				return false;
 			}

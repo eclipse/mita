@@ -14,6 +14,8 @@
 package org.eclipse.mita.platform.xdk110.sensors
 
 import com.google.inject.Inject
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.library.stdlib.RingbufferGenerator.PushGenerator
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ModalityAccess
@@ -24,8 +26,10 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.library.stdlib.RingbufferGenerator
-import org.eclipse.mita.library.stdlib.RingbufferGenerator.PushGenerator
+import org.eclipse.mita.base.util.BaseUtils
+import java.util.Optional
 
 class ButtonGenerator extends AbstractSystemResourceGenerator {
 
@@ -37,6 +41,9 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 	
 	@Inject
 	protected PushGenerator pushGenerator
+	
+	@Inject
+	StdlibTypeRegistry typeRegistry
 		
     override generateSetup() {
         codeFragmentProvider.create('''
@@ -71,9 +78,13 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
             	«ENDFOR»
 				«FOR changedHandler: changedHandlers»
 				«pushGenerator.generate(
-					codeFragmentProvider.create('''rb_«changedHandler.baseName»'''),
-					codeFragmentProvider.create('''data == BSP_XDK_BUTTON_PRESSED'''),
-					null
+					changedHandler,
+					new CodeWithContext(
+						RingbufferGenerator.wrapInRingbuffer(typeRegistry, changedHandler, BaseUtils.getType(changedHandler.payload)), 
+						Optional.empty, 
+						codeFragmentProvider.create('''rb_«changedHandler.baseName»''')
+					),
+					codeFragmentProvider.create('''data == BSP_XDK_BUTTON_PRESSED''')
 				)»
 				exception = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «changedHandler.handlerName», NULL, data);
 				if(exception != RETCODE_OK)

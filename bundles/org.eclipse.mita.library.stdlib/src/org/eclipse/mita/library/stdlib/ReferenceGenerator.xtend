@@ -56,11 +56,15 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 		
 	}
 	
-	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
-	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
