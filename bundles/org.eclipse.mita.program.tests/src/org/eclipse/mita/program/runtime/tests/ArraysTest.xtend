@@ -37,12 +37,6 @@ class ArraysTest extends AbstractRuntimeTest {
 			catch(InvalidRangeException) {
 				println("error a0");
 			}
-«««			try {
-«««				foo1(ar);
-«««			}
-«««			catch(InvalidRangeException) {
-«««				println("error a1");
-«««			}
 			try {
 				let a2 = foo2();
 				printarray(a2);
@@ -50,12 +44,6 @@ class ArraysTest extends AbstractRuntimeTest {
 			catch(InvalidRangeException) {
 				println("error a2");
 			}
-«««			try {
-«««				foo3(ar, [1,2,3,4]);
-«««			}
-«««			catch(InvalidRangeException) {
-«««				println("error a3");
-«««			}
 			try {
 				let a4 = foo4();
 				printarray(a4);
@@ -63,24 +51,12 @@ class ArraysTest extends AbstractRuntimeTest {
 			catch(InvalidRangeException) {
 				println("error a4");
 			}
-«««			try {
-«««				foo5(ar);
-«««			}
-«««			catch(InvalidRangeException) {
-«««				println("error a5");
-«««			}
 			try {
 				foo6();
 			}
 			catch(InvalidRangeException) {
 				println("error a6");
 			}
-«««			try {
-«««				foo7(ar, [2,3,4,5]);
-«««			}
-«««			catch(InvalidRangeException) {
-«««				println("error a7");
-«««			}
 		} 
 		
 		every 1 second {
@@ -99,57 +75,33 @@ class ArraysTest extends AbstractRuntimeTest {
 		}
 		
 		fn foo0() {
-			var a: array<int8> = [1,2,3,4];
+			var a: array<int8, _> = [1,2,3,4];
 			a += [5 as int8, 6,7]; 
 			a = [10,11,12,13,14,15];
 			return a; 
 		}
 		
-«««		fn foo1(a: array<int8>) {
-«««			a = [1,2,3,4];
-«««			a += [5 as int8, 6,7]; 
-«««			a = [10,11,12,13,14,15]; 
-«««		}
-		
 		fn foo2() {
-			var b: array<int8> = [1,2,3,4];
-			var a: array<int8> = b;
+			var b: array<int8, _> = [1,2,3,4];
+			var a: array<int8, _> = b;
 			a += b; 
 			a = b; 
 			return a;
 		} 
 		
-«««		fn foo3(a: array<int8>, b: array<int8>) { 
-«««			a = b;
-«««			a += b; 
-«««			a = b;  
-«««		}
-		
 		fn foo4() {
-			var a: array<int8> = [1,2,3,4];
+			var a: array<int8, _> = [1,2,3,4];
 			a += [5 as int8, 6,7]; 
 			a = [10,11,12,13,14,15];
 			return a[1:2]; 
 		}
 		
-«««		fn foo5(a: array<int8>) {
-«««			a = [1,2,3,4];
-«««			a += [5 as int8, 6,7]; 
-«««			a = [10,11,12,13,14,15]; 
-«««		}   
-		
 		fn foo6() {
-			var b: array<int8> = [1,2,3,4];
-			var a: array<int8> = b[1:2];
+			var b: array<int8, _> = [1,2,3,4];
+			var a: array<int8, _> = b[1:2];
 			a += b[1:2];  
 			a = b[1:2]; 
 		}
-		
-«««		fn foo7(a: array<int8>, b: array<int8>) {
-«««			a = b[1:2];
-«««			a += b[1:2]; 
-«««			a = b[1:2]; 
-«««		} 
 		''').key;
 		compileMita(projectPath);
 		compileC(projectPath, "all");
