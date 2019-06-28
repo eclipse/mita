@@ -80,6 +80,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	
 	/**
 	 * Produces header definitions, called per different instance of type arguments.
+	 * For now implementors need to check that all data types contained in type are bound to an actual type (instanceof TypeVariable is false). 
 	 */
 	def CodeFragment generateHeader(EObject context, AbstractType type) {
 		return CodeFragment.EMPTY;
