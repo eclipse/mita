@@ -50,7 +50,6 @@ class OptionalSizeInferrer extends GenericContainerSizeInferrer {
 	}
 	
 	dispatch override void doCreateConstraints(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType t) {
-		// recurse on data
 		if(obj.optional) {
 			val modelType = obj.innerSpecifier;
 			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), t.typeArguments.get(1)); 

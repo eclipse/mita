@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.util.EcoreUtil
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Type
@@ -25,7 +26,6 @@ import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.EventHandlerDeclaration
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.SystemEventSource
@@ -37,11 +37,6 @@ import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
-import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.base.types.PackageAssociation
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.program.resource.PluginResourceLoader
-import com.google.inject.Module
 
 class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 

@@ -266,7 +266,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	protected def getExtensionMethodScope(Expression context, EReference reference, AbstractType type) {
 		return new FilteringScope(delegate.getScope(context, reference), [ x |
 			(x.EClass == ProgramPackage.Literals.FUNCTION_DEFINITION ||
-				x.EClass == ProgramPackage.Literals.GENERATED_FUNCTION_DEFINITION) && x.isApplicableOn(type)
+				x.EClass == TypesPackage.Literals.GENERATED_FUNCTION_DEFINITION) && x.isApplicableOn(type)
 		]);
 	}
 

@@ -31,9 +31,11 @@ import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.GenericElement
 import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.TypeAccessor
@@ -61,11 +63,11 @@ import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.FunctionParameterDeclaration
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
+import org.eclipse.mita.program.ReturnParameterDeclaration
 import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
@@ -82,8 +84,6 @@ import org.eclipse.xtext.validation.ComposedChecks
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.program.ReturnParameterDeclaration
-import org.eclipse.mita.base.types.Operation
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,

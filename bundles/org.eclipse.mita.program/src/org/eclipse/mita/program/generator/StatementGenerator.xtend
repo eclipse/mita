@@ -48,11 +48,11 @@ import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
-import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
@@ -81,13 +81,13 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ArrayRuntimeCheckStatement
+import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.IfStatement
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
@@ -98,7 +98,6 @@ import org.eclipse.mita.program.LoopBreakerStatement
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.NativeFunctionDefinition
-import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.NoopStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
@@ -108,6 +107,7 @@ import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SourceCodeComment
+import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.ThrowExceptionStatement
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
@@ -128,9 +128,6 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypeUtils.getConstraintSystem
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
-import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.ConfigurationItemValue
 
 class StatementGenerator {
 
@@ -488,6 +485,15 @@ class StatementGenerator {
 		return #["NamedProductType", "StructureType"].findFirst[it == eClass] !== null;
 	}
 	
+	@Traced def IGeneratorNode generateGeneratedFunctionCall(ElementReferenceExpression funCall, CodeWithContext target, GeneratedFunctionDefinition function) {
+		val generator = registry.getGenerator(function);
+		if(generator === null) {
+			// contract: no generator means NOOP.
+			return ''''''
+		}
+		'''«generator.generate(target, funCall).noTerminator»''';
+	}
+	
 	@Traced dispatch def IGeneratorNode code(ElementReferenceExpression stmt) {
 		val ref = stmt.reference
 		val id = ref?.baseName
@@ -501,12 +507,8 @@ class StatementGenerator {
 			} else if (ref instanceof FunctionDefinition) {
 				'''«ref.generateFunctionCall(cf('''NULL''').addHeader("stdlib.h", true), stmt)»'''
 			} else if (ref instanceof GeneratedFunctionDefinition) {
-				'''«registry.getGenerator(ref)?.generate(
-					// representation of passing C-NULL
-					// this seems bad?
-					null, 
-					stmt
-				)»''';
+				// target is null if we aren't part of an assignment
+				'''«generateGeneratedFunctionCall(stmt, null, ref)»''';
 			} else if(ref instanceof NativeFunctionDefinition) {
 				if(ref.checked) {
 					'''«ref.generateNativeFunctionCallChecked(cf('''NULL'''), stmt)»'''
@@ -618,7 +620,7 @@ class StatementGenerator {
 			''')
 		} else if (reference instanceof GeneratedFunctionDefinition) {
 			return cf('''
-				«registry.getGenerator(reference).generate(left, initialization).noTerminator»;
+				«generateGeneratedFunctionCall(initialization, left, reference)»;
 			''')
 		} else if(reference instanceof NativeFunctionDefinition) {
 			if(reference.checked) {

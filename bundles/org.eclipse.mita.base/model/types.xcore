@@ -337,6 +337,12 @@ class Parameter extends TypedElement, NamedElement {
 	}
 }
 
+abstract class ExportableOperation extends Operation, Exportable {
+	op String toString() {
+		return super.toString();
+	}
+}
+
 abstract class Expression {
 }
 class ParameterWithDefaultValue extends Parameter {
@@ -415,6 +421,15 @@ class StructureType extends StructuralType, HasAccessors, Exportable {
 	}
 }
 
+class GeneratedFunctionDefinition extends ExportableOperation, GeneratedElement {
+	op String getId(){
+		return null;
+	}
+	op String toString() {
+		return super.toString();
+	}
+}
+
 class GeneratedType extends ComplexType, GeneratedElement, Exportable {	
 	op String toString() {
 		super.toString
@@ -422,7 +437,7 @@ class GeneratedType extends ComplexType, GeneratedElement, Exportable {
 	contains Operation constructor
 }
 
-class GeneratedTypeConstructor extends Operation, GeneratedObject {
+class GeneratedTypeConstructor extends GeneratedFunctionDefinition, GeneratedObject {
 	contains transient TypeReferenceSpecifier generatedTypeSpecifier
 	
 	op String getName() {
@@ -433,6 +448,16 @@ class GeneratedTypeConstructor extends Operation, GeneratedObject {
 			null;
 		}
 		return "con_" + generatedType?.name
+	}
+	
+	op boolean isExported() {
+		val generatedType = if(eContainer instanceof GeneratedType) {
+			eContainer as GeneratedType;
+		} 
+		else {
+			return false;
+		}
+		return generatedType.isExported; 
 	}
 	
 	op TypeParameter[] getTypeParameters() {

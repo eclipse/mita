@@ -16,9 +16,9 @@ package org.eclipse.mita.program.ui.highlighting
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.platform.Modality
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.xtext.ide.editor.syntaxcoloring.DefaultSemanticHighlightingCalculator
 import org.eclipse.xtext.ide.editor.syntaxcoloring.IHighlightedPositionAcceptor
 import org.eclipse.xtext.nodemodel.INode

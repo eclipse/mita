@@ -78,13 +78,16 @@ GeneratedType returns GeneratedType:
 		'generator' generator=STRING
 		'size-inferrer' sizeInferrer=STRING
 		('validator' validator=STRING)?
-		constructor = GeneratedTypeConstructor
+		(constructor = GeneratedTypeConstructor)?
 	';'
 ;
 
 GeneratedTypeConstructor returns GeneratedTypeConstructor:
 	{GeneratedTypeConstructor}
 	'constructor' name='con' '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')' 
+		('generator' generator=STRING)?
+		('size-inferrer' sizeInferrer=STRING)?
+		('validator' validator=STRING)?
 ;
 
 GeneratedTypeParameter returns GeneratedTypeParameter:
@@ -424,6 +427,7 @@ ReservedKeywords:
 	'catch' |
 	'checked' |
 	'constructor' |
+	'con' |
 	'do' |
 	'else' |
 	'enum' |
@@ -487,6 +491,7 @@ ReservedSymbols:
 	'!' | '<' | 
 	'>' | '<=' |
 	'>=' | '!=' |
+	'"' | "'" |
 	HOLE
 ;
 
