@@ -335,6 +335,29 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 	}
 	
+	static class CapacityGenerator extends AbstractFunctionGenerator {
+		
+		@Inject
+		protected CodeFragmentProvider codeFragmentProvider
+				
+		@Inject
+		protected extension StatementGenerator
+	
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
+			val varref = if(variable !== null) {
+				variable.code;
+			}
+			
+			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».capacity''').addHeader('MitaGeneratedTypes.h', false);
+		}
+		
+		override callShouldBeUnraveled(ElementReferenceExpression expression) {
+			false
+		}
+		
+	}
+	
 	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
 		val inner = expr.value;
 		if(inner instanceof ArrayLiteral) {

@@ -60,7 +60,14 @@ class TypeReferenceSpecifier extends PresentTypeSpecifier {
 		refText = refText ?: ""
 		refText = refText.trim
 		
-		return refText + args;
+		val optionalModifier = if(optional) {
+			"?";
+		}
+		else {
+			""
+		}
+		
+		return referenceModifiers.join + refText + optionalModifier + args;
 	}
 }
 class TypeReferenceLiteral extends Literal {

@@ -25,6 +25,10 @@ class DependentTypeVariable extends TypeVariable {
 		this.dependsOn = dependsOn;
 	}
 	
+	override replaceOrigin(EObject origin) {
+		return new DependentTypeVariable(origin, idx, name, dependsOn);
+	}
+	
 	override modifyNames(NameModifier converter) {
 		val newName = converter.apply(idx);
 		if(newName instanceof Left<?, ?>) {

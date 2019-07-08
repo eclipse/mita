@@ -307,14 +307,16 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 				if(«rbRef».length == 0) {
 					«generateExceptionHandler(functionCall, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»
 				}
+				«IF resultVariable !== null»
 				«statementGenerator.initializationCode(
 					functionCall, 
-					resultVariable.code, 
+					resultVariable?.code, 
 					resultVariable, 
 					AssignmentOperator.ASSIGN, 
 					new CodeWithContext(innerType, Optional.empty, codeFragmentProvider.create('''«rbRef».data[«rbRef».read]''')), 
 					true
 				)»
+				«ENDIF»
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}		
 	}

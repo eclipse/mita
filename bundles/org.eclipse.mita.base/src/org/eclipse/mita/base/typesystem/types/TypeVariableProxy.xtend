@@ -71,6 +71,10 @@ class TypeVariableProxy extends TypeVariable {
 	new(EObject origin, int idx, EReference reference, QualifiedName qualifiedName) {
 		this(origin, idx, reference, qualifiedName, true);
 	}
+	
+	override replaceOrigin(EObject origin) {
+		return new TypeVariableProxy(origin, idx, reference, targetQID, ambiguityResolutionStrategy, isLinkingProxy, name);
+	}
 
 	public static def getQName(EObject origin, EReference reference) {
 		var QualifiedName maybeQname; 

@@ -97,6 +97,10 @@ class GeneratorUtils {
 	@Inject(optional = true)
 	protected IPlatformLoggingGenerator loggingGenerator;
 
+	def isTopLevel(EObject obj) {
+		return (EcoreUtil2.getContainerOfType(obj, Operation) as EObject ?: EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration)) === null
+	}
+
 	/**
 	 * Opens the file at *fileLoc* either absolute or relative to the current project, depending on whether the path is absolute or relative.
 	 * In the case of the standalone compiler this will open *fileLoc* relative to the user's command.

@@ -58,6 +58,9 @@ import org.eclipse.mita.program.ReturnParameterReference
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.program.EventHandlerVariableDeclaration
+import org.eclipse.mita.program.DereferenceExpression
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.types.GeneratedElement
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -468,11 +471,15 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		}
 		
 		// can be overriden to explicitly enable/disable validation for certain eobjects
-		def alwaysValid(EObject origin) {
+		def boolean alwaysValid(EObject origin) {
 			// function parameters normally don't need their size inferred,
 			// since they are allocated from outside.
 			// copying them will create issues at the place where they are copied.
 			if(EcoreUtil2.getContainerOfType(origin, Parameter) !== null) {
+				return true;
+			}
+			// TODO is this bad? I think for generated elements all bets are off anyway.
+			if(EcoreUtil2.getContainerOfType(origin, GeneratedElement) !== null) {
 				return true;
 			}
 			// references don't need to validate, since their reference already validates --> less errors for user
@@ -488,6 +495,13 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 			// same goes for array access expression
 			if(origin instanceof ArrayAccessExpression) {
 				return true;
+			}
+			// and for dereference
+			if(origin instanceof DereferenceExpression) {
+				return true;
+			}
+			if(origin instanceof Argument) {
+				return origin.value.alwaysValid;
 			}
 			return false;
 		}

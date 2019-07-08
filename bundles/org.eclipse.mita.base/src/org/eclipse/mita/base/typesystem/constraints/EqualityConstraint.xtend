@@ -33,7 +33,7 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		if(left === null || right === null || source === null) {
 			throw new NullPointerException;
 		}
-		if(this.toString == "f_80 ≡ optional<f_2081>") {//"optional<array<uint32, f_75>> ≡ optional<optional<array<uint32, f_75>>>") {
+		if(this.toString == "ringbuffer<string<'100>, '3> ≡ ringbuffer<f_4744, uint32>") {
 			print("")
 		}
 	}

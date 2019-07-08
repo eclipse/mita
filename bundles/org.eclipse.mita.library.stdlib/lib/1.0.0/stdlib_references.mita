@@ -27,5 +27,5 @@ package stdlib;
  */
 export generated type reference<T>
 	generator "org.eclipse.mita.library.stdlib.ReferenceGenerator"
-	size-inferrer "org.eclipse.mita.library.stdlib.ReferenceSizeInferrer"
+	size-inferrer "org.eclipse.mita.library.stdlib.OptionalAndReferenceSizeInferrer"
 	constructor con(t: T);

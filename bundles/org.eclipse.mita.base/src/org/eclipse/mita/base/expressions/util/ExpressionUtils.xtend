@@ -110,7 +110,6 @@ class ExpressionUtils {
 				if(name == "self") {
 					return expr.arguments.head.value;
 				}
-				argIndex--;	
 			}
 		}
 		if(argIndex === null || argIndex >= sortedArgs.length) return null;

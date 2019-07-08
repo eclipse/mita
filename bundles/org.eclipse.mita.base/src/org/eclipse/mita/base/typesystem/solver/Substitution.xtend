@@ -177,7 +177,7 @@ class Substitution {
 	}
 	
 	def void addToContent(TypeVariable tv, AbstractType typ) {
-		if(tv.idx == 278 && typ.toString == "string<string<f_2908>>") {
+		if(tv.idx == 2679 && typ.toString == "uint32") {
 			print("")
 		}
 		content.put(tv.idx, typ);

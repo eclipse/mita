@@ -188,7 +188,7 @@ export generated fn <T> write(self : siginst<T>, value : T) : void
  */
 export generated type optional<T>
 	generator "org.eclipse.mita.library.stdlib.OptionalGenerator"
-	size-inferrer "org.eclipse.mita.library.stdlib.OptionalSizeInferrer"
+	size-inferrer "org.eclipse.mita.library.stdlib.OptionalAndReferenceSizeInferrer"
 	constructor con();
 
 /*

@@ -30,6 +30,10 @@ class TypeHole extends TypeVariable {
 	new(EObject origin, int idx, String name) {
 		super(origin, idx, name);
 	}
+	
+	override replaceOrigin(EObject origin) {
+		return new TypeHole(origin, idx, name);
+	}
 		
 	override modifyNames(NameModifier converter) {
 		val newName = converter.apply(idx);

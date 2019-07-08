@@ -34,7 +34,6 @@ class TypeVariable extends AbstractType {
 		return system.newTypeVariable(null);
 	}
 	
-	
 	new(EObject origin, int idx) {
 		this(origin, idx, null);
 	}
@@ -42,6 +41,10 @@ class TypeVariable extends AbstractType {
 	new(EObject origin, int idx, String name) {
 		super(origin, name);
 		this.idx = idx;
+	}
+	
+	def TypeVariable replaceOrigin(EObject origin) {
+		return new TypeVariable(origin, idx, name);
 	}
 	
 	override quote() {

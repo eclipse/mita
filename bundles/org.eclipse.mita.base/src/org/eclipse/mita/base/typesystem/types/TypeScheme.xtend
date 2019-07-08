@@ -38,6 +38,10 @@ class TypeScheme extends AbstractType {
 		super(origin, on.name);
 		this.vars = vars;
 		this.on = on;
+		
+		if(this.toString == "∀[f_2677, d_2679].ringbuffer<f_2677, uint32>") {
+			print("")
+		}
 	}
 	
 	override Tree<AbstractType> quote() {
@@ -95,7 +99,9 @@ class TypeScheme extends AbstractType {
 				return this;
 			}
 			return new TypeScheme(origin, this.vars, 
-				on.replace(sub.filter[!vars.contains(it)])
+				on.replace(sub.filter[
+					!vars.contains(it)
+				])
 			);
 		} else {
 			return new TypeScheme(origin, this.vars, this.on.replace(sub));			

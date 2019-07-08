@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -260,7 +261,11 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	override createConstraints(InferenceContext c) {
 		doCreateConstraints(c, c.obj);
 	}
-		
+	
+	dispatch def void doCreateConstraints(InferenceContext c, Argument arg) {
+		inferUnmodifiedFrom(c.system, arg, arg.value);	
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, Operation op) {
 		val typeArgs = op.typeParameters.map[c.system.getTypeVariable(it)].force()
 		var type = c.type;

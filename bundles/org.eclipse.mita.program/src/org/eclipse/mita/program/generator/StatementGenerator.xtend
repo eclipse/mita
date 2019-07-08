@@ -180,7 +180,7 @@ class StatementGenerator {
 		}
 
 		return '''
-			«IF EcoreUtil2.getContainerOfType(stmt, Operation) !== null»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
+			«IF !stmt.isTopLevel»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
 				.data = "«stmt.value»",
 				.capacity = «stmt.value.length»,
 				.length = «stmt.value.length»,
@@ -217,7 +217,7 @@ class StatementGenerator {
 	}
 		
 	@Traced dispatch def IGeneratorNode code(ArrayLiteral stmt) {
-		'''«IF EcoreUtil2.getContainerOfType(stmt, Operation) !== null»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
+		'''«IF !stmt.isTopLevel»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
 			.data = («typeGenerator.code(stmt, (BaseUtils.getType(stmt) as TypeConstructorType).typeArguments.get(1))»[«stmt.values.length»]) {«FOR value: stmt.values SEPARATOR(', ')»«value.code»«ENDFOR»},
 			.capacity = «stmt.values.length»,
 			.length = «stmt.values.length»,

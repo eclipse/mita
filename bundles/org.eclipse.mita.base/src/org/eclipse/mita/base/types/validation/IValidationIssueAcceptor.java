@@ -38,10 +38,10 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean shouldTest() {
-			return false;
+			return true;
 		}
 		private static String getTestString() {
-			return "array<uint32, prim»i»2>? must be of type \"optional<array<uint32, '2>>\"";
+			return "&ringbuffer<uint16, _> must be of type \"reference<ringbuffer<uint16, A>>\"";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

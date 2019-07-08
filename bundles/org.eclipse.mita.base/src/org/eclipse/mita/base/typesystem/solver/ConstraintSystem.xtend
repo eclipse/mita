@@ -477,8 +477,8 @@ class ConstraintSystem {
 				println('''introducing «uri»!''');
 			}
 			// explicitly set the origin to the resolved object, since the symbol table only contains proxies!
-			val tvIdx = this.getTypeVariable(it).idx;
-			return new TypeVariable(it, tvIdx) as AbstractType;
+			val tv = this.getTypeVariable(it);
+			return tv.replaceOrigin(it) as AbstractType;
 		].force;
 	}
 	
