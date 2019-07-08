@@ -40,6 +40,16 @@ class MqttValidator implements IResourceValidator {
 		}
 	}
 	
+	def validateKeepAliveInterval(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
+		val keepAliveValueObj = setup.configurationItemValues.findFirst[ it.item.name == "keepAliveInterval"];
+		val keepAliveValue = StaticValueInferrer.infer(keepAliveValueObj.value, []);
+		if(keepAliveValue instanceof Long) {
+			if(keepAliveValue <= 0) {
+				acceptor.acceptError("keepAliveInterval must be greater than 0", keepAliveValueObj, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE, 0, null);
+			}
+		}
+	}
+	
 	def validateUrl(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
 		val urlConfigValue = setup.configurationItemValues.findFirst[ it.item.name == "url"];
 		val url = setup.getConfigurationItemValue("url");

@@ -292,7 +292,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		«generatorUtils.generateExceptionHandler(setup, "exception")»
 
 		mqttSession.MQTTVersion = 4;
-		mqttSession.keepAliveInterval = 60;
+		mqttSession.keepAliveInterval = «configuration.getExpression("keepAliveInterval")?.code»;
 		mqttSession.cleanSession = false;
 		«IF lastWill instanceof SumTypeRepr»
 			«IF lastWill.hasLastWill»
@@ -339,6 +339,16 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PARSING_ERROR);
 		}
 		
+		if(exception == RETCODE_OK) {
+			TimerHandle_t pingTimerHandle = xTimerCreate("mqttPing", UINT32_C(500*«configuration.getExpression("keepAliveInterval").code»), pdTRUE, NULL, mqttPing);
+			if(pingTimerHandle != NULL) {
+				xTimerStart(pingTimerHandle, 0);
+			}
+			else {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to create ping task")»
+			}
+		}
+		
 		return exception;
 		''')
 		.addHeader("BCDS_BSP_Board.h", true)
@@ -347,6 +357,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("HTTPRestClientSecurity.h", true)
 		.addHeader("time.h", true)
 		.addHeader("XDK_TimeStamp.h", true)
+		.addHeader("Serval_StringDescr.h", true)
+		.addHeader("timers.h", true)
 		result.setPreamble('''
 		«IF auth instanceof SumTypeRepr»
 			«IF auth.isLogin()»
@@ -368,7 +380,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				const char* lastWillMessageBuf = «lastWill.properties.get("message")?.code»;
 			«ENDIF»
 		«ENDIF»
-		''').addHeader("Serval_StringDescr.h", true);
+		''')
 
 
 		return result;
@@ -468,6 +480,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
+			case MQTT_PING_RESPONSE_RECEIVED:
+				break;
 			default:
 				«loggingGenerator.generateLogStatement(LogLevel.Info, "MqttEventHandler : Unhandled MQTT Event: %x", codeFragmentProvider.create('''event'''))»
 				break;
@@ -475,18 +489,29 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 			if (RETCODE_OK != exception)
 			{
-				mqttIsConnected = false;
-				Mqtt_disconnect(&mqttSession);
 				Retcode_RaiseError(exception);
 			}
 
 			return RC_OK;
 		}
 		
+		static void mqttPing(void* userParameter1, uint32_t userParameter2) {
+			if(!mqttIsConnected) {
+				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT: Ping failed: not connected")»
+				return;
+			}
+			retcode_t rc = Mqtt_ping(&mqttSession);
+			if(RC_OK != rc) {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT: Ping failed: %x", codeFragmentProvider.create('''rc'''))»
+				mqttIsConnected = false;
+				Mqtt_disconnect(&mqttSession);
+			}
+		}
+		
 		/**
 		 * Connects to a configured backend.
 		 */
-		Retcode_T connectToBackend(void) {
+		static Retcode_T connectToBackend(void) {
 			Retcode_T exception = NO_EXCEPTION, tempException = NO_EXCEPTION;
 			bool exceptionHappened = false;
 			«IF isSecure»
@@ -535,6 +560,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.setPreamble('''
 		static retcode_t MqttEventHandler(MqttSession_T* session, MqttEvent_t event, const MqttEventData_t* eventData);
 		static Retcode_T connectToBackend(void);
+		static void mqttPing(void* userParameter1, uint32_t userParameter2);
 		''')
 	}
 
