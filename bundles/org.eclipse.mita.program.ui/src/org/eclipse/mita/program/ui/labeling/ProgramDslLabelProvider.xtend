@@ -234,6 +234,6 @@ class ProgramDslLabelProvider extends DefaultEObjectLabelProvider {
 	}
 
 	def protected dispatch getTypeName(SystemResourceSetup it) {
-		(BaseUtils.getType(it) ?: type)?.toString
+		(BaseUtils.getType(it) ?: BaseUtils.getText(it, ProgramPackage.eINSTANCE.systemResourceSetup_Type))?.toString
 	}
 }
