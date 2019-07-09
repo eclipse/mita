@@ -13,11 +13,14 @@ package org.eclipse.mita.program
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
- 
+  
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.expressions.AbstractStatement
+import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.types.Event
@@ -37,8 +40,8 @@ import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 
 class Program extends PackageAssociation {
@@ -185,9 +188,6 @@ class ProgramBlock {
 	}
 }
 
-
-abstract class AbstractStatement { }
-
 class VariableDeclaration extends Property, AbstractStatement {
 	boolean writeable
 	contains Expression initialization
@@ -207,13 +207,6 @@ class ArrayLiteral extends Literal {
 	contains Expression[] values
 }
 
-class ExpressionStatement extends AbstractStatement {
-	contains Expression expression
-	op String toString() {
-		return expression.toString + ";";
-	}
-}
-
 abstract class AbstractLoopStatement extends AbstractStatement {
 	contains ProgramBlock body	
 }
@@ -223,7 +216,7 @@ class DoWhileStatement extends AbstractLoopStatement {
 class ForStatement extends AbstractLoopStatement {
 	contains VariableDeclaration[] loopVariables
 	contains Expression condition
-	contains Expression[] postLoopStatements
+	contains AbstractStatement[] postLoopStatements
 }
 class ForEachStatement extends AbstractLoopStatement {
 	contains VariableDeclaration iterator
@@ -245,11 +238,39 @@ class IfStatement extends ConditionalStatement {
 	contains ProgramBlock ^else
 }
 
+class ReturnParameterDeclaration extends VariableDeclaration {
+	op String getName() {
+		return "_result";
+	}
+	op String toString() {
+		return name;
+	}
+	op boolean isWriteable() {
+		return true;
+	}
+}
 class ReturnStatement extends AbstractStatement {
-	contains Expression value
+	op String toString() {
+		return 'return;';
+	}
+}
+class ReturnParameterReference extends ElementReferenceExpression {
+	op EObject getReference() {
+		val funDef = EcoreUtil2.getContainerOfType(this, FunctionDefinition);
+		val returnParameter = funDef?.eAllContents?.filter(ReturnParameterDeclaration)?.head;
+		return returnParameter;
+	}
 	
 	op String toString() {
-		return 'return' + (if(value !== null) ' ...' else '');
+		return reference.toString
+	}
+}
+class ReturnValueExpression extends AssignmentExpression {
+	op String toString() {
+		return 'return ...;';
+	}
+	op AssignmentOperator getOperator() {
+		return AssignmentOperator.ASSIGN;
 	}
 }
 
@@ -334,10 +355,17 @@ class DereferenceExpression extends Expression {
 		}
 		return expression;
 	}
+	
+	op String toString() {
+		return "*" + expression;
+	}
 }
 
 class ReferenceExpression extends Expression {
 	contains Expression variable
+	op String toString() {
+		return "&" + variable;
+	}
 } 
 
 

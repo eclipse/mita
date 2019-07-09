@@ -17,8 +17,8 @@ import com.google.inject.Inject
 import java.util.LinkedList
 import java.util.List
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.AbstractStatement
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
-import org.eclipse.mita.program.AbstractStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.GeneratorUtils

@@ -19,7 +19,7 @@ import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.program.ArrayLiteral
-import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnValueExpression
 
 class UnravelLiteralArraysStage extends AbstractUnravelingStage {
 	
@@ -30,7 +30,7 @@ class UnravelLiteralArraysStage extends AbstractUnravelingStage {
 				while(container instanceof CoercionExpression) {
 					container = container.eContainer;
 				}
-				return container instanceof ReturnStatement || container instanceof Argument || container instanceof FeatureCall
+				return container instanceof ReturnValueExpression || container instanceof Argument || container instanceof FeatureCall
 			}
 		}
 		return false;

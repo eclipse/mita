@@ -39,6 +39,7 @@ import org.eclipse.xtext.ui.editor.quickfix.Fix
 import org.eclipse.xtext.ui.editor.quickfix.IssueResolutionAcceptor
 import org.eclipse.xtext.validation.Issue
 import org.eclipse.mita.program.generator.transformation.AbstractTransformationStage
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 
@@ -78,19 +79,6 @@ class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 		}
 	}
 
-	@Fix(ProgramImportValidator.MISSING_TARGET_PLATFORM_CODE)
-	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {
-		LibraryExtensions.availablePlatforms.forEach [ platform |
-			acceptor.accept(issue, '''Import '«platform.id»' '''.toString,
-				'''Add import for platform '«platform.id»' '''.toString, '', [ element, context |
-					val program = element as Program
-					program.imports += TypesFactory.eINSTANCE.createImportStatement => [
-						importedNamespace = platform.id
-					]
-				])
-		]
-	}
-
 	@Fix(ProgramSetupValidator.MISSING_CONIGURATION_ITEM_CODE)
 	def addMissingConfigItem(Issue issue, IssueResolutionAcceptor acceptor) {
 		acceptor.accept(issue, 'Add config items', 'Add missing configuration items', '', [ element, context |
@@ -107,4 +95,25 @@ class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 		])
 	}
 
+	@Fix(ProgramImportValidator.NO_PLATFORM_SELECTED_CODE)
+	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {
+		LibraryExtensions.availablePlatforms.forEach [ platform |
+			acceptor.accept(issue, '''Import '«platform.id»' '''.toString,
+				'''Add import for platform '«platform.id»' '''.toString, '', [ element, context |
+					val program = element as Program
+					program.imports += TypesFactory.eINSTANCE.createImportStatement => [
+						importedNamespace = platform.id
+					]
+				])
+		]
+	}
+
+	@Fix(ProgramImportValidator.MULTIPLE_PLATFORMS_SELECTED_CODE)
+	def addMissingPlatform2(Issue issue, IssueResolutionAcceptor acceptor) {
+		acceptor.accept(issue, '''Remove all imports except: «issue.data.toString»''', "", "", [element, context | 
+			val program = element.eContainer as Program
+			EcoreUtil.removeAll(program.imports.filter[it != element].toList)
+		])
+		acceptor.accept(issue, '''Remove import: «issue.data.toString»''', "", "",[element ,context | EcoreUtil.remove(element)])
+	}
 }

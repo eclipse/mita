@@ -10,9 +10,7 @@
  */
 package org.eclipse.mita.base.types
 
-import org.eclipse.emf.common.util.BasicEList
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator

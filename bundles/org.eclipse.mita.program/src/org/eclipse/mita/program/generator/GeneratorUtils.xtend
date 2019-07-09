@@ -30,7 +30,6 @@ import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
-import org.eclipse.mita.base.types.GeneratedTypeConstructor
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
@@ -60,7 +59,7 @@ import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
-import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.SystemResourceSetup
@@ -183,7 +182,7 @@ class GeneratorUtils {
 		pb.eContainer.uniqueIdentifierInternal + pb.eContainer.eAllContents.toList.indexOf(pb).toString;
 	}
 	
-	private def dispatch String getUniqueIdentifierInternal(ReturnStatement rt) {
+	private def dispatch String getUniqueIdentifierInternal(ReturnValueExpression rt) {
 		return rt.eContainer.uniqueIdentifierInternal + "_result";
 	}
 	

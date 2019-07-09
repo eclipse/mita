@@ -20,6 +20,7 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
@@ -39,7 +40,6 @@ import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.expressions.ValueRange
 
 class StringGenerator extends ArrayGenerator {
 	
@@ -107,8 +107,17 @@ class StringGenerator extends ArrayGenerator {
 	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Literal l) {
 		return codeFragmentProvider.create('''UNKNOWN LITERAL: «l.eClass»''')
 	}
-		
+	
 	dispatch def IGeneratorNode getDataHandleForPrintf(Expression e) {
+		val type = BaseUtils.getType(e);
+		if(type !== null) {
+			if(type.name == "string") {
+				return codeFragmentProvider.create('''«e.code».length, «e.code».data''')
+			}
+		}
+		return e.code;
+	}
+	dispatch def IGeneratorNode getDataHandleForPrintf(PrimitiveValueExpression e) {
 		return e.code;
 	}
 	dispatch def IGeneratorNode getDataHandleForPrintf(ElementReferenceExpression ref) {
@@ -158,7 +167,7 @@ class StringGenerator extends ArrayGenerator {
 				case 'xint8':   '%" PRId8 "'
 				case 'f32':  '%.' + DOUBLE_PRECISION + 'g'
 				case 'f64': '%.' + DOUBLE_PRECISION + 'g'
-				case 'bool':   '%d'
+				case 'bool':   '%" PRIu8 "'
 				case 'string': if(sub.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(StringLiteral) !== null) {
 						'%s'
 					}
@@ -205,27 +214,4 @@ class StringGenerator extends ArrayGenerator {
 		return node;
 		
 	}
-	
-	static class LengthGenerator extends AbstractFunctionGenerator {
-		
-		@Inject
-		protected CodeFragmentProvider codeFragmentProvider
-		
-		@Inject
-		protected ElementSizeInferrer sizeInferrer
-	
-		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
-			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
-			val varref = if(variable instanceof ElementReferenceExpression) {
-				val varref = variable.reference;
-				if(varref instanceof VariableDeclaration) {
-					varref
-				}
-			}
-			
-			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref».length''');
-		}
-		
-	}
-	
 }

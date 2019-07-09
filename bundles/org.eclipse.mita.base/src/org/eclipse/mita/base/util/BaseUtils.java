@@ -444,7 +444,15 @@ public class BaseUtils {
 	private static void prependNamedElementName(final StringBuilder id, final EObject container) {
 		Object _eGet = container.eGet(TypesPackage.Literals.NAMED_ELEMENT__NAME);
 		String name = ((String) _eGet);
-		if ((name != null)) {
+		if (name != null) {
+			EStructuralFeature feature = container.eContainingFeature();
+			Object elements = container.eContainer().eGet(feature);
+			int index = 0;
+			if ((elements instanceof BasicEList)) {
+				BasicEList<?> elementList = ((BasicEList<?>) elements);
+				index = elementList.indexOf(container);
+				name = name + index;
+			}
 			id.insert(0, TypesUtil.ID_SEPARATOR);
 			id.insert(0, name);
 		}

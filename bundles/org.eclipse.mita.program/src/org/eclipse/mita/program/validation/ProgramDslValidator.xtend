@@ -51,7 +51,6 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.util.PreventRecursion
-import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Connectivity
 import org.eclipse.mita.platform.Modality
@@ -66,7 +65,7 @@ import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramPackage
-import org.eclipse.mita.program.ReturnStatement
+import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
@@ -122,9 +121,6 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	public static val String VARIABLE_NOT_UNIQUE_MSG = "Cannot redeclare variable '%s'.";
 	public static val String VARIABLE_NOT_UNIQUE_CODE = "variable_not_unique";
 
-	public static val String NO_PLATFORM_SELECTED_MSG = "No platform selected. Please import one of the available platforms: \"%s.\"";
-	public static val String NO_PLATFORM_SELECTED_CODE = "no_platform_selected";
-	
 	public static val String FUNCTIONS_CAN_NOT_BE_REFERENCED_MSG = "Functions can not be used as values. Please add parentheses.";
 	public static val String FUNCTIONS_CAN_NOT_BE_REFERENCED_CODE = "no_function_references";
 	
@@ -271,7 +267,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	def checkFunctionsReturnSomething(FunctionDefinition funDef) {
 		val returnType = BaseUtils.getType(funDef.typeSpecifier);
 		if(returnType !== null && returnType.name != "void") {
-			if(funDef.eAllContents.filter(ReturnStatement).empty) {
+			if(funDef.eAllContents.filter(ReturnValueExpression).empty) {
 				error(String.format(MISSING_RETURN_VALUE_MSG, returnType), funDef, TypesPackage.eINSTANCE.namedElement_Name, MISSING_RETURN_VALUE_CODE);
 			}
 		}
@@ -341,14 +337,11 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 		runLibraryValidator(setup.eContainer as Program, setup, systemResource.eResource, systemResource.validator);
 	}
-
+	
 	@Check(CheckType.NORMAL)
 	def checkProgram_platformValidator(Program program) {
 		val platform = modelUtils.getPlatform(program.eResource.resourceSet, program);
-		if (platform === null) { 
-			error(String.format(NO_PLATFORM_SELECTED_MSG, LibraryExtensions.descriptors.filter[optional].map[id].join(", ")), program, ProgramPackage.eINSTANCE.program_EventHandlers,
-				NO_PLATFORM_SELECTED_CODE);
-		} else {
+		if (platform !== null) { 
 			runLibraryValidator(program, platform, platform.eResource, platform.validator);
 		}
 	}
@@ -412,8 +405,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.NORMAL)
 	def checkNoReturnValueForVoidOperation(FunctionDefinition op) {
 		if(typeSystem.isSame(op.getType(), typeSystem.getType(VOID))) {
-			EcoreUtil2.getAllContentsOfType(op.body, ReturnStatement)
-				.filter[x | x.value !== null ]
+			EcoreUtil2.getAllContentsOfType(op.body, ReturnValueExpression)
 				.forEach [ error(VOID_OP_CANNOT_RETURN_VALUE_MSG, it, null) ];
 		}
 	}
@@ -430,8 +422,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	
 	@Check(CheckType.FAST)
 	def checkNoReturnValueForEventHandler(EventHandlerDeclaration op) {
-		EcoreUtil2.getAllContentsOfType(op.block, ReturnStatement)
-			.filter[x | x.value !== null ]
+		EcoreUtil2.getAllContentsOfType(op.block, ReturnValueExpression)
 			.forEach [ error(VOID_OP_CANNOT_RETURN_VALUE_MSG, it, null) ];
 	}
 	
@@ -510,28 +501,22 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	}
 	
 	protected def checkTypesAreNotNestedGeneratedTypes(EObject obj, AbstractType ir) {
-		checkTypesAreNotNestedGeneratedTypes(obj, ir, false, false);
+		checkTypesAreNotNestedGeneratedTypes(obj, ir, false);
 	}
 	
-	protected def void checkTypesAreNotNestedGeneratedTypes(EObject obj, AbstractType type, Boolean hasGeneratedType, Boolean containsReferenceTypes) {
+	protected def void checkTypesAreNotNestedGeneratedTypes(EObject obj, AbstractType type, Boolean hasGeneratedType) {
 		if(type === null) {
 			return;
 		}
 		var hasGeneratedTypeNext = hasGeneratedType;
-		var containsReferenceTypesNext = containsReferenceTypes;
 
 		val subTypes = if(type instanceof TypeConstructorType) {
 			if(TypesUtil.isGeneratedType(obj, type)) {
 				if(type.name == "reference") {
-					if(hasGeneratedTypeNext) {
-						error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
-						return;
-					}
-					else {
-						containsReferenceTypesNext = true;
-					}
+					// references are a clean and supported way for nested generated types, since refs are value types and easily copied.
+					return;
 				}
-				else if(hasGeneratedTypeNext || containsReferenceTypesNext) {
+				else if(hasGeneratedTypeNext) {
 					error(NESTED_GENERATED_TYPES_ARE_NOT_SUPPORTED, obj, null);
 					return;
 				}
@@ -551,11 +536,10 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		// We don't have nested types so there is nothing to check.
 		if(subTypes === null) return;
 		
-		val hasGeneratedTypeNextFinal = hasGeneratedTypeNext;
-		val containsReferenceTypesNextFinal = containsReferenceTypesNext;	
+		val hasGeneratedTypeNextFinal = hasGeneratedTypeNext;	
 		subTypes.filterNull.forEach[
 			PreventRecursion.preventRecursion(it, [| 
-				checkTypesAreNotNestedGeneratedTypes(obj, it, hasGeneratedTypeNextFinal, containsReferenceTypesNextFinal);
+				checkTypesAreNotNestedGeneratedTypes(obj, it, hasGeneratedTypeNextFinal);
 				return null;
 			]);
 		];
