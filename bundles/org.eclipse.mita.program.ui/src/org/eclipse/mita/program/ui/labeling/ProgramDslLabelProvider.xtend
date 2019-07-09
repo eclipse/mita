@@ -51,6 +51,7 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.ui.label.DefaultEObjectLabelProvider
+import org.eclipse.mita.program.ProgramPackage
 
 /**
  * Provides labels for EObjects.
