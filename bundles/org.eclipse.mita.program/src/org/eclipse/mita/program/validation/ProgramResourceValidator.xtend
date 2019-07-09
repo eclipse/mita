@@ -26,10 +26,10 @@ class ProgramResourceValidator extends AbstractDeclarativeValidator {
 	public static val MAIN_NOT_ALLOWED_MSG = "File name 'main%s' is not allowed. Rename the file."
 
 	@Check(CheckType.FAST)
-	def checkFileNamesAreUnique(Program program) {
+	def checkFileNameNotEqualsMain(Program program) {
 		val path = program.eResource.URI.path
 		val fileName = path.substring(path.lastIndexOf("/") + 1)
-		if (fileName.equals("main" + MitaBaseResource.PROGRAM_EXT)) {
+		if (fileName.startsWith("main" + MitaBaseResource.PROGRAM_EXT)) {
 			error(String.format(MAIN_NOT_ALLOWED_MSG, MitaBaseResource.PROGRAM_EXT), null, MAIN_NOT_ALLOWED_CODE)
 		}
 	}
