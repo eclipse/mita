@@ -895,7 +895,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// t
 		val type = system.resolveReferenceToSingleAndGetType(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
 		val typeWithoutModifiers = if(typeArguments.empty) {
-			type;
+			val typeInstance = system.newTypeVariable(null);
+			system.addConstraint(new ExplicitInstanceConstraint(typeInstance, type, new ValidationIssue(Severity.ERROR, '''«typeSpecifier?.toString?.replace("%", "%%")» (:: %s) is not instance of %s''', typeSpecifier, null, "")));
+			typeInstance;
 		}
 		else {
 			val eRef = TypesPackage.eINSTANCE.typeReferenceSpecifier_Type;

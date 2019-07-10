@@ -70,8 +70,8 @@ every 100 milliseconds {
 	// this happens because later on we compare (f == g), where g is a string.
 	// XPECT errors --> "prim»i»8 (:: xint8) has a different type than f (:: string<A>)" at "8"
 	let f = 8;
-	// XPECT infos --> "_ has type uint32" at "_"
-	let g: string<_> = id(e);          
+	// XPECT infos --> "_ has type uint32" at "?"
+	let g: string<?> = id(e);          
 	let h = id(f); 
 	let h2 = id2(y=0, x=e);
 	let h3 = id2(y=0, x=f);    

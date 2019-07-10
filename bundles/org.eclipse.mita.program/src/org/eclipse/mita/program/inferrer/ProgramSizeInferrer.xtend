@@ -17,13 +17,17 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionStatement
+import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeExpressionSpecifier
 import org.eclipse.mita.base.types.TypeHole
@@ -32,9 +36,11 @@ import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.constraints.SumConstraint
@@ -49,36 +55,29 @@ import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.NumericMaxType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnValueExpression
+import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.diagnostics.Severity
 
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.expressions.ArrayAccessExpression
-import org.eclipse.mita.base.expressions.ValueRange
-import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
-import org.eclipse.mita.base.typesystem.types.FunctionType
-import org.eclipse.mita.base.typesystem.types.ProdType
-import org.eclipse.mita.base.typesystem.types.TypeScheme
-import org.eclipse.mita.base.expressions.IntLiteral
-import org.eclipse.mita.base.typesystem.types.LiteralNumberType
-import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.FunctionParameterDeclaration
-import org.eclipse.mita.base.types.Parameter
 
 /**
  * Hierarchically infers the size of a data element.
@@ -395,7 +394,9 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		// t
 		val type = c.system.getTypeVariable(typeSpecifier.type);
 		val typeWithoutModifiers = if(typeArguments.empty) {
-			type;
+			val typeInstance = c.system.newTypeVariable(null);
+			c.system.addConstraint(new ExplicitInstanceConstraint(typeInstance, type, new ValidationIssue(Severity.ERROR, '''«typeSpecifier?.toString?.replace("%", "%%")» (:: %s) is not instance of %s''', typeSpecifier, null, "")));
+			typeInstance;
 		}
 		else if(_typeConsType.class == TypeConstructorType) {
 			val typeConsType = _typeConsType as TypeConstructorType;
@@ -441,8 +442,17 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		inferUnmodifiedFrom(c.system, obj, obj.typeSpecifier);
 	}
 	
+
+	dispatch def void doCreateConstraints(InferenceContext c, TypedElement obj) {
+		inferUnmodifiedFrom(c.system, obj, obj.typeSpecifier);
+	}
+
 	dispatch def void doCreateConstraints(InferenceContext c, EObject obj) {
 		println('''ProgramSizeInferrer: Unhandled: «obj.class.simpleName» («obj»)''')
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, Void obj) {
+		println('''ProgramSizeInferrer: Unhandled: null''')
 	}
 			
 	dispatch def void doCreateConstraints(InferenceContext c, FunctionDefinition obj) {

@@ -70,13 +70,13 @@ every 100 milliseconds {
 	let d = c.x(); 
 	let e = "asdf";
 	let f = 8;
-	// XPECT infos --> "_ has type uint32" at "_"
+	// XPECT infos --> "_ has type uint32" at "?"
 	/*XPECT errors ---
 		"Couldn't infer size" at "id(e)"
-		"Couldn't infer size" at "let g: string<_> = id(e);"
-		"Couldn't infer size" at "string<_>"
+		"Couldn't infer size" at "let g: string<?> = id(e);"
+		"Couldn't infer size" at "string<?>"
 	--- */
-	let g: string<_> = id(e);          
+	let g: string<?> = id(e);          
 	let h = id(f);
 	/*XPECT errors ---
 		"Couldn't infer size" at ""

@@ -331,7 +331,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 			)
 			return SimplificationResult.success(resultSystem, Substitution.EMPTY);	
 		}
-		return SimplificationResult.failure(new ValidationIssue('''«ts» is not a generic type''', ts.origin));
+		// to allow typeSpecifiers like a: string (instead of a: string<?>)
+		// we need to allow uint8 instanceof uint8 (instead of \. uint8)
+		// or make all type declarations typeSchemes
+		system.addConstraint(new EqualityConstraint(constraint.instance, constraint.typeScheme, constraint.errorMessage));
+		return SimplificationResult.success(system, Substitution.EMPTY);	
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, JavaClassInstanceConstraint constraint) {
 		if(constraint.javaClass.isInstance(constraint.what)) {

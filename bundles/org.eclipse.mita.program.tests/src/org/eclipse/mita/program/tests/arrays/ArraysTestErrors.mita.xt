@@ -12,8 +12,8 @@ import platforms.unittest;
 var foo = new array<uint8, 10>();
 
 // Arrays can be initialized with brackets
-// XPECT infos ---> "_ has type uint32" at "_"
-var foo2: array<uint8, _> = [1, 2, 3, 4, 5];
+// XPECT infos ---> "_ has type uint32" at "?"
+var foo2: array<uint8, ?> = [1, 2, 3, 4, 5];
 
 /* XPECT errors ---
 "prim»i»1 (:: xint8) doesn't share a common type with the other members of this array literal" at "1"
@@ -199,8 +199,8 @@ fn errors() {
 
 // XPECT noCompileErrors
 // XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayLiteral"
-// XPECT infos ---> "_ has type uint32" at "_"
-fn returnArrayLiteral() : array<uint8, _> {
+// XPECT infos ---> "_ has type uint32" at "?"
+fn returnArrayLiteral() : array<uint8, ?> {
 	return [1,2,3,4];
 }
 
@@ -219,8 +219,8 @@ struct SensorMessage {
 }
 
 // XPECT noCompileErrors
-// XPECT infos ---> "_ has type uint32" at "_"
-fn mean(data : array<SensorMessage, _>) {
+// XPECT infos ---> "_ has type uint32" at "?"
+fn mean(data : array<SensorMessage, ?>) {
     let result : SensorMessage;
     // this error is actually fine, it's a consequence of global type inference. 
     // It happens because of lines like line 168 (b = a[-2:-1];), negative indices create a graph  uint32 -> f_685.0 <- int8.

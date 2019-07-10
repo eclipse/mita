@@ -26,8 +26,8 @@ function stringTestSuccess() : void {
 	
 	// The length of a string can be set explicitly
 	// XPECT inferredType --> string<'300>
-	// XPECT infos --> "_ has type '300" at "_"
-	var foo2 : string<_> = new string<300>();
+	// XPECT infos --> "_ has type '300" at "?"
+	var foo2 : string<?> = new string<300>();
 	foo2 = "bla";
 	
 	// Strings with explicit size can be used in loops

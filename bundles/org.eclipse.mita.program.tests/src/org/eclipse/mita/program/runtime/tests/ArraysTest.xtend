@@ -63,7 +63,7 @@ class ArraysTest extends AbstractRuntimeTest {
 			exit(0);
 		}
 		 
-		fn printarray(a: array<int8, _>) {
+		fn printarray(a: array<int8, ?>) {
 			print("[");
 			for(var i = 0; i < a.length(); i++) {
 				print(`${a[i]}`);
@@ -75,30 +75,30 @@ class ArraysTest extends AbstractRuntimeTest {
 		}
 		
 		fn foo0() {
-			var a: array<int8, _> = [1,2,3,4];
+			var a: array<int8, ?> = [1,2,3,4];
 			a += [5 as int8, 6,7]; 
 			a = [10,11,12,13,14,15];
 			return a; 
 		}
 		
 		fn foo2() {
-			var b: array<int8, _> = [1,2,3,4];
-			var a: array<int8, _> = b;
+			var b: array<int8, ?> = [1,2,3,4];
+			var a: array<int8, ?> = b;
 			a += b; 
 			a = b; 
 			return a;
 		} 
 		
 		fn foo4() {
-			var a: array<int8, _> = [1,2,3,4];
+			var a: array<int8, ?> = [1,2,3,4];
 			a += [5 as int8, 6,7]; 
 			a = [10,11,12,13,14,15];
 			return a[1:2]; 
 		}
 		
 		fn foo6() {
-			var b: array<int8, _> = [1,2,3,4];
-			var a: array<int8, _> = b[1:2];
+			var b: array<int8, ?> = [1,2,3,4];
+			var a: array<int8, ?> = b[1:2];
 			a += b[1:2];  
 			a = b[1:2]; 
 		}

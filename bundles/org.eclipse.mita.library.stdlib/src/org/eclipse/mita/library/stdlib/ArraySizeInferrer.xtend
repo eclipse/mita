@@ -50,7 +50,7 @@ class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		c.system.addConstraint(new MaxConstraint(innerDataType, lit.values.map[
 				c.system.getTypeVariable(it)
 			] 
-			// add the original type here to make for example [1,2,3]: array<uint32, _> (because of other use) type to *uint32* instead of xint8 
+			// add the original type here to make for example [1,2,3]: array<uint32, ?> (because of other use) type to *uint32* instead of xint8 
 			+ #[oldDataType], new ValidationIssue('''''', lit)));
 		
 		c.system.associate(new TypeConstructorType(lit, t.name, #[

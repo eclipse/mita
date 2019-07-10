@@ -30,7 +30,7 @@ abstract class TypeSpecifier {}
 abstract class PresentTypeSpecifier extends TypeSpecifier {}
 class TypeHole extends PresentTypeSpecifier {
 	op String toString() {
-		return "_"
+		return "?"
 	}
 }
 class TypeExpressionSpecifier extends PresentTypeSpecifier {

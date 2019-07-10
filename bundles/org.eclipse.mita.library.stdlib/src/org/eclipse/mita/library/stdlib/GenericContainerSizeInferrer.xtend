@@ -131,7 +131,15 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 			[i, t| 
 				delegate.unbindSize(r, system, typeSpecifier.typeArguments.get(i - 1), t)
 			], 
-			[i, t| system.newTypeVariable(t.origin) as AbstractType -> #[typeSpecifier.typeArguments.get(i - 1)] + typeSpecifier.typeArguments.get(i - 1).eAllContents.toIterable],
+			[i, t| 
+				system.newTypeVariable(t.origin) as AbstractType -> 
+					if(typeSpecifier.typeArguments.empty) {
+						#[]
+					} else {
+						#[typeSpecifier.typeArguments.get(i - 1)] + 
+						typeSpecifier.typeArguments.get(i - 1).eAllContents.toIterable
+					}
+			],
 			[t_objs | t_objs.key],
 			[t, objs| t -> objs.flatMap[it.value]]
 		);
@@ -194,25 +202,38 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		c.system.associate(summationType, obj);
 	}
 	
+	def getTypeSpecifierArgument(InferenceContext c, TypeReferenceSpecifier obj, int index) {
+		if(obj.typeArguments.size > index) {
+			val arg = obj.typeArguments.get(index)
+			return arg -> c.system.getTypeVariable(arg);
+		}
+		else {
+			return null	-> c.system.newTypeVariable(null);
+		}
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType t) {
 		// recurse on sizes
-		val sizeTypeIndexes = sizeTypeIndexes;
-		val dataTypeIndexes = dataTypeIndexes;
-		(obj.typeArguments).indexed.zip(t.typeArguments.tail).forEach[ i_mt__tv |
-			val i_mt = i_mt__tv.key;
-			val i = i_mt.key + 1;
-			val modelType = i_mt.value;
-			val tv = i_mt__tv.value;
-			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), tv);
-			if(sizeTypeIndexes.contains(i)) {
-				createConstraints(innerContext);
+		val newType = setTypeArguments(t, [i, t1| 
+			val modelType = getTypeSpecifierArgument(c, obj, i - 1);
+			val innerContext = new InferenceContext(c, modelType.key, modelType.value, t1);
+			createConstraints(innerContext);
+			val result = c.system.newTypeVariable(t1.origin) as AbstractType
+			if(modelType.key !== null) {
+				c.system.associate(result, modelType.key);
 			}
-			else if(dataTypeIndexes.contains(i)) {
-				delegate.createConstraints(innerContext);
+			result;
+		], [i, t1|
+			val modelType = getTypeSpecifierArgument(c, obj, i - 1);
+			val innerContext = new InferenceContext(c, modelType.key, modelType.value, t1);
+			delegate.createConstraints(innerContext);
+			val result = c.system.newTypeVariable(t1.origin) as AbstractType
+			if(modelType.key !== null) {
+				c.system.associate(result, modelType.key);
 			}
-			c.system.associate(tv, modelType);
-		]
-		c.system.associate(t, obj);
+			result;
+		], [it], [t1, xs | t1])
+		c.system.associate(newType, obj);
 	}
 	
 	// default: delegate
