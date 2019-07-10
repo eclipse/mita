@@ -29,7 +29,7 @@ abstract class PlatformMakefileGenerator extends PlatformBuildSystemGenerator {
 	override void generateFiles(IFileSystemAccess2 fsa, CompilationContext context, List<String> sourceFiles) {
 		val codefragment = generateMakefile(context, sourceFiles)
 		if(codefragment !== null && codefragment != CodeFragment.EMPTY) {
-			var root = CodeFragment.cleanNullChildren(codefragment);
+			val root = CodeFragment.cleanNullChildren(codefragment);
 			fsa.generateTracedFile('Makefile', root);		
 		}
 	}
