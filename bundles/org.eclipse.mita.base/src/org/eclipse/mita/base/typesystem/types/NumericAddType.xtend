@@ -14,6 +14,9 @@ import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
+/**
+ * NumericAddType represents the addition of multiple types, for example (T + '1 + '3)
+ */
 @Accessors
 class NumericAddType extends TypeConstructorType implements CompositeLiteralType<Long> {
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {

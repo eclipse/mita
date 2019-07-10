@@ -48,6 +48,12 @@ interface TypeSizeInferrer extends FunctionSizeInferrer {
 	 */
 	def void createConstraintsForSum(ConstraintSystem system, Resource r, SumConstraint constraint);
 	
+	/**
+	 * Returns whether all size arguments are fixed by this type specifier. Examples:
+	 * - array<uint8, 10>: true
+	 * - array<array<uint8, 1>, 2>: true
+	 * - array<array<uint8, ?>, 2>: false
+	 */
 	def boolean isFixedSize(TypeSpecifier ts);
 	
 	def AbstractType getZeroSizeType(InferenceContext c, AbstractType skeleton);

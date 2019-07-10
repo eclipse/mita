@@ -14,6 +14,9 @@ import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
+/**
+ * NumericMaxType represents the maximum of multiple types, for example max(T, '1, '3)
+ */
 @Accessors
 class NumericMaxType extends TypeConstructorType implements CompositeLiteralType<Long> {
 	static def unify(ConstraintSystem system, Iterable<AbstractType> instances) {
