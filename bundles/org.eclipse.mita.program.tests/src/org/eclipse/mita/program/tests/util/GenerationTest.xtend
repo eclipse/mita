@@ -173,7 +173,7 @@ class GenerationTest {
 		val ResourceSet set = resourceSetProvider.get()
 		val Resource resource = set.createResource(URI.createPlatformResourceURI("unittestprj/application.mita", true))
 		val libs = libraryProvider.standardLibraries;
-		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
+		val stdlibUri = libs.filter[it.toString.endsWith(MitaBaseResource.PROGRAM_EXT)]
 		val stdlib = stdlibUri.map[set.getResource(it, true)].filterNull.map[it.contents.filter(Program).head].force;
 		
 		var Copier copier = new Copier()

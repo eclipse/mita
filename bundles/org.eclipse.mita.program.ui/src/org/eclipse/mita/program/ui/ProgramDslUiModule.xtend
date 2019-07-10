@@ -21,6 +21,7 @@ import org.eclipse.mita.program.ui.builder.ProgramDslBuilderParticipant
 import org.eclipse.mita.program.ui.contentassist.ProposalPriorityHelper
 import org.eclipse.mita.program.ui.highlighting.ProgramDslHighlightingConfiguration
 import org.eclipse.mita.program.ui.highlighting.ProgramDslSemanticHighlightingCalculator
+import org.eclipse.mita.program.ui.hyperlink.LibraryImportHyperlinkHelper
 import org.eclipse.mita.program.ui.labeling.ProgramDslEObjectHoverProvider
 import org.eclipse.ui.PlatformUI
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
@@ -29,6 +30,7 @@ import org.eclipse.xtext.ui.LanguageSpecific
 import org.eclipse.xtext.ui.editor.IURIEditorOpener
 import org.eclipse.xtext.ui.editor.contentassist.ContentProposalPriorities
 import org.eclipse.xtext.ui.editor.hover.IEObjectHoverProvider
+import org.eclipse.xtext.ui.editor.hyperlinking.IHyperlinkHelper
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration
 
 @FinalFieldsConstructor
@@ -75,6 +77,10 @@ class ProgramDslUiModule extends AbstractProgramDslUiModule {
 	
 	override bindIAllContainersState$Provider() {
 		return MitaWorkspaceProjectsState.Provider;
+	}
+	
+	def Class<? extends IHyperlinkHelper> bindIHyperlinkHelper() {
+		return LibraryImportHyperlinkHelper
 	}
 	
 }

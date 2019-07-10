@@ -101,6 +101,9 @@ class MitaBaseResource extends LazyLinkingResource {
 	protected Provider<Substitution> substitutionProvider;
 	
 	List<Diagnostic> typeLinkingErrors = new ArrayList();
+	
+	public final static String PROGRAM_EXT = ".mita"
+	public final static String PLATFORM_EXT = ".platform"
 
 	override toString() {
 		val str = URI.toString;
@@ -354,7 +357,7 @@ class MitaBaseResource extends LazyLinkingResource {
 							th.origin;
 						}
 						val t = substitution.content.get(th.idx);
-						solution.issues += new ValidationIssue(Severity.INFO, '''Â«originÂ» has type Â«t.modifyNames(new NicerTypeVariableNamesForErrorMessages)Â»''', origin, null, "") 
+						solution.issues += new ValidationIssue(Severity.INFO, '''«origin» has type «t.modifyNames(new NicerTypeVariableNamesForErrorMessages)»''', origin, null, "") 
 					]
 					
 					resource.latestSolution = solution;

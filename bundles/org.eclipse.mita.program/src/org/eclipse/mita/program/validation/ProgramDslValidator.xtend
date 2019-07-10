@@ -90,7 +90,8 @@ import org.eclipse.mita.base.types.Operation
 	ProgramImportValidator,
 	ProgramSetupValidator,
 	SumTypesValidator,
-	ReferenceTypesValidator
+	ReferenceTypesValidator,
+	ProgramResourceValidator
 ])
 class ProgramDslValidator extends AbstractProgramDslValidator {
 
