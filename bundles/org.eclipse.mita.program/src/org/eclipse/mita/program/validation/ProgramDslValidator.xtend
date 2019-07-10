@@ -88,7 +88,8 @@ import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 	ProgramImportValidator,
 	ProgramSetupValidator,
 	SumTypesValidator,
-	ReferenceTypesValidator
+	ReferenceTypesValidator,
+	ProgramResourceValidator
 ])
 class ProgramDslValidator extends AbstractProgramDslValidator {
 

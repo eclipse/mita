@@ -1,0 +1,13 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.filename.FileNameTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+
+// XPECT errors ---> "File name 'main.mita' is not allowed. Rename the file." at "package test; import platforms.unittest;  function expressions() : void { }"
+package test;
+import platforms.unittest;
+
+function expressions() : void { }
