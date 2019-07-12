@@ -38,9 +38,6 @@ class TypeScheme extends AbstractType {
 		super(origin, on.name);
 		this.vars = vars;
 		this.on = on;
-		if(this.toString == "∀[f_19].__args(f_30) → f_35") {
-			print("")
-		}
 	}
 	
 	override Tree<AbstractType> quote() {
