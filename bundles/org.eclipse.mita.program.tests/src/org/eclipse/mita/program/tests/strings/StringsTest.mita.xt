@@ -31,7 +31,7 @@ function stringTestSuccess() : void {
 	foo2 = "bla";
 	
 	// Strings with explicit size can be used in loops
-	var explicitSize = new string<300>();
+	var explicitSize: string<300>;
 	for(var i: uint8 = 0; i < 10; i+=1) {
 		explicitSize += "foo";
 	} 
@@ -54,7 +54,7 @@ function stringTestSuccess() : void {
 	foo5 = "bla";
 	
 	// Strings with explicit size can be used in loops
-	var explicitSize2: string = new string<300>();
+	var explicitSize2: string<300>;
 	for(var i: uint8 = 0; i < 10; i+=1) {
 		explicitSize2 += "foo";
 	} 
@@ -94,7 +94,7 @@ function stringTestFail() : void {
 	var foo = "hello world";
 	for(var i: uint16 = 0; i < someExternalFunction(); i=i++) { //TODO: Increment Operator i++
 		/* XPECT errors ---
-			"Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "foo"" at "foo"
+			"Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "foo" with type arguments (e.g. string<'10>)" at "foo"
 			"Couldn't infer size" at "foo += "hello""
 			"Couldn't infer size" at "foo += "hello""
 		--- */

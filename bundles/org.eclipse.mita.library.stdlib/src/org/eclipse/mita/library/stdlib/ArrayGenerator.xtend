@@ -115,6 +115,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		// buffer for «varName»
 		«generateBufferStmt(context, type, bufferName, capacity, initValue)»
 		«ELSE»
+		«print("")»
 		ERROR: Couldn't infer size!
 		«ENDIF»
 		// var «varName»: «type.toString»

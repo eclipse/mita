@@ -9,7 +9,6 @@ package test;
 import platforms.unittest;
 
 /*XPECT errors ---
-	"Couldn't resolve reference to Type 's'." at "array"
 	"Couldn't resolve reference to Type 's'." at "s"
 	"Couldn't resolve reference to Type 's'." at "s"
 --- */
