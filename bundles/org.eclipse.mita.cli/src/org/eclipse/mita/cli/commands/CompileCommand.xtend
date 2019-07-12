@@ -40,6 +40,7 @@ import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.validation.CheckMode
 import org.eclipse.xtext.validation.IResourceValidator
 import org.apache.commons.cli.CommandLine
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class CompileCommand extends AbstractCommand {
 	@Inject
@@ -141,7 +142,7 @@ class CompileCommand extends AbstractCommand {
 					it.listChildren
 				}
 			]
-			.filter[ it.endsWith(".mita") || it.endsWith(".platform") ]
+			.filter[ it.endsWith(MitaBaseResource.PROGRAM_EXT) || it.endsWith(MitaBaseResource.PLATFORM_EXT) ]
 			.map[ it.replace('classpath://', 'classpath:/') ]
 	}
 	

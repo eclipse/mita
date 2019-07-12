@@ -85,6 +85,9 @@ class MitaBaseResource extends LazyLinkingResource {
 
 	@Inject
 	protected XtextFragmentProvider fragmentProvider;
+	
+	public final static String PROGRAM_EXT = ".mita"
+	public final static String PLATFORM_EXT = ".platform"
 
 	override toString() {
 		val str = URI.toString;
