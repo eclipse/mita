@@ -96,15 +96,6 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 		return CodeFragment.EMPTY;
 	}	
 	override CodeFragment generateEventLoopHandlerEpilogue(CompilationContext context, EventHandlerDeclaration declaration) {
-		val payloadType = BaseUtils.getType(declaration);
-		if(payloadType.name == "string") {
-			val privateRingbufferName = declaration.xdkRingbufferName;
-		}
 		return CodeFragment.EMPTY
-	}
-	
-	public def String getXdkRingbufferName(EventHandlerDeclaration declaration) {
-		return "xdkrb_" + declaration.baseName.toFirstLower;
-	}
-	
+	}	
 }

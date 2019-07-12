@@ -9,7 +9,8 @@ import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.MainSystemResourceGenerator
-import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin;
+
+import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
 
 class Xdk110PlatformGenerator extends MainSystemResourceGenerator {
 	

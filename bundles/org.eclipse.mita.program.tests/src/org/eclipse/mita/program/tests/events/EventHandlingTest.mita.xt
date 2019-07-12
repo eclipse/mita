@@ -33,3 +33,21 @@ every vci01.event02 { }
 
 // This should be fine, we should generate two different handlers
 every my_sensor00.event00 { }
+
+// XPECT noCompileErrors
+every my_sensor00.event03(u32) {
+	//XPECT inferredType "uint32"
+	let a = u32;
+}
+// XPECT noCompileErrors
+every my_sensor00.event04(s100) {
+	//XPECT inferredType "string<'100>"
+	let a = s100;
+}
+// XPECT noCompileErrors
+every my_sensor00.event05(ar_s100_5) {
+	//XPECT inferredType "array<string<'100>, 5>"
+	let a = ar_s100_5;
+}
+
+

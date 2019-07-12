@@ -491,7 +491,6 @@ ReservedSymbols:
 	'!' | '<' | 
 	'>' | '<=' |
 	'>=' | '!=' |
-	'"' | "'" |
 	QUESTION_MARK
 ;
 

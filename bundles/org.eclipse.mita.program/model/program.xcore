@@ -339,6 +339,10 @@ class CatchStatement extends AbstractStatement {
 class NewInstanceExpression extends ElementReferenceExpression {
 	contains TypeReferenceSpecifier ^type
 	
+	op void setReference(EObject reference) {
+		
+	}
+	
 	op Operation getReference() {
 		val refType = ^type.^type;
 		if(refType instanceof GeneratedType) {

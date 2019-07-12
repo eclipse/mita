@@ -115,7 +115,7 @@ class OptionalAndReferenceSizeInferrer extends GenericContainerSizeInferrer {
 	
 	static def getReferenceModifiersUsedAdapter(TypeReferenceSpecifier ts) {
 		return ts.eAdapters.filter(ReferenceModifiersUsedAdapter).head ?: {
-			val adapter = new ReferenceModifiersUsedAdapter(ts.referenceModifiers.map[it.length].reduce[a, b | a+b]);
+			val adapter = new ReferenceModifiersUsedAdapter(ts.referenceModifiers.map[it.length].fold(0, [a, b | a+b]));
 			ts.eAdapters.add(adapter);
 			adapter;
 		}

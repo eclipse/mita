@@ -30,6 +30,9 @@ sensor MySensor {
 	event event00
 	event event01
 	event event02
+	event event03: uint32
+	event event04: string<100>
+	event event05: array<string<100>, 5>
 }
 
 sensor MyOtherSensor {
@@ -97,6 +100,7 @@ alias vci01 for MyOtherSensor
 
 platform UnitTestPlatform {
 	module "org.eclipse.mita.platform.unittest.UnitTestPlatformGeneratorModule"
+	generator "org.eclipse.mita.platform.unittest.UnittestPlatformGenerator"
 	
 	event foo
 	

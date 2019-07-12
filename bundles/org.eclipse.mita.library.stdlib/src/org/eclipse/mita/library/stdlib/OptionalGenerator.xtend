@@ -30,6 +30,7 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.xtext.EcoreUtil2
+import java.util.Optional
 
 class OptionalGenerator extends AbstractTypeGenerator {
 	

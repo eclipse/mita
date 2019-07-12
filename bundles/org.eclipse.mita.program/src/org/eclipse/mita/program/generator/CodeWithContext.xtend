@@ -15,7 +15,7 @@ class CodeWithContext {
 	
 	new(AbstractType type, Optional<EObject> obj, CodeFragment code) {
 		this.type = type;
-		this.obj = obj.map([ignoreCoercions]);
+		this.obj = obj;
 		this.code = code;
 	}
 	

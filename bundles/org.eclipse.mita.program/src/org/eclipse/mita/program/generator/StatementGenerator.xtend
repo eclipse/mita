@@ -128,6 +128,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypeUtils.getConstraintSystem
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.ReturnParameterReference
 
 class StatementGenerator {
 
@@ -652,6 +653,18 @@ class StatementGenerator {
 		);
 	}
 	
+		dispatch def IGeneratorNode initializationCode(ReturnValueExpression expr) {
+		val varName = cf('''«expr.varRef.code.noTerminator»''');
+		return initializationCode(
+			expr.varRef, 
+			cf('''_result'''),
+			new CodeWithContext(BaseUtils.getType(expr.varRef), Optional.of(expr.varRef), varName), 
+			expr.operator, 
+			new CodeWithContext(BaseUtils.getType(expr.expression), Optional.of(expr.expression), cf(expr.expression.code)), 
+			true
+		);
+	}
+	
 //	public def IGeneratorNode initializationCode(EObject target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
 // 		return initializationCode(BaseUtils.getType(target), target, varName, op, initialization, alwaysGenerate);
 // 	}
@@ -691,8 +704,7 @@ class StatementGenerator {
 		}
 		return CodeFragment.EMPTY;
 	}
-	
-
+		
 	dispatch def IGeneratorNode code(ReturnParameterDeclaration stmt) {
 		return CodeFragment.EMPTY;
 	}
