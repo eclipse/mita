@@ -90,7 +90,8 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 	ProgramImportValidator,
 	ProgramSetupValidator,
 	SumTypesValidator,
-	ReferenceTypesValidator
+	ReferenceTypesValidator,
+	ProgramResourceValidator
 ])
 class ProgramDslValidator extends AbstractProgramDslValidator {
 

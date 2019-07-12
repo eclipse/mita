@@ -25,6 +25,7 @@ import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.validation.CheckMode
 import org.eclipse.xtext.validation.IResourceValidator
 import org.eclipse.xtext.workspace.ProjectConfigAdapter
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class ProjectErrorShouldGenerate implements IShouldGenerate {
 
@@ -41,7 +42,7 @@ class ProjectErrorShouldGenerate implements IShouldGenerate {
 			
 			if (project.name == projectConfig?.name) {
 				val allMakers = project.findMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
-				if(allMakers.exists[ it.getAttribute(IMarker.SEVERITY) == IMarker.SEVERITY_ERROR && it.resource.name.toLowerCase.endsWith(".mita") ]) {
+				if(allMakers.exists[ it.getAttribute(IMarker.SEVERITY) == IMarker.SEVERITY_ERROR && it.resource.name.toLowerCase.endsWith(MitaBaseResource.PROGRAM_EXT) ]) {
 					return false;					
 				}
 			}

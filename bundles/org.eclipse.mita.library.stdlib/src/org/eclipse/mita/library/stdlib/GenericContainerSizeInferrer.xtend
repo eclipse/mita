@@ -142,7 +142,15 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 			[i, t| 
 				delegate.unbindSize(r, system, typeSpecifier.typeArguments.get(i - 1), t)
 			], 
-			[i, t| system.newTypeVariable(t.origin) as AbstractType -> #[typeSpecifier.typeArguments.get(i - 1)] + typeSpecifier.typeArguments.get(i - 1).eAllContents.toIterable],
+			[i, t| 
+				system.newTypeVariable(t.origin) as AbstractType -> 
+					if(typeSpecifier.typeArguments.empty) {
+						#[]
+					} else {
+						#[typeSpecifier.typeArguments.get(i - 1)] + 
+						typeSpecifier.typeArguments.get(i - 1).eAllContents.toIterable
+					}
+			],
 			[t_objs | t_objs.key],
 			[t, objs| t -> objs.flatMap[it.value]]
 		);
@@ -205,6 +213,16 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		c.system.associate(summationType, obj);
 	}
 	
+	def getTypeSpecifierArgument(InferenceContext c, TypeReferenceSpecifier obj, int index) {
+		if(obj.typeArguments.size > index) {
+			val arg = obj.typeArguments.get(index)
+			return arg -> c.system.getTypeVariable(arg);
+		}
+		else {
+			return null	-> c.system.newTypeVariable(null);
+		}
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, EventHandlerVariableDeclaration variable, AbstractType t) {
 		inferUnmodifiedFrom(c.system, variable, EcoreUtil2.getContainerOfType(variable, EventHandlerDeclaration).event);
 	}
@@ -212,18 +230,22 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	dispatch def void doCreateConstraints(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType t) {
 		// recurse on sizes
 		val newType = setTypeArguments(t, [i, t1| 
-			val modelType = obj.typeArguments.get(i - 1);
-			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), t1);
+			val modelType = getTypeSpecifierArgument(c, obj, i - 1);
+			val innerContext = new InferenceContext(c, modelType.key, modelType.value, t1);
 			createConstraints(innerContext);
 			val result = c.system.newTypeVariable(t1.origin) as AbstractType
-			c.system.associate(result, modelType)
+			if(modelType.key !== null) {
+				c.system.associate(result, modelType.key);
+			}
 			result;
 		], [i, t1|
-			val modelType = obj.typeArguments.get(i - 1);
-			val innerContext = new InferenceContext(c, modelType, c.system.getTypeVariable(modelType), t1);
+			val modelType = getTypeSpecifierArgument(c, obj, i - 1);
+			val innerContext = new InferenceContext(c, modelType.key, modelType.value, t1);
 			delegate.createConstraints(innerContext);
 			val result = c.system.newTypeVariable(t1.origin) as AbstractType
-			c.system.associate(result, modelType)
+			if(modelType.key !== null) {
+				c.system.associate(result, modelType.key);
+			}
 			result;
 		], [it], [t1, xs | t1])
 		c.system.associate(newType, obj);
@@ -423,6 +445,14 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 				val initSize = delegate.wrap(c, varRef, c.system.getTypeVariable(expr.expression));
 				val runningSizeTCT = typeVariableToTypeConstructorType(c, runningSize, c.type as TypeConstructorType);
 				val initSizeTCT = typeVariableToTypeConstructorType(c, initSize, c.type as TypeConstructorType);
+				val typeExampleSizeHolder = new Object {
+					private int value = 0;
+					def getValue() {
+						value += 10;
+						return value;
+					}
+				}
+				val typeExample = setTypeArguments(resultTCT, [i, t| t], [i, t | new LiteralNumberType(null, typeExampleSizeHolder.getValue(), null)], [it], [t, ts| t]);
 				
 				resultTCT.typeArguments.zip(runningSizeTCT.typeArguments.zip(initSizeTCT.typeArguments)).indexed
 					.filter[variableSizes.contains(it.key)]
@@ -437,7 +467,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 						if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
 							if(sizeTypeIndexes.contains(i)) {
 								if(variableReferenceIsInLoop(variable, expr)) {
-									val msg = '''Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "«variable.name»"''';
+									val msg = '''Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "«variable.name»" with type arguments (e.g. «typeExample»)''';
 									c.system.addConstraint(new EqualityConstraint(c.system.newTypeVariable(expr.varRef), new BottomType(expr, msg), new ValidationIssue(msg, expr)))
 								}
 								else {

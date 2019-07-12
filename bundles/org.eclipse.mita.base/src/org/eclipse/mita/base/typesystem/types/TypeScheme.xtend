@@ -38,8 +38,7 @@ class TypeScheme extends AbstractType {
 		super(origin, on.name);
 		this.vars = vars;
 		this.on = on;
-		
-		if(this.toString == "∀[f_2677, d_2679].ringbuffer<f_2677, uint32>") {
+		if(this.toString == "∀[f_19].__args(f_30) → f_35") {
 			print("")
 		}
 	}

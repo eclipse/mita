@@ -111,29 +111,29 @@ fn returnSumType9(): anyVec {
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray1"
-//XPECT infos --> "_ has type '4" at "_"
-fn returnArray1(): array<int32, _> {
-	//XPECT infos --> "_ has type '4" at "_"
-	var res: array<int32, _> = [1,2,3,4];
+//XPECT infos --> "? has type '4" at "?"
+fn returnArray1(): array<int32, ?> {
+	//XPECT infos --> "? has type '4" at "?"
+	var res: array<int32, ?> = [1,2,3,4];
 	return res;
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray2"
-//XPECT infos --> "_ has type '4" at "_"
-fn returnArray2(): array<int32, _> {
+//XPECT infos --> "? has type '4" at "?"
+fn returnArray2(): array<int32, ?> {
 	return [1,2,3,4];
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString1"
-//XPECT infos --> "_ has type '3" at "_"
-fn returnString1(): string<_> {
-	//XPECT infos --> "_ has type '3" at "_"
-	var res: string<_> = "abc";
+//XPECT infos --> "? has type '3" at "?"
+fn returnString1(): string<?> {
+	//XPECT infos --> "? has type '3" at "?"
+	var res: string<?> = "abc";
 	return res;
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString2"
-//XPECT infos --> "_ has type '3" at "_"
-fn returnString2(): string<_> {
+//XPECT infos --> "? has type '3" at "?"
+fn returnString2(): string<?> {
 	return "abc";
 }
 

@@ -26,20 +26,43 @@ function stringTestSuccess() : void {
 	
 	// The length of a string can be set explicitly
 	// XPECT inferredType --> string<'300>
-	// XPECT infos --> "_ has type '300" at "_"
-	var foo2 : string<_> = new string<300>();
+	// XPECT infos --> "? has type '300" at "?"
+	var foo2 : string<?> = new string<300>();
 	foo2 = "bla";
 	
 	// Strings with explicit size can be used in loops
-	var explicitSize = new string<300>();
+	var explicitSize: string<300>;
 	for(var i: uint8 = 0; i < 10; i+=1) {
 		explicitSize += "foo";
 	} 
-	
+		
 	// Strings can be concatenated using +
 	// XPECT inferredType --> string<'18>
 	var foo3 = "bla bla";
 	foo3 += "hello world";
+
+	// XPECT inferredType --> string<'14>
+	var bar2: string = "this is a test";
+
+	// XPECT inferredType --> string<'24>
+	var foo4: string = "hello world";
+	foo4 = "this is my long sentence"; // This is ok. At compile time we can determine that foo is max 24 characters.
+	
+	// The length of a string can be set explicitly
+	// XPECT inferredType --> string<'300>
+	var foo5 : string = new string<300>();
+	foo5 = "bla";
+	
+	// Strings with explicit size can be used in loops
+	var explicitSize2: string<300>;
+	for(var i: uint8 = 0; i < 10; i+=1) {
+		explicitSize2 += "foo";
+	} 
+		
+	// Strings can be concatenated using +
+	// XPECT inferredType --> string<'18>
+	var foo6: string = "bla bla";
+	foo6 += "hello world";
 
 	// Strings can be interpolated
 	let bla = 42;
@@ -71,7 +94,7 @@ function stringTestFail() : void {
 	var foo = "hello world";
 	for(var i: uint16 = 0; i < someExternalFunction(); i=i++) { //TODO: Increment Operator i++
 		/* XPECT errors ---
-			"Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "foo"" at "foo"
+			"Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "foo" with type arguments (e.g. string<'10>)" at "foo"
 			"Couldn't infer size" at "foo += "hello""
 			"Couldn't infer size" at "foo += "hello""
 		--- */

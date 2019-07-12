@@ -12,8 +12,8 @@ import platforms.unittest;
 var foo = new array<uint8, 10>();
 
 // Arrays can be initialized with brackets
-// XPECT infos --> "_ has type '5" at "_"
-var foo2: array<uint8, _> = [1, 2, 3, 4, 5];
+// XPECT infos --> "? has type '5" at "?"
+var foo2: array<uint8, ?> = [1, 2, 3, 4, 5];
 
 // XPECT noCompileErrors
 fn works() {
@@ -169,8 +169,8 @@ fn errors() {
 
 // XPECT noCompileErrors
 // XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayLiteral"
-// XPECT infos --> "_ has type '4" at "_"
-fn returnArrayLiteral() : array<uint8, _> {
+// XPECT infos --> "? has type '4" at "?"
+fn returnArrayLiteral() : array<uint8, ?> {
 	return [1,2,3,4];
 }
 
@@ -189,8 +189,8 @@ struct SensorMessage {
 }
 
 // XPECT noCompileErrors
-// XPECT infos ---> "_ has type A" at "_"
-fn mean(data : array<SensorMessage, _>) {
+// XPECT infos ---> "? has type A" at "?"
+fn mean(data : array<SensorMessage, ?>) {
     let result : SensorMessage;
     for(var i = 0; i < data.length(); i++) {
         // featureCalls on arrayAccess is allowed

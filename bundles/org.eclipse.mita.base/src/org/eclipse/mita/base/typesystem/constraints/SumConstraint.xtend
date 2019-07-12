@@ -2,8 +2,8 @@ package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
@@ -11,8 +11,13 @@ import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.typesystem.types.AbstractBaseType
 
+/**
+ * SumConstraint expresses that 
+ * target = t1 + t2 + t3 + t4 +...
+ * 
+ * The difference to EqualityConstraint (target = NumericAddType([t1, t2, ...]) is that SumConstraint resolves if t1... are solved far enough.
+ */
 @Accessors
 class SumConstraint extends AbstractTypeConstraint {
 	val TypeVariable target;

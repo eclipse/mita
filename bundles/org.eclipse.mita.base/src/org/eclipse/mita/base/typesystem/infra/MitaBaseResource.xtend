@@ -102,6 +102,9 @@ class MitaBaseResource extends LazyLinkingResource {
 	protected Provider<Substitution> substitutionProvider;
 	
 	List<Diagnostic> typeLinkingErrors = new ArrayList();
+	
+	public final static String PROGRAM_EXT = ".mita"
+	public final static String PLATFORM_EXT = ".platform"
 
 	@Inject
 	protected LiveScopeResourceSetInitializer liveScopeResourceSetInitializer

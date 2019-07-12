@@ -9,14 +9,12 @@ package test;
 import platforms.unittest;
 
 /*XPECT errors ---
-	"Couldn't resolve reference to Type 's'." at "array"
 	"Couldn't resolve reference to Type 's'." at "s"
 	"Couldn't resolve reference to Type 's'." at "s"
 --- */
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayBad"
 fn returnArrayBad(s: uint32): array<int32, s> {
 	/*XPECT errors ---
-		"Couldn't resolve reference to Type 's'." at "array"
 		"Couldn't resolve reference to Type 's'." at "s"
 		"Couldn't resolve reference to Type 's'." at "s"
 	--- */

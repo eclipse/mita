@@ -188,7 +188,7 @@ AssignmentExpression returns Expression:
 ;
 
 ConditionalExpression returns Expression:
-	LogicalOrExpression ({ConditionalExpression.condition=current} '?' trueCase=LogicalOrExpression ':'
+	LogicalOrExpression ({ConditionalExpression.condition=current} QUESTION_MARK trueCase=LogicalOrExpression ':'
 	falseCase=LogicalOrExpression)?;
 
 LogicalOrExpression returns Expression:
@@ -303,7 +303,7 @@ TypeSpecifierArgument returns PresentTypeSpecifier:
 
 TypeHole returns TypeHole:
 	{TypeHole}
-	HOLE
+	QUESTION_MARK
 ;
 
 TypeExpressionSpecifier returns TypeExpressionSpecifier:
@@ -314,7 +314,7 @@ TypeSpecifier returns TypeReferenceSpecifier:
 	{TypeReferenceSpecifier} 
 	(referenceModifiers+=('&' | LogicalAndOperator))* 
 	type=[Type|QID] 
-	('<' (typeArguments+=TypeSpecifierArgument (',' typeArguments+=TypeSpecifierArgument)* '>'))? (optional?="?")?;
+	('<' (typeArguments+=TypeSpecifierArgument (',' typeArguments+=TypeSpecifierArgument)* '>'))? (optional?=QUESTION_MARK)?;
 
 InterpolatedStringLiteral returns InterpolatedStringLiteral: 
 	{InterpolatedStringLiteral}
@@ -492,7 +492,7 @@ ReservedSymbols:
 	'>' | '<=' |
 	'>=' | '!=' |
 	'"' | "'" |
-	HOLE
+	QUESTION_MARK
 ;
 
 
@@ -508,7 +508,7 @@ ReservedSymbols:
 
 // _ only if followed by something
 terminal ID: '^'? (('a'..'z'|'A'..'Z') | (('a'..'z'|'A'..'Z' | '_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')+));
-terminal HOLE: '_';
+terminal QUESTION_MARK: '?';
 terminal LONG returns ecore::ELong: ('0'..'9')+;
 terminal STRING:
 			'"' ( '\\' . /* 'b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\' */ | !('\\'|'"') )* '"' |

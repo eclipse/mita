@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return true;
 		}
 		private static String getTestString() {
-			return "&ringbuffer<uint16, _> must be of type \"reference<ringbuffer<uint16, A>>\"";
+			return "Types int32 and int32 are not the same.";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

@@ -577,7 +577,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def AbstractType computeTypeForOperation(ConstraintSystem system, Operation function) {
-		val typeArgs = function.typeParameters.map[system.computeConstraints(it)].force()
+		val typeArgs = function.typeParameters.map[system.translateTypeDeclaration(it) as TypeVariable].force()
 			
 		val fromType = system.computeParameterType(function, function.parameters);
 		val toType = system.computeConstraints(function.typeSpecifier);
@@ -747,7 +747,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(containerName !== null) {
 			system.typeTable.put(QualifiedName.create(containerName, type.name), tv);
 		}
-		return system.associate(tv, type);
+		return tv;
 	}
 	
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, InstanceTypeParameter type) {
@@ -906,7 +906,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// t
 		val type = system.resolveReferenceToSingleAndGetType(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
 		val typeWithoutModifiers = if(typeArguments.empty) {
-			type;
+			val typeInstance = system.newTypeVariable(typeSpecifier);
+			system.addConstraint(new ExplicitInstanceConstraint(typeInstance, type, new ValidationIssue(Severity.ERROR, '''«typeSpecifier?.toString?.replace("%", "%%")» (:: %s) is not instance of %s''', typeSpecifier, null, "")));
+			typeInstance;
 		}
 		else {
 			val eRef = TypesPackage.eINSTANCE.typeReferenceSpecifier_Type;
@@ -938,7 +940,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			typeWithReferenceModifiers;
 		}
 		
-		return system.associate(typeWithOptionalModifier, typeSpecifier);
+		return system.associate(typeWithOptionalModifier, typeSpecifier, true);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypedElement element) {

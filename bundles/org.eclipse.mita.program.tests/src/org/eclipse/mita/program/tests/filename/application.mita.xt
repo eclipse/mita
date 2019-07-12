@@ -1,0 +1,13 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.filename.FileNameTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+
+package test;
+import platforms.unittest;
+
+// XPECT noCompileErrors
+function expressions() : void { }

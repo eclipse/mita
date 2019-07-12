@@ -79,6 +79,7 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -135,7 +136,7 @@ class GeneratorUtils {
 	}
 
 	def getGlobalInitName(Program program) {
-		return '''initGlobalVariables_«program.eResource.URI.lastSegment.replace(".mita", "")»'''
+		return '''initGlobalVariables_«program.eResource.URI.lastSegment.replace(MitaBaseResource.PROGRAM_EXT, "")»'''
 	}
 	def generateLoggingExceptionHandler(String resourceName, String action) {
 		codeFragmentProvider.create('''

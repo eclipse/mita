@@ -422,4 +422,12 @@
           name="Mita Application File">
     </wizard>
  </extension>
+ <extension
+       point="org.eclipse.ui.navigator.navigatorContent">
+    <commonWizard
+          type="new"
+          wizardId="org.eclipse.mita.program.ui.wizards.NewMitaWizard">
+       <enablement></enablement>
+    </commonWizard>
+ </extension>
 </plugin>

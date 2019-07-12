@@ -29,9 +29,14 @@ import org.eclipse.xtend.lib.annotations.Accessors
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.constraints.TypeClassConstraint
+import java.util.stream.Collectors
+import java.util.ArrayDeque
 
 class Substitution {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider;
+	@Inject
+	protected MostGenericUnifierComputer mguComputer
 	@Accessors
 	protected Int2ObjectMap<AbstractType> content = new Int2ObjectOpenHashMap();
 	@Accessors
@@ -222,23 +227,28 @@ class Substitution {
 	def ConstraintSystem applyToAtomics(ConstraintSystem system, DebugTimer debugTimer) {
 		debugTimer.start("constraints");
 		// atomic constraints may become composite by substitution, the opposite can't happen
-		val unknownConstrains = system.atomicConstraints.map[c | c.replace(this)].force;
+		val unknownConstrains = system.atomicConstraints.map[c | c -> c.replace(this)].force;
 		debugTimer.stop("constraints");
 		system.atomicConstraints.clear();
 		debugTimer.start("atomicity");
-		for(it: unknownConstrains) {
-			if(it.isAtomic(system)) {
-				system.atomicConstraints.add(it);
+		for(old_new: unknownConstrains) {
+			val oldC = old_new.key;
+			val newC = old_new.value;
+			// constraints only change atomicity if they change
+			// except for type class constraints which have a dependency on their type class
+			// for further optimization we could check if type classes change
+			if((!(oldC instanceof TypeClassConstraint) && (oldC === newC)) || newC.isAtomic(system)) {
+				system.atomicConstraints.add(newC);
 			}
 			else {
-				system.nonAtomicConstraints.add(it);
+				system.nonAtomicConstraints.add(newC);
 			}
 		}
 		debugTimer.stop("atomicity");
 		return system;
 	}
 	def ConstraintSystem applyToNonAtomics(ConstraintSystem system) {
-		system.nonAtomicConstraints.replaceAll[it.replace(this)];
+		system.nonAtomicConstraints = system.nonAtomicConstraints.stream.map[it.replace(this)].collect(Collectors.toCollection[new ArrayDeque]);
 		return system;
 	}
 	
