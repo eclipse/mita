@@ -12,7 +12,7 @@ import platforms.unittest;
 var foo = new array<uint8, 10>();
 
 // Arrays can be initialized with brackets
-// XPECT infos ---> "_ has type uint32" at "?"
+// XPECT infos ---> "? has type uint32" at "?"
 var foo2: array<uint8, ?> = [1, 2, 3, 4, 5];
 
 /* XPECT errors ---
@@ -199,7 +199,7 @@ fn errors() {
 
 // XPECT noCompileErrors
 // XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayLiteral"
-// XPECT infos ---> "_ has type uint32" at "?"
+// XPECT infos ---> "? has type uint32" at "?"
 fn returnArrayLiteral() : array<uint8, ?> {
 	return [1,2,3,4];
 }
@@ -219,7 +219,7 @@ struct SensorMessage {
 }
 
 // XPECT noCompileErrors
-// XPECT infos ---> "_ has type uint32" at "?"
+// XPECT infos ---> "? has type uint32" at "?"
 fn mean(data : array<SensorMessage, ?>) {
     let result : SensorMessage;
     // this error is actually fine, it's a consequence of global type inference. 

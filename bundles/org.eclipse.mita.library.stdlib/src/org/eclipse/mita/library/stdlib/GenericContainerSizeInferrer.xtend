@@ -430,6 +430,14 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 				val initSize = delegate.wrap(c, varRef, c.system.getTypeVariable(expr.expression));
 				val runningSizeTCT = typeVariableToTypeConstructorType(c, runningSize, c.type as TypeConstructorType);
 				val initSizeTCT = typeVariableToTypeConstructorType(c, initSize, c.type as TypeConstructorType);
+				val typeExampleSizeHolder = new Object {
+					private int value = 0;
+					def getValue() {
+						value += 10;
+						return value;
+					}
+				}
+				val typeExample = setTypeArguments(resultTCT, [i, t| t], [i, t | new LiteralNumberType(null, typeExampleSizeHolder.getValue(), null)], [it], [t, ts| t]);
 				
 				resultTCT.typeArguments.zip(runningSizeTCT.typeArguments.zip(initSizeTCT.typeArguments)).indexed
 					.filter[variableSizes.contains(it.key)]
@@ -444,7 +452,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 						if(expr.operator == AssignmentOperator.ADD_ASSIGN) {
 							if(sizeTypeIndexes.contains(i)) {
 								if(variableReferenceIsInLoop(variable, expr)) {
-									val msg = '''Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "«variable.name»"''';
+									val msg = '''Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "«variable.name»" with type arguments (e.g. «typeExample»)''';
 									c.system.addConstraint(new EqualityConstraint(c.system.newTypeVariable(expr.varRef), new BottomType(expr, msg), new ValidationIssue(msg, expr)))
 								}
 								else {

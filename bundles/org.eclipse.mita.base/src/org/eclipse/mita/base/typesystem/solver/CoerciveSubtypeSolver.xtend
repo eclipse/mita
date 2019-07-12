@@ -333,8 +333,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 		}
 		// to allow typeSpecifiers like a: string (instead of a: string<?>)
 		// we need to allow uint8 instanceof uint8 (instead of \. uint8)
-		// or make all type declarations typeSchemes
-		system.addConstraint(new EqualityConstraint(constraint.instance, constraint.typeScheme, constraint.errorMessage));
+		// or make all type declarations typeSchemes 
+		// to improve error messages we add this constraint to the head of the lists, so its "harder" than other constraints
+		system.addConstraint(new EqualityConstraint(constraint.instance, constraint.typeScheme, constraint.errorMessage), true);
 		return SimplificationResult.success(system, Substitution.EMPTY);	
 	}
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, JavaClassInstanceConstraint constraint) {
@@ -398,6 +399,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, FunctionTypeClassConstraint constraint) {
 		val refType = constraint.typ;
 		val typeClass = system.typeClasses.get(constraint.instanceOfQN);
+		constraint.isAtomic(system);
 		if(typeClass !== null) {
 			val unificationResults = typeClass.instances.entrySet.map[k_v | 
 				val typRaw = k_v.key;
@@ -472,8 +474,11 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 								prodType.typeArguments.tail.zip(targetType.typeArguments.tail).map[
 									val coercedObject = it.key.origin;
 									val coercedType = it.value;
-									EcoreUtil.getURI(coercedObject) -> coercedType;
-								].force;
+									if(coercedObject !== null) {
+										return EcoreUtil.getURI(coercedObject) -> coercedType;
+									}
+									return null;
+								].filterNull.force;
 							}	
 						}) ?: #[];
 

@@ -41,7 +41,7 @@ public interface IValidationIssueAcceptor {
 			return false;
 		}
 		private static String getTestString() {
-			return "prim»i»8 (:: xint8) has a different type than f (:: string<A>)";
+			return "Types int32 and int32 are not the same.";
 		}
 		private static boolean testFun(String s) {
 			return s.startsWith(getTestString());

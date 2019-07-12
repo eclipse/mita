@@ -98,9 +98,10 @@ fn returnInVoid() : void {
 	}
 }
 
-// XPECT errors --> "Types void and uint32 are not the same." at "uint32"
+// XPECT errors --> "The operation must return a value of type uint32." at "returnWithoutValudInNoVoidFunction"
 fn returnWithoutValudInNoVoidFunction() : uint32 {
 	if(true) {
+		// XPECT errors --> "Types void and uint32 are not the same." at "return;"
 		return;
 	}
 }
@@ -178,28 +179,28 @@ fn returnSumType9(): anyVec {
 
 // size inference is only done if typing is without errors. Hence inferred type is *uint32*, not *'4*.
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray1"
-//XPECT infos --> "_ has type uint32" at "?"
+//XPECT infos --> "? has type uint32" at "?"
 fn returnArray1(): array<int32, ?> {
-	//XPECT infos --> "_ has type uint32" at "?"
+	//XPECT infos --> "? has type uint32" at "?"
 	var res: array<int32, ?> = [1,2,3,4];
 	return res;
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray2"
-//XPECT infos --> "_ has type uint32" at "?"
+//XPECT infos --> "? has type uint32" at "?"
 fn returnArray2(): array<int32, ?> {
 	return [1,2,3,4];
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString1"
-//XPECT infos --> "_ has type uint32" at "?"
+//XPECT infos --> "? has type uint32" at "?"
 fn returnString1(): string<?> {
-	//XPECT infos --> "_ has type uint32" at "?"
+	//XPECT infos --> "? has type uint32" at "?"
 	var res: string<?> = "abc";
 	return res;
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString2"
-//XPECT infos --> "_ has type uint32" at "?"
+//XPECT infos --> "? has type uint32" at "?"
 fn returnString2(): string<?> {
 	return "abc";
 }

@@ -20,7 +20,7 @@ function expressions() : void {
 //	let f = 1.0e4; // float literal
 	let g = "1"; // string literal
 	let h = '1'; // string literal
-//	let i = [1, 2]; // Array<uint32_t> literal (size=2)
+	let i = [1, 2]; // Array<uint32_t> literal (size=2)
 	// Expressions support basic arithmetic. Valid operators are:
 	// multiplication: *
 	// addition: +

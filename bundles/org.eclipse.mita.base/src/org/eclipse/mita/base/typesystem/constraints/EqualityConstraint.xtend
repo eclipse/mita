@@ -14,11 +14,11 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 @Accessors
 @EqualsHashCode
@@ -32,6 +32,9 @@ class EqualityConstraint extends AbstractTypeConstraint {
 		this.right = right;
 		if(left === null || right === null || source === null) {
 			throw new NullPointerException;
+		}
+		if(this.toString == "f_15 ≡ int8") {
+			print("")
 		}
 	}
 	

@@ -14,12 +14,12 @@
 package org.eclipse.mita.base.typesystem.constraints
 
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
-import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 /**
  * Corresponds to instance relationship 𝜏 ⪯ σ as defined in
@@ -72,7 +72,7 @@ class ExplicitInstanceConstraint extends AbstractTypeConstraint {
 	}
 	
 	override isAtomic(ConstraintSystem system) {
-		return typeScheme instanceof TypeVariable
+		return typeScheme instanceof TypeVariableProxy
 	}
 	
 	override hasProxy() {
