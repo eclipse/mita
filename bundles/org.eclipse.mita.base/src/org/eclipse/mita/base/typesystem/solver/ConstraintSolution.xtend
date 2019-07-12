@@ -21,18 +21,18 @@ import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 @FinalFieldsConstructor
 @Accessors
 class ConstraintSolution {
-	protected final ConstraintSystem constraintSystem;
-	protected final Substitution solution;
+	protected final ConstraintSystem system;
+	protected final Substitution substitution; 
 	protected final List<ValidationIssue> issues;
 	
 	override toString() {
 		'''
 		Constraints:
-			«constraintSystem»
+			«system»
 		Issues:
 			«FOR issue : issues SEPARATOR "\n"»«issue»«ENDFOR»
 		Solution:
-			«solution»
+			«substitution»
 		'''
 	}
 	

@@ -17,9 +17,9 @@ import java.util.ArrayList
 import java.util.List
 import java.util.Map
 import java.util.Set
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.types.Signedness
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy.AmbiguityResolutionStrategy
-import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.diagnostics.Severity
 
 final class SerializedConstraintSystem {
@@ -91,14 +91,21 @@ final class SerializedFloatingType extends SerializedNumericType {
 final class SerializedIntegerType extends SerializedNumericType {
 	public Signedness signedness;
 }
+final class SerializedLiteralNumberType extends SerializedAbstractBaseType {
+	public SerializedAbstractType typeOf;
+	public long value;
+}
 
 abstract class SerializedCompoundType extends SerializedAbstractType {
-	public List<SerializedAbstractType> typeArguments = new ArrayList;
+	public List<Pair<SerializedAbstractType, Variance>> typeArguments = new ArrayList;
 }
 
 final class SerializedTypeConstructorType extends SerializedCompoundType {
 }
 
+final class SerializedNumericAddType extends SerializedCompoundType {
+	public SerializedAbstractType typeOf;
+}
 final class SerializedFunctionType extends SerializedCompoundType {
 }
 
@@ -107,14 +114,18 @@ final class SerializedProductType extends SerializedCompoundType {
 
 final class SerializedSumType extends SerializedCompoundType {
 }
-
 final class SerializedTypeScheme extends SerializedAbstractType {
-	public List<SerializedTypeVariable> vars;
+	public List<SerializedAbstractType> vars;
 	public SerializedAbstractType on;
 }
 
 final class SerializedTypeVariable extends SerializedAbstractType {
 	public int idx;
+}
+
+final class SerializedDependentTypeVariable extends SerializedAbstractType {
+	public int idx;
+	public SerializedAbstractType dependsOn;
 }
 
 final class SerializedTypeVariableProxy extends SerializedAbstractType {

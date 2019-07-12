@@ -17,7 +17,6 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import java.util.ArrayList
 import java.util.HashMap
-import java.util.HashSet
 import java.util.List
 import java.util.Map
 import org.eclipse.core.runtime.CoreException
@@ -27,9 +26,13 @@ import org.eclipse.emf.common.util.URI
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.emf.ecore.InternalEObject
+import org.eclipse.emf.ecore.impl.BasicEObjectImpl
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.InstanceTypeParameter
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
 import org.eclipse.mita.base.typesystem.infra.Graph
 import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
@@ -38,26 +41,33 @@ import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AbstractType.Either
 import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import java.util.Deque
+import java.util.ArrayDeque
+import java.util.stream.Collectors
 
 @Accessors
 class ConstraintSystem {
 	@Inject protected Provider<ConstraintSystem> constraintSystemProvider; 
 	@Inject protected SerializationAdapter serializationAdapter;
+	@Inject protected MostGenericUnifierComputer mguComputer;
 	protected Map<URI, TypeVariable> symbolTable = new HashMap();
 	protected Map<QualifiedName, AbstractType> typeTable = new HashMap();
 	protected Map<QualifiedName, TypeClass> typeClasses = new HashMap();
-	protected List<AbstractTypeConstraint> atomicConstraints = new ArrayList();
-	protected List<AbstractTypeConstraint> nonAtomicConstraints = new ArrayList();
+	protected Deque<AbstractTypeConstraint> atomicConstraints = new ArrayDeque();
+	protected Deque<AbstractTypeConstraint> nonAtomicConstraints = new ArrayDeque();
 	protected Graph<AbstractType> explicitSubtypeRelations;
 	protected Map<Integer, AbstractType> explicitSubtypeRelationsTypeSource = new HashMap();
 	protected Map<String, Map<String, String>> userData = new HashMap();
@@ -101,6 +111,14 @@ class ConstraintSystem {
 		new TypeHole(obj, instanceCount++)
 	}
 	
+	def TypeVariable getDependentTypeVariable(InstanceTypeParameter obj, AbstractType dependsOn) {
+		val uri = EcoreUtil.getURI(obj);
+		
+		getOrCreate(obj, uri, [
+			return new DependentTypeVariable(obj, instanceCount++, dependsOn);
+		]);
+	}
+	
 	def TypeVariableProxy newTypeVariableProxy(EObject origin, EReference reference) {
 		return new TypeVariableProxy(origin, instanceCount++, reference);
 	}
@@ -116,6 +134,14 @@ class ConstraintSystem {
 		return getOrCreate(obj, subUri, [
 			newTypeVariable(it)
 		])
+	}
+	
+	def TypeVariable getTypeHole(EObject obj) {
+		val uri = EcoreUtil.getURI(obj);
+
+		getOrCreate(obj, uri, [ 
+			newTypeHole(it)
+		]);
 	}
 	
 	def TypeVariable getTypeVariable(EObject obj) {
@@ -160,6 +186,7 @@ class ConstraintSystem {
 	
 	new(ConstraintSystem other) {
 		this();
+		mguComputer = mguComputer ?: other.mguComputer;
 		constraintSystemProvider = constraintSystemProvider ?: other.constraintSystemProvider;
 		instanceCount = other.instanceCount;
 		atomicConstraints.addAll(other.atomicConstraints);
@@ -180,8 +207,9 @@ class ConstraintSystem {
 				return Either.left(var1+offset);
 			}	
 		}
-		result.atomicConstraints.replaceAll([it.modifyNames(converter)])
-		result.nonAtomicConstraints.replaceAll([it.modifyNames(converter)])
+		
+		result.atomicConstraints = result.atomicConstraints.stream.map[it.modifyNames(converter)].collect(Collectors.toCollection[new ArrayDeque]);
+		result.nonAtomicConstraints = result.nonAtomicConstraints.stream.map[it.modifyNames(converter)].collect(Collectors.toCollection[new ArrayDeque]);
 		result.symbolTable.replaceAll([k, v | v.modifyNames(converter) as TypeVariable]);
 		result.typeTable.replaceAll([k, v | v.modifyNames(converter)]);
 		result.typeClasses.replaceAll([k, v | v.modifyNames(converter)]);
@@ -243,13 +271,27 @@ class ConstraintSystem {
 		};
 	}
 	
-	def void addConstraint(AbstractTypeConstraint constraint) {
+	def void addConstraint(AbstractTypeConstraint constraint, boolean toHead) {
 		if(constraint.isAtomic(this)) {
-			atomicConstraints.add(constraint);
+			if(toHead) { 
+				atomicConstraints.addFirst(constraint);
+			}
+			else {				
+				atomicConstraints.add(constraint);
+			}
 		}
 		else {
-			nonAtomicConstraints.add(constraint);
+			if(toHead) {
+				nonAtomicConstraints.addFirst(constraint);
+			}
+			else {				
+				nonAtomicConstraints.add(constraint);
+			}
 		}
+	}
+	
+	def void addConstraint(AbstractTypeConstraint constraint) {
+		addConstraint(constraint, false);
 	}
 	
 	def TypeClass getTypeClassOrNull(QualifiedName qn) {
@@ -302,12 +344,12 @@ class ConstraintSystem {
 		'''
 	}
 	
-	def takeOneNonAtomic() {
+	def AbstractTypeConstraint takeOneNonAtomic() {
 		if(nonAtomicConstraints.empty) {
 			return null;
 		}
 		
-		return nonAtomicConstraints.remove(0);
+		return nonAtomicConstraints.poll;
 	}
 	
 	def hasNonAtomicConstraints() {
@@ -322,12 +364,28 @@ class ConstraintSystem {
 		this.addConstraint(constraint);
 		return this;
 	}
+		
+	public def associate(AbstractType t, EObject typeVarOrigin) {
+		return associate(t, typeVarOrigin, false);	
+	}
+	public def associate(AbstractType t, EObject typeVarOrigin, boolean toHead) {
+		if(typeVarOrigin === null) {
+			throw new UnsupportedOperationException("BCF: Associating a type variable without origin is not supported (on purpose)!");
+		}
+		
+		val typeVar = getTypeVariable(typeVarOrigin);
+		if(typeVar != t && t !== null) { 
+			addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» must be of type "%2$s"''', typeVarOrigin, null, "")), toHead);
+		}
+		return typeVar;	
+	}
 	
 	def static combine(Iterable<ConstraintSystem> systems) {
 		if(systems.empty) {
 			return null;
 		}
 		
+		val mguComputer = systems.map[it.mguComputer].filterNull.head;
 		val csp = systems.map[it.constraintSystemProvider].filterNull.head;
 		val result = systems.fold(csp?.get() ?: new ConstraintSystem(), [r, t|
 			r.instanceCount += t.instanceCount;
@@ -364,26 +422,27 @@ class ConstraintSystem {
 			return r;
 		]);
 		result.constraintSystemProvider = csp;
+		result.mguComputer = mguComputer;
 		return result;
 	}
 	
 	def replace(Substitution substitution) {
-		atomicConstraints = atomicConstraints.map[ it.replace(substitution) ].force;
-		nonAtomicConstraints = nonAtomicConstraints.map[ it.replace(substitution) ].force;
+		atomicConstraints = atomicConstraints.stream.map[it.replace(substitution)].collect(Collectors.toCollection[new ArrayDeque])
+		nonAtomicConstraints = nonAtomicConstraints.stream.map[it.replace(substitution)].collect(Collectors.toCollection[new ArrayDeque])
 		return this;
 	}
 	
 	def ConstraintSystem replaceProxies(Resource resource, IScopeProvider scopeProvider) {
 		val result = new ConstraintSystem(this);
-
-		result.atomicConstraints = atomicConstraints.map[ 
-			it.replaceProxies(result, [ 
+		result.atomicConstraints.clear();
+		result.nonAtomicConstraints.clear();
+		
+		constraints.forEach[
+			result.addConstraint(it.replaceProxies(result, [ 
 				result.resolveProxy(it, resource, scopeProvider)
-			]) ].force;
-		result.nonAtomicConstraints = nonAtomicConstraints.map[ 
-			it.replaceProxies(result, [ 
-				result.resolveProxy(it, resource, scopeProvider)
-			]) ].force;
+			]));
+		];
+		
 		result.typeClasses = new HashMap(typeClasses.mapValues[ 
 			it.replaceProxies([ 
 				result.resolveProxy(it, resource, scopeProvider)
@@ -404,7 +463,7 @@ class ConstraintSystem {
 		if(tvp.origin === null) {
 			return #[new BottomType(tvp.origin, '''Origin is empty for «tvp.name»''')];
 		}
-		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference)) {
+		if(tvp.isLinkingProxy && tvp.origin.eClass.EReferences.contains(tvp.reference) && tvp.origin.eIsSet(tvp.reference) && !tvp.origin.eGet(tvp.reference, false)?.castOrNull(BasicEObjectImpl)?.eIsProxy) {
 			return #[BaseUtils.ignoreChange(tvp.origin, [
 					getTypeVariable(tvp.origin.eGet(tvp.reference, false) as EObject)
 				])];

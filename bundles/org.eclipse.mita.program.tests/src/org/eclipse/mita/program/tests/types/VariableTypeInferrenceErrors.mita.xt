@@ -1,0 +1,127 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+ 
+package test;
+import platforms.unittest;
+ 
+function variableInference() : void { 
+	//XPECT inferredType --> xint8
+	var x = 10;
+	//XPECT inferredType --> uint8
+	var z : uint8 = x; 
+} 
+
+function variableInferenceExpression() : void {
+	//XPECT inferredType --> int8
+	var x: int8 = 10;
+	//XPECT inferredType --> int16
+	var z: int16 = (x * 3) + 10;
+}
+
+function variableInferenceOperationCall() : void {
+	//XPECT inferredType --> array<int8, uint32>
+	var array : array<int8, 10> = new array<int8, 10>();
+	//XPECT inferredType --> xint8  
+	var x = 10;   
+	testIt(x, 10);         
+	//XPECT inferredType --> xint8
+	var y = 10;
+	testIt(param2 = y, param1 = 10);   
+} 
+ 
+function testIt(param1 : uint8, param2 : uint32) : bool {
+	return true;
+}
+
+function variableInferenceExtensionOperationCall() : void {
+	var opt : optional<int8> = 10;
+	//XPECT inferredType --> int8 
+	var x = opt.value();     
+}
+
+function variableInferenceRecursion() {
+	//XPECT inferredType --> xint8
+	var x = 10;
+	//XPECT inferredType --> xint8
+	var z = x;
+}
+
+function variableInferenceIf() {
+	//XPECT inferredType --> xint8
+	var x = 10;
+	if(x > 10){
+		
+	}
+}
+
+function variableInferenceFloat() {
+	//XPECT inferredType --> xint8
+	var x  = 10;
+	//XPECT inferredType --> f32
+	var z : float = x as float;
+	//XPECT inferredType --> f32
+	var y = 10.0f; 
+}
+ 
+function variableInferenceDouble() {
+	//XPECT inferredType --> xint8
+	var x = 10;
+	//XPECT inferredType --> f64
+	var z : double = x as double;
+	// XPECT inferredType --> f64
+	var y = 10.0d; 
+}
+
+function variableInferenceGenerated() {
+    //XPECT inferredType --> optional<int32>
+    var xo: int32? = 1;
+    //XPECT inferredType --> optional<int32>
+    var yo = xo;
+    
+    //XPECT inferredType --> xint8
+    var xs = 42;
+    //XPECT inferredType --> string<uint32>
+    var ys = `${xs}`;
+    
+    //XPECT inferredType --> array<xint8, uint32>
+    var xa = [1,2,3,4];
+    //XPECT inferredType --> array<xint8, uint32>
+    var ya = xa;
+}
+
+function variableInferenceBoolean() {
+	//XPECT inferredType --> bool
+	var x  = true;
+}
+
+function test(){
+	//XPECT inferredType --> uint8
+	var x = inferMe();  
+}
+
+function inferMe() {
+	var z : uint8  = 10;
+	return z;  
+}
+
+function inferByInitialization() {
+	var x : uint8 = 10;
+	var y : int8 = 10;
+	//XPECT inferredType --> int16
+	var z = x + y;
+}	
+
+function noCommonType() {
+	var x : int32 = 10;
+	var y : uint32 = 10;
+	/* XPECT errors --- 
+		"Function __PLUS__ cannot be used here" at "x + y"
+		"__args(int32, uint32) not instance of __PLUS__. Valid instances are:\r\n	__PLUS__([x: double, y: double]): __args(f64, f64) → f64\r\n	__PLUS__([x: float, y: float]): __args(f32, f32) → f32\r\n	__PLUS__([x: int16, y: int16]): __args(int16, int16) → int16\r\n	__PLUS__([x: int32, y: int32]): __args(int32, int32) → int32\r\n	__PLUS__([x: int8, y: int8]): __args(int8, int8) → int8\r\n	__PLUS__([x: uint16, y: uint16]): __args(uint16, uint16) → uint16\r\n	__PLUS__([x: uint32, y: uint32]): __args(uint32, uint32) → uint32\r\n	__PLUS__([x: uint8, y: uint8]): __args(uint8, uint8) → uint8\r\n	__PLUS__([x: xint16, y: xint16]): __args(xint16, xint16) → xint16\r\n	__PLUS__([x: xint32, y: xint32]): __args(xint32, xint32) → xint32\r\n	__PLUS__([x: xint8, y: xint8]): __args(xint8, xint8) → xint8\r\n	__PLUS__<S1 (variance: =), S2 (variance: =)>([x: string<S1>, y: string<S2>]): ∀[A, B].__args(string<A>, string<B>) → string<uint32>\r\n	__PLUS__<T (variance: =), S1 (variance: =), S2 (variance: =)>([x: array<T, S1>, y: array<T, S2>]): ∀[C, D, E].__args(array<C, D>, array<C, E>) → array<C, uint32>\r\n" at "x + y"
+		--- */
+	var z = x + y;  
+}
+

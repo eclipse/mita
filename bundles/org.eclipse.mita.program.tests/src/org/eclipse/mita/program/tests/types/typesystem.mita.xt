@@ -37,11 +37,10 @@ fn id(x: int32?): int32? {
 fn id(x: int32): int32 {
 	return x;  
 }      
-//XPECT inferredType --> __args(string) → string
-/*XPECT errors ---
-"Could not infer the size of the function's return." at "id"
---- */
-fn id(x: string): string {
+//XPECT inferredType --> ∀[A].__args(string<A>) → string<A>
+//XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "id"
+//XPECT errors ---> "Couldn't infer size" at "string<Size>"
+fn <Size> id(x: string<Size>): string<Size> {
 	return x;
 }   
 
@@ -50,11 +49,10 @@ fn id2(x: int32, y: int8): int32 {
 	return x;  
 }      
   
-//XPECT inferredType --> __args(string, int8) → string
-/*XPECT errors ---
-"Could not infer the size of the function's return." at "id2"
---- */
-fn id2(x: string, y: int8): string {
+//XPECT inferredType --> ∀[A].__args(string<A>, int8) → string<A>
+//XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "id2"
+//XPECT errors ---> "Couldn't infer size" at "string<Size>"
+fn <Size> id2(x: string<Size>, y: int8): string<Size> {
 	return x;
 }
     
@@ -70,12 +68,21 @@ every 100 milliseconds {
 	// XPECT infos --> "<auto>.vec1d(<null>=prim»i»10) has type ∗anyVec(vec0d() | vec1d(int32) | vec2d(int32, optional<bool>))" at ".vec1d(10)"
 	let c = .vec1d(10); 
 	let d = c.x(); 
-	let e = "asdf";     
+	let e = "asdf";
 	let f = 8;
-	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "id(e)"
-	let g: string = id(e);          
-	let h = id(f); 
-	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "FunctionParameterDeclarationImpl" of type "string"." at "id2(y=0, x=e)"
+	// XPECT infos --> "? has type uint32" at "?"
+	/*XPECT errors ---
+		"Couldn't infer size" at "id(e)"
+		"Couldn't infer size" at "let g: string<?> = id(e);"
+		"Couldn't infer size" at "string<?>"
+	--- */
+	let g: string<?> = id(e);          
+	let h = id(f);
+	/*XPECT errors ---
+		"Couldn't infer size" at ""
+		"Couldn't infer size" at "id2(y=0, x=e)"
+		"Couldn't infer size" at "let h2 = id2(y=0, x=e);"
+	--- */
 	let h2 = id2(y=0, x=e);
 	let h3 = id2(y=0, x=f);    
 	let m = C_Magnetometer_read();
@@ -84,7 +91,6 @@ every 100 milliseconds {
 	--- */
 	let asdf: &&int32;    
 	let wert: int32?;
-	// XPECT errors --> "Cannot determine size of element: Cannot infer size of "VariableDeclarationImpl" of type "modality<uint16>"." at "foo"
 	let foo: modality<uint16>;   
 	let bar: uint32? = 10;
 	let barp: uint16? = 10;
@@ -92,7 +98,6 @@ every 100 milliseconds {
 	let bar3 = &bar2; 
 	let bar4 = 1 == 1? *bar3: bar; 
 	/* XPECT errors ---
-		"Cannot determine size of element: Object does not have a size" at "MySensor.modality01"
 		"Modalities must be used immediately. Add .read() after modality01" at "modality01"
 	--- */
 	let a: modality<uint32> = MySensor.modality01; 
@@ -119,23 +124,10 @@ every 100 milliseconds {
 		is(anyVec.vec2d -> a1, b2) {
 		
 		}
-		/*XPECT errors ---
-			"Cannot determine size of element: Unable to infer size from type A" at "a1"
-			"vec2d(int32, optional<bool>) and vec2d(A) don't fit together" at "is(anyVec.vec2d -> a1) { 		  		}"
-		--- */
-		is(anyVec.vec2d -> a1) {
-		 
-		}
 		is(x: anyVec.vec1d) {
 			
 		} 
 	}
-	/* XPECT errors ---
-		"f (:: A) and g don't share a common type" at "f"
-		"f (:: xint8) and g don't share a common type" at "f"
-		"f and g (:: string) don't share a common type" at "g"
-	 --- */
-	let a4 = f == g;
 //	let k = m.x;    
 	//backend.t.write(`[${m.x}, ${m.y}, ${m.z}, ${m.r}]`);
 }   
@@ -145,25 +137,7 @@ fn <T> foo2() {
 	let bar2 =  bar;
 	let bar3 = &bar2;
 	let bar4 = *bar3; 
-	/* XPECT errors ---
-		"Function con_array cannot be used here: arguments don't fit (__args(A, B) != __args(uint32))" at "new array<int32>(10, 20)"
-		"__args(xint8, xint8) and __args(uint32) differ in the number of type arguments" at "new array<int32>(10, 20)"
-	--- */
-	let bar5 = new array<int32>(10, 20);
-	let bar6 = new array<int32>(10);
-	/* XPECT errors ---
-		"Cannot determine size of element: No explicit maximum size was given" at "new array<int32>()"
-		"__args() and __args(uint32) differ in the number of type arguments" at "new array<int32>()"
-	--- */
-	let bar7 = new array<int32>();
-	let bar8 = new array<int32>(size=10);
-	/* XPECT errors ---
-		"Couldn't resolve reference to Parameter 'foo'." at "foo"
-		"Function con_array cannot be used here" at "new array<int32>(foo=10)"
-		"Too few arguments" at "new array<int32>(foo=10)"
-		"prim»i»10 (:: xint8) not compatible with foo (:: ⊥ (Couldn't resolve reference to Parameter 'foo'.))" at "foo=10"
-	--- */
-	let bar9 = new array<int32>(foo=10);
+	let bar6 = new array<int32, 10>();
 	return;  
 } 
  

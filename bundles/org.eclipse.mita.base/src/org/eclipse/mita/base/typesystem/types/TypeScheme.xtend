@@ -23,6 +23,10 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
+import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
 
 @EqualsHashCode
 @Accessors
@@ -65,10 +69,13 @@ class TypeScheme extends AbstractType {
 		return on.freeVars.filter(TypeVariable).reject[vars.contains(it)];
 	}
 	
-	def instantiate(ConstraintSystem system) {
+	def instantiate(ConstraintSystem system, EObject origin) {
 		val newVars = new ArrayList<TypeVariable>();
 		val newOn = vars.fold(on, [term, boundVar | 
-			val freeVar = system.newTypeVariable(null);
+			val freeVar = system.newTypeVariable(origin);
+			if(boundVar instanceof DependentTypeVariable) {
+				system.addConstraint(new SubtypeConstraint(freeVar, boundVar.dependsOn, new ValidationIssue("%s is not a %s", origin)))
+			}
 			newVars.add(freeVar);
 			term.replace(boundVar, freeVar);
 		]);
@@ -88,7 +95,7 @@ class TypeScheme extends AbstractType {
 				return this;
 			}
 			return new TypeScheme(origin, this.vars, 
-				on.replace(sub.filter[vars.contains(it)])
+				on.replace(sub.filter[!vars.contains(it)])
 			);
 		} else {
 			return new TypeScheme(origin, this.vars, this.on.replace(sub));			
@@ -109,6 +116,10 @@ class TypeScheme extends AbstractType {
 	
 	override unquote(Iterable<Tree<AbstractType>> children) {
 		return new TypeScheme(origin, vars, children.head.node.unquote(children.head.children))
+	}
+	
+	override hasProxy() {
+		super.hasProxy() || vars.exists[it instanceof TypeVariableProxy]
 	}
 	
 }

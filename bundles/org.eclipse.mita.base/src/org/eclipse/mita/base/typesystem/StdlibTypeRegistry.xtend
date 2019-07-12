@@ -14,45 +14,27 @@
 package org.eclipse.mita.base.typesystem
 
 import com.google.inject.Inject
-import java.util.HashSet
-import java.util.List
-import java.util.Set
 import java.util.regex.Pattern
-import org.eclipse.core.runtime.CoreException
-import org.eclipse.core.runtime.IStatus
-import org.eclipse.core.runtime.Status
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider.ExportedFilteredScope
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.NativeType
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
-import org.eclipse.mita.base.typesystem.constraints.AbstractTypeConstraint
-import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
-import org.eclipse.mita.base.typesystem.types.BaseKind
-import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.FloatingType
-import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.IntegerType
-import org.eclipse.mita.base.typesystem.types.ProdType
 import org.eclipse.mita.base.typesystem.types.Signedness
-import org.eclipse.mita.base.typesystem.types.SumType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeScheme
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.util.OnChangeEvictingCache
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import static extension org.eclipse.mita.base.util.BaseUtils.zip
-import org.eclipse.mita.base.scoping.TypesGlobalScopeProvider.ExportedFilteredScope
 
 class StdlibTypeRegistry {
 	public static val voidTypeQID = QualifiedName.create(#[/*"stdlib",*/ "void"]);
@@ -96,14 +78,14 @@ class StdlibTypeRegistry {
 			return null;
 		}
 		val obj = cache.get(qn, context.eResource, [|
-			val scope = cache.get("SCOPE_TYPE", context.eResource, [|scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type)]);
+			val scope = cache.get("SCOPE_TYPE", context.eResource, [|scopeProvider.getScope(context, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)]);
 			scope.getSingleElement(qn)?.EObjectOrProxy
 		]);
 		return obj;
 	}
 	def getTypeModelObjectProxy(ConstraintSystem system, EObject context, QualifiedName qn) {
 		if(isLinking) {
-			return system.getTypeVariableProxy(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type, qn);
+			return system.getTypeVariableProxy(context, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type, qn);
 		}
 		return system.getTypeVariable(getTypeModelObject(context, qn));
 	}
@@ -125,12 +107,7 @@ class StdlibTypeRegistry {
 		val voidType = getTypeModelObject(context, StdlibTypeRegistry.voidTypeQID);
 		return new AtomicType(voidType, "void");
 	}
-	
-	protected def getStringType(EObject context) {
-		val stringType = getTypeModelObject(context, StdlibTypeRegistry.stringTypeQID);
-		return new AtomicType(stringType, "string");
-	}
-	
+		
 	protected def getFloatType(EObject context) {
 		val floatType = getTypeModelObject(context, StdlibTypeRegistry.floatTypeQID);
 		if(floatType === null) {
@@ -147,19 +124,19 @@ class StdlibTypeRegistry {
 	public def getOptionalType(ConstraintSystem system, EObject context) {
 		val optionalType = getTypeModelObject(context, StdlibTypeRegistry.optionalTypeQID) as GeneratedType;
 		val typeArgs = #[system.newTypeVariable(optionalType.typeParameters.head)]
-		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, new AtomicType(optionalType, "optional"), typeArgs.map[it as AbstractType]));
+		return new TypeScheme(optionalType, typeArgs, new TypeConstructorType(optionalType, new AtomicType(optionalType, "optional"), typeArgs.map[it as AbstractType -> Variance.INVARIANT]));
 	}
 	
 	public def getReferenceType(ConstraintSystem system, EObject context) {
 		val referenceType = getTypeModelObject(context, StdlibTypeRegistry.referenceTypeQID) as GeneratedType;
 		val typeArgs = #[system.newTypeVariable(referenceType.typeParameters.head)]
-		return new TypeScheme(referenceType, typeArgs, new TypeConstructorType(referenceType, new AtomicType(referenceType, "reference"), typeArgs.map[it as AbstractType]));
+		return new TypeScheme(referenceType, typeArgs, new TypeConstructorType(referenceType, new AtomicType(referenceType, "reference"), typeArgs.map[it as AbstractType -> Variance.INVARIANT]));
 	}
 	
 	protected def getModalityType(ConstraintSystem system, EObject context) {
 		val modalityType = getTypeModelObject(context, StdlibTypeRegistry.modalityTypeQID) as GeneratedType;
 		val typeArgs = #[system.newTypeVariable(modalityType.typeParameters.head)]
-		return new TypeScheme(modalityType, typeArgs, new TypeConstructorType(modalityType, new AtomicType(modalityType, "modality"), typeArgs.map[it as AbstractType]));
+		return new TypeScheme(modalityType, typeArgs, new TypeConstructorType(modalityType, new AtomicType(modalityType, "modality"), typeArgs.map[it as AbstractType -> Variance.INVARIANT]));
 	}
 		
 	public def Iterable<AbstractType> getFloatingTypes(EObject context) {
@@ -169,7 +146,7 @@ class StdlibTypeRegistry {
 		val cache = new OnChangeEvictingCache();
 		
 		return cache.get("STDLIB_INTEGER_TYPES", context.eResource, [|
-			val typesScopeFiltered = scopeProvider.getScope(context, TypesPackage.eINSTANCE.presentTypeSpecifier_Type);
+			val typesScopeFiltered = scopeProvider.getScope(context, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
 			val typesScope = if(typesScopeFiltered instanceof ExportedFilteredScope) {
 				// we want all integer types, even xint*.
 				typesScopeFiltered.unfilter;

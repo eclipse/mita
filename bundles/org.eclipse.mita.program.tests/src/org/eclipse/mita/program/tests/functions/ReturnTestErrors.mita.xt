@@ -67,7 +67,7 @@ fn noRet() : bool {}
 
 fn incompatibleReturnTypes() : int32 {
 	if (true) {
-		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of int32" at """"
+		// XPECT errors --> "Can't return prim»s»"" (:: string<A>) since it's not of a subtype of int32" at """"
 		return "";
 	} else {
 		return 18;
@@ -81,12 +81,10 @@ fn incompatibleReturnTypes() : int32 {
 // XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "impossibleInference"
 fn impossibleInference() {
 	if (true) {
-		// XPECT errors --> "Can't return prim»s»"" (:: string) since it's not of a subtype of A" at """"
 		return "";
 	}
 	/* XPECT errors ---
-		"Can't return prim»b»true (:: bool) since it's not of a subtype of A" at "true"
-		"Can't return prim»b»true (:: bool) since it's not of a subtype of string" at "true"
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of string<A>" at "true"
 	--- */
 	return true;
 }
@@ -100,9 +98,10 @@ fn returnInVoid() : void {
 	}
 }
 
-// XPECT errors --> "Types void and uint32 are not the same." at "uint32"
+// XPECT errors --> "The operation must return a value of type uint32." at "returnWithoutValudInNoVoidFunction"
 fn returnWithoutValudInNoVoidFunction() : uint32 {
 	if(true) {
+		// XPECT errors --> "Types void and uint32 are not the same." at "return;"
 		return;
 	}
 }
@@ -178,29 +177,31 @@ fn returnSumType9(): anyVec {
 	return anyVec.vec4d(1,2,3,4);
 }
 
+// size inference is only done if typing is without errors. Hence inferred type is *uint32*, not *'4*.
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray1"
-fn returnArray1(): array<int32> {
-	var res: array<int32> = [1,2,3,4];
+//XPECT infos --> "? has type uint32" at "?"
+fn returnArray1(): array<int32, ?> {
+	//XPECT infos --> "? has type uint32" at "?"
+	var res: array<int32, ?> = [1,2,3,4];
 	return res;
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray2"
-fn returnArray2(): array<int32> {
+//XPECT infos --> "? has type uint32" at "?"
+fn returnArray2(): array<int32, ?> {
 	return [1,2,3,4];
 }
 
-//XPECT errors --> "Could not infer the size of the function's return." at "returnArrayBad"
-fn returnArrayBad(s: uint32): array<int32> {
-	return new array<int32>(size = s);
-}
-
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString1"
-fn returnString1(): string {
-	var res: string = "abc";
+//XPECT infos --> "? has type uint32" at "?"
+fn returnString1(): string<?> {
+	//XPECT infos --> "? has type uint32" at "?"
+	var res: string<?> = "abc";
 	return res;
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString2"
-fn returnString2(): string {
+//XPECT infos --> "? has type uint32" at "?"
+fn returnString2(): string<?> {
 	return "abc";
 }
 

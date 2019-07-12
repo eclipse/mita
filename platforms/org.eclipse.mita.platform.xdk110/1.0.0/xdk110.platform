@@ -712,10 +712,10 @@ connectivity named-singleton LoRa {
     validator "org.eclipse.mita.platform.xdk110.connectivity.LoraValidator"
 
 	required configuration-item region: Region
-	required configuration-item loraAppKey: array<uint8>
-	required configuration-item loraAppEui: array<uint8>
+	required configuration-item loraAppKey: array<uint8, ?>
+	required configuration-item loraAppEui: array<uint8, ?>
 	
-	configuration-item loraDeviceEui: array<uint8>
+	configuration-item loraDeviceEui: array<uint8, ?>
 	configuration-item adaptiveDataRate: bool = true
 	
 	configuration-item bandFrequency: uint16
@@ -725,8 +725,8 @@ connectivity named-singleton LoRa {
 	
 	
 	
-	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8>
-	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload>
+	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8, ?>
+	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload, ?>
 }
 
 /**
@@ -953,18 +953,18 @@ enum I2CMode {
 bus many I2C {
 	generator "org.eclipse.mita.platform.xdk110.buses.I2CGenerator"
 	validator "org.eclipse.mita.platform.xdk110.buses.I2CValidator"
-	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
+	sizeInferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
 	
 	required configuration-item deviceAddress: uint8
 	
 	configuration-item byteOrder : ByteOrder = ByteOrder.LittleEndian
 	
-	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint8>
-	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int8>
-	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint16>
-	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int16>
-	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint32>
-	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int32>
+	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint8, ?>
+	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int8, ?>
+	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint16, ?>
+	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int16, ?>
+	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint32, ?>
+	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int32, ?>
 	
 	signal register_uint8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint8
 	signal register_int8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int8
@@ -1043,14 +1043,14 @@ io named-singleton SDCard {
 	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
 	sizeInferrer "org.eclipse.mita.platform.xdk110.io.SDCardSizeInferrer"
 
-	signal resumingBinaryRead(filePath: string, blockSize: uint32) : array<uint8>
-	signal appendingBinaryWrite(filePath: string) : array<uint8>
+	signal resumingBinaryRead(filePath: string, blockSize: uint32) : array<uint8, ?>
+	signal appendingBinaryWrite(filePath: string) : array<uint8, ?>
 
 	signal resumingTextRead(filePath: string, blockSize: uint32) : string
 	signal appendingTextWrite(filePath: string) : string
 
-	signal rewindingBinaryRead(filePath: string, fileSize: uint32) : array<uint8>
-	signal rewindingBinaryWrite(filePath: string) : array<uint8>
+	signal rewindingBinaryRead(filePath: string, fileSize: uint32) : array<uint8, ?>
+	signal rewindingBinaryWrite(filePath: string) : array<uint8, ?>
 
 	signal rewindingTextRead(filePath: string, fileSize: uint32) : string
 	signal rewindingTextWrite(filePath: string) : string

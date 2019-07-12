@@ -42,7 +42,11 @@ function structTest() : void {
 	--- */
 	inst = Foo(1, false, 3);
 	// We error on wrong type of arguments
-	// XPECT errors --> "Incompatible types: string is not subtype of bool." at "Foo"
+	/* XPECT errors ---
+		"Types string<A> and bool are not the same." at "Foo(1, "AHHHH!")"
+		"__args isn't structurally a subtype of __args" at "Foo"
+		"string<uint32> is not a subtype of bool" at "Foo"
+	--- */
 	inst = Foo(1, "AHHHH!");
 	
 	// we can use named parameters to swap argument order
@@ -69,8 +73,8 @@ function structTest() : void {
 	// We error on wrong type of arguments
 	/* XPECT errors ---
 		"__args isn't structurally a subtype of __args" at "Foo"
-		"prim»s»"AHHHH!" (:: string) not compatible with foo (:: bool)" at "foo="AHHHH!""
-		"string is not a subtype of bool" at "Foo"
+		"prim»s»"AHHHH!" (:: string<A>) not compatible with foo (:: bool)" at "foo="AHHHH!""
+		"string<uint32> is not a subtype of bool" at "Foo"
 	--- */
 	inst = Foo(bar=1, foo="AHHHH!");
 }

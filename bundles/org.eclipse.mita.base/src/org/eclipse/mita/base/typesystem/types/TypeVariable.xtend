@@ -20,6 +20,11 @@ import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
+/*
+ * Info: TypeVariable.name is null unless an explicit display name is set.
+ * toString is derived from idx, unless name is set.
+ * This is used for nicer displaying of type variables.
+ */
 class TypeVariable extends AbstractType {
 	@Accessors
 	protected val int idx;

@@ -54,19 +54,13 @@ class ConstraintGraphProvider implements Provider<ConstraintGraph> {
 
 class ConstraintGraph extends Graph<AbstractType> {
 
-	protected val SubtypeChecker subtypeChecker;
-	protected val MostGenericUnifierComputer mguComputer;
-	protected val ConstraintSystem constraintSystem;
-	protected val EObject typeResolutionOrigin;
+	private val ConstraintSystem constraintSystem;
 	// this map keeps track of generating subtype constraints to create error messages if solving fails
 	@Accessors
 	protected val Map<Integer, Set<SubtypeConstraint>> nodeSourceConstraints = new HashMap;
 	
 	new(ConstraintSystem system, SubtypeChecker subtypeChecker, MostGenericUnifierComputer mguComputer, EObject typeResolutionOrigin) {
-		this.subtypeChecker = subtypeChecker;
-		this.mguComputer = mguComputer;
 		this.constraintSystem = system;
-		this.typeResolutionOrigin = typeResolutionOrigin;
 		system.constraints
 			.filter(SubtypeConstraint)
 			.forEach[ 
@@ -88,48 +82,6 @@ class ConstraintGraph extends Graph<AbstractType> {
 		return getSuccessors(t).filter[!(it instanceof TypeVariable)].force
 	}
 	
-	def <T extends AbstractType> getSupremum(ConstraintSystem system, Iterable<T> ts) {
-		val tsWithSuperTypes = ts.toSet.filter[!(it instanceof BottomType)].map[
-			subtypeChecker.getSuperTypes(constraintSystem, it, typeResolutionOrigin).toSet
-		].force
-		val tsIntersection = tsWithSuperTypes.reduce[s1, s2| 
-			s1.reject[
-				!s2.contains(it)
-			].toSet
-		] ?: #[].toSet; // intersection over emptySet is emptySet
-		return tsIntersection.findFirst[candidate |
-			tsIntersection.forall[u | 
-				subtypeChecker.isSubType(system, typeResolutionOrigin, candidate, u)
-			]
-		] ?: ts.filter(BottomType).head;
-	}
-		
-	def <T extends AbstractType> getInfimum(ConstraintSystem system, Iterable<T> ts) {
-		val tsWithSubTypes = ts.map[subtypeChecker.getSubTypes(system, it, typeResolutionOrigin).toSet].force;
-		// since we are checking with MGU here some types might be equal to others except for some free variables the MGU unifies.
-		// however we do need to actually use those substitutions after checking for intersection.
-		val typeSubstitutions = new HashMap<AbstractType, Substitution>();
-		val tsIntersection = tsWithSubTypes.reduce[s1, s2| s1.reject[t1 | !s2.exists[t2 | 
-			val unification = mguComputer.compute(null, t1, t2)
-			if(unification.valid) {
-				if(!unification.substitution.content.empty) {
-					if(!typeSubstitutions.containsKey(t1)) {
-						typeSubstitutions.put(t1, unification.substitution);
-					}
-					else {
-						typeSubstitutions.put(t1, unification.substitution.apply(typeSubstitutions.get(t1)));
-					}
-				}
-				return true;
-			}
-			return false;
-		]].toSet]?.map[it.replace(typeSubstitutions.getOrDefault(it, Substitution.EMPTY))]?.toSet ?: #[].toSet;
-		return tsIntersection.findFirst[candidate | tsIntersection.forall[l | 
-			val str = subtypeChecker.isSubtypeOf(system, typeResolutionOrigin, l, candidate);
-			return str.valid && str.constraints.empty
-		]];
-	}
-
 	override nodeToString(Integer i) {
 		val t = nodeIndex.get(i);
 		if(t?.origin === null) {

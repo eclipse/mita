@@ -13,8 +13,8 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
+import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentOperator
@@ -24,10 +24,12 @@ import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
@@ -40,14 +42,11 @@ import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
-import static extension org.eclipse.mita.base.types.TypesUtil.ignoreCoercions
+import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class ArrayGenerator extends AbstractTypeGenerator {
@@ -57,30 +56,31 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	@Inject
 	protected extension GeneratorUtils generatorUtils
-	
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
-	
+		
 	@Inject 
 	protected extension StatementGenerator statementGenerator
 	
 	@Inject
 	protected TypeGenerator typeGenerator
-		
-		
+	
+	static def getInferredSize(EObject obj) {
+		BaseUtils.getType(obj)?.getInferredSize
+	}
+	static def getInferredSize(AbstractType type) {
+		return type?.castOrNull(TypeConstructorType)?.typeArguments?.last?.castOrNull(LiteralTypeExpression) as LiteralTypeExpression<Long>
+	}	
+	
 	private def long getFixedSize(EObject stmt) {
-		val inference = sizeInferrer.infer(stmt);
-		return if(inference instanceof ValidElementSizeInferenceResult) {
-			inference.elementCount;
-		} else {
-			return -1;
-		}
+		return stmt.inferredSize?.eval ?: -1L
 	}
 	
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
+		if(getDataType(type) instanceof TypeVariable) {
+			return CodeFragment.EMPTY;
+		}
 		codeFragmentProvider.create('''
 		typedef struct {
-			«getBufferType(context, type)»* data;
+			«getDataTypeCCode(context, type)»* data;
 			uint32_t length;
 			uint32_t capacity;
 		} «typeGenerator.code(context, type)»;
@@ -96,13 +96,13 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	protected def CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init) {
 		return codeFragmentProvider.create('''
-			«getBufferType(context, arrayType)» «bufferName»[«size»]«IF init !== null» = «statementGenerator.code(init)»«ENDIF»;
+			«getDataTypeCCode(context, arrayType)» «bufferName»[«size»]«IF init !== null» = «statementGenerator.code(init)»«ENDIF»;
 		''')
 	}
 	
-	override CodeFragment generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	override CodeFragment generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		val init = initialization.ignoreCoercions;
-		val capacity = size.elementCount;
+		val capacity = type.inferredSize?.eval
 		// if we are top-level, we must do initialization if there is any
 		val occurrence = getOccurrence(context);
 		val initValue = init?.castOrNull(PrimitiveValueExpression)
@@ -111,7 +111,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val bufferName = codeFragmentProvider.create('''data_«varName»_«occurrence»''');
 		
 		val cf = codeFragmentProvider.create('''
-		«IF capacity >= 0»
+		«IF capacity !== null»
 		// buffer for «varName»
 		«generateBufferStmt(context, type, bufferName, capacity, initValue)»
 		«ELSE»
@@ -127,12 +127,16 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return cf;
 	}
 	
-	def CodeFragment getBufferType(EObject context, AbstractType type) {
-		typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head);
+	def getDataType(AbstractType type) {
+		(type as TypeConstructorType).typeArguments.tail.head;
+	}
+	
+	def CodeFragment getDataTypeCCode(EObject context, AbstractType type) {
+		typeGenerator.code(context, type.dataType);
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''array_«getBufferType(context, type)»''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''array_«getDataTypeCCode(context, type)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
 	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
@@ -167,7 +171,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		'''
 			«IF objLit !== null»«getFixedSize(obj)»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«objCodeExpr».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»
 		''');
-	}
+	} 
 
 	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject _right) {
 		val right = _right.ignoreCoercions;
@@ -214,12 +218,12 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			temporaryBufferName;	
 		}
 		
-		val sizeResLeft = left.transform[sizeInferrer.infer(it)].or(new InvalidElementSizeInferenceResult(null, null, ""));
-		val sizeResRight = sizeInferrer.infer(right);
+		val sizeResLeft = left.flatMap[Optional.ofNullable(it.inferredSize)]
+		val sizeResRight = Optional.ofNullable(right.inferredSize);
 		
 		// if we can infer the sizes we don't need to check bounds 
 		// (validation prevents out of bounds compilation for known sizes)
-		val staticSize = sizeResLeft.valid && sizeResRight.valid;
+		val staticSize = sizeResLeft.present && sizeResRight.present;
 
 		val capacityCheck = if(!staticSize || operator == AssignmentOperator.ADD_ASSIGN) {
 			codeFragmentProvider.create('''
@@ -248,7 +252,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			«lengthLeft» «operator.literal» «lengthRight»«IF valRange !== null»«IF valRange.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«IF valRange.upperBound !== null» - («lengthRight» - «valRange.upperBound.code.noTerminator»)«ENDIF»«ENDIF»;
 		''');
 				
-		val typeSize = codeFragmentProvider.create('''sizeof(«getBufferType(context, type)»)''')
+		val typeSize = codeFragmentProvider.create('''sizeof(«getDataTypeCCode(context, type)»)''')
 		
 		codeFragmentProvider.create('''
 		«IF rightExprIsValueLit»
@@ -266,10 +270,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
-		
-		@Inject
-		protected ElementSizeInferrer sizeInferrer
-		
+				
 		@Inject
 		protected extension StatementGenerator
 

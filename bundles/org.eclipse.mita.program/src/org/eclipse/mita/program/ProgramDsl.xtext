@@ -55,30 +55,38 @@ SignalInstance returns program::SignalInstance:
 
 GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
 	(exported?='export')?
-	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' typeSpecifier=OptionalTypeSpecifier
-	'generator' generator=STRING
-	('validator' validator=STRING)?
+	'generated' ('fn' | 'function') 
+	('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
+	name=ID '(' 
+		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
+	')' 
+	typeSpecifier=OptionalTypeSpecifier
+	(
+		('generator' generator=STRING) &
+		('validator' validator=STRING)? &
+		('size-inferrer' sizeInferrer=STRING)?
+	)
 	';'
 ;
 
 NativeFunctionDefinition returns program::NativeFunctionDefinition:
 	(exported?='export')?
-	'native' (checked?='checked' | 'unchecked') ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
+	'native' (checked?='checked' | 'unchecked') ('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
 	'header' header=STRING ';'
 ;
 
 FunctionDefinition returns program::FunctionDefinition:
 	(exported?='export')?
-	('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' typeSpecifier=OptionalTypeSpecifier
-	(body = FunctionProgramBlock)?
+	('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
+	name=ID '(' 
+		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
+	')' 
+	typeSpecifier=OptionalTypeSpecifier
+	body = FunctionProgramBlock
 ;
 
 OptionalTypeSpecifier returns types::TypeSpecifier:
 	(':' TypeSpecifier) | ({types::NullTypeSpecifier})
-;
-
-GenericFunctionTypeParameter returns types::TypeParameter: 
-	name=ID ('<:' bound=[types::Type])?
 ;
 
 FunctionParameterDeclaration returns program::FunctionParameterDeclaration:
@@ -110,7 +118,7 @@ SystemEventSource returns program::SystemEventSource:
 ;
 
 ReturnParameterDeclaration returns program::ReturnParameterDeclaration:
-	{program::ReturnParameterDeclaration}
+	{program::ReturnParameterDeclaration} typeSpecifier=NullTypeSpecifier
 ;
 
 FunctionProgramBlock returns program::ProgramBlock:
@@ -176,8 +184,8 @@ NewInstanceExpression returns program::NewInstanceExpression:
 	'new' type=UnqualifiedPresentTypeSpecifier '(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
 ;
 
-UnqualifiedPresentTypeSpecifier returns types::PresentTypeSpecifier:
-	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))?
+UnqualifiedPresentTypeSpecifier returns types::TypeReferenceSpecifier:
+	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifierArgument (WS? ',' WS? typeArguments+=TypeSpecifierArgument)* WS? '>'))?
 ;
 
 

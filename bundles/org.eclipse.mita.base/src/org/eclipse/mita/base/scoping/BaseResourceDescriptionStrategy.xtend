@@ -21,16 +21,16 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.impl.ResourceImpl
 import org.eclipse.mita.base.types.Exportable
 import org.eclipse.mita.base.types.GeneratedObject
-import org.eclipse.mita.base.types.PackageAssociation
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.StructuralParameter
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypedElement
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.solver.CoerciveSubtypeSolver
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.nodemodel.INode
@@ -41,7 +41,6 @@ import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionStrategy
 import org.eclipse.xtext.util.IAcceptor
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.util.BaseUtils
 
 class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy {
 	public static final String TYPE = "TYPE"
@@ -120,7 +119,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 	}
 
 	static def String getTypeSpecifierType(TypeSpecifier specifier) {
-		if(specifier instanceof PresentTypeSpecifier){
+		if(specifier instanceof TypeReferenceSpecifier){
 			if(specifier.optional){
 				return MitaTypeSystem.OPTIONAL_TYPE
 			} else if (!specifier.referenceModifiers.isEmpty){
@@ -128,7 +127,7 @@ class BaseResourceDescriptionStrategy extends DefaultResourceDescriptionStrategy
 			}
 		}
 		var List<INode> typeNode = NodeModelUtils.findNodesForFeature(specifier,
-			TypesPackage.Literals.PRESENT_TYPE_SPECIFIER__TYPE)
+			TypesPackage.Literals.TYPE_REFERENCE_SPECIFIER__TYPE)
 		if (typeNode.size() === 1) {
 			return typeNode.get(0).getText().trim()
 		} else {

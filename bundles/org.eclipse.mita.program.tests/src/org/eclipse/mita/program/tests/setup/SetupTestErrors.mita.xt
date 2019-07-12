@@ -65,21 +65,21 @@ setup alt6 : MyConnectivity {
 setup alt0_bad : MyConnectivity {
 	/*XPECT errors ---
 		"Function Nothing cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))))" at ".Nothing(10)"
-		"__args(h_130, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))) differ in the number of type arguments" at "Nothing"
+		"__args(A, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))) differ in the number of type arguments" at "Nothing"
 	--- */
 	cfg05 = .Nothing(10);
 }
 setup alt1_bad : MyConnectivity { 
 	/*XPECT errors ---
 		"Function SomethingAnonymous cannot be used here: arguments don't fit (__args(A, B, C) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32))" at ".SomethingAnonymous(10, 20)"
-		"__args(h_143, xint8, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32) differ in the number of type arguments" at "SomethingAnonymous"
+		"__args(A, xint8, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32) differ in the number of type arguments" at "SomethingAnonymous"
 	--- */
 	cfg05 = .SomethingAnonymous(10, 20);
 }
 setup alt2_bad : MyConnectivity { 
 	/*XPECT errors ---
 		"Function SomethingAnonymous cannot be used here: arguments don't fit (__args(A) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32))" at ".SomethingAnonymous()"
-		"__args(h_159) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32) differ in the number of type arguments" at "SomethingAnonymous"
+		"__args(A) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32) differ in the number of type arguments" at "SomethingAnonymous"
 	--- */
 	cfg05 = .SomethingAnonymous();
 } 
@@ -91,7 +91,7 @@ setup alt3_bad : MyConnectivity {
 setup alt4_bad : MyConnectivity { 
 	/*XPECT errors ---
 		"Function SomethingNamed cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool))" at ".SomethingNamed(20)"
-		"__args(h_185, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool) differ in the number of type arguments" at "SomethingNamed"
+		"__args(A, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool) differ in the number of type arguments" at "SomethingNamed"
 	--- */
 	cfg05 = .SomethingNamed(20);
 }
@@ -205,7 +205,11 @@ setup bluetoothA : MyConnectivity {
 	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
  	var boolD = vci00(true, .CFG_VAL_1);
  	
- 	// XPECT errors --> "Incompatible types: string is not subtype of uint32." at "vci01"
+ 	/* XPECT errors ---
+ 	    "Types string<A> and uint32 are not the same." at "vci01("wrong")"
+ 	    "__args isn't structurally a subtype of __args" at "vci01"
+ 	    "string<uint32> is not a subtype of uint32" at "vci01"
+ 	--- */
  	var boolC2 = vci01("wrong"); // compile-error: The types int16 and string compatible
 } 
 
@@ -245,7 +249,11 @@ setup missingReq : MyConnectivityWithRequires {
 
 }
 setup alt11_bad : MyConnectivity { 
-	// XPECT errors --> "Incompatible types: string is not subtype of int32." at "ConfigStruct"
+	/* XPECT errors ---
+		"Types string<A> and int32 are not the same." at "ConfigStruct("asdf")"
+		"__args isn't structurally a subtype of __args" at "ConfigStruct"
+		"string<uint32> is not a subtype of int32" at "ConfigStruct"
+	--- */
 	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»s»"asdf")) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct("asdf"))"
 	cfg05 = .SomeStruct(ConfigStruct("asdf"));
 }

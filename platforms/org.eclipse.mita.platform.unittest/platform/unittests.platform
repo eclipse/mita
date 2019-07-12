@@ -57,9 +57,9 @@ connectivity named-singleton MySingletonConnectivity {
 connectivity many MyConnectivity {
 	generator "org.eclipse.mita.platform.unittest.ConnectivityGenerator"
 	//validator ""
-	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
+	sizeInferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
 	
-	configuration-item cfg00 : string = "foo"
+	configuration-item cfg00 : string<?> = "foo"
 	configuration-item cfg01 : bool
 	configuration-item cfg02 : uint32
 	configuration-item cfg03 : MyConfigItemValues
@@ -73,16 +73,16 @@ connectivity many MyConnectivity {
 	signal vci00(p01 : bool, p02 : MyConfigItemValues) : bool
 	signal vci01(p01 : uint32) : uint16
 	signal vci02(p01 : uint32, p02 : int32 = 42) : uint16
-	signal vci03(length: uint32) : string
-	signal vci04(length: uint32) : array<int32>
+	signal vci03(length: uint32) : string<?>
+	signal vci04(length: uint32) : array<int32, ?>
 }
 
 connectivity many MyConnectivityWithRequires {
 	generator "org.eclipse.mita.platform.unittest.ConnectivityGenerator"
 	//validator ""
-	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
+	sizeInferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
 	
-	required configuration-item rcfg00 : string = "foo"
+	required configuration-item rcfg00 : string<?> = "foo"
 	required configuration-item rcfg01 : bool
 	required configuration-item rcfg02 : uint32
 	required configuration-item rcfg03 : MyConfigItemValues
