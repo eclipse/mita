@@ -33,41 +33,19 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.ProgramDslTraceExtensions
 import org.eclipse.mita.program.generator.transformation.EscapeWhitespaceInStringStage
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 import org.eclipse.xtext.generator.trace.node.NewLineNode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
+
 
 class StringGenerator extends ArrayGenerator {
 	
-	static public val DOUBLE_PRECISION = 6L;
-		
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
-
 	@Inject
 	protected extension ProgramDslTraceExtensions
-
-	override CodeFragment getUsedSize(CodeFragment bufferName, EObject stmt) {
-		doGetUsedSize(bufferName, stmt);
-	}
-	
-	dispatch def CodeFragment doGetUsedSize(CodeFragment bufferName, PrimitiveValueExpression stmt) {
-		return doGetUsedSize(bufferName, stmt, stmt.value);
-	}
-	dispatch def CodeFragment doGetUsedSize(CodeFragment bufferName, PrimitiveValueExpression stmt, InterpolatedStringLiteral value) {
-		return codeFragmentProvider.create('''«bufferName»_written''');
-	}
-	dispatch def CodeFragment doGetUsedSize(CodeFragment bufferName, PrimitiveValueExpression stmt, EObject value) {
-		super.getUsedSize(bufferName, stmt);
-	}
-	dispatch def CodeFragment doGetUsedSize(CodeFragment bufferName, EObject stmt) {
-		super.getUsedSize(bufferName, stmt);
-	}
-
 
 	override CodeFragment generateLength(EObject obj, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr) {
 		return codeFragmentProvider.create('''«doGenerateLength(obj, temporaryBufferName, valRange, objCodeExpr).noNewline»''');
@@ -94,15 +72,15 @@ class StringGenerator extends ArrayGenerator {
 		return super.generateLength(expr, temporaryBufferName, valRange, objCodeExpr);
 	}
 	
-	override CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init) {
+	override CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init) {
 		val value = init?.value;
 		return doGenerateBufferStmt(context, arrayType, bufferName, size, init, value);
 	}
-	
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, InterpolatedStringLiteral l) {
+	 
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, InterpolatedStringLiteral l) {
+		// need to allocate size+1 since snprintf always writes a zero byte at the end.
 		codeFragmentProvider.create('''
-				// need to allocate size+1 since snprintf always writes a zero byte at the end.
-				«getBufferType(context, arrayType)» «bufferName»[«size» + 1] = {0};
+				«getDataTypeCCode(context, arrayType)» «bufferName»[«size + 1»] = {0};
 				int «bufferName»_written = snprintf(«bufferName», sizeof(«bufferName»), "«l.pattern»"«FOR x : l.content BEFORE ', ' SEPARATOR ', '»«x.getDataHandleForPrintf»«ENDFOR»);
 				if(«bufferName»_written > «size») {
 					«generateExceptionHandler(context, "EXCEPTION_STRINGFORMATEXCEPTION")»
@@ -112,17 +90,17 @@ class StringGenerator extends ArrayGenerator {
 			.addHeader('inttypes.h', true)
 	}
 	
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, StringLiteral l) {
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, StringLiteral l) {
 		return super.generateBufferStmt(context, arrayType, bufferName, size, init);
 	}
 
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, Object l) {
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Object l) {
 		return super.generateBufferStmt(context, arrayType, bufferName, size, init);
 	}
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, Void l) {
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Void l) {
 		return super.generateBufferStmt(context, arrayType, bufferName, size, init);
 	}
-	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init, Literal l) {
+	dispatch def CodeFragment doGenerateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init, Literal l) {
 		return codeFragmentProvider.create('''UNKNOWN LITERAL: «l.eClass»''')
 	}
 	
@@ -183,8 +161,8 @@ class StringGenerator extends ArrayGenerator {
 				case 'xint32':  '%" PRId32 "'
 				case 'xint16':  '%" PRId16 "'
 				case 'xint8':   '%" PRId8 "'
-				case 'f32':  '%.' + DOUBLE_PRECISION + 'g'
-				case 'f64': '%.' + DOUBLE_PRECISION + 'g'
+				case 'f32':  '%.' + BaseUtils.DOUBLE_PRECISION + 'g'
+				case 'f64': '%.' + BaseUtils.DOUBLE_PRECISION + 'g'
 				case 'bool':   '%" PRIu8 "'
 				case 'string': if(sub.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(StringLiteral) !== null) {
 						'%s'
@@ -222,8 +200,8 @@ class StringGenerator extends ArrayGenerator {
 		return results.map[x | EscapeWhitespaceInStringStage.replaceSpecialCharacters(x) ];
 	}
 
-	override CodeFragment getBufferType(EObject context, AbstractType type) {
-		return codeFragmentProvider.create('''char''').addHeader("string.h", true)
+	override CodeFragment getDataTypeCCode(EObject context, AbstractType type) {
+		return codeFragmentProvider.create('''char''')
 	}
 
 	protected def CompositeGeneratorNode removeAllNewLines(CompositeGeneratorNode node) {
@@ -232,4 +210,27 @@ class StringGenerator extends ArrayGenerator {
 		return node;
 		
 	}
+	
+	static class LengthGenerator extends AbstractFunctionGenerator {
+		
+		@Inject
+		protected CodeFragmentProvider codeFragmentProvider
+		
+		@Inject
+		protected TypeSizeInferrer sizeInferrer
+	
+		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
+			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+			val varref = if(variable instanceof ElementReferenceExpression) {
+				val varref = variable.reference;
+				if(varref instanceof VariableDeclaration) {
+					varref
+				}
+			}
+			
+			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref».length''');
+		}
+		
+	}
+	
 }

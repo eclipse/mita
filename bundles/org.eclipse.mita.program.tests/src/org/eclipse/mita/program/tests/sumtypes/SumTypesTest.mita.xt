@@ -55,35 +55,35 @@ fn incVecs(a: anyVec) {
         is(anyVec.vec0d) {
         	/*XPECT errors ---
         	    "Function vec0d cannot be used here" at "vec0d"
-        	    "__args() not instance of vec0d\n	__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32))) → vec0d() = vec0d([self: ∗anyVec])\n	⊥ (Couldn't resolve reference to EObject 'vec0d'.) = vec0d\n" at "vec0d"
+        	    "__args() not instance of vec0d. Valid instances are:\r\n	vec0d: ⊥ (Couldn't resolve reference to EObject 'vec0d'.)\r\n	vec0d([self: ∗anyVec]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32))) → vec0d()\r\n" at "vec0d"
         	--- */
     		b = vec0d();
     	} 
         is(x: anyVec.vec1d) {
         	/*XPECT errors ---
         	    "Function __PLUS__ cannot be used here" at "x + 1"
-        	    "__args(vec1d(int32), xint8) not instance of __PLUS__\r\n	__args(f32, f32) → f32 = __PLUS__([x: float, y: float])\r\n	__args(f64, f64) → f64 = __PLUS__([x: double, y: double])\r\n	__args(int16, int16) → int16 = __PLUS__([x: int16, y: int16])\r\n	__args(int32, int32) → int32 = __PLUS__([x: int32, y: int32])\r\n	__args(int8, int8) → int8 = __PLUS__([x: int8, y: int8])\r\n	__args(string, string) → string = __PLUS__([x: string, y: string])\r\n	__args(uint16, uint16) → uint16 = __PLUS__([x: uint16, y: uint16])\r\n	__args(uint32, uint32) → uint32 = __PLUS__([x: uint32, y: uint32])\r\n	__args(uint8, uint8) → uint8 = __PLUS__([x: uint8, y: uint8])\r\n	__args(xint16, xint16) → xint16 = __PLUS__([x: xint16, y: xint16])\r\n	__args(xint32, xint32) → xint32 = __PLUS__([x: xint32, y: xint32])\r\n	__args(xint8, xint8) → xint8 = __PLUS__([x: xint8, y: xint8])\r\n	∀[A].__args(array<A>, array<A>) → array<A> = __PLUS__<T>([x: array<T>, y: array<T>])\r\n" at "x + 1"
+        	    "__args(vec1d(int32), xint8) not instance of __PLUS__. Valid instances are:\r\n	__PLUS__([x: double, y: double]): __args(f64, f64) → f64\r\n	__PLUS__([x: float, y: float]): __args(f32, f32) → f32\r\n	__PLUS__([x: int16, y: int16]): __args(int16, int16) → int16\r\n	__PLUS__([x: int32, y: int32]): __args(int32, int32) → int32\r\n	__PLUS__([x: int8, y: int8]): __args(int8, int8) → int8\r\n	__PLUS__([x: uint16, y: uint16]): __args(uint16, uint16) → uint16\r\n	__PLUS__([x: uint32, y: uint32]): __args(uint32, uint32) → uint32\r\n	__PLUS__([x: uint8, y: uint8]): __args(uint8, uint8) → uint8\r\n	__PLUS__([x: xint16, y: xint16]): __args(xint16, xint16) → xint16\r\n	__PLUS__([x: xint32, y: xint32]): __args(xint32, xint32) → xint32\r\n	__PLUS__([x: xint8, y: xint8]): __args(xint8, xint8) → xint8\r\n	__PLUS__<S1 (variance: =), S2 (variance: =)>([x: string<S1>, y: string<S2>]): ∀[A, B].__args(string<A>, string<B>) → string<uint32>\r\n	__PLUS__<T (variance: =), S1 (variance: =), S2 (variance: =)>([x: array<T, S1>, y: array<T, S2>]): ∀[C, D, E].__args(array<C, D>, array<C, E>) → array<C, uint32>\r\n" at "x + 1"
         	--- */
         	b = vec1d(x + 1);
         } 
         is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
         	/*XPECT errors ---
         	    "Function vec3d cannot be used here" at "vec3d"
-        	    "__args(int32, int32, int32) not instance of vec3d\n	__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32) → vec3d(int32, int32, int32) = vec3d([self: ∗anyVec, x: int32, y: int32, z: int32])\n	⊥ (Couldn't resolve reference to EObject 'vec3d'.) = vec3d(<null>=x + prim»i»1, <null>=y + prim»i»1, <null>=z + prim»i»1)\n" at "vec3d"
+        	    "__args(int32, int32, int32) not instance of vec3d. Valid instances are:\r\n	vec3d(<null>=x + prim»i»1, <null>=y + prim»i»1, <null>=z + prim»i»1): ⊥ (Couldn't resolve reference to EObject 'vec3d'.)\r\n	vec3d([self: ∗anyVec, x: int32, y: int32, z: int32]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32) → vec3d(int32, int32, int32)\r\n" at "vec3d"
         	--- */
         	b = vec3d(x + 1, y + 1, z + 1);
         }
         is(anyVec.vec0d) {
         	/* XPECT errors ---
         	    "Function vec0d cannot be used here" at "vec0d"
-        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), xint8) not instance of vec0d\n	__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32))) → vec0d() = vec0d([self: ∗anyVec])\n	⊥ (Couldn't resolve reference to EObject 'vec0d'.) = vec0d\n" at "vec0d"
+        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), xint8) not instance of vec0d. Valid instances are:\r\n	vec0d: ⊥ (Couldn't resolve reference to EObject 'vec0d'.)\r\n	vec0d([self: ∗anyVec]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32))) → vec0d()\r\n" at "vec0d"
         	--- */
     		b = anyVec.vec0d(1);
     	}
         is(anyVec.vec1d -> x) {
         	/* XPECT errors ---
         	    "Function vec1d cannot be used here" at "vec1d"
-        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32) not instance of vec1d\n	__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32) → vec1d(int32) = vec1d([self: ∗anyVec, _0: int32])\n	⊥ (Couldn't resolve reference to EObject 'vec1d'.) = vec1d(<null>=x + prim»i»1)\n" at "vec1d"
+        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32) not instance of vec1d. Valid instances are:\r\n	vec1d(<null>=x + prim»i»1): ⊥ (Couldn't resolve reference to EObject 'vec1d'.)\r\n	vec1d([self: ∗anyVec, _0: int32]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32) → vec1d(int32)\r\n" at "vec1d"
         	--- */
         	b = anyVec.vec1d(x + 1, x + 2);
 		}
@@ -97,7 +97,7 @@ fn incVecs(a: anyVec) {
         is(anyVec.vec3d -> x, y, z) {
         	/* XPECT errors ---
         	    "Function vec3d cannot be used here" at "vec3d"
-        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32, int32) not instance of vec3d\n	__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32) → vec3d(int32, int32, int32) = vec3d([self: ∗anyVec, x: int32, y: int32, z: int32])\n	⊥ (Couldn't resolve reference to EObject 'vec3d'.) = vec3d(<null>=x + prim»i»1, <null>=y + prim»i»1, <null>=z + prim»i»1)\n" at "vec3d"
+        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32, int32) not instance of vec3d. Valid instances are:\r\n	vec3d(<null>=x + prim»i»1, <null>=y + prim»i»1, <null>=z + prim»i»1): ⊥ (Couldn't resolve reference to EObject 'vec3d'.)\r\n	vec3d([self: ∗anyVec, x: int32, y: int32, z: int32]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32) → vec3d(int32, int32, int32)\r\n" at "vec3d"
         	--- */
         	b = anyVec.vec3d(x + 1, y + 1, z + 1, x + 2);
         }
@@ -109,38 +109,24 @@ fn incVecs(a: anyVec) {
         	b = anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2);
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type A" at "x"
-            "Cannot determine size of element: Unable to infer size from type A" at "y"
             "Wrong number of deconstructors, expected 1." at "x"
             "vec1d(int32) and vec1d(A, B) don't fit together" at "is(anyVec.vec1d -> x, y) {  		}"
         --- */
         is(anyVec.vec1d -> x, y) {
 		}
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type A" at "x"
-            "Cannot determine size of element: Unable to infer size from type A" at "y"
-            "Cannot determine size of element: Unable to infer size from type A" at "z"
             "Wrong number of deconstructors, expected 1." at "x"
             "vec2d(vec2d_t(int32, int32)) and vec2d(A, B, C) don't fit together" at "is(anyVec.vec2d -> x, y, z) {          }"
         --- */
         is(anyVec.vec2d -> x, y, z) {
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type A" at "w"
-            "Cannot determine size of element: Unable to infer size from type A" at "x"
-            "Cannot determine size of element: Unable to infer size from type A" at "y"
-            "Cannot determine size of element: Unable to infer size from type A" at "z"
             "Wrong number of deconstructors, expected 3." at "x"
             "vec3d(int32, int32, int32) and vec3d(A, B, C, D) don't fit together" at "is(anyVec.vec3d -> x, y, z, w) {          }"
         --- */
         is(anyVec.vec3d -> x, y, z, w) {
         }
         /* XPECT errors ---
-            "Cannot determine size of element: Unable to infer size from type A" at "v"
-            "Cannot determine size of element: Unable to infer size from type A" at "w"
-            "Cannot determine size of element: Unable to infer size from type A" at "x"
-            "Cannot determine size of element: Unable to infer size from type A" at "y"
-            "Cannot determine size of element: Unable to infer size from type A" at "z"
             "Wrong number of deconstructors, expected 4." at "x"
             "vec4d(int32, int32, int32, int32) and vec4d(A, B, C, D, E) don't fit together" at "is(anyVec.vec4d -> x, y, z, w, v) {          }"
         --- */
@@ -154,9 +140,8 @@ fn incVecs(a: anyVec) {
     	}
     	/* XPECT errors ---
     	    "Can't deconstruct singletons" at "is(anyVec.vec0d -> x) {      	}"
-    	    "Cannot determine size of element: Unable to infer size from type A" at "x"
+    	    "vec0d() and vec0d(A) don't fit together" at "is(anyVec.vec0d -> x) {     	}"
     	    "Wrong number of deconstructors, expected 0." at "x"
-    	    "vec0d() and vec0d(A) don't fit together" at "is(anyVec.vec0d -> x) {      	}"
     	--- */
     	is(anyVec.vec0d -> x) {
     	}

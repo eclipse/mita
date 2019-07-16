@@ -16,19 +16,19 @@ package org.eclipse.mita.program.validation
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.xml.type.internal.DataValue.TypeValidator
 import org.eclipse.mita.base.types.HasAccessors
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsOtherCase
+import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
-import org.eclipse.mita.program.ProgramPackage
-import org.eclipse.mita.base.util.BaseUtils
 
 class SumTypesValidator extends AbstractDeclarativeValidator implements IValidationIssueAcceptor {
 	
@@ -85,7 +85,7 @@ class SumTypesValidator extends AbstractDeclarativeValidator implements IValidat
 	
 	@Check(CheckType.FAST)
 	def checkIsAssignmentCaseCantAssignSingletons(IsAssignmentCase assignmentCase) {
-		if((assignmentCase.assignmentVariable.typeSpecifier as PresentTypeSpecifier).type instanceof Singleton) {
+		if((assignmentCase.assignmentVariable.typeSpecifier as TypeReferenceSpecifier).type instanceof Singleton) {
 			error(CANT_ASSIGN_SINGLETONS_MSG, assignmentCase.assignmentVariable, null);
 		}
 	}

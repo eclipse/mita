@@ -13,8 +13,8 @@
 
 package org.eclipse.mita.library.stdlib
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
+import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -32,8 +32,8 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class OptionalGenerator extends AbstractTypeGenerator {
 	
@@ -61,7 +61,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
@@ -150,9 +150,13 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	}
 	
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
+		val dataType = (type as TypeConstructorType).typeArguments.tail.head;
+		if(dataType instanceof TypeVariable) {
+			return CodeFragment.EMPTY;
+		}
 		codeFragmentProvider.create('''
 		typedef struct { 
-			«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)» «OPTIONAL_DATA_MEMBER»;
+			«typeGenerator.code(context, dataType)» «OPTIONAL_DATA_MEMBER»;
 			«ENUM_NAME» «OPTIONAL_FLAG_MEMBER»;
 		} «typeGenerator.code(context, type)»;
 		''').addHeader('MitaGeneratedTypes.h', false);
@@ -160,9 +164,6 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	
 	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
 		// this should be a coercion 1 -> some(1).
-		if(from instanceof TypeConstructorType) {
-			print("")
-		}
 		val needCast = EcoreUtil2.getContainerOfType(expr, ProgramBlock) !== null;
 		return codeFragmentProvider.create('''
 			«IF needCast»(«generateTypeSpecifier(to, expr)»)«ENDIF» {

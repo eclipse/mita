@@ -13,8 +13,8 @@
 
 package org.eclipse.mita.program.generator
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
+import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.types.CoercionExpression
@@ -22,7 +22,6 @@ import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 /**
  * Interface for type generators.
@@ -30,7 +29,7 @@ import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 abstract class AbstractTypeGenerator implements IGenerator {
 
 	@Inject SubtypeChecker subtypeChecker;
-
+ 
 	@Inject
 	protected TypeGenerator typeGenerator
 	
@@ -47,7 +46,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a variable declaration for a variable of a generated type
 	 */
-	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
@@ -81,6 +80,7 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	
 	/**
 	 * Produces header definitions, called per different instance of type arguments.
+	 * For now implementors need to check that all data types contained in type are bound to an actual type (instanceof TypeVariable is false). 
 	 */
 	def CodeFragment generateHeader(EObject context, AbstractType type) {
 		return CodeFragment.EMPTY;

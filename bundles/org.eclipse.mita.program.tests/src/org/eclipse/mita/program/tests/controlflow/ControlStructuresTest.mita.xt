@@ -37,7 +37,7 @@ function testLoopsSuccess() : void {
 	}
 	
 	// Advanced for loops
-	var list = new array<int16>(10);
+	var list = new array<int16, 10>();
 	for (var element in list) { 
 		var x = element;
 	}

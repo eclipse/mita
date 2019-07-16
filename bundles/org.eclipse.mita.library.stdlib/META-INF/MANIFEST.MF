@@ -13,7 +13,8 @@ Require-Bundle: org.eclipse.mita.base,
  org.eclipse.xtend.lib,
  org.eclipse.xtend.lib.macro,
  org.eclipse.mita.program,
- com.google.inject
+ com.google.inject,
+ org.eclipse.core.runtime
 Export-Package: org.eclipse.mita.library.stdlib,
  org.eclipse.mita.library.stdlib.functions
 

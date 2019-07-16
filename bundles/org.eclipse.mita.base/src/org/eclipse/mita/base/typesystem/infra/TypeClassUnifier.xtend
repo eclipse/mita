@@ -63,7 +63,7 @@ class TypeClassUnifier {
 		}
 		val instances = types.map[
 			if(it instanceof TypeScheme) {
-				it.instantiate(system).value;	
+				it.instantiate(system, null).value;	
 			}
 		].force;
 		// commonStructure: fst :: (a, b) -> c
@@ -167,7 +167,7 @@ class TypeClassUnifier {
 	def AbstractType unifyTypeClassInstancesStructure(ConstraintSystem system, Iterable<AbstractType> _instances) {
 		val instances = _instances.map[
 			if(it instanceof TypeScheme) {
-				it.instantiate(system).value;
+				it.instantiate(system, null).value;
 			}
 			else {
 				it;

@@ -13,7 +13,6 @@
 
 package org.eclipse.mita.library.stdlib.functions
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.NamedElement
@@ -25,9 +24,7 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
@@ -36,11 +33,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
 	@Inject
 	protected TypeGenerator typeGenerator
-	
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
-	
-	
+		
 	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
 		val firstArg = functionCall.arguments.get(0)?.value;
 		val siginst = if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {
@@ -65,7 +58,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			val siginstType = BaseUtils.getType(siginst).sigInstTypeArg;
 			
 			return codeFragmentProvider.create('''
-			«statementGenerator.generateVariableDeclaration(siginstType, functionCall, Optional.absent, sizeInferrer.infer(functionCall.arguments.tail.head.value) as ValidElementSizeInferenceResult, variableName, value, false)»
+«««			«statementGenerator.generateVariableDeclaration(siginstType, functionCall, Optional.absent, sizeInferrer.infer(functionCall) as ValidElementSizeInferenceResult, variableName, value, false)»
 			exception = «siginst.writeAccessName»(&«variableName»);
 			«generateExceptionHandler(functionCall, 'exception')»
 			''')

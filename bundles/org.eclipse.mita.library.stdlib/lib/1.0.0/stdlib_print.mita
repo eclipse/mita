@@ -16,37 +16,37 @@ package stdlib;
 /**
  * Prints a string via USB/serial.
  */
-export generated fn print(msg : string) : void
+export generated fn <S> print(msg : string<S>) : void
 	generator "org.eclipse.mita.library.stdlib.functions.PrintGenerator";
 
 /**
  * Prints a string via USB/serial appending a newline.
  */
-export generated fn println(msg : string) : void
+export generated fn <S> println(msg : string<S>) : void
 	generator "org.eclipse.mita.library.stdlib.functions.PrintGenerator";
 
 /**
  * Logs a debug message using the platform logging capabilities.
  */
-export generated fn logDebug(msg : string) : void
+export generated fn <S> logDebug(msg : string<S>) : void
 	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
 
 /**
  * Logs an info message using the platform logging capabilities.
  */
-export generated fn logInfo(msg : string) : void
+export generated fn <S> logInfo(msg : string<S>) : void
 	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
 	
 /**
  * Logs a warning message using the platform logging capabilities.
  */
-export generated fn logWarning(msg : string) : void
+export generated fn <S> logWarning(msg : string<S>) : void
 	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
 	
 /**
  * Logs an error message using the platform logging capabilities.
  */
-export generated fn logError(msg : string) : void
+export generated fn <S> logError(msg : string<S>) : void
 	generator "org.eclipse.mita.library.stdlib.functions.LogGenerator";
 	
 export exception StringFormatException;

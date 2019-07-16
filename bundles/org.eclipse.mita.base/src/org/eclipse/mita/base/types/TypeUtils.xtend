@@ -19,14 +19,13 @@ import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.xtext.EcoreUtil2
 
 /** 
  * @author Thomas Kutz - Initial contribution and API
  * @author Simon Wegendt - Some methods
  */
-class TypesUtil {
+class TypeUtils { 
 	public static final String ID_SEPARATOR = "."
 	
 	static dispatch def EObject ignoreCoercions(CoercionExpression expr) {
@@ -39,8 +38,11 @@ class TypesUtil {
 		return obj;
 	}
 	
+	static def boolean isGeneratedType(ConstraintSystem system, AbstractType type) {
+		return system?.getUserData(type)?.containsKey(BaseConstraintFactory.GENERATOR_KEY);
+	}
 	static def boolean isGeneratedType(Resource res, AbstractType type) {
-		return res.constraintSolution?.getConstraintSystem?.getUserData(type)?.containsKey(BaseConstraintFactory.GENERATOR_KEY);
+		return res.constraintSolution?.getSystem?.isGeneratedType(type);
 	}
 	static def boolean isGeneratedType(EObject context, AbstractType type) {
 		return context.eResource.isGeneratedType(type);
@@ -53,7 +55,7 @@ class TypesUtil {
 		return null;
 	}
 	static def ConstraintSystem getConstraintSystem(Resource res) {
-		return res.constraintSolution?.getConstraintSystem;
+		return res.constraintSolution?.getSystem;
 	}
 	
 	static def getVarianceInAssignment(EObject obj) {
@@ -63,14 +65,14 @@ class TypesUtil {
 			if(lhs === obj || lhs.eAllContents.exists[it === obj]) {
 				// obj is only on the left hand side of the assignment
 				if(maybeAssignment.operator == AssignmentOperator.ASSIGN) {
-					return Variance.Contravariant;	
+					return Variance.CONTRAVARIANT;	
 				}
 				// other operators are *mutating*, therefore obj is both argument and destination. Hence it must be invariant.
 				else {
-					return Variance.Invariant;					
+					return Variance.INVARIANT;					
 				}
 			}
 		}
-		return Variance.Covariant;
+		return Variance.COVARIANT;
 	}
 }

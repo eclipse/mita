@@ -44,7 +44,7 @@ class MitaTypeLinker extends Linker {
 	}
 	
 	override protected isNullValidResult(EObject obj, EReference eRef, INode node) {
-		return true;
+		return false;
 	}
 	
 	def shouldNotClearReference(EObject object, EReference reference) {

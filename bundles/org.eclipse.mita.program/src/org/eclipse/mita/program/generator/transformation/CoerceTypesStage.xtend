@@ -22,8 +22,8 @@ import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.PostFixUnaryExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.types.TypesFactory
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.typesystem.IConstraintFactory
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.infra.CoercionAdapter
@@ -76,7 +76,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 		println("----------------------")
 		val constraints = cs?.constraints?.filter(SubtypeConstraint);
 		
-		val constraintSystem = TypesUtil.getConstraintSystem(program.computeOrigin.eResource);
+		val constraintSystem = TypeUtils.getConstraintSystem(program.computeOrigin.eResource);
 		
 		constraints?.forEach[c |
 			// we want to resolve only one copySourceAdapter here since that's the program we were passed

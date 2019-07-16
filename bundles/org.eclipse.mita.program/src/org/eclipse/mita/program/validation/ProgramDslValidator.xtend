@@ -35,18 +35,19 @@ import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.GenericElement
 import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.Parameter
-import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeParameter
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.TypesUtil
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
@@ -69,10 +70,7 @@ import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtext.EcoreUtil2
@@ -82,6 +80,10 @@ import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.ComposedChecks
 
 import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.ReturnParameterDeclaration
+import org.eclipse.mita.base.types.Operation
 
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
@@ -162,7 +164,6 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 
 	@Inject ITypeSystem typeSystem
 	@Inject PluginResourceLoader loader
-	@Inject ElementSizeInferrer elementSizeInferrer
 	@Inject ModelUtils modelUtils
 		
 	def featureOrNull(EStructuralFeature ref, EObject object) {
@@ -174,7 +175,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.FAST)
 	def attachTypingIssues(Program program) {
 		val resource = program.eResource;
-		val solution = TypesUtil.getConstraintSolution(resource);
+		val solution = TypeUtils.getConstraintSolution(resource);
 		if(solution === null) {
 			return;
 		}
@@ -182,7 +183,8 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			.map[MitaBaseResource.resolveProxy(program.eResource, it.target) -> it]
 			.filter[it.key !== null]
 			.groupBy[it.value.message->EcoreUtil.getURI(it.key)].values.map[it.head]
-			.filter[it.key.eResource == program.eResource];
+			.filter[it.key.eResource == program.eResource]
+			.map[it.key.improveOrigin -> it.value];
 		issues.toSet.filter[it.value.severity == Severity.ERROR].forEach[
 			error(it.value.message, it.key, it.value.feature.featureOrNull(it.key), 0, it.value.issueCode, #[]);
 		]
@@ -194,28 +196,20 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		]
 	}
 	
-	@Check(CheckType.NORMAL)
-	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {
-		val item = expr.owner;
-		val sizeInfRes = elementSizeInferrer.infer(item);
-				
-		val staticVal = StaticValueInferrer.infer(expr.arraySelector, [x|]);
-		val isInferred = (sizeInfRes instanceof ValidElementSizeInferenceResult) && staticVal instanceof Long;
-		if(isInferred) {
-			val idx = staticVal as Long;
-			val len = (sizeInfRes as ValidElementSizeInferenceResult).elementCount;
-			if(idx < 0 || len <= idx) {
-				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ExpressionsPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
-			}
-		}
+	dispatch def EObject improveOrigin(EObject object) {
+		return object
+	}
+	dispatch def EObject improveOrigin(ReturnParameterDeclaration object) {
+		return EcoreUtil2.getContainerOfType(object, Operation).typeSpecifier;
 	}
 	
+		
 	@Check(CheckType.FAST) 
-	def void checkValidTypesForPresentTypeSpecifier(PresentTypeSpecifier ts) {
+	def void checkValidTypesForPresentTypeSpecifier(TypeReferenceSpecifier ts) {
 		if(EcoreUtil2.getContainerOfType(ts, SystemResourceSetup) === null) {
-			val typeRef = TypesPackage.eINSTANCE.presentTypeSpecifier_Type;
+			val typeRef = TypesPackage.eINSTANCE.typeReferenceSpecifier_Type;
 			val type = BaseUtils.getType(ts);
-			val eClassName = TypesUtil.getConstraintSystem(ts.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY);
+			val eClassName = TypeUtils.getConstraintSystem(ts.eResource)?.getUserData(type, BaseConstraintFactory.ECLASS_KEY);
 			if(#[ExceptionTypeDeclaration, Sensor, Connectivity].map[it.simpleName].contains(eClassName)) {
 				error('''Cannot use «eClassName» as type here''', ts, typeRef);
 			}
@@ -234,7 +228,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			}
 			// otherwise we didn't get a type for this
 			else if(type instanceof TypeVariable) {
-				val resolvedReference = ts.eGet(TypesPackage.eINSTANCE.presentTypeSpecifier_Type, false);
+				val resolvedReference = ts.eGet(TypesPackage.eINSTANCE.typeReferenceSpecifier_Type, false);
 				if(resolvedReference instanceof EObject) {
 					val genericElement = EcoreUtil2.getContainerOfType(resolvedReference, GenericElement);
 					if(genericElement !== null) {
@@ -272,33 +266,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			}
 		}
 	}
-	
-	@Check(CheckType.NORMAL)
-	def checkElementSizeInference(VariableDeclaration variable) {[|
-		if(EcoreUtil2.getContainerOfType(variable, SystemResourceSetup) !== null) return;
 		
-		val sizeInferenceResult = elementSizeInferrer.infer(variable);
-		val invalidElements = sizeInferenceResult.invalidSelfOrChildren;
-		for(invalidElement : invalidElements) {
-			if(invalidElement.typeOf instanceof PresentTypeSpecifier && (invalidElement.typeOf as PresentTypeSpecifier).type.name == "array") {
-			}
-			else {
-				val invalidObj = if(invalidElement.root?.eResource == variable.eResource) {
-					invalidElement.root
-				} else {
-					variable
-				}
-				
-				val invalidRef = if(invalidObj instanceof VariableDeclaration) {
-					TypesPackage.eINSTANCE.namedElement_Name
-				}
-				
-				error('Cannot determine size of element: ' + (invalidElement as InvalidElementSizeInferenceResult).message,
-					invalidObj, invalidRef)		
-			}
-		}
-	].apply()}
-	
 	@Check(CheckType.NORMAL)
 	def checkSiginstOrModalityIsUsedImediately(ElementReferenceExpression featureCall) {[|
 		val isSiginst = featureCall.reference instanceof SignalInstance;
@@ -434,13 +402,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			return;
 		}
 		
-		// TODO: At the moment we allow too much. Reduce this to strings/arrays/structs and implement the rules described
-		//       in #120.
-		val opSize = elementSizeInferrer.infer(op);
-		if(!(opSize instanceof ValidElementSizeInferenceResult)) {
-			error(SIZE_INFERENCE_FAILED_FOR_RETURN, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
-			return;
-		}
+		// TODO: At the moment we allow too much. Reduce this to strings/arrays/structs.
 		warning(FUNCTION_RETURN_TYPE_NOT_PRIMITIVE_MSG, op, TypesPackage.Literals.NAMED_ELEMENT__NAME);
 	].apply()}
 	
@@ -511,7 +473,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		var hasGeneratedTypeNext = hasGeneratedType;
 
 		val subTypes = if(type instanceof TypeConstructorType) {
-			if(TypesUtil.isGeneratedType(obj, type)) {
+			if(TypeUtils.isGeneratedType(obj, type)) {
 				if(type.name == "reference") {
 					// references are a clean and supported way for nested generated types, since refs are value types and easily copied.
 					return;
@@ -554,17 +516,37 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 			error(ARRAY_SLICES_ARE_NOT_SUPPORTED_TOP_LEVEL, lit, null);
 		}
 	}
-		
+	
+	static def getArrayInferredSize(EObject obj) {
+		BaseUtils.getType(obj)?.getArrayInferredSize
+	}
+	static def getArrayInferredSize(AbstractType type) {
+		return type?.castOrNull(TypeConstructorType)?.typeArguments?.last?.castOrNull(LiteralTypeExpression) as LiteralTypeExpression<Long>
+	}
+	
+	@Check(CheckType.NORMAL)
+	def arrayElementAccessIndexCheck(ArrayAccessExpression expr) {
+		val item = expr.owner;
+		val sizeInfRes = item.arrayInferredSize?.eval;
+				
+		val staticVal = StaticValueInferrer.infer(expr.arraySelector, [x|]);
+		val isInferred = sizeInfRes !== null && staticVal instanceof Long;
+		if(isInferred) {
+			val idx = staticVal as Long;
+			val len = sizeInfRes;
+			if(idx < 0 || len <= idx) {
+				error(String.format(ARRAY_INDEX_OUT_OF_BOUNDS, len), expr, ExpressionsPackage.Literals.ARRAY_ACCESS_EXPRESSION__ARRAY_SELECTOR);
+			}
+		}
+	}
+	
 	@Check(CheckType.NORMAL)
 	def arrayRangeChecks(ValueRange range) {
 		val errorFun1 = [String s | error(s, range, null)];
 		val errorFun2 = [String s | error(String.format(ARRAY_RANGE_INVALID, s), range, null)];
 		val expr = EcoreUtil2.getContainerOfType(range, ArrayAccessExpression).owner;
 		
-		val lengthOfArrayIR = elementSizeInferrer.infer(expr);
-		val lengthOfArray = if(lengthOfArrayIR instanceof ValidElementSizeInferenceResult) {
-			lengthOfArrayIR.elementCount;
-		}
+		val lengthOfArray = expr.arrayInferredSize?.eval
 		val lowerBound = StaticValueInferrer.infer(range.lowerBound, [x|])?:0L
 		val upperBound = StaticValueInferrer.infer(range.upperBound, [x|])?:lengthOfArray
 				
@@ -573,10 +555,9 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		}
 		
 		if(upperBound !== null) {
-			val size = elementSizeInferrer.infer(expr);
-			if(size.valid) {
-				if((upperBound as Long) > (size as ValidElementSizeInferenceResult).elementCount) {
-					errorFun2.apply(String.format("Upper bound must be less than or equal to array size (%s)", (size as ValidElementSizeInferenceResult).elementCount));
+			if(lengthOfArray !== null) {
+				if((upperBound as Long) > lengthOfArray) {
+					errorFun2.apply(String.format("Upper bound must be less than or equal to array size (%s)", lengthOfArray));
 				}
 				else if((upperBound as Long) <= 0) {
 					errorFun2.apply("Upper bound must be strictly positive");

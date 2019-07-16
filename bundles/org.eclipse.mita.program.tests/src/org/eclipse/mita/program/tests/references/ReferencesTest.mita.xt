@@ -262,11 +262,8 @@ fn referencing(): void {
   // XPECT inferredType --> reference<A>
   var a5 = **r2_1;
   
-  // XPECT errors --> "Cannot determine size of element: Unable to infer size from type A" at "**r1"
   var bad1 = **r1;
-  // XPECT errors --> "Cannot determine size of element: Unable to infer size from type A" at "***r2"
   var bad2 = ***r2;
-  // XPECT errors --> "Cannot determine size of element: Unable to infer size from type A" at "****r3"
   var bad3 = ****r3;
   // you can't ref twice in a row, since we need to store the intermediate ref first
   // since creating constraints with a broken model is bad we won't test this.

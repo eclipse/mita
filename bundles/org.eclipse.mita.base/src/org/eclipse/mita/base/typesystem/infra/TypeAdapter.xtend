@@ -18,16 +18,29 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 
-@FinalFieldsConstructor
+
 class TypeAdapter extends AdapterImpl {
-	protected final AbstractType type;
+	protected AbstractType type;
+	
+	new() {
+		type = null;
+	}
+	new(AbstractType type) {
+		
+	}
 	
 	static def void set(EObject obj, AbstractType type) {
-		obj.eAdapters.add(new TypeAdapter(type));
+		obj.adapter.type = type;
+	}
+	
+	static def TypeAdapter getAdapter(EObject obj) {
+		obj?.eAdapters?.filter(TypeAdapter)?.head ?: (
+			new TypeAdapter() => [obj.eAdapters.add(it)]
+		);
 	}
 	
 	static def AbstractType get(EObject obj) {
-		return obj?.eAdapters?.filter(TypeAdapter)?.head?.type;
+		return obj.adapter.type;
 	}
 	
 	public override toString() {

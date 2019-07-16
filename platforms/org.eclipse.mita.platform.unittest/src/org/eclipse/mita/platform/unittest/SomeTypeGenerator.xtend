@@ -26,8 +26,6 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class SomeTypeGenerator extends AbstractTypeGenerator {
@@ -35,12 +33,7 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 	
-	@Inject
-	protected ElementSizeInferrer sizeInferrer
-
-	
-	
-	override generateVariableDeclaration(AbstractType type, EObject context, ValidElementSizeInferenceResult size, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)» «varName»;''');
 	}
 	

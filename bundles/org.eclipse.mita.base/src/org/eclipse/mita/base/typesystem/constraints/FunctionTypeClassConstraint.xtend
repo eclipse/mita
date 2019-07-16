@@ -17,23 +17,24 @@ import com.google.inject.Inject
 import com.google.inject.Provider
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.infra.CachedBoolean
+import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.solver.MostGenericUnifierComputer
 import org.eclipse.mita.base.typesystem.solver.SimplificationResult
 import org.eclipse.mita.base.typesystem.solver.Substitution
 import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.TypeHole
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 import org.eclipse.mita.base.typesystem.types.TypeVariable
-import org.eclipse.mita.base.typesystem.types.Variance
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
-import com.google.common.base.Optional
-import org.eclipse.mita.base.typesystem.types.TypeScheme
-import org.eclipse.mita.base.typesystem.infra.CachedBoolean
-import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 
 @Accessors
 @EqualsHashCode
@@ -71,15 +72,15 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 		}
 		if(at instanceof FunctionType) {
 			val newConstraint = switch(returnTypeVariance) {
-				case Covariant: {
+				case COVARIANT: {
 					// the returned type should be smaller than the expected type so it can be assigned
 					new SubtypeConstraint(at.to, returnTypeTV, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s'''));
 				}
-				case Contravariant: {
+				case CONTRAVARIANT: {
 					// if we are the target of an assignment we need to accept superclasses
 					new SubtypeConstraint(returnTypeTV, at.to, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not subtype of %2$s'''));
 				}
-				case Invariant: {
+				default: {
 					new EqualityConstraint(returnTypeTV, at.to, new ValidationIssue(_errorMessage, '''«_errorMessage.message»: Return type incompatible: %1$s is not equal to %2$s'''));
 				}
 			}
@@ -92,7 +93,7 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	}
 	
 	override map((AbstractType)=>AbstractType f) {
-		val newType = typ.map(f);
+		val newType = f.apply(typ);
 		if(newType !== typ) {
 			return new FunctionTypeClassConstraint(_errorMessage, newType, instanceOfQN, functionCall, functionReference, returnTypeTV, returnTypeVariance, constraintSystemProvider);	
 		}
@@ -107,13 +108,28 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 	
 	override isAtomic(ConstraintSystem system) {
 		val typeClass = system.typeClasses.get(instanceOfQN);
-		if(false || typeClass.mostSpecificGeneralization === null || typ.freeVars.empty) {	
-			return !typ.freeVars.empty
+		// we don't need to consider TypeHoles as free variables since they never will get bound anyway 
+		val freeVars = typ.freeVars.filter[!(it instanceof TypeHole)];
+		val selfIsAtomic = if(typeClass.mostSpecificGeneralization === null || freeVars.empty) {
+			!freeVars.empty;
 		}
-		if(cachedIsAtomic == CachedBoolean.Uncached) {
-			cachedIsAtomic = CachedBoolean.from(!typ.isMoreSpecificThan(typeClass.mostSpecificGeneralization));
+		else {
+			if(cachedIsAtomic == CachedBoolean.Uncached) {
+				cachedIsAtomic = CachedBoolean.from(!typ.isMoreSpecificThan(typeClass.mostSpecificGeneralization));
+			}
+			cachedIsAtomic.get();
 		}
-	 	return cachedIsAtomic.get();
+		return selfIsAtomic || !instancesAreMutuallyUnunifiable(system.mguComputer, typeClass)
+	}
+	
+	def boolean instancesAreMutuallyUnunifiable(MostGenericUnifierComputer mgu, TypeClass tc) {
+		val instances = tc.instances.keySet;
+		return !BaseUtils.chooseAny(instances)
+			.filter[it.size == 2]
+			.map[it.get(0) -> it.get(1)]
+			.filter[it.key !== it.value]
+			.map[mgu.compute(#[it]).valid]
+			.fold(false, [b1, b2| b1 || b2])
 	}
 	
 	def boolean isMoreSpecificThan(AbstractType instance, AbstractType generalization) {
@@ -141,6 +157,5 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 			return true;
 		}		
 	}
-	
 		
 }

@@ -93,8 +93,20 @@ GeneratedTypeParameter returns GeneratedTypeParameter:
 ;
 
 TypeParameter returns TypeParameter:
-	name=ID ('extends' bound=[Type])?;
-
+	(InstanceTypeParameter | RawTypeParameter)
+;
+RawTypeParameter returns RawTypeParameter:
+	{RawTypeParameter}
+	// since Invariant is the first=default value of Variance this assigns invariance on no match
+	//(variance=Variance)?
+	name=ID 
+;
+InstanceTypeParameter returns InstanceTypeParameter:
+	{InstanceTypeParameter}
+	// since Invariant is the first=default value of Variance this assigns invariance on no match
+	//(variance=Variance)? 
+	name=ID 'is' ofType=[Type] 
+;
 
 TypeKind returns TypeKind:
 	{TypeKind}
@@ -166,7 +178,7 @@ AssignmentExpression returns Expression:
 ;
 
 ConditionalExpression returns Expression:
-	LogicalOrExpression ({ConditionalExpression.condition=current} '?' trueCase=LogicalOrExpression ':'
+	LogicalOrExpression ({ConditionalExpression.condition=current} QUESTION_MARK trueCase=LogicalOrExpression ':'
 	falseCase=LogicalOrExpression)?;
 
 LogicalOrExpression returns Expression:
@@ -230,6 +242,22 @@ PrimaryExpression returns Expression:
 PrimitiveValueExpression returns Expression:
 	{PrimitiveValueExpression} value=Literal;
 
+TypeExpression returns Expression:
+	  ({NaryTypeAddition} values+=ValueOrSpecifier ('+' values+=ValueOrSpecifier)+)
+	| IntExpression
+;
+
+ValueOrSpecifier returns Literal:
+	IntLiteral | TypeReferenceLiteral
+;
+
+IntExpression returns Expression:
+	{PrimitiveValueExpression} value=IntLiteral
+;
+
+TypeReferenceLiteral returns TypeReferenceLiteral:
+	type=[Type]
+;
 
 arraySelector returns Expression:
 	  Expression ({ValueRange.lowerBound=current} ':' (upperBound=Expression)?)?
@@ -259,8 +287,24 @@ Argument returns Argument:
 ParenthesizedExpression returns Expression:
 	'(' Expression ')';
 
-TypeSpecifier returns PresentTypeSpecifier:
-	{PresentTypeSpecifier} (referenceModifiers+=('&' | LogicalAndOperator))* type=[Type|QID] (WS? '<' (WS? typeArguments+=TypeSpecifier (WS? ',' WS? typeArguments+=TypeSpecifier)* WS? '>'))? (optional?="?")?;
+TypeSpecifierArgument returns PresentTypeSpecifier:
+	TypeExpressionSpecifier | TypeSpecifier | TypeHole
+;
+
+TypeHole returns TypeHole:
+	{TypeHole}
+	QUESTION_MARK
+;
+
+TypeExpressionSpecifier returns TypeExpressionSpecifier:
+	value=TypeExpression
+;
+
+TypeSpecifier returns TypeReferenceSpecifier:
+	{TypeReferenceSpecifier} 
+	(referenceModifiers+=('&' | LogicalAndOperator))* 
+	type=[Type|QID] 
+	('<' (typeArguments+=TypeSpecifierArgument (',' typeArguments+=TypeSpecifierArgument)* '>'))? (optional?=QUESTION_MARK)?;
 
 InterpolatedStringLiteral returns InterpolatedStringLiteral: 
 	{InterpolatedStringLiteral}
@@ -308,6 +352,9 @@ BitwiseOrOperator:
 
 BitwiseAndOperator:
 	'&';
+
+enum Variance:
+	Covariant | Contravariant;
 
 enum PostFixOperator:
 	increment="++" | decrement="--";
@@ -432,7 +479,8 @@ ReservedSymbols:
 	'=' | '==' |
 	'!' | '<' | 
 	'>' | '<=' |
-	'>=' | '!='
+	'>=' | '!=' |
+	QUESTION_MARK
 ;
 
 
@@ -446,7 +494,9 @@ ReservedSymbols:
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
 
-terminal ID: '^'?('a'..'z'|'A'..'Z'|'_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')*;
+// _ only if followed by something
+terminal ID: '^'? (('a'..'z'|'A'..'Z') | (('a'..'z'|'A'..'Z' | '_') ('a'..'z'|'A'..'Z'|'_'|'0'..'9')+));
+terminal QUESTION_MARK: '?';
 terminal LONG returns ecore::ELong: ('0'..'9')+;
 terminal STRING:
 			'"' ( '\\' . /* 'b'|'t'|'n'|'f'|'r'|'u'|'"'|"'"|'\\' */ | !('\\'|'"') )* '"' |

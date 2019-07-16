@@ -30,7 +30,7 @@ import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.IGenerator
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
-import org.eclipse.mita.base.types.TypesUtil
+import org.eclipse.mita.base.types.TypeUtils
 
 /**
  * Creates and maintains the component generators associated with a platform.
@@ -54,7 +54,7 @@ class GeneratorRegistry {
 		});
 
 	def getGenerator(Resource eResource, AbstractType type) {
-		val generatorString = TypesUtil.getConstraintSystem(eResource).getUserData(type, BaseConstraintFactory.GENERATOR_KEY);
+		val generatorString = TypeUtils.getConstraintSystem(eResource).getUserData(type, BaseConstraintFactory.GENERATOR_KEY);
 		if(generatorString !== null) {
 			return generatorCache.get(eResource -> generatorString).orNull
 		}
