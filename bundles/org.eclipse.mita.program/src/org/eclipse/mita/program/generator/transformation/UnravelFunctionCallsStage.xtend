@@ -19,16 +19,17 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionStatement
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.GeneratedTypeConstructor
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeConstructor
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ReturnValueExpression
+import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
@@ -45,7 +46,11 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 		if(EcoreUtil2.getContainerOfType(expression, ProgramBlock) === null) {
 			return false;
 		}
-		if(expression instanceof NewInstanceExpression) {
+		val parent = expression.eContainer;
+		// we would unravel expressions into a variable declaration/assignment anyway.
+		if(	parent instanceof VariableDeclaration
+		 || (parent instanceof AssignmentExpression && parent.eContainer instanceof ExpressionStatement)
+		) {
 			return false;
 		}
 		if(expression instanceof ElementReferenceExpression) {

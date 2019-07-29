@@ -38,7 +38,7 @@ public interface IValidationIssueAcceptor {
 		private EStructuralFeature feature;
 		
 		private static boolean shouldTest() {
-			return false;
+			return true;
 		}
 		private static String getTestString() {
 			return "Types int32 and int32 are not the same.";

@@ -56,4 +56,8 @@ class UnitTestPlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 	override bindIPlatformMakefileGenerator() {
 		MakefileGenerator
 	}
+	
+	override bindMainSystemResourceGenerator() {
+		UnittestPlatformGenerator
+	}
 }

@@ -119,7 +119,7 @@ class MqttValidator implements IResourceValidator {
 	
 	def validateTopicQualityOfService(SystemResourceSetup setup, ValidationMessageAcceptor acceptor) {
 		for(siginst : setup.signalInstances) {
-			if(siginst.instanceOf.name == 'topic' || siginst.instanceOf.name == 'telemetry') {
+			if(siginst.instanceOf?.name == 'topic' || siginst.instanceOf?.name == 'telemetry') {
 				val qos = ModelUtils.getArgumentValue(siginst, "qos")
 				if(qos !== null) {
 					val qosValue = StaticValueInferrer.infer(qos, []);

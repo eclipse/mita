@@ -14,21 +14,23 @@
 package org.eclipse.mita.platform.xdk110.platform
 
 import com.google.inject.Inject
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.generator.GeneratorUtils
 
 class EventLoopGenerator implements IPlatformEventLoopGenerator {
 
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider;
 	@Inject
-	protected StatementGenerator statementGenerator;
+	protected extension StatementGenerator statementGenerator;
 	@Inject
 	protected extension GeneratorUtils generatorUtils;
 	
@@ -92,6 +94,8 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	}	
 	override generateEnablePreamble(CompilationContext context) {
 		return CodeFragment.EMPTY;
-	}
-	
+	}	
+	override CodeFragment generateEventLoopHandlerEpilogue(CompilationContext context, EventHandlerDeclaration declaration) {
+		return CodeFragment.EMPTY
+	}	
 }

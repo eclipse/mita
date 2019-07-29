@@ -17,8 +17,9 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.typesystem.infra.Tree
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.typesystem.solver.Substitution
+import org.eclipse.mita.base.util.Left
+import org.eclipse.mita.base.util.Right
 import org.eclipse.xtend.lib.annotations.Accessors
-import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
 /*
  * Info: TypeVariable.name is null unless an explicit display name is set.
@@ -33,7 +34,6 @@ class TypeVariable extends AbstractType {
 		return system.newTypeVariable(null);
 	}
 	
-	
 	new(EObject origin, int idx) {
 		this(origin, idx, null);
 	}
@@ -41,6 +41,10 @@ class TypeVariable extends AbstractType {
 	new(EObject origin, int idx, String name) {
 		super(origin, name);
 		this.idx = idx;
+	}
+	
+	def TypeVariable replaceOrigin(EObject origin) {
+		return new TypeVariable(origin, idx, name);
 	}
 	
 	override quote() {

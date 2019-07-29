@@ -18,8 +18,8 @@ import java.util.Random
 import java.util.stream.Collectors
 import java.util.stream.IntStream
 import org.eclipse.core.runtime.Assert
-import org.eclipse.mita.base.typesystem.types.AbstractType.Either
 import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
+import org.eclipse.mita.base.util.Either
 
 class NicerTypeVariableNamesForErrorMessages extends NameModifier {
 	

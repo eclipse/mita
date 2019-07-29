@@ -41,4 +41,8 @@ class Xdk110PlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 		LoggingGenerator
 	}
 	
+	override bindMainSystemResourceGenerator() {
+		Xdk110PlatformGenerator
+	}
+	
 }

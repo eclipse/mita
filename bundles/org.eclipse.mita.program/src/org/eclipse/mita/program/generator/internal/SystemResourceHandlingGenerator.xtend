@@ -16,12 +16,12 @@ package org.eclipse.mita.program.generator.internal
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.FunctionType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.CodeFragmentProvider
@@ -219,6 +219,8 @@ class SystemResourceHandlingGenerator {
 				eventSource.eContainer as AbstractSystemResource;
 			} else if(eventSource instanceof AbstractSystemResource) {
 				eventSource;
+			} else if(eventSource instanceof SystemResourceSetup) {
+				eventSource.type
 			} else {
 				return false;
 			}

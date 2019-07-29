@@ -122,6 +122,11 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	Provider<XtextResourceSet> resourceSetProvider;
 		
 
+	protected def injectPlatformDependencies(Object obj, Module libraryModule) {
+		val injector = Guice.createInjector(injectingModule, libraryModule);
+		injector.injectMembers(obj)
+	}
+
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		resource.resourceSet.doGenerate(fsa);
 	}
@@ -130,11 +135,6 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		return resource.URI.segments.last.startsWith('application.')
 	}
 	
-	protected def injectPlatformDependencies(Module libraryModule) {
-		injector = Guice.createInjector(injectingModule, libraryModule);
-		injector.injectMembers(this)
-	}
-
 	private def produceFile(IFileSystemAccess2 fsa, String path, EObject ctx, CompositeGeneratorNode content) {
 		var root = CodeFragment.cleanNullChildren(content);
 		fsa.generateTracedFile(path, root);
@@ -159,6 +159,12 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val libs = libraryProvider.standardLibraries;
 		val stdlibUri = libs.filter[it.toString.endsWith(MitaBaseResource.PROGRAM_EXT)]
 		val stdlib = stdlibUri.map[input.getResource(it, true)].filterNull.map[it.contents.filter(Program).head].force;
+		
+		val someProgram = resourcesToCompile.map[it.contents.head].filter(Program).head;
+		val platform = modelUtils.getPlatform(input, someProgram);
+		val platformModule = resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module;
+		injectPlatformDependencies(this, platformModule);
+		
 		
 		/*
 		 * Steps:
@@ -187,15 +193,22 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			]
 			.toList();
 		
-		val someProgram = compilationUnits.head;
 		
+		compilationUnits.forEach[
+			// some transformation stages might force evaluation of resource descriptions. 
+			// Here we clear them again.
+			clearCache(it);
+		]
 		compilationUnits.forEach[
 			doType(it);			
 		]
 		
-		val platform = modelUtils.getPlatform(input, someProgram);
+		var EObject platformRoot = modelUtils.getPlatform(input, compilationUnits.head);
+		while(platformRoot.eContainer !== null) {
+			platformRoot = platformRoot.eContainer;
+		}
 		
-		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
+		doType(platformRoot)
 		
 		val context = compilationContextProvider.get(compilationUnits, stdlib);
 		
@@ -237,12 +250,21 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		)
 		
 		files += fsa.produceFile('base/MitaGeneratedTypes.h', someProgram, generatedTypeGenerator.generateHeader(context, userTypeFiles));
+		files += fsa.produceFile('base/MitaGeneratedTypes.c', someProgram, generatedTypeGenerator.generateImplementation(context, userTypeFiles));
 		
 		files += getUserFiles(input);
 		
 		val codefragment = makefileGenerator?.generateMakefile(compilationUnits, files)
 		if(codefragment !== null && codefragment != CodeFragment.EMPTY)
 			fsa.produceFile('Makefile', someProgram, codefragment);
+	}
+	
+
+	def clearCache(EObject obj) {
+		val resource = obj.eResource;
+		BaseUtils.getCacheAdapters(resource).forEach[
+			it.clearValues();
+		];
 	}
 	
 	def doType(EObject program) {

@@ -9,9 +9,10 @@ class ProgramLinker extends PlatformLinker {
 	
 	override shouldLink(EClass classifier) {
 		super.shouldLink(classifier) 
-		|| PlatformPackage.eINSTANCE.systemResourceEvent.isSuperTypeOf(classifier)
+		|| TypesPackage.eINSTANCE.systemResourceEvent.isSuperTypeOf(classifier)
 		|| TypesPackage.eINSTANCE.event.isSuperTypeOf(classifier)
 		|| PlatformPackage.eINSTANCE.configurationItem.isSuperTypeOf(classifier)
+		|| PlatformPackage.eINSTANCE.hasEvents.isSuperTypeOf(classifier)
 	}
 	
 }

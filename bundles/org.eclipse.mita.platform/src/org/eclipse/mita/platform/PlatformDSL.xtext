@@ -42,10 +42,6 @@ PlatformSpecification returns platform::Platform:
 	)* '}'
 ;
 
-SystemResourceEvent returns platform::SystemResourceEvent: 
-	'event' name=ID typeSpecifier=NullTypeSpecifier
-;
-
 SystemResourceAlias returns platform::SystemResourceAlias: 
 	'alias' name=ID typeKind=TypeKind 'for' delegate=[platform::AbstractSystemResource]
 ;

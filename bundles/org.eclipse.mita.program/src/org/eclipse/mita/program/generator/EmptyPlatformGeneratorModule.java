@@ -41,4 +41,7 @@ public class EmptyPlatformGeneratorModule extends AbstractGenericModule {
 		return IPlatformLoggingGenerator.NullImpl.class;
 	}
 
+	public Class<? extends MainSystemResourceGenerator> bindMainSystemResourceGenerator() {
+		return DefaultMainSystemResourceGenerator.class;
+	}
 }

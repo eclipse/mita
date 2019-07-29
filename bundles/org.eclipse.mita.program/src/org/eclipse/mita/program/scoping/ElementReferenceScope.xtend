@@ -20,6 +20,7 @@ import org.eclipse.mita.base.expressions.AbstractStatement
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeKind
+import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
@@ -27,6 +28,7 @@ import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
+import org.eclipse.mita.program.ReturnParameterDeclaration
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.resource.IEObjectDescription
@@ -37,7 +39,6 @@ import org.eclipse.xtext.util.SimpleAttributeResolver
 
 import static extension org.eclipse.emf.ecore.util.EcoreUtil.*
 import static extension org.eclipse.xtext.EcoreUtil2.*
-import org.eclipse.mita.program.ReturnParameterDeclaration
 
 class ElementReferenceScope extends AbstractScope {
 
@@ -60,6 +61,7 @@ class ElementReferenceScope extends AbstractScope {
 		result.addForEachLoopIterator(context)
 		result.addGlobalVariables(context)
 		result.addDeconstructorVariables(context)
+		result.addEventHandlerPayloadVariable(context)
 		result.addStructureAccessors(context)
 		Scopes.scopedElementsFor(result, [obj | 
 			if(obj instanceof TypeKind) {
@@ -130,5 +132,11 @@ class ElementReferenceScope extends AbstractScope {
 			}
 			addProgramBlocks(result, programBlock.eContainer)
 		}
+	}
+	
+	def void addEventHandlerPayloadVariable(List<EObject> result, EObject object) {
+		val eventHandler = object.getContainerOfType(EventHandlerDeclaration);
+		val variable = eventHandler?.payload;
+		result += #[variable].filterNull
 	}
 }

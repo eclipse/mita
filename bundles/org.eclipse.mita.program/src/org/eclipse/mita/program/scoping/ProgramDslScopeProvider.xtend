@@ -266,7 +266,7 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	protected def getExtensionMethodScope(Expression context, EReference reference, AbstractType type) {
 		return new FilteringScope(delegate.getScope(context, reference), [ x |
 			(x.EClass == ProgramPackage.Literals.FUNCTION_DEFINITION ||
-				x.EClass == ProgramPackage.Literals.GENERATED_FUNCTION_DEFINITION) && x.isApplicableOn(type)
+				x.EClass == TypesPackage.Literals.GENERATED_FUNCTION_DEFINITION) && x.isApplicableOn(type)
 		]);
 	}
 
@@ -656,6 +656,9 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 					val sysSpec = (obj.eContainer as SystemSpecification).name
 					return context.imports.exists[it.importedNamespace.equals(sysSpec)]
 				}
+			}
+			else if(obj instanceof SystemResourceSetup) {
+				return !obj.events.isNullOrEmpty
 			}
 			return false;
 		])

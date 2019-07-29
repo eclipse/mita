@@ -20,17 +20,17 @@ import com.google.common.cache.LoadingCache
 import com.google.inject.Inject
 import com.google.inject.Singleton
 import org.eclipse.emf.ecore.resource.Resource
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.TypeUtils
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.IGenerator
 import org.eclipse.mita.program.resource.PluginResourceLoader
-import org.eclipse.mita.base.typesystem.BaseConstraintFactory
-import org.eclipse.mita.base.types.TypeUtils
 
 /**
  * Creates and maintains the component generators associated with a platform.

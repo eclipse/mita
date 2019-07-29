@@ -557,6 +557,8 @@ sensor Button {
 	 * Fires after the button was released.
 	 */
 	event released
+	
+	event changed: bool
 }
 
 enum ADC_Channel {
@@ -829,6 +831,7 @@ connectivity many MQTT {
 	 */
 	signal topic(name : string, qos : uint32 = 0) : string
 	
+	event msgReceived: string<500>
 }
 
 alt HonoAuthentication {

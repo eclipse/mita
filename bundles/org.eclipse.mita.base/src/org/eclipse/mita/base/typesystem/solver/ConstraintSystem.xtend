@@ -38,7 +38,6 @@ import org.eclipse.mita.base.typesystem.infra.TypeClass
 import org.eclipse.mita.base.typesystem.infra.TypeClassProxy
 import org.eclipse.mita.base.typesystem.serialization.SerializationAdapter
 import org.eclipse.mita.base.typesystem.types.AbstractType
-import org.eclipse.mita.base.typesystem.types.AbstractType.Either
 import org.eclipse.mita.base.typesystem.types.AbstractType.NameModifier
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.DependentTypeVariable
@@ -47,6 +46,7 @@ import org.eclipse.mita.base.typesystem.types.TypeHole
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.Either
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.diagnostics.Severity
 import org.eclipse.xtext.naming.QualifiedName
@@ -502,8 +502,8 @@ class ConstraintSystem {
 				println('''introducing «uri»!''');
 			}
 			// explicitly set the origin to the resolved object, since the symbol table only contains proxies!
-			val tvIdx = this.getTypeVariable(it).idx;
-			return new TypeVariable(it, tvIdx) as AbstractType;
+			val tv = this.getTypeVariable(it);
+			return tv.replaceOrigin(it) as AbstractType;
 		].force;
 	}
 	

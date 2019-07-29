@@ -23,9 +23,9 @@ class StandaloneProgramDslGenerator extends ProgramDslGenerator {
 	
 	
 	
-	override protected injectPlatformDependencies(Module libraryModule) {
+	override protected injectPlatformDependencies(Object obj, Module libraryModule) {
 		injector = Guice.createInjector(Modules.override(injectingModule).with(new StandaloneModule()), libraryModule);
-		injector.injectMembers(this);
+		injector.injectMembers(obj);
 	}
 	
 	override getUserFiles(ResourceSet set) {
