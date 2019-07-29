@@ -111,8 +111,8 @@ class SizeConstraintSolver implements IConstraintSolver {
 			case 'xint8' :  4L
 			case 'bool'  :  1L
 			// https://stackoverflow.com/a/1934253
-			case 'double': BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
-			case 'float':  BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+			case 'f64'   : BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+			case 'f32'   : BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
 			case 'string':    {
 				val stringSize = (tsub as TypeConstructorType).typeArguments.last;
 				stringSize;

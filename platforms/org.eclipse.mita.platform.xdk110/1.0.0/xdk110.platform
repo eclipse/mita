@@ -921,7 +921,7 @@ connectivity many HttpRestClient {
 }
 
 
-enum LedColor {
+export enum LedColor {
 	Red,
 	Yellow,
 	Orange
