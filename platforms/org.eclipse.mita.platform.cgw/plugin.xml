@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.mita.library.extension.type_library">
+      <Library
+            description="CGW Platform Definition"
+            id="platforms.cgw"
+            module="org.eclipse.mita.platform.cgw.platform.CgwPlatformGeneratorModule"
+            name="CGW Platform Definition"
+            optional="true"
+            version="1.0.0">
+         <ResourceURI
+               uri="platform:/plugin/org.eclipse.mita.platform.cgw/1.0.0/cgw.platform">
+         </ResourceURI>
+         <Dependency
+               id="org.eclipse.mita.library.stdlib"></Dependency>
+      </Library>
+   </extension>
+
+</plugin>

@@ -59,7 +59,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 				Sleep(ms);
 			}
 			int32_t getTime() {
-				clock();
+				return clock();
 			}
 			#endif
 			''')

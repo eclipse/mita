@@ -42,7 +42,8 @@ class CompilationContext {
 	protected Iterable<SystemResourceSetup> systemResourceSetups;
 	
 	protected Iterable<EventHandlerDeclaration> eventHandler;
-
+	
+	@Accessors
 	protected Platform platform;
 	
 	protected IResourceGraph<EObject> resourceGraph;

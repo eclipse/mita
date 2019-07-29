@@ -22,6 +22,7 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.xtext.EcoreUtil2
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
+import org.eclipse.mita.program.generator.internal.ProgramCopier
 
 class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 	
@@ -48,6 +49,15 @@ class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 			&& possibleFunctionCallContainer?.isOperationCall 
 			&& !isInPrintContext 
 			&& expression.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(InterpolatedStringLiteral) !== null;
+	}
+	
+	override protected createInitialization(Expression expression) {
+		// safe cast since ~3lines above we return true only if expression is a primitive value expression and since super copies the expression
+		val copy = super.createInitialization(expression) as PrimitiveValueExpression;
+		val original = expression as PrimitiveValueExpression;
+		// link inner value
+		ProgramCopier.linkOrigin(copy.value, ProgramCopier.getOrigin(original.value));
+		return copy;
 	}
 	
 }

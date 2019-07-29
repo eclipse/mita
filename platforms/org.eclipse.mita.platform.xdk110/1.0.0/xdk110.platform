@@ -48,7 +48,6 @@ enum BMA280_Bandwidth {
  */
 sensor BMA280 {
 	generator "org.eclipse.mita.platform.xdk110.sensors.Bma280Generator"
-	validator "org.eclipse.mita.platform.xdk110.sensors.Bma280Validator"
 	
 	/**
 	 * The range of acceleration we want to measure.

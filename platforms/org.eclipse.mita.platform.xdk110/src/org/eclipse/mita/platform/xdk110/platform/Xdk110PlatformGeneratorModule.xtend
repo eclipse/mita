@@ -25,7 +25,7 @@ class Xdk110PlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 		ExceptionGenerator
 	}
 	
-	override bindIPlatformMakefileGenerator() {
+	override bindPlatformBuildSystemGenerator() {
 		MakefileGenerator
 	}
 	

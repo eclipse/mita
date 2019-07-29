@@ -13,7 +13,7 @@ class NoiseSensorGenerator extends AbstractSystemResourceGenerator {
 	
 	override generateSetup() {
 		return codeFragmentProvider.create('''
-			return NoiseSensor_Setup(«configuration.getInteger("samplingFrequency")»);
+			return NoiseSensor_Setup(«configuration.getLong("samplingFrequency")»);
 		''').addHeader('XDK_NoiseSensor.h', true)
 	}
 	
@@ -22,7 +22,7 @@ class NoiseSensorGenerator extends AbstractSystemResourceGenerator {
 			return NoiseSensor_Enable();
 		''').addHeader('XDK_NoiseSensor.h', true)
 		.setPreamble(codeFragmentProvider.create('''
-		#define NOISE_SENSOR_READ_TIMEOUT «configuration.getInteger("timeout")»
+		#define NOISE_SENSOR_READ_TIMEOUT «configuration.getLong("timeout")»
 		'''))
 	}
 	

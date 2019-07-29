@@ -70,7 +70,7 @@ public interface IComponentConfiguration {
 	 * @param key the key to get a value for
 	 * @return the value of the configuration item named key
 	 */
-	public Integer getInteger(String key);
+	public Long getLong(String key);
 	
 	/**
 	 * Retrieves an enumerator value from this configuration. If the key is unknown or the value stored with this key

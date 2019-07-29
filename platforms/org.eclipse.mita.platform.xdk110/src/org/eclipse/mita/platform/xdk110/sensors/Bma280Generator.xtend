@@ -132,14 +132,14 @@ class Bma280Generator extends AbstractSystemResourceGenerator {
         
         «IF eventHandler.containsHandlerFor('any_motion')»
         /* any motion */
-        bma2x2_set_thres(BMA2x2_SLOPE_THRES, «configuration.getInteger('any_motion_threshold')»);
+        bma2x2_set_thres(BMA2x2_SLOPE_THRES, «configuration.getLong('any_motion_threshold')»);
         bma2x2_set_durn(BMA2x2_SLOPE_DURN, 0);
         bma2x2_set_source(BMA2x2_SOURCE_SLOPE, 0); /* Data source for interrupt engine */
         «ENDIF»
         
         «IF eventHandler.containsHandlerFor('no_motion')»
         /* no motion */
-        bma2x2_set_thres(BMA2x2_SLOW_NO_MOTION_THRES, «configuration.getInteger('no_motion_threshold')»);
+        bma2x2_set_thres(BMA2x2_SLOW_NO_MOTION_THRES, «configuration.getLong('no_motion_threshold')»);
         bma2x2_set_durn(BMA2x2_SLOW_NO_MOTION_DURN, 1);
         bma2x2_set_slow_no_motion(BMA2x2_SLOW_NO_MOTION_ENABLE_X, INTR_ENABLE);
         bma2x2_set_slow_no_motion(BMA2x2_SLOW_NO_MOTION_ENABLE_Y, INTR_ENABLE);
