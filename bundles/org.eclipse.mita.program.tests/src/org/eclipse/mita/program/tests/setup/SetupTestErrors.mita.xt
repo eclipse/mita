@@ -192,7 +192,7 @@ setup bluetoothA : MyConnectivity {
 	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
  	cfg03 = .CFG_VAL_1;
  	
- 	// XPECT errors --> "MySingletonConnectivity not valid for cfg04" at "cfg04 = MySingletonConnectivity;"
+ 	// XPECT errors --> "Couldn't resolve reference to EObject 'MySingletonConnectivity'." at "MySingletonConnectivity"
  	cfg04 = MySingletonConnectivity;
  	
  	// We only care for vci00, vci01 and vci02 but not for the other stuff in the scope. Syntax prevents invalid choices.
