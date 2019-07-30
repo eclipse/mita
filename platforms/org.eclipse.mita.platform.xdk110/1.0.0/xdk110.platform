@@ -1110,6 +1110,13 @@ platform XDK110 {
 	 */
 	configuration-item startupDelay: uint32 = 0
 	
+	/**
+	 * The FreeRTOS stack size of the event loop task in 32-bit words. If you don't know what this
+	 * means, be careful when you change this value. More information can be found here:
+	 * http://www.freertos.org/FAQMem.html#StackSize
+	 */
+	configuration-item stackSize: uint32 = 2000
+	
 	modality powerStatus: PowerStatus
 	
 	event startup
