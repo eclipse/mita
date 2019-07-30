@@ -42,7 +42,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	protected extension StatementGenerator statementGenerator
 	
 	@Inject
-	protected GeneratorUtils generatorUtils
+	protected extension GeneratorUtils generatorUtils
 	
 	override generateAdditionalFiles(IFileSystemAccess2 fsa) {
 		val brokerUri = new URI(configuration.getString("url"));
@@ -194,6 +194,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("XdkCommonInfo.h", true)
 		.addHeader("BCDS_WlanNetworkConfig.h", true)
+		.addHeader(setup.getConfigurationItemValue("transport").baseName + ".h", false)
 		
 		if(isSecure) {
 			result.addHeader("HTTPRestClientSecurity.h", true)
@@ -395,6 +396,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	override generateAdditionalImplementation() {
+		val brokerUri = new URI(configuration.getString("url"));
+		val isSecure = brokerUri.scheme == "mqtts";
+		
 		codeFragmentProvider.create('''
 		/**
 		 * @brief Callback function used by the stack to communicate events to the application.
@@ -428,6 +432,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			case MQTT_CONNECT_SEND_FAILED:
 			case MQTT_CONNECT_TIMEOUT:
 				mqttIsConnected = false;
+				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT_Event : Connection timeout -> disconnected. Will try to reconnect on next send.")»
+				Mqtt_disconnect(&mqttSession);
 				if (pdTRUE != xSemaphoreGive(mqttConnectHandle))
 				{
 					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
@@ -496,6 +502,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			}
 			retcode_t rc = Mqtt_ping(&mqttSession);
 			if(RC_OK != rc) {
+				mqttIsConnected = false;
+				Mqtt_disconnect(&mqttSession);
 				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT: Ping failed: %x", codeFragmentProvider.create('''rc'''))»
 			}
 		}
@@ -504,12 +512,35 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		 * Connects to a configured backend.
 		 */
 		static Retcode_T connectToBackend(void) {
+			Retcode_T exception = NO_EXCEPTION, tempException = NO_EXCEPTION;
+			bool exceptionHappened = false;
+			«IF isSecure»
+			tempException = SNTP_Disable();
+			if(!exceptionHappened && tempException != NO_EXCEPTION) {
+				exception = tempException;
+				exceptionHappened = true;
+			}
+			«ENDIF»
+			exception = CheckWlanConnectivityAndReconnect();
+			if(!exceptionHappened && tempException != NO_EXCEPTION) {
+				exception = tempException;
+				exceptionHappened = true;
+			}
+			«IF isSecure»
+			exception = SNTP_Enable();
+			if(!exceptionHappened && tempException != NO_EXCEPTION) {
+				exception = tempException;
+				exceptionHappened = true;
+			}
+			«ENDIF»
+			«generatorUtils.generateExceptionHandler(null, "exception")»
+			
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttConnectHandle, 0UL);
 			retcode_t rc = Mqtt_connect(&mqttSession);
 			if(RC_OK != rc) {
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT: 0x%d", codeFragmentProvider.create('''rc'''))»
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT: 0x%x", codeFragmentProvider.create('''rc'''))»
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_FAILED);
 			}
 			if (pdTRUE != xSemaphoreTake(mqttConnectHandle, pdMS_TO_TICKS(30000)))
@@ -520,6 +551,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			if (!mqttIsConnected)
 			{
 				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect")»
+				Mqtt_disconnect(&mqttSession);
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_STATUS_ERROR);
 			}
 			return RETCODE_OK;
@@ -555,6 +587,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				}
 				else {
 					«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Write : Connection failed!")»
+					return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 				}
 			}
 			«generatorUtils.generateExceptionHandler(signalInstance, "exception")»
