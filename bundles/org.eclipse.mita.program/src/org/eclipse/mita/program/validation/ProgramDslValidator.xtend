@@ -85,6 +85,9 @@ import static org.eclipse.mita.base.types.typesystem.ITypeSystem.VOID
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
+import org.eclipse.mita.program.ReturnParameterDeclaration
+import org.eclipse.mita.base.types.Operation
+
 @ComposedChecks(validators = #[
 	ProgramNamesAreUniqueValidator,
 	ProgramImportValidator,

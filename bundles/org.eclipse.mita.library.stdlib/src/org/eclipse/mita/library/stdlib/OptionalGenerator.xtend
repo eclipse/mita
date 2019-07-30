@@ -14,6 +14,7 @@
 package org.eclipse.mita.library.stdlib
 
 import com.google.inject.Inject
+import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.types.CoercionExpression
@@ -31,6 +32,7 @@ import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.xtext.EcoreUtil2
 import java.util.Optional
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class OptionalGenerator extends AbstractTypeGenerator {
 	

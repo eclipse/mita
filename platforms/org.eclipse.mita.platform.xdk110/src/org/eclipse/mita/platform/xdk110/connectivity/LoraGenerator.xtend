@@ -151,10 +151,10 @@ class LoraGenerator extends AbstractSystemResourceGenerator {
 		val appKey = StaticValueInferrer.infer(configuration.getExpression("loraAppKey"), []);
 		val deviceEui = StaticValueInferrer.infer(configuration.getExpression("loraDeviceEui"), []);
 		val regionName    = configuration.getEnumerator("region")?.name;
-		val bandFrequency = configuration.getInteger("bandFrequency") ?: defaultValues.get(regionName)?.get("bandFrequency");
-		val rx2Frequency  = configuration.getInteger("rx2Frequency" ) ?: defaultValues.get(regionName)?.get("rx2Frequency" );
-		val rx2DataRate   = configuration.getInteger("rx2DataRate"  ) ?: defaultValues.get(regionName)?.get("rx2DataRate"  );
-		val dataRate      = configuration.getInteger("dataRate"     ) ?: defaultValues.get(regionName)?.get("dataRate"     );
+		val bandFrequency = configuration.getLong("bandFrequency") ?: defaultValues.get(regionName)?.get("bandFrequency");
+		val rx2Frequency  = configuration.getLong("rx2Frequency" ) ?: defaultValues.get(regionName)?.get("rx2Frequency" );
+		val rx2DataRate   = configuration.getLong("rx2DataRate"  ) ?: defaultValues.get(regionName)?.get("rx2DataRate"  );
+		val dataRate      = configuration.getLong("dataRate"     ) ?: defaultValues.get(regionName)?.get("dataRate"     );
 		if(appEui instanceof List) {
 			if(appKey instanceof List) {
 				return codeFragmentProvider.create('''

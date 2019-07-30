@@ -582,7 +582,7 @@ class StatementGenerator {
 		 * explicitly encode this case and devolve code generation the registered code generator of the generated-type. 
 		 */
 		val type = BaseUtils.getType(stmt);
-		if (isGeneratedType(stmt.eResource, type)) {
+		if (TypeUtils.isGeneratedType(stmt.eResource, type)) {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (generator !== null) {
 				val varName = codeFragmentProvider.create('''«stmt»''');

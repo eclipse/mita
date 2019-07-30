@@ -165,7 +165,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	def AbstractType getDataType(AbstractType t) {
 		(t as TypeConstructorType).typeArguments.get(1);
 	}
-		
+	
 	def CodeFragment getDataTypeCCode(EObject context, AbstractType type) {
 		typeGenerator.code(context, type.dataType);
 	}
@@ -339,8 +339,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
-				
-		@Inject
+		
 		protected extension StatementGenerator
 	
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {

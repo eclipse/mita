@@ -43,6 +43,7 @@ import org.eclipse.xtext.generator.trace.node.NewLineNode
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 import java.util.Optional
 
 class StringGenerator extends ArrayGenerator {

@@ -22,7 +22,8 @@ import com.google.inject.Injector
 import com.google.inject.Module
 import com.google.inject.Provider
 import com.google.inject.name.Named
-import java.util.LinkedList
+import java.util.ArrayList
+import java.util.List
 import org.eclipse.core.resources.IFile
 import org.eclipse.core.resources.IProject
 import org.eclipse.core.resources.IWorkspaceRoot
@@ -68,7 +69,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.force
 class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResourceSet {
 
 	@Inject 
-	protected extension ProgramDslTraceExtensions
+	protected extension ProgramDslTraceExtensions traceExtensions
 	
 	@Inject
 	protected extension ProgramCopier
@@ -80,7 +81,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	protected extension GeneratorUtils
 	
 	@Inject(optional=true)
-	protected IPlatformMakefileGenerator makefileGenerator
+	protected PlatformBuildSystemGenerator buildSystemGenerator
 
 	@Inject
 	protected EntryPointGenerator entryPointGenerator
@@ -212,8 +213,8 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		
 		val context = compilationContextProvider.get(compilationUnits, stdlib);
 		
-		val files = new LinkedList<String>();
-		val userTypeFiles = new LinkedList<String>();
+		val files = new ArrayList<String>();
+		val userTypeFiles = new ArrayList<String>();
 		
 		// generate all the infrastructure bits
 		files += fsa.produceFile('main.c', someProgram, entryPointGenerator.generateMain(context));
@@ -225,14 +226,14 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			files += fsa.produceFile('base/MitaTime.c', someProgram, timeEventGenerator.generateImplementation(context));
 		}
 		
-		for (resourceOrSetup : context.getResourceGraph().nodes.filter(EObject)) {
+		for (resourceOrSetup : (context.getResourceGraph().nodes.filter(EObject) + #[platform]).toSet) {
 			if(resourceOrSetup instanceof AbstractSystemResource
 			|| resourceOrSetup instanceof SystemResourceSetup) { 
-				files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».h''', resourceOrSetup as EObject, systemResourceGenerator.generateHeader(context, resourceOrSetup));
-				files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».c''', resourceOrSetup as EObject, systemResourceGenerator.generateImplementation(context, resourceOrSetup));
-				files += systemResourceGenerator.generateAdditionalFiles(fsa, context, resourceOrSetup);
+				generate(files, fsa, context, resourceOrSetup);
 			}
 		}
+		
+		
 	
 		for (program : compilationUnits.filter[containsCodeRelevantContent]) {
 			// generate the actual content for this resource
@@ -254,9 +255,13 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		
 		files += getUserFiles(input);
 		
-		val codefragment = makefileGenerator?.generateMakefile(compilationUnits, files)
-		if(codefragment !== null && codefragment != CodeFragment.EMPTY)
-			fsa.produceFile('Makefile', someProgram, codefragment);
+		buildSystemGenerator?.generateFiles(fsa, context, files)
+	}
+	
+	def generate(List<String> files, IFileSystemAccess2 fsa, CompilationContext context, EObject resourceOrSetup) {
+		files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».h''', resourceOrSetup, systemResourceGenerator.generateHeader(context, resourceOrSetup));
+		files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».c''', resourceOrSetup, systemResourceGenerator.generateImplementation(context, resourceOrSetup));
+		files += systemResourceGenerator.generateAdditionalFiles(fsa, context, resourceOrSetup);
 	}
 	
 

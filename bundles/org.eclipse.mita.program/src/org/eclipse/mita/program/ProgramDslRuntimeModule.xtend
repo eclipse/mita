@@ -56,6 +56,7 @@ import org.eclipse.xtext.ui.editor.DirtyStateManager
 import org.eclipse.xtext.ui.editor.IDirtyStateManager
 import org.eclipse.xtext.validation.CompositeEValidator
 import org.eclipse.xtext.validation.IResourceValidator
+import org.eclipse.mita.program.inferrer.SizeConstraintSolver
 
 class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 

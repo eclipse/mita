@@ -33,6 +33,7 @@ class ProgramDslResourceDescriptionStrategy extends BaseResourceDescriptionStrat
 
 	override protected boolean shouldCreateDescription(EObject object) {
 		return !(SUPPRESSED_OBJECTS.contains(object.eClass()))
+
 	}
 
 	override createEObjectDescriptions(EObject eObject, IAcceptor<IEObjectDescription> acceptor) {

@@ -14,6 +14,7 @@
 package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
+import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.types.CoercionExpression

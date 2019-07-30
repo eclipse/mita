@@ -151,7 +151,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		
 		return type -> #[];
 	}
-		
+	
 	def Iterable<InferenceContext> unbindSizes(ConstraintSystem system, Substitution sub, Resource r) {
 		val additionalUnbindings = newHashSet();
 		// unbind sizes from all eobjects
@@ -287,7 +287,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			new TypeScheme(op, typeArgs, funType);	
 		}, op);
 	}
-		
+	
 	dispatch def void doCreateConstraints(InferenceContext c, ElementReferenceExpression obj) {
 		if(obj.isOperationCall) {
 			val fun = obj.reference;

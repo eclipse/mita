@@ -8,5 +8,5 @@ abstract class MainSystemResourceGenerator extends AbstractSystemResourceGenerat
 	 * Will be used to create a ringbuffer of size 2^(returned value).
 	 * This facilitates a really easy ringbuffer implementation.
 	 */
-	public def int getEventHandlerPayloadQueueSize(EventHandlerDeclaration handler);
+	public def long getEventHandlerPayloadQueueSize(EventHandlerDeclaration handler);
 }

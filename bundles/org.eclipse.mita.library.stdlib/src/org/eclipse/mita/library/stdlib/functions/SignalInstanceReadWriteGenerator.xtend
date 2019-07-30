@@ -34,8 +34,7 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
 	@Inject
 	protected TypeGenerator typeGenerator
-	
-	
+		
 	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 		val firstArg = functionCall.arguments.get(0)?.value;
 		val siginst = if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {

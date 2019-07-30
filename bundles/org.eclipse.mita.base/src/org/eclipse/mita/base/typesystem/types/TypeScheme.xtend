@@ -95,9 +95,7 @@ class TypeScheme extends AbstractType {
 				return this;
 			}
 			return new TypeScheme(origin, this.vars, 
-				on.replace(sub.filter[
-					!vars.contains(it)
-				])
+				on.replace(sub.filter[!vars.contains(it)])
 			);
 		} else {
 			return new TypeScheme(origin, this.vars, this.on.replace(sub));			

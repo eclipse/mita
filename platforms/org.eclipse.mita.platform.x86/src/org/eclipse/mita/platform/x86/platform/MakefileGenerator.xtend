@@ -13,17 +13,12 @@
 
 package org.eclipse.mita.platform.x86.platform
 
-import com.google.inject.Inject
 import java.util.List
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.generator.CodeFragmentProvider
-import org.eclipse.mita.program.generator.IPlatformMakefileGenerator
+import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.PlatformMakefileGenerator
 
-class MakefileGenerator implements IPlatformMakefileGenerator {
-	@Inject
-	private CodeFragmentProvider codeFragmentProvider 
-	
-	override generateMakefile(Iterable<Program> program, List<String> sourceFiles) {
+class MakefileGenerator extends PlatformMakefileGenerator {
+	override generateMakefile(CompilationContext context, List<String> sourceFiles) {
 		return codeFragmentProvider.create('''
 		export CC=gcc
 		export CCFLAGS=-Wall -std=c99 -D_POSIX_C_SOURCE=199309L -D_DEFAULT_SOURCE -g

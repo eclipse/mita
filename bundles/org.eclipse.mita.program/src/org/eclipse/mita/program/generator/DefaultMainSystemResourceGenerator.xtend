@@ -17,6 +17,6 @@ class DefaultMainSystemResourceGenerator extends MainSystemResourceGenerator {
 	}
 	
 	override getEventHandlerPayloadQueueSize(EventHandlerDeclaration handler) {
-		return configuration.getInteger(queueSizeName);
+		return configuration.getLong(queueSizeName);
 	}	
 }

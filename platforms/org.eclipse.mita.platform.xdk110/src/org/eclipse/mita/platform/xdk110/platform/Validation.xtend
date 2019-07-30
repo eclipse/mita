@@ -37,6 +37,7 @@ import org.eclipse.mita.program.validation.MethodCall
 import org.eclipse.mita.program.validation.MethodCall.MethodCallModality
 import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
 import org.eclipse.xtext.validation.ValidationMessageAcceptor
+import org.eclipse.mita.library.stdlib.ArrayGenerator
 
 class Validation implements IResourceValidator {		
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {

@@ -24,6 +24,7 @@ import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.generator.internal.ProgramCopier
 
 class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 	
