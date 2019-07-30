@@ -110,6 +110,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('stdio.h', true)
 		.addHeader('FreeRTOS.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('semphr.h', true)
+		.addHeader(setup.getConfigurationItemValue("transport").baseName + ".h", false)
 	}
 	
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
@@ -121,7 +122,12 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
 		
 		codeFragmentProvider.create('''
+		Retcode_T exception = RETCODE_OK;
 		size_t messageLength = strlen((const char*) *«variableName») + 1;
+
+		exception = CheckWlanConnectivityAndReconnect();
+		«generateExceptionHandler(signalInstance, "exception")»
+
 		if(messageLength > sizeof(httpBodyBuffer))
 		{
 			return EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION;
@@ -129,7 +135,6 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		
 		memcpy(httpBodyBuffer, *«variableName», messageLength);
 
-		Retcode_T exception = RETCODE_OK;
 		Ip_Address_T destAddr;
 		exception = NetworkConfig_GetIpAddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
 		if (exception != RETCODE_OK)

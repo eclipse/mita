@@ -175,6 +175,7 @@ class SystemResourceHandlingGenerator {
 				«internalGenerator?.generateAdditionalImplementation()»
 			''')
 			.addHeader('MitaExceptions.h', false)
+			.addHeader(obj.fileBasename + ".h", false)
 			.toImplementation(context))
 		return cgn;
 	}
