@@ -21,6 +21,7 @@ import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformStartupGenerator
 import com.google.inject.Inject
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
 
 class StartupGenerator implements IPlatformStartupGenerator {
 	
@@ -33,6 +34,8 @@ class StartupGenerator implements IPlatformStartupGenerator {
 	override generateMain(CompilationContext context) {
 		val systemEvents = context.allEventHandlers.filter[x | x.event instanceof SystemEventSource].filter[x | (x.event as SystemEventSource).origin instanceof Platform ]
 		val startupEvent = systemEvents.findFirst[x | (x.event as SystemEventSource).source.name == 'startup' ]
+		val platformConfig = context.allSystemResourceSetup.findFirst[it.type?.name == "XDK110"]
+		val stackSize = StaticValueInferrer.infer(platformConfig?.getConfigurationItemValueOrDefault("stackSize"), []) ?: 2000;
 		
 		codeFragmentProvider.create('''
 		/* Mapping Default Error Handling function */
@@ -83,7 +86,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		 * means, be careful when you change this value. More information can be found here:
 		 * http://www.freertos.org/FAQMem.html#StackSize
 		 */
-		#define TASK_STACK_SIZE_EVENT_LOOP   (UINT16_C(2000))
+		#define TASK_STACK_SIZE_EVENT_LOOP   (UINT16_C(«stackSize»))
 		
 		/**
 		 * The maximum number of events the event queue can hold. The default value should
@@ -96,6 +99,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		''')
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
 		.addHeader('FreeRTOS.h', true, IncludePath.HIGH_PRIORITY)
+		.addHeader('BCDS_Assert.h', true)
 		.addHeader('timers.h', true)
 		.addHeader('XdkSystemStartup.h', true)
 		.addHeader("BCDS_CmdProcessor.h", true)

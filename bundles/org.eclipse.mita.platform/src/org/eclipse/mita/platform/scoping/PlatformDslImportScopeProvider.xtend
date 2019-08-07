@@ -43,6 +43,6 @@ class PlatformDslImportScopeProvider extends BaseImportScopeProvider {
 		}
 		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		val exportedObjects = visibleContainers.map[x|x.exportedObjects].flatten().force();
-		return new MultimapBasedSelectable(exportedObjects);
+		return new MultimapBasedSelectable(exportedObjects + thisResourceDescription.exportedObjects);
 	}
 }

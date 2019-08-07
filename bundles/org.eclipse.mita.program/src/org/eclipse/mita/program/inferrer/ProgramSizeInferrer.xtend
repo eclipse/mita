@@ -306,8 +306,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, SignalInstance siginst) {
-		// do nothing, special case where call sites create constraints
-		// otherwise we need to create a special case for unbinding these, and its easier like this	
+		inferUnmodifiedFrom(c.system, siginst, siginst.initialization);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, VariableDeclaration variable) {
