@@ -14,18 +14,13 @@
 package org.eclipse.mita.platform.xdk110.platform
 
 import java.util.List
-import javax.inject.Inject
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.generator.CodeFragmentProvider
-import org.eclipse.mita.program.generator.IPlatformMakefileGenerator
+import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.PlatformMakefileGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 
-class MakefileGenerator implements IPlatformMakefileGenerator {
-	
-	@Inject
-	private CodeFragmentProvider codeFragmentProvider 
-	
-	override generateMakefile(Iterable<Program> compilationUnits, List<String> sourceFiles) {
+class MakefileGenerator extends PlatformMakefileGenerator {	
+	override generateMakefile(CompilationContext context, List<String> sourceFiles) {
+		val compilationUnits = context.allUnits
 		val setups = compilationUnits?.flatMap[it.setup];
 		val appName = StaticValueInferrer.infer(
 			setups?.findFirst[it.type.name == "XDK110"]?.getConfigurationItemValue("applicationName"), []

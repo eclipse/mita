@@ -217,7 +217,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		    {
 		        do
 		        {
-		            if ((WLANNETWORKCONFIG_IPV4_ACQUIRED == WlanNetworkConfig_GetIpStatus()) && (WLANNETWORK_CONNECTED == WlanNetworkConnect_GetStatus()))
+		            if ((WLANNWCNF_IPSTATUS_IPV4_AQRD == WlanNetworkConfig_GetIpStatus()) && (WLANNWCT_STATUS_CONNECTED == WlanNetworkConnect_GetStatus()))
 		            {
 		                exception = RETCODE_OK;
 		            }
@@ -236,6 +236,59 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		    }
 		    return exception;
 		}
+		
+		Retcode_T CheckWlanConnectivityAndReconnect(void)
+		{
+			Retcode_T exception = RETCODE_OK;
+			    WlanNetworkConnect_ScanInterval_T scanInterval = 5;
+			    WlanNetworkConnect_ScanList_T scanList;
+			    WlanNetworkConnect_IpStatus_T nwStatus;
+			    bool networkStatusFlag = false;
+			
+			    nwStatus = WlanNetworkConnect_GetIpStatus();
+			
+			    if (WLANNWCT_IPSTATUS_CT_AQRD != nwStatus)
+			    {
+			        printf("Checking for network availability and trying to connect again\n");
+			        exception = WlanNetworkConnect_ScanNetworks(scanInterval, &scanList);
+			
+			        if (RETCODE_OK == exception)
+			        {
+			            for (int i = 0U; i < WLANNWCT_MAX_SCAN_INFO_BUF; i++)
+			            {
+			                if (0U == strcmp((char *) NETWORK_SSID, (char *) scanList.ScanData[i].Ssid))
+			                {
+			                    networkStatusFlag = true;
+			                    printf("Network with SSID  %s is available\n", NETWORK_SSID);
+			                    exception = ConnectivityWLANWifi_Enable();
+			                    if (RETCODE_OK != exception)
+			                    {
+			                        printf("Not able to connect to the network\n");
+			                    }
+			                    break;
+			                }
+			                else
+			                {
+			                    networkStatusFlag = false;
+			                }
+			            }
+			            if (false == networkStatusFlag)
+			            {
+			                exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_WLAN_NETWORK_NOT_AVAILABLE);
+			                printf("Network with SSID  %s is not available\n", NETWORK_SSID);
+			            }
+			        }
+			        else if ((uint32_t) RETCODE_NO_NW_AVAILABLE == Retcode_GetCode(exception))
+			        {
+			            printf("Network not available\n");
+			        }
+			    }
+			    else
+			    {
+			        printf("Network Connection is active\n");
+			    }
+			    return exception;
+		}
 		''')
 		.addHeader('XdkCommonInfo.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('BCDS_Basics.h', true, IncludePath.VERY_HIGH_PRIORITY)
@@ -243,6 +296,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('BCDS_WlanNetworkConfig.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Network.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('Serval_Ip.h', true, IncludePath.HIGH_PRIORITY)
+		.addHeader("BCDS_WlanNetworkConnect.h", true)
 		.addHeader('wlan.h', true, IncludePath.HIGH_PRIORITY)
 		if(auth instanceof SumTypeRepr) {
 			if(auth.name == "Enterprise") {
@@ -256,10 +310,17 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		}
 		return result
 	}
+	
+	override generateAdditionalHeaderContent() {
+		return codeFragmentProvider.create('''
+		Retcode_T CheckWlanConnectivityAndReconnect(void);
+		''');
+	}
+	
 	private def CodeFragment buildStatusCallbacks(SystemResourceSetup component) {
 		val baseName = component.baseName
 		
-		codeFragmentProvider.create('''
+		return codeFragmentProvider.create('''
 		static void «baseName»_WlanConnectStatusCallback(WlanNetworkConnect_Status_T connectStatus)
 		{
 			BCDS_UNUSED(connectStatus);

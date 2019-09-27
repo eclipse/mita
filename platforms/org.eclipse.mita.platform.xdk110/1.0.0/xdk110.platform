@@ -48,7 +48,6 @@ enum BMA280_Bandwidth {
  */
 sensor BMA280 {
 	generator "org.eclipse.mita.platform.xdk110.sensors.Bma280Generator"
-	validator "org.eclipse.mita.platform.xdk110.sensors.Bma280Validator"
 	
 	/**
 	 * The range of acceleration we want to measure.
@@ -74,17 +73,17 @@ sensor BMA280 {
 	/**
 	 * The X axis of the BMA280
 	 */
-	modality x_axis : int32
+	modality x_axis : int16
 	
 	/**
 	 * The Y axis of the BMA280
 	 */
-	modality y_axis : int32
+	modality y_axis : int16
 	
 	/**
 	 * The Z axis of the BMA280
 	 */ 
-	modality z_axis : int32
+	modality z_axis : int16
 	
 	/**
 	 * The L2 norm of the acceleration vector: sqrt(x^2 + y^2 + z^2)
@@ -712,10 +711,10 @@ connectivity named-singleton LoRa {
     validator "org.eclipse.mita.platform.xdk110.connectivity.LoraValidator"
 
 	required configuration-item region: Region
-	required configuration-item loraAppKey: array<uint8>
-	required configuration-item loraAppEui: array<uint8>
+	required configuration-item loraAppKey: array<uint8, ?>
+	required configuration-item loraAppEui: array<uint8, ?>
 	
-	configuration-item loraDeviceEui: array<uint8>
+	configuration-item loraDeviceEui: array<uint8, ?>
 	configuration-item adaptiveDataRate: bool = true
 	
 	configuration-item bandFrequency: uint16
@@ -725,8 +724,8 @@ connectivity named-singleton LoRa {
 	
 	
 	
-	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8>
-	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload>
+	signal raw(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<uint8, ?>
+	signal cayenne(portNum: uint8 = 1, confirmation: LoRaMessageConfirmation = LoRaMessageConfirmation.Unconfirmed): array<CayennePayload, ?>
 }
 
 /**
@@ -756,7 +755,7 @@ connectivity named-singleton WLAN {
     /**
      * Configure IP address and network via DHCP or static 
      */
-    configuration-item ipConfiguration : IpConfiguration = Dhcp()
+    configuration-item ipConfiguration : IpConfiguration = IpConfiguration.Dhcp()
 }
 
 exception MqttException;
@@ -805,9 +804,9 @@ connectivity many MQTT {
 	 */
 	required configuration-item clientId : string
 	
-	configuration-item lastWill: MqttWill = NoWill()
+	configuration-item lastWill: MqttWill = MqttWill.NoWill()
 	
-	configuration-item authentication: MqttAuthentication = None()
+	configuration-item authentication: MqttAuthentication = MqttAuthentication.None()
 	
 	/**
 	 * The clean session flag indicates to the broker whether the client wants
@@ -922,7 +921,7 @@ connectivity many HttpRestClient {
 }
 
 
-enum LedColor {
+export enum LedColor {
 	Red,
 	Yellow,
 	Orange
@@ -953,18 +952,18 @@ enum I2CMode {
 bus many I2C {
 	generator "org.eclipse.mita.platform.xdk110.buses.I2CGenerator"
 	validator "org.eclipse.mita.platform.xdk110.buses.I2CValidator"
-	sizeInferrer "org.eclipse.mita.program.inferrer.GenericPlatformSizeInferrer"
+	sizeInferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
 	
 	required configuration-item deviceAddress: uint8
 	
 	configuration-item byteOrder : ByteOrder = ByteOrder.LittleEndian
 	
-	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint8>
-	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int8>
-	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint16>
-	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int16>
-	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint32>
-	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int32>
+	signal array_register_uint8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint8, ?>
+	signal array_register_int8(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int8, ?>
+	signal array_register_uint16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint16, ?>
+	signal array_register_int16(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int16, ?>
+	signal array_register_uint32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<uint32, ?>
+	signal array_register_int32(address: uint8, length: uint8, mode: I2CMode = I2CMode.ReadWrite): array<int32, ?>
 	
 	signal register_uint8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): uint8
 	signal register_int8(address: uint8, mode: I2CMode = I2CMode.ReadWrite): int8
@@ -1043,14 +1042,14 @@ io named-singleton SDCard {
 	generator "org.eclipse.mita.platform.xdk110.io.SDCardGenerator"
 	sizeInferrer "org.eclipse.mita.platform.xdk110.io.SDCardSizeInferrer"
 
-	signal resumingBinaryRead(filePath: string, blockSize: uint32) : array<uint8>
-	signal appendingBinaryWrite(filePath: string) : array<uint8>
+	signal resumingBinaryRead(filePath: string, blockSize: uint32) : array<uint8, ?>
+	signal appendingBinaryWrite(filePath: string) : array<uint8, ?>
 
 	signal resumingTextRead(filePath: string, blockSize: uint32) : string
 	signal appendingTextWrite(filePath: string) : string
 
-	signal rewindingBinaryRead(filePath: string, fileSize: uint32) : array<uint8>
-	signal rewindingBinaryWrite(filePath: string) : array<uint8>
+	signal rewindingBinaryRead(filePath: string, fileSize: uint32) : array<uint8, ?>
+	signal rewindingBinaryWrite(filePath: string) : array<uint8, ?>
 
 	signal rewindingTextRead(filePath: string, fileSize: uint32) : string
 	signal rewindingTextWrite(filePath: string) : string
@@ -1110,6 +1109,13 @@ platform XDK110 {
 	 * This is especially useful to view debug output.
 	 */
 	configuration-item startupDelay: uint32 = 0
+	
+	/**
+	 * The FreeRTOS stack size of the event loop task in 32-bit words. If you don't know what this
+	 * means, be careful when you change this value. More information can be found here:
+	 * http://www.freertos.org/FAQMem.html#StackSize
+	 */
+	configuration-item stackSize: uint32 = 2000
 	
 	modality powerStatus: PowerStatus
 	
