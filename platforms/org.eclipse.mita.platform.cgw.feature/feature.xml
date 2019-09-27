@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature
+      id="org.eclipse.mita.platform.cgw.feature"
+      label="Mita CGW Platform Feature"
+      version="0.2.0.qualifier"
+      provider-name="Eclipse.org/Mita">
+
+   <description>
+      Contains the Mita Platform CGW
+   </description>
+
+   <copyright url="">
+      Copyright (c) 2019 Bosch GmbH.
+   </copyright>
+
+   <license url="https://www.eclipse.org/org/documents/epl-2.0/EPL-2.0.html">
+      This program and the accompanying materials are made available under the
+      terms of the Eclipse Public License 2.0 which is available at
+      http://www.eclipse.org/legal/epl-2.0.
+
+      SPDX-License-Identifier: EPL-2.0
+   </license>
+
+   <requires>
+      <import feature="org.eclipse.mita.feature"/>
+   </requires>
+
+   <plugin
+         id="org.eclipse.mita.platform.cgw"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+</feature>

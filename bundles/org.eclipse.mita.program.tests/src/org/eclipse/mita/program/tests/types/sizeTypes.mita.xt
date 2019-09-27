@@ -1,0 +1,9 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;

@@ -127,6 +127,7 @@ fn testError(x1: Foo, x2: &Foo, x3: &&Foo, y1: uint32, y2: &uint32, y3: &&uint32
 // The code formatter can't handle double dereference expressions (**) atm. NoCompileErrors doesn't work here because of that
 fn test(x1: Foo, x2: &Foo, x3: &&Foo, y1: uint32, y2: &uint32, y3: &&uint32): void {
 // You can always read contents of references, but you can only copy them if they are not from your function arguments
+	// XPECT errors --> "Types with references must be initialized" at "let z: Foo;"
 	let z: Foo;
 	let w = &z;
 	
@@ -197,7 +198,7 @@ fn test(x1: Foo, x2: &Foo, x3: &&Foo, y1: uint32, y2: &uint32, y3: &&uint32): vo
 }
 
 fn test2(x: &&uint32) { }
-		
+
 fn foo(x: &&int32, y: &int32) {
   // this is allowed, since references are always valid:
   var a = **x;
@@ -214,7 +215,6 @@ fn foo(x: &&int32, y: &int32) {
   *x = y;   
   
   /* XPECT errors ---
-  	"Cannot determine size of element: Cannot infer size of "VariableDeclarationImpl" of type "reference"." at "b"
   	"Types with references must be initialized" at "var b: &uint32;"
   --- */
   var b: &uint32;
@@ -226,7 +226,7 @@ fn foo(x: &&int32, y: &int32) {
 // XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "forbiddenReturn"
 fn forbiddenReturn(): &int32 {
 	var a = 0;
-	// XPECT errors --> "Functions may not return references" at "return &a;"
+	// XPECT errors --> "Functions may not return references" at "&a"
 	return &a;
 }
 
@@ -241,36 +241,37 @@ fn add1(x: uint32): uint32 {
 
 fn referencing(): void {
   var a: uint32 = 10;
+  // This happens because of global type inference: a couple of lines down var bad1 = **r1 leads to inference of r1 :: ref<ref<t>>. 
+  // Then here we try to unify &a :: ref<uint32> and ref<ref<t>>
+  // XPECT errors --> "Types uint32 and reference<A> are not the same." at "&a"
   var r1 = &a;
   var r2 = &r1;
   var r3 = &r2;
   
-  // XPECT inferredType --> uint32 
+  // XPECT inferredType --> reference<A>
   var a1 = *r1;
-  // XPECT inferredType --> uint32
+  // XPECT inferredType --> reference<A>
   var a2 = **r2;
-  // XPECT inferredType --> uint32
+  // XPECT inferredType --> reference<A>
   var a3 = ***r3;
-  // XPECT inferredType --> reference<uint32>
+  // XPECT inferredType --> reference<reference<A>>
   var r1_1 = *r2;
   var r2_1 = *r3;
-  // XPECT inferredType --> uint32
+  // XPECT inferredType --> reference<A>
   var a4 = *r1_1;
-  // XPECT inferredType --> uint32
+  // XPECT inferredType --> reference<A>
   var a5 = **r2_1;
   
-  // XPECT errors --> "Can not dereference non-reference types." at "**r1" 
   var bad1 = **r1;
-  // XPECT errors --> "Can not dereference non-reference types." at "***r2"
   var bad2 = ***r2;
-  // XPECT errors --> "Can not dereference non-reference types." at "****r3"
   var bad3 = ****r3;
   // you can't ref twice in a row, since we need to store the intermediate ref first
-    /* XPECT errors ---
+  // since creating constraints with a broken model is bad we won't test this.
+    /* xpect errors ---
       "Logical operator '&&' may only be applied on boolean types, not on null and reference<uint32>." at "&&r1"
       "no viable alternative at input '&&'" at "&&"
   --- */
-  var r2_nope = &&r1;
+  //var r2_nope = &&r1;
   
   // you can ref struct members
   var s = testRef(4, 2);

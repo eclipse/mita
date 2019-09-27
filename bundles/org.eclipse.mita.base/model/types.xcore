@@ -13,17 +13,39 @@ package org.eclipse.mita.base.types
  *
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
- 
+
 import java.util.HashSet
 import java.util.Set
 import org.eclipse.emf.common.util.BasicEList
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.expressions.Literal
 
-class TypeSpecifier {
+class InterpolatedStringLiteral extends Literal {
+	String[] text
+	contains Expression[] content
+}
+
+abstract class TypeSpecifier {}
+abstract class PresentTypeSpecifier extends TypeSpecifier {}
+class TypeHole extends PresentTypeSpecifier {
+	op String toString() {
+		return "?"
+	}
+}
+class TypeExpressionSpecifier extends PresentTypeSpecifier {
+	contains Expression value	
+	op String toString() {
+		return value.toString
+	}
+}
+
+class TypeReferenceSpecifier extends PresentTypeSpecifier {
 	refers Type ^type
-	contains TypeSpecifier[] typeArguments
+	contains PresentTypeSpecifier[] typeArguments
 	
-	transient boolean optional
-	transient String[] referenceModifiers
+	boolean optional
+	String[] referenceModifiers
 	
 	op String toString() {
 		val args = if(typeArguments.empty) {
@@ -31,12 +53,25 @@ class TypeSpecifier {
 		} else {
 			"<" + typeArguments.map[if(it === null) {"null"} else {it.toString}].reduce[p1, p2| p1 + ", " + p2] + ">"
 		}
-		val typeName = if(^type === null) {
-			"null"
-		} else {
-			^type.toString
-		}
-		return typeName + args;
+
+		val ref = eGet(TypesPackage.eINSTANCE.typeReferenceSpecifier_Type, false)
+		var refText = if (ref instanceof EObject && !(ref as EObject).eIsProxy) ref?.toString else null
+		refText = refText ?: BaseUtils.getText(this, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)
+		refText = refText ?: ""
+		refText = refText.trim
+		
+		return refText + args;
+	}
+}
+class TypeReferenceLiteral extends Literal {
+	refers Type ^type
+}
+class NaryTypeAddition extends Expression {
+	contains Literal[] values
+}
+class NullTypeSpecifier extends TypeSpecifier {
+	op String toString() {
+		return "NullTypeSpecifier";
 	}
 }
 
@@ -45,7 +80,7 @@ abstract class NamedElement {
 }
 abstract class PackageMember extends NamedElement {
 	derived id String ^id get {
-		return TypesUtil.computeQID(this);
+		return BaseUtils.computeQID(this);
 	}
 }
 class Package extends PackageMember {
@@ -58,8 +93,8 @@ abstract class Type extends PackageMember {
 		return this;
 	}
 	
-	refers Type[] superTypes
 	contains TypeConstraint[] constraint
+	contains TypeKind typeKind opposite kindOf
 	
 	op String toString() {
 		return name;
@@ -68,13 +103,160 @@ abstract class Type extends PackageMember {
 class TypeConstraint {
 	Object value
 }
+class TypeKind extends Type {
+	op String getName() {
+		return "∗" + kindOf?.name
+	}
+	op String toString() {
+		return "∗" + kindOf?.name
+	}
+	container Type kindOf opposite typeKind
+}
 class PrimitiveType extends Type, Exportable {
 	op String toString() {
 		return super.toString();
 	}
 }
+
+interface GeneratedObject {
+	op void generateMembers()
+}
+class VirtualFunction extends Operation, GeneratedObject { /* stub for now */
+	op void generateMembers() {
+		/* stub */
+	}
+}
+
+class TypeAccessor extends VirtualFunction {
+	op void generateMembers() {
+		super.generateMembers();
+		if(generatedParameter === null) {
+			generatedParameter = TypesFactory.eINSTANCE.createParameter => [
+				it.typeSpecifier = TypesFactory.eINSTANCE.createTypeReferenceSpecifier;
+				it.name = "self";
+			]
+		}
+		if(BaseUtils.castOrNull(generatedParameter.typeSpecifier, TypeReferenceSpecifier).^type === null) {
+			(generatedParameter.typeSpecifier as TypeReferenceSpecifier).^type = accessedFeature.structuralType;
+		} 
+	}
+	
+	op StructuralParameter getAccessedFeature() {
+		val f = eContainer;
+		if(f instanceof StructuralParameter) {
+			return f;
+		}
+		return null;
+	}
+	op String getName() {
+		return accessedFeature.name;
+	}
+	
+	contains transient Parameter generatedParameter
+	op Parameter[] getParameters() {
+		generateMembers();
+		return #[generatedParameter].asEList;
+	}
+	contains transient PresentTypeSpecifier generatedTypeSpecifier
+	op TypeSpecifier getTypeSpecifier() {
+		return accessedFeature.typeSpecifier;
+	}
+	op TypeParameter[] getTypeParameters() {
+		return accessedFeature.structuralType.typeParameters;
+	}
+}
+class StructuralParameter extends Parameter {
+	op StructuralType getStructuralType() {
+		val st = eContainer;
+		if(st instanceof StructuralType) {
+			return st;
+		}
+	}
+	contains TypeAccessor accessor
+}
+
+class TypeConstructor extends VirtualFunction {
+	contains transient TypeReferenceSpecifier generatedTypeSpecifier
+	
+	op StructuralType getConstructedType() {
+		return this.eContainer as StructuralType;
+	}
+	
+	op void generateMembers() {
+		super.generateMembers();
+		if(generatedTypeSpecifier === null) {
+			generatedTypeSpecifier = TypesFactory.eINSTANCE.createTypeReferenceSpecifier => [ ts |
+				ts.^type = constructedType;
+				ts.typeArguments += BaseUtils.force(constructedType.typeParameters.map[ tp |
+					TypesFactory.eINSTANCE.createTypeReferenceSpecifier => [
+						it.^type = tp
+					]
+				])
+			]
+		}
+		if(generatedTypeSpecifier.^type === null) {
+			generatedTypeSpecifier.^type = constructedType;
+		}
+		if(generatedTypeSpecifier.typeArguments.filter(TypeReferenceSpecifier).exists[it.^type === null]) {
+			// assertion: all type arguments are TypeReferenceSpecifier, they reference the type arguments of the constructed type.
+			BaseUtils.zip(generatedTypeSpecifier.typeArguments.filter(TypeReferenceSpecifier), constructedType.typeParameters).forEach[ ta_tp |
+				ta_tp.key.^type = ta_tp.value
+			]
+		}
+	}
+	op String getName() {
+		return constructedType.name;
+	}
+	op Parameter[] getParameters() {
+		return constructedType.parameters.map[it as Parameter];
+	} 
+	op TypeSpecifier getTypeSpecifier() {
+		generateMembers();
+		return generatedTypeSpecifier;
+	}
+	op TypeParameter[] getTypeParameters() {
+		return constructedType.typeParameters;
+	}
+}
+
+class AnonymousProductTypeImportingConstructor extends SumSubTypeConstructor {
+	op Parameter[] getParameters() {
+		generateMembers();
+		val anonymousProductType = constructedType as AnonymousProductType;
+		// sadly this doesn't work since types aren't linked for some reason
+		val realType = BaseUtils.castOrNull(anonymousProductType.typeSpecifiers.head, TypeReferenceSpecifier)?.^type;
+		if(realType instanceof StructuralType) {
+			return (#[sumTypeParameter] + realType.constructor.parameters).toEList;
+		}
+		return anonymousProductType.constructor.parameters;
+	}
+}
+
+class SumSubTypeConstructor extends TypeConstructor {
+	contains transient Parameter sumTypeParameter
+	
+	op void generateMembers() {
+		if(sumTypeParameter === null) {
+			sumTypeParameter = TypesFactory.eINSTANCE.createParameter => [ p | 
+				p.name = "self";
+				p.typeSpecifier = TypesFactory.eINSTANCE.createTypeReferenceSpecifier => [ ts |
+					ts.^type = (this.eContainer.eContainer as SumType).typeKind;
+				]
+			]
+		}
+		if((sumTypeParameter.typeSpecifier as TypeReferenceSpecifier).^type === null) {
+			(sumTypeParameter.typeSpecifier as TypeReferenceSpecifier).^type = (this.eContainer.eContainer as SumType).typeKind;
+		}
+		super.generateMembers();
+	}
+	op Parameter[] getParameters() {
+		generateMembers();
+		return (#[sumTypeParameter] + constructedType.parameters).toEList;
+	} 
+}
 class ComplexType extends Type, GenericElement {
 	contains Declaration[] features
+	
 	
 	op Declaration[] getAllFeatures() {
 		val features = new BasicEList<Declaration>();
@@ -87,41 +269,83 @@ class ComplexType extends Type, GenericElement {
 		if (tpe === null || visited.contains(tpe))
 			return;
 		if (tpe instanceof ComplexType) {
-			for (Type superType : tpe.getSuperTypes()) {
-				collectFeatures(superType, features, visited);
-			}
 			features.addAll(tpe.getFeatures());
 		}
 		visited.add(tpe);
 	}
-	
 }
+class StructuralType extends ComplexType {
+	contains StructuralParameter[] parameters
+	contains TypeConstructor constructor
+}
+
 class GenericElement extends NamedElement {
 	contains TypeParameter[] typeParameters
 }
-class TypeParameter extends Type {
-	refers Type bound
+abstract class TypeParameter extends Type {
+	Variance variance
 }
+
+enum Variance {
+	// invariant should match if nothing else matches
+	// therefore it needs to be the first enum value so it's the default value
+	Invariant as "=", Covariant as "+", Contravariant as "-", Unknown as "?"
+}
+
+class RawTypeParameter extends TypeParameter {
+	//refers Type bound
+}
+class InstanceTypeParameter extends TypeParameter {
+	refers Type ofType
+}
+
 class Declaration extends TypedElement, NamedElement, PackageMember {
-	
+	op String toString() {
+		return name + if(typeSpecifier instanceof org.eclipse.mita.base.types.PresentTypeSpecifier) ": " + typeSpecifier else ""
+	}
 }
 abstract class TypedElement {
 	contains TypeSpecifier typeSpecifier
 	
 	op Type getType() {
-		if (getTypeSpecifier() !== null) {
-			return getTypeSpecifier().getType();
+		if (getTypeSpecifier() instanceof TypeReferenceSpecifier) {
+			return (getTypeSpecifier() as TypeReferenceSpecifier).getType();
 		}
 		return null;
 	}
 }
+
 class Operation extends Declaration, GenericElement {
-	contains Parameter[] parameters opposite owningOperation
+	contains Parameter[] parameters
+	
+	op String toString() {
+		val typeParameterString = if(typeParameters.empty) {
+			""
+		} 
+		else {
+			"<" + typeParameters.join(", ") + ">"
+		}
+		val parameterString = parameters.toString
+		return name + typeParameterString + "(" + parameterString + ")"
+	}
 }
 class Parameter extends TypedElement, NamedElement {
-	container Operation owningOperation opposite parameters
 	boolean optional
+	
+	op String toString() {
+		return name + ": " + typeSpecifier
+	}
 }
+
+abstract class Expression {
+}
+class ParameterWithDefaultValue extends Parameter {
+	contains Expression defaultValue
+}
+
+
+
+
 class Enumerator extends Declaration {
 	container EnumerationType owningEnumeration opposite enumerator
 }
@@ -154,7 +378,7 @@ interface HasAccessors {
 	/**
 	 * caution: this is only the type from the parsed model, not neccessarily the inferred type. Use with caution for type inferrence.
 	 */
-	op TypeSpecifier[] accessorsTypes()
+	op TypeReferenceSpecifier[] accessorsTypes()
 }
 
 class Exportable {
@@ -181,10 +405,9 @@ class NativeType extends PrimitiveType, Exportable {
 	}
 }
 
-class StructureType extends ComplexType, HasAccessors, Exportable {
-	contains Parameter[] parameters
-	op TypeSpecifier[] accessorsTypes() {
-		return parameters.map[it.typeSpecifier];
+class StructureType extends StructuralType, HasAccessors, Exportable {
+	op TypeReferenceSpecifier[] accessorsTypes() {
+		return parameters.map[it.typeSpecifier].filter(TypeReferenceSpecifier).toEList;
 	}
 	
 	op String toString() {
@@ -192,16 +415,65 @@ class StructureType extends ComplexType, HasAccessors, Exportable {
 	}
 }
 
-class GeneratedType extends ComplexType, GeneratedElement, Exportable {
-	contains Operation constructor
-	
+class GeneratedType extends ComplexType, GeneratedElement, Exportable {	
 	op String toString() {
 		super.toString
+	}
+	contains Operation constructor
+}
+
+class GeneratedTypeConstructor extends Operation, GeneratedObject {
+	contains transient TypeReferenceSpecifier generatedTypeSpecifier
+	
+	op String getName() {
+		val generatedType = if(eContainer instanceof GeneratedType) {
+			eContainer as GeneratedType;
+		} 
+		else {
+			null;
+		}
+		return "con_" + generatedType?.name
+	}
+	
+	op TypeParameter[] getTypeParameters() {
+		return (eContainer as GeneratedType).typeParameters;
+	}
+	op void generateMembers() {
+		val generatedType = if(eContainer instanceof GeneratedType) {
+			eContainer as GeneratedType;
+		} 
+		else {
+			null;
+		}
+		if(generatedTypeSpecifier === null) {
+			generatedTypeSpecifier = TypesFactory.eINSTANCE.createTypeReferenceSpecifier => [ ts |
+				ts.^type = generatedType;
+				ts.typeArguments += BaseUtils.force(generatedType.typeParameters.map[ tp |
+					TypesFactory.eINSTANCE.createTypeReferenceSpecifier => [
+						it.^type = tp
+					]
+				])
+			]
+		}
+		if(generatedTypeSpecifier.^type === null) {
+			generatedTypeSpecifier.^type = generatedType;
+		}
+		if(generatedTypeSpecifier.typeArguments.filter(TypeReferenceSpecifier).exists[it.^type === null]) {
+			// assertion: all type arguments are PresentTypeSpecifiers, they reference the type arguments of the constructed type.
+			BaseUtils.zip(generatedTypeSpecifier.typeArguments.filter(TypeReferenceSpecifier), generatedType.typeParameters).forEach[ ta_tp |
+				ta_tp.key.^type = ta_tp.value
+			]	
+		}
+	}
+	op TypeSpecifier getTypeSpecifier() {
+		generateMembers();
+		return generatedTypeSpecifier;
 	}
 }
 
 class PackageAssociation {
 	String name
+	contains Type[] types
 }
 
 class ImportStatement {
@@ -211,51 +483,72 @@ class ImportStatement {
 
 class SumType extends ComplexType, Exportable {
 	// I would use features, but if I want to have SumAlternative as a ComplexType (which it is), then I can't make it a Declaration as well
-	contains SumAlternative[] alternatives
-	
+	contains SumAlternative[] alternatives opposite sumType
+
 	op String toString() {
 		return super.toString();
 	}
 }
-interface SumAlternative extends ComplexType, HasAccessors {
+
+class SumAlternative extends StructuralType, GeneratedObject, HasAccessors {
+	container SumType sumType opposite alternatives
+	
 	op Type realType() {
 		return this;
 	}
+	
+	op void generateMembers() {
+	}
 }
 class Singleton extends SumAlternative {
-	op TypeSpecifier[] accessorsTypes() {
+	op TypeReferenceSpecifier[] accessorsTypes() {
 		return #[].asEList;
 	}
 }
-class AnonymousProductType extends SumAlternative {
-	contains TypeSpecifier[] typeSpecifiers 
-	op Type realType() {
-		if(typeSpecifiers.length == 1) {
-			val mbRealType = typeSpecifiers.get(0).^type;
-			return mbRealType;
-		}
-		return this;	
+
+class AnonymousStructuralParameter extends StructuralParameter {
+	refers transient TypeSpecifier memberTypeSpecifier
+	
+	op TypeSpecifier getTypeSpecifier() {
+		return memberTypeSpecifier;
 	}
-	op TypeSpecifier[] accessorsTypes() {
-		// need to duplicate functionality, since calling realType and deferring to that ones accessor types would create infinite recursion if it returns this
-		// could check with == this, but that would be more confusing I think
-		if(typeSpecifiers.length == 1) {
-			val realType = typeSpecifiers.get(0).^type;
-			if(realType instanceof HasAccessors) {
-				return realType.accessorsTypes;
-			}
+}
+class AnonymousProductType extends SumAlternative {
+	contains TypeReferenceSpecifier[] typeSpecifiers 
+	//contains transient AnonymousProductTypeImportingConstructor importingConstructor
+	
+	op void generateMembers() {
+		super.generateMembers();
+		if(generatedParameters.empty) {
+			generatedParameters.clear;
+			generatedParameters += BaseUtils.force(typeSpecifiers.indexed.map[ i_ts |
+				val name = "_" + i_ts.key;
+				val ts = i_ts.value;
+				return TypesFactory.eINSTANCE.createAnonymousStructuralParameter() => [ p |
+					p.name = name;
+					p.memberTypeSpecifier = ts;
+					p.accessor = TypesFactory.eINSTANCE.createTypeAccessor();
+				];
+			])
 		}
+	}
+	op TypeReferenceSpecifier[] accessorsTypes() {
 		return typeSpecifiers;
+	}
+	contains transient StructuralParameter[] generatedParameters
+	op StructuralParameter[] getParameters() {
+		generateMembers();
+		return generatedParameters;
 	}
 }
 class NamedProductType extends SumAlternative, HasAccessors {
-	contains Parameter[] parameters
 	// always return parameter types, since we never embed
-	op TypeSpecifier[] accessorsTypes() {
-		return parameters.map[it.typeSpecifier];
+	op TypeReferenceSpecifier[] accessorsTypes() {
+		return parameters.map[it.typeSpecifier].filter(TypeReferenceSpecifier).toEList;
 	}
 }
-class ProductMember extends Parameter { }
+
+class ProductMember extends StructuralParameter { }
 
 class TypeAlias extends Type, Declaration {
 	
@@ -273,8 +566,20 @@ class Property extends Declaration {
 	boolean const
 	boolean external
 	boolean ^readonly
+	op String toString() {
+		return super.toString();
+	}
 }
 
 class Event extends Declaration {
 	
 }
+
+class CoercionExpression extends Expression {
+	contains Expression value
+	Object typeSpecifier
+	op String toString() {
+		return "((" + typeSpecifier + ") " + value + ")" 
+	}
+}
+

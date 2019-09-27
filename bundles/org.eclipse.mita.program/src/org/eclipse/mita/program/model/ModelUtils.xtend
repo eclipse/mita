@@ -15,51 +15,61 @@ package org.eclipse.mita.program.model
 
 import com.google.common.base.Optional
 import com.google.inject.Inject
-import java.util.TreeMap
+import java.util.List
 import java.util.function.Predicate
-import org.eclipse.emf.common.notify.impl.AdapterImpl
 import org.eclipse.emf.common.util.EList
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.expressions.Argument
-import org.eclipse.mita.base.expressions.ArgumentExpression
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.base.expressions.Literal
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.AnonymousProductType
-import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.Parameter
-import org.eclipse.mita.base.types.PrimitiveType
 import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.Type
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.TypedElement
-import org.eclipse.mita.base.types.TypesFactory
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer.InferenceResult
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.types.AbstractBaseType
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.SumType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
+import org.eclipse.mita.platform.PlatformPackage
 import org.eclipse.mita.platform.SignalParameter
-import org.eclipse.mita.program.ArrayAccessExpression
-import org.eclipse.mita.program.FunctionDefinition
+import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
-import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.xtext.mwe.ResourceDescriptionsProvider
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
-import org.eclipse.mita.base.expressions.ExpressionsFactory
-import org.eclipse.mita.base.types.PackageAssociation
+import org.eclipse.xtext.resource.IContainer
+
+import static extension org.eclipse.emf.common.util.ECollections.asEList
+import org.eclipse.mita.base.types.TypeExpressionSpecifier
+import org.eclipse.mita.base.types.TypeUtils
 
 class ModelUtils {
-
-	@Inject protected ILibraryProvider typesLibraryProvider;
+	@Inject
+	protected IContainer.Manager containerManager;
+	
+	@Inject
+	protected ResourceDescriptionsProvider resourceDescriptionsProvider;
+	
 
 	/**
 	 * Retrieves the variable declaration this nested expression is referencing.
@@ -70,7 +80,7 @@ class ModelUtils {
 		acc.owner.underlyingVariableDeclaration;
 	}
 	static dispatch def VariableDeclaration getUnderlyingVariableDeclaration(FeatureCall fc) {
-		fc.owner.underlyingVariableDeclaration;
+		fc.arguments.head.value.underlyingVariableDeclaration;
 	}
 	static dispatch def VariableDeclaration getUnderlyingVariableDeclaration(ElementReferenceExpression ere) {
 		ere.reference.underlyingVariableDeclaration;
@@ -90,18 +100,18 @@ class ModelUtils {
 		return Optional.of(op.parameters);
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(StructureType st) {
-		return Optional.of(st.parameters);	
+		return Optional.of(st.parameters.map[it as Parameter].asEList);	
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(AnonymousProductType apt) {
 		val tss = apt.typeSpecifiers;
-		if(tss.length == 1) {
-			val t0 = tss.head.type;
-			return t0.getAccessorParameters;
-		}
+//		if(tss.length == 1) {
+//			val t0 = tss.head.type;
+//			return t0.getAccessorParameters;
+//		}
 		return Optional.absent;
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(NamedProductType npt) {
-		return Optional.of(npt.parameters);
+		return Optional.of(npt.parameters.map[it as Parameter].asEList);
 	}
 	static dispatch def Optional<EList<Parameter>> getAccessorParameters(EObject obj) {
 		Optional.absent;
@@ -110,94 +120,89 @@ class ModelUtils {
 		Optional.absent;
 	}
 	
-	static def <T> Optional<T> preventRecursion(EObject obj, () => T action) {
-		preventRecursion(obj, [| Optional.fromNullable(action.apply)], [| return Optional.absent]);
+	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject context, ProdType struct) {
+		val rt = getRealType(context, struct);
+		if(rt instanceof ProdType) {
+			return Optional.of(rt.typeArguments.tail.map[it.name].toList);
+		}
+		return Optional.of(#[rt.name]);
 	}
-	static def <T> T preventRecursion(EObject obj, () => T action, () => T onRecursion) {
-		if(PreventRecursionAdapter.isMarked(obj)) {
-			return onRecursion.apply();
-		}
-		val adapter = PreventRecursionAdapter.applyTo(obj);
-		try {
-			return action.apply();	
-		}
-		finally {
-			adapter.removeFrom(obj);
-		}
+	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject context, Object obj) {
+		Optional.absent;
 	}
-	static class PreventRecursionAdapter extends AdapterImpl {
-		
-		static def boolean isMarked(EObject obj) {
-			return obj.eAdapters.exists[it instanceof PreventRecursionAdapter];
+	static dispatch def Optional<List<String>> getAccessorParameterNames(EObject context, Void obj) {
+		Optional.absent;
+	}
+	
+	
+	static def dispatch AbstractType getRealType(EObject context, AbstractType t) {
+		return t;
+	}
+	
+	static def dispatch AbstractType getRealType(EObject context, ProdType sumConstructor) {
+		if(TypeUtils.getConstraintSystem(context.eResource).getUserData(sumConstructor, BaseConstraintFactory.ECLASS_KEY) == "AnonymousProductType") {
+			val children = sumConstructor.typeArguments.tail;
+			if(children.length == 1) {
+				return getRealType(context, children.head);
+			}
 		}
-		
-		static def PreventRecursionAdapter applyTo(EObject target) {
-			val adapter = new PreventRecursionAdapter();
-			target.eAdapters.add(adapter);
-			return adapter;
-		}
-		
-		static def removeFromBySearch(EObject target) {
-			target.eAdapters.removeIf[it instanceof PreventRecursionAdapter];
-		}
-		
-		def removeFrom(EObject target) {
-			target.eAdapters.remove(this);
-		}
+		return sumConstructor;
 	}
 	
 	/**
 	 * Retrieves the platform a program was written against.
 	 * 
 	 */
-	def getPlatform(Program program) {
-		val programResource = program.eResource;
-		val resourceSet = programResource.resourceSet;
+	def getPlatform(ResourceSet resourceSet, Program program) {
+		val resourceDescriptions = resourceDescriptionsProvider.get(resourceSet);
+		val thisResourceDescription = resourceDescriptions.getResourceDescription(program.eResource.URI);
+		val visibleContainers = containerManager.getVisibleContainers(thisResourceDescription, resourceDescriptions);
 		
-		val libraries = typesLibraryProvider.getImportedLibraries(programResource);
-		val platformResourceUris = libraries.filter[r|r.fileExtension == 'platform'];
-
-		val platforms = platformResourceUris
-			.flatMap[uri| resourceSet.getResource(uri, true).allContents.toIterable ]
-			.filter(Platform)
-		if (platforms.length > 1) {
-			// TODO: handle this error properly
-		}
-		return platforms.head;
+		val platforms = visibleContainers
+			.flatMap[ it.exportedObjects ]
+			.filter[it.EClass == PlatformPackage.eINSTANCE.systemSpecification]
+			.map[it.EObjectOrProxy]
+			.filter(SystemSpecification);
+		
+		val importStrings = program.imports
+			.map[ it.importedNamespace ]
+		
+		val platformSpecification = platforms.filter[importStrings.contains(it.name)].head
+		
+		return platformSpecification?.eContents?.filter(Platform)?.head
 	}
 	
 	static def getPackageAssociation(EObject obj) {
 		return EcoreUtil2.getContainerOfType(obj, PackageAssociation);
 	}
 	
-	static def boolean containsAbstractType(InferenceResult ir) {
-		return containsTypeBy(true, [t | t.abstract], ir);
-	}
-	
-	static def boolean containsTypeBy(boolean onNull, Predicate<Type> pred, InferenceResult ir) {
+	static def boolean containsTypeBy(boolean onNull, Predicate<AbstractType> pred, AbstractType ir) {
 		if(ir === null) {
 			return onNull;
 		}
-		if(pred.test(ir.type)) {
+		if(pred.test(ir)) {
 			return true;
 		}
-		ir.bindings.fold(false, [b, x | b || containsTypeBy(onNull, pred, x)])
+		if(ir instanceof TypeConstructorType) {
+			return ir.typeArguments.tail.fold(false, [b, x | b || containsTypeBy(onNull, pred, x)])
+		}
+		return false;
 	}
 	
-	static def boolean containsAbstractType(TypeSpecifier ts) {
+	static def boolean containsAbstractType(TypeReferenceSpecifier ts) {
 		if(ts === null) {
 			return true;
 		}
 		if(ts.type.abstract) {
 			return true;
 		}
-		ts.typeArguments.fold(false, [b, x | b || x.containsAbstractType])
+		ts.typeArguments.filter(TypeReferenceSpecifier).fold(false, [b, x | b || x.containsAbstractType])
 	}
 
 	/**
 	 * Computes the time interval of an event in milliseconds.
 	 */
-	static def int getIntervalInMilliseconds(TimeIntervalEvent event) {
+	static def long getIntervalInMilliseconds(TimeIntervalEvent event) {
 		val base = event.interval.value;
 		val factor = switch event.unit {
 			case MILLISECOND: 1
@@ -209,26 +214,18 @@ class ModelUtils {
 	}
 
 	def static boolean isModalityAccess(EObject statement) {
-		if (statement instanceof FeatureCall) {
-			if (statement.feature instanceof Modality) {
+		if (statement instanceof ElementReferenceExpression) {
+			if (statement.reference instanceof Modality) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	def static TypeSpecifier toSpecifier(InferenceResult inference) {
-		if (inference === null) {
-			return null;
-		} else {
-			val result = TypesFactory.eINSTANCE.createTypeSpecifier;
-			result.type = inference.type;
-			result.typeArguments.addAll(inference.bindings.map[x|x.toSpecifier]);
-			return result;
-		}
+	static dispatch def String typeSpecifierIdentifier(TypeExpressionSpecifier x) {
+		return x.value.toString;
 	}
-
-	static def String typeSpecifierIdentifier(TypeSpecifier x) {
+	static dispatch def String typeSpecifierIdentifier(TypeReferenceSpecifier x) {
 		val innerTypes = x.typeArguments.map[typeSpecifierIdentifier].reduce[p1, p2|p1 + ", " + p2];
 		val innerString = if (innerTypes === null) {
 				""
@@ -250,12 +247,6 @@ class ModelUtils {
 		return program.setup.findFirst[it.type?.name == name]
 	}
 	
-	def static getSortedArgumentsAsMap(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
-		val args = getSortedArguments(parameters, arguments);
-		val map = new TreeMap<Parameter, Argument>([p1, p2 | p1.name.compareTo(p2.name)]);
-		BaseUtils.zip(parameters,args).forEach[map.put(it.key, it.value)];
-		return map;
-	}
 	
 	def static getSortedArguments(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
 		if(arguments.empty || arguments.head.parameter === null) {
@@ -267,133 +258,61 @@ class ModelUtils {
 			 */
 			parameters.map[parm | arguments.findFirst[it.parameter?.name == parm.name]]
 		}
-	}
-		
-	dispatch def static getFunctionCallArguments(FeatureCall functionCall) {
-		val fun = functionCall.feature;
-		if(fun instanceof SumAlternative) {
-			// function.owner is a sumType
-			getFunctionCallArguments(fun, functionCall.arguments);
-		}
-		else {
-			if(fun instanceof TypedElement) {
-				return #[fun.typeSpecifier -> (ExpressionsFactory.eINSTANCE.createArgument => [it.value = functionCall.owner])] + getFunctionCallArguments(fun, functionCall.arguments);
-			}	
-		}
-	}
-	
-	dispatch def static getFunctionCallArguments(ElementReferenceExpression functionCall) {
-		if(functionCall === null || !functionCall.operationCall || functionCall.arguments.empty){
-			return null;
-		}
-		val funRef = functionCall.reference;
-		val arguments = functionCall.arguments;
-		getFunctionCallArguments(funRef, arguments);
-	}
-	def static getFunctionCallArguments(EObject funRef, Iterable<Argument> arguments) {	
-		val typesAndArgsInOrder = if(funRef instanceof FunctionDefinition) {
-			BaseUtils.zip(
-				funRef.parameters.map[typeSpecifier],
-				ModelUtils.getSortedArguments(funRef.parameters, arguments));
-		} else if(funRef instanceof StructureType) {
-			BaseUtils.zip(
-				funRef.parameters.map[typeSpecifier],
-				ModelUtils.getSortedArguments(funRef.parameters, arguments));
-		} else if(funRef instanceof NamedProductType) {
-			BaseUtils.zip(
-				funRef.parameters.map[typeSpecifier],
-				ModelUtils.getSortedArguments(funRef.parameters, arguments));
-		} else if(funRef instanceof AnonymousProductType) {
-			BaseUtils.zip(
-				funRef.accessorsTypes,
-				arguments);
-		} else {
-			return null;
-		}
-		return typesAndArgsInOrder;
 	}	
 	
-	def static boolean typeSpecifierEqualsByName(TypeSpecifier ts, Object o) {
-		return typeSpecifierEqualsWith([t1, t2 | t1.name == t2.name], ts, o)
-	}
-		
-	def static boolean typeSpecifierEqualsWith((Type, Type) => Boolean equalityCheck, TypeSpecifier ts1, Object o) {
-		if(!(o instanceof TypeSpecifier)) {
-			return false;
-		}
-		val ts2 = o as TypeSpecifier;
-		if(!equalityCheck.apply(ts1.type, ts2.type) || ts1.typeArguments.length != ts2.typeArguments.length) {
-			return false;
-		}
-		BaseUtils.zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(equalityCheck, tss.key, tss.value)])
+	
+	def static boolean typeSpecifierEqualsByName(TypeReferenceSpecifier ts, Object o) {
+		return typeSpecifierEqualsWith([t1, t2 | t1.name == t2.name], [t1, t2 | t1 == t2], ts, o)
 	}
 	
-	def static boolean typeInferenceResultEqualsWith((Type, Type) => Boolean equalityCheck, InferenceResult ir1, Object o) {
-		if(!(o instanceof InferenceResult)) {
+	static dispatch def boolean typeSpecifierEqualsWith((Type, Type) => Boolean typeEqualityCheck, (Expression, Expression) => Boolean valueEqualityCheck, TypeExpressionSpecifier ts1, Object o) {
+		if(!(o instanceof TypeExpressionSpecifier)) {
 			return false;
 		}
-		val ir2 = o as InferenceResult;
-		if(!equalityCheck.apply(ir1.type, ir2.type) || ir1.bindings.length != ir2.bindings.length) {
+		val ts2 = o as TypeExpressionSpecifier;
+		if(!valueEqualityCheck.apply(ts1.value, ts2.value)) {
 			return false;
 		}
-		BaseUtils.zip(ir1.bindings, ir2.bindings).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
+		return true;
+	}
+	static dispatch def boolean typeSpecifierEqualsWith((Type, Type) => Boolean typeEqualityCheck, (Expression, Expression) => Boolean valueEqualityCheck, TypeReferenceSpecifier ts1, Object o) {
+		if(!(o instanceof TypeReferenceSpecifier)) {
+			return false;
+		}
+		val ts2 = o as TypeReferenceSpecifier;
+		if(!typeEqualityCheck.apply(ts1.type, ts2.type) || ts1.typeArguments.length != ts2.typeArguments.length) {
+			return false;
+		}
+		return BaseUtils.zip(ts1.typeArguments, ts2.typeArguments).fold(true, [eq, tss | eq && typeSpecifierEqualsWith(typeEqualityCheck, valueEqualityCheck, tss.key, tss.value)])
 	}
 	
-	/**
-	 * Finds the value of an argument based on the name of its parameter.
-	 */
-	def static Expression getArgumentValue(Operation op, ArgumentExpression expr, String name) {
-		// first check if we find a named argument
-		val namedArg = expr.arguments.findFirst[x|x.parameter?.name == name];
-		if(namedArg !== null) return namedArg.value;
-
-		// we did not find a named arg. Let's look it up based on the index
-		val sortedArgs = getSortedArguments(op.parameters, expr.arguments);
-		
-		var argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
-		// for extension methods the first arg is on the left side
-		if(expr instanceof FeatureCall) {
-			if(expr.operationCall) {
-				if(argIndex == 0) {
-					return expr.owner;
+	def static boolean typeInferenceResultEqualsWith((AbstractType, AbstractType) => Boolean equalityCheck, AbstractType ir1, Object o) {
+		if(!(o instanceof AbstractType)) {
+			return false;
+		}
+		val ir2 = o as AbstractType;
+		if(!equalityCheck.apply(ir1, ir2)) {
+			return false;
+		}
+		if(ir1 instanceof TypeConstructorType) {
+			if(ir2 instanceof TypeConstructorType) {
+				if(ir1.typeArguments.length != ir2.typeArguments.length) {
+					return false;
 				}
-				argIndex--;	
+				BaseUtils.zip(ir1.typeArguments.tail, ir2.typeArguments.tail).fold(true, [eq, tss | eq && typeInferenceResultEqualsWith(equalityCheck, tss.key, tss.value)])
 			}
 		}
-		if(argIndex === null || argIndex >= sortedArgs.length) return null;
-
-		return sortedArgs.get(argIndex)?.value;
+		return ir1.class == ir2.class;
 	}
 	
-	def static Expression getArgumentValue(NamedProductType op, ArgumentExpression expr, String name) {
-		// first check if we find a named argument
-		val namedArg = expr.arguments.findFirst[x|x.parameter?.name == name];
-		if(namedArg !== null) return namedArg.value;
-
-		// we did not find a named arg. Let's look it up based on the index
-		val sortedArgs = getSortedArguments(op.parameters, expr.arguments);
-		
-		var argIndex = op.parameters.indexed.findFirst[x|x.value.name == name]?.key
-		// for extension methods the first arg is on the left side
-		if(expr instanceof FeatureCall) {
-			if(expr.operationCall) {
-				if(argIndex == 0) {
-					return expr.owner;
-				}
-				argIndex--;	
-			}
-		}
-		if(argIndex === null || argIndex >= sortedArgs.length) return null;
-
-		return sortedArgs.get(argIndex)?.value;
-	}
+	
 
 	def static Expression getArgumentValue(SignalInstance signalInstance, String name) {
 		val init = signalInstance.initialization;
 		val configuredValue = if (init instanceof ElementReferenceExpression) {
 				val ref = init.reference;
 				if (ref instanceof Operation) {
-					ModelUtils.getArgumentValue(ref, init, name);
+					ExpressionUtils.getArgumentValue(ref, init, name);
 				} else {
 					null;
 				}
@@ -407,19 +326,27 @@ class ModelUtils {
 	}
 
 	def static getOriginalSourceCode(EObject obj) {
-		val origin = ProgramCopier.computeOrigin(obj);
+		val origin = BaseUtils.computeOrigin(obj);
 		val node = NodeModelUtils.getNode(origin);
 		return if(node === null) null else NodeModelUtils.getTokenText(node);
 	}
-
-	static def boolean isPrimitiveType(TypeSpecifier typeSpec) {
-		val type = typeSpec?.type;
-		return if (type instanceof PrimitiveType) {
-			true
-		} else if (type instanceof GeneratedType && type.name == 'optional') {
-			typeSpec.typeArguments.forall[x|x.isPrimitiveType]
-		} else {
-			false
+	
+	static def boolean isStructuralType(AbstractType type, EObject context) {
+		return type instanceof SumType || type instanceof ProdType || type.isPrimitiveType(context)
+	}
+	
+	static def boolean isPrimitiveType(AbstractType type, EObject context) {
+		if (type instanceof AtomicType) {
+			return !TypeUtils.isGeneratedType(context, type);
 		}
+		if (type instanceof AbstractBaseType) {
+			return true;
+		} else if (type instanceof TypeConstructorType) {
+			if(type.name == 'optional') {
+				return type.typeArguments.tail.forall[x|x.isPrimitiveType(context)]
+			}
+		}
+		return false;
+		
 	}	
 }

@@ -13,68 +13,44 @@ package org.eclipse.mita.platform.xdk110.platform
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-import com.google.inject.Inject
+import java.util.HashSet
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EStructuralFeature
 import org.eclipse.mita.base.expressions.ArgumentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
-import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
+import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Signal
+import org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
-import org.eclipse.xtext.validation.ValidationMessageAcceptor
-import java.util.Set
-import java.util.HashSet
-import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.xtext.naming.IQualifiedNameProvider
 import org.eclipse.mita.program.validation.MethodCall
-import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
 import org.eclipse.mita.program.validation.MethodCall.MethodCallModality
-import org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator
-import org.eclipse.mita.program.EventHandlerDeclaration
-import org.eclipse.mita.program.TimeIntervalEvent
-import org.eclipse.mita.program.ProgramBlock
+import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst
+import org.eclipse.xtext.validation.ValidationMessageAcceptor
+import org.eclipse.mita.library.stdlib.ArrayGenerator
 
-class Validation implements IResourceValidator {
-
-	@Inject ElementSizeInferrer sizeInferrer
-		
+class Validation implements IResourceValidator {		
 	override validate(Program program, EObject context, ValidationMessageAcceptor acceptor) {
-		val functionCalls1 = program.eAllContents.filter(FeatureCall).filter[it.operationCall].toList;
-		val functionCalls2 = program.eAllContents.filter(ElementReferenceExpression).filter[it.operationCall].toList;
+		val functionCalls = program.eAllContents.filter(ElementReferenceExpression).filter[!(it instanceof FeatureCallWithoutFeature)].filter[it.operationCall].toList;
 		
 		// the following is extension method hell
 		// EObject source = it, SignalInstance sigInst, int structFeature
 		// ArgumentExpression source = it, Operation writeMethod, SignalInstance sigInst
 		val sigInstOrModalityAccesses = (
-			functionCalls1.map[
-				val ArgumentExpression source = it;
-				val method = it.feature;
-				val owner = it.owner;
-				if(owner instanceof FeatureCall) {
-					val sigInst = owner.feature;
-					if(source === null || method === null || sigInst === null) {
-						return null;
-					}
-					return MethodCall.cons(source, method, sigInst, ExpressionsPackage.Literals.FEATURE_CALL__FEATURE)
-				}
-				return null;
-			] + functionCalls2.map[
+			functionCalls.map[
 				val ArgumentExpression source = it;
 				val method = it.reference;
 				if(method instanceof Operation) {
-					val sigInst = ModelUtils.getArgumentValue(method, it, "self");
+					val sigInst = ExpressionUtils.getArgumentValue(method, it, "self");
 					if(source === null || method === null || sigInst === null) {
 						return null;
 					}
@@ -211,12 +187,11 @@ class Validation implements IResourceValidator {
 		}
 		val specifiedLength = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "length"), []);
 		if(specifiedLength instanceof Integer) {
-			val argumentArray = ModelUtils.getArgumentValue(writeMethod, source, "value");
-			val arraySize = sizeInferrer.infer(argumentArray);
-			if(arraySize instanceof ValidElementSizeInferenceResult) {
-				val actualLength = arraySize.elementCount;
-				if(actualLength != specifiedLength) {
-					acceptor.acceptError("passed array has invalid size: " + actualLength + ", should be: " + specifiedLength, argumentArray, null, 0, "PASSED_ARRAY_HAS_INVALID_SIZE")
+			val argumentArray = ExpressionUtils.getArgumentValue(writeMethod, source, "value");
+			val arraySize = ArrayGenerator.getInferredSize(argumentArray)?.eval;
+			if(arraySize !== null) {
+				if(arraySize != specifiedLength) {
+					acceptor.acceptError("passed array has invalid size: " + arraySize + ", should be: " + specifiedLength, argumentArray, null, 0, "PASSED_ARRAY_HAS_INVALID_SIZE")
 				}
 			}	
 		}

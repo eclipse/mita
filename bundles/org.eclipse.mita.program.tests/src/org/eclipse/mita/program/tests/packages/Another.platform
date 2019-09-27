@@ -1,5 +1,7 @@
 package platforms.another;
 
 platform AnotherPlatform {	
-	has system-event foo
+	module "org.eclipse.mita.platform.unittest.UnitTestPlatformGeneratorModule"
+	
+	event foo
 }

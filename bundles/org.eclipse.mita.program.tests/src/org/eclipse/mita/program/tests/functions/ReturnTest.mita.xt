@@ -14,71 +14,30 @@ fn foo11() {
 	return 17;
 }
 fn callsFoo11() {
-	// XPECT inferredType --> int32
+	// XPECT inferredType --> xint8
 	let x = foo11();
-}
+} 
 
 fn callFoo11() {
 	var i : int32 = foo11();
-	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on bool and int32." at "var b : bool = foo11();"
-	var b : bool = foo11();
 }
 
 // for multiple return statements, the common type is inferred
-// XPECT inferredType --> double
+// XPECT inferredType --> __args() → f64
 fn foo12() {
 	if (true) {
-		return 17;
+		return 17.0f;
 	}
 	return 4.0;
 }
 
 fn callFoo12() {
 	var d : double = foo12();
-	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on int32 and double." at "var j : int32 = foo12();"
-	var j : int32 = foo12();
 }
 
 // XPECT errors --> "The operation must return a value of type bool." at "noRet"
 fn noRet() : bool {}
 
-fn incompatibleReturnTypes() : int32 {
-	if (true) {
-		// XPECT errors --> "The return type 'string' is not compatible with the operation's type 'int32'." at """"
-		return "";
-	} else {
-		return 18;
-	}
-	// XPECT errors --> "The return type 'bool' is not compatible with the operation's type 'int32'." at "true"
-	return true;
-}
-
-/* XPECT errors ---
-"Could not infer common return type from operation's return statements" at "fn impossibleInference() {  	if (true) {  		return "";   	}  	return true;  }"
-"Could not infer common return type from operation's return statements" at "fn impossibleInference() {  	if (true) {  		return "";   	}  	return true;  }"
---- */
-fn impossibleInference() {
-	if (true) {
-		return "";
-	}
-	return true;
-}
- 
-fn returnInVoid() : void {
-	if(true) {
-		return;
-	} else {
-		// XPECT errors --> "Void operations cannot return a value." at "return 1;"
-		return 1;
-	}
-}
-
-fn returnWithoutValudInNoVoidFunction() : uint32 {
-	if(true) {
-		// XPECT errors --> "The return type 'void' is not compatible with the operation's type 'uint32'." at "return;"
-		return;
-	}
-}
 
 struct vec2d_t {
     var x: int32;
@@ -116,7 +75,7 @@ fn returnSumType1(): anyVec {
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType2"
 fn returnSumType2(): anyVec {
-	var res: anyVec = anyVec.vec2d(1,2);
+	var res: anyVec = anyVec.vec2d(vec2d_t(1,2));
 	return res;
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType3"
@@ -140,7 +99,7 @@ fn returnSumType6(): anyVec {
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType7"
 fn returnSumType7(): anyVec {
-	return anyVec.vec2d(1,2);
+	return anyVec.vec2d(vec2d_t(1,2));
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType8"
 fn returnSumType8(): anyVec {
@@ -152,28 +111,29 @@ fn returnSumType9(): anyVec {
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray1"
-fn returnArray1(): array<int32> {
-	var res: array<int32> = [1,2,3,4];
+//XPECT infos --> "? has type '4" at "?"
+fn returnArray1(): array<int32, ?> {
+	//XPECT infos --> "? has type '4" at "?"
+	var res: array<int32, ?> = [1,2,3,4];
 	return res;
 }
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray2"
-fn returnArray2(): array<int32> {
+//XPECT infos --> "? has type '4" at "?"
+fn returnArray2(): array<int32, ?> {
 	return [1,2,3,4];
 }
 
-//XPECT errors --> "Could not infer the size of the function's return." at "returnArrayBad"
-fn returnArrayBad(s: int32): array<int32> {
-	return new array<int32>(size = s);
-}
-
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString1"
-fn returnString1(): string {
-	var res: string = "abc";
+//XPECT infos --> "? has type '3" at "?"
+fn returnString1(): string<?> {
+	//XPECT infos --> "? has type '3" at "?"
+	var res: string<?> = "abc";
 	return res;
 }
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString2"
-fn returnString2(): string {
+//XPECT infos --> "? has type '3" at "?"
+fn returnString2(): string<?> {
 	return "abc";
 }
 
@@ -190,7 +150,6 @@ fn returnOptional2(): int32? {
 	return res;
 }
 fn returnOptional3(): int32? {
-//XPECT errors --> "Implicit construction of optionals in returns is not yet supported. Please use 'optional.some' instead." at "return 1;"
 	return 1;
 }
 fn returnOptional4(): int32? {
@@ -200,7 +159,7 @@ fn returnOptional5(): int32? {
 	return some(1);
 }
 
-//INGORE noCompileErrors
+//XPECT noCompileErrors
 fn testComplexReturns() {
   var x1  = returnStruct1();
   var x2  = returnStruct2();
@@ -221,8 +180,7 @@ fn testComplexReturns() {
   var x17 = returnOptional0();
   var x18 = returnOptional1();
   var x19 = returnOptional2();
-  // this isn't implemented yet, but explicitly so
-  //var x20 = returnOptional3();
+  var x20 = returnOptional3();
   var x21 = returnOptional4();
   var x22 = returnOptional5();
 }

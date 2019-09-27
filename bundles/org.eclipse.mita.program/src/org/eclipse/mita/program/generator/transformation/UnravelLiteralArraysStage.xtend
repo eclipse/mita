@@ -13,21 +13,24 @@
 
 package org.eclipse.mita.program.generator.transformation
 
-import org.eclipse.mita.program.generator.transformation.AbstractUnravelingStage
-import org.eclipse.mita.base.expressions.Expression
-import org.eclipse.mita.base.expressions.PrimitiveValueExpression
-import org.eclipse.mita.program.ReturnStatement
-import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.program.ArrayLiteral
+import org.eclipse.mita.program.ReturnValueExpression
 
 class UnravelLiteralArraysStage extends AbstractUnravelingStage {
 	
 	override protected needsUnraveling(Expression expression) {
 		if(expression instanceof PrimitiveValueExpression) {
 			if(expression.value instanceof ArrayLiteral) {
-				val container = expression.eContainer;
-				return container instanceof ReturnStatement || container instanceof Argument || container instanceof FeatureCall
+				var container = expression.eContainer;
+				while(container instanceof CoercionExpression) {
+					container = container.eContainer;
+				}
+				return container instanceof ReturnValueExpression || container instanceof Argument || container instanceof FeatureCall
 			}
 		}
 		return false;

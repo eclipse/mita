@@ -13,88 +13,71 @@
 
 package org.eclipse.mita.library.stdlib
 
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
+import org.eclipse.mita.base.typesystem.constraints.SumConstraint
+import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.program.ArrayLiteral
-import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.ValueRange
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
-import org.eclipse.mita.program.inferrer.InvalidElementSizeInferenceResult
-import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
-import org.eclipse.mita.program.model.ModelUtils
-import com.google.inject.Inject
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
 
-class ArraySizeInferrer extends ElementSizeInferrer {
-	
-	@Inject
-    protected ITypeSystem registry;
-	
-	
-	override protected dispatch doInfer(NewInstanceExpression obj) {
-		val parentType = ModelUtils.toSpecifier(typeInferrer.infer(obj.eContainer));
+import static org.eclipse.mita.program.inferrer.ProgramSizeInferrer.*
+
+import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+
+class ArraySizeInferrer extends GenericContainerSizeInferrer {
 		
-		val rawSizeValue = ModelUtils.getArgumentValue(obj.reference as Operation, obj, 'size');
-		if(rawSizeValue === null) {
-			return new InvalidElementSizeInferenceResult(obj, parentType, "size missing");
-		} else if(parentType === null) {
-			return new InvalidElementSizeInferenceResult(obj, parentType, "parent type unknown");
-		} else {
-			val staticSizeValue = StaticValueInferrer.infer(rawSizeValue, [x |]);
-			val result = if(staticSizeValue === null) {
-				newInvalidResult(obj.reference, "Cannot infer static value");
-			} else {
-				new ValidElementSizeInferenceResult(obj, parentType, staticSizeValue as Integer);
-			}
-			
-			/**
-			 * TODO: at the moment we don't have array/struct literals. As such the size inference for arrays
-			 * is limited to primitive types, because the size of generated types is determined during initialization.
-			 */
-			val typeOfChildren = parentType.typeArguments.head;
-			result.children.add(obj.inferFromType(typeOfChildren));
-			return result;
-		}
+	override getDataTypeIndexes() {
+		return #[1];
 	}
 	
-	def protected dispatch doInfer(ArrayLiteral obj) {
-		val parentType = ModelUtils.toSpecifier(typeInferrer.infer(obj.eContainer));
-		
-		val typeOfChildren = parentType.typeArguments.head;
-		
-		val result = new ValidElementSizeInferenceResult(obj, parentType, obj.values.length);
-		 
-		if(typeOfChildren.type === registry.getType(ProgramDslTypeInferrer.ARRAY_LITERAL_TYPE)) {
-			result.children.add(infer(obj.values.head));	
-		}
-		else {
-			result.children.add(super.infer(obj.values.head));	
-		}
-		return result;			
+	override getSizeTypeIndexes() {
+		return #[2];
 	}
 	
-	override protected dispatch doInfer(ElementReferenceExpression obj) {
-		if(obj.arrayAccess && obj.arraySelector.head instanceof ValueRange) {
-			val valRange = (obj as ElementReferenceExpression).arraySelector.head as ValueRange;
-			
-			val parentType = ModelUtils.toSpecifier(typeInferrer.infer(obj));
-			val typeOfChildren = parentType.typeArguments.head;
-			
-			val lowerBound = StaticValueInferrer.infer(valRange.lowerBound, [x |]);
-			val upperBound = StaticValueInferrer.infer(valRange.upperBound, [x |]);
-			if(!(lowerBound instanceof Integer && upperBound instanceof Integer)) {
-				return new InvalidElementSizeInferenceResult(obj, parentType, "can not infer size for this range");
+	dispatch def void doCreateConstraints(InferenceContext c, ArrayLiteral lit, TypeConstructorType t) {	
+		val innerDataType = c.system.newTypeVariable(lit);
+		val oldDataType = t.typeArguments.get(1)
+		val u32 = typeRegistry.getTypeModelObject(lit, StdlibTypeRegistry.u32TypeQID);
+		val u32Type = c.system.getTypeVariable(u32);
+		c.system.addConstraint(new MaxConstraint(innerDataType, lit.values.map[
+				c.system.getTypeVariable(it)
+			] 
+			// add the original type here to make for example [1,2,3]: array<uint32, ?> (because of other use) type to *uint32* instead of xint8 
+			+ #[oldDataType], new ValidationIssue('''''', lit)));
+		
+		c.system.associate(new TypeConstructorType(lit, t.name, #[
+			t.typeArguments.head -> Variance.INVARIANT, 
+			innerDataType -> Variance.INVARIANT, 
+			new LiteralNumberType(lit, lit.values.length, u32Type) -> Variance.COVARIANT
+		]), lit);
+	}
+
+	dispatch def void doCreateConstraints(InferenceContext c, ArrayAccessExpression expr, TypeConstructorType type) {
+		val arraySelector = expr.arraySelector.ignoreCoercions?.castOrNull(ValueRange);
+		if(arraySelector !== null) {
+			val u32 = typeRegistry.getTypeModelObject(expr, StdlibTypeRegistry.u32TypeQID);
+			val u32Type = c.system.getTypeVariable(u32);
+			val ownerSize = typeVariableToTypeConstructorType(c, c.system.getTypeVariable(expr.owner), type).typeArguments.last;
+			val lowerBound = new LiteralNumberType(arraySelector.lowerBound, -1 * (StaticValueInferrer.infer(arraySelector.lowerBound, [])?.castOrNull(Long) ?: 0L), u32Type);
+			val upperBoundInferred = StaticValueInferrer.infer(arraySelector.upperBound, [])?.castOrNull(Long);
+			val upperBound = if(upperBoundInferred !== null) {
+				new LiteralNumberType(arraySelector.upperBound, upperBoundInferred, u32Type);
 			}
-			val elCount = (upperBound as Integer) - (lowerBound as Integer) + 1;
-			
-			val result = new ValidElementSizeInferenceResult(obj, parentType, elCount);
-			result.children.add(obj.inferFromType(typeOfChildren));
-			return result;
-		} else {
-			return super._doInfer(obj);
+			else {
+				ownerSize	
+			}
+			val exprSizeType = typeVariableToTypeConstructorType(c, c.system.getTypeVariable(expr), type).typeArguments.last as TypeVariable;
+			c.system.addConstraint(new SumConstraint(exprSizeType, #[upperBound, lowerBound], new ValidationIssue('''''', expr)));
 		}
+		c.system.associate(type, expr);
 	}
 	
 }

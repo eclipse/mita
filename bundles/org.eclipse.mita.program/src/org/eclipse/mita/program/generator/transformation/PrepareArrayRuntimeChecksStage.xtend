@@ -14,27 +14,24 @@
 package org.eclipse.mita.program.generator.transformation
 
 import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.program.AbstractLoopStatement
-import org.eclipse.mita.program.ArrayAccessExpression
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ProgramFactory
-import org.eclipse.mita.program.ValueRange
 import org.eclipse.mita.program.WhileStatement
-import org.eclipse.mita.program.inferrer.ElementSizeInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.inferrer.ValidElementSizeInferenceResult
 import org.eclipse.xtext.EcoreUtil2
 
-class PrepareArrayRuntimeChecksStage extends AbstractTransformationStage {
-	
-	@Inject
-	protected ElementSizeInferrer sizeInferrer;
-	
+import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
+
+class PrepareArrayRuntimeChecksStage extends AbstractTransformationStage {	
 	@Inject
 	protected UnravelLiteralArraysStage unravelExpression;
 	
@@ -51,10 +48,9 @@ class PrepareArrayRuntimeChecksStage extends AbstractTransformationStage {
 		expression.transformChildren();
 		
 		// precondition: we can't infer the dimensions of the array and the access ourselves
-		val sizeInfRes = sizeInferrer.infer(expression.owner);
-		val arraySelector = expression.arraySelector;
+		val arraySelector = expression.arraySelector.ignoreCoercions as Expression;
 		val staticVal = StaticValueInferrer.infer(arraySelector, [x|]);
-		val canInferStatically = (sizeInfRes instanceof ValidElementSizeInferenceResult) && staticVal !== null;
+		val canInferStatically = false && staticVal !== null;
 		if(canInferStatically) return;
 		
 		if(staticVal === null) {

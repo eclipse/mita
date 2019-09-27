@@ -14,7 +14,7 @@
 package org.eclipse.mita.program.generator.transformation
 
 import org.eclipse.mita.base.expressions.BinaryExpression
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 
 class EnforceOperatorPrecedenceStage extends AbstractTransformationStage {

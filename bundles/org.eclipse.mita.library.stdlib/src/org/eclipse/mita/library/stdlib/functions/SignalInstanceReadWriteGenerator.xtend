@@ -15,14 +15,17 @@ package org.eclipse.mita.library.stdlib.functions
 
 import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import java.util.Optional
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
@@ -31,12 +34,10 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	
 	@Inject
 	protected TypeGenerator typeGenerator
-	
+		
 	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
 		val firstArg = functionCall.arguments.get(0)?.value;
-		val siginst = if(firstArg instanceof FeatureCall && (firstArg as FeatureCall).feature instanceof SignalInstance) {
-			(firstArg as FeatureCall).feature as SignalInstance;
-		} else if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {
+		val siginst = if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {
 			(firstArg as ElementReferenceExpression).reference as SignalInstance;
 		} else {
 			firstArg.eAllContents.findFirst[ it instanceof SignalInstance ] as SignalInstance;
@@ -53,12 +54,13 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			.addHeader(siginst.eContainer.fileBasename + '.h', false)
 		} else if(functionName == 'write') {
 			val value = functionCall.arguments.get(1).value;
-			val variableName = '''_new«firstArg.uniqueIdentifier.toFirstUpper»''';
+			val variableName = codeFragmentProvider.create('''_new«firstArg.uniqueIdentifier.toFirstUpper»''');
 			
-			val siginstType = ModelUtils.toSpecifier(typeInferrer.infer(siginst.instanceOf));
+			val siginstType = BaseUtils.getType(siginst).sigInstTypeArg;
+			val valueType = BaseUtils.getType(value);
 			
 			return codeFragmentProvider.create('''
-			«typeGenerator.code(siginstType)» «variableName» = «statementGenerator.code(value).noTerminator»;
+			«statementGenerator.generateVariableDeclaration(valueType, functionCall, Optional.empty, variableName, value, false)»
 			exception = «siginst.writeAccessName»(&«variableName»);
 			«generateExceptionHandler(functionCall, 'exception')»
 			''')
@@ -66,6 +68,23 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 		} else {
 			return codeFragmentProvider.create('''#error Can only generate code for signal instance read or write''')			
 		}
+	}
+	
+	dispatch def AbstractType getSigInstTypeArg(AbstractType type) {
+		return type;
+	}
+	dispatch def AbstractType getSigInstTypeArg(FunctionType type) {
+		return type.to.sigInstTypeArg2;
+	}
+	
+	dispatch def AbstractType getSigInstTypeArg2(AbstractType type) {
+		return type;
+	}
+	dispatch def AbstractType getSigInstTypeArg2(TypeConstructorType type) {
+		if(type.name == "siginst" && type.typeArguments.tail.size > 0) {
+			return type.typeArguments.tail.head;
+		}
+		return type;
 	}
 	
 }

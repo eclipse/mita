@@ -1,13 +1,13 @@
 /********************************************************************************
  * Copyright (c) 2017, 2018 Bosch Connected Devices and Solutions GmbH.
- *
+ * 
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License 2.0 which is available at
  * http://www.eclipse.org/legal/epl-2.0.
- *
+ * 
  * Contributors:
  *    Bosch Connected Devices and Solutions GmbH - initial contribution
- *
+ * 
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
@@ -24,7 +24,6 @@ import org.eclipse.jface.viewers.StyledString
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.ComplexType
-import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.PackageAssociation
@@ -32,13 +31,15 @@ import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.DefaultValueProvider
 import org.eclipse.mita.program.model.ImportHelper
+import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.RuleCall
@@ -52,61 +53,86 @@ import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor
 class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 
 	@Inject
-	private ProposalPriorityHelper priorityHelper;
+	ProposalPriorityHelper priorityHelper;
 	@Inject
-	private ILabelProvider labelProvider;
+	ILabelProvider labelProvider;
 	@Inject
-	private IScopeProvider scopeProvider;
+	IScopeProvider scopeProvider;
 	@Inject
-	protected ITypeSystemInferrer typeInferrer;
-	@Inject 
 	protected extension ImportHelper
-	@Inject 
+	@Inject
 	DefaultValueProvider defaultValueProvider
+
+	static val hiddenQIDs = StdlibTypeRegistry.integerTypeQIDs.filter[it.lastSegment.startsWith("x")] +
+		#[StdlibTypeRegistry.plusFunctionQID, StdlibTypeRegistry.minusFunctionQID, StdlibTypeRegistry.timesFunctionQID,
+			StdlibTypeRegistry.divisionFunctionQID, StdlibTypeRegistry.moduloFunctionQID,
+			StdlibTypeRegistry.leftShiftFunctionQID, StdlibTypeRegistry.rightShiftFunctionQID,
+			StdlibTypeRegistry.postincrementFunctionQID, StdlibTypeRegistry.postdecrementFunctionQID].map [
+			it.skipFirst(1)
+		]
 
 	override Function<IEObjectDescription, ICompletionProposal> getProposalFactory(String ruleName,
 		ContentAssistContext contentAssistContext) {
 		return new DefaultProposalCreator(contentAssistContext, ruleName, getQualifiedNameConverter()) {
 
 			override ICompletionProposal apply(IEObjectDescription candidate) {
-				val proposal = super.apply(candidate);
-				if (TypesPackage.Literals.OPERATION.isSuperTypeOf(candidate.EClass)) {
-					createFunctionDefinitionProposal(candidate, proposal)
+				val uri = candidate.EObjectURI;
+				if (hiddenQIDs.exists [
+					uri.fragment.startsWith(it.toString)
+				]) {
+					return null;
 				}
+				val proposal = super.apply(candidate)
 				if (proposal instanceof ConfigurableCompletionProposal) {
+					proposal.removeImplicitImports
+					if (TypesPackage.Literals.OPERATION.isSuperTypeOf(candidate.EClass)) {
+						createFunctionDefinitionProposal(candidate, proposal)
+					}
+					if (TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(candidate.EClass)) {
+						createTypeKindProposal(candidate, proposal)
+					}
 					proposal.image = labelProvider.getImage(candidate.EObjectOrProxy);
 				}
 
 				return proposal;
 			}
+			
+			protected def removeImplicitImports(ConfigurableCompletionProposal it) {
+				ProgramDslImportScopeProvider.IMPLICIT_IMPORTS.map[replaceAll("\\*", "")].forEach [ import |
+					if (replacementString.startsWith(import)) {
+						replacementString = replacementString.replaceFirst(import, "")
+					}
+				]
+			}
+			
+			protected def createTypeKindProposal(IEObjectDescription description, ConfigurableCompletionProposal proposal) {
+				// remove star
+				proposal.displayString = proposal.displayString.replaceAll("∗", "");
+			}
 
 			/**
 			 * For operations, add brackets and put cursor in-between them if more than one parameter expected
 			 */
-			protected def void createFunctionDefinitionProposal(IEObjectDescription candidate,
-				ICompletionProposal proposal) {
-				if (proposal instanceof ConfigurableCompletionProposal) {
-					val configProposal = proposal as ConfigurableCompletionProposal;
+			protected def createFunctionDefinitionProposal(IEObjectDescription candidate,
+				ConfigurableCompletionProposal proposal) {
 					val paramTypes = getParamTypes(candidate).replace("[", "").replace("]", "");
 					val returnType = getType(candidate);
 					if (paramTypes !== null) {
 						// add semicolon for operations with void return type
 						if (MitaTypeSystem.VOID.equals(returnType)) {
-							configProposal.setReplacementString(configProposal.getReplacementString() + "();");
+							proposal.setReplacementString(proposal.getReplacementString() + "();");
 						} else {
-							configProposal.setReplacementString(configProposal.getReplacementString() + "()");
+							proposal.setReplacementString(proposal.getReplacementString() + "()");
 						}
 						// move cursor between brackets for operations with input parameters
 						if (paramTypes.split(",").length > 0) {
-							configProposal.setCursorPosition(configProposal.getCursorPosition() + 1);
+							proposal.setCursorPosition(proposal.getCursorPosition() + 1);
 						} else {
-							configProposal.setCursorPosition(configProposal.getCursorPosition() + 2);
+							proposal.setCursorPosition(proposal.getCursorPosition() + 2);
 						}
 						
-						configProposal.displayString = configProposal.displayString + "(" +
-							paramTypes + ")" + " : " + returnType;
+						proposal.displayString = proposal.displayString + "(" + paramTypes + ")" + " : " + returnType;
 					}
-				}
 			}
 
 			protected def String getParamTypes(IEObjectDescription candidate) {
@@ -122,7 +148,7 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 				if (candidate.EObjectOrProxy.eIsProxy) {
 					return candidate.getUserData(ProgramDslResourceDescriptionStrategy.TYPE);
 				} else {
-					return typeInferrer.infer(candidate.EObjectOrProxy)?.type?.name;
+					return BaseUtils.getType(candidate.EObjectOrProxy)?.name;
 				}
 			}
 		};
@@ -131,40 +157,41 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 	override getPriorityHelper() {
 		priorityHelper
 	}
-	
-	def proposeComplexTypeConstructors(Boolean scoped, EObject model, ContentAssistContext context, ICompletionProposalAcceptor acceptor) {
+
+	def proposeComplexTypeConstructors(Boolean scoped, EObject model, ContentAssistContext context,
+		ICompletionProposalAcceptor acceptor) {
 		val scope = scopeProvider.getScope(model, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference);
 		for (element : scope.allElements) {
 			val obj = element.EObjectOrProxy;
 			val fromPlatform = EcoreUtil2.getContainerOfType(obj, Program) === null;
 			val inSetupBlock = EcoreUtil2.getContainerOfType(model, SystemResourceSetup) !== null;
 			// in setup blocks we use platform defined types and vice versa
-			if(fromPlatform === inSetupBlock) {
-				if(obj instanceof SumAlternative || obj instanceof StructureType) {
-					val prefix = if(scoped && obj instanceof SumAlternative) {
-						(obj.eContainer as SumType).name + ".";
-					}
-					else {
-						"";
-					}
+			if (fromPlatform === inSetupBlock) {
+				if (obj instanceof SumAlternative || obj instanceof StructureType) {
+					val prefix = if (scoped && obj instanceof SumAlternative) {
+							(obj.eContainer as SumType).name + ".";
+						} else {
+							"";
+						}
 					val s = defaultValueProvider.getDummyConstructor(prefix, obj as ComplexType);
-					if(s !== null) {
+					if (s !== null) {
 						val proposal = createCompletionProposal(
 							s,
 							new StyledString(s),
 							labelProvider.getImage(obj),
 							context
 						);
-						
+
 						if (proposal instanceof ConfigurableCompletionProposal) {
 							proposal.additionalProposalInfo = obj;
 							proposal.hover = hover;
-							getPriorityHelper.adjustCrossReferencePriority(proposal, prefix + (obj as ComplexType).name);
+							getPriorityHelper.adjustCrossReferencePriority(proposal,
+								prefix + (obj as ComplexType).name);
 						}
-						
-						acceptor.accept(proposal);	
+
+						acceptor.accept(proposal);
 					}
-				}	
+				}
 			}
 		}
 	}
@@ -178,7 +205,7 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 
 	override complete_FeatureCall(EObject model, RuleCall ruleCall, ContentAssistContext context,
 		ICompletionProposalAcceptor acceptor) {
-		if(EcoreUtil2.getContainerOfType(model, SystemResourceSetup) !== null) {
+		if (EcoreUtil2.getContainerOfType(model, SystemResourceSetup) !== null) {
 			return;
 		}
 		// resolve the element reference of the feature call and add all qualified sensor modalities
@@ -212,25 +239,26 @@ class ProgramDslProposalProvider extends AbstractProgramDslProposalProvider {
 			}
 		}
 	}
-	
-	protected def ICompletionProposal createCustomProposal(String proposalString, EObject element, ContentAssistContext context) {
-					val proposal = createCompletionProposal(
+
+	protected def ICompletionProposal createCustomProposal(String proposalString, EObject element,
+		ContentAssistContext context) {
+		val proposal = createCompletionProposal(
 			proposalString,
 			new StyledString(proposalString),
 			labelProvider.getImage(element),
-						context
-					);
-		
-					if (proposal instanceof ConfigurableCompletionProposal) {
+			context
+		);
+
+		if (proposal instanceof ConfigurableCompletionProposal) {
 			proposal.additionalProposalInfo = if (element.eIsProxy)
 				EcoreUtil.resolve(element, context.resource)
 			else
 				element;
-						proposal.hover = hover;
-						getPriorityHelper.adjustCrossReferencePriority(proposal, context.prefix);
-					}
+			proposal.hover = hover;
+			getPriorityHelper.adjustCrossReferencePriority(proposal, context.prefix);
+		}
 		proposal
-				}
+	}
 
 	override complete_QID(EObject model, RuleCall ruleCall, ContentAssistContext context,
 		ICompletionProposalAcceptor acceptor) {

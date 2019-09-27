@@ -3,8 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: %pluginName
 Bundle-Vendor: %providerName
 Bundle-Localization: plugin
-Bundle-Version: 0.1.0.qualifier
-Bundle-ClassPath: .
+Bundle-Version: 0.2.0.qualifier
+Bundle-ClassPath: .,
+ lib/protostuff-api-1.5.3.jar,
+ lib/protostuff-collectionschema-1.5.3.jar,
+ lib/protostuff-core-1.5.3.jar,
+ lib/protostuff-runtime-1.5.3.jar,
+ lib/fastutil-8.2.2.jar
 Bundle-SymbolicName: org.eclipse.mita.base;singleton:=true
 Automatic-Module-Name: org.eclipse.mita.base
 Bundle-ActivationPolicy: lazy
@@ -24,9 +29,24 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.eclipse.emf.ecore.xcore,
  com.google.inject;visibility:=reexport,
  com.google.guava,
- org.eclipse.mita.library.extension;bundle-version="0.1.0"
+ org.eclipse.mita.library.extension,
+ org.eclipse.core.resources;bundle-version="3.12.0",
+ com.google.gson;bundle-version="2.2.4"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Export-Package: org.eclipse.mita.base,
+Export-Package: io.protostuff,
+ io.protostuff.runtime,
+ it.unimi.dsi.fastutil,
+ it.unimi.dsi.fastutil.booleans,
+ it.unimi.dsi.fastutil.bytes,
+ it.unimi.dsi.fastutil.chars,
+ it.unimi.dsi.fastutil.doubles,
+ it.unimi.dsi.fastutil.floats,
+ it.unimi.dsi.fastutil.ints,
+ it.unimi.dsi.fastutil.io,
+ it.unimi.dsi.fastutil.longs,
+ it.unimi.dsi.fastutil.objects,
+ it.unimi.dsi.fastutil.shorts,
+ org.eclipse.mita.base,
  org.eclipse.mita.base.expressions,
  org.eclipse.mita.base.expressions.impl,
  org.eclipse.mita.base.expressions.inferrer,
@@ -40,10 +60,15 @@ Export-Package: org.eclipse.mita.base,
  org.eclipse.mita.base.services,
  org.eclipse.mita.base.types,
  org.eclipse.mita.base.types.impl,
- org.eclipse.mita.base.types.inferrer,
  org.eclipse.mita.base.types.typesystem,
  org.eclipse.mita.base.types.util,
  org.eclipse.mita.base.types.validation,
+ org.eclipse.mita.base.typesystem,
+ org.eclipse.mita.base.typesystem.constraints,
+ org.eclipse.mita.base.typesystem.infra,
+ org.eclipse.mita.base.typesystem.serialization,
+ org.eclipse.mita.base.typesystem.solver,
+ org.eclipse.mita.base.typesystem.types,
  org.eclipse.mita.base.util,
  org.eclipse.mita.base.validation
 Import-Package: org.apache.log4j

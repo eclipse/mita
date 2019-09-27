@@ -62,10 +62,10 @@ class EntryPointGenerator {
 		
 		
 		// find all resources used
-		val allResourcesUsed = context.resourceGraph
-			.nodesInTopolicalOrder
+		val allResourcesUsed = (#[context.platform] + context.resourceGraph
+			.nodesInTopologicalOrder
 			.filter[ it instanceof AbstractSystemResource || it instanceof SystemResourceSetup ]
-			.filter(EObject)
+			.filter(EObject))
 			.toList;
 		
 		// build list of base includes
@@ -103,13 +103,12 @@ class EntryPointGenerator {
 				«resource.baseName.generateLoggingExceptionHandler("setup")»
 				
 				«ENDFOR»
+				«ENDIF»
 
 				«IF context.hasTimeEvents»
-
 				// setup time
 				exception = SetupTime();
 				«"Time".generateLoggingExceptionHandler("setup")»
-				«ENDIF»
 				«ENDIF»
 				return exception;
 			}

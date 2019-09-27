@@ -14,7 +14,8 @@
 package org.eclipse.mita.platform.xdk110.sensors
 
 import com.google.inject.Inject
-import org.eclipse.mita.base.types.Enumerator
+import java.util.Map
+import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
@@ -39,7 +40,7 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
     
     override generateSetup() {
         val powerMode = if(configuration.getEnumerator(CONFIG_ITEM_POWER_MODE)?.name == 'Forced') 'ENVIRONMENTAL_BME280_POWERMODE_FORCED' else 'ENVIRONMENTAL_BME280_POWERMODE_NORMAL';
-        val standbyTimeRaw = configuration.getInteger(CONFIG_ITEM_STANDBY_TIME);
+        val standbyTimeRaw = configuration.getLong(CONFIG_ITEM_STANDBY_TIME);
         val standbyTime = if(standbyTimeRaw === null) null else standbyTimeRaw.clipStandbyTime?.value;
         val temperatureOversampling = configuration.getEnumerator(CONFIG_ITEM_TEMPERATURE_OVERSAMPLING)?.oversamplingConstant;
         val pressureOversampling = configuration.getEnumerator(CONFIG_ITEM_PRESSURE_OVERSAMPLING)?.oversamplingConstant;
@@ -81,7 +82,7 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
         .addHeader('XdkSensorHandle.h', true)
     }
     
-    protected def String getOversamplingConstant(Enumerator value) {
+    protected def String getOversamplingConstant(Singleton value) {
         return switch(value?.name) {
             case 'OVERSAMPLE_1X': 'ENVIRONMENTAL_BME280_OVERSAMP_1X'
             case 'OVERSAMPLE_2X': 'ENVIRONMENTAL_BME280_OVERSAMP_2X'
@@ -124,11 +125,11 @@ class Bme280Generator extends AbstractSystemResourceGenerator {
     /**
      * Translates an arbitrary standby time in milliseconds to a fixed, supported value.
      */
-    public static def Pair<Integer, String> clipStandbyTime(int standbyTime) {
-        val supportedValuesInMs = #[1, 10, 20, 63, 125, 250, 500, 1000];
-        val nearestStandbyTime = supportedValuesInMs.minBy[x| Math.abs(x - standbyTime)];
-        val constantName = '''ENVIRONMENTAL_BME280_STANDBY_TIME_«nearestStandbyTime»_MS''';
-        return nearestStandbyTime -> constantName;
+    static def Pair<Double, String> clipStandbyTime(long standbyTime) {
+        val Map<Double, String> supportedValuesInMs = #{1.0 -> "1", 10.0 -> "10", 20.0 -> "20", 62.5 -> "62_5", 125.0 -> "125", 250.0 -> "250", 500.0 -> "500", 1000.0 -> "1000"};
+        val nearestStandbyTime = supportedValuesInMs.entrySet.minBy[x| Math.abs(x.key - standbyTime)];
+        val constantName = '''ENVIRONMENTAL_BME280_STANDBY_TIME_«nearestStandbyTime.value»_MS''';
+        return nearestStandbyTime.key -> constantName;
     }
     
 }

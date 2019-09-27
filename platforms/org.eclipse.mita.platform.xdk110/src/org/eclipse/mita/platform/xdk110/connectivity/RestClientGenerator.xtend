@@ -16,10 +16,8 @@ package org.eclipse.mita.platform.xdk110.connectivity
 import com.google.inject.Inject
 import java.net.URL
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.Enumerator
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
@@ -31,11 +29,7 @@ import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
 
-class RestClientGenerator extends AbstractSystemResourceGenerator {
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
-	
+class RestClientGenerator extends AbstractSystemResourceGenerator {	
 	@Inject
 	protected extension GeneratorUtils
 	
@@ -110,6 +104,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		.addHeader('stdio.h', true)
 		.addHeader('FreeRTOS.h', true, IncludePath.HIGH_PRIORITY)
 		.addHeader('semphr.h', true)
+		.addHeader(setup.getConfigurationItemValue("transport").baseName + ".h", false)
 	}
 	
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String variableName) {
@@ -121,15 +116,19 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 		val port = if(baseUrl.port < 0) 80 else baseUrl.port;
 		
 		codeFragmentProvider.create('''
-		size_t messageLength = strlen((const char*) *«variableName») + 1;
+		Retcode_T exception = RETCODE_OK;
+
+		exception = CheckWlanConnectivityAndReconnect();
+		«generateExceptionHandler(signalInstance, "exception")»
+
+		size_t messageLength = «variableName»->length + 1;
 		if(messageLength > sizeof(httpBodyBuffer))
 		{
 			return EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION;
 		}
 		
-		memcpy(httpBodyBuffer, *«variableName», messageLength);
+		memcpy(httpBodyBuffer, «variableName»->data, messageLength);
 
-		Retcode_T exception = RETCODE_OK;
 		Ip_Address_T destAddr;
 		exception = NetworkConfig_GetIpAddress((uint8_t*) «setup.baseName.toUpperCase»_HOST, &destAddr);
 		if (exception != RETCODE_OK)
@@ -200,12 +199,7 @@ class RestClientGenerator extends AbstractSystemResourceGenerator {
 	
 	protected def String getHttpMethod(Expression expression) {
 		var result = 'Http_Method_Post';
-		val enumerator = if(expression instanceof FeatureCall) {
-			val feature = expression.feature;
-			if(feature instanceof Enumerator) {
-				feature
-			}
-		} else if(expression instanceof ElementReferenceExpression) {
+		val enumerator = if(expression instanceof ElementReferenceExpression) {
 			val ref = expression.reference;
 			if(ref instanceof Enumerator) {
 				ref

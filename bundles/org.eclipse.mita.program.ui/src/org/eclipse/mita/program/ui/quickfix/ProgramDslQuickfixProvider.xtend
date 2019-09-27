@@ -17,9 +17,15 @@
 package org.eclipse.mita.program.ui.quickfix
 
 import com.google.inject.Inject
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ExpressionsFactory
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.typesystem.BaseConstraintFactory
 import org.eclipse.mita.base.ui.quickfix.TypeDslQuickfixProvider
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.library.^extension.LibraryExtensions
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
@@ -27,10 +33,13 @@ import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.generator.DefaultValueProvider
 import org.eclipse.mita.program.validation.ProgramImportValidator
 import org.eclipse.mita.program.validation.ProgramSetupValidator
+import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.ui.editor.quickfix.Fix
 import org.eclipse.xtext.ui.editor.quickfix.IssueResolutionAcceptor
 import org.eclipse.xtext.validation.Issue
+import org.eclipse.mita.program.generator.transformation.AbstractTransformationStage
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 
@@ -43,17 +52,31 @@ class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 	@Inject
 	DefaultValueProvider defaultValueProvider
 
-	@Fix(ProgramImportValidator.MISSING_TARGET_PLATFORM_CODE)
-	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {
-		LibraryExtensions.availablePlatforms.forEach [ platform |
-			acceptor.accept(issue, '''Import '«platform.id»' '''.toString,
-				'''Add import for platform '«platform.id»' '''.toString, '', [ element, context |
-					val program = element as Program
-					program.imports += TypesFactory.eINSTANCE.createImportStatement => [
-						importedNamespace = platform.id
-					]
+	@Fix(BaseConstraintFactory.FUNCTION_CANNOT_BE_USED_HERE)
+	def migrateScopeToFeatureCallWithoutFeature(Issue issue, IssueResolutionAcceptor acceptor) {
+		val uri = issue.uriToProblem;
+		if(uri.toString.contains("@setup.")) {
+			acceptor.accept(issue, "Try to migrate to new type system", "In setup blocks enum and sum type constructors can no longer be directly used. Instead you can use a new calling style which is just as easy to use.", "", 
+				[element, context |
+					if(element instanceof ElementReferenceExpression) {
+						if(element instanceof FeatureCall) {
+							return;
+						}
+						val ref = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
+						val referencedElementName = BaseUtils.getText(element, ref);
+						val scope = scopeProvider.getScope(element, ref);
+						val candidates = scope.getElements(QualifiedName.create(referencedElementName));
+						if(candidates.size == 1) {
+							val candidate = candidates.head.EObjectOrProxy;
+							val fcwf = ExpressionsFactory.eINSTANCE.createFeatureCallWithoutFeature;
+							fcwf.reference = candidate;
+							fcwf.arguments += element.arguments;
+							fcwf.operationCall = true;
+							AbstractTransformationStage.replaceWith(element, fcwf);
+						}
+					}	
 				])
-		]
+		}
 	}
 
 	@Fix(ProgramSetupValidator.MISSING_CONIGURATION_ITEM_CODE)
@@ -72,4 +95,25 @@ class ProgramDslQuickfixProvider extends TypeDslQuickfixProvider {
 		])
 	}
 
+	@Fix(ProgramImportValidator.NO_PLATFORM_SELECTED_CODE)
+	def addMissingPlatform(Issue issue, IssueResolutionAcceptor acceptor) {
+		LibraryExtensions.availablePlatforms.forEach [ platform |
+			acceptor.accept(issue, '''Import '«platform.id»' '''.toString,
+				'''Add import for platform '«platform.id»' '''.toString, '', [ element, context |
+					val program = element as Program
+					program.imports += TypesFactory.eINSTANCE.createImportStatement => [
+						importedNamespace = platform.id
+					]
+				])
+		]
+	}
+
+	@Fix(ProgramImportValidator.MULTIPLE_PLATFORMS_SELECTED_CODE)
+	def addMissingPlatform2(Issue issue, IssueResolutionAcceptor acceptor) {
+		acceptor.accept(issue, '''Remove all imports except: «issue.data.toString»''', "", "", [element, context | 
+			val program = element.eContainer as Program
+			EcoreUtil.removeAll(program.imports.filter[it != element].toList)
+		])
+		acceptor.accept(issue, '''Remove import: «issue.data.toString»''', "", "",[element ,context | EcoreUtil.remove(element)])
+	}
 }

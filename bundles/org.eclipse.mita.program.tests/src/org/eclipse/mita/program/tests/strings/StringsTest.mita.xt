@@ -9,7 +9,6 @@ package test;
 import platforms.unittest;
 
 // Strings are one-byte ASCII strings (not UTF8, not ISO8859-1)
-// Strings are reference types
 // Strings have a maximum length fixed at compile time
 
 function someExternalFunction() : int32 {
@@ -18,33 +17,57 @@ function someExternalFunction() : int32 {
 
 // XPECT noCompileErrors
 function stringTestSuccess() : void {
-	// XPECT inferredStringLength --> string::14
+	// XPECT inferredType --> string<'14>
 	var bar = "this is a test";
 
-	// XPECT inferredStringLength --> string::24
+	// XPECT inferredType --> string<'24>
 	var foo = "hello world";
 	foo = "this is my long sentence"; // This is ok. At compile time we can determine that foo is max 24 characters.
 	
 	// The length of a string can be set explicitly
-	// XPECT inferredStringLength --> string::300
-	var foo2 : string = new string(size=300);
+	// XPECT inferredType --> string<'300>
+	// XPECT infos --> "? has type '300" at "?"
+	var foo2 : string<?> = new string<300>();
 	foo2 = "bla";
 	
 	// Strings with explicit size can be used in loops
-	var explicitSize = new string(size=300);
-	for(var i = 0; i < 10; i+=1) {
+	var explicitSize: string<300>;
+	for(var i: uint8 = 0; i < 10; i+=1) {
 		explicitSize += "foo";
 	} 
-	
+		
 	// Strings can be concatenated using +
-	// XPECT inferredStringLength --> string::18
+	// XPECT inferredType --> string<'18>
 	var foo3 = "bla bla";
 	foo3 += "hello world";
+
+	// XPECT inferredType --> string<'14>
+	var bar2: string = "this is a test";
+
+	// XPECT inferredType --> string<'24>
+	var foo4: string = "hello world";
+	foo4 = "this is my long sentence"; // This is ok. At compile time we can determine that foo is max 24 characters.
+	
+	// The length of a string can be set explicitly
+	// XPECT inferredType --> string<'300>
+	var foo5 : string = new string<300>();
+	foo5 = "bla";
+	
+	// Strings with explicit size can be used in loops
+	var explicitSize2: string<300>;
+	for(var i: uint8 = 0; i < 10; i+=1) {
+		explicitSize2 += "foo";
+	} 
+		
+	// Strings can be concatenated using +
+	// XPECT inferredType --> string<'18>
+	var foo6: string = "bla bla";
+	foo6 += "hello world";
 
 	// Strings can be interpolated
 	let bla = 42;
 	let greeting = "good sir";
-	// XPECT inferredStringLength --> string::37
+	// XPECT inferredType --> string<'30>
 	let baz = `my variable: ${bla} and ${greeting}`;
 	
 	let x10 = `${bla}`;
@@ -57,15 +80,26 @@ function stringTestSuccess() : void {
 	let x17 = `${x14} ${x15}`;
 	let x18 = `\n\t\r 0123456789{}()[],.;:`;
 	let x19 = `{ } , ; : . ( ) [ ] + - * / % \\ && || & | = == < > <= >= !=`;
-	let x20 = `alias-of alt alternative catch checked constructor do else enum every exception export extends finally fn for function generated generator header hour hours if import is isother let millisecond milliseconds minute minutes native native-type package return second seconds setup size-inferrer static struct subtype-of throw try type unchecked validator var where while`;
+	let x20 = `alias-of alt alternative as catch checked constructor do else enum every exception export extends finally fn for function generated generator header hour hours if in import is isother let millisecond milliseconds minute minutes native native-type new package return second seconds setup size-inferrer static struct subtype-of throw try type unchecked validator var where while`;
 	let x21 = `this ${"is"} a test`;
+	let x22 = `${bla + bla * 2}`;
 }
 
 function stringTestFail() : void {
-// XPECT inferredStringLength --> INVALID:Cannot infer string length in loops@string {}
+// XPECT inferredType --> string<A>
+	/*XPECT errors ---
+		"Couldn't infer size" at ""
+		"Couldn't infer size" at "var foo = "hello world";"
+	--- */
 	var foo = "hello world";
-	for(var i = 0; i < someExternalFunction(); i=i+1) { //TODO: Increment Operator i++
-		// XPECT errors --> "Cannot determine size of element: Cannot infer string length in loops" at "+="
-		foo += "hello"; // compiler error: Cannot determine the length of foo. Please set the length explicitly.
+	for(var i: uint16 = 0; i < someExternalFunction(); i=i++) { //TODO: Increment Operator i++
+		/* XPECT errors ---
+			"Cannot infer sizes on append in loops. Please set a fixed size by declaring the type of "foo" with type arguments (e.g. string<'10>)" at "foo"
+			"Couldn't infer size" at "foo += "hello""
+			"Couldn't infer size" at "foo += "hello""
+		--- */
+		foo += "hello"; 
 	}
 }
+
+

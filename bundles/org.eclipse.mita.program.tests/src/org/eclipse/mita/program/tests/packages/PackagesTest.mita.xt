@@ -33,8 +33,12 @@ fn main() {
 	myVar.x = 20;
 	
 	/* XPECT errors ---
-		"Couldn't resolve reference to EObject 'NotExportedStruct'." at "NotExportedStruct"
+		"Can't use named parameters for non-operations" at "NotExportedStruct"
 		"Couldn't resolve reference to Type 'NotExportedStruct'." at "NotExportedStruct"
+		"Couldn't resolve reference to Type 'NotExportedStruct'." at "NotExportedStruct"
+		"Couldn't resolve reference to Type 'NotExportedStruct'." at "NotExportedStruct(x = 10)"
+		"Couldn't resolve reference to Type 'NotExportedStruct'." at "var myOtherVar : NotExportedStruct = NotExportedStruct(x = 10);"
+		"Function NotExportedStruct cannot be used here" at "NotExportedStruct"
 	--- */
 	var myOtherVar : NotExportedStruct = NotExportedStruct(x = 10);
 	

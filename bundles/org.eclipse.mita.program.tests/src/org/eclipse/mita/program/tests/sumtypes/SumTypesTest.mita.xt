@@ -29,18 +29,16 @@ alt anyVec {
 
 //XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "incVecs"
 fn incVecs(a: anyVec) {
-	// 4*int32 + 1 = 4*4 + 1 = 17
-	// XPECT inferredSize --> 17
     var b: anyVec;
     where(a) {
     	is(anyVec.vec0d) {
-    		b = anyVec.vec0d();
+    		b = anyVec.vec0d(); 
     	} 
         is(x: anyVec.vec1d) {
-        	b = anyVec.vec1d(x + 1);
+        	b = anyVec.vec1d(x._0 + 1);
         } 
-        is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
-        	b = anyVec.vec2d(x = x + 1, y = y + 1);
+        is(anyVec.vec2d -> v) {
+        	b = anyVec.vec2d(vec2d_t(x = v.x + 1, y = v.y + 1));
         }
         is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
         	b = anyVec.vec3d(x + 1, y + 1, z + 1);
@@ -48,9 +46,6 @@ fn incVecs(a: anyVec) {
         is(anyVec.vec1d -> x) {
         	b = anyVec.vec1d(x + 1);
 		}
-        is(anyVec.vec2d -> x, y) {
-        	b = anyVec.vec2d(x = x + 1, y = y + 1);
-        }
         is(anyVec.vec3d -> x, y, z) {
         	b = anyVec.vec3d(x + 1, y + 1, z + 1);
         }
@@ -59,64 +54,82 @@ fn incVecs(a: anyVec) {
         }
         is(anyVec.vec0d) {
         	/*XPECT errors ---
-        	    "Assignment operator '=' may only be applied on compatible types, not on anyVec and any." at "b = vec0d()"
-        	    "Couldn't resolve reference to EObject 'vec0d'." at "vec0d"
+        	    "Function vec0d cannot be used here" at "vec0d"
+        	    "__args() not instance of vec0d. Valid instances are:\r\n	vec0d: ⊥ (Couldn't resolve reference to EObject 'vec0d'.)\r\n	vec0d([self: ∗anyVec]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32))) → vec0d()\r\n" at "vec0d"
         	--- */
     		b = vec0d();
     	} 
         is(x: anyVec.vec1d) {
         	/*XPECT errors ---
-        	    "Assignment operator '=' may only be applied on compatible types, not on anyVec and any." at "b = vec1d(x + 1)"
-        	    "Couldn't resolve reference to EObject 'vec1d'." at "vec1d"
+        	    "Function __PLUS__ cannot be used here" at "x + 1"
+        	    "__args(vec1d(int32), xint8) not instance of __PLUS__. Valid instances are:\r\n	__PLUS__([x: double, y: double]): __args(f64, f64) → f64\r\n	__PLUS__([x: float, y: float]): __args(f32, f32) → f32\r\n	__PLUS__([x: int16, y: int16]): __args(int16, int16) → int16\r\n	__PLUS__([x: int32, y: int32]): __args(int32, int32) → int32\r\n	__PLUS__([x: int8, y: int8]): __args(int8, int8) → int8\r\n	__PLUS__([x: uint16, y: uint16]): __args(uint16, uint16) → uint16\r\n	__PLUS__([x: uint32, y: uint32]): __args(uint32, uint32) → uint32\r\n	__PLUS__([x: uint8, y: uint8]): __args(uint8, uint8) → uint8\r\n	__PLUS__([x: xint16, y: xint16]): __args(xint16, xint16) → xint16\r\n	__PLUS__([x: xint32, y: xint32]): __args(xint32, xint32) → xint32\r\n	__PLUS__([x: xint8, y: xint8]): __args(xint8, xint8) → xint8\r\n	__PLUS__<S1 (variance: =), S2 (variance: =)>([x: string<S1>, y: string<S2>]): ∀[A, B].__args(string<A>, string<B>) → string<uint32>\r\n	__PLUS__<T (variance: =), S1 (variance: =), S2 (variance: =)>([x: array<T, S1>, y: array<T, S2>]): ∀[C, D, E].__args(array<C, D>, array<C, E>) → array<C, uint32>\r\n" at "x + 1"
         	--- */
         	b = vec1d(x + 1);
         } 
-        is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
-        	/*XPECT errors ---
-        	    "Assignment operator '=' may only be applied on compatible types, not on anyVec and any." at "b = vec2d(x = x + 1, y = y + 1)"
-        	    "Couldn't resolve reference to EObject 'vec2d'." at "vec2d"
-        	    "Couldn't resolve reference to Parameter 'x'." at "x"
-        	    "Couldn't resolve reference to Parameter 'y'." at "y"
-        	--- */
-        	b = vec2d(x = x + 1, y = y + 1);
-        }
         is(anyVec.vec3d -> x = vec3d.x, y = vec3d.y, z = vec3d.z) {
         	/*XPECT errors ---
-        	    "Assignment operator '=' may only be applied on compatible types, not on anyVec and any." at "b = vec3d(x + 1, y + 1, z + 1)"
-        	    "Couldn't resolve reference to EObject 'vec3d'." at "vec3d"
+        	    "Function vec3d cannot be used here" at "vec3d"
+        	    "__args(int32, int32, int32) not instance of vec3d. Valid instances are:\r\n	vec3d(<null>=x + prim»i»1, <null>=y + prim»i»1, <null>=z + prim»i»1): ⊥ (Couldn't resolve reference to EObject 'vec3d'.)\r\n	vec3d([self: ∗anyVec, x: int32, y: int32, z: int32]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32) → vec3d(int32, int32, int32)\r\n" at "vec3d"
         	--- */
         	b = vec3d(x + 1, y + 1, z + 1);
         }
         is(anyVec.vec0d) {
-        	// XPECT errors --> "Wrong number of arguments, expected []." at "anyVec.vec0d(1)"
+        	/* XPECT errors ---
+        	    "Function vec0d cannot be used here" at "vec0d"
+        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), xint8) not instance of vec0d. Valid instances are:\r\n	vec0d: ⊥ (Couldn't resolve reference to EObject 'vec0d'.)\r\n	vec0d([self: ∗anyVec]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32))) → vec0d()\r\n" at "vec0d"
+        	--- */
     		b = anyVec.vec0d(1);
     	}
         is(anyVec.vec1d -> x) {
-        	// XPECT errors --> "Wrong number of arguments, expected [int32]." at "anyVec.vec1d(x + 1, x + 2)"
+        	/* XPECT errors ---
+        	    "Function vec1d cannot be used here" at "vec1d"
+        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32) not instance of vec1d. Valid instances are:\r\n	vec1d(<null>=x + prim»i»1): ⊥ (Couldn't resolve reference to EObject 'vec1d'.)\r\n	vec1d([self: ∗anyVec, _0: int32]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32) → vec1d(int32)\r\n" at "vec1d"
+        	--- */
         	b = anyVec.vec1d(x + 1, x + 2);
 		}
-        is(anyVec.vec2d -> x, y) {
-        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32]." at "anyVec.vec2d(x + 1, y + 1, x + 2)"
-        	b = anyVec.vec2d(x + 1, y + 1, x + 2);
+        is(anyVec.vec2d -> s) {
+        	/* XPECT errors ---
+        	    "Function vec2d cannot be used here: arguments don't fit (__args(A, B, C, D) != __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), vec2d_t(int32, int32)))" at "anyVec.vec2d(s.x + 1, s.y + 1, s.x + 2)"
+        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32) and __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), vec2d_t(int32, int32)) differ in the number of type arguments" at "vec2d"
+        	--- */
+        	b = anyVec.vec2d(s.x + 1, s.y + 1, s.x + 2);
         }
         is(anyVec.vec3d -> x, y, z) {
-        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32]." at "anyVec.vec3d(x + 1, y + 1, z + 1, x + 2)"
+        	/* XPECT errors ---
+        	    "Function vec3d cannot be used here" at "vec3d"
+        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32, int32) not instance of vec3d. Valid instances are:\r\n	vec3d(<null>=x + prim»i»1, <null>=y + prim»i»1, <null>=z + prim»i»1): ⊥ (Couldn't resolve reference to EObject 'vec3d'.)\r\n	vec3d([self: ∗anyVec, x: int32, y: int32, z: int32]): __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32) → vec3d(int32, int32, int32)\r\n" at "vec3d"
+        	--- */
         	b = anyVec.vec3d(x + 1, y + 1, z + 1, x + 2);
         }
         is(anyVec.vec4d -> x, y, z, w) {
-        	// XPECT errors --> "Wrong number of arguments, expected [int32, int32, int32, int32]." at "anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2)"
+        	/* XPECT errors ---
+        	    "Function vec4d cannot be used here: arguments don't fit (__args(A, B, C, D, E, F) != __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32, int32))" at "anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2)"
+        	    "__args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32, int32, int32) and __args(∗anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)), int32, int32, int32, int32) differ in the number of type arguments" at "vec4d"
+        	--- */
         	b = anyVec.vec4d(x + 1, y + 1, z + 1, w + 1, x + 2);
         }
-        // XPECT errors --> "Wrong number of deconstructors, expected 1." at "is(anyVec.vec1d -> x, y) {        }"
+        /* XPECT errors ---
+            "Wrong number of deconstructors, expected 1." at "x"
+            "vec1d(int32) and vec1d(A, B) don't fit together" at "is(anyVec.vec1d -> x, y) {  		}"
+        --- */
         is(anyVec.vec1d -> x, y) {
 		}
-        // XPECT errors --> "Wrong number of deconstructors, expected 2." at "is(anyVec.vec2d -> x, y, z) {        }"
+        /* XPECT errors ---
+            "Wrong number of deconstructors, expected 1." at "x"
+            "vec2d(vec2d_t(int32, int32)) and vec2d(A, B, C) don't fit together" at "is(anyVec.vec2d -> x, y, z) {          }"
+        --- */
         is(anyVec.vec2d -> x, y, z) {
         }
-        // XPECT errors --> "Wrong number of deconstructors, expected 3." at "is(anyVec.vec3d -> x, y, z, w) {        }"
+        /* XPECT errors ---
+            "Wrong number of deconstructors, expected 3." at "x"
+            "vec3d(int32, int32, int32) and vec3d(A, B, C, D) don't fit together" at "is(anyVec.vec3d -> x, y, z, w) {          }"
+        --- */
         is(anyVec.vec3d -> x, y, z, w) {
         }
-        // XPECT errors --> "Wrong number of deconstructors, expected 4." at "is(anyVec.vec4d -> x, y, z, w, v) {        }"
+        /* XPECT errors ---
+            "Wrong number of deconstructors, expected 4." at "x"
+            "vec4d(int32, int32, int32, int32) and vec4d(A, B, C, D, E) don't fit together" at "is(anyVec.vec4d -> x, y, z, w, v) {          }"
+        --- */
         is(anyVec.vec4d -> x, y, z, w, v) {
         }
         // XPECT errors --> "Default case must be the last case" at "isother {      	}" 
@@ -127,7 +140,8 @@ fn incVecs(a: anyVec) {
     	}
     	/* XPECT errors ---
     	    "Can't deconstruct singletons" at "is(anyVec.vec0d -> x) {      	}"
-    	    "Wrong number of deconstructors, expected 0." at "is(anyVec.vec0d -> x) {      	}"
+    	    "vec0d() and vec0d(A) don't fit together" at "is(anyVec.vec0d -> x) {     	}"
+    	    "Wrong number of deconstructors, expected 0." at "x"
     	--- */
     	is(anyVec.vec0d -> x) {
     	}
@@ -137,24 +151,21 @@ fn incVecs(a: anyVec) {
     	// XPECT errors --> "Deconstruction cases must not mix named and anonymous deconstructors" at "is(anyVec.vec3d -> x, y = vec3d.y, z) {      	}"
     	is(anyVec.vec3d -> x, y = vec3d.y, z) {
     	}
-    	is(anyVec.vec2d -> x = vec2d.x, y = vec2d.y) {
+    	is(anyVec.vec2d -> v) {
+    		// XPECT errors --> "Function x cannot be used here: Return type incompatible: int32 is not subtype of int16" at "x"
+    		let x = v.x;
+    		// XPECT errors --> "Function y cannot be used here: Return type incompatible: int32 is not subtype of bool" at "y"
+    		let y = v.y;
     		// types are checked
-    		// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on anyVec and badVec2d." at "b = badVec2d(1, true)"
+    		// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on anyVec(vec0d() | vec1d(int32) | vec2d(vec2d_t(int32, int32)) | vec3d(int32, int32, int32) | vec4d(int32, int32, int32, int32)) and badVec2d(int16, bool)." at "b = badVec2d(1, true)"
         	b = badVec2d(1, true);
         	var bVec: badVec2d;
-        	/* XPECT errors ---
-        	    "Incompatible types: 'int32' can't be converted to 'bool'." at "y"
-        		"Incompatible types: 'int32' can't be converted to 'int16'." at "x"
-        	--- */
+        	// these two lines make x and y have typing issues above (it's easier to infer the type of x and y from this than from x(v)).
         	bVec = badVec2d(x, y);
-        	/* XPECT errors ---
-        	    "Incompatible types: 'int32' can't be converted to 'bool'." at "y"
-        		"Incompatible types: 'int32' can't be converted to 'int16'." at "x"
-        	--- */
         	bVec = badVec2d(x = x, y = y);
         }
         isother {
-        }
+        }  
     }
 	return b;
 }

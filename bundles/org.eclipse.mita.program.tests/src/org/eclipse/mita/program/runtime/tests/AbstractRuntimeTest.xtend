@@ -48,8 +48,8 @@ class AbstractRuntimeTest {
 	def void compileMita(Path projectFolder) {
 		val Map<String, String> env = System.getenv();
 		val compilerJar = env.getOrDefault("MitaCLI", "org.eclipse.mita.cli.jar");
-		val x86platformJar = env.getOrDefault("x86platform", "org.eclipse.mita.repository/target/plugins/org.eclipse.mita.platform.x86_0.1.0.jar");
-		val stdlibJar = env.getOrDefault("stdlib", "org.eclipse.mita.repository/target/plugins/org.eclipse.mita.library.stdlib_0.1.0.jar");
+		val x86platformJar = env.getOrDefault("x86platform", "org.eclipse.mita.repository/target/plugins/org.eclipse.mita.platform.x86_0.2.0.jar");
+		val stdlibJar = env.getOrDefault("stdlib", "org.eclipse.mita.repository/target/plugins/org.eclipse.mita.library.stdlib_0.2.0.jar");
 		val javaExec = env.getOrDefault("java", "java");
 		val ps = File.pathSeparatorChar;
 		

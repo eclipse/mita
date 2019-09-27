@@ -16,26 +16,24 @@
  */
 package org.eclipse.mita.platform.scoping
 
-import com.google.inject.Inject
-import java.util.Collections
+import com.google.common.base.Predicate
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.EReference
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
-import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.scoping.TypeKindNormalizer
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.EnumerationType
-import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
-import org.eclipse.mita.platform.ConfigurationItem
-import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.platform.PlatformPackage
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.resource.IEObjectDescription
 import org.eclipse.xtext.scoping.IScope
 import org.eclipse.xtext.scoping.Scopes
 import org.eclipse.xtext.scoping.impl.FilteringScope
 import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
-import org.eclipse.xtext.naming.IQualifiedNameProvider
 
 /**
  * This class contains custom scoping description.
@@ -44,36 +42,61 @@ import org.eclipse.xtext.naming.IQualifiedNameProvider
  * on how and when to use it.
  */
 class PlatformDSLScopeProvider extends AbstractPlatformDSLScopeProvider {
+	
+	val Predicate<IEObjectDescription> globalElementFilter = [ x |
+		val inclusion = 
+			(PlatformPackage.Literals.ABSTRACT_SYSTEM_RESOURCE.isSuperTypeOf(x.EClass)) ||
+			(PlatformPackage.Literals.MODALITY.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.PARAMETER.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.OPERATION.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.ENUMERATION_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.TYPE_KIND.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.VIRTUAL_FUNCTION.isSuperTypeOf(x.EClass));
 
-	@Inject
-	private ITypeSystemInferrer typeInferrer;
-	@Inject
-	IQualifiedNameProvider qualifiedNameProvider;
+		val exclusion = 
+			(PlatformPackage.Literals.SIGNAL.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.NAMED_PRODUCT_TYPE.isSuperTypeOf(x.EClass))  ||
+			(TypesPackage.Literals.ANONYMOUS_PRODUCT_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SUM_TYPE.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.SINGLETON.isSuperTypeOf(x.EClass)) ||
+			(TypesPackage.Literals.STRUCTURE_TYPE.isSuperTypeOf(x.EClass)) ||
+			(PlatformPackage.Literals.SIGNAL_PARAMETER.isSuperTypeOf(x.EClass)) 
 
-	def IScope scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
-		val configItem = EcoreUtil2.getContainerOfType(context, ConfigurationItem);
-		val typ = configItem?.type;
-		val superScope = delegate.getScope(context, ref);
-		if(typ instanceof SumType) {
-			return Scopes.scopeFor(typ.alternatives);
-		}
-		return superScope;
+		inclusion && !exclusion;
+	]
+	
+	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
+		val delegateScope = delegate.getScope(context, ref);
+		val superScope = new FilteringScope(delegateScope, globalElementFilter);
+		val scope = (if(context instanceof ElementReferenceExpression) {
+			if(context.isOperationCall && context.arguments.size > 0) {
+				val owner = context.arguments.head.value;
+
+				val ownerText = NodeModelUtils.findNodesForFeature(owner, ref)?.head?.text ?: "";
+				val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
+				new ImportScope(#[normalizer], superScope, null, null, false);
+				
+			}
+		}) ?: superScope;
+		val typeKindNormalizer = new TypeKindNormalizer();
+		return new ImportScope(#[typeKindNormalizer], scope, null, null, false);
+		
 	}
 
-	def IScope scope_FeatureCall_feature(FeatureCall context, EReference reference) {
-		val owner = context.owner;
-		var EObject element = owner.element;
-		
-		if (element === null) {
-			return getDelegate().getScope(context, reference);
-		}
-
-		val scope = IScope.NULLSCOPE;
-		val result = typeInferrer.infer(owner);
-		val ownerType = result?.type;
-		
-		return addScopeForType(ownerType, scope);
-	}
+//	def IScope scope_FeatureCall_feature(FeatureCall context, EReference reference) {
+//		val owner = context.arguments.head.value;
+//		var EObject element = owner.element;
+//		
+//		if (element === null) {
+//			return getDelegate().getScope(context, reference);
+//		}
+//
+//		val scope = IScope.NULLSCOPE;
+//		val result = typeInferrer.infer(owner);
+//		val ownerType = result?.type;
+//		
+//		return addScopeForType(ownerType, scope);
+//	}
 
 	def dispatch IScope addScopeForType(EnumerationType type, IScope scope) {
 		return Scopes.scopeFor(type.getEnumerator(), scope);
@@ -93,9 +116,5 @@ class PlatformDSLScopeProvider extends AbstractPlatformDSLScopeProvider {
 	
 	def dispatch getElement(ElementReferenceExpression it) {
 		reference
-	}
-	
-	def dispatch getElement(FeatureCall it) {
-		feature
 	}
 }

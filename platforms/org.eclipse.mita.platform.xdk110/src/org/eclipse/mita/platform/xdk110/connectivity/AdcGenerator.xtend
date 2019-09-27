@@ -13,7 +13,7 @@
 
 package org.eclipse.mita.platform.xdk110.connectivity
 
-import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
@@ -147,8 +147,8 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 	
 	def getArgumentEnum(SignalInstance inst, String name) {
 		val argValue = ModelUtils.getArgumentValue(inst, name);
-		val value = StaticValueInferrer.infer(if(argValue instanceof FeatureCall) {
-			argValue.feature
+		val value = StaticValueInferrer.infer(if(argValue instanceof ElementReferenceExpression) {
+			argValue.reference
 		}
 		else {
 			argValue;

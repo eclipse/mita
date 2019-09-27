@@ -1,0 +1,230 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.functions.FunctionsTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP
+ */
+
+package test;
+import platforms.unittest; 
+
+// functions can have an optional return type, if no return type is specified, it is inferred from return statements
+fn foo11() {
+	/* XPECT errors ---
+		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of A" at "17"
+		"Can't return prim»i»17 (:: xint8) since it's not of a subtype of bool" at "17"
+	--- */
+	return 17;
+}
+fn callsFoo11() {
+	// this error is because of a lot of type problems that lead to problems infering a common type for "foo11()". 
+	// It would have to be a subtype of things like optional<int32>, xint8, void, float and bottom(), which is very hard to be.
+	// If you look at ReturnTest.mita.xt you can see that type inference actually works here if you eliminate some of the more glaring errors.
+	/* XPECT errors ---
+		"Function foo11 cannot be used here: Return type incompatible: A is not subtype of B" at "foo11"
+		"Function foo11 cannot be used here: Return type incompatible: bool is not subtype of xint8" at "foo11"
+	--- */
+	let x = foo11();
+}
+
+fn callFoo11() {
+	/* XPECT errors ---
+		"Function foo11 cannot be used here: Return type incompatible: A is not subtype of B" at "foo11"
+		"Function foo11 cannot be used here: Return type incompatible: bool is not subtype of xint8" at "foo11"
+	--- */
+	var i : int32 = foo11();
+	/* XPECT errors ---
+		"Assignment operator '=' may only be applied on compatible types, not on bool and A." at "var b : bool = foo11();"
+		"Function foo11 cannot be used here: A, B" at "foo11"
+		"Function foo11 cannot be used here: Return type incompatible: A is not subtype of B" at "foo11"
+	--- */
+	var b : bool = foo11();
+}
+
+// for multiple return statements, the common type is inferred
+// XPECT inferredType --> __args() → f64
+fn foo12() {
+	if (true) {
+		return 17.0f;
+	}
+	return 4.0;
+}
+
+fn callFoo12() {
+	var d : double = foo12();
+	/* XPECT errors ---
+		"Assignment operator '=' may only be applied on compatible types, not on int32 and A." at "var j : int32 = foo12();"
+		"Assignment operator '=' may only be applied on compatible types, not on int32 and f64." at "var j : int32 = foo12();"
+		"Function foo12 cannot be used here: A, B" at "foo12"
+		"Function foo12 cannot be used here: Return type incompatible: A is not subtype of B" at "foo12"
+	--- */
+	var j : int32 = foo12();
+}
+
+// XPECT errors --> "The operation must return a value of type bool." at "noRet"
+fn noRet() : bool {}
+
+fn incompatibleReturnTypes() : int32 {
+	if (true) {
+		// XPECT errors --> "Can't return prim»s»"" (:: string<A>) since it's not of a subtype of int32" at """"
+		return "";
+	} else {
+		return 18;
+	}
+	/* XPECT errors ---
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of int32" at "true"
+	--- */
+	return true;
+}
+
+// XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "impossibleInference"
+fn impossibleInference() {
+	if (true) {
+		return "";
+	}
+	/* XPECT errors ---
+		"Can't return prim»b»true (:: bool) since it's not of a subtype of string<A>" at "true"
+	--- */
+	return true;
+}
+
+fn returnInVoid() : void {
+	if(true) {
+		return;
+	} else {
+		// XPECT errors --> "Can't return prim»i»1 (:: xint8) since it's not of a subtype of void" at "1"
+		return 1;
+	}
+}
+
+// XPECT errors --> "The operation must return a value of type uint32." at "returnWithoutValudInNoVoidFunction"
+fn returnWithoutValudInNoVoidFunction() : uint32 {
+	if(true) {
+		// XPECT errors --> "Types void and uint32 are not the same." at "return;"
+		return;
+	}
+}
+
+struct vec2d_t {
+    var x: int32;
+    var y: int32;
+}
+
+alt anyVec { 
+	  vec0d /* singleton */ 
+	| vec1d: int32 
+	| vec2d: vec2d_t 
+	| vec3d: {x: int32, y: int32, z: int32} 
+	| vec4d: int32, int32, int32, int32
+}
+
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnStruct1"
+fn returnStruct1(): vec2d_t {
+	var res: vec2d_t = vec2d_t(1,2);
+	return res;
+}
+
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnStruct2"
+fn returnStruct2(): vec2d_t {
+	return vec2d_t(4,2);
+}
+
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType0"
+fn returnSumType0(): anyVec {
+	var res: anyVec = anyVec.vec0d();
+	return res;
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType1"
+fn returnSumType1(): anyVec {
+	var res: anyVec = anyVec.vec1d(1);
+	return res;
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType2"
+fn returnSumType2(): anyVec {
+	var res: anyVec = anyVec.vec2d(vec2d_t(1,2));
+	return res;
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType3"
+fn returnSumType3(): anyVec {
+	var res: anyVec = anyVec.vec3d(1,2,3);
+	return res;
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType4"
+fn returnSumType4(): anyVec {
+	var res: anyVec = anyVec.vec4d(1,2,3,4);
+	return res;
+}
+
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType5"
+fn returnSumType5(): anyVec {
+	return anyVec.vec0d();
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType6"
+fn returnSumType6(): anyVec {
+	return anyVec.vec1d(1);
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType7"
+fn returnSumType7(): anyVec {
+	return anyVec.vec2d(vec2d_t(1,2));
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType8"
+fn returnSumType8(): anyVec {
+	return anyVec.vec3d(1,2,3);
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnSumType9"
+fn returnSumType9(): anyVec {
+	return anyVec.vec4d(1,2,3,4);
+}
+
+// size inference is only done if typing is without errors. Hence inferred type is *uint32*, not *'4*.
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray1"
+//XPECT infos --> "? has type uint32" at "?"
+fn returnArray1(): array<int32, ?> {
+	//XPECT infos --> "? has type uint32" at "?"
+	var res: array<int32, ?> = [1,2,3,4];
+	return res;
+}
+
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArray2"
+//XPECT infos --> "? has type uint32" at "?"
+fn returnArray2(): array<int32, ?> {
+	return [1,2,3,4];
+}
+
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString1"
+//XPECT infos --> "? has type uint32" at "?"
+fn returnString1(): string<?> {
+	//XPECT infos --> "? has type uint32" at "?"
+	var res: string<?> = "abc";
+	return res;
+}
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnString2"
+//XPECT infos --> "? has type uint32" at "?"
+fn returnString2(): string<?> {
+	return "abc";
+}
+
+fn returnOptional0(): int32? {
+	var res: int32? = 1;
+	return res;
+}
+fn returnOptional1(): int32? {
+	var res: int32? = none();
+	return res;
+}
+fn returnOptional2(): int32? {
+	var res: int32? = some(1);
+	return res;
+}
+fn returnOptional3(): int32? {
+	return 1;
+}
+fn returnOptional4(): int32? {
+	return none();
+}
+fn returnOptional5(): int32? {
+	return some(1);
+}
+
+

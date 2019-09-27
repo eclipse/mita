@@ -1,0 +1,304 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.setup.SetupTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+// Platforms define system resources (e.g. connectivity, sensors,GPIO, I2C, SPI).
+// System resources can be set up before use.
+// Sensors are the only system resources which do not require explicit setup.
+
+/* XPECT errors ---
+"Cannot assign a to this system resource." at "foo"
+--- */
+setup foo : my_sensor01 { }
+
+// Connectivity has to be named
+/* XPECT errors ---
+"Connectivity setup blocks have to be named, e.g. 'setup myConnectivity : MyConnectivity { }'" at "MyConnectivity"
+--- */
+setup MyConnectivity { 
+	
+}
+
+// Some system resources can be named
+// XPECT noCompileErrors
+setup devNetwork : MyConnectivity { 
+	cfg00 = "MyDevice";
+} 
+
+// Sum types can be used
+setup alt0 : MyConnectivity {
+	// XPECT infos --> "<auto>.Nothing() has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".Nothing()"
+	cfg05 = .Nothing();
+}
+setup alt1 : MyConnectivity { 
+	// XPECT infos --> "<auto>.SomethingAnonymous(<null>=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingAnonymous(10)"
+	cfg05 = .SomethingAnonymous(10);
+} 
+setup alt2 : MyConnectivity { 
+	// XPECT infos --> "<auto>.SomethingNamed(<null>=prim»i»10, <null>=prim»b»false) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(10, false)"
+	cfg05 = .SomethingNamed(10, false);
+}
+setup alt3 : MyConnectivity { 
+	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»10, y: bool=prim»b»true) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(x = 10, y = true)"
+	cfg05 = .SomethingNamed(x = 10, y = true);
+}
+setup alt4 : MyConnectivity { 
+	// XPECT infos --> "<auto>.SomethingNamed(y: bool=prim»b»false, x: int32=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(y = false, x = 10)"
+	cfg05 = .SomethingNamed(y = false, x = 10);
+}
+setup alt5 : MyConnectivity { 
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»i»10)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(10))"
+	cfg05 = .SomeStruct(ConfigStruct(10));
+}
+setup alt6 : MyConnectivity { 
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»i»10)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = 10))"
+	cfg05 = .SomeStruct(ConfigStruct(config = 10));
+}
+
+// Sum type constructors are validated
+setup alt0_bad : MyConnectivity {
+	/*XPECT errors ---
+		"Function Nothing cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))))" at ".Nothing(10)"
+		"__args(A, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))) differ in the number of type arguments" at "Nothing"
+	--- */
+	cfg05 = .Nothing(10);
+}
+setup alt1_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Function SomethingAnonymous cannot be used here: arguments don't fit (__args(A, B, C) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32))" at ".SomethingAnonymous(10, 20)"
+		"__args(A, xint8, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32) differ in the number of type arguments" at "SomethingAnonymous"
+	--- */
+	cfg05 = .SomethingAnonymous(10, 20);
+}
+setup alt2_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Function SomethingAnonymous cannot be used here: arguments don't fit (__args(A) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32))" at ".SomethingAnonymous()"
+		"__args(A) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32) differ in the number of type arguments" at "SomethingAnonymous"
+	--- */
+	cfg05 = .SomethingAnonymous();
+} 
+setup alt3_bad : MyConnectivity { 
+	//XPECT errors --> "Incompatible types: xint8 is not subtype of bool." at "SomethingNamed"
+	// XPECT infos --> "<auto>.SomethingNamed(<null>=prim»i»10, <null>=prim»i»20) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(10, 20)"
+	cfg05 = .SomethingNamed(10, 20);
+} 
+setup alt4_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Function SomethingNamed cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool))" at ".SomethingNamed(20)"
+		"__args(A, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool) differ in the number of type arguments" at "SomethingNamed"
+	--- */
+	cfg05 = .SomethingNamed(20);
+}
+setup alt5_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Couldn't resolve reference to Parameter 'z'." at "z"
+		"Positional and named parameters must not be mixed." at ".SomethingNamed(x = 20, y = true, z = 10)"
+		"prim»i»10 (:: xint8) not compatible with z (:: ⊥ (Couldn't resolve reference to Parameter 'z'.))" at "z = 10"
+	--- */
+	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»20, y: bool=prim»b»true, z=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(x = 20, y = true, z = 10)"
+	cfg05 = .SomethingNamed(x = 20, y = true, z = 10);
+}
+setup alt6_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "SomethingNamed"
+		"bool is not a subtype of int32" at "SomethingNamed"
+		"prim»b»true (:: bool) not compatible with x (:: int32)" at "x = true"
+		"prim»i»20 (:: xint8) not compatible with y (:: bool)" at "y = 20"
+		"xint8 is not a subtype of bool" at "SomethingNamed"
+	--- */
+	cfg05 = .SomethingNamed(x = true, y = 20);
+} 
+setup alt7_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Function SomethingNamed cannot be used here" at "SomethingNamed"
+		"Too few arguments" at "SomethingNamed"
+	--- */
+	cfg05 = .SomethingNamed(x = 20);
+} 
+setup alt8_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Duplicate assignment to parameter x." at "x = 10"
+	--- */
+	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»20, y: bool=prim»b»true, x: int32=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(x = 20, y = true, x = 10)"
+	cfg05 = .SomethingNamed(x = 20, y = true, x = 10);
+}
+setup alt9_bad : MyConnectivity { 
+	// XPECT errors --> "__args() and __args(int32) differ in the number of type arguments" at "ConfigStruct"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct())"
+	cfg05 = .SomeStruct(ConfigStruct());
+}
+setup alt10_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Function ConfigStruct cannot be used here: arguments don't fit (__args(A, B) != __args(int32))" at "ConfigStruct(10, 20)"
+		"__args(xint8, xint8) and __args(int32) differ in the number of type arguments" at "ConfigStruct"
+	--- */
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»i»10, <null>=prim»i»20)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(10, 20))"
+	cfg05 = .SomeStruct(ConfigStruct(10, 20));
+}
+setup alt12_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "ConfigStruct"
+		"bool is not a subtype of int32" at "ConfigStruct"
+		"prim»b»true (:: bool) not compatible with config (:: int32)" at "config = true"
+	--- */
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = true))"
+	cfg05 = .SomeStruct(ConfigStruct(config = true));
+}
+setup alt14_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"Duplicate assignment to parameter config." at "config = 20"
+	--- */
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»i»10, config: int32=prim»i»20)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = 10, config = 20))"
+	cfg05 = .SomeStruct(ConfigStruct(config = 10, config = 20));
+}
+
+
+setup productionNetwork : MyConnectivity { } 
+// setup myGpioSetup : GPIO { } // compiler error: The GPIO resource can not be named . 
+
+// Some system resources can exist multiple times.
+// XPECT noCompileErrors
+setup networkA : MyConnectivity { } 
+setup networkB : MyConnectivity { } 
+// setup GPIO { } 
+// setup GPIO { } // compiler error: The GPIO resource can only be set up once . 
+
+// Some system resources (connectivity and sensors) have configuration items . 
+// Configuration items are set like named parameters with basic expressions . 
+// Configuration items are typed.
+setup my_sensor00 { 
+	// XPECT errors --> "prim»b»true not valid for cfg01" at "cfg01 = true;"
+ 	cfg01 = true; // compiler error: configuration item type int16 and bool are not compatible . 
+} 
+ 
+// Some system resources have variable configuration items (VCI),e . g . connectivity , GPIO , I2C , SPI . 
+// VCI are defined like variables using vci functions.
+// VCI can only be mutable using var. 
+// The system resource defines the VCI functions available.
+setup bluetoothA : MyConnectivity {
+ 	cfg00 = "MyDevice";
+ 	
+ 	// The fully qualified enumerator in the scope is not a problem. Users can't use it anyways and it will
+ 	// go away once we import the platforms and do away with the selectable libraries.
+ 	/* XPECT scope at CFG_VAL_1 ---
+ 	    CFG_VAL_1
+ 	--- */
+	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
+ 	cfg03 = .CFG_VAL_1;
+ 	
+ 	// XPECT errors --> "Couldn't resolve reference to EObject 'MySingletonConnectivity'." at "MySingletonConnectivity"
+ 	cfg04 = MySingletonConnectivity;
+ 	
+ 	// We only care for vci00, vci01 and vci02 but not for the other stuff in the scope. Syntax prevents invalid choices.
+ 	/* XPECT scope at vci00 ---
+ 	    vci00, vci01, vci02, vci03, vci04
+ 	--- */
+	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
+ 	var boolC = vci00(p01=true, p02=.CFG_VAL_1);
+ 	
+	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
+ 	var boolD = vci00(true, .CFG_VAL_1);
+ 	
+ 	/* XPECT errors ---
+ 	    "Types string<A> and uint32 are not the same." at "vci01("wrong")"
+ 	    "__args isn't structurally a subtype of __args" at "vci01"
+ 	    "string<uint32> is not a subtype of uint32" at "vci01"
+ 	--- */
+ 	var boolC2 = vci01("wrong"); // compile-error: The types int16 and string compatible
+} 
+
+// XPECT errors --> "This system resource must only be setup once" at "MySingletonConnectivity"
+setup someSingletonName : MySingletonConnectivity {
+
+}
+// XPECT errors --> "This system resource must only be setup once" at "MySingletonConnectivity"
+setup withADifferentName : MySingletonConnectivity {
+
+} 
+
+// setup GPIO { 
+// 	var ledSwitch : bool = digitalOut ( ) 
+// 	let button : bool = digitalIn ( pullup = true ) 
+// 	let batteryVoltage : uint32 = analogIn ( ) 
+// 	let wrongVoltage : bool = analogIn ( ) // compiler error: return type uint32 and bool are not compatible . 
+// } 
+
+ // Connectivity resources have configuration items and slots
+ // XPECT noCompileErrors
+ setup devNetwork2 : MyConnectivity { 
+ 	cfg00 = "bar";
+ 	cfg01 = true;
+ 	cfg02 = 123 as uint32;
+	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
+ 	cfg03 = .CFG_VAL_1;
+ }
+
+ // Configuration items can be mandatory
+// setup backend : LWM2M {  
+// 	transport = devNetwork2;
+// } // compile-error: Missing setup for configuration item 'serverName'
+
+// XPECT errors --> "Missing configuration items: rcfg00, rcfg01, rcfg02, rcfg03, rcfg04, rcfg05" at "setup missingReq : MyConnectivityWithRequires {}"
+setup missingReq : MyConnectivityWithRequires {
+
+}
+setup alt11_bad : MyConnectivity { 
+	/* XPECT errors ---
+		"Types string<A> and int32 are not the same." at "ConfigStruct("asdf")"
+		"__args isn't structurally a subtype of __args" at "ConfigStruct"
+		"string<uint32> is not a subtype of int32" at "ConfigStruct"
+	--- */
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»s»"asdf")) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct("asdf"))"
+	cfg05 = .SomeStruct(ConfigStruct("asdf"));
+}
+setup alt12_bad : MyConnectivity { 
+	/*XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "ConfigStruct"
+		"bool is not a subtype of int32" at "ConfigStruct"
+		"prim»b»true (:: bool) not compatible with config (:: int32)" at "config = true"
+	--- */
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = true))"
+	cfg05 = .SomeStruct(ConfigStruct(config = true));
+}
+ 
+// VCI can have optional parameters
+setup bluetoothB : MyConnectivity {
+	// We do not expect an error as p02 is optional
+	// XPECT vciParameters --> p01=0 p02=42
+	var vciv0 = vci02(p01 = 0);
+	
+	// We can explicitly set p02
+	// XPECT vciParameters --> p01=0 p02=0
+	var vciv1 = vci02(p01 = 0, p02 = 0);
+	
+	/* XPECT errors ---
+		"Function vci02 cannot be used here" at "vci02"
+		"Too few arguments" at "vci02"
+	--- */
+	var vciv2 = vci02(p02 = 0);
+	
+	/* XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "vci02"
+		"bool is not a subtype of int32" at "vci02"
+		"prim»b»true (:: bool) not compatible with p02 (:: int32)" at "p02 = true"
+	--- */
+	var vciv3 = vci02(p01 = 0, p02 = true);
+	
+	// XPECT vciParameters --> p01=1 p02=41
+	var vciv4 = vci02(1, 41);
+
+	// XPECT vciParameters --> p01=0 p02=42
+	var vciv5 = vci02(0);
+}
+
+// XPECT errors --> "Missing configuration items: rcfg00, rcfg01, rcfg02, rcfg03, rcfg04, rcfg05" at "setup missingReq : MyConnectivityWithRequires {}"
+setup missingReq : MyConnectivityWithRequires {
+
+}
+ 

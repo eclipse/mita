@@ -2,7 +2,7 @@ package org.eclipse.mita.program.generator
 
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
@@ -100,18 +100,18 @@ class DefaultValueProvider {
 			val args = alt.accessorsTypes.map[tp | ExpressionsFactory.eINSTANCE.createArgument => [
 				 value = tp.type.dummyExpression(context)
 			]];
-			if(EcoreUtil2.getContainerOfType(context, SystemResourceSetup) === null) {
-				return ExpressionsFactory.eINSTANCE.createFeatureCall => [
-					feature = alt;
-					operationCall = true;
-					owner = ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
-						reference = itemType;
-					]
-					arguments += args;
-				]
+			val result = if(EcoreUtil2.getContainerOfType(context, SystemResourceSetup) === null) {
+				args += ExpressionsFactory.eINSTANCE.createArgument => [ 
+					value = ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
+						reference = itemType.typeKind;
+				]]
+				ExpressionsFactory.eINSTANCE.createFeatureCall;
 			}
-			return ExpressionsFactory.eINSTANCE.createElementReferenceExpression => [
-				reference = itemType.alternatives.head;
+			else {
+				ExpressionsFactory.eINSTANCE.createFeatureCallWithoutFeature;
+			}
+			return result => [
+				reference = alt.constructor;
 				operationCall = true;
 				arguments += args;
 			]

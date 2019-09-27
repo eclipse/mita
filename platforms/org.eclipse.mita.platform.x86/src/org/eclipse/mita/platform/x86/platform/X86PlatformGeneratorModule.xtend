@@ -33,7 +33,7 @@ class X86PlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 		TimeGenerator
 	}
 	
-	override bindIPlatformMakefileGenerator() {
+	override bindPlatformBuildSystemGenerator() {
 		MakefileGenerator
 	}
 

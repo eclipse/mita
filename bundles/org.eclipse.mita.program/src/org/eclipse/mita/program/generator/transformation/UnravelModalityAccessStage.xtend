@@ -13,16 +13,16 @@
 
 package org.eclipse.mita.program.generator.transformation
 
-import org.eclipse.mita.program.GeneratedFunctionDefinition
-import org.eclipse.mita.program.ProgramFactory
-import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.expressions.AbstractStatement
 import org.eclipse.mita.base.expressions.ArgumentExpression
-import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.platform.Modality
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.TypeKind
 import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.Modality
+import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.ModalityAccessPreparation
+import org.eclipse.mita.program.ProgramFactory
 
 class UnravelModalityAccessStage extends AbstractUnravelingStage {
 	
@@ -44,14 +44,15 @@ class UnravelModalityAccessStage extends AbstractUnravelingStage {
 		return false;
 	}
 	
-	override protected createResultVariable(Expression unravelingObject, Expression initialization) {
+	override protected createResultVariable(Expression unravelingObject) {
 		/* TODO: This code makes very strict assumptions about the structure of the rewritten function call.
 		 *       As such this code is very likely to break in the future.
 		 */
 		val firstArgument = (unravelingObject as ArgumentExpression).arguments.head?.value;
-		val featureCall = firstArgument as FeatureCall
-		val modality = featureCall.feature as Modality;
-		val systemResource = (featureCall.owner as ElementReferenceExpression).reference as AbstractSystemResource;
+		val featureCall = firstArgument as ElementReferenceExpression;
+		val modality = featureCall.reference as Modality;
+		val systemResourceKind = (featureCall.arguments.head.value as ElementReferenceExpression).reference as TypeKind;
+		val systemResource = systemResourceKind.kindOf as AbstractSystemResource;
 		
 		val result = ProgramFactory.eINSTANCE.createModalityAccessPreparation();
 		result.modalities.add(modality);
@@ -59,13 +60,17 @@ class UnravelModalityAccessStage extends AbstractUnravelingStage {
 		return result;
 	}
 	
-	override protected createResultVariableReference(EObject resultVariable) {
+	// We don't create a variable declaration but a modality access preparation, therefore we don't need to assign anything
+	override protected AbstractStatement createAssignmentStatement(Expression varRef, Expression initialization) {
+		return ProgramFactory.eINSTANCE.createNoopStatement();
+	}
+	
+	override protected createResultVariableReference(AbstractStatement resultVariable) {
 		val modalityAccessPreparation = resultVariable as ModalityAccessPreparation;
 		
 		val result = ProgramFactory.eINSTANCE.createModalityAccess();
 		result.preparation = modalityAccessPreparation;
 		result.modality = modalityAccessPreparation.modalities.head;
 		return result;
-	}
-	
+	}	
 }

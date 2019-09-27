@@ -40,6 +40,7 @@ import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.validation.CheckMode
 import org.eclipse.xtext.validation.IResourceValidator
 import org.apache.commons.cli.CommandLine
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 
 class CompileCommand extends AbstractCommand {
 	@Inject
@@ -88,7 +89,7 @@ class CompileCommand extends AbstractCommand {
 		val allFilesInClasspath = getAllMitaAndPlatformFilesInClasspath().toList;
 		for(libraryFile : allFilesInClasspath) {
 			println("Loading " + libraryFile);
-			resourceSet.getResource(URI.createURI(libraryFile), true);
+			resourceSet.getResource(URI.createURI(libraryFile.replace("\\", "/")), true);
 		}
 		EcoreUtil.resolveAll(resourceSet);
 		validateResources(resourceSet.resources.filter[ it.URI.toString.endsWith('.platform') ]);
@@ -122,7 +123,7 @@ class CompileCommand extends AbstractCommand {
 		}
 	}
 
-	public static def getAllMitaAndPlatformFilesInClasspath() {
+	static def getAllMitaAndPlatformFilesInClasspath() {
 		val rootURLs = new LinkedList<URL>();
 		var cl = Thread.currentThread().getContextClassLoader();
 		while (cl !== null) {
@@ -141,7 +142,7 @@ class CompileCommand extends AbstractCommand {
 					it.listChildren
 				}
 			]
-			.filter[ it.endsWith(".mita") || it.endsWith(".platform") ]
+			.filter[ it.endsWith(MitaBaseResource.PROGRAM_EXT) || it.endsWith(MitaBaseResource.PLATFORM_EXT) ]
 			.map[ it.replace('classpath://', 'classpath:/') ]
 	}
 	

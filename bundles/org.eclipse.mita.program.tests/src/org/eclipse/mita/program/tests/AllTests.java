@@ -23,6 +23,7 @@ import org.eclipse.mita.program.tests.enums.EnumerationsTest;
 import org.eclipse.mita.program.tests.events.EventHandlingTest;
 import org.eclipse.mita.program.tests.exceptions.ExceptionsTest;
 import org.eclipse.mita.program.tests.expressions.ExpressionsTest;
+import org.eclipse.mita.program.tests.filename.FileNameTest;
 import org.eclipse.mita.program.tests.functions.FunctionsTest;
 import org.eclipse.mita.program.tests.id.IDTest;
 import org.eclipse.mita.program.tests.linking.LinkingTest;
@@ -41,6 +42,7 @@ import org.eclipse.mita.program.tests.variables.VariablesTest;
 @SuiteClasses({ 
 	ExpressionsTest.class,
 	FunctionsTest.class, 
+	FileNameTest.class,
 	ControlStructuresTest.class, 
 	VariablesTest.class, 
 	ExceptionsTest.class,
@@ -51,7 +53,6 @@ import org.eclipse.mita.program.tests.variables.VariablesTest;
 	StringsTest.class, 
 	ArraysTest.class, 
 	StructuresTest.class, 
-	TypesTest.class, 
 	SetupTest.class,
 	EventHandlingTest.class, 
 	PackagesTest.class,

@@ -14,23 +14,26 @@
 package org.eclipse.mita.library.stdlib
 
 import com.google.inject.Inject
+import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.Operation
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.inferrer.ITypeSystemInferrer
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.ReturnStatement
-import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
-import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class OptionalGenerator extends AbstractTypeGenerator {
 	
@@ -42,42 +45,32 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	
 	@Inject
 	protected GeneratorRegistry registry
-	
-	@Inject
-	protected ITypeSystemInferrer typeInferrer
-	
+		
 	public static final String ENUM_NAME = "enumOptional";
-	public static enum enumOptional {
+	static enum enumOptional {
 		Some, None
 	}
 	public static final String OPTIONAL_FLAG_MEMBER = "flag";
 	public static final String OPTIONAL_DATA_MEMBER = "data";
 	
-	override generateNewInstance(TypeSpecifier type, NewInstanceExpression expr) {
+	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
 		CodeFragment.EMPTY;
 	}
 	
-	override generateTypeSpecifier(TypeSpecifier type, EObject context) {
-		codeFragmentProvider.create('''optional_«typeGenerator.code(type.typeArguments.head)»''').addHeader('MitaGeneratedTypes.h', false);
+	override generateTypeSpecifier(AbstractType type, EObject context) {
+		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
 	
-	override generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»;''')
+	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
-	override generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
-		val isReturnStmt = left instanceof ReturnStatement;
-		
+	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {		
 		if(operator != AssignmentOperator.ASSIGN) {
 			return codeFragmentProvider.create('''ERROR: Unsuported operator: «operator.literal»''')
 		}
 		val haveInit = right !== null;
-		
-		val varType = ModelUtils.toSpecifier(typeInferrer.infer(left));
-		val initType = if(haveInit) {
-			ModelUtils.toSpecifier(typeInferrer.infer(right));
-		}
-		
+				
 		val initIsEref = haveInit && right instanceof ElementReferenceExpression;
 		val initAsEref = if(initIsEref) {
 			right as ElementReferenceExpression;
@@ -93,35 +86,32 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			initAsOperation as GeneratedFunctionDefinition;
 		}
 		
-		val validInit = if(initIsGeneratedFunction && initAsGeneratedFunction.name == "some") {
-			codeFragmentProvider.create('''«initAsEref.arguments.head.code»''')
-		} else if(right !== null) {
+		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, context)») ''');
+		
+		val validInit = if(right !== null) {
 			codeFragmentProvider.create('''«right.code»''');
+		}
+		else {
+			codeFragmentProvider.create('''
+			«valueExpressionTypeAnnotation»{
+				.«OPTIONAL_FLAG_MEMBER» = «enumOptional.None.name»
+			}''')
 		}
 		
 		val initValueIsNone = right === null || (initIsGeneratedFunction && initAsGeneratedFunction.name == "none");
 		
-		val firstTypeArg = varType.typeArguments.head;
-		val firstTypeArgType = firstTypeArg.type;
+		val firstTypeArgType = (type as TypeConstructorType).typeArguments.tail.head;
+		val firstTypeArgOrigin = firstTypeArgType.origin;
+
 		
 		// if we assigned for example a: int32? = 1, right has integer, left has optional<int32>. so we check if left.args.head ~ right. Also we short-circuit none and some and supply a default value.
 		val initWithImmediate = initIsGeneratedFunction 
 		|| right === null 
-		|| (!(firstTypeArgType instanceof GeneratedType) && firstTypeArg.checkExpressionSupport(AssignmentOperator.ASSIGN, initType));
+		|| (!(firstTypeArgOrigin instanceof GeneratedType));
 		
-		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, null)») ''');
 		
 		val init = if(initWithImmediate) {
-			codeFragmentProvider.create('''
-			«valueExpressionTypeAnnotation»{
-				«IF initValueIsNone»
-				.«OPTIONAL_FLAG_MEMBER» = «enumOptional.None.name»
-				«ELSE»
-				.«OPTIONAL_DATA_MEMBER» = «validInit»,
-				.«OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»
-				«ENDIF»
-			};
-			''')
+			validInit
 		} else {
 			if(firstTypeArgType instanceof GeneratedType) {
 				// We don't get here (guaranteed by validation), but this is about the code we would produce
@@ -132,7 +122,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 					«ELSE»
 					.«OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»
 					«ENDIF»
-				 }; 
+				 }
 				«IF !initValueIsNone»
 				«««this is impossible right now, since we can't reference «left.name».data
 				«««registry.getGenerator(firstTypeArgType).generateExpression(firstTypeArg, '''«left.name».«OPTIONAL_DATA_MEMBER»''', AssignmentOperator.ASSIGN, stmt.initialization)»
@@ -142,19 +132,11 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			else {
 				//!initIsGeneratedFunction && !firstTypeArg.checkExpressionSupport(AssignmentOperator.ASSIGN, initType))
 				//This should only be variable copying with non-generated types
-				codeFragmentProvider.create('''«right.code»;''')
+				codeFragmentProvider.create('''«right.code»''')
 			}
 		}
-		
-		val varNameLeft = if(left instanceof VariableDeclaration) {
-			codeFragmentProvider.create('''«left.name»''')
-		} else if(isReturnStmt) {
-			codeFragmentProvider.create('''*_result''');
-		} else {
-			codeFragmentProvider.create('''«left.code.noTerminator»''')
-		}
-		
-		codeFragmentProvider.create('''«varNameLeft» = «init.noNewline»''')
+				
+		codeFragmentProvider.create('''«leftName» = «init.noNewline»''')
 	}
 	
 	override CodeFragment generateHeader() {
@@ -167,13 +149,28 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		''')
 	}
 	
-	override CodeFragment generateHeader(TypeSpecifier type) {
+	override CodeFragment generateHeader(EObject context, AbstractType type) {
+		val dataType = (type as TypeConstructorType).typeArguments.tail.head;
+		if(dataType instanceof TypeVariable) {
+			return CodeFragment.EMPTY;
+		}
 		codeFragmentProvider.create('''
 		typedef struct { 
-			«typeGenerator.code(type.typeArguments.head)» «OPTIONAL_DATA_MEMBER»;
+			«typeGenerator.code(context, dataType)» «OPTIONAL_DATA_MEMBER»;
 			«ENUM_NAME» «OPTIONAL_FLAG_MEMBER»;
-		} «typeGenerator.code(type)»;
+		} «typeGenerator.code(context, type)»;
 		''').addHeader('MitaGeneratedTypes.h', false);
+	}
+	
+	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
+		// this should be a coercion 1 -> some(1).
+		val needCast = EcoreUtil2.getContainerOfType(expr, ProgramBlock) !== null;
+		return codeFragmentProvider.create('''
+			«IF needCast»(«generateTypeSpecifier(to, expr)»)«ENDIF» {
+				.data = «expr.value.code»,
+				.flag = Some
+			}
+		''');
 	}
 	
 	

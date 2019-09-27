@@ -19,26 +19,29 @@ package stdlib;
  * Iterables are the base-type of all types which can be iterated using a for-each loop.
  * They offer some generic functionality on a "bunch of items" level. 
  */
-export generated type iterable<T>
+/*export generated type iterable<T>
 	generator ""
 	size-inferrer ""
 	constructor con();
-
+*/
 /*
  * # Lists
  * 
  * A list is an ordered collection of elements which offers random read/write access.
  */
-export generated type array<T> subtype-of iterable
+export generated type array<T, Size is uint32>
 	generator "org.eclipse.mita.library.stdlib.ArrayGenerator"
 	size-inferrer "org.eclipse.mita.library.stdlib.ArraySizeInferrer"
 	
-	constructor con(size : static uint32);
+	constructor con();
 
 /*
  * Returns the length of an array.
  */
-export generated fn <T> length(self : array<T>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$LengthGenerator";
+
+export generated fn <T, S> length(self : array<T, S>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$LengthGenerator";
+export generated fn <S> length(self : string<S>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$LengthGenerator";
+export native unchecked function <T, S1, S2> __PLUS__(x: array<T, S1>, y: array<T, S2>): array<T, S1 + S2> header "string.h";
 
 //
 ///*
@@ -46,7 +49,7 @@ export generated fn <T> length(self : array<T>) : uint32 generator "org.eclipse.
 // * 
 // * A list is an ordered collection of elements which offers random read/write access.
 // */
-//type ringbuffer<T> subtype-of iterable {
+//type ringbuffer<T> {
 //	property size : uint32
 //}
 //
@@ -56,7 +59,7 @@ export generated fn <T> length(self : array<T>) : uint32 generator "org.eclipse.
 // * A stack is an ordered collection of elements where elements can be placed on top
 // * or removed from the top of the stack.
 // */
-//type stack<T> subtype-of iterable {
+//type stack<T> {
 //	property size : uint32
 //}
 

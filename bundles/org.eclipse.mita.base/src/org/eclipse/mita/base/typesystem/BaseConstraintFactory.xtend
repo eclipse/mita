@@ -1,0 +1,1067 @@
+/********************************************************************************
+ * Copyright (c) 2018, 2019 Robert Bosch GmbH & TypeFox GmbH
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * Contributors:
+ *    Robert Bosch GmbH & TypeFox GmbH - initial contribution
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ ********************************************************************************/
+
+package org.eclipse.mita.base.typesystem
+
+import com.google.inject.Inject
+import com.google.inject.Provider
+import java.util.List
+import org.eclipse.core.runtime.CoreException
+import org.eclipse.core.runtime.IStatus
+import org.eclipse.core.runtime.Status
+import org.eclipse.emf.ecore.EObject
+import org.eclipse.emf.ecore.EReference
+import org.eclipse.mita.base.expressions.AdditiveOperator
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
+import org.eclipse.mita.base.expressions.BinaryExpression
+import org.eclipse.mita.base.expressions.BoolLiteral
+import org.eclipse.mita.base.expressions.ConditionalExpression
+import org.eclipse.mita.base.expressions.DoubleLiteral
+import org.eclipse.mita.base.expressions.ElementReferenceExpression
+import org.eclipse.mita.base.expressions.ExpressionsPackage
+import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
+import org.eclipse.mita.base.expressions.FloatLiteral
+import org.eclipse.mita.base.expressions.IntLiteral
+import org.eclipse.mita.base.expressions.Literal
+import org.eclipse.mita.base.expressions.LogicalOperator
+import org.eclipse.mita.base.expressions.MultiplicativeOperator
+import org.eclipse.mita.base.expressions.NumericalAddSubtractExpression
+import org.eclipse.mita.base.expressions.NumericalMultiplyDivideExpression
+import org.eclipse.mita.base.expressions.NumericalUnaryExpression
+import org.eclipse.mita.base.expressions.ParenthesizedExpression
+import org.eclipse.mita.base.expressions.PrimitiveValueExpression
+import org.eclipse.mita.base.expressions.RelationalOperator
+import org.eclipse.mita.base.expressions.ShiftOperator
+import org.eclipse.mita.base.expressions.StringLiteral
+import org.eclipse.mita.base.expressions.TypeCastExpression
+import org.eclipse.mita.base.expressions.UnaryOperator
+import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.ComplexType
+import org.eclipse.mita.base.types.ExceptionTypeDeclaration
+import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.GeneratedType
+import org.eclipse.mita.base.types.InstanceTypeParameter
+import org.eclipse.mita.base.types.NamedElement
+import org.eclipse.mita.base.types.NaryTypeAddition
+import org.eclipse.mita.base.types.NativeType
+import org.eclipse.mita.base.types.NullTypeSpecifier
+import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.base.types.Parameter
+import org.eclipse.mita.base.types.ParameterWithDefaultValue
+import org.eclipse.mita.base.types.PrimitiveType
+import org.eclipse.mita.base.types.RawTypeParameter
+import org.eclipse.mita.base.types.StructuralParameter
+import org.eclipse.mita.base.types.StructuralType
+import org.eclipse.mita.base.types.StructureType
+import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SumType
+import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeExpressionSpecifier
+import org.eclipse.mita.base.types.TypeHole
+import org.eclipse.mita.base.types.TypeKind
+import org.eclipse.mita.base.types.TypeReferenceLiteral
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.types.TypeUtils
+import org.eclipse.mita.base.types.TypedElement
+import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.types.Variance
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
+import org.eclipse.mita.base.typesystem.constraints.EqualityConstraint
+import org.eclipse.mita.base.typesystem.constraints.ExplicitInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.FunctionTypeClassConstraint
+import org.eclipse.mita.base.typesystem.constraints.JavaClassInstanceConstraint
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.BaseKind
+import org.eclipse.mita.base.typesystem.types.BottomType
+import org.eclipse.mita.base.typesystem.types.FunctionType
+import org.eclipse.mita.base.typesystem.types.IntegerType
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.NumericAddType
+import org.eclipse.mita.base.typesystem.types.NumericType
+import org.eclipse.mita.base.typesystem.types.ProdType
+import org.eclipse.mita.base.typesystem.types.Signedness
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy
+import org.eclipse.mita.base.typesystem.types.TypeVariableProxy.AmbiguityResolutionStrategy
+import org.eclipse.mita.base.typesystem.types.UnorderedArguments
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.xtend.lib.annotations.Accessors
+import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
+import org.eclipse.xtext.diagnostics.Severity
+import org.eclipse.xtext.naming.IQualifiedNameProvider
+import org.eclipse.xtext.naming.QualifiedName
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.scoping.IScopeProvider
+
+import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
+import static extension org.eclipse.mita.base.util.BaseUtils.force
+
+class BaseConstraintFactory implements IConstraintFactory {
+	
+	@Inject
+	protected IQualifiedNameProvider nameProvider;
+	
+	@Inject
+	protected Provider<ConstraintSystem> constraintSystemProvider;
+		
+	@Inject 
+	protected StdlibTypeRegistry typeRegistry;
+	
+	@Inject
+	protected IScopeProvider scopeProvider;
+	
+	public static final String GENERATOR_KEY = "generator";
+	public static final String SIZE_INFERRER_KEY = "sizeInferrer";
+	public static final String PARENT_NAME_KEY = "parentName";
+	public static final String ECLASS_KEY = "eClass";
+	public static final String DEFINING_RESOURCE_KEY = "definingResource";
+	public static final String INCLUDE_HEADER_KEY = "includeHeader";
+	public static final String INCLUDE_IS_USER_INCLUDE_KEY = "includeIsUserInclude";
+	public static final String VARIANCES_KEY = "variances";
+
+	public static final String FUNCTION_CANNOT_BE_USED_HERE = "FUNCTION_CANNOT_BE_USED_HERE";
+	
+	override ConstraintSystem create(EObject context) {		
+		val result = constraintSystemProvider.get();
+		result.computeConstraints(context);
+		return result;
+	}
+	
+	override getTypeRegistry() {
+		return typeRegistry;
+	}
+	
+	protected def TypeVariable resolveReferenceToSingleAndGetType(ConstraintSystem system, EObject origin, EReference featureToResolve) {
+		return system.getTypeVariableProxy(origin, featureToResolve);
+	}
+	
+	protected def List<TypeVariable> resolveReferenceToTypes(ConstraintSystem system, EObject origin, EReference featureToResolve) {
+		return #[system.getTypeVariableProxy(origin, featureToResolve, false)];
+	}
+	
+	protected def List<EObject> resolveReference(EObject origin, EReference featureToResolve) {
+		val scope = scopeProvider.getScope(origin, featureToResolve);
+		
+		val name = NodeModelUtils.findNodesForFeature(origin, featureToResolve).head?.text;
+		if(name === null) {
+			return #[];//system.associate(new BottomType(origin, "Reference text is null"));
+		}
+		
+		if(origin.eIsSet(featureToResolve)) {
+			return #[origin.eGet(featureToResolve, false) as EObject];	
+		}
+		
+		val candidates = scope.getElements(QualifiedName.create(name.split("\\.")));
+		
+		val List<EObject> resultObjects = candidates.map[it.EObjectOrProxy].force;
+		
+		if(resultObjects.size === 1) {
+			val candidate = resultObjects.head;
+			if(candidate.eIsProxy) {
+				println("!PROXY!")
+			}
+			BaseUtils.ignoreChange(origin, [
+				origin.eSet(featureToResolve, candidate);	
+			]);
+		}
+		
+		return resultObjects;
+	}
+	
+	
+	
+	protected def EObject resolveReferenceToSingleAndLink(EObject origin, EReference featureToResolve) {
+		val candidates = resolveReference(origin, featureToResolve);
+		val result = candidates.last;
+		if(result !== null && origin.eGet(featureToResolve) === null) {
+			origin.eSet(featureToResolve, result);
+		}
+		return result;
+	}
+	
+	// if you want to give each function call argument type a different name you can change this. 
+	// In Mita this is a bit difficult since you would get the following constraints for signals/signal instances:
+	//	signal x(...) <-> x_inst_args(...)
+	//	var y = x(...) <-> y_inst_args(...)
+	//	x_inst_args(...) = y_inst_args(...)
+	//	x_inst_args = y_inst_args
+	// this could be solved by taking the argName from Eref.eContainer if it (the container) is a sigInst. 
+	// However this introduces a lot of codeu dupliation for probably not much improved correctness, 
+	// since a program would have to be quite strange to equate argument types with anything else.
+	// This might change in the future if a need arises.
+	static dispatch def String argName(NamedElement obj) {
+		return obj.name.argName;
+	}
+	static dispatch def String argName(String s) {
+		return "__args";
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EObject context) {
+		println('''«this.class.simpleName.replaceAll("[a-z]", "")»: computeConstraints is not implemented for «context.eClass.name»''');
+		system.computeConstraintsForChildren(context);
+		return system.getTypeVariable(context);
+	}
+	
+	protected def void computeConstraintsForChildren(ConstraintSystem system, EObject context) {
+		context.eContents.forEach[ system.computeConstraints(it) ]
+	}
+
+	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
+		val parmTypes = parms.map[
+			system.computeConstraints(it)
+		].filterNull.map[it as AbstractType].force();
+		return new ProdType(function, new AtomicType(function, function.argName), parmTypes);
+	}
+	
+	protected def AbstractType computeArgumentConstraints(ConstraintSystem system, EObject origin, String functionName, Iterable<Expression> expression) {
+		val argTypes = expression.map[system.computeConstraints(it) as AbstractType].force();
+		return system.computeArgumentConstraintsWithTypes(origin, functionName, argTypes);
+	}
+	protected def AbstractType computeArgumentConstraintsWithTypes(ConstraintSystem system, EObject origin, String functionName, Iterable<AbstractType> argTypes) {
+		return new ProdType(origin, new AtomicType(origin, functionName.argName), argTypes);
+	}
+	
+	protected def Pair<AbstractType, AbstractType> computeTypesInArgument(ConstraintSystem system, Argument arg) {
+		val feature = ExpressionsPackage.eINSTANCE.argument_Parameter;
+		val paramName = BaseUtils.getText(arg, feature);
+		val paramType = if(!paramName.nullOrEmpty) {
+			val tvp = system.resolveReferenceToSingleAndGetType(arg, feature) as AbstractType;
+			if(tvp instanceof TypeVariableProxy) {
+				tvp.ambiguityResolutionStrategy = AmbiguityResolutionStrategy.MakeNew;
+			}
+			tvp;
+		}
+
+		val valueType = system.computeConstraints(arg.value);
+
+		if(paramType !== null) {
+			system.addConstraint(new SubtypeConstraint(valueType, paramType, new ValidationIssue(''''«arg.value»' of type %1$s can not be assigned to parameter '«paramName»' of type %2$s.''', arg.value)))	
+		}		
+		
+		return paramType -> valueType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeHole arg) {
+		system.associate(system.getTypeHole(arg), arg);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Argument arg) {
+		val ptype_etype = computeTypesInArgument(system, arg);
+		val tvs = #[ptype_etype.key, ptype_etype.value]
+			.filterNull
+			.map[system.associate(ptype_etype.key ?: ptype_etype.value, arg)]
+			.force;
+		return tvs.head;
+	}
+	
+	@FinalFieldsConstructor
+	@Accessors
+	static protected class UnorderedArgsInformation {
+		protected val String nameOfReferencedObject;
+		protected val EObject referencingObject;
+		protected val EObject expressionObject;
+		protected val AbstractType referencedType;
+		protected val AbstractType expressionType;
+		
+		override toString() {
+			return "(" + #[nameOfReferencedObject, referencingObject, expressionObject, referencedType, expressionType].join(", ") + ")"
+		}
+		
+	} 
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ElementReferenceExpression varOrFun) {
+		val featureToResolve = ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference;
+		
+		/*
+		 * This function is pretty complicated. It handles both function calls and normal references to for example `f`, i.e.
+		 * - var y = f;
+		 * - var y = f(x);
+		 * - var y = x.f();
+		 * 
+		 * For this we need to look into scope to find all objects that could be referenced by f. 
+		 * If varOrFun is a function call, we want to do polymorphic dispatch, which means we need to create a typeClassConstraint.
+		 * Otherwise we resolve to the *last* candidate, which came into scope last and therefore is the nearest one. 
+		 * 
+		 * For function calls we delegate to computeConstraintsForFunctionCall to be able to reuse logic.
+		 */
+		
+		val isFunctionCall = varOrFun.operationCall || !varOrFun.arguments.empty;	
+						
+		// if isFunctionCall --> delegate. 
+		val refType = if(isFunctionCall) {
+			val txt = BaseUtils.getText(varOrFun, featureToResolve);
+			val candidates = system.resolveReferenceToTypes(varOrFun, featureToResolve);	
+			if(candidates.empty) {
+				return system.associate(new BottomType(varOrFun, '''PCF: Couldn't resolve: «txt»'''), varOrFun);
+			}
+			
+			// [(ParameterName, Argument, Expression)]
+			val argumentParamsAndValues = varOrFun.arguments.indexed.map[
+				// for FeatureCalls (except not real featureCalls) the first parameter doesn't have a name/text.
+				if(it.key == 0 && varOrFun instanceof FeatureCall && !(varOrFun instanceof FeatureCallWithoutFeature)) {
+					null -> (it.value -> it.value.value)
+				}
+				else {
+					BaseUtils.getText(it.value, ExpressionsPackage.eINSTANCE.argument_Parameter) -> (it.value -> it.value.value)
+				}
+			].force
+			
+			// FeatureCalls are unordered if they have at least one parameter on the right side
+			val requiredArgCountForUnordered = if(varOrFun instanceof FeatureCall && !(varOrFun instanceof FeatureCallWithoutFeature)) {
+				2
+			} else {
+				1
+			}
+			
+			val argType = if(argumentParamsAndValues.size >= requiredArgCountForUnordered && argumentParamsAndValues.forall[!it.key.nullOrEmpty]) {
+				val List<UnorderedArgsInformation> argumentParamTypesAndValueTypes = argumentParamsAndValues.map[
+					val arg = it.value.key;
+					val aValue = it.value.value;
+					val exprType = system.computeConstraints(aValue) as AbstractType;
+					val paramType = if(it.key === null) {
+						system.newTypeVariable(arg);
+					} else {
+						system.resolveReferenceToSingleAndGetType(arg, ExpressionsPackage.eINSTANCE.argument_Parameter) as AbstractType;	
+					}
+					if(paramType instanceof TypeVariableProxy) {
+						paramType.ambiguityResolutionStrategy = AmbiguityResolutionStrategy.MakeNew;
+					}
+					system.associate(paramType, arg);
+					new UnorderedArgsInformation(it.key, arg, aValue, paramType, exprType);
+				].force
+				argumentParamTypesAndValueTypes.forEach[
+					system.addConstraint(new SubtypeConstraint(it.expressionType, it.referencedType, new ValidationIssue(Severity.ERROR, '''«it.expressionObject» (:: %s) not compatible with «it.nameOfReferencedObject» (:: %s)''', it.referencingObject, null, "")));
+				]
+				val withAutoFirstArg = if(varOrFun instanceof FeatureCallWithoutFeature) {
+					// here we make a *new* type hole instead of getting the one of FCWF, since the type hole is not the singular identifying type variable of the FCWF.
+					val tv = system.newTypeHole(varOrFun) as AbstractType;
+					(#[new UnorderedArgsInformation("self", null, null, tv, tv)] + argumentParamTypesAndValueTypes).force;
+				}
+				else {
+					argumentParamTypesAndValueTypes
+				}
+				new UnorderedArguments(varOrFun, txt.argName, withAutoFirstArg.map[it.nameOfReferencedObject -> it.expressionType]);
+			} else {
+				val argTypes = varOrFun.arguments.map[system.computeConstraints(it) as AbstractType];
+				val args = if(varOrFun instanceof FeatureCallWithoutFeature) {
+					#[system.newTypeHole(varOrFun) as AbstractType] + argTypes;
+				}
+				else {
+					argTypes;
+				}
+				system.computeArgumentConstraintsWithTypes(varOrFun, txt, args.force);
+			}
+			
+			system.computeConstraintsForFunctionCall(varOrFun, featureToResolve, txt, argType, candidates);
+		}
+		// otherwise use the last candidate in scope. We can check here for ambiguity, otherwise this is just the "closest" candidate.
+		else {
+			val ref = system.resolveReferenceToSingleAndGetType(varOrFun, featureToResolve);
+			val refval = varOrFun.eGet(featureToResolve, false);
+			if(refval === null && refval instanceof EObject && (refval as EObject).eIsProxy && !(ref instanceof TypeVariableProxy)) {
+				varOrFun.eSet(featureToResolve, ref.origin);
+			}
+			ref;
+		}
+		
+		// refType is the type of the referenced thing (or the function application)
+		// assert f/f(x): refType
+		return system.associate(refType, varOrFun);		
+	}
+	
+	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<TypeVariable> candidates) {
+		return computeConstraintsForFunctionCall(system, functionCall, functionReference, functionName, system.computeArgumentConstraints(functionCall, functionName, argExprs), candidates);
+	}
+	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, AbstractType argumentType, List<TypeVariable> candidates) {
+		if(candidates === null || candidates.empty) {
+			return null;
+		}
+		val issue = new ValidationIssue(Severity.ERROR, '''Function «functionName» cannot be used here: %s, %s''', functionCall, functionReference, FUNCTION_CANNOT_BE_USED_HERE);
+		/* This function is pretty complicated. It handles function calls like `f(x)` or `x.f()`.
+		 * We get:
+		 * - an object holding the function call, "f(x)"
+		 * - a reference which will be set to the called function
+		 * - the function's name "f"
+		 * - the arguments of the call "[x]"
+		 * - the possible candidates the function name could reference, {f_1, f_2, ...}
+		 *   
+		 * To compute type constraints of `f(x)` we do the following:
+		 * - compute x: a
+		 * - assert f: A -> B
+		 * - assert a <= A
+		 * - assert f(x): B
+		 * - if f ∈ {f_1, f_2, ...}: (can only happen if isLinking == false!)
+		 *   - compute {A_1, A_2 | f_i: A_i -> B_i}
+		 *   - create TypeClass T for {A_1 -> B_1, ...}
+		 *   - on resolve of T with function f_k: A_k -> B_k:
+		 *     - we already know that A = A_k
+		 *     - set the reference and assert relation of B_k and B with regards to their variance
+		 * - otherwise f = f_1: A_1 -> B_1
+		 * 	 - assert A -> B super type of A_1 -> B_1 (with indirection to prevent duplicate work, taking variance into account)
+		 * - return B (the type of this expression)
+		 * 
+		 * Now we know that:
+		 * - f: A -> B
+		 * - f = f_k
+		 * - f_k: A_k -> B_k
+		 * - A = A_k
+		 * - B = B_k
+		 */
+		//Allocate TypeVariables for functionCall
+		// A
+		val fromTV = system.newTypeVariable(null);
+		// B
+		val toTV = system.newTypeVariable(null);
+		// b
+		val resultType = system.newTypeVariable(null);
+		// a -> B >: A -> B
+		system.addConstraint(new SubtypeConstraint(argumentType, fromTV, issue));
+		val varianceOfResultVar = TypeUtils.getVarianceInAssignment(functionCall);
+		switch(varianceOfResultVar) {
+			case COVARIANT: {
+				system.addConstraint(new SubtypeConstraint(toTV, resultType, issue));
+			}
+			case CONTRAVARIANT: {
+				system.addConstraint(new SubtypeConstraint(resultType, toTV, issue));
+			}
+			case INVARIANT: {
+				system.addConstraint(new EqualityConstraint(toTV, resultType, issue));
+			}
+			
+		}
+		
+		val useTypeClassProxy = !candidates.filter(TypeVariableProxy).empty
+		val typeClassQN = QualifiedName.create(functionName);
+		val typeClass = if(useTypeClassProxy) {
+			if(candidates.size != 1) {
+				// If we have a type class we are in the linking phase. 
+				// This means that the caller called resolveToXX, which returned a proxy. 
+				// However this should always create only one proxy.
+				// Otherwise some candidates are resolved and some aren't, 
+				// and we just don't know how this happened or how to handle it.
+				// Basically safe .head
+				throw new Exception("BCF: Somethings wrong!");
+			}
+			// this function call has the side effect of creating the type class.
+			system.getTypeClassProxy(typeClassQN, candidates.head as TypeVariableProxy);
+		}
+		else {
+			// this function call has the side effect of creating the type class.
+			system.getTypeClass(typeClassQN, candidates.map[it as AbstractType -> it.origin]) => [ typeClass |	
+			// add all candidates this TC doesn't already contain
+				candidates.reject[typeClass.instances.containsKey(it)].force.forEach[
+					typeClass.instances.put(it, it.origin);
+				]	
+			]
+		}
+		system.addConstraint(new FunctionTypeClassConstraint(new ValidationIssue(issue, '''Function «functionName» cannot be used here'''), fromTV, typeClassQN, functionCall, functionReference, toTV, varianceOfResultVar, constraintSystemProvider));
+		
+		
+		// B
+		return resultType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ArrayAccessExpression expr) {
+		// typing expr = a[idx]:
+		// assert a :: array<t>
+		// - get \T. array<T> (arrayType)
+		// - type a[idx] :: t (innerType)
+		// - make constraints to assert array<t> (nestInType)
+		// compute typeof a (refType)
+		// assert a = array<t>
+		// recurse into accessor, computing idx :: s
+		// assert idx is unsigned integer (s <= u32)
+		// return t
+		val arrayType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.arrayTypeQID);
+		val accessor = expr.arraySelector.ignoreCoercions;
+		val accessorType = system.computeConstraints(accessor);
+
+		val refType = system.computeConstraints(expr.owner);
+
+		val selfType = if(accessor instanceof ValueRange) {
+			system.associate(refType, expr);
+			refType;
+		}
+		else {
+			val innerType = system.getTypeVariable(expr);
+			innerType;
+		}
+		
+		val innerType = if(accessor instanceof ValueRange) {
+			system.newTypeVariable(expr);
+		}
+		else {
+			system.getTypeVariable(expr);
+		}
+		
+		val sizeType = system.newTypeVariable(expr);
+
+		val supposedExpressionArrayType = nestInType(system, expr, #[innerType -> Variance.INVARIANT, sizeType -> Variance.COVARIANT], arrayType, "array");
+		system.addConstraint(new EqualityConstraint(refType, supposedExpressionArrayType, new ValidationIssue(Severity.ERROR, '''«expr.owner» (:: %s) must be of type array<...>''', expr.owner)));
+		
+		
+		// here we could link to a builtin/generated function to facilitate easier code generation. For now just assert uintxx.
+		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u32TypeQID);
+		system.addConstraint(new SubtypeConstraint(accessorType, uint32Type, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
+		// also fix the sign with "at least u8". This helps usage like var i=0; i+=1; x[i];
+//		val uint8Type = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.u8TypeQID);
+//		system.addConstraint(new SubtypeConstraint(uint8Type, accessorType, new ValidationIssue('''«accessor» (:: %s) must be an unsigned integer''', accessor)));
+		return selfType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ValueRange vr) {
+		// assert that all values are unsigned integer (<= u32)
+		// returns u32
+		val uint32Type = typeRegistry.getTypeModelObjectProxy(system, vr, StdlibTypeRegistry.u32TypeQID);
+		val commonType = system.getTypeVariable(vr);
+		#[vr.lowerBound, vr.upperBound].filterNull.forEach[
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(it), commonType, new ValidationIssue('''«it» (:: %s) must be an unsigned integer''', it)));
+		]
+		system.addConstraint(new SubtypeConstraint(commonType, uint32Type, new ValidationIssue('''All values in «vr» (:: %s) must be unsigned integers''', vr)));
+		return commonType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeCastExpression expr) {
+		// typing (expr as t)
+		// compute expr :: s (realType)
+		// get reference to t (castType)
+		// validate that only numeric types are part of this cast (s and t must be numeric)
+		// return t
+		val realType = system.computeConstraints(expr.operand);
+		val castType = system.resolveReferenceToSingleAndGetType(expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type);
+		// only used in validation message
+		val castTypeName = BaseUtils.getText(expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type);
+		// can only cast from and to numeric types
+		system.addConstraint(new JavaClassInstanceConstraint(
+			new ValidationIssue(Severity.ERROR, '''«expr.operand» (:: %1$s) may not be cast''', expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Operand, ""), 
+			realType, NumericType
+		));
+		system.addConstraint(new JavaClassInstanceConstraint(
+			new ValidationIssue(Severity.ERROR, '''May not cast to «castTypeName»''', expr, ExpressionsPackage.eINSTANCE.typeCastExpression_Type, ""), 
+			castType, NumericType
+		));
+		return system.associate(castType, expr);
+	}
+
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalAddSubtractExpression expr) {
+		val opQID = switch(expr.operator) {
+			case(AdditiveOperator.PLUS): StdlibTypeRegistry.plusFunctionQID
+			case(AdditiveOperator.MINUS): StdlibTypeRegistry.minusFunctionQID
+		}
+		return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
+	}
+	
+	protected def AbstractType computeTypeForOperation(ConstraintSystem system, Operation function) {
+		val typeArgs = function.typeParameters.map[system.translateTypeDeclaration(it) as TypeVariable].force()
+			
+		val fromType = system.computeParameterType(function, function.parameters);
+		val toType = system.computeConstraints(function.typeSpecifier);
+		val funType = new FunctionType(function, new AtomicType(function), fromType, toType);
+		
+		if(typeArgs.empty) {
+			return funType
+		} else {
+			return new TypeScheme(function, typeArgs, funType);	
+		}
+		
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Operation function) {
+		val result = computeTypeForOperation(system, function);
+		return system.associate(result, function);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalMultiplyDivideExpression expr) {
+		val opQID = switch(expr.operator) {
+			case(MultiplicativeOperator.MUL): StdlibTypeRegistry.timesFunctionQID
+			case(MultiplicativeOperator.DIV): StdlibTypeRegistry.divisionFunctionQID
+			case(MultiplicativeOperator.MOD): StdlibTypeRegistry.moduloFunctionQID
+		}
+		return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
+	}
+	
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ParameterWithDefaultValue param) {
+		// do base case of normal parameters and assert that the default value can be assigned to the parameter
+		val paramType = system._computeConstraints(param as Parameter);
+		if(param.defaultValue !== null) {
+			val valueType = system.computeConstraints(param.defaultValue);
+			system.addConstraint(new SubtypeConstraint(valueType, paramType, 
+				new ValidationIssue(Severity.ERROR, '''Invalid default value «param.defaultValue» (:: %s) for parameter «param.name» (:: s)''', param.defaultValue, null, "")
+			))
+		}
+		return paramType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BoolLiteral bl) {
+		val boolType = typeRegistry.getTypeModelObjectProxy(system, bl, StdlibTypeRegistry.boolTypeQID);
+		return system.associate(boolType, bl);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ConditionalExpression expr) {
+		// typing (true ? a : b)
+		val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
+		system.addConstraint(new EqualityConstraint(system.computeConstraints(expr.condition), boolType, 
+			new ValidationIssue(Severity.ERROR, '''«expr.condition» must be a boolean expression''', expr.condition, null, "")));
+		// true and false  case/expression  must be share some common type
+		val commonTV = system.getTypeVariable(expr);
+		val trueTV = system.computeConstraints(expr.trueCase);
+		var falseTV = system.computeConstraints(expr.falseCase);
+		val mkIssue = [String f1, String f2, Expression e | new ValidationIssue(Severity.ERROR, '''«expr.trueCase»«f1» and «expr.falseCase»«f2» don't share a common type''', e, null, "")];
+		system.addConstraint(new SubtypeConstraint(trueTV, commonTV, mkIssue.apply(" (:: %s)", "", expr.trueCase)));
+		system.addConstraint(new SubtypeConstraint(falseTV, commonTV, mkIssue.apply("", " (:: %s)", expr.falseCase)));		
+		return system.associate(commonTV, expr);
+	}
+		
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, BinaryExpression expr) {
+		if(expr.operator instanceof LogicalOperator) {
+			val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
+			val mkIssue = [new ValidationIssue(Severity.ERROR, '''«it» (:: %s) must be of type %s''', it, null, "")];
+			system.addConstraint(new EqualityConstraint(system.computeConstraints(expr.leftOperand), boolType, mkIssue.apply(expr.leftOperand)))
+			system.addConstraint(new EqualityConstraint(system.computeConstraints(expr.rightOperand), boolType, mkIssue.apply(expr.leftOperand)))
+			return system.associate(boolType, expr);
+		}
+		else if(expr.operator instanceof RelationalOperator) {
+			val boolType = typeRegistry.getTypeModelObjectProxy(system, expr, StdlibTypeRegistry.boolTypeQID);
+			if(expr.operator == RelationalOperator.EQUALS || expr.operator == RelationalOperator.NOT_EQUALS) {
+				// left and right must be subtype of some common type
+				val commonTV = system.newTypeVariable(null);
+				val mkIssue = [String f1, String f2, Expression e | new ValidationIssue(Severity.ERROR, '''«expr.leftOperand»«f1» and «expr.rightOperand»«f2» don't share a common type''', e, null, "")];
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.leftOperand), commonTV, mkIssue.apply(" (:: %s)", "", expr.leftOperand)));
+				system.addConstraint(new SubtypeConstraint(system.computeConstraints(expr.rightOperand), commonTV, mkIssue.apply("", " (:: %s)", expr.rightOperand)));		
+			}
+			else {
+				val mkIssue = [new ValidationIssue(Severity.ERROR, '''«it» must be an integer type''', it, null, "")];
+				system.addConstraint(new JavaClassInstanceConstraint(mkIssue.apply(expr.leftOperand), system.computeConstraints(expr.leftOperand), NumericType))
+				system.addConstraint(new JavaClassInstanceConstraint(mkIssue.apply(expr.rightOperand), system.computeConstraints(expr.rightOperand), NumericType))
+			}
+			return system.associate(boolType, expr);
+		}
+		else if(expr.operator instanceof ShiftOperator) {
+			val opQID = switch(expr.operator) {
+				case(ShiftOperator.LEFT): StdlibTypeRegistry.leftShiftFunctionQID
+				case(ShiftOperator.RIGHT): StdlibTypeRegistry.rightShiftFunctionQID
+			}
+			return computeConstraintsForBuiltinOperation(system, expr, opQID, #[expr.leftOperand, expr.rightOperand]);
+		}
+		else {
+			return system.associate(new BottomType(expr, println("BinaryExpression not implemented for " + expr.operator)), expr);
+		}
+	}
+	
+	protected def TypeVariable computeConstraintsForBuiltinOperation(ConstraintSystem system, EObject expr, QualifiedName opQID, List<Expression> operands) {
+		val operations = typeRegistry.getModelObjects(system, expr, opQID, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, false);
+		
+		val resultType = system.computeConstraintsForFunctionCall(expr, null, opQID.lastSegment, operands, operations);
+		return system.associate(resultType, expr);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NaryTypeAddition expr) {
+		// for now assume that operations on types are always T* -> T
+		val result = system.getTypeVariable(expr);
+		expr.values.forEach[
+			system.addConstraint(new SubtypeConstraint(system.computeConstraints(it), result, new ValidationIssue(Severity.ERROR, '''«it» (:: %s) doesn't share a common type with the other members of this expression''', it, null, "")))
+		]
+		return result;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeReferenceLiteral expr) {
+		return system.associate(system.getTypeVariableProxy(expr, TypesPackage.eINSTANCE.typeReferenceLiteral_Type), expr)
+	}
+
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Type type) {
+		system.associate(system.translateTypeDeclaration(type), type);
+	}
+
+	protected def AbstractType translateTypeDeclaration(ConstraintSystem system, EObject obj) {
+		val typeTrans = system.doTranslateTypeDeclaration(obj);
+		system.defineUserData(obj, typeTrans);
+		system.associate(typeTrans, obj);
+		if(obj instanceof Type) {
+			if(obj.typeKind !== null) {
+				system.computeConstraints(obj.typeKind);
+			}
+		}
+		
+		system.computeConstraintsForChildren(obj);
+		return typeTrans;
+	}
+
+
+	protected dispatch def void defineUserData(ConstraintSystem system, EObject obj, AbstractType typeTrans) {
+		system.putUserData(typeTrans, ECLASS_KEY, obj.eClass.name);
+	}
+
+	protected dispatch def void defineUserData(ConstraintSystem system, NativeType type, AbstractType nativeType) {
+		if(!type.header.nullOrEmpty) {
+			system.putUserData(nativeType, INCLUDE_HEADER_KEY, type.header);
+			system.putUserData(nativeType, INCLUDE_IS_USER_INCLUDE_KEY, "false");
+		}
+		system._defineUserData(type as PrimitiveType, nativeType);
+	}
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, NativeType type) {
+		val nativeType = typeRegistry.translateNativeType(type);
+		system.typeTable.put(QualifiedName.create(type.name), nativeType);
+		return nativeType;
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, PrimitiveType type) {
+		val atomicType = new AtomicType(type);
+		system.typeTable.put(QualifiedName.create(type.name), atomicType);
+		return atomicType;
+	}
+
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, RawTypeParameter type) {
+		val tv = system.getTypeVariable(type);
+		val container = type.eContainer;
+		val containerName = if(container instanceof GeneratedType) {
+			container.name;
+		} else if(container instanceof Operation) {
+			container.name;
+		}
+		if(containerName !== null) {
+			system.typeTable.put(QualifiedName.create(containerName, type.name), tv);
+		}
+		return tv;
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, InstanceTypeParameter type) {
+		val tv = system.getDependentTypeVariable(type, system.resolveReferenceToSingleAndGetType(type, TypesPackage.eINSTANCE.instanceTypeParameter_OfType));
+		val container = type.eContainer;
+		val containerName = if(container instanceof GeneratedType) {
+			container.name;
+		} else if(container instanceof Operation) {
+			container.name;
+		}
+		if(containerName !== null) {
+			system.typeTable.put(QualifiedName.create(containerName, type.name), tv);
+		}
+		return tv;
+	}
+	
+	protected dispatch def void defineUserData(ConstraintSystem system, ComplexType cType, AbstractType result) {
+		system.putUserData(result, DEFINING_RESOURCE_KEY, cType.eResource.URI.lastSegment);
+		system.putUserData(result, VARIANCES_KEY, cType.typeParameters.map[it.variance.literal].join)
+		system._defineUserData(cType as Type, result);
+	}
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, StructureType structType) {
+		val types = structType.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
+		system.computeConstraints(structType.constructor);
+		/*
+		 * struct foo { var x: i32; var y: i32 }
+		 * ---------------
+		 * ProdType(foo, <>, [i32, i32])
+		 */
+		val result = new ProdType(structType, new AtomicType(structType), types);
+		system.typeTable.put(QualifiedName.create(structType.name), result);
+		return result;
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumType sumType) {
+		val subTypes = sumType.alternatives.map[ sumAlt |
+			system.translateTypeDeclaration(sumAlt);
+		].force;
+		val result = new org.eclipse.mita.base.typesystem.types.SumType(sumType, new AtomicType(sumType), subTypes);
+		system.typeTable.put(QualifiedName.create(sumType.name), result);
+		return result;	
+	}
+	
+	protected dispatch def void defineUserData(ConstraintSystem system, SumAlternative sumAlt, AbstractType result) {
+		val sumType = sumAlt.eContainer;
+		if(sumType instanceof SumType) {
+			system.putUserData(result, PARENT_NAME_KEY, sumType.name);
+		}
+		system._defineUserData(sumAlt as StructuralType, result);
+	}
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, SumAlternative sumAlt) {
+		val sumType = sumAlt.eContainer;
+		if(sumType instanceof SumType) {
+			val selfType = new AtomicType(sumAlt);
+			val types = sumAlt.accessorsTypes.map[ system.computeConstraints(it) as AbstractType ].force();
+			val prodType = new ProdType(sumAlt, selfType, types);
+	
+			val sumTypeName = sumType.name
+			val superType = new AtomicType(sumType, sumTypeName);
+	
+			val iSelf_iSuper = system.explicitSubtypeRelations.addEdge(selfType, superType);
+			system.explicitSubtypeRelationsTypeSource.put(iSelf_iSuper.key, prodType);
+			system.explicitSubtypeRelationsTypeSource.put(iSelf_iSuper.value, system.getTypeVariable(sumType));
+			
+			system.computeConstraints(sumAlt.constructor);
+			
+			system.typeTable.put(QualifiedName.create(sumTypeName, sumAlt.name), prodType);
+			
+			return prodType;	
+		}
+		throw new CoreException(new Status(IStatus.ERROR, null, 'Broken model: parent of sum alternative is not a sum type'));
+	}
+	
+	protected dispatch def void defineUserData(ConstraintSystem system, GeneratedType genType, AbstractType result) {
+		system.putUserData(result, GENERATOR_KEY, genType.generator)
+		if(genType.sizeInferrer !== null) {
+			system.putUserData(result, SIZE_INFERRER_KEY, genType.sizeInferrer)
+		}
+		system._defineUserData(genType as ComplexType, result);
+	}
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
+		val typeParameters = genType.typeParameters;
+		val typeArgsAndVariances = typeParameters.map[
+			// assertion: all type parameters translate to a type variable
+			system.translateTypeDeclaration(it) -> it.variance
+		].force;
+
+		system.computeConstraints(genType.constructor);
+		val result = if(typeParameters.empty) {
+			new AtomicType(genType);
+		}
+		else {
+			new TypeScheme(genType, typeArgsAndVariances.map[it.key as TypeVariable].force, new TypeConstructorType(genType, genType.name, #[new AtomicType(genType) as AbstractType -> Variance.INVARIANT] + typeArgsAndVariances));
+		}
+		
+		system.typeTable.put(QualifiedName.create(genType.name), result);
+				
+		return result;
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, ExceptionTypeDeclaration genType) {
+		val result = new AtomicType(genType);
+		system.typeTable.put(QualifiedName.create(genType.name), result);
+		if(genType.name == "Exception") {
+			val i = system.explicitSubtypeRelations.addNode(result);
+			system.explicitSubtypeRelationsTypeSource.put(i, result);	
+		}
+		else {
+			val exceptionBaseType = new AtomicType(null, "Exception");
+			val i1_i2 = system.explicitSubtypeRelations.addEdge(result, exceptionBaseType);
+			system.explicitSubtypeRelationsTypeSource.put(i1_i2.key, result);
+		}
+		return result;
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, TypeKind context) {
+		val result = new BaseKind(context, context.kindOf.name, system.getTypeVariable(context.kindOf));
+		// context.toString is '∗«context.kindOf.name»'
+		system.typeTable.put(QualifiedName.create(context.toString), result);
+		return result;
+	}
+	
+	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, EObject genType) {
+		println('''BCF: No doTranslateTypeDeclaration for «genType.eClass»''');
+		return new AtomicType(genType, genType.toString);
+	}
+	
+	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, Iterable<Pair<AbstractType, Variance>> inner, AbstractType outerTypeScheme, String outerName) {
+		return nestInType(system, origin, new AtomicType(origin, outerName), inner, outerTypeScheme, outerName);	
+	}
+		// given reference to/typevariable \T. c<T>, t and nameof c:
+	protected def TypeConstructorType nestInType(ConstraintSystem system, EObject origin, AbstractType typeReference, Iterable<Pair<AbstractType, Variance>> inner, AbstractType outerTypeScheme, String outerName) {
+		// constructs constraints asserting that c<t> instance of \T. c<T> and returns c<t>
+		val outerTypeInstance = system.newTypeVariable(null);
+		val nestedType = new TypeConstructorType(origin, typeReference, inner.force);
+		system.addConstraint(new ExplicitInstanceConstraint(outerTypeInstance, outerTypeScheme, new ValidationIssue(Severity.ERROR, '''«origin?.toString?.replace("%", "%%")» (:: %s) is not instance of %s''', origin, null, "")));
+		system.addConstraint(new EqualityConstraint(nestedType, outerTypeInstance, new ValidationIssue(Severity.ERROR, '''«origin?.toString?.replace("%", "%%")» (:: %s) is not instance of %s''', origin, null, "")));
+		return nestedType;
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ParenthesizedExpression expr) {
+		return system.associate(system.computeConstraints(expr.expression), expr);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeExpressionSpecifier typeSpecifier) {
+		return system.associate(system.computeConstraintsForExpression(typeSpecifier.value), typeSpecifier);
+	}
+		
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypeReferenceSpecifier typeSpecifier) {
+		// this is  t<a, b>  in  var x: t<a,  b>
+		val typeArguments = typeSpecifier.typeArguments;
+		
+		// t
+		val type = system.resolveReferenceToSingleAndGetType(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
+		val typeWithoutModifiers = if(typeArguments.empty) {
+			val typeInstance = system.newTypeVariable(typeSpecifier);
+			system.addConstraint(new ExplicitInstanceConstraint(typeInstance, type, new ValidationIssue(Severity.ERROR, '''«typeSpecifier?.toString?.replace("%", "%%")» (:: %s) is not instance of %s''', typeSpecifier, null, "")));
+			typeInstance;
+		}
+		else {
+			val eRef = TypesPackage.eINSTANCE.typeReferenceSpecifier_Type;
+			// this type specifier is an instance of type
+			// compute <a, b>
+			val ref = typeSpecifier.eGet(eRef, false)
+			val reftext = if(ref instanceof EObject && !(ref as EObject).eIsProxy) ref.toString() else null;
+			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)?.head?.text?.trim;
+			val typeArgTypes = typeArguments.map[system.computeConstraints(it) as AbstractType];
+			// since type specifiers reference something we don't always know the variance here
+			val typeArgs = typeArgTypes.map[it -> Variance.UNKNOWN].force;
+			// compute constraints to validate t<a, b> (argument count etc.)
+			val typeInstance = system.nestInType(typeSpecifier, new AtomicType(typeSpecifier.eGet(eRef, false) as EObject, typeName), typeArgs, type, typeName);
+			typeInstance;
+		}
+		
+		// handle reference modifiers (a: &t)
+		val referenceTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, typeSpecifier, StdlibTypeRegistry.referenceTypeQID);
+		val typeWithReferenceModifiers = typeSpecifier.referenceModifiers.flatMap[it.split("").toList].fold(typeWithoutModifiers, [t, __ | 
+			nestInType(system, null, #[t -> Variance.INVARIANT], referenceTypeVarOrigin, "reference");
+		])
+		
+		//handle optional modifier (a: t?)
+		val optionalTypeVarOrigin = typeRegistry.getTypeModelObjectProxy(system, typeSpecifier, StdlibTypeRegistry.optionalTypeQID);
+		val typeWithOptionalModifier = if(typeSpecifier.optional) {
+			nestInType(system, null, #[typeWithReferenceModifiers -> Variance.INVARIANT], optionalTypeVarOrigin, "optional");
+		}
+		else {
+			typeWithReferenceModifiers;
+		}
+		
+		return system.associate(typeWithOptionalModifier, typeSpecifier, true);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TypedElement element) {
+		return system.associate(system.computeConstraints(element.typeSpecifier), element);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, PrimitiveValueExpression t) {
+		return system.associate(system.computeConstraints(t.value), t);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NumericalUnaryExpression expr) {
+		// this is the only way to handle negative int literals. 
+		// It also is only a best guess, i.e. you can construct expressions with negative literal values that are types as u8.
+		val operand = expr.operand;
+		if(operand instanceof PrimitiveValueExpression) {
+			val value = operand.value;
+			if(value instanceof IntLiteral) {
+				if(expr.operator == UnaryOperator.NEGATIVE) {
+					val type = translateInteger(system, operand, -value.value);
+					system.associate(type, value);
+					system.associate(type, operand);
+					return system.associate(translateInteger(system, operand, -value.value), expr);
+				}
+				println('''BCF: Unhandled operator: «expr.operator»''')	
+			}
+			else if(value instanceof DoubleLiteral || value instanceof FloatLiteral) {
+				return system.associate(system.computeConstraints(operand), expr);
+			}
+		}
+		println('''BCF: Unhandled operand: «operand?.eClass.name»''')
+		return system.associate(system.computeConstraints(operand), expr);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, IntLiteral lit) {
+		return system.associate(system.translateInteger(lit, lit.value), lit);
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, FloatLiteral lit) {
+		return system.associate(typeRegistry.getTypeModelObjectProxy(system, lit, StdlibTypeRegistry.floatTypeQID), lit);
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, DoubleLiteral lit) {
+		return system.associate(typeRegistry.getTypeModelObjectProxy(system, lit, StdlibTypeRegistry.doubleTypeQID), lit);
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StringLiteral lit) {
+		val sizeType = system.newTypeVariable(null);
+		val stringTypeSchemeTV = typeRegistry.getTypeModelObjectProxy(system, lit, StdlibTypeRegistry.stringTypeQID);
+		val outerType = system.nestInType(lit, #[sizeType -> Variance.COVARIANT], stringTypeSchemeTV, "string");
+		return system.associate(outerType, lit);
+	}
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, StructuralParameter sParam) {
+		/*
+		 * in  struct foo { var x: i32; }
+		 * this computes  var x: i32;
+		 */
+		system.computeConstraints(sParam.accessor);
+		return system._computeConstraints(sParam as TypedElement);
+	}
+
+	protected def AbstractType translateInteger(ConstraintSystem system, EObject source, long value) {
+		val sign = if(value < 0) {
+			Signedness.Signed;
+		} else {
+			if(value > 127 && value <= 255) {
+				Signedness.Unsigned;
+			}
+			else if(value > 32767 && value <= 65535) {
+				Signedness.Unsigned;
+			}
+			else if(value > 2147483647L && value <= 4294967295L) {
+				Signedness.Unsigned;
+			}
+			else {
+				Signedness.DontCare;
+			}
+		}
+		val byteCount = 
+			if(value >= 0 && value <= 255) {
+				1;
+			}
+			else if(value > 255 && value <= 65535) {
+				2;
+			}
+			else if(value > 65535 && value <= 4294967295L) {
+				4;
+			}
+			else if(value >= -128 && value < 0) {
+				1;
+			} 
+			else if(value >= -32768 && value < -128) {
+				2;
+			}
+			else if(value >= -2147483648L && value < -32768) {
+				4;
+			}
+			else {
+				return new BottomType(source, "BCF: Value out of bounds: " + value);
+			}
+		return new IntegerType(source, byteCount, sign);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, NullTypeSpecifier context) {
+		return system.getTypeVariable(context);
+	}
+
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Void context) {
+		println('BCF: computeConstraints called on null');
+		return null;
+	}
+	
+	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, NaryTypeAddition e) {
+		val valueTypes = e.values.map[system.computeConstraintsForLiteral(it) as AbstractType -> Variance.INVARIANT].force;
+		val commonType = system.newTypeVariable(e);
+		valueTypes.forEach[
+			system.addConstraint(new SubtypeConstraint(it.key, commonType, new ValidationIssue(Severity.ERROR, '''«it.key» (:: %s) doesn't share a common type with the other members of this expression''', it.key.origin, null, "")))
+		]
+		return system.associate(new NumericAddType(e, "typeAdd", commonType, valueTypes), e);
+	}
+	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, PrimitiveValueExpression e) {
+		return system.associate(system.computeConstraintsForLiteral(e.value), e);
+	}
+	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, TypeReferenceLiteral e) {
+		return system.associate(system.resolveReferenceToSingleAndGetType(e, TypesPackage.eINSTANCE.typeReferenceLiteral_Type), e);
+	}
+	
+	protected dispatch def computeConstraintsForExpression(ConstraintSystem system, Expression e) {
+		throw new UnsupportedOperationException("BCF: unimplemented computeConstraintsForExpression for " + e.class.simpleName);
+	}
+	
+	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, IntLiteral literal) {
+		return system.associate(new LiteralNumberType(literal, literal.value, system.translateInteger(literal, literal.value)), literal);
+	}
+	
+	protected dispatch def computeConstraintsForLiteral(ConstraintSystem system, Literal literal) {
+		throw new UnsupportedOperationException("BCF: unimplemented computeConstraintsForLiteral for " + literal.class.simpleName);
+	}	
+}

@@ -20,30 +20,30 @@ import org.eclipse.xtext.util.Strings;
  * @author andreas muelder - Initial contribution and API
  * 
  */
-public class BinaryValueConverter extends AbstractLexerBasedConverter<Integer> {
+public class BinaryValueConverter extends AbstractLexerBasedConverter<Long> {
 
 	public static final String BINARY_PREFIX = "0b";
 	
-	public Integer toValue(String string, INode node) {
+	public Long toValue(String string, INode node) {
 
 		if (Strings.isEmpty(string))
 			throw new ValueConverterException("Couldn't convert empty string to number.", node, null);
 
 		try {
 			// perform the conversion with string index 2 since the prefix is always '0x'
-			return Integer.parseInt(string.substring(2), 2);
+			return Long.parseLong(string.substring(2), 2);
 		} catch ( NumberFormatException e ) {
 			throw new ValueConverterException("Couldn't convert '" + string + "' to number.", node, null);
 		}
 	}
 
 	@Override
-	protected String toEscapedString(Integer value) {
+	protected String toEscapedString(Long value) {
 		if (value < 0) { 
-			return "-" + BINARY_PREFIX + Integer.toString( value * -1, 2).toUpperCase();
+			return "-" + BINARY_PREFIX + Long.toString( value * -1, 2).toUpperCase();
 
 		}
-		return BINARY_PREFIX + Integer.toString(value, 2).toUpperCase();
+		return BINARY_PREFIX + Long.toString(value, 2).toUpperCase();
 	}
 	
 	

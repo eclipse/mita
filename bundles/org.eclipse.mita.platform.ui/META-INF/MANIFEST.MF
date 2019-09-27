@@ -1,8 +1,9 @@
 Manifest-Version: 1.0
+Automatic-Module-Name: org.eclipse.mita.platform.ui
 Bundle-ManifestVersion: 2
 Bundle-Name: Mita Platform UI
 Bundle-Vendor: Eclipse.org/Mita
-Bundle-Version: 0.1.0.qualifier
+Bundle-Version: 0.2.0.qualifier
 Bundle-SymbolicName: org.eclipse.mita.platform.ui; singleton:=true
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.mita.platform,

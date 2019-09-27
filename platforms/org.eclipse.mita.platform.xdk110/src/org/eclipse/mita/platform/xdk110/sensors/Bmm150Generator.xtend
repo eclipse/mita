@@ -20,7 +20,6 @@ import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IComponentConfiguration
-import org.eclipse.mita.program.generator.internal.ExceptionGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 
 class Bmm150Generator extends AbstractSystemResourceGenerator {

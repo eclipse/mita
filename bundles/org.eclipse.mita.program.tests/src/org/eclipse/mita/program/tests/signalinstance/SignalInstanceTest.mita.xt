@@ -9,7 +9,8 @@ package test;
 import platforms.unittest; 
 
 setup connectivity : MyConnectivity {
-	var signal_instance00 = vci00(p01=true, p02=CFG_VAL_1);
+	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
+	var signal_instance00 = vci00(p01=true, p02=.CFG_VAL_1);
 	var signal_instance01 = vci01(20);
 	var signal_instance03 = vci03(5);
 	var signal_instance04 = vci04(6);
@@ -17,7 +18,6 @@ setup connectivity : MyConnectivity {
 
 fn accessWithoutReadOrWrite() {
 	/* XPECT errors ---
-		"Cannot determine size of element: Object does not have a size" at "connectivity.signal_instance00"
 		"Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
 	--- */
 	var x1 = connectivity.signal_instance00;
@@ -27,7 +27,7 @@ fn accessWithoutReadOrWrite() {
 fn functionWithSiginstParameter(p : siginst<uint32>) { 
 }
 
-// XPECT errors ---> "Could not infer the size of the function's return." at "functionReturningSiginst"
+// XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "functionReturningSiginst"
 fn functionReturningSiginst() : siginst<bool> {
 	// XPECT errors --> "Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
 	return connectivity.signal_instance00;
@@ -40,12 +40,10 @@ fn useSiginstCorrectly() {
 	// XPECT inferredType ---> uint16
 	var x2 = connectivity.signal_instance01.read();
 	
-	// XPECT inferredType ---> string
-	// XPECT inferredSize ---> string::5
+	// XPECT inferredType ---> string<'5>
 	var x3 = connectivity.signal_instance03.read();
 	
-	// XPECT inferredType ---> array<int32>
-	// XPECT inferredSize ---> array<int32>::6
+	// XPECT inferredType ---> array<int32, '6>
 	let x4 = connectivity.signal_instance04.read();
 	
 	// this should work
@@ -66,12 +64,4 @@ fn useSiginstCorrectly() {
 	var x6 = read(connectivity.signal_instance00);
 	
 	write(connectivity.signal_instance00, true);
-}
-
-fn stuffSiginstShouldValidate() {
-	/* XPECT errors ---
-		"Could not infer common type for type parameter T from argument types [integer, bool]." at "connectivity.signal_instance00.write(20)"
-		"Incompatible types integer and bool." at "connectivity.signal_instance00.write(20)"
-	--- */
-	connectivity.signal_instance00.write(20);
 }

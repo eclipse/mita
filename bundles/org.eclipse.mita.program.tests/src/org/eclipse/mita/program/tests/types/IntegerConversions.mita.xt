@@ -36,15 +36,19 @@ fn singedIntSuccess() {
 	s8 = s8;
 }
 
-fn takesUint8(x : uint8) {
+fn takesUint8(x : uint8): uint8 {
 	return x;
 }
 
 fn intRangeChecks() {
-	// XPECT errors ---> "Value is out of range. Must be 0 <= x <= 255." at "-1"
+	/* XPECT errors ---
+		"Function takesUint8 cannot be used here: uint8, A" at "takesUint8"
+		"Function takesUint8 cannot be used here: uint8, xint8" at "takesUint8"
+		"Incompatible types: int8 is not subtype of uint8." at "takesUint8"
+	--- */
 	takesUint8(-1);
 	
-	// here we would like to see an error, but a bug in the type inferrer validation acceptance prevents that.
+	// XPECT errors --> "Assignment operator '=' may only be applied on compatible types, not on uint8 and int8." at "let x : uint8 = -1;"
 	let x : uint8 = -1;
 }
 
@@ -113,26 +117,20 @@ function testVariables() : void {
 	var x42 = new SomeGenType<uint32>(10); 
 	var x43 = new SomeGenType<uint32>(10, 10);
 	
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, int16]." at "new SomeGenType<uint32>()"
+	// XPECT errors --> "__args() and __args(uint32, int16) differ in the number of type arguments" at "new SomeGenType<uint32>()"
 	var x51 = new SomeGenType<uint32>();
 
-	// XPECT errors --> "Wrong number of arguments, expected [uint32, int16]." at "new SomeGenType<uint32>(opt = 18)"
-	var x52 = new SomeGenType<uint32>(opt = 18);
-
-	// XPECT errors --> "Couldn't resolve reference to Type 'real'." at "real"
-	var x53 : real = 10;
-	
-	// XPECT errors --> "Couldn't resolve reference to Type 'boolean'." at "boolean"
-	var x54 : boolean = 10;
-	
-	// XPECT errors --> "Couldn't resolve reference to Type 'integer'." at "integer"
-	var x55 : integer = 10;
-	
-	/* xpect errors ---
-		"Incompatible types bool and uint32." at "new SomeGenType<uint32>(true)"
-		"Incompatible types bool and uint32." at "var x6 = new SomeGenType<uint32>(true);"
+	/* XPECT errors ---
+		"Function con_SomeGenType cannot be used here" at "new SomeGenType<uint32>(opt = 18)"
+		"Too few arguments" at "new SomeGenType<uint32>(opt = 18)"
 	--- */
-//	var x6 = new SomeGenType<uint32>(true); // TODO: will be fixed in next SCT release
+	var x52 = new SomeGenType<uint32>(opt = 18);
+	
+	/* XPECT errors ---
+		"__args isn't structurally a subtype of __args" at "new SomeGenType<uint32>(true)"
+		"bool is not a subtype of uint32" at "new SomeGenType<uint32>(true)"
+	--- */
+	var x6 = new SomeGenType<uint32>(true); 
 		
 	// Types are types. The type of an expression can be had withtypeof. Explicit type references can be made with the type keyword
 //	var foo : Type = typeof(1 + 1); // TODO: wouldn't it be more readable to write "foo : typeof(1+1)"?
@@ -152,12 +150,14 @@ function testVariables() : void {
 //	default(ringbuffer<uint32>)
 }
 
-
-struct Name {
-	// XPECT errors --> "Cannot determine size of element: Type "Name" is recursive. Cannot infer size." at "x"
-    var x : Name;
-}
+/* XPECT errors ---
+		"Types are recursive: [A, Name(A)]" at "struct Name { var x : Name; }"
+	--- */
+struct Name { var x : Name; }
 
 function useRecursiveTypeDef() {
+	/* XPECT errors ---
+		"Couldn't resolve reference to Type 'Name'." at "Name"
+	--- */
     var myStruct : Name;
 }

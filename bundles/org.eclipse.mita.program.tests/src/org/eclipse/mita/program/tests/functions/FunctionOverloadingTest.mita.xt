@@ -26,9 +26,8 @@ fn g(x : uint8) : uint8 {
 	return x as uint8;
 }
 
-// noCompileErrors doesn't work for polymorphic functions yet
-// IGNORE noCompileErrors
-fn main() {
+// XPECT noCompileErrors
+fn main1() {
 	// XPECT inferredType --> int16 
 	let x1 = overloadingTest(10 as int8);
 	

@@ -32,7 +32,7 @@ class EscapeWhitespaceInStringStage extends AbstractTransformationStage {
 		literal.value = literal.value.replaceSpecialCharacters();
 	}
 	
-	public static def replaceSpecialCharacters(String str) {
+	static def replaceSpecialCharacters(String str) {
 		str.replace("\n", "\\n")
 			.replace("\r", "\\r")
 			.replace("\t", "\\t")

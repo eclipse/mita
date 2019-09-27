@@ -50,31 +50,43 @@ ConfigurationItemValue returns program::ConfigurationItemValue:
 ;
 
 SignalInstance returns program::SignalInstance: 
-	(writeable ?= 'var') name=ID (':' typeSpecifier=TypeSpecifier)? '=' initialization=Expression ';'
+	(writeable ?= 'var') name=ID typeSpecifier=NullTypeSpecifier '=' initialization=ElementReferenceExpression ';'
 ;
 
 GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
 	(exported?='export')?
-	'generated' ('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)
-	'generator' generator=STRING
-	('validator' validator=STRING)?
+	'generated' ('fn' | 'function') 
+	('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
+	name=ID '(' 
+		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
+	')' 
+	typeSpecifier=OptionalTypeSpecifier
+	(
+		('generator' generator=STRING) &
+		('validator' validator=STRING)? &
+		('size-inferrer' sizeInferrer=STRING)?
+	)
 	';'
 ;
 
 NativeFunctionDefinition returns program::NativeFunctionDefinition:
 	(exported?='export')?
-	'native' (checked?='checked' | 'unchecked') ('fn' | 'function')  name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)?
+	'native' (checked?='checked' | 'unchecked') ('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' ':' typeSpecifier=TypeSpecifier
 	'header' header=STRING ';'
 ;
 
 FunctionDefinition returns program::FunctionDefinition:
 	(exported?='export')?
-	('fn' | 'function') ('<' typeParameters+=GenericFunctionTypeParameter (',' typeParameters+=GenericFunctionTypeParameter)* '>')? name=ID '(' (parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? ')' (':' typeSpecifier=TypeSpecifier)?
-	(body = ProgramBlock)?
+	('fn' | 'function') ('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
+	name=ID '(' 
+		(parameters+=FunctionParameterDeclaration (',' parameters+=FunctionParameterDeclaration)*)? 
+	')' 
+	typeSpecifier=OptionalTypeSpecifier
+	body = FunctionProgramBlock
 ;
 
-GenericFunctionTypeParameter returns types::TypeParameter: 
-	name=ID ('<:' bound=[types::Type])?
+OptionalTypeSpecifier returns types::TypeSpecifier:
+	(':' TypeSpecifier) | ({types::NullTypeSpecifier})
 ;
 
 FunctionParameterDeclaration returns program::FunctionParameterDeclaration:
@@ -82,7 +94,7 @@ FunctionParameterDeclaration returns program::FunctionParameterDeclaration:
 ;
 
 VariableDeclaration returns program::VariableDeclaration: 
-	(writeable ?= 'var' | 'let') name=ID (':' typeSpecifier=TypeSpecifier)? ('=' initialization=Expression)? ';'
+	(writeable ?= 'var' | 'let') name=ID typeSpecifier=OptionalTypeSpecifier ('=' initialization=Expression)? ';'
 ;
 
 EventHandlerDeclaration returns program::EventHandlerDeclaration: 
@@ -105,12 +117,21 @@ SystemEventSource returns program::SystemEventSource:
 	origin=[platform::AbstractSystemResource] '.' source=[types::Event]
 ;
 
+ReturnParameterDeclaration returns program::ReturnParameterDeclaration:
+	{program::ReturnParameterDeclaration} typeSpecifier=NullTypeSpecifier
+;
+
+FunctionProgramBlock returns program::ProgramBlock:
+	{program::ProgramBlock}
+	'{' content+=ReturnParameterDeclaration (content+=AbstractStatement)* '}'
+;
+
 ProgramBlock returns program::ProgramBlock:
 	{program::ProgramBlock}
 	'{' (content+=AbstractStatement)* '}'
 ;
 
-AbstractStatement returns program::AbstractStatement:
+AbstractStatement returns expressions::AbstractStatement:
 	(
 	  VariableDeclaration 
 	| ExpressionStatement
@@ -124,29 +145,32 @@ AbstractStatement returns program::AbstractStatement:
 	| WhereIsStatement
 	)
 ;
+ExpressionStatementWithoutTerminator returns expressions::AbstractStatement:
+	{expressions::ExpressionStatement} expression=AssignmentExpression
+;
 
-ExpressionStatement returns program::ExpressionStatement:
-	expression=Expression ';'
+ExpressionStatement returns expressions::AbstractStatement:
+	ExpressionStatementWithoutTerminator ';'
 ;
 
 @Override
 Literal returns expressions::Literal:
-	ArrayLiteral | BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral;
+	ArrayLiteral | BoolLiteral | HexLiteral | BinaryLiteral | IntLiteral | DoubleLiteral | FloatLiteral | StringLiteral | InterpolatedStringLiteral;
 
 ArrayLiteral returns program::ArrayLiteral:
 	{program::ArrayLiteral}
-	'[' (values+=Literal (',' values += Literal)*)? ']'
+	'[' (values+=Expression (',' values += Expression)*)? ']'
 ;
 
 @Override 
-PrimaryExpression returns expressions::Expression:
+PrimaryExpression returns types::Expression:
 	PrimitiveValueExpression
 	| FeatureCall
 	| NewInstanceExpression
-	| InterpolatedStringExpression
 	| DereferenceExpression
 	| ReferenceExpression
 ;
+
 
 DereferenceExpression returns program::DereferenceExpression hidden():
 	'*' expression=PrimaryExpression
@@ -156,38 +180,14 @@ ReferenceExpression returns program::ReferenceExpression hidden():
 	'&' variable=FeatureCall
 ;
 
-// no need to capture as its own expression
-@Override ParenthesizedExpression returns expressions::Expression:
-    '(' Expression ')'
-;
-
-@Override
-FeatureCall returns expressions::Expression:
-    (ElementReferenceExpression | ParenthesizedExpression) (
-    	({expressions::FeatureCall.owner=current} '.' feature=[ecore::EObject] (=> operationCall?='('(arguments+=Argument (',' arguments+=Argument)*)?')')?)
-	  | ({program::ArrayAccessExpression.owner=current} '[' (arraySelector=arraySelector) ']')
-    )*
-;
-
-@Override
-ElementReferenceExpression returns expressions::Expression:
-	{expressions::ElementReferenceExpression} reference=[ecore::EObject|ID]
-	(=> operationCall?='('	(arguments+=Argument (',' arguments+=Argument)*)?	')' )?;
-
-arraySelector returns expressions::Expression:
-	  Expression ({program::ValueRange.lowerBound=current} ':' (upperBound=Expression)?)?
-	| ({program::ValueRange} ':' (upperBound=Expression)?)
-;
-
 NewInstanceExpression returns program::NewInstanceExpression:
-	'new' type=TypeSpecifier operationCall?='(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
+	'new' type=UnqualifiedPresentTypeSpecifier '(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
 ;
 
-InterpolatedStringExpression returns program::InterpolatedStringExpression hidden(): 
-	{program::InterpolatedStringExpression}
-	'`' ((=>'${' content+=Expression '}') | (text+=(ID|ReservedKeywords|ReservedSymbols|STRING|WS|IntAsString)))* '`'
+UnqualifiedPresentTypeSpecifier returns types::TypeReferenceSpecifier:
+	type=[types::Type|ID] (WS? '<' (WS? typeArguments+=TypeSpecifierArgument (WS? ',' WS? typeArguments+=TypeSpecifierArgument)* WS? '>'))?
 ;
-IntAsString returns ecore::EString: INT;
+
 
 DoWhileStatement returns program::DoWhileStatement: 
 	'do' body=ProgramBlock 'while' '(' condition=Expression ')'
@@ -198,7 +198,7 @@ AbstractLoopStatement returns program::AbstractLoopStatement:
 		( {program::ForEachStatement} iterator=ForEachLoopIteratorVariableDeclaration =>'in' iterable=Expression )
 		| ({program::ForStatement} (loopVariables += ForLoopVariableDeclaration (',' loopVariables += ForLoopVariableDeclaration)*)? ';'
 			condition = Expression ';'
-			(postLoopStatements += (Expression) (',' postLoopStatements += (Expression))*)? )
+			(postLoopStatements += (ExpressionStatementWithoutTerminator) (',' postLoopStatements += (ExpressionStatementWithoutTerminator))*)? )
 	)')' body=ProgramBlock
 ;
 
@@ -207,7 +207,7 @@ ForEachLoopIteratorVariableDeclaration returns program::ForEachLoopIteratorVaria
 ;
 
 ForLoopVariableDeclaration returns program::VariableDeclaration:
-	writeable ?= 'var' name=ID (':' typeSpecifier=TypeSpecifier)? '=' initialization=Expression;
+	writeable ?= 'var' name=ID typeSpecifier=OptionalTypeSpecifier '=' initialization=Expression;
 
 IfStatement returns program::IfStatement:
 	'if' '(' condition=Expression ')' 	
@@ -224,13 +224,30 @@ WhileStatement returns program::WhileStatement:
 	'while' '(' condition=Expression ')' body=ProgramBlock
 ;
 
-ReturnStatement returns program::ReturnStatement:
-	{program::ReturnStatement} 
-	'return' (value=Expression)? ';'
+ReturnStatement returns expressions::AbstractStatement: 
+	'return' (
+		(ReturnValueStatement) | 
+		({program::ReturnStatement})
+	) ';'
+;
+
+ReturnValueStatement returns expressions::ExpressionStatement:
+	{expressions::ExpressionStatement} expression=ReturnValueExpression
+;
+ReturnValueExpression returns program::ReturnValueExpression:
+	{program::ReturnValueExpression} expression=Expression 
+	// the following constructs a proxy to the return parameter. It doesn't consume any tokens.
+	varRef=ReturnParameterDereference
+;
+ReturnParameterDereference returns program::DereferenceExpression:
+	{program::DereferenceExpression} expression=(ReturnParameterReference)
+;
+ReturnParameterReference returns program::ReturnParameterReference:
+	{program::ReturnParameterReference}
 ;
 
 WhereIsStatement returns program::WhereIsStatement:
-	'where' '(' matchElement=ElementReferenceExpression ')' '{'
+	'where' '(' matchElement=Expression ')' '{'
 		(isCases += IsCase)*
 	'}'
 ;
@@ -279,72 +296,3 @@ CatchStatement returns program::CatchStatement:
 	'catch' '(' exceptionType=[types::ExceptionTypeDeclaration] ')' body=ProgramBlock
 ;
 
-ReservedKeywords:
-	'alias-of' |
-	'alt' |
-	'alternative' |
-	'catch' |
-	'checked' |
-	'constructor' |
-	'do' |
-	'else' |
-	'enum' |
-	'every' |
-	'exception' |
-	'export' |
-	'extends' |
-	'finally' |
-	'fn' |
-	'for' |
-	'function' |
-	'generated' |
-	'generator' |
-	'header' |
-	'hour' |
-	'hours' |
-	'if' |
-	'import' |
-	'is' |
-	'isother' |
-	'let' |
-	'millisecond' |
-	'milliseconds' |
-	'minute' |
-	'minutes' |
-	'native' |
-	'native-type' |
-	'package' |
-	'return' |
-	'second' |
-	'seconds' |
-	'setup' |
-	'size-inferrer' |
-	'static' |
-	'struct' |
-	'subtype-of' |
-	'throw' |
-	'try' |
-	'type' |
-	'unchecked' |
-	'validator' |
-	'var' |
-	'where' |
-	'while'
-;
-
-ReservedSymbols:
-	'{' | '}' |
-	',' | ';' |
-	':' | '.' |
-	'(' | ')' |
-	'[' | ']' |
-	'+' | '-' |
-	'*' | '/' |
-	'%' | '\\'| 
-	'&&' | '||' |
-	'&' | '|' |
-	'=' | '==' |
-	'!' | '<' | 
-	'>' | '<=' |
-	'>=' | '!='
-;

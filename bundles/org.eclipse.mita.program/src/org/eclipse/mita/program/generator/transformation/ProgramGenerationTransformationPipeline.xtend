@@ -16,25 +16,23 @@ package org.eclipse.mita.program.generator.transformation
 import org.eclipse.mita.program.Program
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
-import org.eclipse.mita.base.expressions.Expression
+import org.eclipse.mita.base.types.Expression
 
 class ProgramGenerationTransformationPipeline implements ITransformationPipelineInfoProvider {
 	
+	@Inject CoerceTypesStage coerceTypesStage
 	@Inject AddExceptionVariableStage addExceptionVariableStage
 	@Inject EscapeWhitespaceInStringStage escapeWhitespaceInStringStage
 	@Inject UnravelModalityAccessStage unravelModalityAccessStage
 	@Inject GroupModalityAccessStage groupModalityAccessStage
-	@Inject ResolveExtensionMethodsStage resolveExtensionMethodsStage
-	@Inject ResolveGeneratedTypeConstructorStage resolveGeneratedTypeConstructorStage
-	@Inject UnravelFunctionCallsStage unravelFunctionCallsStage
 	@Inject UnravelInterpolatedStringsStage unravelInterpolatedStringsStage
-	@Inject ResolveEnumValuesStage resolveEnumValuesStage
 	@Inject PrepareLoopForFunctionUnvravelingStage prepareLoopForFunctionUnvravelingStage
 	@Inject PrepareArrayRuntimeChecksStage prepareArrayRuntimeChecksStage
 	@Inject UnravelLiteralArraysStage unravelLiteralArrayReturnStage
 	@Inject EnforceOperatorPrecedenceStage enforceOperatorPrecedenceStage
+	@Inject UnravelFunctionCallsStage unravelFunctionCallsStage
 
-	public def transform(Program program) {
+	def transform(Program program) {
 		val stages = getOrderedStages();
 
 		var result = program;
@@ -44,7 +42,7 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 		return result;
 	}
 	
-	public override boolean willBeUnraveled(EObject obj) {
+	override boolean willBeUnraveled(EObject obj) {
 		if(obj instanceof Expression) {
 			for(stage : orderedStages) {
 				if(stage instanceof AbstractUnravelingStage) {
@@ -64,19 +62,17 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 
 	protected def getOrderedStages() {
 		return #[
+			coerceTypesStage,
 			addExceptionVariableStage,
 			escapeWhitespaceInStringStage,
 			unravelModalityAccessStage,
 			groupModalityAccessStage,
-			resolveExtensionMethodsStage,
-			resolveGeneratedTypeConstructorStage,
-			unravelFunctionCallsStage,
 			unravelInterpolatedStringsStage,
-			resolveEnumValuesStage,
 			prepareLoopForFunctionUnvravelingStage,
 			prepareArrayRuntimeChecksStage,
 			unravelLiteralArrayReturnStage,
-			enforceOperatorPrecedenceStage
+			enforceOperatorPrecedenceStage,
+			unravelFunctionCallsStage
 		].sortBy[ x | x.order ];
 	}
 

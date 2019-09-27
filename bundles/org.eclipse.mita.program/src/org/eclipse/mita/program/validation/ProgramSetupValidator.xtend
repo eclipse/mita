@@ -14,26 +14,16 @@
 package org.eclipse.mita.program.validation
 
 import com.google.inject.Inject
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.types.StructureType
-import org.eclipse.mita.base.types.SumAlternative
-import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesPackage
-import org.eclipse.mita.base.types.validation.TypeValidator
 import org.eclipse.mita.platform.Instantiability
 import org.eclipse.mita.program.ProgramPackage
 import org.eclipse.mita.program.SystemResourceSetup
-import org.eclipse.mita.program.inferrer.ProgramDslTypeInferrer
 import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
 
 class ProgramSetupValidator extends AbstractDeclarativeValidator {
-	
-	@Inject ProgramDslTypeInferrer inferrer
-	@Inject TypeValidator typeValidator
-
 	public static val String INCOMPATIBLE_VALUE_TYPE_MSG = "The type '%s' is not compatible with the configuration item's type '%s'";
 	public static val String INCOMPATIBLE_VALUE_TYPE_CODE = "incompatible_value_type";
 	
@@ -50,39 +40,18 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	
 	@Check(CheckType.FAST)
 	def checkConfigurationItemValues(SystemResourceSetup setup) {
-		// check config item value types match
-		for (value : setup.configurationItemValues) {
-			val itemValue = value.value;
-			if(itemValue === null) return;
-
-			val configItemType = inferrer.infer(value.item);
-			val valueType = inferrer.infer(itemValue);
-			typeValidator.assertAssignable(configItemType, valueType, String.format(INCOMPATIBLE_VALUE_TYPE_MSG, valueType, configItemType), [
-				error(it.getMessage(), value, ProgramPackage.Literals.CONFIGURATION_ITEM_VALUE__VALUE);
-			]);
-			
-			if(itemValue instanceof ElementReferenceExpression) {
-				val ref = itemValue.reference;
-				if(ref instanceof SumAlternative || ref instanceof StructureType) {
-					/* do nothing, it's ok */
-				} else if(ref instanceof Type) {
-					error(String.format("Value has to be an instance of '%s'", configItemType), value,
-						ProgramPackage.eINSTANCE.configurationItemValue_Value, INCOMPATIBLE_VALUE_TYPE_CODE);
-				}
-			}
-		}
 
 		// check config item values are unique
-		setup.configurationItemValues.groupBy[x| x.item.name ].entrySet.filter[x|x.value.length > 1].forEach [ x |
+		setup.configurationItemValues.groupBy[x| x.item?.name ].entrySet.filter[x|x.value.length > 1].forEach [ x |
 			error(String.format(CONFIG_ITEM_VALUE_NOT_UNIQUE_MSG, x.key), x.value.last,
 				ProgramPackage.eINSTANCE.configurationItemValue_Item, CONFIG_ITEM_VALUE_NOT_UNIQUE_MSG);
 		]
 
 		// check all mandatory config items are present
-		var missingConfigItems = setup.type.configurationItems
+		var missingConfigItems = setup.type?.configurationItems
 		?.filter[required] // item is mandatory
 		?.filter[!setup.configurationItemValues.map[c|c.item].contains(it)] // item is not contained in setup
-		if (!missingConfigItems.empty) {
+		if (missingConfigItems === null || !missingConfigItems.empty) {
 			error('Missing configuration items: ' + missingConfigItems.map[c|c.name].join(', '), null,
 				MISSING_CONIGURATION_ITEM_CODE)
 		}
@@ -102,14 +71,14 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	@Check(CheckType.FAST)
 	def checkSetupNaming(SystemResourceSetup setup) {
 		val setupType = setup.type;
-		if(setupType.instantiable == Instantiability.MANY || setupType.instantiable == Instantiability.NAMED_SINGLETON) {
+		if(setupType?.instantiable == Instantiability.MANY || setupType?.instantiable == Instantiability.NAMED_SINGLETON) {
 			// must be named
 			if(setup.name === null || setup.name.trim.empty) {
 				val proposal = '''setup «setupType.name.toFirstLower» : «setupType.name» { }'''
 				error(String.format(SETUP_MUST_HAVE_NAME_MSG, proposal), setup,
 					ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE, SETUP_MUST_HAVE_NAME_CODE);
 			}
-		} else if(setupType.instantiable == Instantiability.NONE) {
+		} else if(setupType?.instantiable == Instantiability.NONE) {
 			// cannot be named
 			if(setup.name !== null && !setup.name.trim.empty) {
 				error(ProgramSetupValidator.SETUP_MUST_NOT_HAVE_NAME_MSG, setup,
@@ -120,10 +89,10 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	
 	@Check(CheckType.FAST)
 	def checkSetupIsSingleton(SystemResourceSetup setup) {
-		if(setup.type.instantiable == Instantiability.NONE || setup.type.instantiable == Instantiability.NAMED_SINGLETON) {
+		if(setup.type?.instantiable == Instantiability.NONE || setup.type?.instantiable == Instantiability.NAMED_SINGLETON) {
 			val allSetupsForThisType = setup.eResource.resourceSet.allContents
 				.filter(SystemResourceSetup)
-				.filter[ it.type.name == setup.type.name ];
+				.filter[ it.type?.name == setup.type?.name ];
 			if(!allSetupsForThisType.tail.empty) {
 				// more than two setups for this system resource exist. That's a problem.
 				error("This system resource must only be setup once", setup, ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__TYPE);

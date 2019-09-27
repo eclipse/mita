@@ -13,21 +13,23 @@
 
 package org.eclipse.mita.program.generator
 
-import org.eclipse.mita.program.NewInstanceExpression
-import org.eclipse.mita.program.VariableDeclaration
 import com.google.inject.Inject
+import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.types.TypeSpecifier
-import org.eclipse.mita.base.types.typesystem.ITypeSystem
+import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.typesystem.infra.SubtypeChecker
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.program.NewInstanceExpression
 
 /**
  * Interface for type generators.
  */
 abstract class AbstractTypeGenerator implements IGenerator {
 
-	@Inject ITypeSystem typeSystem
-
+	@Inject SubtypeChecker subtypeChecker;
+ 
 	@Inject
 	protected TypeGenerator typeGenerator
 	
@@ -37,35 +39,30 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	/**
 	 * Produces a code fragment with the actual type specifier
 	 */
-	def CodeFragment generateTypeSpecifier(TypeSpecifier type, EObject context) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)»''')
+	def CodeFragment generateTypeSpecifier(AbstractType type, EObject context) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)»''')
 	}
 	
 	/**
 	 * Produces a variable declaration for a variable of a generated type
 	 */
-	def CodeFragment generateVariableDeclaration(TypeSpecifier type, VariableDeclaration stmt) {
-		codeFragmentProvider.create('''«typeGenerator.code(type)» «stmt.name»;''')
+	def CodeFragment generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
+		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
 	/**
 	 * Produces a new instance of the type
 	 */
-	def CodeFragment generateNewInstance(TypeSpecifier type, NewInstanceExpression expr);
-
-	/**
-	 * Checks if this type supports a particular expression within its type hierarchy
-	 */
-	def boolean checkExpressionSupport(TypeSpecifier type, AssignmentOperator operator, TypeSpecifier otherType) {
-		return operator == AssignmentOperator.ASSIGN && typeSystem.haveCommonType(type?.type, otherType?.type);
-	}
+	def CodeFragment generateNewInstance(AbstractType type, NewInstanceExpression expr);
 	
 	/**
-	 * Produces code which implements an assignment operation. This function will only be executed if
-	 * {@link #checkExpressionSupport) returned true for the corresponding types.
+	 * Produces code which implements an assignment operation. 
+	 * Every generator should be able to at least handle AssignmentOperator.ASSIGN. 
+	 * left can be used for size inference, but might not exist, for example when copying inner structures.
+	 * leftName might be a C expression (for example `(*_result)`), to generate temporary variable names use cVariablePrefix. 
 	 */
-	def CodeFragment generateExpression(TypeSpecifier type, EObject left, AssignmentOperator operator, EObject right) {
-		return codeFragmentProvider.create('''«left» «operator.literal» «right»;''');
+	def CodeFragment generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {
+		return codeFragmentProvider.create('''«leftName» «operator.literal» «right»;''');
 	}
 	
 	/**
@@ -75,10 +72,17 @@ abstract class AbstractTypeGenerator implements IGenerator {
 		return CodeFragment.EMPTY;
 	}
 	
+	def CodeFragment generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
+		return codeFragmentProvider.create('''
+		ERROR: CANT COERCE FROM «from» to «to» (expr.eClass = «expr.eClass.name»). THIS IS MOST LIKELY A BUG IN THE COMPILER, PLEASE REPORT
+		''')
+	}
+	
 	/**
 	 * Produces header definitions, called per different instance of type arguments.
+	 * For now implementors need to check that all data types contained in type are bound to an actual type (instanceof TypeVariable is false). 
 	 */
-	def CodeFragment generateHeader(TypeSpecifier type) {
+	def CodeFragment generateHeader(EObject context, AbstractType type) {
 		return CodeFragment.EMPTY;
 	}
 }

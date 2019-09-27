@@ -16,8 +16,9 @@
  */
 package org.eclipse.mita.base.ui
 
-import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
 import com.google.inject.Binder
+import org.eclipse.mita.base.ui.index.MitaWorkspaceProjectsState
+import org.eclipse.mita.base.ui.opener.LibraryURIEditorOpener
 import org.eclipse.ui.PlatformUI
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
 import org.eclipse.xtext.ui.LanguageSpecific
@@ -33,4 +34,13 @@ class TypeDslUiModule extends AbstractTypeDslUiModule {
 		if (PlatformUI.isWorkbenchRunning())
 			binder.bind(IURIEditorOpener).annotatedWith(LanguageSpecific).to(LibraryURIEditorOpener);
 	}
+	
+	override configure(Binder binder) {
+		super.configure(binder)
+	}
+	
+	override bindIAllContainersState$Provider() {
+		return MitaWorkspaceProjectsState.Provider;
+	}
+	
 }

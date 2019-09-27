@@ -13,18 +13,18 @@
 
 package org.eclipse.mita.program.generator.internal
 
-import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.program.generator.CompilationContext
-import org.eclipse.mita.program.generator.IComponentConfiguration
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import java.util.HashMap
 import java.util.Map
 import java.util.NoSuchElementException
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.Expression
 import org.eclipse.mita.base.expressions.FeatureCall
-import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.Singleton
+import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.SystemResourceSetup
+import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.IComponentConfiguration
+import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 
 class MapBasedComponentConfiguration implements IComponentConfiguration {
 	
@@ -39,7 +39,7 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	}
 	
 	
-	private final Map<String, ConfigItemValue> configurationItems;
+	final Map<String, ConfigItemValue> configurationItems;
 	
 	new(AbstractSystemResource resource, CompilationContext context, SystemResourceSetup setup) {
 		configurationItems = new HashMap();
@@ -75,16 +75,19 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	
 	override getEnumerator(String key) {
 		val expr = getExpression(key)?.reduce;
-		if(expr instanceof Enumerator) {
-			return expr;
-		} else {
-			return null;
+		if(expr instanceof SumTypeRepr) {
+			val constructor = expr.constructor;
+			if(constructor instanceof Singleton) {
+				return constructor;
+			}	
 		}
+		return null;
 	}
+
 	
-	override getInteger(String key) {
+	override getLong(String key) {
 		val expr = getExpression(key)?.reduce;
-		if(expr instanceof Integer) {
+		if(expr instanceof Long) {
 			return expr;
 		} else {
 			return null;
@@ -116,22 +119,10 @@ class MapBasedComponentConfiguration implements IComponentConfiguration {
 	/**
 	 * Reduces an expression to it's root value. This function is useful when generating
 	 * code from configuration item values. It behaves as follows:
-	 *   if expression is FeatureCall: return expression.feature
-	 *   if expression is ElementReferenceExpression: return reference
-	 *   if expression is not null: return staticValueOf(expression)
-	 *   else null
-	 * 
+	 * staticValueOf(expression)
 	 */
 	protected static def reduce(Expression expression) {
-		return if(expression instanceof FeatureCall) {
-			expression.feature;
-		} else if(expression instanceof ElementReferenceExpression) {
-			expression.reference;
-		} else if(expression !== null) {
-			StaticValueInferrer.infer(expression, [x | ])
-		} else {
-			null;
-		};
+		return StaticValueInferrer.infer(expression, [x | ]);
 	}
 	
 }

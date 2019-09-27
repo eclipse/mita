@@ -1,0 +1,85 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.signalinstance.SignalInstanceTest 
+Workspace {
+	Project "testproject" {
+	}  
+}
+END_SETUP */
+
+package test;
+import platforms.unittest; 
+
+setup connectivity : MyConnectivity {
+	// XPECT infos --> "<auto>.CFG_VAL_1() has type ∗MyConfigItemValues(CFG_VAL_1() | CFG_VAL_2() | CFG_VAL_3())" at ".CFG_VAL_1"
+	var signal_instance00 = vci00(p01=true, p02=.CFG_VAL_1);
+	var signal_instance01 = vci01(20);
+	var signal_instance03 = vci03(5);
+	var signal_instance04 = vci04(6);
+}
+
+fn accessWithoutReadOrWrite() {
+	/* XPECT errors ---
+		"Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
+	--- */
+	var x1 = connectivity.signal_instance00;
+}
+
+// XPECT errors ---> "Signal instances and modalities cannot be passed as parameters." at "siginst<uint32>"
+fn functionWithSiginstParameter(p : siginst<uint32>) { 
+}
+
+// XPECT warnings ---> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "functionReturningSiginst"
+fn functionReturningSiginst() : siginst<bool> {
+	// XPECT errors --> "Signal instances must be used immediately. Add .read() or .write() after signal_instance00" at "signal_instance00"
+	return connectivity.signal_instance00;
+}
+
+fn useSiginstCorrectly() {
+	// The write at line ~81 makes the type system think the return type of signal_instance00 is modality<xint8>. 
+	// However because of type class unification we already know that x1 is of type bool.
+	// Therefore the assignment results in an error.
+	/* XPECT errors ---
+		"Function read cannot be used here: bool, A" at "read"
+		"connectivity.signal_instance00().read() (:: A) has a different type than x1 (:: B)" at "connectivity.signal_instance00.read()"
+	--- */ 
+	// XPECT inferredType ---> bool
+	var x1 = connectivity.signal_instance00.read();
+	
+	// XPECT inferredType ---> uint16
+	var x2 = connectivity.signal_instance01.read();
+	
+	// XPECT inferredType ---> string<uint32>
+	var x3 = connectivity.signal_instance03.read();
+	
+	// XPECT inferredType ---> array<int32, uint32>
+	let x4 = connectivity.signal_instance04.read();
+	
+	// this should work
+	if(true) {
+		let x5 = connectivity.signal_instance04.read();
+	}
+	
+	connectivity.signal_instance00.write(true);
+	connectivity.signal_instance01.write(20);
+	
+	connectivity.signal_instance03.write("asdf");
+	let data = [1,2,3,4];
+	connectivity.signal_instance04.write(data);
+	
+	// use as non-extension method call
+	
+	/* XPECT errors ---
+		"Function read cannot be used here: bool, A" at "read"
+		"read(<null>=connectivity.signal_instance00()) (:: A) has a different type than x6 (:: B)" at "read(connectivity.signal_instance00)"
+	--- */ 
+	// XPECT inferredType ---> bool
+	var x6 = read(connectivity.signal_instance00);
+	
+	write(connectivity.signal_instance00, true);
+}
+
+fn stuffSiginstShouldValidate() {
+	/* XPECT errors ---
+		"Incompatible types: xint8 is not subtype of bool." at "write"
+	--- */
+	connectivity.signal_instance00.write(20);
+}

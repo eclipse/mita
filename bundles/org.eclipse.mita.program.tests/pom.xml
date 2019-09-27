@@ -6,12 +6,12 @@
 	<parent>
 		<groupId>org.eclipse.mita</groupId>
 		<artifactId>org.eclipse.mita.releng</artifactId>
-		<version>0.1.0-SNAPSHOT</version>
+		<version>0.2.0-SNAPSHOT</version>
 		<relativePath>..</relativePath>
 	</parent>
 	<groupId>org.eclipse.mita</groupId>
 	<artifactId>org.eclipse.mita.program.tests</artifactId>
-	<version>0.1.0-SNAPSHOT</version>
+	<version>0.2.0-SNAPSHOT</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<build>
@@ -39,9 +39,9 @@
 				<version>${tycho-version}</version>
 				<configuration>
 					<environmentVariables>
-          	<MitaCLI>${basedir}/../org.eclipse.mita.cli/target/org.eclipse.mita.cli-0.1.0-SNAPSHOT-cli.jar</MitaCLI>
-          	<x86platform>${basedir}/../../platforms/org.eclipse.mita.platform.x86/target/org.eclipse.mita.platform.x86-0.1.0-SNAPSHOT.jar</x86platform>
-          	<stdlib>${basedir}/../org.eclipse.mita.library.stdlib/target/org.eclipse.mita.library.stdlib-0.1.0-SNAPSHOT.jar</stdlib>
+          	<MitaCLI>${basedir}/../org.eclipse.mita.cli/target/org.eclipse.mita.cli-0.2.0-SNAPSHOT-cli.jar</MitaCLI>
+          	<x86platform>${basedir}/../../platforms/org.eclipse.mita.platform.x86/target/org.eclipse.mita.platform.x86-0.2.0-SNAPSHOT.jar</x86platform>
+          	<stdlib>${basedir}/../org.eclipse.mita.library.stdlib/target/org.eclipse.mita.library.stdlib-0.2.0-SNAPSHOT.jar</stdlib>
           </environmentVariables>
 					<excludes>
 						<exclude>**/*Test.java</exclude>

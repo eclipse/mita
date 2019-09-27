@@ -15,8 +15,8 @@ package org.eclipse.mita.program.generator;
 
 import java.util.NoSuchElementException;
 
-import org.eclipse.mita.base.expressions.Expression;
-import org.eclipse.mita.base.types.Enumerator;
+import org.eclipse.mita.base.types.Expression;
+import org.eclipse.mita.base.types.Singleton;
 
 /**
  * Component configurations describe the setup of a component based on user specification
@@ -70,7 +70,7 @@ public interface IComponentConfiguration {
 	 * @param key the key to get a value for
 	 * @return the value of the configuration item named key
 	 */
-	public Integer getInteger(String key);
+	public Long getLong(String key);
 	
 	/**
 	 * Retrieves an enumerator value from this configuration. If the key is unknown or the value stored with this key
@@ -81,7 +81,7 @@ public interface IComponentConfiguration {
 	 * @param key the key to get a value for
 	 * @return the value of the configuration item named key
 	 */
-	public Enumerator getEnumerator(String key);
+	public Singleton getEnumerator(String key);
 	
 	/**
 	 * Retrieves the raw expression from this configuration. If the key is unknown or does not have a default,

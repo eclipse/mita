@@ -22,7 +22,8 @@ import com.google.inject.Injector
 import com.google.inject.Module
 import com.google.inject.Provider
 import com.google.inject.name.Named
-import java.util.LinkedList
+import java.util.ArrayList
+import java.util.List
 import org.eclipse.core.resources.IFile
 import org.eclipse.core.resources.IProject
 import org.eclipse.core.resources.IWorkspaceRoot
@@ -33,6 +34,8 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.resource.ResourceSet
 import org.eclipse.mita.base.scoping.ILibraryProvider
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.Program
@@ -52,8 +55,11 @@ import org.eclipse.xtext.generator.AbstractGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import org.eclipse.xtext.generator.IGeneratorContext
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
+import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.xbase.lib.Functions.Function1
+
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 /**
  * Generates code from your model files on save.
@@ -63,7 +69,7 @@ import org.eclipse.xtext.xbase.lib.Functions.Function1
 class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResourceSet {
 
 	@Inject 
-	protected extension ProgramDslTraceExtensions
+	protected extension ProgramDslTraceExtensions traceExtensions
 	
 	@Inject
 	protected extension ProgramCopier
@@ -75,7 +81,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	protected extension GeneratorUtils
 	
 	@Inject(optional=true)
-	protected IPlatformMakefileGenerator makefileGenerator
+	protected PlatformBuildSystemGenerator buildSystemGenerator
 
 	@Inject
 	protected EntryPointGenerator entryPointGenerator
@@ -113,6 +119,9 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 	@Inject
 	protected PluginResourceLoader resourceLoader
 	
+	@Inject
+	Provider<XtextResourceSet> resourceSetProvider;
+		
 
 	override void doGenerate(Resource resource, IFileSystemAccess2 fsa, IGeneratorContext context) {
 		resource.resourceSet.doGenerate(fsa);
@@ -148,10 +157,10 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		}
 		
 		// Include libraries such as the stdlib in the compilation context
-		val libs = libraryProvider.defaultLibraries;
-		val stdlibUri = libs.filter[it.toString.endsWith(".mita")]
-		val stdlib = stdlibUri.map[input.getResource(it, true).contents.filter(Program).head]
-	
+		val libs = libraryProvider.standardLibraries;
+		val stdlibUri = libs.filter[it.toString.endsWith(MitaBaseResource.PROGRAM_EXT)]
+		val stdlib = stdlibUri.map[input.getResource(it, true)].filterNull.map[it.contents.filter(Program).head].force;
+		
 		/*
 		 * Steps:
 		 *  1. Copy all programs
@@ -160,21 +169,40 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		 *  4. Generate shared files
 		 *  5. Generate user code per input model file
 		 */
+		val copyResourceSet = resourceSetProvider.get();
 		val compilationUnits = (resourcesToCompile)
 			.map[x | x.contents.filter(Program).head ]
 			.filterNull
-			.map[x | transformer.get.transform(x.copy) ]
+			.map[x | 
+				val resource = x.eResource;	
+				if(resource instanceof MitaBaseResource) {	
+					if(resource.latestSolution === null) {	
+						x.doType();	
+					}	
+				}
+				val copy = x.copy(copyResourceSet);
+				BaseUtils.ignoreChange(copy, [
+					transformer.get.transform(copy)
+				]);
+				return copy;
+			]
 			.toList();
 		
 		val someProgram = compilationUnits.head;
-		val platform = modelUtils.getPlatform(someProgram);
-		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);		
+		
+		compilationUnits.forEach[
+			doType(it);			
+		]
+		
+		val platform = modelUtils.getPlatform(input, someProgram);
+		platform.doType();
+		
+		injectPlatformDependencies(resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module);
 		
 		val context = compilationContextProvider.get(compilationUnits, stdlib);
 		
-		val files = new LinkedList<String>();
-		val userTypeFiles = new LinkedList<String>();
-		
+		val files = new ArrayList<String>();
+		val userTypeFiles = new ArrayList<String>();
 		
 		// generate all the infrastructure bits
 		files += fsa.produceFile('main.c', someProgram, entryPointGenerator.generateMain(context));
@@ -186,14 +214,14 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			files += fsa.produceFile('base/MitaTime.c', someProgram, timeEventGenerator.generateImplementation(context));
 		}
 		
-		for (resourceOrSetup : context.getResourceGraph().nodes.filter(EObject)) {
+		for (resourceOrSetup : (context.getResourceGraph().nodes.filter(EObject) + #[platform]).toSet) {
 			if(resourceOrSetup instanceof AbstractSystemResource
 			|| resourceOrSetup instanceof SystemResourceSetup) { 
-				files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».h''', resourceOrSetup as EObject, systemResourceGenerator.generateHeader(context, resourceOrSetup));
-				files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».c''', resourceOrSetup as EObject, systemResourceGenerator.generateImplementation(context, resourceOrSetup));
-				files += systemResourceGenerator.generateAdditionalFiles(fsa, context, resourceOrSetup);
+				generate(files, fsa, context, resourceOrSetup);
 			}
 		}
+		
+		
 	
 		for (program : compilationUnits.filter[containsCodeRelevantContent]) {
 			// generate the actual content for this resource
@@ -214,10 +242,22 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		
 		files += getUserFiles(input);
 		
-		val codefragment = makefileGenerator?.generateMakefile(compilationUnits, files)
-		if(codefragment !== null && codefragment != CodeFragment.EMPTY)
-			fsa.produceFile('Makefile', someProgram, codefragment);
+		buildSystemGenerator?.generateFiles(fsa, context, files)
 	}
+	
+	def generate(List<String> files, IFileSystemAccess2 fsa, CompilationContext context, EObject resourceOrSetup) {
+		files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».h''', resourceOrSetup, systemResourceGenerator.generateHeader(context, resourceOrSetup));
+		files += fsa.produceFile('''base/«resourceOrSetup.fileBasename».c''', resourceOrSetup, systemResourceGenerator.generateImplementation(context, resourceOrSetup));
+		files += systemResourceGenerator.generateAdditionalFiles(fsa, context, resourceOrSetup);
+	}
+	
+	def doType(EObject program) {
+		val resource = program.eResource;
+		if(resource instanceof MitaBaseResource) {
+			resource.collectAndSolveTypes(program);
+		}
+	}
+	
 		
 	def Iterable<String> getUserFiles(ResourceSet set) {
         val resource = set.resources.head;   

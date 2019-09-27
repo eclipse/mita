@@ -16,9 +16,9 @@ package org.eclipse.mita.program.ui.highlighting
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.FeatureCall
+import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.GeneratedFunctionDefinition
-import org.eclipse.mita.program.InterpolatedStringExpression
 import org.eclipse.xtext.ide.editor.syntaxcoloring.DefaultSemanticHighlightingCalculator
 import org.eclipse.xtext.ide.editor.syntaxcoloring.IHighlightedPositionAcceptor
 import org.eclipse.xtext.nodemodel.INode
@@ -38,12 +38,12 @@ class ProgramDslSemanticHighlightingCalculator extends DefaultSemanticHighlighti
 	}
 	
 	protected dispatch def highlight(FeatureCall obj, INode node, IHighlightedPositionAcceptor acceptor) {
-		if(obj.feature instanceof Modality) {
+		if(obj.reference instanceof Modality) {
 			acceptor.addPosition(node.offset, node.length, ProgramDslHighlightingConfiguration.SENSOR_ID);
-		} else if(obj.feature instanceof GeneratedFunctionDefinition) {
-			val owner = obj.owner;
+		} else if(obj.reference instanceof GeneratedFunctionDefinition) {
+			val owner = obj.arguments.head.value;
 			if(owner instanceof FeatureCall) {
-				if(owner.feature instanceof Modality) {
+				if(owner.reference instanceof Modality) {
 					acceptor.addPosition(node.offset, node.length, ProgramDslHighlightingConfiguration.SENSOR_ID);
 				}
 			}
@@ -56,7 +56,7 @@ class ProgramDslSemanticHighlightingCalculator extends DefaultSemanticHighlighti
 		}
 	}
 	
-	protected dispatch def highlight(InterpolatedStringExpression obj, INode node, IHighlightedPositionAcceptor acceptor) {
+	protected dispatch def highlight(InterpolatedStringLiteral obj, INode node, IHighlightedPositionAcceptor acceptor) {
 		acceptor.addPosition(node.offset, node.length, ProgramDslHighlightingConfiguration.STRING_ID);				
 	}
 	

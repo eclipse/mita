@@ -1,0 +1,22 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+/*XPECT errors ---
+	"Couldn't resolve reference to Type 's'." at "s"
+	"Couldn't resolve reference to Type 's'." at "s"
+--- */
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "returnArrayBad"
+fn returnArrayBad(s: uint32): array<int32, s> {
+	/*XPECT errors ---
+		"Couldn't resolve reference to Type 's'." at "s"
+		"Couldn't resolve reference to Type 's'." at "s"
+	--- */
+	return new array<int32, s>();
+}

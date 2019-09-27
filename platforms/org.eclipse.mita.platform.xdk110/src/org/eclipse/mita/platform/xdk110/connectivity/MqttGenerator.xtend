@@ -19,16 +19,16 @@ import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
-import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
+import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.xtext.generator.IFileSystemAccess2
 import java.util.stream.Collectors
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 
@@ -42,7 +42,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	protected extension StatementGenerator statementGenerator
 	
 	@Inject
-	protected GeneratorUtils generatorUtils
+	protected extension GeneratorUtils generatorUtils
 	
 	override generateAdditionalFiles(IFileSystemAccess2 fsa) {
 		val brokerUri = new URI(configuration.getString("url"));
@@ -194,6 +194,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("stdint.h", true, IncludePath.HIGH_PRIORITY)
 		.addHeader("XdkCommonInfo.h", true)
 		.addHeader("BCDS_WlanNetworkConfig.h", true)
+		.addHeader(setup.getConfigurationItemValue("transport").baseName + ".h", false)
 		
 		if(isSecure) {
 			result.addHeader("HTTPRestClientSecurity.h", true)
@@ -291,7 +292,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		«generatorUtils.generateExceptionHandler(setup, "exception")»
 
 		mqttSession.MQTTVersion = 4;
-		mqttSession.keepAliveInterval = 60;
+		mqttSession.keepAliveInterval = «configuration.getExpression("keepAliveInterval")?.code»;
 		mqttSession.cleanSession = false;
 		«IF lastWill instanceof SumTypeRepr»
 			«IF lastWill.hasLastWill»
@@ -338,6 +339,16 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PARSING_ERROR);
 		}
 		
+		if(exception == RETCODE_OK) {
+			TimerHandle_t pingTimerHandle = xTimerCreate("mqttPing", UINT32_C(500*«configuration.getExpression("keepAliveInterval").code»), pdTRUE, NULL, mqttPing);
+			if(pingTimerHandle != NULL) {
+				xTimerStart(pingTimerHandle, 0);
+			}
+			else {
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Enable : Failed to create ping task")»
+			}
+		}
+		
 		return exception;
 		''')
 		.addHeader("BCDS_BSP_Board.h", true)
@@ -346,28 +357,30 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.addHeader("HTTPRestClientSecurity.h", true)
 		.addHeader("time.h", true)
 		.addHeader("XDK_TimeStamp.h", true)
+		.addHeader("Serval_StringDescr.h", true)
+		.addHeader("timers.h", true)
 		result.setPreamble('''
 		«IF auth instanceof SumTypeRepr»
 			«IF auth.isLogin()»
-				«val username = auth.properties.get("username")»
-				«val password = auth.properties.get("password")»
+				«val username = auth.properties.get("username").code»
+				«val password = auth.properties.get("password").code»
 				StringDescr_T username;
-				const char* usernameBuf = «username?.code»;
+				const char* usernameBuf = «username»;
 				
 				StringDescr_T password;
-				const char* passwordBuf = «password?.code»;
+				const char* passwordBuf = «password»;
 			«ENDIF»
 		«ENDIF»
 		
 		«IF lastWill instanceof SumTypeRepr»
 			«IF lastWill.hasLastWill»
 				StringDescr_T lastWillTopic;
-				const char* lastWillTopicBuf = «lastWill.properties.get("topic")?.code»;
+				const char* lastWillTopicBuf = «lastWill.properties.get("topic").code»;
 				StringDescr_T lastWillMessage;
-				const char* lastWillMessageBuf = «lastWill.properties.get("message")?.code»;
+				const char* lastWillMessageBuf = «lastWill.properties.get("message").code»;
 			«ENDIF»
 		«ENDIF»
-		''').addHeader("Serval_StringDescr.h", true);
+		''')
 
 
 		return result;
@@ -383,6 +396,9 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	override generateAdditionalImplementation() {
+		val brokerUri = new URI(configuration.getString("url"));
+		val isSecure = brokerUri.scheme == "mqtts";
+		
 		codeFragmentProvider.create('''
 		/**
 		 * @brief Callback function used by the stack to communicate events to the application.
@@ -416,6 +432,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			case MQTT_CONNECT_SEND_FAILED:
 			case MQTT_CONNECT_TIMEOUT:
 				mqttIsConnected = false;
+				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT_Event : Connection timeout -> disconnected. Will try to reconnect on next send.")»
+				Mqtt_disconnect(&mqttSession);
 				if (pdTRUE != xSemaphoreGive(mqttConnectHandle))
 				{
 					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
@@ -462,6 +480,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 					exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_SEMAPHORE_ERROR);
 				}
 				break;
+			case MQTT_PING_RESPONSE_RECEIVED:
+				break;
 			default:
 				«loggingGenerator.generateLogStatement(LogLevel.Info, "MqttEventHandler : Unhandled MQTT Event: %x", codeFragmentProvider.create('''event'''))»
 				break;
@@ -475,16 +495,52 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			return RC_OK;
 		}
 		
+		static void mqttPing(void* userParameter1, uint32_t userParameter2) {
+			if(!mqttIsConnected) {
+				«loggingGenerator.generateLogStatement(LogLevel.Warning, "MQTT: Ping failed: not connected")»
+				return;
+			}
+			retcode_t rc = Mqtt_ping(&mqttSession);
+			if(RC_OK != rc) {
+				mqttIsConnected = false;
+				Mqtt_disconnect(&mqttSession);
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT: Ping failed: %x", codeFragmentProvider.create('''rc'''))»
+			}
+		}
+		
 		/**
 		 * Connects to a configured backend.
 		 */
-		Retcode_T connectToBackend(void) {
+		static Retcode_T connectToBackend(void) {
+			Retcode_T exception = NO_EXCEPTION, tempException = NO_EXCEPTION;
+			bool exceptionHappened = false;
+			«IF isSecure»
+			tempException = SNTP_Disable();
+			if(!exceptionHappened && tempException != NO_EXCEPTION) {
+				exception = tempException;
+				exceptionHappened = true;
+			}
+			«ENDIF»
+			exception = CheckWlanConnectivityAndReconnect();
+			if(!exceptionHappened && tempException != NO_EXCEPTION) {
+				exception = tempException;
+				exceptionHappened = true;
+			}
+			«IF isSecure»
+			exception = SNTP_Enable();
+			if(!exceptionHappened && tempException != NO_EXCEPTION) {
+				exception = tempException;
+				exceptionHappened = true;
+			}
+			«ENDIF»
+			«generatorUtils.generateExceptionHandler(null, "exception")»
+			
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttConnectHandle, 0UL);
 			retcode_t rc = Mqtt_connect(&mqttSession);
 			if(RC_OK != rc) {
-				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT: 0x%d", codeFragmentProvider.create('''rc'''))»
+				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect MQTT: 0x%x", codeFragmentProvider.create('''rc'''))»
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_FAILED);
 			}
 			if (pdTRUE != xSemaphoreTake(mqttConnectHandle, pdMS_TO_TICKS(30000)))
@@ -495,6 +551,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			if (!mqttIsConnected)
 			{
 				«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Connect : Failed to connect")»
+				Mqtt_disconnect(&mqttSession);
 				return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_CONNECT_STATUS_ERROR);
 			}
 			return RETCODE_OK;
@@ -503,6 +560,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		.setPreamble('''
 		static retcode_t MqttEventHandler(MqttSession_T* session, MqttEvent_t event, const MqttEventData_t* eventData);
 		static Retcode_T connectToBackend(void);
+		static void mqttPing(void* userParameter1, uint32_t userParameter2);
 		''')
 	}
 
@@ -516,9 +574,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 	}
 
 	override generateSignalInstanceSetter(SignalInstance signalInstance, String resultName) {
-		val qosRaw = getQosLevel(signalInstance);
-		val qos = getQosFromInt(qosRaw);
-
+		val qos = getQosLevel(signalInstance);
+		
 		return codeFragmentProvider.create('''
 			Retcode_T exception = RETCODE_OK;
 			
@@ -530,6 +587,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				}
 				else {
 					«loggingGenerator.generateLogStatement(LogLevel.Error, "MQTT_Write : Connection failed!")»
+					return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 				}
 			}
 			«generatorUtils.generateExceptionHandler(signalInstance, "exception")»
@@ -542,7 +600,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 			/* This is a dummy take. In case of any callback received
 			 * after the previous timeout will be cleared here. */
 			(void) xSemaphoreTake(mqttPublishHandle, 0UL);
-			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, *value, strlen(*value), (uint8_t) «qos», false))
+			if (RC_OK != Mqtt_publish(&mqttSession, publishTopicDescription, value->data, value->length, (uint8_t) «qos», false))
 			{
 			    exception = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_MQTT_PUBLISH_FAILED);
 			}
@@ -567,8 +625,8 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 
 	protected def int getQosLevel(SignalInstance instance) {
 		val qosRaw = ModelUtils.getArgumentValue(instance, 'qos');
-		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]) as Integer;
-		return Math.min(Math.max(qosRawValue ?: 0, 0), 3);
+		val qosRawValue = if(qosRaw === null) null else StaticValueInferrer.infer(qosRaw, [ ]) as Long  ?: 0;
+		return Math.min(Math.max(qosRawValue.intValue, 0), 3);
 	}
 
 	protected def String getTopicName(SignalInstance instance) {

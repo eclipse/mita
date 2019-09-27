@@ -25,8 +25,8 @@ public class EmptyPlatformGeneratorModule extends AbstractGenericModule {
 		return IPlatformExceptionGenerator.NullImpl.class;
 	}
 
-	public Class<? extends IPlatformMakefileGenerator> bindIPlatformMakefileGenerator() {
-		return IPlatformMakefileGenerator.NullImpl.class;
+	public Class<? extends PlatformBuildSystemGenerator> bindPlatformBuildSystemGenerator() {
+		return PlatformMakefileGenerator.NullImpl.class;
 	}
 
 	public Class<? extends IPlatformStartupGenerator> bindIPlatformStartupGenerator() {

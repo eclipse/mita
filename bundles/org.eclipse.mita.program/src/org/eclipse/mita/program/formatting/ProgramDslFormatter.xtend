@@ -107,15 +107,15 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 			config.setNoSpace.before(k.first)
 			config.setSpace(" ").before(k.second)
 		]
-	}
+	} 
 
 	def formatGeneratedType(FormattingConfig config) {
-		config.setIndentationIncrement.before(grammar.generatedTypeAccess.generatorKeyword_7)
-		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeAccess.generatorKeyword_7)
-		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeAccess.sizeInferrerKeyword_9)
-		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeAccess.validatorKeyword_11_0)
+		config.setIndentationIncrement.before(grammar.generatedTypeAccess.generatorKeyword_6)
+		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeAccess.generatorKeyword_6)
+		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeAccess.sizeInferrerKeyword_8)
+		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeAccess.validatorKeyword_10_0)
 		config.setLinewrap(1, 1, 2).before(grammar.generatedTypeConstructorRule)
-		config.setIndentationDecrement.after(grammar.generatedTypeAccess.semicolonKeyword_13)
+		config.setIndentationDecrement.after(grammar.generatedTypeAccess.semicolonKeyword_12)
 	}
 
 	def formatStructureField(FormattingConfig config) {
@@ -141,10 +141,10 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 	}
 
 	def formatGeneratedFunctionDefinition(FormattingConfig config) {
-		config.setIndentationIncrement.before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_9)
-		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_9)
-		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.validatorKeyword_11_0)
-		config.setIndentationDecrement.after(grammar.generatedFunctionDefinitionAccess.semicolonKeyword_12);
+		config.setIndentationIncrement.before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_9_0_0)
+		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_9_0_0)
+		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.validatorKeyword_9_1_0)
+		config.setIndentationDecrement.after(grammar.generatedFunctionDefinitionAccess.semicolonKeyword_10);
 	}
 
 	def formatFeatureCalls(FormattingConfig config) {
