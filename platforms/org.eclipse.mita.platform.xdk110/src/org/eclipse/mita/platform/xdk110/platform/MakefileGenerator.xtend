@@ -45,7 +45,7 @@ class MakefileGenerator extends PlatformMakefileGenerator {
 		#Please refer BCDS_CFLAGS_COMMON variable in application.mk file
 		#and if any addition flags required then add that flags only in the below macro 
 		#export BCDS_CFLAGS_COMMON = 
-		
+		export BCDS_PRINTF_IN_SDCARD=1
 		«IF isSecure»
 		export SERVAL_TLS_MBEDTLS=1
 		export SERVAL_ENABLE_TLS_CLIENT=1
@@ -54,7 +54,6 @@ class MakefileGenerator extends PlatformMakefileGenerator {
 		export SERVAL_MAX_NUM_MESSAGES=8
 		export SERVAL_MAX_SIZE_APP_PACKET=900
 		export SERVAL_ENABLE_TLS=1
-		
 		export XDK_MBEDTLS_PARSE_INFO=0
 		«ENDIF»
 		
