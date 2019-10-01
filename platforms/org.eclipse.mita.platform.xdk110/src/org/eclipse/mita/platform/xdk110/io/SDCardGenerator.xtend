@@ -97,7 +97,20 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_STORAGE_SDCARD_MOUNT_FAILED);
 				}
 			}
+#if BCDS_PRINTF_IN_SDCARD
+			if (RETCODE_OK == retcode)
+			{
+				SdCardGuardMutex = xSemaphoreCreateMutex();
+				if (NULL == SdCardGuardMutex)
+				{
+					return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
+				}
+			}
+#endif /* BCDS_PRINTF_IN_SDCARD */
 			return retcode;
+		''')
+		.setPreamble('''
+		static SemaphoreHandle_t SdCardGuardMutex = (SemaphoreHandle_t) NULL; /* Mutex to block file operations */
 		''')
 	}
 
@@ -246,5 +259,80 @@ class SDCardGenerator extends AbstractSystemResourceGenerator {
 		} else {
 			codeFragmentProvider.create('''INVALID_ARGUMENT''');
 		}
+	}
+	override generateAdditionalImplementation() {
+		codeFragmentProvider.create('''
+			static Retcode_T Storage_WritePrintf(uint8_t *data, uint32_t len)
+			{
+				Retcode_T retcode = RETCODE_OK;
+				FRESULT sdCardReturn = FR_OK, fileOpenReturn = FR_OK;
+				UINT bytesWritten;
+				FIL fileWriteHandle;
+				char fileName[FF_MAX_LFN];
+
+				if (pdTRUE !=xSemaphoreTake(SdCardGuardMutex, pdMS_TO_TICKS(UINT32_C(STORAGE_MUTEX_TIMEOUT))))
+				{
+					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+					return retcode;
+				}
+
+				snprintf(fileName, FF_MAX_LFN, "XDKinfo%d.txt", FileCounter);
+				fileOpenReturn = f_open(&fileWriteHandle, fileName, FA_WRITE | FA_CREATE_ALWAYS);
+				if (FR_OK == fileOpenReturn)
+				{
+					sdCardReturn = f_lseek(&fileWriteHandle,SDcardOffset);
+				}
+				if ((FR_OK == sdCardReturn) && (FR_OK == fileOpenReturn))
+				{
+					sdCardReturn = f_write(&fileWriteHandle, data, len, &bytesWritten); /* Write it to the destination file */
+					SDcardOffset = SDcardOffset + bytesWritten;
+					if (FR_OK == sdCardReturn)
+					{
+						sdCardReturn = f_sync(&fileWriteHandle);
+					}
+					if(FF_MAX_FILE_SIZE < SDcardOffset)
+					{
+						FileCounter += 1;
+					}
+				}
+				if (FR_OK == fileOpenReturn)
+				{
+					fileOpenReturn = f_close(&fileWriteHandle);
+				}
+				if (pdTRUE !=xSemaphoreGive(SdCardGuardMutex))
+				{
+					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+				}
+				if ((FR_OK != sdCardReturn) || (FR_OK != fileOpenReturn))
+				{
+					retcode = RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_FAILURE);
+				}
+				return retcode;
+			}
+			int RETARGET_WriteChar(uint8_t *data, uint32_t len)
+			{
+				int retVal = 0;
+				Retcode_T retcode = Storage_WritePrintf(data, len);
+				if(RETCODE_OK != retcode)
+				{
+					retVal = -1;
+				}
+				return retVal;
+			}
+			''')
+			.setPreamble('''
+			#define FF_MAX_FILE_SIZE 		UINT64_C(4294967296) /* FatFs file size limit is 4GB */
+			#define STORAGE_MUTEX_TIMEOUT   UINT8_C(1000) /* Mutex timeout for the file operations */
+			static uint64_t SDcardOffset = 0; /* FatFs file offset */
+			static int FileCounter = 1; /* FatFs file name suffix */
+			''')
+		}
+
+	override generateAdditionalHeaderContent() {
+		return codeFragmentProvider.create('''
+		#if BCDS_PRINTF_IN_SDCARD
+			int RETARGET_WriteChar(uint8_t *data, uint32_t len);
+		#endif /* BCDS_PRINTF_IN_SDCARD */
+		''');
 	}
 }
