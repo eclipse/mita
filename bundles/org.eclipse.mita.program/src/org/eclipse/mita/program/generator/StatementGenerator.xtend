@@ -281,8 +281,15 @@ class StatementGenerator {
 		generator.generateAccessPreparationFor(stmt).addHeader(stmt.systemResource.fileBasename + '.h', false);
 	}
 
-	@Traced dispatch def IGeneratorNode code(ArrayAccessExpression stmt) {		
-		'''«stmt.owner.code».data[«stmt.arraySelector.code.noTerminator»]'''
+	@Traced dispatch def IGeneratorNode code(ArrayAccessExpression stmt) {
+		val arraySelector = stmt.arraySelector;
+		if(arraySelector instanceof ValueRange) {
+			// value ranges should be handled by generator. Return reference to element.
+			return '''«stmt.owner.code»''';
+		}
+		else {
+			return '''«stmt.owner.code».data[«stmt.arraySelector.code.noTerminator»]''';
+		}
 	}
 	
 	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
@@ -600,7 +607,7 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(Expression stmt) {
-		'''/* ERROR: unsupported expression «stmt» */'''
+		'''ERROR: unsupported expression «stmt»'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(ExpressionStatement stmt) {

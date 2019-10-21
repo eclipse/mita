@@ -17,6 +17,7 @@ import org.eclipse.mita.program.Program
 import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.program.generator.CompilationContext
 
 class ProgramGenerationTransformationPipeline implements ITransformationPipelineInfoProvider {
 	
@@ -33,12 +34,12 @@ class ProgramGenerationTransformationPipeline implements ITransformationPipeline
 	@Inject UnravelFunctionCallsStage unravelFunctionCallsStage
 	@Inject AddEventHandlerRingbufferStage addEventHandlerRingbufferStage
 
-	def transform(Program program) {
+	def transform(CompilationContext context, Program program) {
 		val stages = getOrderedStages();
 
 		var result = program;
 		for(stage : stages) {
-			result = stage.transform(this, result);
+			result = stage.transform(this, context, result);
 		}
 		return result;
 	}

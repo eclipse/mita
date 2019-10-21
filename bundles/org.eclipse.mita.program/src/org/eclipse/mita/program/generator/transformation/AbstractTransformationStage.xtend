@@ -24,6 +24,7 @@ import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.program.generator.CompilationContext
 
 abstract class AbstractTransformationStage {
 	
@@ -57,7 +58,7 @@ abstract class AbstractTransformationStage {
 		return x + 10;
 	}
 	
-	def transform(ITransformationPipelineInfoProvider pipeline, Program program) {
+	def transform(ITransformationPipelineInfoProvider pipeline, CompilationContext context, Program program) {
 		pipelineInfoProvider = pipeline;
 		
 		program.doTransform();

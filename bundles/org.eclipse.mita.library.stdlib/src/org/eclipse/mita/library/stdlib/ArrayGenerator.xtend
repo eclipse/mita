@@ -51,6 +51,7 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import org.eclipse.xtend2.lib.StringConcatenationClient
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.types.TypeUtils
+import org.eclipse.mita.program.model.ModelUtils
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -176,9 +177,10 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 	def generateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj) {
 		val objLit = obj.obj.orElse(null)?.castOrNull(PrimitiveValueExpression);
+		val inferredSize = obj.type.inferredSize?.eval;
 		return cf(
 		'''
-			«IF objLit !== null»«obj.type.inferredSize?.eval»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«obj.code».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»
+			(«IF inferredSize !== null»«inferredSize»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«obj.code».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»)
 		''');
 	} 
 	
@@ -190,8 +192,8 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val dataType = left.type.dataType;
 		if(!TypeUtils.isGeneratedType(context, dataType)) {
 			return cf('''
-				«typeGenerator.code(context, dataType)» «cVariablePrefix»_temp[«lit.values.length»] = {«FOR v: lit.values SEPARATOR(", ")»«v.code»«ENDFOR»};
-				memcpy(«left.code».data, «cVariablePrefix»_temp, sizeof(«typeGenerator.code(context, dataType)»)*«lit.values.length»);
+				«typeGenerator.code(context, dataType)» «cVariablePrefix»_temp_«context.occurrence»[«lit.values.length»] = {«FOR v: lit.values SEPARATOR(", ")»«v.code»«ENDFOR»};
+				memcpy(«left.code».data, «cVariablePrefix»_temp_«context.occurrence», sizeof(«typeGenerator.code(context, dataType)»)*«lit.values.length»);
 				«left.code».length = «lit.values.length»;
 			''').addHeader("string.h", true)
 		}
@@ -218,6 +220,11 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return null;
 	}
 
+	def toCComment(CodeWithContext c) {
+		// TODO replace */ with something else
+		return c.obj.map[cf('''«ModelUtils.getOriginalSourceCode(it)»''')].orElse(c.code);
+	}
+
 	override generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {
 		if(right === null) {
 			return cf('''''')
@@ -232,9 +239,10 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		val temporaryBufferName = cf('''«cVariablePrefix»_temp_«context.occurrence»''')
 		
-		val valRange = if(right instanceof ArrayAccessExpression) {
-			if(right.arraySelector instanceof ValueRange) {
-				right.arraySelector as ValueRange;	
+		val rightObj = right.obj.orElse(null);
+		val valRange = if(rightObj instanceof ArrayAccessExpression) {
+			if(rightObj.arraySelector instanceof ValueRange) {
+				rightObj.arraySelector as ValueRange;	
 			}
 		}
 		
@@ -287,12 +295,11 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		val lengthModifyStmt = cf('''
 			«lengthLeft» «operator.literal» «lengthRight»«IF valRange !== null»«IF valRange.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«IF valRange.upperBound !== null» - («lengthRight» - «valRange.upperBound.code.noTerminator»)«ENDIF»«ENDIF»;
 		''');
-				
-		val typeSize = cf('''sizeof(«getDataTypeCCode(context, left.type)»)''')
+		
 		
 		cf('''
 		«capacityCheck»
-		/* «left.code» «operator.literal» «codeRightExpr» */
+		/* «left.toCComment» «operator.literal» «right.toCComment» */
 		«copyContents(
 			context, 
 			cf('''«cVariablePrefix»_i'''),

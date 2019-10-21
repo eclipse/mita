@@ -112,5 +112,7 @@ platform UnitTestPlatform {
 	has MyConnectivity
 	has MySingletonConnectivity
 	has MyConnectivityWithRequires
+	
+	configuration-item queueSize: uint32 = 10
 }
 

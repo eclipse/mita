@@ -70,9 +70,10 @@ class StringGenerator extends ArrayGenerator {
 		if(operator != AssignmentOperator.ASSIGN) {
 			return null;
 		}
+		val charBuffer = cf('''«cVariablePrefix»_temp_«context.occurrence»''');
 		return cf('''
-			char «cVariablePrefix»_temp[«lit.value.length»] = "«lit.value»";
-			memcpy(«left.code».data, «cVariablePrefix»_temp, sizeof(char)*«lit.value.length»);
+			char «charBuffer»[«lit.value.length»] = "«lit.value»";
+			memcpy(«left.code».data, «charBuffer», sizeof(char)*«lit.value.length»);
 			«left.code».length = «lit.value.length»;
 		''').addHeader("string.h", true)
 	}
@@ -81,7 +82,7 @@ class StringGenerator extends ArrayGenerator {
 		if(operator != AssignmentOperator.ASSIGN) {
 			return null;
 		}
-		val bufferName = cf('''«cVariablePrefix»_temp''');
+		val bufferName = cf('''«cVariablePrefix»_temp_«context.occurrence»''');
 		val size = left.type.inferredSize?.eval
 		// need to allocate size+1 since snprintf always writes a zero byte at the end.
 		return cf('''

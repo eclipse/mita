@@ -20,17 +20,25 @@ import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.PresentTypeSpecifier
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.base.types.Type
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.TypesPackage
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.platform.AbstractSystemResource
+import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
 import org.eclipse.mita.program.SystemEventSource
+import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.VariableDeclaration
+import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.generator.IComponentConfiguration
 import org.eclipse.mita.program.generator.MainSystemResourceGenerator
+import org.eclipse.mita.program.generator.internal.MapBasedComponentConfiguration
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.naming.QualifiedName
 import org.eclipse.xtext.scoping.IScopeProvider
@@ -42,12 +50,29 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 
 	@Inject
 	IScopeProvider scopeProvider
+	
+	@Inject
+	protected extension GeneratorUtils
 		
 	@Inject(optional=true)
 	protected MainSystemResourceGenerator queueSizeProvider
 
 	override getOrder() {
 		return before(AddExceptionVariableStage.ORDER);
+	}
+	
+	// HACK for preparation
+	protected def IComponentConfiguration getConfiguration(CompilationContext context, AbstractSystemResource component, SystemResourceSetup setup) {
+		return new MapBasedComponentConfiguration(component, context, setup);
+	}
+		
+	override transform(ITransformationPipelineInfoProvider pipeline, CompilationContext context, Program program) {
+		val componentAndSetup = context.platform.getComponentAndSetup(context);
+		val component = componentAndSetup.key;
+		val setup = componentAndSetup.value;
+		
+		queueSizeProvider.prepare(context, component, setup, getConfiguration(context, component, setup), #[]);
+		return super.transform(pipeline, context, program);
 	}
 	
 	protected dispatch def void doTransform(EventHandlerDeclaration decl) {

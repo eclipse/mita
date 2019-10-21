@@ -60,6 +60,7 @@ import org.eclipse.xtext.service.DefaultRuntimeModule
 import org.eclipse.xtext.xbase.lib.Functions.Function1
 
 import static extension org.eclipse.mita.base.util.BaseUtils.force
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 /**
  * Generates code from your model files on save.
@@ -176,6 +177,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		 *  5. Generate user code per input model file
 		 */
 		val copyResourceSet = resourceSetProvider.get();
+		val untransformedCompilationContext = compilationContextProvider.get(resourcesToCompile.map[it.contents.head.castOrNull(Program)].filterNull, stdlib);
 		val compilationUnits = (resourcesToCompile)
 			.map[x | x.contents.filter(Program).head ]
 			.filterNull
@@ -188,7 +190,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 				}
 				val copy = x.copy(copyResourceSet);
 				BaseUtils.ignoreChange(copy, [
-					transformer.get.transform(copy)
+					transformer.get.transform(untransformedCompilationContext, copy)
 				]);
 				return copy;
 			]
