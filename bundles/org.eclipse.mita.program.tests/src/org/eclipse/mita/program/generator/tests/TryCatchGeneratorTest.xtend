@@ -53,7 +53,7 @@ class TryCatchGeneratorTest extends AbstractGeneratorTest {
 		''');
 		ast.assertNoCompileErrors();
 		
-		val eventHandler = ast.value.findFunction("HandleEvery100Millisecond1")
+		val eventHandler = ast.value.findFunction("HandleEvery100Millisecond1_worker")
 		assertNotNull("No event handler was generated", eventHandler);
 		val body = eventHandler.body as IASTCompoundStatement;
 		
@@ -110,7 +110,7 @@ class TryCatchGeneratorTest extends AbstractGeneratorTest {
 		''');
 		ast.assertNoCompileErrors();
 		
-		val eventHandler = ast.value.findFunction("HandleEvery100Millisecond1")
+		val eventHandler = ast.value.findFunction("HandleEvery100Millisecond1_worker")
 		assertNotNull("No event handler was generated", eventHandler);
 		val body = eventHandler.body as IASTCompoundStatement;
 		
@@ -225,7 +225,7 @@ class TryCatchGeneratorTest extends AbstractGeneratorTest {
 		''');
 		ast.assertNoCompileErrors();
 		
-		val eventHandler = ast.value.findFunction("HandleEvery100Millisecond1")
+		val eventHandler = ast.value.findFunction("HandleEvery100Millisecond1_worker")
 		assertNotNull("No event handler was generated", eventHandler);
 		val body = eventHandler.body as IASTCompoundStatement;
 		
