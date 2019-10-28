@@ -43,6 +43,7 @@ export generated fn <T, S> length(self : array<T, S>) : uint32 generator "org.ec
 export generated fn <T, S> capacity(self : array<T, S>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$CapacityhGenerator";
 export generated fn <S> length(self : string<S>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$LengthGenerator";
 export generated fn <S> capacity(self : string<S>) : uint32 generator "org.eclipse.mita.library.stdlib.ArrayGenerator$CapacityGenerator";
+export native unchecked function <T, S1, S2> __PLUS__(x: array<T, S1>, y: array<T, S2>): array<T, S1 + S2> header "string.h";
 
 //
 ///*

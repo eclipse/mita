@@ -33,12 +33,12 @@ class Xdk110PlatformGenerator extends MainSystemResourceGenerator {
 	}
 	
 	override generateAdditionalHeaderContent() {
-		return codeFragmentProvider.create('''Retcode_T XDK110_powerStatus_read(PowerStatus* result);''').addHeader("xdk110Types.h", false);
+		return codeFragmentProvider.create('''Retcode_T XDK110_powerStatus_read(PowerStatus_t* result);''').addHeader("xdk110Types.h", false);
 	}
 	
 	override generateEnable() {
 		return codeFragmentProvider.create('''''').setPreamble('''
-		Retcode_T XDK110_powerStatus_read(PowerStatus* result) {
+		Retcode_T XDK110_powerStatus_read(PowerStatus_t* result) {
 			uint16_t batteryVoltage = 0;
 			uint16_t* batteryVoltagePtr = &batteryVoltage;
 			Retcode_T exception = NO_EXCEPTION;
@@ -72,7 +72,7 @@ class Xdk110PlatformGenerator extends MainSystemResourceGenerator {
 		val varName = accessPreparation.uniqueIdentifier.toFirstLower;
 		
 		return codeFragmentProvider.create('''
-			PowerStatus «varName»;
+			PowerStatus_t «varName»;
 			exception = «powerStatusReadMethod»(&«varName»);
 			«generateExceptionHandler(accessPreparation, "exception")»
 		''')

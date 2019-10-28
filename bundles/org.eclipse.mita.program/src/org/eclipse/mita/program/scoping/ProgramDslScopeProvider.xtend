@@ -448,32 +448,36 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	def scope_InstanceTypeParameter_ofType(EObject context, EReference ref) {
 		scope_TypeSpecifier_type(context, ref);
 	}
+	
+	def createFeatureCallScope(EObject context, EReference ref, IScope scope) {
+		if(context instanceof FeatureCallWithoutFeature) {
+			val normalizer = new ImportNormalizer(QualifiedName.create("<auto>"), true, false);
+			return new ImportScope(#[normalizer], scope, null, null, false);
+		}
+		else if(context instanceof ElementReferenceExpression) {
+			if(context.isOperationCall && context.arguments.size > 0) {
+				val owner = context.arguments.head.value;
+				
+				val ownerText = BaseUtils.getText(owner, ref) ?: "";
+				val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
+				return new ImportScope(#[normalizer], scope, null, null, false);
+			}	
+		}
+		return scope;
+	}
 
 	def scope_ElementReferenceExpression_reference(EObject context, EReference ref) {
 		val setup = EcoreUtil2.getContainerOfType(context, SystemResourceSetup)
-		val superScope = if (setup !== null) {
+		if (setup !== null) {
 			// we're in a setup block which has different scoping rules. Let's use those
-			new FilteringScope(scopeInSetupBlock(context, ref), [globalElementFilterInSetup.apply(it.EClass)]);
+			val scope = createFeatureCallScope(context, ref, scopeInSetupBlock(context, ref));
+			return new FilteringScope(scope, [globalElementFilterInSetup.apply(it.EClass)]);
 		} else {
-			new FilteringScope(delegate.getScope(context, ref), [globalElementFilter.apply(it.EClass)]);	
+			val superScope = new FilteringScope(delegate.getScope(context, ref), [globalElementFilter.apply(it.EClass)]);
+			val scope = createFeatureCallScope(context, ref, superScope);
+			val typeKindNormalizer = new TypeKindNormalizer();
+			return new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
 		}
-		val scope = (
-			if(context instanceof FeatureCallWithoutFeature) {
-				val normalizer = new ImportNormalizer(QualifiedName.create("<auto>"), true, false);
-				new ImportScope(#[normalizer], superScope, null, null, false);
-			} else if(context instanceof ElementReferenceExpression) {
-				if(context.isOperationCall && context.arguments.size > 0) {
-					val owner = context.arguments.head.value;
-					
-					val ownerText = BaseUtils.getText(owner, ref) ?: "";
-					val normalizer = new ImportNormalizer(QualifiedName.create(ownerText), true, false);
-					new ImportScope(#[normalizer], superScope, null, null, false);
-					
-				}
-			}) ?: superScope;
-		val typeKindNormalizer = new TypeKindNormalizer();
-		return new ImportScope(#[typeKindNormalizer], new ElementReferenceScope(scope, context), null, null, false);
-		
 	}
 
 	dispatch def IScope scopeInSetupBlock(SignalInstance context, EReference reference) {

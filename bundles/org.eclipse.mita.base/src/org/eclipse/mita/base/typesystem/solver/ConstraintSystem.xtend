@@ -487,7 +487,7 @@ class ConstraintSystem {
 		val scope = scopeProvider.getScope(origin, tvp.reference);
 		val scopeElements = scope.getElements(tvp.targetQID);
 		
-		val replacementObjects = scopeElements.map[EObjectOrProxy].force.toSet;
+		val replacementObjects = scopeElements.map[EObjectOrProxy];
 		if(replacementObjects.empty) { 
 			// redo to allow easier debugging
 			scopeProvider.getScope(origin, tvp.reference);
@@ -495,7 +495,7 @@ class ConstraintSystem {
 			return #[new BottomType(origin, '''Couldn't resolve reference to «tvp.reference.EReferenceType.name» '«tvp.targetQID»'.''', tvp.reference)];
 		}
 				
-		return replacementObjects.map[
+		return replacementObjects.toSet.map[
 			val uri = EcoreUtil.getURI(it);
 			if(!symbolTable.containsKey(uri)) {
 				// this means that there is an object in scope that we have not seen during constraint generation

@@ -31,6 +31,7 @@ import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 
 // handles equality and max
 class SizeConstraintSolver implements IConstraintSolver {
@@ -112,8 +113,8 @@ class SizeConstraintSolver implements IConstraintSolver {
 			case 'xint8' :  4L
 			case 'bool'  :  1L
 			// https://stackoverflow.com/a/1934253
-			case 'double': BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
-			case 'float':  BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+			case 'f64'   : BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
+			case 'f32'   : BaseUtils.DOUBLE_PRECISION + 1L + 1L + 5L + 1L
 			case 'string':    {
 				val stringSize = (tsub as TypeConstructorType).typeArguments.last;
 				stringSize;
@@ -187,6 +188,22 @@ class SizeConstraintSolver implements IConstraintSolver {
 		// unify
 		val mgu = mguComputer.compute(constraint._errorMessage, t1, t2);
 		if(!mgu.valid) {
+			if(t1 instanceof LiteralTypeExpression<?>) {
+				val t1v = t1.eval();
+				if(t2 instanceof LiteralTypeExpression<?>) {
+					val t2v = t2.eval();
+					if(t1.eval() != t2.eval()) {
+						return SimplificationResult.failure(#[t1.origin, t2.origin].map[new ValidationIssue('''«t1v» is not equal to «t2v»''', it)])
+					}
+					return SimplificationResult.success(system, Substitution.EMPTY);
+				}
+				else {
+					return doSimplify(system, substitution, typeResolutionOrigin, constraint, t1.typeOf, t2);
+				}
+			}
+			else if(t2 instanceof LiteralTypeExpression<?>) {
+				return doSimplify(system, substitution, typeResolutionOrigin, constraint, t1, t2.typeOf);
+			}
 			return SimplificationResult.failure(mgu.issues);
 		}
 		

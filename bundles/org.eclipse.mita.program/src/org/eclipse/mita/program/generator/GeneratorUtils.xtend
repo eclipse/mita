@@ -80,6 +80,7 @@ import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypeSpecifier
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.core.runtime.NullProgressMonitor
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -129,6 +130,7 @@ class GeneratorUtils {
 					null;
 				}
 				else {
+					file.refreshLocal(0, new NullProgressMonitor);
 			        new BufferedReader(new InputStreamReader(file.getContents(), file.charset));
 				}
 			}
@@ -161,7 +163,8 @@ class GeneratorUtils {
 	}
 	
 	public def String getUniqueIdentifier(EObject obj) {
-		return obj.uniqueIdentifierInternal.replace(".", "_") + "_" + obj.occurrence.toString;
+		val result = obj.uniqueIdentifierInternal.replace(".", "_") + "_" + obj.occurrence.toString;
+		return result;
 	} 
 	
 	private def dispatch String getUniqueIdentifierInternal(Program p) {
