@@ -17,7 +17,6 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
-import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
@@ -65,6 +64,7 @@ import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.NumericMaxType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.EventHandlerVariableDeclaration
@@ -73,7 +73,6 @@ import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.resource.PluginResourceLoader
@@ -81,8 +80,8 @@ import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.diagnostics.Severity
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 
 /**
@@ -301,6 +300,10 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 				else {
 					c.system.associate(c.type, c.tv.origin);
 				}
+			}
+			// signals are hard to type (see PlatformConstraintFactory), and this call's signalInstance parent should have enough information to type the function call anyways.
+			else if(fun instanceof Signal) {
+				return;
 			}
 			else if(fun instanceof Operation) {
 				inferUnmodifiedFrom(c.system, obj, fun.typeSpecifier);

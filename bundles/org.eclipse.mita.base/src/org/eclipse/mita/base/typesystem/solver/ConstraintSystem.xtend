@@ -375,7 +375,7 @@ class ConstraintSystem {
 		
 		val typeVar = getTypeVariable(typeVarOrigin);
 		if(typeVar != t && t !== null) { 
-			addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» must be of type "%2$s"''', typeVarOrigin, null, "")), toHead);
+			addConstraint(new EqualityConstraint(typeVar, t, new ValidationIssue(Severity.ERROR, '''«typeVarOrigin» (:: %1$s) must be of type "%2$s"''', typeVarOrigin, null, "")), toHead);
 		}
 		return typeVar;	
 	}

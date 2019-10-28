@@ -36,6 +36,9 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	protected TypeGenerator typeGenerator
 		
 	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+		val resultVariableCode = resultVariable?.code ?: codeFragmentProvider.create('''
+			«functionCall.uniqueIdentifier»
+		''')
 		val firstArg = functionCall.arguments.get(0)?.value;
 		val siginst = if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {
 			(firstArg as ElementReferenceExpression).reference as SignalInstance;
@@ -48,7 +51,10 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			return codeFragmentProvider.create('''#error No signal instance found in this siginst write call. This should not happen!''')
 		} else if(functionName == 'read') {
 			return codeFragmentProvider.create('''
-			exception = «siginst.readAccessName»(&«resultVariable.code»);
+			«IF resultVariable === null»««« generate a temporary variable 
+			«typeGenerator.code(functionCall, BaseUtils.getType(functionCall))» «resultVariableCode»;
+			«ENDIF»
+			exception = «siginst.readAccessName»(&«resultVariableCode»);
 			«generateExceptionHandler(functionCall, 'exception')»
 			''')
 			.addHeader(siginst.eContainer.fileBasename + '.h', false)
