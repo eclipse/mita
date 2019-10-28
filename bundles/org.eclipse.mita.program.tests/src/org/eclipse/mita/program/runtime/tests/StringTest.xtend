@@ -63,7 +63,9 @@ class StringTest extends AbstractRuntimeTest {
 		val lines = runAtMost(executable, 60);
 		val expectedLines = #["1", "2", "34", "3", "56", "7", "7891011"];
 		for(l1_l2: lines.collect(Collectors.toList).zip(expectedLines)) {
-			Assert.assertEquals(l1_l2.key.trim, l1_l2.value.trim);
+			println(l1_l2);
+			println(l1_l2.key.trim + ", " + l1_l2.value.trim);
+			Assert.assertEquals(l1_l2.key, l1_l2.value);
 		}
 	}
 }

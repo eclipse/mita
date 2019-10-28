@@ -132,7 +132,9 @@ class SumTypesTest extends AbstractRuntimeTest {
 			"v4d(18, 19, 20, 21)"
 		]
 		for(l1_l2: lines.collect(Collectors.toList).zip(expectedLines)) {
-			Assert.assertEquals(l1_l2.key.trim, l1_l2.value);			
+			println(l1_l2);
+			println(l1_l2.key.trim + ", " + l1_l2.value.trim);
+			Assert.assertEquals(l1_l2.key, l1_l2.value);
 		}
 	}
 }
