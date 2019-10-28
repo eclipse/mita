@@ -23,7 +23,11 @@ import org.eclipse.xtext.generator.trace.node.TracedAccessors
 class ProgramDslTraceExtensions {
 
 	override location(EObject obj) {
-		super.location(ProgramCopier.getOrigin(obj) ?: obj);
+		var original = ProgramCopier.getOrigin(obj);
+		if(original?.eResource !== null) {
+			return super.location(original);
+		}
+		return super.location(obj);
 	}
 
 }
