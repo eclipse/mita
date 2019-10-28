@@ -41,6 +41,7 @@ import org.eclipse.xtext.validation.CheckMode
 import org.eclipse.xtext.validation.IResourceValidator
 import org.apache.commons.cli.CommandLine
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
+import org.eclipse.emf.common.notify.Adapter
 
 class CompileCommand extends AbstractCommand {
 	@Inject
@@ -91,7 +92,6 @@ class CompileCommand extends AbstractCommand {
 			println("Loading " + libraryFile);
 			resourceSet.getResource(URI.createURI(libraryFile.replace("\\", "/")), true);
 		}
-		EcoreUtil.resolveAll(resourceSet);
 		validateResources(resourceSet.resources.filter[ it.URI.toString.endsWith('.platform') ]);
 		
 		// load project files
@@ -102,8 +102,10 @@ class CompileCommand extends AbstractCommand {
 				resource.eAdapters.add(new CompileToCAdapter());
 			]);
 			
-		// resolve all
-		EcoreUtil.resolveAll(resourceSet);
+		// resolve all user programs
+		resourceSet.resources.filter[it.eAdapters.exists[adapter | adapter instanceof CompileToCAdapter]].forEach[
+			EcoreUtil.resolveAll(it);	
+		]
 	}
 	
 	protected def validateResources(Iterable<Resource> resources) {

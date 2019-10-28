@@ -162,8 +162,8 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 		val stdlibUri = libs.filter[it.toString.endsWith(MitaBaseResource.PROGRAM_EXT)]
 		val stdlib = stdlibUri.map[input.getResource(it, true)].filterNull.map[it.contents.filter(Program).head].force;
 		
-		val someProgram = resourcesToCompile.map[it.contents.head].filter(Program).head;
-		val platform = modelUtils.getPlatform(input, someProgram);
+		val someProgram1 = resourcesToCompile.map[it.contents.head].filter(Program).head;
+		val platform = modelUtils.getPlatform(input, someProgram1);
 		val platformModule = resourceLoader.loadFromPlugin(platform.eResource, platform.module) as Module;
 		injectPlatformDependencies(this, platformModule);
 		
@@ -196,6 +196,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			]
 			.toList();
 		
+		val someProgram = compilationUnits.head;
 		
 		compilationUnits.forEach[
 			// some transformation stages might force evaluation of resource descriptions. 
