@@ -13,13 +13,20 @@
  
 package org.eclipse.mita.platform.x86.platform
 
-import org.eclipse.mita.program.generator.IPlatformStartupGenerator
-import org.eclipse.mita.program.generator.CompilationContext
 import com.google.inject.Inject
-import org.eclipse.mita.program.generator.CodeFragmentProvider
-import org.eclipse.mita.program.generator.GeneratorUtils
+import java.util.Optional
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.library.stdlib.RingbufferGenerator
+import org.eclipse.mita.library.stdlib.RingbufferGenerator.PushGenerator
+import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.TimeIntervalEvent
+import org.eclipse.mita.program.generator.CodeFragmentProvider
+import org.eclipse.mita.program.generator.CodeWithContext
+import org.eclipse.mita.program.generator.CompilationContext
+import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.generator.IPlatformStartupGenerator
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class StartupGenerator implements IPlatformStartupGenerator {
 	
@@ -29,10 +36,36 @@ class StartupGenerator implements IPlatformStartupGenerator {
 	@Inject 
 	protected extension GeneratorUtils
 	
+	@Inject
+	protected PushGenerator pushGenerator
+	
+	@Inject
+	StdlibTypeRegistry typeRegistry
+	
 	override generateMain(CompilationContext context) {
+		val startupEventHandlers = context.allEventHandlers
+			.map[it -> it.event]
+			.filter[it.value instanceof SystemEventSource]
+			.map[it.key -> it.value as SystemEventSource]
+			.map[it.key -> it.value.source]
+			.filter[it.value.name == "startup"]
+			.map[it.key]
+			.filter[it.payload !== null];
 		return codeFragmentProvider.create('''
 			Mita_initialize();
 			Mita_goLive();
+			int32_t exception = 0;
+			«FOR startupEventHandler: startupEventHandlers»
+				«pushGenerator.generate(
+					startupEventHandler,
+					new CodeWithContext(
+						RingbufferGenerator.wrapInRingbuffer(typeRegistry, startupEventHandler, BaseUtils.getType(startupEventHandler.payload)), 
+						Optional.empty, 
+						codeFragmentProvider.create('''rb_«startupEventHandler.baseName»''')
+					),
+					codeFragmentProvider.create('''getTime()''')
+				)»
+			«ENDFOR»
 			while(1) {
 				int32_t now = getTime();
 				«FOR handler : context.allEventHandlers»
@@ -54,6 +87,11 @@ class StartupGenerator implements IPlatformStartupGenerator {
 				sleepMs(5);
 			}
 			return 0;
+		''')
+		.setPreamble('''
+			«FOR startupEventHandler: startupEventHandlers»					
+				extern ringbuffer_int32_t rb_«startupEventHandler.baseName»;
+			«ENDFOR»
 		''')
 		.addHeader('time.h', true)
 		.addHeader('stdio.h', true)
