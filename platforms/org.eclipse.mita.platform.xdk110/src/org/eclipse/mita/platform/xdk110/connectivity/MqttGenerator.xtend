@@ -36,6 +36,8 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.types.Variance
 import org.eclipse.mita.library.stdlib.RingbufferGenerator
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.program.SystemEventSource
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 
@@ -501,7 +503,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				«FOR handler: eventHandler»
 				«pushGenerator.generate(
 					handler,
-					new CodeWithContext(RingbufferGenerator.wrapInRingbuffer(typeRegistry, handler, BaseUtils.getType(handler.payload)), Optional.empty, codeFragmentProvider.create('''rb_«handler.baseName»''')),
+					new CodeWithContext(RingbufferGenerator.wrapInRingbuffer(typeRegistry, handler, BaseUtils.getType(handler.event.castOrNull(SystemEventSource).source)), Optional.empty, codeFragmentProvider.create('''rb_«handler.baseName»''')),
 					codeFragmentProvider.create('''msg''')
 				)»
 				exception = CmdProcessor_enqueue(&Mita_EventQueue, «handler.handlerName», NULL, 0);

@@ -30,6 +30,7 @@ import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.library.stdlib.RingbufferGenerator
 import org.eclipse.mita.base.util.BaseUtils
 import java.util.Optional
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 
 class ButtonGenerator extends AbstractSystemResourceGenerator {
 
@@ -80,7 +81,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 				«pushGenerator.generate(
 					changedHandler,
 					new CodeWithContext(
-						RingbufferGenerator.wrapInRingbuffer(typeRegistry, changedHandler, BaseUtils.getType(changedHandler.payload)), 
+						RingbufferGenerator.wrapInRingbuffer(typeRegistry, changedHandler, BaseUtils.getType(changedHandler.event.castOrNull(SystemEventSource).source)), 
 						Optional.empty, 
 						codeFragmentProvider.create('''rb_«changedHandler.baseName»''')
 					),

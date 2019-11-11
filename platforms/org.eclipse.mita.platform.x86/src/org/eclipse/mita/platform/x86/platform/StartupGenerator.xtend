@@ -43,23 +43,23 @@ class StartupGenerator implements IPlatformStartupGenerator {
 	StdlibTypeRegistry typeRegistry
 	
 	override generateMain(CompilationContext context) {
-		val startupEventHandlers = context.allEventHandlers
+		val startupEventHandlersAndEvents = context.allEventHandlers
 			.map[it -> it.event]
 			.filter[it.value instanceof SystemEventSource]
 			.map[it.key -> it.value as SystemEventSource]
 			.map[it.key -> it.value.source]
 			.filter[it.value.name == "startup"]
-			.map[it.key]
-			.filter[it.payload !== null];
 		return codeFragmentProvider.create('''
 			Mita_initialize();
 			Mita_goLive();
 			int32_t exception = 0;
-			«FOR startupEventHandler: startupEventHandlers»
+			«FOR startupEventHandler_event: startupEventHandlersAndEvents»
+				«val startupEventHandler = startupEventHandler_event.key»
+				«val event = startupEventHandler_event.value»
 				«pushGenerator.generate(
 					startupEventHandler,
 					new CodeWithContext(
-						RingbufferGenerator.wrapInRingbuffer(typeRegistry, startupEventHandler, BaseUtils.getType(startupEventHandler.payload)), 
+						RingbufferGenerator.wrapInRingbuffer(typeRegistry, startupEventHandler, BaseUtils.getType(event)), 
 						Optional.empty, 
 						codeFragmentProvider.create('''rb_«startupEventHandler.baseName»''')
 					),
@@ -89,8 +89,8 @@ class StartupGenerator implements IPlatformStartupGenerator {
 			return 0;
 		''')
 		.setPreamble('''
-			«FOR startupEventHandler: startupEventHandlers»					
-				extern ringbuffer_int32_t rb_«startupEventHandler.baseName»;
+			«FOR startupEventHandler_event: startupEventHandlersAndEvents»					
+				extern ringbuffer_int32_t rb_«startupEventHandler_event.key.baseName»;
 			«ENDFOR»
 		''')
 		.addHeader('time.h', true)
