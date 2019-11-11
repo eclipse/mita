@@ -74,10 +74,6 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return type?.castOrNull(TypeConstructorType)?.typeArguments?.last?.castOrNull(LiteralTypeExpression) as LiteralTypeExpression<Long>
 	}
 	
-	private def long getFixedSize(EObject stmt) {
-		return stmt.inferredSize?.eval ?: -1L
-	}
-	
 	protected def cf(StringConcatenationClient content) {
 		return codeFragmentProvider.create(content);
 	}
@@ -178,9 +174,11 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	def generateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj) {
 		val objLit = obj.obj.orElse(null)?.castOrNull(PrimitiveValueExpression);
 		val inferredSize = obj.type.inferredSize?.eval;
+		// array literals aren't translated to a C array object, but directly used for initialization of a buffer.
+		// also they are always exactly as long as their member count.  
 		return cf(
 		'''
-			(«IF inferredSize !== null»«inferredSize»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«obj.code».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»)
+			(«IF objLit !== null»«inferredSize»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«obj.code».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»)
 		''');
 	} 
 	
