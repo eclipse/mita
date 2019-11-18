@@ -91,6 +91,10 @@ class AbstractRuntimeTest {
 	}
 	
 	def Stream<String> runAtMost(Path pathToExecutable, int timeInSeconds) {
+		return runAtMost("", pathToExecutable, timeInSeconds);
+	}
+	
+	def Stream<String> runAtMost(String prefix, Path pathToExecutable, int timeInSeconds) {
 		println("running exe...");
 		println(pathToExecutable);
 		println("");
