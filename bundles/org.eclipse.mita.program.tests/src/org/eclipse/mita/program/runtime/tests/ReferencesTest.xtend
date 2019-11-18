@@ -43,7 +43,7 @@ class ReferencesTest extends AbstractRuntimeTest {
 				let x4: anyVec = .vec1d(1);
 				let x5: anyVec = .vec2d(v2d(0,1));
 				let x6 = "foobar";
-				let x7: array<int32> = [1,2,3,4];
+				let x7: array<int32, ?> = [1,2,3,4];
 				printRef(&x1);
 				printRef(&x2);
 				printRef(&x3);
@@ -65,8 +65,8 @@ class ReferencesTest extends AbstractRuntimeTest {
 			 
 			fn printRef(x: &v2d) {
 				println(`v2d(${(*x).x}, ${(*x).y})`);
-			}    
-	  
+			}
+
 			fn printRef(a: &anyVec) {
 				where(*a) { 
 					is(anyVec.vec0d) {

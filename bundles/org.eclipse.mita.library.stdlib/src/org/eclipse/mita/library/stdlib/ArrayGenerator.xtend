@@ -345,6 +345,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 		
+		@Inject
 		protected extension StatementGenerator
 	
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
