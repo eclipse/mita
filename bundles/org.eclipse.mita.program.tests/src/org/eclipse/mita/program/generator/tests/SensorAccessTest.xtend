@@ -34,7 +34,7 @@ class SensorAccessTest extends AbstractGeneratorTest {
 		''');
 		ast.assertNoCompileErrors();
 		
-		val eventHandler = ast.value.findFunction("HandleEvery100Millisecond1_worker")
+		val eventHandler = ast.value.findFunction("HandleEvery100Millisecond_1_worker")
 		assertNotNull("No event handler was generated", eventHandler);
 		val body = eventHandler.body as IASTCompoundStatement;
 		 /*

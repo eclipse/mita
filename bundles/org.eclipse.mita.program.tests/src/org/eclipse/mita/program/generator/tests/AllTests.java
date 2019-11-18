@@ -18,18 +18,18 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @SuiteClasses({ 
+	ArraysTest.class,
 	BasicControlStructuresTest.class,
 	EnumsTest.class,
 	FunctionOverloadingTest.class,
-	SensorAccessTest.class,
-	StructsTest.class,
-	TryCatchGeneratorTest.class,
-	UnravelFunctionCallsTest.class,
-	SumTypesTest.class,
-	SetupTest.class,
 	GlobalAndLocalVariables.class,
-	ArraysTest.class,
-	SetupTest.class
+	PrepareLoopForFunctionUnvravelingStageTest.class,
+	SensorAccessTest.class,
+	SetupTest.class,
+	StructsTest.class,
+	SumTypesTest.class,
+	TryCatchGeneratorTest.class,
+	UnravelFunctionCallsTest.class
 })
 @RunWith(Suite.class)
 public class AllTests {
