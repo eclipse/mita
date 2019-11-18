@@ -18,10 +18,14 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @SuiteClasses({ 
-	HelloWorldTest.class,
-	StringTest.class,
-	ControlflowTest.class,
 	ArraysTest.class,
+	ControlflowTest.class,
+	EpochTimeTest.class,
+	HelloWorldTest.class,
+	MqttTest.class,
+	ReferencesTest.class,
+	RingbufferTest.class,
+	StringTest.class,
 	SumTypesTest.class
 })
 @RunWith(Suite.class)
