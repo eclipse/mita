@@ -83,6 +83,7 @@ import org.eclipse.xtext.diagnostics.Severity
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
+import org.eclipse.mita.base.types.SystemResourceEvent
 
 /**
  * Hierarchically infers the size of a data element.
@@ -200,6 +201,26 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 				it?.setDelegate(this)]
 		}
 		
+		val eventSource = if(obj instanceof EventHandlerVariableDeclaration) {
+			EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration).event?.castOrNull(SystemEventSource); 
+		}
+		else {
+			obj;
+		}
+		val event = if(eventSource instanceof SystemEventSource) {
+			eventSource.source;
+		}
+		else {
+			eventSource;
+		}
+		val platformInferrerCls = if(event instanceof SystemResourceEvent) {
+			event.sizeInferrer;
+		}
+		val platformInferrer = if(platformInferrerCls !== null) { 
+			loader.loadFromPlugin(obj.eResource, platformInferrerCls)?.castOrNull(FunctionSizeInferrer) => [
+				it?.setDelegate(typeInferrer ?: this)]
+		}
+		
 		// all generated elements may supply an inferrer
 		// function calls
 		val functionInferrerCls = if(obj instanceof ElementReferenceExpression) {
@@ -209,13 +230,13 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 					ref.sizeInferrer;
 				}
 			}
-		}
+		} 
 		val functionInferrer = if(functionInferrerCls !== null) { 
-			loader.loadFromPlugin(obj.eResource, typeInferrerCls)?.castOrNull(FunctionSizeInferrer) => [
+			loader.loadFromPlugin(obj.eResource, functionInferrerCls)?.castOrNull(FunctionSizeInferrer) => [
 				it?.setDelegate(typeInferrer ?: this)]
 		}
 		
-		return functionInferrer ?: typeInferrer
+		return (functionInferrer ?: platformInferrer) ?: typeInferrer
 	}
 	
 	// only generated types have special needs for size inference for now

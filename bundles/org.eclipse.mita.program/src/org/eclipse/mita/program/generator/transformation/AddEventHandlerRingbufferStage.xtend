@@ -14,20 +14,23 @@
 package org.eclipse.mita.program.generator.transformation
 
 import com.google.inject.Inject
-import org.eclipse.emf.ecore.util.EcoreUtil
+import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.PresentTypeSpecifier
-import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
 import org.eclipse.mita.base.types.TypesFactory
 import org.eclipse.mita.base.types.TypesPackage
+import org.eclipse.mita.base.typesystem.types.AbstractType
+import org.eclipse.mita.base.typesystem.types.LiteralNumberType
+import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramFactory
@@ -129,6 +132,37 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		block.content.addAll(0, popCallStmts);
 	}
 	
+	protected dispatch def PresentTypeSpecifier typeToTypeSpecifier((String) => EObject scopeLookup, TypeConstructorType type) {
+		val ts = _typeToTypeSpecifier(scopeLookup, type as AbstractType) as TypeReferenceSpecifier;
+		ts.typeArguments += type.typeArguments.tail.map[typeToTypeSpecifier(scopeLookup, it)]
+		return ts;
+	}
+	protected dispatch def PresentTypeSpecifier typeToTypeSpecifier((String) => EObject scopeLookup, LiteralNumberType type) {
+		return _typeToTypeSpecifier(scopeLookup, type.value);
+	}
+	protected dispatch def PresentTypeSpecifier typeToTypeSpecifier((String) => EObject scopeLookup, LiteralTypeExpression<?> type) {
+		val literalValue = type.eval;
+		return typeToTypeSpecifier(scopeLookup, literalValue);
+	}
+	protected dispatch def PresentTypeSpecifier typeToTypeSpecifier((String) => EObject scopeLookup, Long longLiteral) {
+		val ef = ExpressionsFactory.eINSTANCE;
+		val tf = TypesFactory.eINSTANCE;
+		
+		val sizeTypeSpecifier = tf.createTypeExpressionSpecifier;
+		val sizeExpression = ef.createPrimitiveValueExpression;
+		val sizeLiteral = ef.createIntLiteral;
+		sizeLiteral.value = longLiteral;
+		sizeExpression.value = sizeLiteral;
+		sizeTypeSpecifier.value = sizeExpression;
+		return sizeTypeSpecifier;
+	}
+	protected dispatch def PresentTypeSpecifier typeToTypeSpecifier((String) => EObject scopeLookup, AbstractType type) {
+		val tf = TypesFactory.eINSTANCE;
+		val ts = tf.createTypeReferenceSpecifier;
+		ts.type = scopeLookup.apply(type.name)?.castOrNull(Type);
+		return ts;
+	}
+	
 	protected def VariableDeclaration addRingbufferDeclaration(EventHandlerDeclaration decl) {
 		val type = BaseUtils.getType(decl.event.computeOrigin);
 		if(type === null || type instanceof TypeVariable) {
@@ -148,8 +182,8 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		}
 		
 		val scope = scopeProvider.getScope(decl, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type);
-		val rbTypeDescription = scope.getElements(QualifiedName.create("ringbuffer")).head;
-		val rbType = rbTypeDescription?.EObjectOrProxy?.castOrNull(Type);
+		val (String) => EObject scopeLookupFun = [scope.getElements(QualifiedName.create(it)).head?.EObjectOrProxy];
+		val rbType = scopeLookupFun.apply("ringbuffer")?.castOrNull(Type);
 		if(rbType === null || rbType instanceof NullTypeSpecifier) {
 			println("ringbuffer not found");
 			return null;
@@ -157,7 +191,6 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		
 		val pf = ProgramFactory.eINSTANCE;
 		val tf = TypesFactory.eINSTANCE;
-		val ef = ExpressionsFactory.eINSTANCE;
 		
 		// let rb_everyButtonOnePressed...
 		val rbDeclaration = pf.createVariableDeclaration;
@@ -168,16 +201,9 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		val rbTypeSpecifier = tf.createTypeReferenceSpecifier;
 		rbTypeSpecifier.type = rbType;
 		// bool, ...
-		rbTypeSpecifier.typeArguments += EcoreUtil.copy(eventTypeSpec) as PresentTypeSpecifier;
-		
+		rbTypeSpecifier.typeArguments += typeToTypeSpecifier(scopeLookupFun, type);
 		// 10>;
-		val sizeTypeSpecifier = tf.createTypeExpressionSpecifier;
-		val sizeExpression = ef.createPrimitiveValueExpression;
-		val sizeLiteral = ef.createIntLiteral;
-		sizeLiteral.value = queueSizeProvider.getEventHandlerPayloadQueueSize(decl);
-		sizeExpression.value = sizeLiteral;
-		sizeTypeSpecifier.value = sizeExpression;
-		rbTypeSpecifier.typeArguments += sizeTypeSpecifier;
+		rbTypeSpecifier.typeArguments += typeToTypeSpecifier(scopeLookupFun, queueSizeProvider.getEventHandlerPayloadQueueSize(decl));
 		
 		rbDeclaration.typeSpecifier = rbTypeSpecifier;
 				
