@@ -1,10 +1,55 @@
 package platforms.x86;
 
-
+/**
+ * Implements MQTT using https://www.eclipse.org/paho/clients/c/.
+ * Place headers in ${resourceLoc/include} and binaries in ${resourceLoc/lib}.
+ * To run compiled code add ${resourceLoc/lib} to your LD_LIBRARY_PATH.
+ */
+connectivity many MQTT {
+	generator "org.eclipse.mita.platform.x86.connectivity.MqttGenerator"
+		
+	/**
+	 * The URL pointing to the MQTT broker, for example: mqtt://does-not.exist:8000
+	 */
+	required configuration-item url : string
+	
+	/**
+	 * The client identifier (here: clientID) is a identifier of each MQTT client
+     * connecting to a MQTT broker. It needs to be unique for the broker to
+     * know the state of the client. 
+	 */
+	required configuration-item clientId : string
+	
+	/**
+	 * The clean session flag indicates to the broker whether the client wants
+     * to establish a clean session or a persistent session where all
+     * subscriptions and messages (QoS 1 & 2) are stored for the client.
+	 */
+	configuration-item cleanSession : bool = false
+	
+	/**
+	 * The keep alive interval (in seconds) is the time the client commits to for
+     * when sending regular pings to the broker. The broker responds to the
+     * pings enabling both sides to determine if the other one is still alive and
+     * reachable.
+     */
+	configuration-item keepAliveInterval : uint32 = 60
+	
+	/**
+	 * Publishes a message to a particular topic. 
+	 */
+	signal topic(name : string, qos : uint32 = 0, length: uint32 = 500) : string {
+		event msgReceived: string {
+			size-inferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
+		}
+	}
+}
 
 platform x86 {
 	module "org.eclipse.mita.platform.x86.platform.X86PlatformGeneratorModule"
 	generator "org.eclipse.mita.platform.x86.platform.X86PlatformGenerator"
+	
+	has MQTT
 	
 	// payload is current time in ms since epoch (1970/1/1)
 	event startup: int32

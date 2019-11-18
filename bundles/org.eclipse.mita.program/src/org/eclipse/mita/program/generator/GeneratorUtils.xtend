@@ -155,9 +155,10 @@ class GeneratorUtils {
 	}
 	
 	def getOccurrence(EObject obj) {
-		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
-			?:EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration) as EObject
-			?:EcoreUtil2.getContainerOfType(obj, Program) as EObject;
+		val parent = obj.eContainer;
+		val EObject funDef = EcoreUtil2.getContainerOfType(parent, FunctionDefinition) as EObject
+			?:EcoreUtil2.getContainerOfType(parent, EventHandlerDeclaration) as EObject
+			?:EcoreUtil2.getContainerOfType(parent, Program) as EObject;
 		val result = funDef?.eAllContents?.indexed?.findFirst[it.value.equals(obj)]?.key?:(-1);
 		return result + 1;
 	}
@@ -204,19 +205,7 @@ class GeneratorUtils {
 		val program = EcoreUtil2.getContainerOfType(event, Program);
 		if(program !== null) {
 			// count event handlers, so we get unique names
-			var occurence = 1;
-			var found = false;
-			for(e: program.eventHandlers) {
-				if(e.equals(event)){
-					found = true;
-				}
-				// no break; statement => need flag
-				// only count events with the same name
-				if(!found && e.baseName.equals(event.baseName)) {
-					occurence++;
-				}
-			}
-			return '''HandleEvery«event.baseName»«occurence»''';
+			return '''HandleEvery«event.baseName»_«(event.eContainer as Program).eventHandlers.filter[it.event.baseName == event.event.baseName].indexed.filter[it.value === event].head.key + 1»''';
 		}
 		// if we are somehow not a child of program, default to no numbering
 		return '''HandleEvery«event.baseName»''';
@@ -360,7 +349,7 @@ class GeneratorUtils {
 	}
 	
 	def dispatch String getBaseName(EventHandlerDeclaration event) {
-		return event.event.baseName;
+		return '''«event.event.baseName»''';
 	}
 	
 	def dispatch String getBaseName(SystemEventSource event) {

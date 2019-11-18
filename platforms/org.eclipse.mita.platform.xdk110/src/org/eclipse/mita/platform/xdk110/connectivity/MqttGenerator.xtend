@@ -435,7 +435,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		
 		codeFragmentProvider.create('''
 		«FOR handler: eventHandler»
-		extern ringbuffer_array_char rb_«handler.baseName»;
+		extern ringbuffer_array_char rb_«handler.handlerName»;
 		«ENDFOR»
 		
 		/**
@@ -510,7 +510,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 				if(exception == RETCODE_OK && strlen(«getHandlerTopic(handler)») == eventData->publish.topic.length && 0 == memcmp(eventData->publish.topic.start, «getHandlerTopic(handler)», eventData->publish.topic.length)) {
 					«pushGenerator.generate(
 						handler,
-						new CodeWithContext(RingbufferGenerator.wrapInRingbuffer(typeRegistry, handler, BaseUtils.getType(handler.event.castOrNull(SystemEventSource).source)), Optional.empty, codeFragmentProvider.create('''rb_«handler.baseName»''')),
+						new CodeWithContext(RingbufferGenerator.wrapInRingbuffer(typeRegistry, handler, BaseUtils.getType(handler.event.castOrNull(SystemEventSource).source)), Optional.empty, codeFragmentProvider.create('''rb_«handler.handlerName»''')),
 						codeFragmentProvider.create('''msg''')
 					)»
 					exception = CmdProcessor_enqueue(&Mita_EventQueue, «handler.handlerName», NULL, 0);

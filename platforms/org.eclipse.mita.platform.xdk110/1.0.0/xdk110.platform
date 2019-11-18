@@ -777,7 +777,6 @@ alt MqttWill {
 connectivity many MQTT {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.MqttGenerator"
     validator "org.eclipse.mita.platform.xdk110.connectivity.MqttValidator"
-	sizeInferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
 	
 	/**
 	 * The underlying transport connectivity we use to send the data out. In the future we might also

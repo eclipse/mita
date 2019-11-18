@@ -194,7 +194,7 @@ class AddEventHandlerRingbufferStage extends AbstractTransformationStage {
 		
 		// let rb_everyButtonOnePressed...
 		val rbDeclaration = pf.createVariableDeclaration;
-		rbDeclaration.name = "rb_" + decl.baseName;
+		rbDeclaration.name = "rb_" + decl.handlerName;
 		rbDeclaration.writeable = false;
 		
 		// : ringbuffer<...

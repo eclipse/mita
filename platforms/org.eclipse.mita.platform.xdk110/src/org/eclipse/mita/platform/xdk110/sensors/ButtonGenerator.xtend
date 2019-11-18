@@ -60,7 +60,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 			«FOR handlergrp : eventHandler.groupBy[it.sensorInstance.buttonNumber].values»
 			«val changedHandlers = handlergrp.filter[(it.event as SystemEventSource)?.source?.name == "changed"]»
 			«FOR changedHandler: changedHandlers»
-				extern ringbuffer_bool rb_«changedHandler.baseName»;
+				extern ringbuffer_bool rb_«changedHandler.handlerName»;
 			«ENDFOR»
 			
 			Retcode_T «handlergrp.head.internalHandlerName»(uint32_t data)
@@ -83,7 +83,7 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 					new CodeWithContext(
 						RingbufferGenerator.wrapInRingbuffer(typeRegistry, changedHandler, BaseUtils.getType(changedHandler.event.castOrNull(SystemEventSource).source)), 
 						Optional.empty, 
-						codeFragmentProvider.create('''rb_«changedHandler.baseName»''')
+						codeFragmentProvider.create('''rb_«changedHandler.handlerName»''')
 					),
 					codeFragmentProvider.create('''data == BSP_XDK_BUTTON_PRESSED''')
 				)»
