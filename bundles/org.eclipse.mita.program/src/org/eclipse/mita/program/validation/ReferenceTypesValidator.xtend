@@ -134,6 +134,9 @@ class ReferenceTypesValidator extends AbstractDeclarativeValidator implements IV
 	
 	@Check
 	def forbiddenReferenceReturn(FunctionDefinition funDecl) {
+		if(funDecl.typeSpecifier === null) {
+			return;
+		}
 		val funDeclTypeIR = BaseUtils.getType(funDecl.typeSpecifier);
 		if(hasReferenceInType(funDeclTypeIR)) {
 			error(FORBIDDEN_RETURN, funDecl, TypesPackage.Literals.NAMED_ELEMENT__NAME);

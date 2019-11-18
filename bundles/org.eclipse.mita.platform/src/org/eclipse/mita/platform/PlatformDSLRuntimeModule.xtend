@@ -39,6 +39,8 @@ import org.eclipse.xtext.resource.IDefaultResourceDescriptionStrategy
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
+import org.eclipse.xtext.ui.editor.DirtyStateManager
+import org.eclipse.xtext.ui.editor.IDirtyStateManager
 import org.eclipse.xtext.validation.IResourceValidator
 import org.eclipse.mita.base.typesystem.infra.AbstractSizeInferrer
 import org.eclipse.mita.base.typesystem.infra.NullSizeInferrer
@@ -59,6 +61,7 @@ class PlatformDSLRuntimeModule extends AbstractPlatformDSLRuntimeModule {
 		binder.bind(IConstraintSolver).annotatedWith(Names.named("sizeSolver")).to(NullSolver);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(PlatformLinker);
+		binder.bind(IDirtyStateManager).to(DirtyStateManager);
 		binder.bind(AbstractSizeInferrer).to(NullSizeInferrer);
 	}
 

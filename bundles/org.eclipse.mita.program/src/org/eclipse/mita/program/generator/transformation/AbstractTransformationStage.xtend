@@ -24,6 +24,7 @@ import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.mita.program.generator.CompilationContext
 
 abstract class AbstractTransformationStage {
 	
@@ -50,8 +51,14 @@ abstract class AbstractTransformationStage {
 	public static final int ORDER_VERY_LATE = 900;
 	public static final int ORDER_CUSTOM_STUFF = 1100;
 	
+	static def before(int x) {
+		return x - 10;
+	}
+	static def afterwards(int x) {
+		return x + 10;
+	}
 	
-	def transform(ITransformationPipelineInfoProvider pipeline, Program program) {
+	def transform(ITransformationPipelineInfoProvider pipeline, CompilationContext context, Program program) {
 		pipelineInfoProvider = pipeline;
 		
 		program.doTransform();

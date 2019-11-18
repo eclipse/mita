@@ -14,6 +14,8 @@
 package org.eclipse.mita.platform.xdk110.sensors
 
 import com.google.inject.Inject
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.library.stdlib.RingbufferGenerator.PushGenerator
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ModalityAccess
@@ -24,6 +26,11 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.GeneratorUtils
+import org.eclipse.mita.program.generator.CodeWithContext
+import org.eclipse.mita.library.stdlib.RingbufferGenerator
+import org.eclipse.mita.base.util.BaseUtils
+import java.util.Optional
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 
 class ButtonGenerator extends AbstractSystemResourceGenerator {
 
@@ -33,6 +40,12 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
 	
+	@Inject
+	protected PushGenerator pushGenerator
+	
+	@Inject
+	StdlibTypeRegistry typeRegistry
+		
     override generateSetup() {
         codeFragmentProvider.create('''
             return BSP_Button_Connect();
@@ -42,17 +55,42 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
             .addHeader('BSP_BoardType.h', true, IncludePath.HIGH_PRIORITY)
             .addHeader('BCDS_BSP_Button.h', true)
             .addHeader('MitaEvents.h', true)
+            .addHeader("MitaGeneratedTypes.h", false)
             .setPreamble('''
 			«FOR handlergrp : eventHandler.groupBy[it.sensorInstance.buttonNumber].values»
-			void «handlergrp.head.internalHandlerName»(uint32_t data)
+			«val changedHandlers = handlergrp.filter[(it.event as SystemEventSource)?.source?.name == "changed"]»
+			«FOR changedHandler: changedHandlers»
+				extern ringbuffer_bool rb_«changedHandler.baseName»;
+			«ENDFOR»
+			
+			Retcode_T «handlergrp.head.internalHandlerName»(uint32_t data)
 			{
+				Retcode_T exception = RETCODE_OK;
 				«FOR idx_handler: handlergrp.indexed»
+				«IF #["pressed", "released"].contains((idx_handler.value.event as SystemEventSource)?.source?.name)»
 				«IF idx_handler.key > 0»else «ENDIF»if(data == «getButtonStatusEnumName(idx_handler.value)») {
-					Retcode_T retcode = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «idx_handler.value.handlerName», NULL, data);
-					if(retcode != RETCODE_OK)
+					exception = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «idx_handler.value.handlerName», NULL, data);
+					if(exception != RETCODE_OK)
 					{
-						Retcode_RaiseErrorFromIsr(retcode);
+						Retcode_RaiseErrorFromIsr(exception);
 					}
+				}
+				«ENDIF»
+            	«ENDFOR»
+				«FOR changedHandler: changedHandlers»
+				«pushGenerator.generate(
+					changedHandler,
+					new CodeWithContext(
+						RingbufferGenerator.wrapInRingbuffer(typeRegistry, changedHandler, BaseUtils.getType(changedHandler.event.castOrNull(SystemEventSource).source)), 
+						Optional.empty, 
+						codeFragmentProvider.create('''rb_«changedHandler.baseName»''')
+					),
+					codeFragmentProvider.create('''data == BSP_XDK_BUTTON_PRESSED''')
+				)»
+				exception = CmdProcessor_enqueueFromIsr(&Mita_EventQueue, «changedHandler.handlerName», NULL, data);
+				if(exception != RETCODE_OK)
+				{
+					Retcode_RaiseErrorFromIsr(exception);
 				}
             	«ENDFOR»
 			}

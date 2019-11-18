@@ -103,9 +103,9 @@ class ProgramDslBuilderParticipant extends BuilderParticipant {
 
 	override protected handleChangedContents(Delta delta, IBuildContext context, EclipseResourceFileSystemAccess2 fileSystemAccess) throws CoreException {
 		super.handleChangedContents(delta, context, fileSystemAccess)
-		if (!buildSemaphore.get() && generator !== null) {
-			invokeGenerator(delta, context, fileSystemAccess);
-		}
+//		if (!buildSemaphore.get() && generator !== null) {
+//			invokeGenerator(delta, context, fileSystemAccess);
+//		}
 	}
 
 	protected def void invokeGenerator(Delta delta, IBuildContext context, IFileSystemAccess2 fileSystemAccess) {

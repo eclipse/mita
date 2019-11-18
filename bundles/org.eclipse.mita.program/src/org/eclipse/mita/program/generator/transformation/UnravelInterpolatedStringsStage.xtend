@@ -18,11 +18,14 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.xtext.EcoreUtil2
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.generator.internal.ProgramCopier
+import org.eclipse.xtext.EcoreUtil2
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.generator.internal.ProgramCopier
+import org.eclipse.mita.base.expressions.AssignmentExpression
 
 class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 	
@@ -36,6 +39,11 @@ class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 			'logError'
 		]);
 		
+		var assignmentExpressionParent = EcoreUtil2.getContainerOfType(expression, AssignmentExpression);
+		if(assignmentExpressionParent !== null) {
+			return expression.isIps;
+		}
+		
 		var isInPrintContext = false;
 		val possibleFunctionCallContainer = EcoreUtil2.getContainerOfType(expression, ElementReferenceExpression);
 		if(possibleFunctionCallContainer !== null) {
@@ -46,9 +54,13 @@ class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 		}
 		
 		return possibleFunctionCallContainer !== null 
-			&& possibleFunctionCallContainer?.isOperationCall 
+			&& possibleFunctionCallContainer.isOperationCall 
 			&& !isInPrintContext 
-			&& expression.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(InterpolatedStringLiteral) !== null;
+			&& expression.isIps;
+	}
+	
+	def boolean isIps(Expression expression) {
+		return expression.castOrNull(PrimitiveValueExpression)?.value?.castOrNull(InterpolatedStringLiteral) !== null;
 	}
 	
 	override protected createInitialization(Expression expression) {
@@ -59,5 +71,4 @@ class UnravelInterpolatedStringsStage extends AbstractUnravelingStage {
 		ProgramCopier.linkOrigin(copy.value, ProgramCopier.getOrigin(original.value));
 		return copy;
 	}
-	
 }

@@ -36,5 +36,9 @@ class X86PlatformGeneratorModule extends EmptyPlatformGeneratorModule {
 	override bindPlatformBuildSystemGenerator() {
 		MakefileGenerator
 	}
-
+	
+	override bindMainSystemResourceGenerator() {
+		X86PlatformGenerator
+	}
+	
 }

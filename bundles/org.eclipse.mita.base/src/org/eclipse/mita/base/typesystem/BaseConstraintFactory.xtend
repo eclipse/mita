@@ -48,6 +48,7 @@ import org.eclipse.mita.base.expressions.StringLiteral
 import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryOperator
 import org.eclipse.mita.base.expressions.ValueRange
+import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ComplexType
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.Expression
@@ -128,6 +129,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 	protected IScopeProvider scopeProvider;
 	
 	public static final String GENERATOR_KEY = "generator";
+	public static final String VALIDATOR_KEY = "validator";
 	public static final String SIZE_INFERRER_KEY = "sizeInferrer";
 	public static final String PARENT_NAME_KEY = "parentName";
 	public static final String ECLASS_KEY = "eClass";
@@ -220,7 +222,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 	}
 	
 	protected def void computeConstraintsForChildren(ConstraintSystem system, EObject context) {
-		context.eContents.forEach[ system.computeConstraints(it) ]
+		for(EObject child: context.eContents) {
+			system.computeConstraints(child)	
+		}
 	}
 
 	protected def computeParameterType(ConstraintSystem system, Operation function, Iterable<Parameter> parms) {
@@ -384,6 +388,10 @@ class BaseConstraintFactory implements IConstraintFactory {
 		// refType is the type of the referenced thing (or the function application)
 		// assert f/f(x): refType
 		return system.associate(refType, varOrFun);		
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, Event event) {
+		return system.associate(system.computeConstraints(event.typeSpecifier), event);
 	}
 	
 	protected def TypeVariable computeConstraintsForFunctionCall(ConstraintSystem system, EObject functionCall, EReference functionReference, String functionName, Iterable<Expression> argExprs, List<TypeVariable> candidates) {
@@ -818,6 +826,9 @@ class BaseConstraintFactory implements IConstraintFactory {
 		if(genType.sizeInferrer !== null) {
 			system.putUserData(result, SIZE_INFERRER_KEY, genType.sizeInferrer)
 		}
+		if(genType.validator !== null) {
+			system.putUserData(result, VALIDATOR_KEY, genType.validator);
+		}
 		system._defineUserData(genType as ComplexType, result);
 	}
 	protected dispatch def AbstractType doTranslateTypeDeclaration(ConstraintSystem system, GeneratedType genType) {
@@ -905,7 +916,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			// compute <a, b>
 			val ref = typeSpecifier.eGet(eRef, false)
 			val reftext = if(ref instanceof EObject && !(ref as EObject).eIsProxy) ref.toString() else null;
-			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(typeSpecifier, TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)?.head?.text?.trim;
+			val typeName = reftext ?: NodeModelUtils.findNodesForFeature(BaseUtils.computeOrigin(typeSpecifier), TypesPackage.eINSTANCE.typeReferenceSpecifier_Type)?.head?.text?.trim;
 			val typeArgTypes = typeArguments.map[system.computeConstraints(it) as AbstractType];
 			// since type specifiers reference something we don't always know the variance here
 			val typeArgs = typeArgTypes.map[it -> Variance.UNKNOWN].force;

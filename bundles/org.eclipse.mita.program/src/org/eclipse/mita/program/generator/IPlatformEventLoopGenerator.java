@@ -84,6 +84,9 @@ public interface IPlatformEventLoopGenerator {
 	 */
 	public CodeFragment generateEventHeaderPreamble(CompilationContext context);
 	
+
+	public CodeFragment generateEventLoopHandlerEpilogue(CompilationContext context, EventHandlerDeclaration declaration);
+	
 	/**
 	 * Generates code which is prepended to the Mita_initialize function. This is prepended after generateEventLoopHandlerPreamble and exception variable declaration.
 	 * @param context
@@ -137,5 +140,10 @@ public interface IPlatformEventLoopGenerator {
 			return CodeFragment.EMPTY;
 		}
 
+		@Override
+		public CodeFragment generateEventLoopHandlerEpilogue(CompilationContext context,
+				EventHandlerDeclaration declaration) {
+			return CodeFragment.EMPTY;
+		}
 	}
 }

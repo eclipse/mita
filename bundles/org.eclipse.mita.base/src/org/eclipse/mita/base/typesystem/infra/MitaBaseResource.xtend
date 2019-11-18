@@ -54,6 +54,7 @@ import org.eclipse.xtext.resource.IFragmentProvider
 import org.eclipse.xtext.resource.impl.ListBasedDiagnosticConsumer
 import org.eclipse.xtext.resource.impl.ResourceDescriptionsProvider
 import org.eclipse.xtext.scoping.IScopeProvider
+import org.eclipse.xtext.ui.resource.LiveScopeResourceSetInitializer
 import org.eclipse.xtext.util.CancelIndicator
 import org.eclipse.xtext.util.Triple
 import org.eclipse.xtext.xtext.XtextFragmentProvider
@@ -104,6 +105,9 @@ class MitaBaseResource extends LazyLinkingResource {
 	
 	public final static String PROGRAM_EXT = ".mita"
 	public final static String PLATFORM_EXT = ".platform"
+
+	@Inject
+	protected LiveScopeResourceSetInitializer liveScopeResourceSetInitializer
 
 	override toString() {
 		val str = URI.toString;
@@ -187,10 +191,12 @@ class MitaBaseResource extends LazyLinkingResource {
 
 	public def generateLinkAndType(EObject model) {
 		val diagnosticsConsumer = new ListBasedDiagnosticConsumer();
-		model.eAllContents.filter(GeneratedObject).forEach [
-			it.generateMembers()
-		]
-		typeLinker.doActuallyClearReferences(model);
+		BaseUtils.ignoreChange(model, [
+			typeLinker.doActuallyClearReferences(model);
+			model.eAllContents.filter(GeneratedObject).forEach [
+				it.generateMembers()
+			]
+		])
 		typeLinker.linkModel(model, diagnosticsConsumer);
 		typeDependentLinker.linkModel(model, diagnosticsConsumer);
 		// size inference expects fully linked types, 
@@ -215,7 +221,8 @@ class MitaBaseResource extends LazyLinkingResource {
 		
 		timer.start("resourceDescriptions");
 		if (!resourceSet.loadOptions.containsKey(ResourceDescriptionsProvider.NAMED_BUILDER_SCOPE)) {
-			resourceSet.loadOptions.put(ResourceDescriptionsProvider.LIVE_SCOPE, true);
+//			resourceSet.loadOptions.put(ResourceDescriptionsProvider.LIVE_SCOPE, true);
+			liveScopeResourceSetInitializer.initialize(resourceSet);
 		}
 		val resourceDescriptions = resourceDescriptionsProvider.getResourceDescriptions(resourceSet);
 		val thisResourceDescription = resourceDescriptions.getResourceDescription(resource.URI);

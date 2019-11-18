@@ -87,4 +87,8 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 		return CodeFragment.EMPTY;
 	}
 	
+	override generateEventLoopHandlerEpilogue(CompilationContext context, EventHandlerDeclaration declaration) {
+		return CodeFragment.EMPTY;
+	}
+	
 }

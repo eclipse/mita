@@ -17,22 +17,21 @@ import com.google.inject.Inject
 import java.util.Optional
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
-import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.types.GeneratedType
-import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.program.GeneratedFunctionDefinition
-import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.xtext.EcoreUtil2
+import java.util.Optional
 import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 class OptionalGenerator extends AbstractTypeGenerator {
@@ -48,15 +47,11 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		
 	public static final String ENUM_NAME = "enumOptional";
 	static enum enumOptional {
-		Some, None
+		None, Some
 	}
 	public static final String OPTIONAL_FLAG_MEMBER = "flag";
 	public static final String OPTIONAL_DATA_MEMBER = "data";
-	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
-		CodeFragment.EMPTY;
-	}
-	
+		
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
@@ -65,28 +60,13 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»;''')
 	}
 	
-	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {		
+	override generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {		
 		if(operator != AssignmentOperator.ASSIGN) {
 			return codeFragmentProvider.create('''ERROR: Unsuported operator: «operator.literal»''')
 		}
 		val haveInit = right !== null;
-				
-		val initIsEref = haveInit && right instanceof ElementReferenceExpression;
-		val initAsEref = if(initIsEref) {
-			right as ElementReferenceExpression;
-		}
 		
-		val initIsOperation = initIsEref && initAsEref.reference instanceof Operation
-		val initAsOperation = if(initIsOperation) {
-			initAsEref.reference as Operation;
-		}
-		
-		val initIsGeneratedFunction = initAsOperation instanceof GeneratedFunctionDefinition;
-		val initAsGeneratedFunction = if(initIsGeneratedFunction) {
-			initAsOperation as GeneratedFunctionDefinition;
-		}
-		
-		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(type, context)») ''');
+		val valueExpressionTypeAnnotation = codeFragmentProvider.create('''(«generateTypeSpecifier(left.type, context)») ''');
 		
 		val validInit = if(right !== null) {
 			codeFragmentProvider.create('''«right.code»''');
@@ -98,16 +78,15 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			}''')
 		}
 		
-		val initValueIsNone = right === null || (initIsGeneratedFunction && initAsGeneratedFunction.name == "none");
+		val initValueIsNone = right === null// || (initIsGeneratedFunction && initAsGeneratedFunction.name == "none");
 		
-		val firstTypeArgType = (type as TypeConstructorType).typeArguments.tail.head;
+		val firstTypeArgType = (left.type as TypeConstructorType).typeArguments.tail.head;
 		val firstTypeArgOrigin = firstTypeArgType.origin;
 
 		
-		// if we assigned for example a: int32? = 1, right has integer, left has optional<int32>. so we check if left.args.head ~ right. Also we short-circuit none and some and supply a default value.
-		val initWithImmediate = initIsGeneratedFunction 
-		|| right === null 
-		|| (!(firstTypeArgOrigin instanceof GeneratedType));
+		// Supply a default value and upcast immediates.
+		val initWithImmediate = right === null 
+			|| (!(firstTypeArgOrigin instanceof GeneratedType));
 		
 		
 		val init = if(initWithImmediate) {
@@ -136,7 +115,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			}
 		}
 				
-		codeFragmentProvider.create('''«leftName» = «init.noNewline»''')
+		return codeFragmentProvider.create('''«left.code» = «init.noNewline»''')
 	}
 	
 	override CodeFragment generateHeader() {
@@ -173,5 +152,16 @@ class OptionalGenerator extends AbstractTypeGenerator {
 		''');
 	}
 	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
 	
 }
