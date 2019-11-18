@@ -26,7 +26,7 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import org.eclipse.mita.program.generator.CodeWithContext
 
 class SomeTypeGenerator extends AbstractTypeGenerator {
 	
@@ -40,22 +40,17 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''')
 	}
-	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
-		CodeFragment.EMPTY;
-	}
-	
+		
 		
 	static class GetElementGenerator extends AbstractFunctionGenerator {
 		
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 		
-
-		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
-			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
 			
-			return codeFragmentProvider.create('''«resultVariableName» = «variable.generate»''');
+			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«variable.generate»''');
 		}
 		
 	}
@@ -65,14 +60,25 @@ class SomeTypeGenerator extends AbstractTypeGenerator {
 		@Inject
 		protected CodeFragmentProvider codeFragmentProvider
 	
-
-		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
-			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
-			val value = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'value');
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
+			val value = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'value');
 			
 			return codeFragmentProvider.create('''«variable.generate» = «value.generate»;''');
 		}
 		
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
 }

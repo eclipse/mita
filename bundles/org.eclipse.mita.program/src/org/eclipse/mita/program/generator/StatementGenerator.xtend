@@ -48,11 +48,11 @@ import org.eclipse.mita.base.expressions.TypeCastExpression
 import org.eclipse.mita.base.expressions.UnaryExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
-import org.eclipse.mita.base.scoping.MitaTypeSystem
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.EnumerationType
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.NamedProductType
 import org.eclipse.mita.base.types.Operation
@@ -65,6 +65,7 @@ import org.eclipse.mita.base.types.SumSubTypeConstructor
 import org.eclipse.mita.base.types.SumType
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeConstructor
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
@@ -80,13 +81,13 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.program.ArrayLiteral
 import org.eclipse.mita.program.ArrayRuntimeCheckStatement
+import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.IfStatement
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
@@ -97,7 +98,6 @@ import org.eclipse.mita.program.LoopBreakerStatement
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
 import org.eclipse.mita.program.NativeFunctionDefinition
-import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.NoopStatement
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ProgramBlock
@@ -107,6 +107,7 @@ import org.eclipse.mita.program.ReturnStatement
 import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SourceCodeComment
+import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.ThrowExceptionStatement
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
@@ -114,6 +115,7 @@ import org.eclipse.mita.program.WhereIsStatement
 import org.eclipse.mita.program.WhileStatement
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.xtend2.lib.StringConcatenationClient
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.generator.trace.node.CompositeGeneratorNode
 import org.eclipse.xtext.generator.trace.node.IGeneratorNode
@@ -126,6 +128,7 @@ import static extension org.eclipse.emf.common.util.ECollections.asEList
 import static extension org.eclipse.mita.base.types.TypeUtils.getConstraintSystem
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.ReturnParameterReference
 
 class StatementGenerator {
 
@@ -150,12 +153,41 @@ class StatementGenerator {
 		return codeFragmentProvider.create('''CODE CALLED ON NULL''');
 	}
 
+	private def cf(StringConcatenationClient scc) {
+		codeFragmentProvider.create(scc);
+	}
+	private def cf(IGeneratorNode node) {
+		codeFragmentProvider.create('''«node»''');
+	}
+
 	@Traced dispatch def IGeneratorNode code(Argument stmt) {
 		'''«stmt.value.code»'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(StringLiteral stmt) {
-		'''"«stmt.value»"'''
+		val printContext = stmt
+			?.eContainer?.castOrNull(PrimitiveValueExpression)
+			?.eContainer?.castOrNull(Argument)
+			?.eContainer?.castOrNull(ElementReferenceExpression)
+			?.reference?.castOrNull(GeneratedFunctionDefinition)
+			?.name
+		val setupContext = EcoreUtil2.getContainerOfType(stmt, SystemResourceSetup) as EObject ?:
+						   EcoreUtil2.getContainerOfType(stmt, ConfigurationItemValue)
+		// don't create complicated stuff for:
+		// - print (nicer code)
+		// - setup (easier usage in platform components)
+		if(printContext == "print" || printContext == "println" || setupContext !== null) {
+			return '''"«stmt.value»"'''
+		}
+
+		return '''
+			«IF !stmt.isTopLevel»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
+				.data = "«stmt.value»",
+				.capacity = «stmt.value.length»,
+				.length = «stmt.value.length»,
+			}
+		'''
+		
 	}
 
 	@Traced dispatch def code(NullLiteral stmt) {
@@ -184,9 +216,13 @@ class StatementGenerator {
 			.addHeader('stdbool.h', true);
 		return '''«result»''';
 	}
-	
+		
 	@Traced dispatch def IGeneratorNode code(ArrayLiteral stmt) {
-		'''{«FOR value: stmt.values SEPARATOR(', ')»«value.code»«ENDFOR»}'''
+		'''«IF !stmt.isTopLevel»(«typeGenerator.code(stmt, BaseUtils.getType(stmt))») «ENDIF»{
+			.data = («typeGenerator.code(stmt, (BaseUtils.getType(stmt) as TypeConstructorType).typeArguments.get(1))»[«stmt.values.length»]) {«FOR value: stmt.values SEPARATOR(', ')»«value.code»«ENDFOR»},
+			.capacity = «stmt.values.length»,
+			.length = «stmt.values.length»,
+		}'''
 	}
 	
 	@Traced dispatch def IGeneratorNode code(Literal stmt) {
@@ -245,8 +281,44 @@ class StatementGenerator {
 		generator.generateAccessPreparationFor(stmt).addHeader(stmt.systemResource.fileBasename + '.h', false);
 	}
 
-	@Traced dispatch def IGeneratorNode code(ArrayAccessExpression stmt) {		
-		'''«stmt.owner.code».data[«stmt.arraySelector.code.noTerminator»]'''
+	@Traced dispatch def IGeneratorNode code(ArrayAccessExpression stmt) {
+		val arraySelector = stmt.arraySelector;
+		if(arraySelector instanceof ValueRange) {
+			// value ranges should be handled by generator. Return reference to element.
+			return '''«stmt.owner.code»''';
+		}
+		else {
+			return '''«stmt.owner.code».data[«stmt.arraySelector.code.noTerminator»]''';
+		}
+	}
+	
+	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		if(isGeneratedType(context, left.type)) {
+			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
+			
+			return generator.generateBulkAllocation(context, cVariablePrefix, left, count, isTopLevel);
+		}
+		return cf('''''')
+	}
+	def CodeFragment generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		if(isGeneratedType(context, left.type)) {
+			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
+			
+			return generator.generateBulkAssignment(context, cVariablePrefix, left, count);
+		}
+		return cf('''''')
+	}
+	def CodeFragment generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		if(isGeneratedType(context, left.type)) {
+			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
+			
+			return generator.generateBulkCopyStatements(context, i, left, right, count);
+		}
+		val typeSize = cf('''sizeof(«typeGenerator.code(context, left.type)»)''')
+		return cf('''
+			/* «left.code» = «right.code» */
+			memcpy(«left.code», «right.code», «typeSize» * «count»);
+		''')
 	}
 	
 	@Traced dispatch def IGeneratorNode code(ArrayRuntimeCheckStatement stmt) {
@@ -259,16 +331,16 @@ class StatementGenerator {
 		val arrayLength = codeFragmentProvider.create('''«variableName».length''');
 		if(arraySelector instanceof ValueRange) {			
 			if(arraySelector.lowerBound !== null) {
-				checks += codeFragmentProvider.create('''«arraySelector.lowerBound.code.noTerminator» < 0''');
+				checks += cf('''«arraySelector.lowerBound.code.noTerminator» < 0''');
 			}
 			if(arraySelector.upperBound !== null) {
-				checks += codeFragmentProvider.create('''«arraySelector.upperBound.code.noTerminator» >= «arrayLength»''');
+				checks += cf('''«arraySelector.upperBound.code.noTerminator» >= «arrayLength»''');
 			}
 			if(arraySelector.lowerBound !== null && arraySelector.upperBound !== null) {				
-				checks += codeFragmentProvider.create('''«arraySelector.lowerBound.code.noTerminator» > «arraySelector.upperBound.code.noTerminator»''');
+				checks += cf('''«arraySelector.lowerBound.code.noTerminator» > «arraySelector.upperBound.code.noTerminator»''');
 			}
 		} else {
-			checks += codeFragmentProvider.create('''«arrayLength» <= «arraySelector.code.noTerminator»''');
+			checks += cf('''«arrayLength» <= «arraySelector.code.noTerminator»''');
 		}
 		
 		return '''
@@ -307,7 +379,7 @@ class StatementGenerator {
 		}
 		if(TypeUtils.isGeneratedType(expr, coercedType)) {
 			val generator = registry.getGenerator(expr.eResource, coercedType) as AbstractTypeGenerator;
-			return '''«generator.generateCoercion(expr, expressionType, coercedType)»''';
+			return '''«generator.generateCoercion(expr, expressionType, coercedType)»'''; 
 		}
 		if(coercedType instanceof TypeConstructorType) {
 			// can't really cast these. This should only happen for literals.
@@ -401,7 +473,7 @@ class StatementGenerator {
 				 .getConstraintSystem(callSite.eResource)
 				?.getUserData(constructingType, BaseConstraintFactory.ECLASS_KEY) == "Singleton";
 			
-			val constructedStruct = codeFragmentProvider.create('''
+			val constructedStruct = cf('''
 			«IF returnTypeIsSumType || needCast»(«dataType»)«ENDIF» {
 				«FOR i_arg: arguments.tail.indexed»
 				«IF hasAccessors»«accessor(callSite, eConstructingType, i_arg.value.parameter, ".",  " = ").apply(i_arg.key)»«ENDIF»«i_arg.value.value.code.noTerminator»«IF i_arg.key < arguments.length - 1»,«ENDIF»
@@ -421,6 +493,15 @@ class StatementGenerator {
 		return #["NamedProductType", "StructureType"].findFirst[it == eClass] !== null;
 	}
 	
+	@Traced def IGeneratorNode generateGeneratedFunctionCall(ElementReferenceExpression funCall, CodeWithContext target, GeneratedFunctionDefinition function) {
+		val generator = registry.getGenerator(function);
+		if(generator === null) {
+			// contract: no generator means NOOP.
+			return ''''''
+		}
+		'''«generator.generate(target, funCall).noTerminator»''';
+	}
+	
 	@Traced dispatch def IGeneratorNode code(ElementReferenceExpression stmt) {
 		val ref = stmt.reference
 		val id = ref?.baseName
@@ -432,12 +513,13 @@ class StatementGenerator {
 			if (ref instanceof VirtualFunction) {
 				'''«generateVirtualFunctionCall(stmt, ref, arguments)»'''
 			} else if (ref instanceof FunctionDefinition) {
-				'''«ref.generateFunctionCall(codeFragmentProvider.create('''NULL''').addHeader("stdlib.h", true), stmt)»'''
+				'''«ref.generateFunctionCall(cf('''NULL''').addHeader("stdlib.h", true), stmt)»'''
 			} else if (ref instanceof GeneratedFunctionDefinition) {
-				'''«registry.getGenerator(ref)?.generate(stmt, null)»''';
+				// target is null if we aren't part of an assignment
+				'''«generateGeneratedFunctionCall(stmt, null, ref)»''';
 			} else if(ref instanceof NativeFunctionDefinition) {
 				if(ref.checked) {
-					'''«ref.generateNativeFunctionCallChecked(codeFragmentProvider.create('''NULL'''), stmt)»'''
+					'''«ref.generateNativeFunctionCallChecked(cf('''NULL'''), stmt)»'''
 				} else {
 					'''«ref.generateNativeFunctionCallUnchecked(stmt)»'''
 				}
@@ -511,7 +593,7 @@ class StatementGenerator {
 			val generator = registry.getGenerator(stmt.eResource, type).castOrNull(AbstractTypeGenerator);
 			if (generator !== null) {
 				val varName = codeFragmentProvider.create('''«stmt»''');
-				return '''«generator.generateExpression(type, stmt, Optional.empty, varName, varName, null, null)»''';
+				return '''«generator.generateExpression(stmt, varName, new CodeWithContext(type, Optional.empty, varName), AssignmentOperator.ASSIGN, null)»''';
 			} else {
 				throw new CoreException(
 					new Status(IStatus.ERROR, "org.eclipse.mita.program",
@@ -525,7 +607,7 @@ class StatementGenerator {
 	}
 
 	@Traced dispatch def IGeneratorNode code(Expression stmt) {
-		'''/* ERROR: unsupported expression «stmt» */'''
+		'''ERROR: unsupported expression «stmt»'''
 	}
 
 	@Traced dispatch def IGeneratorNode code(ExpressionStatement stmt) {
@@ -533,85 +615,103 @@ class StatementGenerator {
 	}
 	
 	
-
-	def IGeneratorNode generateFunCallStmt(IGeneratorNode variableName, AbstractType type, ElementReferenceExpression initialization) {
+	def IGeneratorNode generateFunCallStmt(CodeWithContext left, ElementReferenceExpression initialization) {
 		val reference = initialization.reference;
 		val arguments = ExpressionUtils.getArgumentsOfElementReferenceExpression(initialization);
 		if (reference instanceof VirtualFunction) {
-			return codeFragmentProvider.create('''
-				«variableName» = «generateVirtualFunctionCall(initialization, reference, arguments).noTerminator»;
+			return cf('''
+				«left.code» = «generateVirtualFunctionCall(initialization, reference, arguments).noTerminator»;
 			''')
 		} else if (reference instanceof FunctionDefinition) {
-			return codeFragmentProvider.create('''
-				«generateFunctionCall(reference, codeFragmentProvider.create('''&«variableName»'''), initialization).noTerminator»;
+			return cf('''
+				«generateFunctionCall(reference, cf('''&«left.code»'''), initialization).noTerminator»;
 			''')
 		} else if (reference instanceof GeneratedFunctionDefinition) {
-			return codeFragmentProvider.create('''
-				«registry.getGenerator(reference).generate(initialization, variableName).noTerminator»;
+			return cf('''
+				«generateGeneratedFunctionCall(initialization, left, reference)»;
 			''')
 		} else if(reference instanceof NativeFunctionDefinition) {
 			if(reference.checked) {
-				return codeFragmentProvider.create('''
-				«reference.generateNativeFunctionCallChecked(codeFragmentProvider.create('''&«variableName»'''), initialization).noTerminator»;
+				return cf('''
+				«generateNativeFunctionCallChecked(reference, cf('''&«left.code»'''), initialization).noTerminator»;
 				''')
 			}
 			else {
-				return codeFragmentProvider.create('''
-				«variableName» = «reference.generateNativeFunctionCallUnchecked(initialization).noTerminator»;''')
+				return cf('''
+				«left.code» = «generateNativeFunctionCallUnchecked(reference, initialization).noTerminator»;''')
 			}
 		}	
 	}
 	
+
 	// TODO: remove code duplication with generateVariableDeclaration(...)
 	dispatch def IGeneratorNode initializationCode(VariableDeclaration stmt) {
-		val varName = codeFragmentProvider.create('''«stmt.name»''');
-		return initializationCode(BaseUtils.getType(stmt), stmt, Optional.of(stmt), varName, varName, AssignmentOperator.ASSIGN, stmt.initialization, false);
-	}
-	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
-		val varRef = codeFragmentProvider.create('''«expr.varRef.code.noTerminator»''');
-		return initializationCode(BaseUtils.getType(expr.varRef), expr.varRef, Optional.of(expr), varRef, varRef, expr.operator, expr.expression, true);
-	}
-	dispatch def IGeneratorNode initializationCode(ReturnValueExpression expr) {
-		val varRef = codeFragmentProvider.create('''«expr.varRef.code.noTerminator»''');
-		val cPrefix = codeFragmentProvider.create('''_result''');
-		return initializationCode(BaseUtils.getType(expr.varRef), expr.varRef, Optional.of(expr), varRef, cPrefix, expr.operator, expr.expression, true);
+		val varName = cf('''«stmt.name»''');
+		val rightSide = if(stmt.initialization !== null) {
+			new CodeWithContext(BaseUtils.getType(stmt.initialization), Optional.of(stmt.initialization), cf(stmt.initialization.code));
+		}
+		return initializationCode(
+			stmt, 
+			varName, 
+			new CodeWithContext(BaseUtils.getType(stmt), Optional.of(stmt), varName), 
+			AssignmentOperator.ASSIGN, 
+			rightSide,
+			false
+		);
 	}
 	
-	def IGeneratorNode initializationCode(AbstractType type, EObject context, Optional<EObject> target, CodeFragment varName, CodeFragment cVariablePrefix, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {		
-		if (isGeneratedType(context, type)) {
-			val generator = registry.getGenerator(context.eResource, type).castOrNull(AbstractTypeGenerator);
-			if (initialization instanceof NewInstanceExpression) {
-				return generator.generateNewInstance(type, initialization);
-			} else if (initialization instanceof ArrayAccessExpression) {
-				return generator.generateExpression(type, context, target, varName, cVariablePrefix, op, initialization);
-			} else if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
-				return generateFunCallStmt(varName, type, initialization as ElementReferenceExpression);
-			} else if(initialization instanceof PrimitiveValueExpression) {
-				if((initialization.value instanceof ArrayLiteral || initialization.value instanceof StringLiteral) 
-					&& target.orElse(null) instanceof VariableDeclaration
-				) {
-					return CodeFragment.EMPTY;
-				}
-			} else {
-				return generator.generateExpression(type, context, target, varName, cVariablePrefix, op, initialization);
-			}
-			return generator.generateExpression(type, context, target, varName, cVariablePrefix, op, initialization);
+		dispatch def IGeneratorNode initializationCode(ReturnValueExpression expr) {
+		val varName = cf('''«expr.varRef.code.noTerminator»''');
+		return initializationCode(
+			expr.varRef, 
+			cf('''_result'''),
+			new CodeWithContext(BaseUtils.getType(expr.varRef), Optional.of(expr.varRef), varName), 
+			expr.operator, 
+			new CodeWithContext(BaseUtils.getType(expr.expression), Optional.of(expr.expression), cf(expr.expression.code)), 
+			true
+		);
+	}
+	
+//	public def IGeneratorNode initializationCode(EObject target, CodeFragment varName, AssignmentOperator op, Expression initialization, boolean alwaysGenerate) {
+// 		return initializationCode(BaseUtils.getType(target), target, varName, op, initialization, alwaysGenerate);
+// 	}
+
+	dispatch def IGeneratorNode initializationCode(AssignmentExpression expr) {
+		val varName = cf('''«expr.varRef.code.noTerminator»''');
+		return initializationCode(
+			expr.varRef, 
+			varName,
+			new CodeWithContext(BaseUtils.getType(expr.varRef), Optional.of(expr.varRef), varName), 
+			expr.operator, 
+			new CodeWithContext(BaseUtils.getType(expr.expression), Optional.of(expr.expression), cf(expr.expression.code)), 
+			true
+		);
+	}
+	def IGeneratorNode initializationCode(EObject context, CodeFragment tempVarName, CodeWithContext left, AssignmentOperator op, CodeWithContext right, boolean alwaysGenerate) {
+		// TODO handle Optional.none
+		val initialization = right?.obj?.orElse(null);	
+		if (isGeneratedType(context, left.type)) {
+			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
+ 
+			if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
+				return generateFunCallStmt(left, initialization as ElementReferenceExpression);
+			} 
+			return generator.generateExpression(context, tempVarName, left, op, right);
 		} else if (initialization instanceof ElementReferenceExpression) {
 			if(initialization.isOperationCall) {
-				return generateFunCallStmt(varName, type, initialization);	
+				return generateFunCallStmt(left, initialization);	
 			}
 			else {
-				return context.trace('''«varName» «op» «initialization.code.noTerminator»;''');
+				return context.trace('''«left.code» «op» «right.code.noTerminator»;''');
 			}
 		} else if(initialization instanceof ModalityAccess) {
-			return context.trace('''«varName» «op» «initialization.code.noTerminator»;''');
-		} else if(alwaysGenerate) {
-			return context.trace('''«varName» «op» «initialization.code.noTerminator»;''');
+			return context.trace('''«left.code» «op» «right.code.noTerminator»;''');
+		} else if(alwaysGenerate && right !== null) {
+			return context.trace('''«left.code» «op» «right.code.noTerminator»;''');
 		}
 		return CodeFragment.EMPTY;
 	}
-	
-
+		
 	dispatch def IGeneratorNode code(ReturnParameterDeclaration stmt) {
 		return CodeFragment.EMPTY;
 	}
@@ -621,7 +721,7 @@ class StatementGenerator {
 	}
   
 	dispatch def IGeneratorNode code(ExceptionBaseVariableDeclaration stmt) {
-		return codeFragmentProvider.create('''
+		return cf('''
 				«exceptionGenerator.exceptionType» «stmt.name» = NO_EXCEPTION;
 				«IF stmt.needsReturnFromTryCatch»
 					bool returnFromWithinTryCatch = false;
@@ -635,7 +735,7 @@ class StatementGenerator {
 			BaseUtils.getType(stmt), 
 			stmt, 
 			Optional.of(stmt),
-			codeFragmentProvider.create('''«stmt.name»'''), 
+			cf('''«stmt.name»'''), 
 			stmt.initialization,
 			stmt.eContainer instanceof Program
 		);
@@ -658,10 +758,6 @@ class StatementGenerator {
 		if (TypeUtils.isGeneratedType(context, type)) {
 			val generator = registry.getGenerator(context.eResource, type).castOrNull(AbstractTypeGenerator);
 			result.children += generator.generateVariableDeclaration(type, context, varName, initialization, isTopLevel);
-			if(initialization instanceof PrimitiveValueExpression && (
-				type.name == MitaTypeSystem.ARRAY_TYPE || type.name == MitaTypeSystem.STRING)) {
-				initializationDone = true;
-			}
 		} else if (initialization instanceof ElementReferenceExpression) {
 			val ref = initialization.reference;
 			// Assignment from functions is done by declaring, then passing in a reference
@@ -669,35 +765,35 @@ class StatementGenerator {
 				// constructors of structural types are done directly
 				!(ref instanceof TypeConstructor)
 			) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName»;''');
+				result.children += cf('''«type.getCtype(context)» «varName»;''');
 			} else {
 				// copy assigmnent
 				// since type != generatedType we can copy with assignment
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = «initialization.code.noTerminator»;''');
+				result.children += cf('''«type.getCtype(context)» «varName» = «initialization.code.noTerminator»;''');
 				initializationDone = true;
 			}
 		// constant assignments and similar get here
 		} else if(initialization instanceof ModalityAccess) {
-			result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName»;''');
+			result.children += cf('''«type.getCtype(context)» «varName»;''');
 		} 
 		else {
 			if (initialization !== null) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = «initialization.code.noTerminator»;''');
+				result.children += cf('''«type.getCtype(context)» «varName» = «initialization.code.noTerminator»;''');
 			} else if (type instanceof ProdType || type instanceof org.eclipse.mita.base.typesystem.types.SumType) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = {0};''');
+				result.children += cf('''«type.getCtype(context)» «varName» = {0};''');
 			} else if (type instanceof NumericType) {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = 0;''');
+				result.children += cf('''«type.getCtype(context)» «varName» = 0;''');
 			} else if(type instanceof AtomicType) {
 				// init is zero, type is atomic, but not generated
 				// -> type is bool
 				if(type.name == "bool") {
-					result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = false;''');
+					result.children += cf('''«type.getCtype(context)» «varName» = false;''');
 				}
 				else {
-					result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
+					result.children += cf('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
 				} 
 			} else {
-				result.children += codeFragmentProvider.create('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
+				result.children += cf('''«type.getCtype(context)» «varName» = ERROR unsupported initialization;''');
 			}
 			// all of the above did initialization
 			initializationDone = true;
@@ -709,11 +805,17 @@ class StatementGenerator {
 		
 		// generate initialization
 		if(!initializationDone) {
-			result.children += codeFragmentProvider.create('''«"\n"»''');
+			result.children += cf('''«"\n"»''');
 			// TODO: remove code duplication with initializationCode(VariableDeclaration)
-			result.children += initializationCode(type, context, varDecl.map[it], varName, varName, AssignmentOperator.ASSIGN, initialization, false).noNewline.noTerminator;
-			result.children += codeFragmentProvider.create('''«";"»''');
-		
+			result.children += initializationCode(
+				context, 
+				varName, 
+				new CodeWithContext(type, varDecl.map[it], varName), 
+				AssignmentOperator.ASSIGN, 
+				if(initialization !== null) { new CodeWithContext(BaseUtils.getType(initialization), Optional.of(initialization), cf(initialization.code)) }, 
+				false 
+			).noNewline.noTerminator;
+			result.children += cf('''«";"»''');		
 		}
 		
 		return result;
@@ -738,19 +840,23 @@ class StatementGenerator {
 		if (ModelUtils.isInTryCatchFinally(stmt)) {
 			'''
 				// THROW «stmt.exceptionType.name»
-				exception = «codeFragmentProvider.create('''«stmt.exceptionType.baseName»''').addHeader('MitaExceptions.h', true)»;
+				exception = «cf('''«stmt.exceptionType.baseName»''').addHeader('MitaExceptions.h', true)»;
 				break;
 			'''
 		} else {
 			'''
 				// THROW «stmt.exceptionType.name»
-				return «codeFragmentProvider.create('''«stmt.exceptionType.baseName»''').addHeader('MitaExceptions.h', true)»;
+				return «cf('''«stmt.exceptionType.baseName»''').addHeader('MitaExceptions.h', true)»;
 			'''
 		}
 	}
-
+	
+	dispatch def IGeneratorNode code(TypeSpecifier type) {
+		return cf('''«getCtype(BaseUtils.getType(type), type)»''');
+	}
+	
 	@Traced dispatch def IGeneratorNode code(TryStatement stmt) {
-		val bool = codeFragmentProvider.create('''bool''').addHeader('stdbool.h', true);
+		val bool = cf('''bool''').addHeader('stdbool.h', true);
 		'''
 			// TRY
 			returnFromWithinTryCatch = false;
@@ -1071,7 +1177,7 @@ class StatementGenerator {
 
 	private def getCtype(AbstractType type, EObject context) {
 		val result = if(type instanceof TypeVariable) {
-			codeFragmentProvider.create('''void*''') 
+			cf('''void*''') 
 		} 
 		else {
 			typeGenerator.code(context, type);	

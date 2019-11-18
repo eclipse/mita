@@ -55,6 +55,12 @@ import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 import org.eclipse.mita.base.types.Parameter
 import org.eclipse.mita.program.ReturnParameterReference
+import org.eclipse.mita.program.SystemEventSource
+import org.eclipse.mita.base.expressions.ArrayAccessExpression
+import org.eclipse.mita.program.EventHandlerVariableDeclaration
+import org.eclipse.mita.program.DereferenceExpression
+import org.eclipse.mita.base.expressions.Argument
+import org.eclipse.mita.base.types.GeneratedElement
 
 /**
  * Automatic unbinding of size types and recursion of data types.
@@ -124,6 +130,11 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	
 	override Pair<AbstractType, Iterable<EObject>> unbindSize(Resource r, ConstraintSystem system, EObject obj, AbstractType type) {
 		return doUnbindSize(r, system, obj, type);
+	}
+	
+	dispatch def Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, SystemEventSource obj, AbstractType type) {
+		val basicResult = doUnbindSize(r, system, null, type);
+		return basicResult.key -> (basicResult.value + #[obj.source as EObject] + obj.source.eAllContents.toIterable);
 	}
 	
 	dispatch def Pair<AbstractType, Iterable<EObject>> doUnbindSize(Resource r, ConstraintSystem system, TypeReferenceSpecifier typeSpecifier, TypeConstructorType type) {
@@ -210,6 +221,10 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		else {
 			return null	-> c.system.newTypeVariable(null);
 		}
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, EventHandlerVariableDeclaration variable, AbstractType t) {
+		inferUnmodifiedFrom(c.system, variable, EcoreUtil2.getContainerOfType(variable, EventHandlerDeclaration).event);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, TypeReferenceSpecifier obj, TypeConstructorType t) {
@@ -486,11 +501,15 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 		}
 		
 		// can be overriden to explicitly enable/disable validation for certain eobjects
-		def alwaysValid(EObject origin) {
+		def boolean alwaysValid(EObject origin) {
 			// function parameters normally don't need their size inferred,
 			// since they are allocated from outside.
 			// copying them will create issues at the place where they are copied.
 			if(EcoreUtil2.getContainerOfType(origin, Parameter) !== null) {
+				return true;
+			}
+			// TODO is this bad? I think for generated elements all bets are off anyway.
+			if(EcoreUtil2.getContainerOfType(origin, GeneratedElement) !== null) {
 				return true;
 			}
 			// references don't need to validate, since their reference already validates --> less errors for user
@@ -502,6 +521,17 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 				if(!origin.operationCall) {
 					return true;
 				}
+			}
+			// same goes for array access expression
+			if(origin instanceof ArrayAccessExpression) {
+				return true;
+			}
+			// and for dereference
+			if(origin instanceof DereferenceExpression) {
+				return true;
+			}
+			if(origin instanceof Argument) {
+				return origin.value.alwaysValid;
 			}
 			return false;
 		}
@@ -533,7 +563,7 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 					else {
 						return #[];
 					}
-				]
+				].force
 			}
 			else {
 				return #[];

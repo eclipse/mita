@@ -249,7 +249,7 @@ class ModelUtils {
 	
 	
 	def static getSortedArguments(Iterable<Parameter> parameters, Iterable<Argument> arguments) {
-		if(arguments.empty || arguments.head.parameter === null) {
+		if(arguments.empty || arguments.exists[it.parameter === null]) {
 			arguments;
 		}
 		else {

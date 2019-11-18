@@ -17,6 +17,7 @@ import com.google.inject.Inject
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.emf.ecore.util.EcoreUtil.UsageCrossReferencer
+import org.eclipse.mita.base.expressions.Argument
 import org.eclipse.mita.base.expressions.ArrayAccessExpression
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
@@ -25,6 +26,7 @@ import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.PrimitiveValueExpression
 import org.eclipse.mita.base.expressions.ValueRange
 import org.eclipse.mita.base.types.CoercionExpression
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.NullTypeSpecifier
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Parameter
@@ -62,21 +64,24 @@ import org.eclipse.mita.base.typesystem.types.NumericAddType
 import org.eclipse.mita.base.typesystem.types.NumericMaxType
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.types.TypeScheme
+import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.program.DereferenceExpression
+import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.EventHandlerVariableDeclaration
 import org.eclipse.mita.program.FunctionDefinition
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.resource.PluginResourceLoader
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.diagnostics.Severity
 
-import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 import static extension org.eclipse.mita.base.util.BaseUtils.zip
 
 /**
@@ -259,6 +264,10 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		doCreateConstraints(c, c.obj);
 	}
 	
+	dispatch def void doCreateConstraints(InferenceContext c, Argument arg) {
+		inferUnmodifiedFrom(c.system, arg, arg.value);	
+	}
+	
 	dispatch def void doCreateConstraints(InferenceContext c, Operation op) {
 		val typeArgs = op.typeParameters.map[c.system.getTypeVariable(it)].force()
 		var type = c.type;
@@ -292,6 +301,10 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 					c.system.associate(c.type, c.tv.origin);
 				}
 			}
+			// signals are hard to type (see PlatformConstraintFactory), and this call's signalInstance parent should have enough information to type the function call anyways.
+			else if(fun instanceof Signal) {
+				return;
+			}
 			else if(fun instanceof Operation) {
 				inferUnmodifiedFrom(c.system, obj, fun.typeSpecifier);
 			}
@@ -306,7 +319,11 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, SignalInstance siginst) {
-		inferUnmodifiedFrom(c.system, siginst, siginst.initialization);
+		inferUnmodifiedFrom(c.system, siginst, siginst.initialization);	
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, SystemEventSource eventSource) {
+		inferUnmodifiedFrom(c.system, eventSource, eventSource.source);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, VariableDeclaration variable) {
@@ -356,6 +373,10 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	
 	dispatch def void doCreateConstraints(InferenceContext c, TypeExpressionSpecifier typeSpecifier) {
 		inferUnmodifiedFrom(c.system, typeSpecifier, typeSpecifier.value);
+	}
+	
+	dispatch def void doCreateConstraints(InferenceContext c, EventHandlerVariableDeclaration variable) {
+		inferUnmodifiedFrom(c.system, variable, EcoreUtil2.getContainerOfType(variable, EventHandlerDeclaration).event);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, NullTypeSpecifier typeSpecifier) {
@@ -409,6 +430,9 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 			val typeInstance = new TypeConstructorType(typeSpecifier, new AtomicType(typeSpecifier.type, typeName), typeArgs);
 			typeInstance;
 		}
+		else {
+			type
+		}
 		
 		// handle reference modifiers (a: &t)
 		val referenceTypeVarOrigin = typeRegistry.getTypeModelObject(typeSpecifier, StdlibTypeRegistry.referenceTypeQID);
@@ -419,7 +443,7 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 		//handle optional modifier (a: t?)
 		val optionalTypeVarOrigin = typeRegistry.getTypeModelObject(typeSpecifier, StdlibTypeRegistry.optionalTypeQID);
 		val typeWithOptionalModifier = if(typeSpecifier.optional) {
-			new TypeConstructorType(null, new AtomicType(optionalTypeVarOrigin, "reference"), #[typeWithReferenceModifiers -> Variance.INVARIANT]);
+			new TypeConstructorType(null, new AtomicType(optionalTypeVarOrigin, "optional"), #[typeWithReferenceModifiers -> Variance.INVARIANT]);
 		}
 		else {
 			typeWithReferenceModifiers;

@@ -198,10 +198,10 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 		#define NETWORK_SSID  "«configuration.getString("ssid")»"
 		«IF auth instanceof SumTypeRepr»
 			«IF auth.name == "Personal"»
-				#define NETWORK_PSK  «auth.properties.get("psk").code»
+				#define NETWORK_PSK  "«StaticValueInferrer.infer(auth.properties.get("psk"), [])»"
 			«ELSEIF auth.name == "Enterprise"»
-				#define NETWORK_USERNAME «auth.properties.get("username").code»
-				#define NETWORK_PASSWORD «auth.properties.get("password").code»
+				#define NETWORK_USERNAME "«StaticValueInferrer.infer(auth.properties.get("username"), [])»"
+				#define NETWORK_PASSWORD "«StaticValueInferrer.infer(auth.properties.get("password"), [])»"
 			«ENDIF»
 		«ELSE»
 			ERROR: INVALID CONFIGURATION: authentication

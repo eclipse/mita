@@ -30,6 +30,7 @@ import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.typesystem.types.BottomType
 import org.eclipse.mita.base.typesystem.types.LiteralNumberType
 import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.typesystem.constraints.SubtypeConstraint
 import org.eclipse.mita.base.typesystem.types.LiteralTypeExpression
 
 // handles equality and max
@@ -129,6 +130,11 @@ class SizeConstraintSolver implements IConstraintSolver {
 		}
 		
 		system.addConstraint(new EqualityConstraint(constraint.target, typeLengthType, constraint._errorMessage));
+		return SimplificationResult.success(system, Substitution.EMPTY);
+	}
+	
+	protected dispatch def SimplificationResult doSimplify(ConstraintSystem system, Substitution substitution, EObject typeResolutionOrigin, SubtypeConstraint constraint) {
+		// do nothing
 		return SimplificationResult.success(system, Substitution.EMPTY);
 	}
 	

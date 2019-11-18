@@ -23,7 +23,7 @@ import org.eclipse.mita.base.expressions.AssignmentOperator
 import org.eclipse.mita.base.expressions.AssignmentExpression
 import org.eclipse.mita.base.expressions.IntLiteral
 import org.eclipse.mita.base.expressions.Literal
-import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.types.Operation 
 import org.eclipse.mita.base.types.Parameter
@@ -32,6 +32,7 @@ import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.ConfigurationItem
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Signal
+import org.eclipse.mita.platform.HasEvents
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.Exportable
@@ -39,11 +40,11 @@ import org.eclipse.mita.base.types.GeneratedElement
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
 import org.eclipse.mita.base.types.PresentTypeSpecifier
 import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.types.ExportableOperation
 import org.eclipse.mita.base.types.GeneratedType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.mita.base.types.InterpolatedStringLiteral
 
 class Program extends PackageAssociation {
 	contains ImportStatement[] imports
@@ -56,8 +57,7 @@ class Program extends PackageAssociation {
 	}
 }
 
-class SystemResourceSetup {
-	id String name
+class SystemResourceSetup extends HasEvents { 
 	refers AbstractSystemResource ^type
 	contains ConfigurationItemValue[] configurationItemValues
 	contains SignalInstance[] signalInstances
@@ -72,6 +72,10 @@ class SystemResourceSetup {
 	op String toString() {
 		val typeName = BaseUtils.getText(this, ProgramPackage.eINSTANCE.systemResourceSetup_Type);
 		return 'setup ' + name + ': ' + typeName + ' {...}';
+	}
+	
+	op SystemResourceEvent[] getEvents() {
+		return ^type?.events
 	}
 }
 
@@ -102,8 +106,15 @@ class SignalInstance extends VariableDeclaration {
 	
 }
 
+class EventHandlerVariableDeclaration extends VariableDeclaration {
+	op EventHandlerDeclaration getEventHandler() {
+		return EcoreUtil2.getContainerOfType(this, EventHandlerDeclaration)
+	}
+}
+
 class EventHandlerDeclaration {
 	contains EventSource event
+	contains EventHandlerVariableDeclaration payload
 	contains ProgramBlock block
 	
 	op String toString() {
@@ -120,8 +131,8 @@ class TimeIntervalEvent extends EventSource {
 	}
 }
 class SystemEventSource extends EventSource {
-	refers AbstractSystemResource origin
-	refers Event source
+	refers HasEvents origin
+	refers SystemResourceEvent source
 	
 	op String toString() {
 		val ref = eGet(ProgramPackage.eINSTANCE.systemEventSource_Source, false);
@@ -139,12 +150,6 @@ enum TimeUnit {
 	Hour
 }
 
-abstract class ExportableOperation extends Operation, Exportable {
-	op String toString() {
-		return super.toString();
-	}
-}
-
 class FunctionDefinition extends ExportableOperation {
 	contains ProgramBlock body
 	
@@ -153,15 +158,6 @@ class FunctionDefinition extends ExportableOperation {
 	}
 	op String toString() {
 		super.toString()
-	}
-}
-
-class GeneratedFunctionDefinition extends ExportableOperation, GeneratedElement {
-	op String getId(){
-		return null;
-	}
-	op String toString() {
-		return super.toString();
 	}
 }
 
@@ -206,6 +202,9 @@ class VariableDeclaration extends Property, AbstractStatement {
 
 class ArrayLiteral extends Literal {
 	contains Expression[] values
+	op String toString() {
+		return "[" + values.join(", ") + "]";
+	}
 }
 
 abstract class AbstractLoopStatement extends AbstractStatement {
@@ -340,11 +339,19 @@ class CatchStatement extends AbstractStatement {
 class NewInstanceExpression extends ElementReferenceExpression {
 	contains TypeReferenceSpecifier ^type
 	
+	op void setReference(EObject reference) {
+		
+	}
+	
 	op Operation getReference() {
 		val refType = ^type.^type;
 		if(refType instanceof GeneratedType) {
 			return refType.constructor;
 		}
+	}
+	
+	op String getRefText() {
+		return ^type.toString;
 	}
 }
 

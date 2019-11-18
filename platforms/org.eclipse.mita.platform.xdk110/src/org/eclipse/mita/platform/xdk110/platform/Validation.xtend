@@ -22,11 +22,12 @@ import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCallWithoutFeature
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
 import org.eclipse.mita.base.types.Enumerator
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.Operation
+import org.eclipse.mita.library.stdlib.ArrayGenerator
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.platform.xdk110.sensors.NoiseSensorValidator
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.inferrer.StaticValueInferrer

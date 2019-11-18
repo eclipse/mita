@@ -4,5 +4,8 @@ package platforms.x86;
 
 platform x86 {
 	module "org.eclipse.mita.platform.x86.platform.X86PlatformGeneratorModule"
-	event startup
+	generator "org.eclipse.mita.platform.x86.platform.X86PlatformGenerator"
+	
+	// payload is current time in ms since epoch (1970/1/1)
+	event startup: int32
 }

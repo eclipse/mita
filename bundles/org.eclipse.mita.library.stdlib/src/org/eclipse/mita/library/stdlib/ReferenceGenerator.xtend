@@ -23,6 +23,7 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 
@@ -33,11 +34,7 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	
 	@Inject
 	protected extension GeneratorUtils
-	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
-		CodeFragment.EMPTY;
-	}
-	
+
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		if(type instanceof TypeConstructorType) {
 			val realType = type.typeArguments.tail.head;
@@ -54,9 +51,21 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
 		codeFragmentProvider.create('''«typeGenerator.code(context, type)» «varName»«IF initialization !== null» = «initialization.code»«ENDIF»;''')
 	}
-	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject right) {
-		codeFragmentProvider.create('''«leftName» «operator.literal» «right.code»;''')
+	override generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {
+		codeFragmentProvider.create('''«left.code» «operator.literal» «right.code»;''')
 		
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
 }

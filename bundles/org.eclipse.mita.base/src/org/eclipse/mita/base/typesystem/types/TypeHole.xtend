@@ -14,6 +14,8 @@
 package org.eclipse.mita.base.typesystem.types
 
 import org.eclipse.emf.ecore.EObject
+import org.eclipse.mita.base.util.Left
+import org.eclipse.mita.base.util.Right
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 
@@ -29,6 +31,13 @@ class TypeHole extends TypeVariable {
 		super(origin, idx, name);
 	}
 		
+	override getFreeVars() {
+		return #[];
+	}
+	override replaceOrigin(EObject origin) {
+		return new TypeHole(origin, idx, name);
+	}
+	
 	override modifyNames(NameModifier converter) {
 		val newName = converter.apply(idx);
 		if(newName instanceof Left<?, ?>) {
