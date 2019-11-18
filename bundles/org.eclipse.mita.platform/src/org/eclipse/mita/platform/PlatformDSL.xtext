@@ -79,7 +79,9 @@ ConfigurationItem returns platform::ConfigurationItem:
 ;
 
 Signal returns platform::Signal:
-	'signal' name=ID '(' (parameters+=SignalParameter (',' parameters+=SignalParameter)*)? ')' ':' typeSpecifier=TypeSpecifier
+	'signal' name=ID '(' (parameters+=SignalParameter (',' parameters+=SignalParameter)*)? ')' ':' typeSpecifier=TypeSpecifier ('{'
+		(events += SystemResourceEvent)*
+	'}')?
 ;
 
 SignalParameter returns platform::SignalParameter:

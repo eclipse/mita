@@ -51,6 +51,7 @@ import org.eclipse.mita.platform.Sensor
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.ConfigurationItemValue
+import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.IsDeconstructionCase
 import org.eclipse.mita.program.IsDeconstructor
 import org.eclipse.mita.program.Program
@@ -73,6 +74,7 @@ import org.eclipse.xtext.scoping.impl.ImportNormalizer
 import org.eclipse.xtext.scoping.impl.ImportScope
 import org.eclipse.xtext.util.OnChangeEvictingCache
 
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
@@ -662,15 +664,35 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 				}
 			}
 			else if(obj instanceof SystemResourceSetup) {
-				return !obj.events.isNullOrEmpty
+				// TODO
+				return true
 			}
 			return false;
 		])
 	}
 
 	def IScope scope_SystemEventSource_source(SystemEventSource context, EReference reference) {
-		return if (context === null || context.origin === null || context.origin.events.nullOrEmpty) {
+		var superScope = delegateGetScope(context, reference);
+		
+		return if(context === null) {
 			IScope.NULLSCOPE;
+		} else if (context.origin === null || context.origin.events.nullOrEmpty) {
+			val eventSource = EcoreUtil2.getContainerOfType(context, EventHandlerDeclaration)?.event?.castOrNull(SystemEventSource);
+			if(eventSource === null) {
+				superScope;
+			}
+			else {
+				val qualifiers = #[
+					QualifiedName.create(#[BaseUtils.getText(eventSource, ProgramPackage.eINSTANCE.systemEventSource_Origin)])
+				] + if(eventSource.origin !== null && eventSource.signalInstance !== null) {
+					#[QualifiedName.create(#[
+						BaseUtils.getText(eventSource.origin, ProgramPackage.eINSTANCE.systemResourceSetup_Type),
+						BaseUtils.getText(eventSource.signalInstance.initialization, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference)
+					])];
+				} else {#[]};
+				val normalizers = qualifiers.map[qualifier | new ImportNormalizer(qualifier, true, false)];
+				new ImportScope(normalizers.toList, superScope, null, ProgramPackage.eINSTANCE.systemEventSource, false);
+			}
 		} else {
 			Scopes.scopeFor(context.origin.events);
 		}
@@ -687,6 +709,13 @@ class ProgramDslScopeProvider extends AbstractProgramDslScopeProvider {
 	}
 
 	val cache = new OnChangeEvictingCache();
+
+	def IScope scope_SystemEventSource_signalInstance(SystemEventSource eventSource, EReference reference) {
+		val superScope = delegateGetScope(eventSource, reference);
+		val qualifier = QualifiedName.create(#[	BaseUtils.getText(eventSource, ProgramPackage.eINSTANCE.systemEventSource_Origin)]);
+		val normalizer = new ImportNormalizer(qualifier, true, false);
+		return new ImportScope(#[normalizer], superScope, null, ProgramPackage.eINSTANCE.systemEventSource, false);
+	}
 
 	override IScope getScope(EObject context, EReference reference) {
 		// Performance improvement: hard-code well traveled routes

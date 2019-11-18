@@ -777,6 +777,7 @@ alt MqttWill {
 connectivity many MQTT {
 	generator "org.eclipse.mita.platform.xdk110.connectivity.MqttGenerator"
     validator "org.eclipse.mita.platform.xdk110.connectivity.MqttValidator"
+	sizeInferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
 	
 	/**
 	 * The underlying transport connectivity we use to send the data out. In the future we might also
@@ -828,9 +829,9 @@ connectivity many MQTT {
 	/**
 	 * Publishes a message to a particular topic. 
 	 */
-	signal topic(name : string, qos : uint32 = 0) : string
-	
-	event msgReceived: string<500>
+	signal topic(name : string, qos : uint32 = 0, size=500) : string {
+		event msgReceived: string
+	}
 }
 
 alt HonoAuthentication {

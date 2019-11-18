@@ -15,12 +15,19 @@ package org.eclipse.mita.platform.xdk110.connectivity
 
 import com.google.inject.Inject
 import java.net.URI
+import java.util.Optional
 import java.util.stream.Collectors
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.library.stdlib.RingbufferGenerator
 import org.eclipse.mita.library.stdlib.RingbufferGenerator.PushGenerator
+import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.SignalInstance
+import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator
 import org.eclipse.mita.program.generator.IPlatformLoggingGenerator.LogLevel
@@ -29,15 +36,8 @@ import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.generator.IFileSystemAccess2
-import java.util.Optional
-import org.eclipse.mita.program.generator.CodeWithContext
-import org.eclipse.mita.base.typesystem.types.TypeConstructorType
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.types.Variance
-import org.eclipse.mita.library.stdlib.RingbufferGenerator
-import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
-import org.eclipse.mita.program.SystemEventSource
-import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
+
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 
 class MqttGenerator extends AbstractSystemResourceGenerator {
 
@@ -414,6 +414,12 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		return result;
 
 	}
+	
+	// returns a char*
+	protected def getHandlerTopic(EventHandlerDeclaration handler) {
+		val sigInst = handler.event.castOrNull(SystemEventSource)?.signalInstance;
+		return '''«sigInst?.name»TopicBuf''';
+	} 
 
 	protected def isLogin(SumTypeRepr repr) {
 		return repr.name == "Login"
@@ -501,15 +507,17 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 					.length = eventData->publish.length
 				};
 				«FOR handler: eventHandler»
-				«pushGenerator.generate(
-					handler,
-					new CodeWithContext(RingbufferGenerator.wrapInRingbuffer(typeRegistry, handler, BaseUtils.getType(handler.event.castOrNull(SystemEventSource).source)), Optional.empty, codeFragmentProvider.create('''rb_«handler.baseName»''')),
-					codeFragmentProvider.create('''msg''')
-				)»
-				exception = CmdProcessor_enqueue(&Mita_EventQueue, «handler.handlerName», NULL, 0);
-				if(exception != RETCODE_OK)
-				{
-					Retcode_RaiseError(exception);
+				if(exception == RETCODE_OK && strlen(«getHandlerTopic(handler)») == eventData->publish.topic.length && 0 == memcmp(eventData->publish.topic.start, «getHandlerTopic(handler)», eventData->publish.topic.length)) {
+					«pushGenerator.generate(
+						handler,
+						new CodeWithContext(RingbufferGenerator.wrapInRingbuffer(typeRegistry, handler, BaseUtils.getType(handler.event.castOrNull(SystemEventSource).source)), Optional.empty, codeFragmentProvider.create('''rb_«handler.baseName»''')),
+						codeFragmentProvider.create('''msg''')
+					)»
+					exception = CmdProcessor_enqueue(&Mita_EventQueue, «handler.handlerName», NULL, 0);
+					if(exception != RETCODE_OK)
+					{
+						Retcode_RaiseError(exception);
+					}
 				}
 				«ENDFOR»
 				break;

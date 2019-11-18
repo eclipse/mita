@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.function.Function
 import java.util.stream.Stream
+import org.eclipse.core.runtime.NullProgressMonitor
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.plugin.EcorePlugin
 import org.eclipse.emf.ecore.resource.Resource
@@ -36,8 +37,11 @@ import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.types.SystemResourceEvent
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
 import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
@@ -50,6 +54,7 @@ import org.eclipse.mita.platform.InputOutput
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.Sensor
+import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.platform.SystemResourceAlias
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
@@ -75,12 +80,7 @@ import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.base.types.TypeReferenceSpecifier
-import org.eclipse.mita.base.types.TypeSpecifier
 import static extension org.eclipse.mita.base.util.BaseUtils.force
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.core.runtime.NullProgressMonitor
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -369,12 +369,19 @@ class GeneratorUtils {
 			val instanceName = origin.name;
 			'''«instanceName.toFirstUpper»«event.source.name.toFirstUpper»'''
 		} else {
-			event.source.baseName
+			return '''«event.origin.name.toFirstLower»«IF event.signalInstance !== null»«event.signalInstance.name.toFirstUpper»«ENDIF»«event.source.name.toFirstUpper»'''
 		}
 	}
 	
 	def dispatch String getBaseName(SystemResourceEvent event) {
-		return '''«(event.eContainer as AbstractSystemResource).name.toFirstUpper»«event.name.toFirstUpper»'''
+		var parent = event.eContainer;
+		if(parent instanceof AbstractSystemResource) {
+			return '''«parent.name.toFirstUpper»«event.name.toFirstUpper»'''
+		}
+		else if(parent instanceof Signal) {
+			var systemResource = parent.eContainer as AbstractSystemResource;
+			'''«systemResource.name.toFirstUpper»«parent.name.toFirstUpper»«event.name.toFirstUpper»'''
+		}
 	}
 	
 	def dispatch String getBaseName(TimeIntervalEvent event) {

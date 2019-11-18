@@ -89,6 +89,7 @@ class PlatformConstraintFactory extends BaseConstraintFactory {
 		// signals are accessed like `mqtt.t.write("foo")`. 
 		// Therefore, t needs the type "(SystemResource, arg1, ...) -> siginst<concreteType>"
 		// and topic needs to be of type (String, u32) -> ((SystemResource, arg1, ...) -> siginst<concreteType>)
+		sig.events.forEach[system.computeConstraints(it)];
 		val returnType = system.computeConstraints(sig.typeSpecifier);
 		// \T. sigInst<T>
 		val sigInstType = typeRegistry.getTypeModelObjectProxy(system, sig, StdlibTypeRegistry.sigInstTypeQID);

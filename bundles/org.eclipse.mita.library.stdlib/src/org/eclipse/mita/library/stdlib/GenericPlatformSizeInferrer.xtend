@@ -52,9 +52,7 @@ class GenericPlatformSizeInferrer implements FunctionSizeInferrer {
 	def String getLengthParameterName(SignalInstance sigInst) {
 		return 'length';
 	}
-	
-
-	
+		
 	protected dispatch def void doCreateConstraints(InferenceContext c, SignalInstance instance, TypeConstructorType type) {
 		if(!#["string", "array"].contains(type.name)) {
 			return;

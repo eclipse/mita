@@ -319,7 +319,10 @@ class ProgramSizeInferrer extends AbstractSizeInferrer implements TypeSizeInferr
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, SignalInstance siginst) {
-		inferUnmodifiedFrom(c.system, siginst, siginst.initialization);	
+		// siginsts should be typed by the platform; 
+		// if they are not then we get here and they are write-only, 
+		// therefore we can just assign the original type.
+		c.system.associate(c.type, siginst);
 	}
 	
 	dispatch def void doCreateConstraints(InferenceContext c, SystemEventSource eventSource) {

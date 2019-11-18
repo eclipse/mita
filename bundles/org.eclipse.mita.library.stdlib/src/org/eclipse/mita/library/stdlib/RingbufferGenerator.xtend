@@ -219,7 +219,7 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 					), 
 					true
 				)»
-				«rbRef.code».length++;
+				++«rbRef.code».length;
 			''').addHeader("MitaGeneratedTypes.h", false);
 		}
 	}
