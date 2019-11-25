@@ -22,7 +22,7 @@ import org.junit.runners.Suite.SuiteClasses;
 	ControlflowTest.class,
 	EpochTimeTest.class,
 	HelloWorldTest.class,
-	MqttTest.class,
+//	MqttTest.class, // to do this test we need some kind of MQTT broker, which is not available on jenkins
 	ReferencesTest.class,
 	RingbufferTest.class,
 	StringTest.class,

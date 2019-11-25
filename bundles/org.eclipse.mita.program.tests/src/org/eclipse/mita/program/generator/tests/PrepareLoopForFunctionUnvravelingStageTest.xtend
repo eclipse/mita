@@ -25,6 +25,8 @@ import org.junit.Test
 
 import static org.junit.Assert.*
 import org.eclipse.cdt.core.dom.ast.IASTDoStatement
+import org.eclipse.cdt.core.dom.ast.IASTFunctionCallExpression
+import org.eclipse.cdt.core.dom.ast.IASTUnaryExpression
 
 class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 	
@@ -85,13 +87,16 @@ class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 		
 		assertNull("Post loop statement was not rewritten", forLoop.iterationExpression);
 		
-		val lastStatement = (forLoop.body as IASTCompoundStatement).children.last;
-		assertTrue("Post loop statement is not the last statement in the loop", lastStatement instanceof IASTExpressionStatement);
-		val lastExpression = (lastStatement as IASTExpressionStatement).expression;
-		assertTrue("Post loop statement is not the last statement in the loop", lastExpression instanceof IASTBinaryExpression);
-		val leftOperand = (lastExpression as IASTBinaryExpression).operand1;
-		assertTrue("Post loop statement is not the last statement in the loop", leftOperand instanceof IASTIdExpression);
-		assertEquals("Post loop statement is not the last statement in the loop", "i", (leftOperand as IASTIdExpression).name.toString());
+		val secondToLastStatement = (forLoop.body as IASTCompoundStatement).children.reverse.get(1);
+		assertTrue("Post loop statement is not the second to last statement in the loop", secondToLastStatement instanceof IASTExpressionStatement);
+		val secondToLastExpression = (secondToLastStatement as IASTExpressionStatement).expression;
+		assertTrue("Post loop statement is not the second to last statement in the loop", secondToLastExpression instanceof IASTBinaryExpression);
+		val fooCall = (secondToLastExpression as IASTBinaryExpression).operand2;
+		assertTrue("Post loop statement is not the second to last statement in the loop", fooCall instanceof IASTFunctionCallExpression);
+		val iRefArg = (fooCall as IASTFunctionCallExpression).arguments.head;
+		assertTrue("Post loop statement is not the second to last statement in the loop", iRefArg instanceof IASTUnaryExpression);
+		val iVariable = (iRefArg as IASTUnaryExpression).operand;
+		assertEquals("Post loop statement is not the second to last statement in the loop", "i", (iVariable as IASTIdExpression).name.toString());
 	}
 	
 	@Test
