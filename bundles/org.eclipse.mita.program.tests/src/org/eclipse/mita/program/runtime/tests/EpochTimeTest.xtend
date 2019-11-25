@@ -43,9 +43,10 @@ class EpochTimeTest extends AbstractRuntimeTest {
 		val executable = projectPath.resolve(Paths.get("src-gen", "build", "app"));
 		val lines = runAtMost(executable, 60);
 		val lastLine = lines.iterator.last;
-		val timeFromApp = Integer.parseInt(lastLine);
-		val timeFromJava = Instant.now().toEpochMilli();
+		val timeFromApp = Integer.parseInt(lastLine).intValue;
+		val timeFromJava = Instant.now().toEpochMilli() as int;
 		println('''java: «timeFromJava», testling: «timeFromApp»''')
-		Assert.assertTrue(Math.abs(timeFromJava as int - timeFromApp) < 10);
+		// time difference should be less than 2s
+		Assert.assertTrue(Math.abs(timeFromJava - timeFromApp) < 2000);
 	}
 }
