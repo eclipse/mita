@@ -205,7 +205,8 @@ class GeneratorUtils {
 		val program = EcoreUtil2.getContainerOfType(event, Program);
 		if(program !== null) {
 			// count event handlers, so we get unique names
-			return '''HandleEvery«event.baseName»_«(event.eContainer as Program).eventHandlers.filter[it.event.baseName == event.event.baseName].indexed.filter[it.value === event].head.key + 1»''';
+			val occurrence = (event.eContainer as Program).eventHandlers.filter[it.event.baseName == event.event.baseName].indexed.filter[it.value === event].head.key + 1;
+			return '''HandleEvery«event.baseName»_«occurrence»''';
 		}
 		// if we are somehow not a child of program, default to no numbering
 		return '''HandleEvery«event.baseName»''';
@@ -349,7 +350,7 @@ class GeneratorUtils {
 	}
 	
 	def dispatch String getBaseName(EventHandlerDeclaration event) {
-		return '''«event.event.baseName»''';
+		return event.event.baseName;
 	}
 	
 	def dispatch String getBaseName(SystemEventSource event) {
