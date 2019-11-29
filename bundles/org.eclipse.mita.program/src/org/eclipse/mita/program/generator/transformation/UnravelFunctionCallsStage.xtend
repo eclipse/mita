@@ -80,7 +80,7 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 				if(	parent instanceof VariableDeclaration) {
 					// variable declarations are safe, unless they are loop variables.
 					return parent.eContainer instanceof AbstractLoopStatement;
-				} else if((parent instanceof AssignmentExpression && parent.eContainer instanceof ExpressionStatement)) {
+				} else if((parent instanceof AssignmentExpression && parent.eContainer instanceof ExpressionStatement && parent.eContainer.eContainer instanceof ProgramBlock)) {
 					return false;
 				}
 

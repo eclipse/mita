@@ -34,10 +34,10 @@ class RingbufferTest extends AbstractRuntimeTest {
 		let a4: ringbuffer<array<uint8, 10>, 5>;
 		let a5: ringbuffer<array<string<100>, 5>, 3>;
 		
-		fn report(r: &ringbuffer<uint8, _>) {
+		fn report(r: &ringbuffer<uint8, ?>) {
 			println(`${(*r).count()} ${(*r).empty()} ${(*r).full()}`);
 		} 
-		fn report(r: &ringbuffer<uint16, _>) { 
+		fn report(r: &ringbuffer<uint16, ?>) { 
 			println(`${(*r).count()} ${(*r).empty()} ${(*r).full()}`);
 		}
 		    
@@ -152,7 +152,7 @@ class RingbufferTest extends AbstractRuntimeTest {
 			}
 		} 
 		 
-		fn printarray(a: array<uint8, _>) {
+		fn printarray(a: array<uint8, ?>) {
 			print("[");
 			for(var i = 0; i < a.length(); i++) {
 				print(`${a[i]}`);
@@ -163,7 +163,7 @@ class RingbufferTest extends AbstractRuntimeTest {
 			println("]");
 		}
 		
-		fn printarray(a: array<string<_>, _>) {
+		fn printarray(a: array<string<?>, ?>) {
 			print("[");
 			for(var i = 0; i < a.length(); i++) {
 				print(`${a[i]}`);

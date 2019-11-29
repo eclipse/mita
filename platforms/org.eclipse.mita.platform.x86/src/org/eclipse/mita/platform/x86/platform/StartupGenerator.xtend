@@ -47,8 +47,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 			.map[it -> it.event]
 			.filter[it.value instanceof SystemEventSource]
 			.map[it.key -> it.value as SystemEventSource]
-			.map[it.key -> it.value.source]
-			.filter[it.value.name == "startup"]
+			.filter[it.value.source.name == "startup"]
 		return codeFragmentProvider.create('''
 			Mita_initialize();
 			Mita_goLive();
@@ -61,7 +60,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 					new CodeWithContext(
 						RingbufferGenerator.wrapInRingbuffer(typeRegistry, startupEventHandler, BaseUtils.getType(event)), 
 						Optional.empty, 
-						codeFragmentProvider.create('''rb_«startupEventHandler.baseName»''')
+						codeFragmentProvider.create('''rb_«startupEventHandler.handlerName»''')
 					),
 					codeFragmentProvider.create('''getTime()''')
 				)»
@@ -90,12 +89,13 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		''')
 		.setPreamble('''
 			«FOR startupEventHandler_event: startupEventHandlersAndEvents»					
-				extern ringbuffer_int32_t rb_«startupEventHandler_event.key.baseName»;
+				extern ringbuffer_int32_t rb_«startupEventHandler_event.key.handlerName»;
 			«ENDFOR»
 		''')
 		.addHeader('time.h', true)
 		.addHeader('stdio.h', true)
-		.addHeader('stdbool.h', true);
+		.addHeader('stdbool.h', true)
+		.addHeader("MitaEvents.h", false);
 	}
 
 }

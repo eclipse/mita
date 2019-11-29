@@ -260,7 +260,7 @@ class WlanGenerator extends AbstractSystemResourceGenerator {
 			                {
 			                    networkStatusFlag = true;
 			                    printf("Network with SSID  %s is available\n", NETWORK_SSID);
-			                    exception = ConnectivityWLANWifi_Enable();
+			                    exception = «setup.baseName»_Enable();
 			                    if (RETCODE_OK != exception)
 			                    {
 			                        printf("Not able to connect to the network\n");
