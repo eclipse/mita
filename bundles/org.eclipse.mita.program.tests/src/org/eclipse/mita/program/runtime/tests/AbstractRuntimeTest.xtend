@@ -91,11 +91,15 @@ class AbstractRuntimeTest {
 	}
 	
 	def Stream<String> runAtMost(Path pathToExecutable, int timeInSeconds) {
+		return runAtMost(pathToExecutable, #[], timeInSeconds);
+	}
+	
+	def Stream<String> runAtMost(Path pathToExecutable, String[] env, int timeInSeconds) {
 		println("running exe...");
 		println(pathToExecutable);
 		println("");
 		val Runtime rt = Runtime.getRuntime();
-		val Process pr = rt.exec(pathToExecutable.toString);
+		val Process pr = rt.exec(pathToExecutable.toString, env);
 		val output = new BufferedReader(new InputStreamReader(pr.inputStream));
 		pr.waitFor(timeInSeconds, TimeUnit.SECONDS);
 		if(pr.alive) {

@@ -75,7 +75,7 @@ class SystemResourceSetup extends HasEvents {
 	}
 	
 	op SystemResourceEvent[] getEvents() {
-		return ^type?.events
+		return ((^type?.events ?: #[]) + (signalInstances.map[it.events].filterNull.flatten ?: #[])).toEList
 	}
 }
 
@@ -93,7 +93,7 @@ class ConfigurationItemValue {
 /*
  * To get a parameter value, you need to use ModelUtils.getArgumentValue(vciv, 'paramName')
  */
-class SignalInstance extends VariableDeclaration {
+class SignalInstance extends VariableDeclaration, HasEvents {
 	
 	op Signal getInstanceOf() {
 		return if(initialization instanceof ElementReferenceExpression) {
@@ -104,6 +104,13 @@ class SignalInstance extends VariableDeclaration {
 		}
 	} 
 	
+	op SystemResourceEvent[] getEvents() {
+		var signal = instanceOf;
+		if(signal !== null) {
+			return signal.events;
+		}
+		return #[].toEList;
+	}
 }
 
 class EventHandlerVariableDeclaration extends VariableDeclaration {
@@ -133,6 +140,7 @@ class TimeIntervalEvent extends EventSource {
 class SystemEventSource extends EventSource {
 	refers HasEvents origin
 	refers SystemResourceEvent source
+	refers SignalInstance signalInstance
 	
 	op String toString() {
 		val ref = eGet(ProgramPackage.eINSTANCE.systemEventSource_Source, false);

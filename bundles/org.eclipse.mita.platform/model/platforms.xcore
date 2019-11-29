@@ -79,6 +79,7 @@ class ConfigurationItem extends Property {
 }
 
 class Signal extends Operation {
+	contains SystemResourceEvent[] events
 }
 class Modality extends Property {
 }

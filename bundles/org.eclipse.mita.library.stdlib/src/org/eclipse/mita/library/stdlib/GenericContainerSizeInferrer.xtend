@@ -255,6 +255,9 @@ abstract class GenericContainerSizeInferrer implements TypeSizeInferrer {
 	dispatch def void doCreateConstraints(InferenceContext c, EObject obj, AbstractType t) {
 		delegate.createConstraints(c);
 	}
+	dispatch def void doCreateConstraints(InferenceContext c, Void obj, AbstractType t) {
+		delegate.createConstraints(c);
+	}
 	
 	// create max constraints for all sizes
 	override createConstraintsForMax(ConstraintSystem system, Resource r, MaxConstraint constraint) {

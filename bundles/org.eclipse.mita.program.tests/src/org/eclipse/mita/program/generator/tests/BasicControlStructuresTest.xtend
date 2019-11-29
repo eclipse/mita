@@ -40,7 +40,7 @@ class BasicControlStructuresTest extends AbstractGeneratorTest {
 		''')
 		
 		ast.assertNoCompileErrors();
-		val generatedFunction = ast.value.findFunction("HandleEvery100Millisecond1_worker");
+		val generatedFunction = ast.value.findFunction("HandleEvery100Millisecond_1_worker");
 		assertNotNull("No event handler was generated", generatedFunction);
 		val body = generatedFunction.body as IASTCompoundStatement;
 

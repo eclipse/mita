@@ -73,11 +73,11 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	}
 	
 	override generateSetupPreamble(CompilationContext context) {
-		val startupEventHandler = context.allEventHandlers.filter[it.event instanceof SystemEventSource].findFirst[(it.event as SystemEventSource).source.name == "startup"]
+		val startupEventHandlers = context.allEventHandlers.filter[it.event instanceof SystemEventSource].filter[(it.event as SystemEventSource).source.name == "startup"]
 		return codeFragmentProvider.create('''
-			«IF startupEventHandler !== null»
+			«FOR startupEventHandler: startupEventHandlers»
 			«startupEventHandler.handlerName»_flag = 1;
-			«ENDIF»
+			«ENDFOR»
 		''');
 	}
 	

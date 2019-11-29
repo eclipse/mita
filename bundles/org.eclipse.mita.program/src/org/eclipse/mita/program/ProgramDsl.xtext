@@ -118,7 +118,8 @@ enum TimeUnit returns program::TimeUnit:
 ;
 
 SystemEventSource returns program::SystemEventSource:
-	origin=[platform::HasEvents] '.' source=[types::SystemResourceEvent]
+	origin=[platform::HasEvents] '.' ((source=[types::SystemResourceEvent]) |
+	(signalInstance=[program::SignalInstance] '.' source=[types::SystemResourceEvent]))
 ;
 
 ReturnParameterDeclaration returns program::ReturnParameterDeclaration:
