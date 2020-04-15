@@ -31,11 +31,7 @@ class GroupModalityAccessStage extends AbstractTransformationStage {
 		// Make sure we run after the unravel modality access stage
 		UnravelModalityAccessStage.ORDER.afterwards()
 	}
-	
-	static def afterwards(int x) {
-		return x + 10;
-	}
-	
+		
 	def protected dispatch doTransform(ProgramBlock obj) {
 		obj.transformChildren
 		

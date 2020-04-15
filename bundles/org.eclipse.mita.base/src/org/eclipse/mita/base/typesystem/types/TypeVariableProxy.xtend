@@ -20,6 +20,8 @@ import org.eclipse.mita.base.types.NamedElement
 import org.eclipse.mita.base.types.SumAlternative
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
 import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.base.util.Left
+import org.eclipse.mita.base.util.Right
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtext.naming.QualifiedName
@@ -68,6 +70,10 @@ class TypeVariableProxy extends TypeVariable {
 	
 	new(EObject origin, int idx, EReference reference, QualifiedName qualifiedName) {
 		this(origin, idx, reference, qualifiedName, true);
+	}
+	
+	override replaceOrigin(EObject origin) {
+		return new TypeVariableProxy(origin, idx, reference, targetQID, ambiguityResolutionStrategy, isLinkingProxy, name);
 	}
 
 	public static def getQName(EObject origin, EReference reference) {

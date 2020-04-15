@@ -39,6 +39,7 @@ import org.eclipse.mita.program.formatting.ProgramDslFormatter
 import org.eclipse.mita.program.generator.ProgramDslGenerator
 import org.eclipse.mita.program.generator.internal.IGeneratorOnResourceSet
 import org.eclipse.mita.program.inferrer.ProgramSizeInferrer
+import org.eclipse.mita.program.inferrer.SizeConstraintSolver
 import org.eclipse.mita.program.scoping.ProgramDslImportScopeProvider
 import org.eclipse.mita.program.scoping.ProgramDslResourceDescriptionStrategy
 import org.eclipse.mita.program.typesystem.ProgramConstraintFactory
@@ -51,6 +52,8 @@ import org.eclipse.xtext.scoping.IGlobalScopeProvider
 import org.eclipse.xtext.scoping.IScopeProvider
 import org.eclipse.xtext.scoping.impl.AbstractDeclarativeScopeProvider
 import org.eclipse.xtext.service.DefaultRuntimeModule
+import org.eclipse.xtext.ui.editor.DirtyStateManager
+import org.eclipse.xtext.ui.editor.IDirtyStateManager
 import org.eclipse.xtext.validation.CompositeEValidator
 import org.eclipse.xtext.validation.IResourceValidator
 import org.eclipse.mita.program.inferrer.SizeConstraintSolver
@@ -71,6 +74,7 @@ class ProgramDslRuntimeModule extends AbstractProgramDslRuntimeModule {
 		binder.bind(IConstraintSolver).annotatedWith(Names.named("sizeSolver")).to(SizeConstraintSolver);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeLinker")).to(MitaTypeLinker);
 		binder.bind(MitaTypeLinker).annotatedWith(Names.named("typeDependentLinker")).to(ProgramLinker);
+		binder.bind(IDirtyStateManager).to(DirtyStateManager);
 		binder.bind(AbstractSizeInferrer).to(ProgramSizeInferrer);
 	}
 	override configureIScopeProviderDelegate(Binder binder) {

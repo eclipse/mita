@@ -3,6 +3,7 @@ package org.eclipse.mita.base.typesystem.infra
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 import org.eclipse.mita.base.typesystem.constraints.MaxConstraint
 import org.eclipse.mita.base.typesystem.constraints.SumConstraint
 import org.eclipse.mita.base.typesystem.solver.ConstraintSolution
@@ -12,7 +13,6 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.xtend.lib.annotations.EqualsHashCode
 import org.eclipse.xtend.lib.annotations.FinalFieldsConstructor
-import org.eclipse.mita.base.types.validation.IValidationIssueAcceptor.ValidationIssue
 
 abstract class AbstractSizeInferrer {
 	def ConstraintSolution createSizeConstraints(ConstraintSolution cs, Resource r);
@@ -72,9 +72,9 @@ interface TypeSizeInferrer extends FunctionSizeInferrer {
 	def Iterable<ValidationIssue> validateSizeInference(Resource r, ConstraintSystem system, EObject origin, AbstractType type);
 }
 
-@FinalFieldsConstructor
 @Accessors
 @EqualsHashCode
+@FinalFieldsConstructor
 class InferenceContext {
 	val ConstraintSystem system;
 	val Resource r;

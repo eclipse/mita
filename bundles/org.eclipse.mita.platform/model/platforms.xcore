@@ -17,11 +17,12 @@ package org.eclipse.mita.platform
 import org.eclipse.mita.base.types.GeneratedElement
 import org.eclipse.mita.base.types.PackageAssociation
 import org.eclipse.mita.base.types.Expression
-import org.eclipse.mita.base.types.Event
+import org.eclipse.mita.base.types.SystemResourceEvent
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Property
 import org.eclipse.mita.base.types.ParameterWithDefaultValue
 import org.eclipse.mita.base.types.Type
+import org.eclipse.mita.base.types.PackageMember
 
 enum Instantiability {
 	/**
@@ -45,13 +46,17 @@ enum Instantiability {
 	Many
 }
 
+interface HasEvents extends PackageMember {
+	op SystemResourceEvent[] getEvents()
+}
+
 class SystemSpecification extends PackageAssociation {
 	contains AbstractSystemResource[] resources
 }
 class SignalParameter extends ParameterWithDefaultValue {
 }
 // DO NOT SWAP the order of inheritance here as a bug in Xcore will cause the DSL generation to fail with an NPE
-abstract class AbstractSystemResource extends Type, GeneratedElement {
+abstract class AbstractSystemResource extends Type, GeneratedElement, HasEvents {
 	Instantiability instantiable
 	
 	contains ConfigurationItem[] configurationItems
@@ -74,16 +79,8 @@ class ConfigurationItem extends Property {
 }
 
 class Signal extends Operation {
-	contains SignalEvent[] events opposite signal
+	contains SystemResourceEvent[] events
 }
-
-
-class SystemResourceEvent extends Event {
-}
-class SignalEvent extends Event {
-	container Signal signal opposite events
-}
-
 class Modality extends Property {
 }
 

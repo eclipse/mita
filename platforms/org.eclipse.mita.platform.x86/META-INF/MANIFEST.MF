@@ -10,6 +10,7 @@ Require-Bundle: org.eclipse.mita.library.extension,
  com.google.guava,
  org.eclipse.xtext.xbase.lib,
  org.eclipse.xtend.lib,
- org.eclipse.xtend.lib.macro
+ org.eclipse.xtend.lib.macro,
+ org.eclipse.mita.library.stdlib
 Bundle-Vendor: Eclipse.org/Mita
 

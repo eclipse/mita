@@ -40,6 +40,7 @@ import org.eclipse.xtext.EcoreUtil2
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
+import org.eclipse.mita.program.generator.CompilationContext
 
 class CoerceTypesStage extends AbstractTransformationStage {
 	
@@ -58,7 +59,7 @@ class CoerceTypesStage extends AbstractTransformationStage {
 			|| #[AssignmentExpression, Argument, ReturnValueExpression].exists[it.isAssignableFrom(obj.class)]
 	}
 	
-	override transform(ITransformationPipelineInfoProvider pipeline, Program program) {
+	override transform(ITransformationPipelineInfoProvider pipeline, CompilationContext context, Program program) {
 		constraintFactory.typeRegistry.isLinking = true;
 		// we create a copy here because 
 		// - we want all subtype constraints to get coercions

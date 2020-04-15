@@ -4,6 +4,8 @@ import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.types.InstanceTypeParameter
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.mita.base.typesystem.solver.ConstraintSystem
+import org.eclipse.mita.base.util.Left
+import org.eclipse.mita.base.util.Right
 
 @Accessors
 class DependentTypeVariable extends TypeVariable {
@@ -21,6 +23,10 @@ class DependentTypeVariable extends TypeVariable {
 	new(EObject origin, int idx, String name, AbstractType dependsOn) {
 		super(origin, idx, name)
 		this.dependsOn = dependsOn;
+	}
+	
+	override replaceOrigin(EObject origin) {
+		return new DependentTypeVariable(origin, idx, name, dependsOn);
 	}
 	
 	override modifyNames(NameModifier converter) {

@@ -7,12 +7,11 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionsPackage
 import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.expressions.util.ExpressionUtils
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.platform.AbstractSystemResource
 import org.eclipse.mita.platform.Signal
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.mita.program.validation.IResourceValidator
 import org.eclipse.mita.program.validation.MethodCall
 import org.eclipse.mita.program.validation.MethodCall.MethodCallSigInst

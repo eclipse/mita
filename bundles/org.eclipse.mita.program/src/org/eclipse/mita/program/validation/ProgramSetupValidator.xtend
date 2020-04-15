@@ -22,6 +22,7 @@ import org.eclipse.xtext.validation.AbstractDeclarativeValidator
 import org.eclipse.xtext.validation.Check
 import org.eclipse.xtext.validation.CheckType
 import org.eclipse.xtext.validation.EValidatorRegistrar
+import org.eclipse.mita.platform.PlatformPackage
 
 class ProgramSetupValidator extends AbstractDeclarativeValidator {
 	public static val String INCOMPATIBLE_VALUE_TYPE_MSG = "The type '%s' is not compatible with the configuration item's type '%s'";
@@ -82,7 +83,7 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 			// cannot be named
 			if(setup.name !== null && !setup.name.trim.empty) {
 				error(ProgramSetupValidator.SETUP_MUST_NOT_HAVE_NAME_MSG, setup,
-					ProgramPackage.Literals.SYSTEM_RESOURCE_SETUP__NAME, SETUP_MUST_NOT_HAVE_NAME_CODE);
+					TypesPackage.Literals.NAMED_ELEMENT__NAME, SETUP_MUST_NOT_HAVE_NAME_CODE);
 			}
 		}
 	}

@@ -31,7 +31,8 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  com.google.guava,
  org.eclipse.mita.library.extension,
  org.eclipse.core.resources;bundle-version="3.12.0",
- com.google.gson;bundle-version="2.2.4"
+ com.google.gson;bundle-version="2.2.4",
+ org.eclipse.xtext.ui
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: io.protostuff,
  io.protostuff.runtime,

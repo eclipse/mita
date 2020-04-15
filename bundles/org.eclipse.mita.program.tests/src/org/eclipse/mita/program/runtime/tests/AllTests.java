@@ -18,10 +18,14 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 @SuiteClasses({ 
-	HelloWorldTest.class,
-	StringTest.class,
-	ControlflowTest.class,
 	ArraysTest.class,
+	ControlflowTest.class,
+	EpochTimeTest.class,
+	HelloWorldTest.class,
+//	MqttTest.class, // to do this test we need some kind of MQTT broker, which is not available on jenkins
+	ReferencesTest.class,
+	RingbufferTest.class,
+	StringTest.class,
 	SumTypesTest.class
 })
 @RunWith(Suite.class)

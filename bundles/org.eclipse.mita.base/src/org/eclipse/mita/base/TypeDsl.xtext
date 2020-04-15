@@ -78,13 +78,16 @@ GeneratedType returns GeneratedType:
 		'generator' generator=STRING
 		'size-inferrer' sizeInferrer=STRING
 		('validator' validator=STRING)?
-		constructor = GeneratedTypeConstructor
+		(constructor = GeneratedTypeConstructor)?
 	';'
 ;
 
 GeneratedTypeConstructor returns GeneratedTypeConstructor:
 	{GeneratedTypeConstructor}
 	'constructor' name='con' '(' (parameters+=GeneratedTypeParameter (',' parameters+=GeneratedTypeParameter)*)? ')' 
+		('generator' generator=STRING)?
+		('size-inferrer' sizeInferrer=STRING)?
+		('validator' validator=STRING)?
 ;
 
 GeneratedTypeParameter returns GeneratedTypeParameter:
@@ -155,6 +158,13 @@ ProductMember returns ProductMember:
 	accessor = TypeAccessor
 	name=ID ':' typeSpecifier=TypeSpecifier
 ;
+
+SystemResourceEvent returns SystemResourceEvent: 
+	'event' name=ID ((':' typeSpecifier=TypeSpecifier) | (typeSpecifier=NullTypeSpecifier)) ('{'
+		("size-inferrer" sizeInferrer=STRING)?
+	'}')?
+;
+
 
 
 /**
@@ -417,6 +427,7 @@ ReservedKeywords:
 	'catch' |
 	'checked' |
 	'constructor' |
+	'con' |
 	'do' |
 	'else' |
 	'enum' |

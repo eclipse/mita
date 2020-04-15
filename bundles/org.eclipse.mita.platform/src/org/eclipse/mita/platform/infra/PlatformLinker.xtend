@@ -26,7 +26,7 @@ import org.eclipse.xtext.nodemodel.INode
 class PlatformLinker extends MitaTypeLinker {
 		
 	override shouldLink(EClass classifier) {
-		super.shouldLink(classifier) || PlatformPackage.eINSTANCE.abstractSystemResource.isSuperTypeOf(classifier);
+		false;//super.shouldLink(classifier) || PlatformPackage.eINSTANCE.abstractSystemResource.isSuperTypeOf(classifier);
 	}
 	
 	override ensureIsLinked(EObject obj, INode node, CrossReference ref, Set<EReference> handledReferences, IDiagnosticProducer producer) {	
