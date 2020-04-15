@@ -143,7 +143,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static Att16BitCharacteristicAttribute «baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute;
 		static uint8_t «baseName»«signalInstance.name.toFirstUpper»UuidValue[ATTPDU_SIZEOF_128_BIT_UUID] = { «signalInstance.characteristicUuid» };
 		static AttUuid «baseName»«signalInstance.name.toFirstUpper»Uuid;
-		//signalInstance has type A -> siginst<int32>, we need to extract int32 --> args[2].args[1]
+		//signalInstance has type A -> siginst<int32>, we need to extract int32 --> args[2].args[1] 
 		static «typeGenerator.code(setup, ((BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.get(2) as TypeConstructorType).typeArguments.get(1))» «baseName»«signalInstance.name.toFirstUpper»Value;
 		static AttAttribute «baseName»«signalInstance.name.toFirstUpper»Attribute;
 		«ENDFOR»
