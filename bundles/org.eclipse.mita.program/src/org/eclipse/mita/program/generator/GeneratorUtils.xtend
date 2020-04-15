@@ -22,11 +22,11 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.function.Function
 import java.util.stream.Stream
+import org.eclipse.core.runtime.NullProgressMonitor
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.emf.ecore.plugin.EcorePlugin
 import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
-import org.eclipse.mita.base.expressions.FeatureCall
 import org.eclipse.mita.base.types.AnonymousProductType
 import org.eclipse.mita.base.types.Event
 import org.eclipse.mita.base.types.ExceptionTypeDeclaration
@@ -36,7 +36,12 @@ import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.Singleton
 import org.eclipse.mita.base.types.StructureType
 import org.eclipse.mita.base.types.SumAlternative
+import org.eclipse.mita.base.types.SystemResourceEvent
+import org.eclipse.mita.base.types.TypeReferenceSpecifier
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.base.typesystem.BaseConstraintFactory
+import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.base.typesystem.types.AtomicType
 import org.eclipse.mita.base.typesystem.types.ProdType
@@ -49,8 +54,8 @@ import org.eclipse.mita.platform.InputOutput
 import org.eclipse.mita.platform.Modality
 import org.eclipse.mita.platform.Platform
 import org.eclipse.mita.platform.Sensor
+import org.eclipse.mita.platform.Signal
 import org.eclipse.mita.platform.SystemResourceAlias
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.ModalityAccess
@@ -75,9 +80,7 @@ import org.eclipse.xtext.generator.trace.node.TextNode
 import org.eclipse.xtext.scoping.IScopeProvider
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
-import org.eclipse.mita.base.types.TypeUtils
-import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
-import org.eclipse.core.runtime.NullProgressMonitor
+import static extension org.eclipse.mita.base.util.BaseUtils.force
 
 /**
  * Utility functions for generating code. Eventually this will be moved into the model.
@@ -95,6 +98,10 @@ class GeneratorUtils {
 	
 	@Inject(optional = true)
 	protected IPlatformLoggingGenerator loggingGenerator;
+
+	def isTopLevel(EObject obj) {
+		return (EcoreUtil2.getContainerOfType(obj, Operation) as EObject ?: EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration)) === null
+	}
 
 	/**
 	 * Opens the file at *fileLoc* either absolute or relative to the current project, depending on whether the path is absolute or relative.
@@ -148,9 +155,10 @@ class GeneratorUtils {
 	}
 	
 	def getOccurrence(EObject obj) {
-		val EObject funDef = EcoreUtil2.getContainerOfType(obj, FunctionDefinition) as EObject
-			?:EcoreUtil2.getContainerOfType(obj, EventHandlerDeclaration) as EObject
-			?:EcoreUtil2.getContainerOfType(obj, Program) as EObject;
+		val parent = obj.eContainer;
+		val EObject funDef = EcoreUtil2.getContainerOfType(parent, FunctionDefinition) as EObject
+			?:EcoreUtil2.getContainerOfType(parent, EventHandlerDeclaration) as EObject
+			?:EcoreUtil2.getContainerOfType(parent, Program) as EObject;
 		val result = funDef?.eAllContents?.indexed?.findFirst[it.value.equals(obj)]?.key?:(-1);
 		return result + 1;
 	}
@@ -197,19 +205,8 @@ class GeneratorUtils {
 		val program = EcoreUtil2.getContainerOfType(event, Program);
 		if(program !== null) {
 			// count event handlers, so we get unique names
-			var occurence = 1;
-			var found = false;
-			for(e: program.eventHandlers) {
-				if(e.equals(event)){
-					found = true;
-				}
-				// no break; statement => need flag
-				// only count events with the same name
-				if(!found && e.baseName.equals(event.baseName)) {
-					occurence++;
-				}
-			}
-			return '''HandleEvery«event.baseName»«occurence»''';
+			val occurrence = (event.eContainer as Program).eventHandlers.filter[it.event.baseName == event.event.baseName].indexed.filter[it.value === event].head.key + 1;
+			return '''HandleEvery«event.baseName»_«occurrence»''';
 		}
 		// if we are somehow not a child of program, default to no numbering
 		return '''HandleEvery«event.baseName»''';
@@ -273,10 +270,12 @@ class GeneratorUtils {
 
 	def dispatch getFileBasename(AbstractSystemResource resource) {
 		return '''«resource.baseName?.toFirstUpper»'''
-	}
-		
+	}	
 	def dispatch getFileBasename(SystemResourceSetup setup) {
 		return '''«setup.baseName»'''
+	}
+	def dispatch getFileBasename(EObject obj) {
+		return '''INVALID'''
 	}
 	
 	def dispatch getResourceTypeName(Bus sensor) {
@@ -312,7 +311,26 @@ class GeneratorUtils {
 	}
 	
 	def dispatch String getBaseName(Operation element) {
-		return '''«element.name»«FOR p : element.parameters BEFORE '_' SEPARATOR '_'»«p.type.name»«ENDFOR»'''
+		return '''«element.name»«FOR p : element.parameters BEFORE '_' SEPARATOR '_'»«val t = p.typeSpecifier»«t.toFunctionNamePart(t.separator)»«ENDFOR»'''
+	}
+	
+	def String getSeparator(TypeSpecifier t) {
+		return new String(newCharArrayOfSize(doGetSeparator(t))).replace(0 as char, "_");
+	}
+	
+	def dispatch int doGetSeparator(TypeSpecifier t) {
+		return 0;
+	}
+	def dispatch int doGetSeparator(TypeReferenceSpecifier t) {
+		return (#[-1] + t.typeArguments.map[doGetSeparator]).max + 1
+	}
+	
+	def dispatch String toFunctionNamePart(TypeSpecifier t, String separator) {
+		""
+	}
+	def dispatch String toFunctionNamePart(TypeReferenceSpecifier t, String separator) {
+		val typeArgs = t.typeArguments.map[it.toFunctionNamePart(separator.substring(1))].filter[!nullOrEmpty].force;
+		(#[t.type.name] + typeArgs).join(separator)
 	}
 	
 	def dispatch String getBaseName(AbstractSystemResource resource) {
@@ -341,12 +359,19 @@ class GeneratorUtils {
 			val instanceName = origin.name;
 			'''«instanceName.toFirstUpper»«event.source.name.toFirstUpper»'''
 		} else {
-			event.source.baseName
+			return '''«event.origin.name.toFirstLower»«IF event.signalInstance !== null»«event.signalInstance.name.toFirstUpper»«ENDIF»«event.source.name.toFirstUpper»'''
 		}
 	}
 	
 	def dispatch String getBaseName(SystemResourceEvent event) {
-		return '''«(event.eContainer as AbstractSystemResource).name.toFirstUpper»«event.name.toFirstUpper»'''
+		var parent = event.eContainer;
+		if(parent instanceof AbstractSystemResource) {
+			return '''«parent.name.toFirstUpper»«event.name.toFirstUpper»'''
+		}
+		else if(parent instanceof Signal) {
+			var systemResource = parent.eContainer as AbstractSystemResource;
+			'''«systemResource.name.toFirstUpper»«parent.name.toFirstUpper»«event.name.toFirstUpper»'''
+		}
 	}
 	
 	def dispatch String getBaseName(TimeIntervalEvent event) {
@@ -520,7 +545,7 @@ class GeneratorUtils {
 		'''
 		/**
 		 * Generated by Eclipse Mita «context.mitaVersion».
-		 * @date «new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())»
+		 * @date «new SimpleDateFormat("yyyy-MM-dd").format(new Date())»
 		 */
 
 		'''
@@ -613,6 +638,10 @@ class GeneratorUtils {
 	
 	def boolean containsCodeRelevantContent(Program it) {
 		!eventHandlers.empty || !functionDefinitions.empty || !types.empty || !globalVariables.empty
+	}
+
+	def boolean needsCast(EObject obj) {
+		return EcoreUtil2.getContainerOfType(obj, ProgramBlock) !== null;
 	}
 
 }

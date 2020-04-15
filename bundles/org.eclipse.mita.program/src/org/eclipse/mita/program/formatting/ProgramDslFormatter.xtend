@@ -144,6 +144,7 @@ class ProgramDslFormatter extends AbstractDeclarativeFormatter {
 		config.setIndentationIncrement.before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_9_0_0)
 		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.generatorKeyword_9_0_0)
 		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.validatorKeyword_9_1_0)
+		config.setLinewrap(1, 1, 2).before(grammar.generatedFunctionDefinitionAccess.sizeInferrerKeyword_9_2_0)
 		config.setIndentationDecrement.after(grammar.generatedFunctionDefinitionAccess.semicolonKeyword_10);
 	}
 

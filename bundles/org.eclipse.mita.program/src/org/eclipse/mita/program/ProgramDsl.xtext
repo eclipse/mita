@@ -53,7 +53,7 @@ SignalInstance returns program::SignalInstance:
 	(writeable ?= 'var') name=ID typeSpecifier=NullTypeSpecifier '=' initialization=ElementReferenceExpression ';'
 ;
 
-GeneratedFunctionDefinition returns program::GeneratedFunctionDefinition: 
+GeneratedFunctionDefinition returns types::GeneratedFunctionDefinition: 
 	(exported?='export')?
 	'generated' ('fn' | 'function') 
 	('<' typeParameters+=TypeParameter (',' typeParameters+=TypeParameter)* '>')? 
@@ -97,8 +97,12 @@ VariableDeclaration returns program::VariableDeclaration:
 	(writeable ?= 'var' | 'let') name=ID typeSpecifier=OptionalTypeSpecifier ('=' initialization=Expression)? ';'
 ;
 
+EventHandlerVariableDeclaration returns program::EventHandlerVariableDeclaration:
+	name=ID typeSpecifier=NullTypeSpecifier
+;
+
 EventHandlerDeclaration returns program::EventHandlerDeclaration: 
-	'every' event=(TimeIntervalEvent | SystemEventSource)
+	'every' event=(TimeIntervalEvent | SystemEventSource) ('(' payload=EventHandlerVariableDeclaration ')')?
 	block=ProgramBlock
 ;
 
@@ -113,8 +117,9 @@ enum TimeUnit returns program::TimeUnit:
 	Hour = 'hour' | Hour = 'hours' 
 ;
 
-SystemEventSource returns program::SystemEventSource: 
-	origin=[platform::AbstractSystemResource] '.' source=[types::Event]
+SystemEventSource returns program::SystemEventSource:
+	origin=[platform::HasEvents] '.' ((source=[types::SystemResourceEvent]) |
+	(signalInstance=[program::SignalInstance] '.' source=[types::SystemResourceEvent]))
 ;
 
 ReturnParameterDeclaration returns program::ReturnParameterDeclaration:
@@ -181,7 +186,7 @@ ReferenceExpression returns program::ReferenceExpression hidden():
 ;
 
 NewInstanceExpression returns program::NewInstanceExpression:
-	'new' type=UnqualifiedPresentTypeSpecifier '(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
+	'new' type=UnqualifiedPresentTypeSpecifier operationCall?='(' (arguments+=Argument (',' arguments+=Argument)*)? ')' 
 ;
 
 UnqualifiedPresentTypeSpecifier returns types::TypeReferenceSpecifier:

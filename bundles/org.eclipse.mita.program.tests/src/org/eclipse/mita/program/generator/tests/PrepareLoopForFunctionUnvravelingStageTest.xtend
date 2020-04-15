@@ -25,6 +25,8 @@ import org.junit.Test
 
 import static org.junit.Assert.*
 import org.eclipse.cdt.core.dom.ast.IASTDoStatement
+import org.eclipse.cdt.core.dom.ast.IASTFunctionCallExpression
+import org.eclipse.cdt.core.dom.ast.IASTUnaryExpression
 
 class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 	
@@ -54,7 +56,7 @@ class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 		
 		val forCondition = forLoop.conditionExpression;
 		assertTrue("For loop condition was not rewritten", forCondition instanceof IASTIdExpression);
-		assertEquals("For loop condition was not rewritten to TRUE", "TRUE", (forCondition as IASTIdExpression).name.toString());
+		assertEquals("For loop condition was not rewritten to true", "true", (forCondition as IASTIdExpression).name.toString());
 		
 		(forLoop.body as IASTCompoundStatement).assertHasBreakerIf();
 	}
@@ -63,6 +65,7 @@ class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 	def void testForLoopWithCallInPostLoopStatement() {
 		val ast = generateAndParseApplication('''
 		package main;
+		import platforms.unittest;
 
 		fn foo() {
 			return 10;
@@ -84,19 +87,23 @@ class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 		
 		assertNull("Post loop statement was not rewritten", forLoop.iterationExpression);
 		
-		val lastStatement = (forLoop.body as IASTCompoundStatement).children.last;
-		assertTrue("Post loop statement is not the last statement in the loop", lastStatement instanceof IASTExpressionStatement);
-		val lastExpression = (lastStatement as IASTExpressionStatement).expression;
-		assertTrue("Post loop statement is not the last statement in the loop", lastExpression instanceof IASTBinaryExpression);
-		val leftOperand = (lastExpression as IASTBinaryExpression).operand1;
-		assertTrue("Post loop statement is not the last statement in the loop", leftOperand instanceof IASTIdExpression);
-		assertEquals("Post loop statement is not the last statement in the loop", "i", (leftOperand as IASTIdExpression).name.toString());
+		val secondToLastStatement = (forLoop.body as IASTCompoundStatement).children.reverse.get(1);
+		assertTrue("Post loop statement is not the second to last statement in the loop", secondToLastStatement instanceof IASTExpressionStatement);
+		val secondToLastExpression = (secondToLastStatement as IASTExpressionStatement).expression;
+		assertTrue("Post loop statement is not the second to last statement in the loop", secondToLastExpression instanceof IASTBinaryExpression);
+		val fooCall = (secondToLastExpression as IASTBinaryExpression).operand2;
+		assertTrue("Post loop statement is not the second to last statement in the loop", fooCall instanceof IASTFunctionCallExpression);
+		val iRefArg = (fooCall as IASTFunctionCallExpression).arguments.head;
+		assertTrue("Post loop statement is not the second to last statement in the loop", iRefArg instanceof IASTUnaryExpression);
+		val iVariable = (iRefArg as IASTUnaryExpression).operand;
+		assertEquals("Post loop statement is not the second to last statement in the loop", "i", (iVariable as IASTIdExpression).name.toString());
 	}
 	
 	@Test
 	def void testWhileLoopWithCallInCondition() {
 		val ast = generateAndParseApplication('''
 		package main;
+		import platforms.unittest;
 
 		fn foo() {
 			return 10;
@@ -119,7 +126,7 @@ class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 		
 		val condition = loop.condition;
 		assertTrue("For loop condition was not rewritten", condition instanceof IASTIdExpression);
-		assertEquals("For loop condition was not rewritten to TRUE", "TRUE", (condition as IASTIdExpression).name.toString());
+		assertEquals("For loop condition was not rewritten to true", "true", (condition as IASTIdExpression).name.toString());
 		
 		(loop.body as IASTCompoundStatement).assertHasBreakerIf();
 	}
@@ -128,6 +135,7 @@ class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 	def void testDoWhileLoopWithCallInCondition() {
 		val ast = generateAndParseApplication('''
 		package main;
+		import platforms.unittest;
 
 		fn foo() {
 			return 10;
@@ -150,7 +158,7 @@ class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 		
 		val condition = loop.condition;
 		assertTrue("For loop condition was not rewritten", condition instanceof IASTIdExpression);
-		assertEquals("For loop condition was not rewritten to TRUE", "TRUE", (condition as IASTIdExpression).name.toString());
+		assertEquals("For loop condition was not rewritten to true", "true", (condition as IASTIdExpression).name.toString());
 		
 		(loop.body as IASTCompoundStatement).assertHasBreakerIf();
 	}
@@ -165,7 +173,7 @@ class PrepareLoopForFunctionUnvravelingStageTest extends AbstractGeneratorTest {
 				return op.operand1 instanceof IASTIdExpression && ((op.operand1 as IASTIdExpression).name.toString() == "i");
 			];
 		assertNotNull("No breaker if statement was generated", breakerIf);
-		val hasBreakStatement = (breakerIf.thenClause as IASTCompoundStatement).statements.exists[ it instanceof IASTBreakStatement ];
+		val hasBreakStatement = (breakerIf.elseClause as IASTCompoundStatement).statements.exists[ it instanceof IASTBreakStatement ];
 		assertTrue("Breaker if has no break statement", hasBreakStatement);
 	}
 	

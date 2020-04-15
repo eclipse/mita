@@ -556,6 +556,8 @@ sensor Button {
 	 * Fires after the button was released.
 	 */
 	event released
+	
+	event changed: bool
 }
 
 enum ADC_Channel {
@@ -826,8 +828,11 @@ connectivity many MQTT {
 	/**
 	 * Publishes a message to a particular topic. 
 	 */
-	signal topic(name : string, qos : uint32 = 0) : string
-	
+	signal topic(name : string, qos : uint32 = 0, length: uint32 = 500) : string {
+		event msgReceived: string {
+			size-inferrer "org.eclipse.mita.library.stdlib.GenericPlatformSizeInferrer"
+		}
+	}
 }
 
 alt HonoAuthentication {

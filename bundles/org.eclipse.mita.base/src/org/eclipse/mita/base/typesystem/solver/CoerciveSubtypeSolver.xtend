@@ -480,7 +480,7 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 									return null;
 								].filterNull.force;
 							}	
-						}) ?: #[];
+						})?.filterNull ?: #[];
 
 						return new TypeClassConstraintResolutionResult(Substitution.EMPTY, equalities + subtypeCheckResult.constraints, #[], coercions, typ, fun, distance + subtypeCheckResult.constraints.size);
 					}
@@ -873,6 +873,9 @@ class CoerciveSubtypeSolver implements IConstraintSolver {
 	
 	def void coerceTo(EObject object, ConstraintSystem system, AbstractType type) {
 		if(object === null) {
+			return;
+		}
+		if(object.eIsProxy) {
 			return;
 		}
 		val uri = EcoreUtil.getURI(object);

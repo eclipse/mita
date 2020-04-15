@@ -29,6 +29,9 @@ Workflow {
 			name = "org.eclipse.mita.platform.PlatformDSL"
 			fileExtensions = "platform"
 
+			parserGenerator = {
+				debugGrammar = true
+			}
 			serializer = {
 				generateStub = false
 			}

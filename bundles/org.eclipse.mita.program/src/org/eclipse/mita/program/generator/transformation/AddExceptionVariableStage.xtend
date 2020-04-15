@@ -20,8 +20,10 @@ import org.eclipse.xtext.EcoreUtil2
 
 class AddExceptionVariableStage extends AbstractTransformationStage {
 
+	public static val ORDER = ORDER_EARLY
+
 	override getOrder() {
-		ORDER_EARLY
+		return ORDER;
 	}
 
 	protected dispatch def void doTransform(ProgramBlock block) {

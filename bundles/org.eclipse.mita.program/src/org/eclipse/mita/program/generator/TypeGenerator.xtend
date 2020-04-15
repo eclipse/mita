@@ -99,7 +99,8 @@ class TypeGenerator implements IGenerator {
 //	}
 	
 	public dispatch def CodeFragment code(EObject context, IntegerType type) {
-		var result = codeFragmentProvider.create('''«type.CName»''')
+		var result = codeFragmentProvider.create('''«type.CName»''');
+		result.addHeader("inttypes.h", true);
 		return result;
 	}
 	

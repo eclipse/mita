@@ -22,9 +22,10 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.TypeGenerator
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
+import java.util.Optional
 import java.util.Optional
 
 class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
@@ -35,7 +36,10 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 	@Inject
 	protected TypeGenerator typeGenerator
 		
-	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
+	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+		val resultVariableCode = resultVariable?.code ?: codeFragmentProvider.create('''
+			«functionCall.uniqueIdentifier»
+		''')
 		val firstArg = functionCall.arguments.get(0)?.value;
 		val siginst = if(firstArg instanceof ElementReferenceExpression && (firstArg as ElementReferenceExpression).reference instanceof SignalInstance) {
 			(firstArg as ElementReferenceExpression).reference as SignalInstance;
@@ -48,7 +52,10 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			return codeFragmentProvider.create('''#error No signal instance found in this siginst write call. This should not happen!''')
 		} else if(functionName == 'read') {
 			return codeFragmentProvider.create('''
-			exception = «siginst.readAccessName»(&«resultVariableName»);
+			«IF resultVariable === null»««« generate a temporary variable 
+			«typeGenerator.code(functionCall, BaseUtils.getType(functionCall))» «resultVariableCode»;
+			«ENDIF»
+			exception = «siginst.readAccessName»(&«resultVariableCode»);
 			«generateExceptionHandler(functionCall, 'exception')»
 			''')
 			.addHeader(siginst.eContainer.fileBasename + '.h', false)
@@ -56,7 +63,6 @@ class SignalInstanceReadWriteGenerator extends AbstractFunctionGenerator {
 			val value = functionCall.arguments.get(1).value;
 			val variableName = codeFragmentProvider.create('''_new«firstArg.uniqueIdentifier.toFirstUpper»''');
 			
-			val siginstType = BaseUtils.getType(siginst).sigInstTypeArg;
 			val valueType = BaseUtils.getType(value);
 			
 			return codeFragmentProvider.create('''

@@ -13,11 +13,17 @@
 
 package org.eclipse.mita.library.stdlib
 
+import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.emf.ecore.EObject
 import org.eclipse.mita.base.expressions.AssignmentOperator
+import org.eclipse.mita.base.types.TypeSpecifier
+import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.program.generator.AbstractTypeGenerator
+import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
+import org.eclipse.mita.program.generator.CodeWithContext
 
 class VirtualTypeGenerator extends AbstractTypeGenerator {
 		
@@ -25,8 +31,16 @@ class VirtualTypeGenerator extends AbstractTypeGenerator {
 		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}
 	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
-		return codeFragmentProvider.create('''''');
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
+	}
+	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		return codeFragmentProvider.create('''VIRTUAL_TYPE_BREAKS_CODE''');
 	}
 	
 }

@@ -39,15 +39,19 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeFragmentProvider
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.TypeGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.xtext.EcoreUtil2
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 import static extension org.eclipse.mita.base.types.TypeUtils.ignoreCoercions
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.xtend2.lib.StringConcatenationClient
+import org.eclipse.mita.base.expressions.Literal
+import org.eclipse.mita.base.types.TypeUtils
+import org.eclipse.mita.program.model.ModelUtils
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -68,23 +72,30 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	static def getInferredSize(AbstractType type) {
 		return type?.castOrNull(TypeConstructorType)?.typeArguments?.last?.castOrNull(LiteralTypeExpression) as LiteralTypeExpression<Long>
-	}	
+	}
 	
-	private def long getFixedSize(EObject stmt) {
-		return stmt.inferredSize?.eval ?: -1L
+	protected def cf(StringConcatenationClient content) {
+		return codeFragmentProvider.create(content);
 	}
 	
 	override CodeFragment generateHeader(EObject context, AbstractType type) {
 		if(getDataType(type) instanceof TypeVariable) {
 			return CodeFragment.EMPTY;
 		}
-		codeFragmentProvider.create('''
-		typedef struct {
+		cf('''typedef struct «typeGenerator.code(context, type)» «typeGenerator.code(context, type)»;''')
+	}
+	
+	override generateTypeImplementations(EObject context, AbstractType type) {
+		if(getDataType(type) instanceof TypeVariable) {
+			return CodeFragment.EMPTY;
+		}
+		cf('''
+		struct «typeGenerator.code(context, type)»  {
 			«getDataTypeCCode(context, type)»* data;
 			uint32_t length;
 			uint32_t capacity;
-		} «typeGenerator.code(context, type)»;
-		''').addHeader('MitaGeneratedTypes.h', false);
+		};
+		''').addHeader("inttypes.h", true);
 	}
 		
 	protected def boolean getIsOperationCall(EObject object) {
@@ -94,41 +105,62 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		return false;
 	}
 	
-	protected def CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, long size, PrimitiveValueExpression init) {
+	protected def CodeFragment generateBufferStmt(EObject context, AbstractType arrayType, CodeFragment bufferName, CodeFragment size, PrimitiveValueExpression init) {
 		return codeFragmentProvider.create('''
 			«getDataTypeCCode(context, arrayType)» «bufferName»[«size»]«IF init !== null» = «statementGenerator.code(init)»«ENDIF»;
 		''')
 	}
 	
+	override generateGlobalInitialization(AbstractType type, EObject context, CodeFragment varName, Expression initialization) {
+		val capacity = type.inferredSize?.eval
+		val occurrence = getOccurrence(context);
+		val bufferName = cf('''data_«varName»_«occurrence»''');
+		return cf('''
+			«statementGenerator.generateBulkAssignment(
+				context, 
+				codeFragmentProvider.create('''«varName»_array'''),
+				new CodeWithContext((type as TypeConstructorType).typeArguments.get(1), Optional.empty, bufferName),
+				cf('''«capacity»''')
+			)»
+		''')
+	}
+	
 	override CodeFragment generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
-		val init = initialization.ignoreCoercions;
 		val capacity = type.inferredSize?.eval
 		// if we are top-level, we must do initialization if there is any
 		val occurrence = getOccurrence(context);
-		val initValue = init?.castOrNull(PrimitiveValueExpression)
-		val initWithValueLiteral = initValue !== null
+
 						
-		val bufferName = codeFragmentProvider.create('''data_«varName»_«occurrence»''');
+		val bufferName = cf('''data_«varName»_«occurrence»''');
 		
-		val cf = codeFragmentProvider.create('''
+		return cf('''
 		«IF capacity !== null»
 		// buffer for «varName»
-		«generateBufferStmt(context, type, bufferName, capacity, initValue)»
+		«generateBufferStmt(context, type, bufferName, cf('''«capacity»'''), null)»
 		«ELSE»
 		ERROR: Couldn't infer size!
 		«ENDIF»
 		// var «varName»: «type.toString»
-		«typeGenerator.code(context, type)» «varName» = {
-			.data = data_«varName»_«occurrence»,
-			.length = «IF initWithValueLiteral»«getFixedSize(init)»«ELSE»0«ENDIF»,
+		«typeGenerator.code(context, type)» «varName» = «IF !isTopLevel»(«typeGenerator.code(context, type)») «ENDIF»{
+			.data = «bufferName»,
+			.length = 0,
 			.capacity = «capacity»
 		};
+		«statementGenerator.generateBulkAllocation(
+			context, 
+			codeFragmentProvider.create('''«varName»_array'''),
+			new CodeWithContext((type as TypeConstructorType).typeArguments.get(1), Optional.empty, bufferName),
+			cf('''«capacity»'''),
+			isTopLevel
+		)»
+		«IF !isTopLevel»
+		«generateGlobalInitialization(type, context, varName, initialization)»
+		«ENDIF»
 		''').addHeader('MitaGeneratedTypes.h', false);
-		return cf;
 	}
 	
-	def getDataType(AbstractType type) {
-		(type as TypeConstructorType).typeArguments.tail.head;
+	def AbstractType getDataType(AbstractType t) {
+		(t as TypeConstructorType).typeArguments.get(1);
 	}
 	
 	def CodeFragment getDataTypeCCode(EObject context, AbstractType type) {
@@ -136,97 +168,107 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''array_«getDataTypeCCode(context, type)»''').addHeader('MitaGeneratedTypes.h', false);
+		cf('''array_«getDataTypeCCode(context, type)»''').addHeader('MitaGeneratedTypes.h', false);
 	}
-	
-	override generateNewInstance(AbstractType type, NewInstanceExpression expr) {
-		// if we are not in a function we are top-level and must do nothing, since we can't modify top-level anyway
-		if(EcoreUtil2.getContainerOfType(expr, FunctionDefinition) === null && EcoreUtil2.getContainerOfType(expr, EventHandlerDeclaration) === null) {
-			return CodeFragment.EMPTY;
-		}
 		
-		val capacity = expr.getFixedSize();
-		val parent = expr.eContainer;
-		val occurrence = getOccurrence(parent);
-		val varName = generatorUtils.getBaseName(parent);
-		
-		// variable declarations create the buffer already
-		val generateBuffer = (EcoreUtil2.getContainerOfType(expr, VariableDeclaration) === null);
-		codeFragmentProvider.create('''
-		«IF generateBuffer»
-		«typeGenerator.code(expr, (type as TypeConstructorType).typeArguments.tail.head)» data_«varName»_«occurrence»[«capacity»];
-		«ENDIF»
-		// «varName» = new array<«typeGenerator.code(expr, type)»>(size = «capacity»);
-		«varName» = («typeGenerator.code(expr, type)») {
-			.data = data_«varName»_«occurrence»,
-			.capacity = «capacity»,
-			.length = 0
-		};
-		''').addHeader('MitaGeneratedTypes.h', false);
-	}
-	
-	def generateLength(EObject obj, CodeFragment temporaryBufferName, ValueRange valRange, CodeFragment objCodeExpr) {
-		val objLit = obj.castOrNull(PrimitiveValueExpression);
-		return codeFragmentProvider.create(
+	def generateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj) {
+		val objLit = obj.obj.orElse(null)?.castOrNull(PrimitiveValueExpression);
+		val inferredSize = obj.type.inferredSize?.eval;
+		// array literals aren't translated to a C array object, but directly used for initialization of a buffer.
+		// also they are always exactly as long as their member count.  
+		return cf(
 		'''
-			«IF objLit !== null»«getFixedSize(obj)»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«objCodeExpr».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»
+			(«IF objLit !== null»«inferredSize»«ELSE»«IF valRange?.upperBound !== null»«valRange.upperBound.code.noTerminator»«ELSE»«obj.code».length«ENDIF»«IF valRange?.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«ENDIF»)
 		''');
 	} 
+	
+	// returns null if it can't generate this
+	dispatch def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right, ArrayLiteral lit) {
+		if(operator != AssignmentOperator.ASSIGN) {
+			return null;
+		}
+		val dataType = left.type.dataType;
+		if(!TypeUtils.isGeneratedType(context, dataType)) {
+			return cf('''
+				«typeGenerator.code(context, dataType)» «cVariablePrefix»_temp_«context.occurrence»[«lit.values.length»] = {«FOR v: lit.values SEPARATOR(", ")»«v.code»«ENDFOR»};
+				memcpy(«left.code».data, «cVariablePrefix»_temp_«context.occurrence», sizeof(«typeGenerator.code(context, dataType)»)*«lit.values.length»);
+				«left.code».length = «lit.values.length»;
+			''').addHeader("string.h", true)
+		}
+		else {
+			return cf('''
+				«FOR i_v: lit.values.indexed»
+				«statementGenerator.initializationCode(
+					context, 
+					cf('''«cVariablePrefix»_«i_v.key»'''), 
+					new CodeWithContext(dataType, Optional.empty, cf('''«left.code».data[«i_v.key»]''')), 
+					operator, 
+					new CodeWithContext(dataType, Optional.of(i_v.value), cf('''«i_v.value.code»''')),
+					true
+				)»
+				«ENDFOR»
+				«left.code».length = «lit.values.length»;
+			''')
+		}
+	}
+	dispatch def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right, Literal lit) {
+		return null;
+	}
+	dispatch def CodeFragment generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right, Void lit) {
+		return null;
+	}
 
-	override generateExpression(AbstractType type, EObject context, Optional<EObject> left, CodeFragment leftName, CodeFragment cVariablePrefix, AssignmentOperator operator, EObject _right) {
-		val right = _right.ignoreCoercions;
+	def toCComment(CodeWithContext c) {
+		// TODO replace */ with something else
+		return c.obj.map[cf('''«ModelUtils.getOriginalSourceCode(it)»''')].orElse(c.code);
+	}
+
+	override generateExpression(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, AssignmentOperator operator, CodeWithContext right) {
 		if(right === null) {
-			return codeFragmentProvider.create('''''');
+			return cf('''''')
 		}
-		val rightLit = right.castOrNull(PrimitiveValueExpression);
-
-		val rightRef = if(right instanceof ArrayAccessExpression) {
-			right.owner
-		} else {
-			right
+		val rightLit = right.obj.orElse(null)?.castOrNull(PrimitiveValueExpression)?.value;
+		val literalResult = generateExpression(context, cVariablePrefix, left, operator, right, rightLit);
+		if(literalResult !== null) {
+			return literalResult;
 		}
 		
-		val isNewInstance = right instanceof NewInstanceExpression;
+		val codeRightExpr = cf('''«right.code.noTerminator.noNewline»''');
 		
-		val codeRightExpr = codeFragmentProvider.create('''«statementGenerator.code(rightRef).noTerminator.noNewline»''');
-		val rightExprIsValueLit = rightLit !== null;
+		val temporaryBufferName = cf('''«cVariablePrefix»_temp_«context.occurrence»''')
 		
-		val temporaryBufferName = codeFragmentProvider.create('''«cVariablePrefix»_temp_«context.occurrence»''')
-		
-		val valRange = if(right instanceof ArrayAccessExpression) {
-			if(right.arraySelector instanceof ValueRange) {
-				right.arraySelector as ValueRange;	
+		val rightObj = right.obj.orElse(null);
+		val valRange = if(rightObj instanceof ArrayAccessExpression) {
+			if(rightObj.arraySelector instanceof ValueRange) {
+				rightObj.arraySelector as ValueRange;	
 			}
 		}
 		
-		val lengthLeft = codeFragmentProvider.create('''«leftName».length''')
-		val lengthRight = generateLength(right, temporaryBufferName, valRange, codeRightExpr);
-		val capacityLeft = codeFragmentProvider.create('''«leftName».capacity''')
-		val remainingCapacityLeft = codeFragmentProvider.create('''«IF operator == AssignmentOperator.ADD_ASSIGN»(«capacityLeft» - «lengthLeft»)«ELSE»«capacityLeft»«ENDIF»''')
+		val lengthLeft = cf('''«left.code».length''')
+		val lengthRight = generateLength(temporaryBufferName, valRange, right);
+		val capacityLeft = cf('''«left.code».capacity''')
+		val remainingCapacityLeft = cf('''«IF operator == AssignmentOperator.ADD_ASSIGN»(«capacityLeft» - «lengthLeft»)«ELSE»«capacityLeft»«ENDIF»''')
 		
 		val dataLeft = if(operator == AssignmentOperator.ASSIGN) {
-			codeFragmentProvider.create('''«leftName».data''');
+			cf('''«left.code».data''');
 		}
 		else if(operator == AssignmentOperator.ADD_ASSIGN) {
-			codeFragmentProvider.create('''&«leftName».data[«leftName».length]''');
+			cf('''(&«left.code».data[«left.code».length])''');
 		}
-		val dataRight = if(!isNewInstance && !rightExprIsValueLit) {
-			codeFragmentProvider.create('''
-				«IF valRange?.lowerBound !== null»&«ENDIF»«codeRightExpr».data«IF valRange?.lowerBound !== null»[«valRange.lowerBound.code.noTerminator»]«ENDIF»
-			''');
-		} else if(rightExprIsValueLit) {
-			temporaryBufferName;	
-		}
+		val dataRight = cf('''
+			«IF valRange?.lowerBound !== null»&«ENDIF»«codeRightExpr».data«IF valRange?.lowerBound !== null»[«valRange.lowerBound.code.noTerminator»]«ENDIF»
+		''');
 		
-		val sizeResLeft = left.flatMap[Optional.ofNullable(it.inferredSize)]
-		val sizeResRight = Optional.ofNullable(right.inferredSize);
+
+		val sizeResLeft = Optional.ofNullable(left.type.inferredSize?.eval);
+		val sizeResRight = Optional.ofNullable(right.type.inferredSize?.eval);
 		
 		// if we can infer the sizes we don't need to check bounds 
 		// (validation prevents out of bounds compilation for known sizes)
 		val staticSize = sizeResLeft.present && sizeResRight.present;
 
 		val capacityCheck = if(!staticSize || operator == AssignmentOperator.ADD_ASSIGN) {
-			codeFragmentProvider.create('''
+			cf('''
 				// do a runtime check since we either don't know the sizes statically or we're appending
 				if(«remainingCapacityLeft» < «lengthRight») {
 					«generateExceptionHandler(context, "EXCEPTION_INVALIDRANGEEXCEPTION")»
@@ -234,7 +276,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			''')
 		}
 		else {
-			codeFragmentProvider.create()
+			cf('''''')
 		}
 		
 		val staticAccessors = new Object(){
@@ -248,22 +290,31 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			StaticValueInferrer.infer(valRange.upperBound, [x| if(x !== null) staticAccessors.field = false])
 		}
 		 		
-		val lengthModifyStmt = codeFragmentProvider.create('''
+		val lengthModifyStmt = cf('''
 			«lengthLeft» «operator.literal» «lengthRight»«IF valRange !== null»«IF valRange.lowerBound !== null» - «valRange.lowerBound.code.noTerminator»«ENDIF»«IF valRange.upperBound !== null» - («lengthRight» - «valRange.upperBound.code.noTerminator»)«ENDIF»«ENDIF»;
 		''');
-				
-		val typeSize = codeFragmentProvider.create('''sizeof(«getDataTypeCCode(context, type)»)''')
 		
-		codeFragmentProvider.create('''
-		«IF rightExprIsValueLit»
-		// generate buffer to hold immediate
-		«generateBufferStmt(context, type, temporaryBufferName, getFixedSize(rightLit), rightLit)»
-		«ENDIF»
+		
+		cf('''
 		«capacityCheck»
-		// «leftName» «operator.literal» «codeRightExpr»
-		memcpy(«dataLeft», «dataRight», «typeSize» * «lengthRight»);
+		/* «left.toCComment» «operator.literal» «right.toCComment» */
+		«copyContents(
+			context, 
+			cf('''«cVariablePrefix»_i'''),
+			new CodeWithContext((left.type as TypeConstructorType).typeArguments.get(1), Optional.empty, dataLeft),
+			new CodeWithContext((right.type as TypeConstructorType).typeArguments.get(1), Optional.empty, dataRight),
+			lengthRight
+		)»
+
 		«lengthModifyStmt»
-		''').addHeader('MitaGeneratedTypes.h', false);
+		''').addHeader("string.h", true)
+		.addHeader('MitaGeneratedTypes.h', false);
+	}
+	
+	def CodeFragment copyContents(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		cf('''
+			«statementGenerator.generateBulkCopyStatements(context, i,	left, right, count)»
+		''')
 	}
 	
 	static class LengthGenerator extends AbstractFunctionGenerator {
@@ -273,14 +324,37 @@ class ArrayGenerator extends AbstractTypeGenerator {
 				
 		@Inject
 		protected extension StatementGenerator
-
-		override generate(ElementReferenceExpression ref, IGeneratorNode resultVariableName) {
-			val variable = ExpressionUtils.getArgumentValue(ref.reference as Operation, ref, 'self');
+	
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
 			val varref = if(variable !== null) {
 				variable.code;
 			}
 			
-			return codeFragmentProvider.create('''«IF resultVariableName !== null»«resultVariableName» = «ENDIF»«varref».length''').addHeader('MitaGeneratedTypes.h', false);
+			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».length''').addHeader('MitaGeneratedTypes.h', false);
+		}
+		
+		override callShouldBeUnraveled(ElementReferenceExpression expression) {
+			false
+		}
+		
+	}
+	
+	static class CapacityGenerator extends AbstractFunctionGenerator {
+		
+		@Inject
+		protected CodeFragmentProvider codeFragmentProvider
+		
+		@Inject
+		protected extension StatementGenerator
+	
+		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
+			val varref = if(variable !== null) {
+				variable.code;
+			}
+			
+			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».capacity''').addHeader('MitaGeneratedTypes.h', false);
 		}
 		
 		override callShouldBeUnraveled(ElementReferenceExpression expression) {
@@ -292,9 +366,63 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {
 		val inner = expr.value;
 		if(inner instanceof ArrayLiteral) {
-			return codeFragmentProvider.create('''«inner.code»''');
+			return cf('''«inner.code»''');
 		}
-		return codeFragmentProvider.create('''CANT COERCE «inner.eClass.name»''');
+		return cf('''CANT COERCE «inner.eClass.name»''');
+	}
+	
+	override generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
+		val arrayType = left.type as TypeConstructorType;
+		val dataType = arrayType.typeArguments.get(1);
+		val size = cf('''«arrayType.inferredSize?.eval»''');
+		return cf('''
+			«generateBufferStmt(context, arrayType, cf('''«cVariablePrefix»_buf'''), cf('''«count»*«size»'''), null)»
+			
+			«statementGenerator.generateBulkAllocation(
+				context, 
+				codeFragmentProvider.create('''«cVariablePrefix»_array'''),
+				new CodeWithContext(dataType, Optional.empty, cf('''«cVariablePrefix»_buf''')),
+				cf('''«count»*«size»'''),
+				isTopLevel
+			)»
+		''').addHeader("stddef.h", true)
+	}
+	
+	override generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
+		val arrayType = left.type as TypeConstructorType;
+		val dataType = arrayType.typeArguments.get(1);
+		val size = cf('''«arrayType.inferredSize?.eval»''');
+		val i = cf('''«cVariablePrefix»_i''');
+		return cf('''
+			for(size_t «i» = 0; «i» < «count»; ++«i») {
+				«left.code»[«i»] = («typeGenerator.code(context, arrayType)») {
+					.data = &«cVariablePrefix»_buf[«i»*«size»],
+					.length = 0,
+					.capacity = «size»
+				};
+			}
+			«statementGenerator.generateBulkAssignment(
+				context, 
+				codeFragmentProvider.create('''«cVariablePrefix»_array'''),
+				new CodeWithContext(dataType, Optional.empty, cf('''«cVariablePrefix»_buf''')),
+				cf('''«count»*«size»''')
+			)»
+		''')
+	}
+	
+	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
+		return cf('''
+			for(size_t «i» = 0; «i» < «count»; ++«i») {
+				«statementGenerator.generateBulkCopyStatements(
+					context,
+					cf('''ar_«i»'''),
+					new CodeWithContext((left.type as TypeConstructorType).typeArguments.get(1), Optional.empty, cf('''«left.code»[«i»].data''')),
+					new CodeWithContext((right.type as TypeConstructorType).typeArguments.get(1), Optional.empty, cf('''«right.code»[«i»].data''')),
+					cf('''«right.code»[«i»].length''')
+				)»
+				«left.code»[«i»].length = «right.code»[«i»].length;
+			}
+		''')
 	}
 	
 }

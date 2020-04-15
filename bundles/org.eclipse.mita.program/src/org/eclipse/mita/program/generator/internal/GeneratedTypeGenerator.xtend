@@ -51,7 +51,27 @@ class GeneratedTypeGenerator {
 			].values.map[it.head] SEPARATOR("\n")»
 			«type_generator.value.generateHeader(context.allUnits.head, type_generator.key)»
 			«ENDFOR»
+			«FOR type_generator : generatorsWithTypeSpecs.groupBy[
+				it.value.generateTypeSpecifier(it.key, context.allUnits.head).toString
+			].values.map[it.head] SEPARATOR("\n")»
+			«type_generator.value.generateTypeImplementations(context.allUnits.head, type_generator.key)»
+			«ENDFOR»
 		''').addHeader(userTypeFiles.map[new IncludePath(it, false)])
 		.toHeader(context, 'MITA_GENERATED_TYPES_H')
+	}
+	
+	def generateImplementation(CompilationContext context, List<String> userTypeFiles) {
+		val generatedTypes = context.getAllGeneratedTypesUsed().filterNull.force;
+		val generators = generatedTypes.groupBy[it.name].values.map[it.head].map[registry.getGenerator(context.allUnits.head.eResource, it).castOrNull(AbstractTypeGenerator)].filterNull.toList;
+		
+		return codeFragmentProvider.create('''
+			«FOR generator: generators SEPARATOR("\n")» 
+			«generator.generateImplementation()»
+			«ENDFOR»
+			«"\n"»
+		''')
+		.addHeader("MitaGeneratedTypes.h", false)
+		.addHeader(userTypeFiles.map[new IncludePath(it, false)])
+		.toImplementation(context);
 	}
 }

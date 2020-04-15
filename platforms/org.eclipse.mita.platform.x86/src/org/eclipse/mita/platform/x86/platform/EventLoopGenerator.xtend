@@ -15,7 +15,6 @@
 package org.eclipse.mita.platform.x86.platform
 
 import com.google.inject.Inject
-import org.eclipse.mita.platform.SystemResourceEvent
 import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.TimeIntervalEvent
@@ -74,16 +73,18 @@ class EventLoopGenerator implements IPlatformEventLoopGenerator {
 	}
 	
 	override generateSetupPreamble(CompilationContext context) {
-		val startupEventHandler = context.allEventHandlers.filter[it.event instanceof SystemEventSource].findFirst[(it.event as SystemEventSource).source.name == "startup"]
+		val startupEventHandlers = context.allEventHandlers.filter[it.event instanceof SystemEventSource].filter[(it.event as SystemEventSource).source.name == "startup"]
 		return codeFragmentProvider.create('''
-			«IF startupEventHandler !== null»
+			«FOR startupEventHandler: startupEventHandlers»
 			«startupEventHandler.handlerName»_flag = 1;
-			«ENDIF»
+			«ENDFOR»
 		''');
 	}
 	
 	override generateEnablePreamble(CompilationContext context) {
 		return CodeFragment.EMPTY;
 	}
-	
+	override CodeFragment generateEventLoopHandlerEpilogue(CompilationContext context, EventHandlerDeclaration declaration) {
+		return CodeFragment.EMPTY 
+	}
 }

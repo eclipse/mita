@@ -25,6 +25,8 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull;
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.base.typesystem.infra.InferenceContext
+import org.eclipse.mita.base.util.BaseUtils
+import org.eclipse.mita.platform.Signal
 
 class VirtualTypeSizeInferrer extends GenericContainerSizeInferrer {
 	// implements inference for modality and siginst
@@ -40,8 +42,8 @@ class VirtualTypeSizeInferrer extends GenericContainerSizeInferrer {
 		val superResult = super._doUnbindSize(r, system, obj, type);
 		if(type.name == "siginst") {
 			val sigInst = obj.reference?.castOrNull(SignalInstance); 
-			
-			return superResult.key -> (superResult.value + #[sigInst]);
+			val obsAndTypes = (#[sigInst] + sigInst.eAllContents.toIterable).map[it -> system.getTypeVariable(it)]
+			return superResult.key -> (superResult.value + #[sigInst] + sigInst.eAllContents.toIterable);
 		}
 		
 		return superResult;

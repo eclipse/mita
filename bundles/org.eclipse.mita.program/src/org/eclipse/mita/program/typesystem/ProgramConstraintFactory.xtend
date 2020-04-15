@@ -23,6 +23,7 @@ import org.eclipse.mita.base.expressions.PostFixOperator
 import org.eclipse.mita.base.expressions.PostFixUnaryExpression
 import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.ImportStatement
 import org.eclipse.mita.base.types.InterpolatedStringLiteral
 import org.eclipse.mita.base.types.NullTypeSpecifier
@@ -58,11 +59,11 @@ import org.eclipse.mita.program.ConfigurationItemValue
 import org.eclipse.mita.program.DereferenceExpression
 import org.eclipse.mita.program.DoWhileStatement
 import org.eclipse.mita.program.EventHandlerDeclaration
+import org.eclipse.mita.program.EventHandlerVariableDeclaration
 import org.eclipse.mita.program.ExceptionBaseVariableDeclaration
 import org.eclipse.mita.program.ForEachStatement
 import org.eclipse.mita.program.ForStatement
 import org.eclipse.mita.program.FunctionDefinition
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.IfStatement
 import org.eclipse.mita.program.IsAssignmentCase
 import org.eclipse.mita.program.IsDeconstructionCase
@@ -81,8 +82,10 @@ import org.eclipse.mita.program.ReturnValueExpression
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.SignalInstanceReadAccess
 import org.eclipse.mita.program.SignalInstanceWriteAccess
+import org.eclipse.mita.program.SystemEventSource
 import org.eclipse.mita.program.SystemResourceSetup
 import org.eclipse.mita.program.ThrowExceptionStatement
+import org.eclipse.mita.program.TimeIntervalEvent
 import org.eclipse.mita.program.TryStatement
 import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.WhereIsStatement
@@ -158,11 +161,31 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 		return system.associate(typeRegistry.getTypeModelObjectProxy(system, writeAccess, StdlibTypeRegistry.voidTypeQID), writeAccess);
 	}
 	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, TimeIntervalEvent eventSource) {
+		return system.getTypeVariable(eventSource);
+	} 
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, SystemEventSource eventSource) {
+		return system.associate(system.getTypeVariableProxy(eventSource, ProgramPackage.eINSTANCE.systemEventSource_Source), eventSource);
+	} 
+	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerDeclaration eventHandler) {
 		system.computeConstraints(eventHandler.block);
+		system.computeConstraints(eventHandler.event);
+		if(eventHandler.payload !== null) {
+			system.computeConstraints(eventHandler.payload);
+		}
 		
 		val voidType = typeRegistry.getTypeModelObjectProxy(system, eventHandler, StdlibTypeRegistry.voidTypeQID);
 		return system.associate(new FunctionType(eventHandler, new AtomicType(eventHandler.event, eventHandler.event.toString), voidType, voidType), eventHandler);
+	}
+	
+	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, EventHandlerVariableDeclaration varDecl) {
+		val eventHandler = EcoreUtil2.getContainerOfType(varDecl, EventHandlerDeclaration);
+		val event = eventHandler?.event;
+		if(event !== null) {
+			system.associate(system.getTypeVariable(event), varDecl);
+		}
+		return system._computeConstraints(varDecl as VariableDeclaration);
 	}
 	
 	protected dispatch def TypeVariable computeConstraints(ConstraintSystem system, ImportStatement __) {
@@ -537,7 +560,7 @@ class ProgramConstraintFactory extends PlatformConstraintFactory {
 			val args = newInstanceExpression.arguments.map[system.computeConstraints(it) as AbstractType];
 			system.computeArgumentConstraintsWithTypes(newInstanceExpression, constructorName, args.force);
 		}
-		system.computeConstraintsForFunctionCall(newInstanceExpression, null, constructorName, argType, #[functionTypeVar]);
+		system.computeConstraintsForFunctionCall(newInstanceExpression, ExpressionsPackage.eINSTANCE.elementReferenceExpression_Reference, constructorName, argType, #[functionTypeVar]);
 		return system.associate(returnType, newInstanceExpression);
 	}
 	

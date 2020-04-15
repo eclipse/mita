@@ -19,19 +19,23 @@ import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.base.expressions.ExpressionStatement
 import org.eclipse.mita.base.expressions.ExpressionsFactory
 import org.eclipse.mita.base.types.Expression
+import org.eclipse.mita.base.types.GeneratedFunctionDefinition
 import org.eclipse.mita.base.types.GeneratedTypeConstructor
 import org.eclipse.mita.base.types.Operation
 import org.eclipse.mita.base.types.TypeAccessor
 import org.eclipse.mita.base.types.TypeConstructor
 import org.eclipse.mita.base.types.VirtualFunction
 import org.eclipse.mita.base.util.BaseUtils
-import org.eclipse.mita.program.GeneratedFunctionDefinition
 import org.eclipse.mita.program.NewInstanceExpression
 import org.eclipse.mita.program.ProgramBlock
 import org.eclipse.mita.program.ReturnValueExpression
+import org.eclipse.mita.program.VariableDeclaration
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 import org.eclipse.mita.program.generator.internal.ProgramCopier
 import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.program.ForEachStatement
+import org.eclipse.mita.program.AbstractLoopStatement
+import org.eclipse.emf.ecore.util.EcoreUtil
 
 class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	
@@ -45,13 +49,12 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 		if(EcoreUtil2.getContainerOfType(expression, ProgramBlock) === null) {
 			return false;
 		}
-		if(expression instanceof NewInstanceExpression) {
-			return false;
-		}
+		
 		if(expression instanceof ElementReferenceExpression) {
 			val ref = expression.reference;
 			
 			if(ref instanceof Operation) {
+				val parent = expression.eContainer;
 				// special case: for generated functions we need to ask the generator if the call should be unraveled.
 				if(ref instanceof GeneratedFunctionDefinition) {
 					val generator = generatorRegistry.getGenerator(ref);
@@ -68,8 +71,16 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 					return false;
 				}
 
-				if(expression.eContainer instanceof ReturnValueExpression) {
+				if(parent instanceof ReturnValueExpression) {
 					// don't unravel direct returns
+					return false;
+				}
+
+				// we would unravel expressions into a variable declaration/assignment anyway.
+				if(	parent instanceof VariableDeclaration) {
+					// variable declarations are safe, unless they are loop variables.
+					return parent.eContainer instanceof AbstractLoopStatement;
+				} else if((parent instanceof AssignmentExpression && parent.eContainer instanceof ExpressionStatement && parent.eContainer.eContainer instanceof ProgramBlock)) {
 					return false;
 				}
 
@@ -105,14 +116,17 @@ class UnravelFunctionCallsStage extends AbstractUnravelingStage {
 	}
 	
 	override protected createInitialization(Expression expression) {
-		// We can safely make this cast as needsUnraveling ensures that expression must be an ERE
-		val elementReferenceExpression = expression as ElementReferenceExpression;
+		if(expression instanceof ElementReferenceExpression) {
+			val newFunctionCall = ExpressionsFactory.eINSTANCE.createElementReferenceExpression;
+			newFunctionCall.reference = expression.reference;
+			newFunctionCall.operationCall = true;
+			newFunctionCall.arguments.addAll(expression.arguments);
+			return newFunctionCall;			
+		}
+		else {
+			return EcoreUtil.copy(expression);
+		}
 		
-		val newFunctionCall = ExpressionsFactory.eINSTANCE.createElementReferenceExpression;
-		newFunctionCall.reference = elementReferenceExpression.reference;
-		newFunctionCall.operationCall = true;
-		newFunctionCall.arguments.addAll(elementReferenceExpression.arguments);
-		return newFunctionCall;
 	}
 	
 }

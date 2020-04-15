@@ -17,8 +17,8 @@ import com.google.inject.Inject
 import org.eclipse.mita.base.expressions.ElementReferenceExpression
 import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeFragment
+import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.StatementGenerator
-import org.eclipse.xtext.generator.trace.node.IGeneratorNode
 
 class ModalityReadGenerator extends AbstractFunctionGenerator {
 	
@@ -29,11 +29,11 @@ class ModalityReadGenerator extends AbstractFunctionGenerator {
 		return false;
 	}
 	
-	override generate(ElementReferenceExpression functionCall, IGeneratorNode resultVariableName) {
-		if(resultVariableName === null) {
+	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
+		if(resultVariable === null) {
 			CodeFragment.EMPTY
 		} else {
-			codeFragmentProvider.create('''«resultVariableName» = «statementGenerator.code(functionCall.arguments.get(0).value)»;''');			
+			codeFragmentProvider.create('''«resultVariable.code» = «statementGenerator.code(functionCall.arguments.get(0).value)»;''');			
 		}
 	}
 	

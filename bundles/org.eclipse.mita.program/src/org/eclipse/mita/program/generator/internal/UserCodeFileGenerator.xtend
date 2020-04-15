@@ -25,6 +25,7 @@ import org.eclipse.mita.platform.SystemSpecification
 import org.eclipse.mita.program.FunctionDefinition
 import org.eclipse.mita.program.NativeFunctionDefinition
 import org.eclipse.mita.program.Program
+import org.eclipse.mita.program.generator.AbstractTypeGenerator
 import org.eclipse.mita.program.generator.CodeFragment.IncludePath
 import org.eclipse.mita.program.generator.CodeFragmentProvider
 import org.eclipse.mita.program.generator.CompilationContext
@@ -32,10 +33,11 @@ import org.eclipse.mita.program.generator.GeneratorUtils
 import org.eclipse.mita.program.generator.IPlatformEventLoopGenerator
 import org.eclipse.mita.program.generator.IPlatformExceptionGenerator
 import org.eclipse.mita.program.generator.StatementGenerator
+import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtext.EcoreUtil2
 
+import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import static extension org.eclipse.mita.program.generator.internal.ProgramCopier.getOrigin
-import org.eclipse.mita.program.model.ModelUtils
 
 class UserCodeFileGenerator { 
 	
@@ -56,7 +58,10 @@ class UserCodeFileGenerator {
 
     @Inject
 	protected StatementGenerator statementGenerator
-
+	
+	@Inject
+	protected GeneratorRegistry generatorRegistry
+		
 	/**
 	 * Generates custom types used by the application.
 	 */
@@ -158,7 +163,11 @@ class UserCodeFileGenerator {
 				val type = BaseUtils.getType(it);
 				return !ModelUtils.isStructuralType(type, it);
 			]»
-			«statementGenerator.initializationCode(variable)»
+			«val type = BaseUtils.getType(variable)»
+			«val generator = generatorRegistry.getGenerator(program.eResource, type)?.castOrNull(AbstractTypeGenerator)»
+			«IF generator !== null»
+			«generator.generateGlobalInitialization(type, variable, codeFragmentProvider.create('''«variable.name»'''), variable.initialization)»
+			«ENDIF»
 			«generateExceptionHandler(null, "exception")»
 			
 			«ENDFOR»
@@ -166,20 +175,28 @@ class UserCodeFileGenerator {
 		}
 		''')
 	}
+		
+	
+	
 	
 	private def generateEventHandlers(CompilationContext context, Program program) {		
 		val exceptionType = exceptionGenerator.exceptionType;
 		return codeFragmentProvider.create('''
 			«FOR handler : program.eventHandlers»
-			«exceptionType» «handler.handlerName»(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
-			{
+				«exceptionType» «handler.handlerName»_worker()
+				{
+				«statementGenerator.code(handler.block).noBraces»
+					return NO_EXCEPTION;
+				}
 				
-				«eventLoopGenerator.generateEventLoopHandlerPreamble(context, handler)»
-			«statementGenerator.code(handler.block).noBraces» 
-
-				return NO_EXCEPTION;
-			}
-			
+				«exceptionType» «handler.handlerName»(«eventLoopGenerator.generateEventLoopHandlerSignature(context)»)
+				{
+					«exceptionType» exception = NO_EXCEPTION;
+					«eventLoopGenerator.generateEventLoopHandlerPreamble(context, handler)»
+					exception = «handler.handlerName»_worker();
+					«eventLoopGenerator.generateEventLoopHandlerEpilogue(context, handler)»
+					return NO_EXCEPTION;
+				}
 			«ENDFOR»
 		''')
 		.addHeader('MitaExceptions.h', false);

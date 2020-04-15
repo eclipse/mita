@@ -1,24 +1,18 @@
 package org.eclipse.mita.platform.xdk110.platform
 
-import com.google.common.base.Optional
 import com.google.inject.Inject
-import org.eclipse.mita.base.types.Enumerator
-import org.eclipse.mita.platform.AbstractSystemResource
-import org.eclipse.mita.platform.Platform
+import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.platform.xdk110.connectivity.AdcGenerator
 import org.eclipse.mita.platform.xdk110.connectivity.AdcGenerator.SignalInfo
+import org.eclipse.mita.program.EventHandlerDeclaration
 import org.eclipse.mita.program.ModalityAccess
 import org.eclipse.mita.program.ModalityAccessPreparation
-import org.eclipse.mita.program.Program
-import org.eclipse.mita.program.SignalInstance
-import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
-import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.GeneratorUtils
-import org.eclipse.mita.program.inferrer.StaticValueInferrer
-import org.eclipse.mita.program.model.ModelUtils
-import org.eclipse.xtext.EcoreUtil2
+import org.eclipse.mita.program.generator.MainSystemResourceGenerator
 
-class Xdk110PlatformGenerator extends AbstractSystemResourceGenerator {
+import static extension org.eclipse.mita.base.util.BaseUtils.computeOrigin
+
+class Xdk110PlatformGenerator extends MainSystemResourceGenerator {
 	
 	@Inject
 	extension GeneratorUtils
@@ -91,6 +85,14 @@ class Xdk110PlatformGenerator extends AbstractSystemResourceGenerator {
 			«varName»
 		''')
 		.addHeader("xdk110Types.h", false)
+	}
+	
+	override getEventHandlerPayloadQueueSize(EventHandlerDeclaration handler) {
+		val type = BaseUtils.getType(handler.event.computeOrigin);
+		if(type.name == "string") {
+			return 2;
+		}
+		return 10;
 	}
 	
 }
