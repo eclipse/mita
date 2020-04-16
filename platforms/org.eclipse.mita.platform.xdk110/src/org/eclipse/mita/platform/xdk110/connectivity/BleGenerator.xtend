@@ -39,7 +39,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 	
 	public static val MAC_ADDRESS_REGEX = "^([Ff][Cc]:[Dd]6:[Bb][Dd]:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})|([Ff][Cc]-[Dd]6-[Bb][Dd]-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2}-[0-9A-Fa-f]{2})$";
 	public static val MAC_ADDRESS_PATTERN = Pattern.compile(MAC_ADDRESS_REGEX);
-	
+
 	override generateSetup() {
 		val baseName = (setup ?: component).baseName;
 		
@@ -143,7 +143,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		static Att16BitCharacteristicAttribute «baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute;
 		static uint8_t «baseName»«signalInstance.name.toFirstUpper»UuidValue[ATTPDU_SIZEOF_128_BIT_UUID] = { «signalInstance.characteristicUuid» };
 		static AttUuid «baseName»«signalInstance.name.toFirstUpper»Uuid;
-		//signalInstance has type A -> siginst<int32>, we need to extract int32 --> args[2].args[1] 
+		/* signalInstance has type A -> siginst<int32>, we need to extract int32 --> args[2].args[1] */
 		static «typeGenerator.code(setup, ((BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.get(2) as TypeConstructorType).typeArguments.get(1))» «baseName»«signalInstance.name.toFirstUpper»Value;
 		static AttAttribute «baseName»«signalInstance.name.toFirstUpper»Attribute;
 		«ENDFOR»
@@ -348,10 +348,10 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 				&«baseName»«signalInstance.name.toFirstUpper»CharacteristicAttribute,
 				&«baseName»«signalInstance.name.toFirstUpper»Uuid,
 				ATT_PERMISSIONS_ALLACCESS, 
-				«signalInstance.contentLength»,
+				strlen((const char*)«baseName»«signalInstance.name.toFirstUpper»Value),
 				(uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value,
 				FALSE,
-				«signalInstance.contentLength»,
+				strlen((const char*)«baseName»«signalInstance.name.toFirstUpper»Value),
 				&«baseName»Service,
 				&«baseName»«signalInstance.name.toFirstUpper»Attribute
 			);
@@ -446,8 +446,8 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 		}
 		else
 		{
-			memcpy(&«baseName»«signalInstance.name.toFirstUpper»Value, «resultName», sizeof(«typeGenerator.code(signalInstance, retType)»));
-			retcode = «component.baseName»_SendData((uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(signalInstance, retType)»), (void*)«baseName»_«signalInstance.name»,1000);
+			memcpy(&«baseName»«signalInstance.name.toFirstUpper»Value, «resultName», sizeof(«typeGenerator.code(setup, ((BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.get(2) as TypeConstructorType).typeArguments.get(1))»));
+			retcode = «component.baseName»_SendData((uint8_t *) &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(setup, ((BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.get(2) as TypeConstructorType).typeArguments.get(1))»), (void*)«baseName»_«signalInstance.name»,1000);
 		}
 		return retcode;
 		''')
@@ -464,7 +464,7 @@ class BleGenerator extends AbstractSystemResourceGenerator {
 			return RETCODE(RETCODE_SEVERITY_ERROR, RETCODE_NULL_POINTER);
 		}
 		
-		memcpy(«resultName», &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(signalInstance, retType)»));
+		memcpy(«resultName», &«baseName»«signalInstance.name.toFirstUpper»Value, sizeof(«typeGenerator.code(setup, ((BaseUtils.getType(signalInstance) as TypeConstructorType).typeArguments.get(2) as TypeConstructorType).typeArguments.get(1))»));
 		''')
 		.addHeader('string.h', true)
 	}
