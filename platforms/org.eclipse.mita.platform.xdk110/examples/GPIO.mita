@@ -24,14 +24,14 @@ package main;
 import platforms.xdk110;
 
 setup test : GPIO {
-	var out = digitalOut(pin = PA1, initialValue = false);
-	var inp = digitalIn(pin = PB2, mode = PullDown);
+	var out = digitalOut(pin = .PA1, initialValue = false);
+	var inp = digitalIn(pin = .PB2, mode = .PullDown);
 }
 
 setup hmi : LED {
-	var out = light_up(color=Yellow);
-	var inp = light_up(color=Red);
-} 
+	var out = light_up(color=.Yellow);
+	var inp = light_up(color=.Red);
+}
 var state = true;
 
 every 5 seconds {

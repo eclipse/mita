@@ -14,12 +14,12 @@
 package org.eclipse.mita.platform.xdk110.buses
 
 import java.util.Map
-import org.eclipse.mita.base.types.Enumerator
 import org.eclipse.mita.program.SignalInstance
 import org.eclipse.mita.program.generator.AbstractSystemResourceGenerator
 import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
 import org.eclipse.mita.program.model.ModelUtils
+import org.eclipse.mita.program.inferrer.StaticValueInferrer.SumTypeRepr
 
 class GPIOGenerator extends AbstractSystemResourceGenerator {
 	
@@ -92,7 +92,7 @@ class GPIOGenerator extends AbstractSystemResourceGenerator {
 			return codeFragmentProvider.create('''BSP_EXTENSIONPORT_PUSHPULL''');
 		}
 		val mode = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "mode"), []);
-		if(mode instanceof Enumerator) {
+		if(mode instanceof SumTypeRepr) {
 			return codeFragmentProvider.create('''«modeTable.getOrDefault(mode.name, "ERROR_INVALID_ENUM_VALUE")»''');	
 		}
 		return CodeFragment.EMPTY;
@@ -108,7 +108,7 @@ class GPIOGenerator extends AbstractSystemResourceGenerator {
 		}
 		else {
 			val mode = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "mode"), []);
-			if(mode instanceof Enumerator) {
+			if(mode instanceof SumTypeRepr) {
 				val defaultVal = defaultValues.get(mode.name);
 				if(defaultVal !== null) {
 					return codeFragmentProvider.create('''BSP_EXTENSIONPORT_GPIO_PIN_«if(defaultVal) "HIGH" else "LOW"»''');
@@ -120,7 +120,7 @@ class GPIOGenerator extends AbstractSystemResourceGenerator {
 	
 	def CodeFragment getPinName(SignalInstance sigInst) {
 		val enumValue = StaticValueInferrer.infer(ModelUtils.getArgumentValue(sigInst, "pin"), []);
-		if(enumValue instanceof Enumerator) {
+		if(enumValue instanceof SumTypeRepr) {
 			return codeFragmentProvider.create('''«enumValue.name»''');	
 		}
 		return CodeFragment.EMPTY;
