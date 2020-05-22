@@ -43,6 +43,7 @@ fn takesUint8(x : uint8): uint8 {
 fn intRangeChecks() {
 	/* XPECT errors ---
 		"Function takesUint8 cannot be used here: uint8, A" at "takesUint8"
+		"Function takesUint8 cannot be used here: uint8, xint8" at "takesUint8"
 		"Incompatible types: int8 is not subtype of uint8." at "takesUint8"
 	--- */
 	takesUint8(-1);
