@@ -11,7 +11,7 @@ struct ConfigStruct {
 }
 
 alt ConfigAlt {
-	Nothing | SomethingAnonymous : int32 | SomethingNamed : { x : int32, y : bool } | SomeStruct : ConfigStruct
+	Nothing | SomethingAnonymous : int32 | SomethingNamed : { x : int32, y : bool } | SomeStruct : ConfigStruct | SomeString : string<100>
 }
 
 sensor MySensor {

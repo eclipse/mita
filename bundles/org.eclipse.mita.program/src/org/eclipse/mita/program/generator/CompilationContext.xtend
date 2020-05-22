@@ -141,8 +141,7 @@ class CompilationContext {
 		
 	def getAllGeneratedTypesUsed() {
 		assertInited();
-		return ((units + stdlib).flatMap[program |
-			(program.eAllContents.toIterable)] + platform.eAllContents.toIterable).map[
+		return (platform.eAllContents.toIterable + (units + stdlib).flatMap[program |(program.eAllContents.toIterable)]).map[
 				it -> BaseUtils.getType(it)
 			].filter[
 				!(it.value instanceof TypeScheme) && TypeUtils.isGeneratedType(it.key.eResource, it.value)
