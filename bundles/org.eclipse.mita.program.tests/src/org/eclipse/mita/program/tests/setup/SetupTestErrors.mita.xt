@@ -33,65 +33,65 @@ setup devNetwork : MyConnectivity {
 
 // Sum types can be used
 setup alt0 : MyConnectivity {
-	// XPECT infos --> "<auto>.Nothing() has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".Nothing()"
+	// XPECT infos --> "<auto>.Nothing() has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".Nothing()"
 	cfg05 = .Nothing();
 }
 setup alt1 : MyConnectivity { 
-	// XPECT infos --> "<auto>.SomethingAnonymous(<null>=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingAnonymous(10)"
+	// XPECT infos --> "<auto>.SomethingAnonymous(<null>=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomethingAnonymous(10)"
 	cfg05 = .SomethingAnonymous(10);
 } 
 setup alt2 : MyConnectivity { 
-	// XPECT infos --> "<auto>.SomethingNamed(<null>=prim»i»10, <null>=prim»b»false) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(10, false)"
+	// XPECT infos --> "<auto>.SomethingNamed(<null>=prim»i»10, <null>=prim»b»false) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomethingNamed(10, false)"
 	cfg05 = .SomethingNamed(10, false);
 }
 setup alt3 : MyConnectivity { 
-	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»10, y: bool=prim»b»true) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(x = 10, y = true)"
+	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»10, y: bool=prim»b»true) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomethingNamed(x = 10, y = true)"
 	cfg05 = .SomethingNamed(x = 10, y = true);
 }
 setup alt4 : MyConnectivity { 
-	// XPECT infos --> "<auto>.SomethingNamed(y: bool=prim»b»false, x: int32=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(y = false, x = 10)"
+	// XPECT infos --> "<auto>.SomethingNamed(y: bool=prim»b»false, x: int32=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomethingNamed(y = false, x = 10)"
 	cfg05 = .SomethingNamed(y = false, x = 10);
 }
 setup alt5 : MyConnectivity { 
-	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»i»10)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(10))"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»i»10)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomeStruct(ConfigStruct(10))"
 	cfg05 = .SomeStruct(ConfigStruct(10));
 }
 setup alt6 : MyConnectivity { 
-	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»i»10)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = 10))"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»i»10)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomeStruct(ConfigStruct(config = 10))"
 	cfg05 = .SomeStruct(ConfigStruct(config = 10));
 }
 
 // Sum type constructors are validated
 setup alt0_bad : MyConnectivity {
 	/*XPECT errors ---
-		"Function Nothing cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))))" at ".Nothing(10)"
-		"__args(A, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))) differ in the number of type arguments" at "Nothing"
+		"Function Nothing cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<C>))))" at ".Nothing(10)"
+		"__args(A, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<uint32>))) differ in the number of type arguments" at "Nothing"
 	--- */
 	cfg05 = .Nothing(10);
 }
 setup alt1_bad : MyConnectivity { 
 	/*XPECT errors ---
-		"Function SomethingAnonymous cannot be used here: arguments don't fit (__args(A, B, C) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32))" at ".SomethingAnonymous(10, 20)"
-		"__args(A, xint8, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32) differ in the number of type arguments" at "SomethingAnonymous"
+		"Function SomethingAnonymous cannot be used here: arguments don't fit (__args(A, B, C) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<D>)), int32))" at ".SomethingAnonymous(10, 20)"
+		"__args(A, xint8, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<uint32>)), int32) differ in the number of type arguments" at "SomethingAnonymous"
 	--- */
 	cfg05 = .SomethingAnonymous(10, 20);
 }
 setup alt2_bad : MyConnectivity { 
 	/*XPECT errors ---
-		"Function SomethingAnonymous cannot be used here: arguments don't fit (__args(A) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32))" at ".SomethingAnonymous()"
-		"__args(A) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32) differ in the number of type arguments" at "SomethingAnonymous"
+		"Function SomethingAnonymous cannot be used here: arguments don't fit (__args(A) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<B>)), int32))" at ".SomethingAnonymous()"
+		"__args(A) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<uint32>)), int32) differ in the number of type arguments" at "SomethingAnonymous"
 	--- */
 	cfg05 = .SomethingAnonymous();
 } 
 setup alt3_bad : MyConnectivity { 
 	//XPECT errors --> "Incompatible types: xint8 is not subtype of bool." at "SomethingNamed"
-	// XPECT infos --> "<auto>.SomethingNamed(<null>=prim»i»10, <null>=prim»i»20) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(10, 20)"
+	// XPECT infos --> "<auto>.SomethingNamed(<null>=prim»i»10, <null>=prim»i»20) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomethingNamed(10, 20)"
 	cfg05 = .SomethingNamed(10, 20);
 } 
 setup alt4_bad : MyConnectivity { 
 	/*XPECT errors ---
-		"Function SomethingNamed cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool))" at ".SomethingNamed(20)"
-		"__args(A, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32))), int32, bool) differ in the number of type arguments" at "SomethingNamed"
+		"Function SomethingNamed cannot be used here: arguments don't fit (__args(A, B) != __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<C>)), int32, bool))" at ".SomethingNamed(20)"
+		"__args(A, xint8) and __args(∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<uint32>)), int32, bool) differ in the number of type arguments" at "SomethingNamed"
 	--- */
 	cfg05 = .SomethingNamed(20);
 }
@@ -101,7 +101,7 @@ setup alt5_bad : MyConnectivity {
 		"Positional and named parameters must not be mixed." at ".SomethingNamed(x = 20, y = true, z = 10)"
 		"prim»i»10 (:: xint8) not compatible with z (:: ⊥ (Couldn't resolve reference to Parameter 'z'.))" at "z = 10"
 	--- */
-	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»20, y: bool=prim»b»true, z=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(x = 20, y = true, z = 10)"
+	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»20, y: bool=prim»b»true, z=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomethingNamed(x = 20, y = true, z = 10)"
 	cfg05 = .SomethingNamed(x = 20, y = true, z = 10);
 }
 setup alt6_bad : MyConnectivity { 
@@ -125,12 +125,12 @@ setup alt8_bad : MyConnectivity {
 	/*XPECT errors ---
 		"Duplicate assignment to parameter x." at "x = 10"
 	--- */
-	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»20, y: bool=prim»b»true, x: int32=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomethingNamed(x = 20, y = true, x = 10)"
+	// XPECT infos --> "<auto>.SomethingNamed(x: int32=prim»i»20, y: bool=prim»b»true, x: int32=prim»i»10) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomethingNamed(x = 20, y = true, x = 10)"
 	cfg05 = .SomethingNamed(x = 20, y = true, x = 10);
 }
 setup alt9_bad : MyConnectivity { 
 	// XPECT errors --> "__args() and __args(int32) differ in the number of type arguments" at "ConfigStruct"
-	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct())"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomeStruct(ConfigStruct())"
 	cfg05 = .SomeStruct(ConfigStruct());
 }
 setup alt10_bad : MyConnectivity { 
@@ -138,7 +138,7 @@ setup alt10_bad : MyConnectivity {
 		"Function ConfigStruct cannot be used here: arguments don't fit (__args(A, B) != __args(int32))" at "ConfigStruct(10, 20)"
 		"__args(xint8, xint8) and __args(int32) differ in the number of type arguments" at "ConfigStruct"
 	--- */
-	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»i»10, <null>=prim»i»20)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(10, 20))"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»i»10, <null>=prim»i»20)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomeStruct(ConfigStruct(10, 20))"
 	cfg05 = .SomeStruct(ConfigStruct(10, 20));
 }
 setup alt12_bad : MyConnectivity { 
@@ -147,14 +147,14 @@ setup alt12_bad : MyConnectivity {
 		"bool is not a subtype of int32" at "ConfigStruct"
 		"prim»b»true (:: bool) not compatible with config (:: int32)" at "config = true"
 	--- */
-	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = true))"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomeStruct(ConfigStruct(config = true))"
 	cfg05 = .SomeStruct(ConfigStruct(config = true));
 }
 setup alt14_bad : MyConnectivity { 
 	/*XPECT errors ---
 		"Duplicate assignment to parameter config." at "config = 20"
 	--- */
-	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»i»10, config: int32=prim»i»20)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = 10, config = 20))"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»i»10, config: int32=prim»i»20)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomeStruct(ConfigStruct(config = 10, config = 20))"
 	cfg05 = .SomeStruct(ConfigStruct(config = 10, config = 20));
 }
 
@@ -254,7 +254,7 @@ setup alt11_bad : MyConnectivity {
 		"__args isn't structurally a subtype of __args" at "ConfigStruct"
 		"string<uint32> is not a subtype of int32" at "ConfigStruct"
 	--- */
-	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»s»"asdf")) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct("asdf"))"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(<null>=prim»s»"asdf")) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomeStruct(ConfigStruct("asdf"))"
 	cfg05 = .SomeStruct(ConfigStruct("asdf"));
 }
 setup alt12_bad : MyConnectivity { 
@@ -263,7 +263,7 @@ setup alt12_bad : MyConnectivity {
 		"bool is not a subtype of int32" at "ConfigStruct"
 		"prim»b»true (:: bool) not compatible with config (:: int32)" at "config = true"
 	--- */
-	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)))" at ".SomeStruct(ConfigStruct(config = true))"
+	// XPECT infos --> "<auto>.SomeStruct(<null>=ConfigStruct(config: int32=prim»b»true)) has type ∗ConfigAlt(Nothing() | SomethingAnonymous(int32) | SomethingNamed(int32, bool) | SomeStruct(ConfigStruct(int32)) | SomeString(string<A>))" at ".SomeStruct(ConfigStruct(config = true))"
 	cfg05 = .SomeStruct(ConfigStruct(config = true));
 }
  
