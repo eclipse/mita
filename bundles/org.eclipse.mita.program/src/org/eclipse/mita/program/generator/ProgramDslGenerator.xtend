@@ -247,7 +247,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			userTypeFiles += compilationUnitTypesFilename;
 		}
 		
-		val platformSpec = platform.eContainer as SystemSpecification;
+		val platformSpec = platformRoot as SystemSpecification;
 		files += fsa.produceFile(
 			UserCodeFileGenerator.getResourceTypesName(platformSpec) + '.h',
 			platform, stdlib.head.trace.append(userCodeGenerator.generateTypes(context, platformSpec))

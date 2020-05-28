@@ -29,7 +29,8 @@ import org.junit.runners.Suite.SuiteClasses;
 	StructsTest.class,
 	SumTypesTest.class,
 	TryCatchGeneratorTest.class,
-	UnravelFunctionCallsTest.class
+	UnravelFunctionCallsTest.class,
+	GeneratedPlatformTypesTest.class
 })
 @RunWith(Suite.class)
 public class AllTests {
