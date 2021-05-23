@@ -51,7 +51,7 @@ class AbstractRuntimeTest {
 		val x86platformJar = env.getOrDefault("x86platform", "org.eclipse.mita.repository/target/plugins/org.eclipse.mita.platform.x86_0.2.0.jar");
 		val stdlibJar = env.getOrDefault("stdlib", "org.eclipse.mita.repository/target/plugins/org.eclipse.mita.library.stdlib_0.2.0.jar");
 		val javaExec = env.getOrDefault("java", "java");
-		val ps = File.pathSeparatorChar;
+		val ps = File.pathSeparator;
 		
 		val cpEntries = #[compilerJar, x86platformJar];
 		
@@ -61,9 +61,10 @@ class AbstractRuntimeTest {
 			}
 		]
 		
-		val List<String> command = #[javaExec, "-cp", '''«cpEntries.join(ps.toString)»''', "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
+		// to debug, add "-agentlib:jdwp=transport=dt_socket,address=8123,server=y,suspend=y"
+		val List<String> command = #[javaExec, '''-Djava.class.path="«cpEntries.join(ps)»"''', "org.eclipse.mita.cli.Main", "compile", "-p", projectFolder.toString];
 		println("compiling mita project...");
-		println(command.join(", "));
+		println(command.join(" "));
 		println("");
 		
 		val ProcessBuilder builder = new ProcessBuilder(command);

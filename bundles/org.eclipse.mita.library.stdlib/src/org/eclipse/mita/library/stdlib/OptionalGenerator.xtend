@@ -53,7 +53,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 	public static final String OPTIONAL_DATA_MEMBER = "data";
 		
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''optional_«typeGenerator.code(context, (type as TypeConstructorType).typeArguments.tail.head)»''').addHeader('''«context.getIncludePathForTypeImplementation(type)»''', false);
 	}
 	
 	override generateVariableDeclaration(AbstractType type, EObject context, CodeFragment varName, Expression initialization, boolean isTopLevel) {
@@ -138,7 +138,7 @@ class OptionalGenerator extends AbstractTypeGenerator {
 			«typeGenerator.code(context, dataType)» «OPTIONAL_DATA_MEMBER»;
 			«ENUM_NAME» «OPTIONAL_FLAG_MEMBER»;
 		} «typeGenerator.code(context, type)»;
-		''').addHeader('MitaGeneratedTypes.h', false);
+		''');
 	}
 	
 	override generateCoercion(CoercionExpression expr, AbstractType from, AbstractType to) {

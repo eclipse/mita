@@ -1,0 +1,26 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+
+every 1 second {
+	var a: uint8 = 200;
+	//XPECT inferredType --> bool
+	var x = foo(-1);
+	//XPECT inferredType --> string<'1>
+	var y = foo(a);
+}
+
+fn foo(a: int8) {
+	return a == 0;
+}
+
+//XPECT warnings --> "Returning non-primitive values from functions is experimental and might result in invalid C code." at "foo"
+fn foo(a: uint16) {
+	return "a";
+}

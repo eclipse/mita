@@ -53,7 +53,7 @@ class ProgramSetupValidator extends AbstractDeclarativeValidator {
 		?.filter[required] // item is mandatory
 		?.filter[!setup.configurationItemValues.map[c|c.item].contains(it)] // item is not contained in setup
 		if (missingConfigItems === null || !missingConfigItems.empty) {
-			error('Missing configuration items: ' + missingConfigItems.map[c|c.name].join(', '), null,
+			error('Missing configuration items: ' + missingConfigItems?.map[c|c.name]?.join(', '), null,
 				MISSING_CONIGURATION_ITEM_CODE)
 		}
 	}

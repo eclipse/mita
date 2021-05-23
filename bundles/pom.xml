@@ -15,13 +15,14 @@
   <packaging>pom</packaging>
 
   <properties>
-    <tycho-version>1.0.0</tycho-version>
-    <tycho-extras-version>1.0.0</tycho-extras-version>
+    <tycho-version>2.3.0</tycho-version>
+    <tycho-extras-version>2.3.0</tycho-extras-version>
     <junit-version>4.11</junit-version>
-    <xtextVersion>2.16.0</xtextVersion>
-    <xcoreVersion>1.7.0</xcoreVersion>
-    <xcoreLibVersion>1.1.100</xcoreLibVersion>
-    <mweVersion>2.9.1.201705291010</mweVersion>
+    <xtextVersion>2.25.0</xtextVersion>
+    <xcoreVersion>1.17.0</xcoreVersion>
+    <xcoreLibVersion>1.5.0</xcoreLibVersion>
+    <mweVersion>2.12.1</mweVersion>
+    <emfCodegenVersion>1.5.0</emfCodegenVersion>
     <target.id>oxygen</target.id>
 
     <BUILD_NUMBER>Local build by ${user.name}</BUILD_NUMBER>
@@ -67,8 +68,15 @@
                 
                 <module>org.eclipse.mita.library.extension</module>
                 <module>org.eclipse.mita.library.stdlib</module>
-        
-        <module>org.eclipse.mita.cli</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>cli</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>org.eclipse.mita.cli</module>
             </modules>
         </profile>
         
@@ -161,7 +169,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>2.5</version>
+        <version>3.2.0</version>
         <configuration>
           <encoding>UTF-8</encoding>
         </configuration>
@@ -179,9 +187,6 @@
         <configuration>
           <resolver>p2</resolver>
           <pomDependencies>consider</pomDependencies>
-          <!-- Necessary for pack200 files -->
-          <!-- but disabled because of problems with java 1.6 and java 1.7 -->
-          <includePackedArtifacts>false</includePackedArtifacts>
           <target>
             <artifact>
               <groupId>org.eclipse.mita</groupId>
@@ -191,11 +196,6 @@
             </artifact>
           </target>
           <environments>
-            <environment>
-              <os>win32</os>
-              <ws>win32</ws>
-              <arch>x86</arch>
-            </environment>
             <environment>
               <os>win32</os>
               <ws>win32</ws>
@@ -210,11 +210,6 @@
               <os>linux</os>
               <ws>gtk</ws>
               <arch>x86_64</arch>
-            </environment>
-            <environment>
-              <os>linux</os>
-              <ws>gtk</ws>
-              <arch>x86</arch>
             </environment>
           </environments>
         </configuration>
@@ -247,8 +242,8 @@
           <version>${tycho-version}</version>
           <configuration>
             <encoding>UTF-8</encoding>
-            <source>8.0</source>
-            <target>8.0</target>
+            <source>11</source>
+            <target>11</target>
           </configuration>
         </plugin>
         <!-- Avoid the generation of maven archive information in the META-INF 
@@ -285,7 +280,8 @@
             <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
             <failIfNoTests>false</failIfNoTests>
             <testFailureIgnore>${testFailureIgnore}</testFailureIgnore>
-            <argLine>${test.vmargs}</argLine>
+            <argLine>-Dfile.encoding=UTF-8 ${test.vmargs}</argLine>
+            <appArgLine>-Dfile.encoding=UTF-8</appArgLine>
             <testClassesDirectory>${project.build.directory}/classes</testClassesDirectory>
           </configuration>
         </plugin>
@@ -345,7 +341,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>build-helper-maven-plugin</artifactId>
-          <version>1.3</version>
+          <version>3.2.0</version>
           <executions>
             <execution>
               <id>add-source</id>
@@ -381,47 +377,11 @@
             <outputDirectory>${basedir}/xtend-gen</outputDirectory>
             <testOutputDirectory>${basedir}/xtend-gen</testOutputDirectory>
           </configuration>
-          <!-- Workaround for https://github.com/eclipse/xtext-xtend/issues/493 -->
-          <dependencies>
-            <dependency>
-              <groupId>org.eclipse.jdt</groupId>
-              <artifactId>org.eclipse.jdt.core</artifactId>
-              <version>3.18.0</version>
-            </dependency>
-            <dependency>
-              <groupId>org.eclipse.jdt</groupId>
-              <artifactId>org.eclipse.jdt.compiler.apt</artifactId>
-              <version>1.3.600</version>
-            </dependency>
-            <dependency>
-              <groupId>org.eclipse.jdt</groupId>
-              <artifactId>org.eclipse.jdt.compiler.tool</artifactId>
-              <version>1.2.600</version>
-            </dependency>
-          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.eclipse.xtext</groupId>
           <artifactId>xtext-maven-plugin</artifactId>
           <version>${xtext-version}</version>
-          <!-- Workaround for https://github.com/eclipse/xtext-xtend/issues/493 -->
-          <dependencies>
-            <dependency>
-              <groupId>org.eclipse.jdt</groupId>
-              <artifactId>org.eclipse.jdt.core</artifactId>
-              <version>3.18.0</version>
-            </dependency>
-            <dependency>
-              <groupId>org.eclipse.jdt</groupId>
-              <artifactId>org.eclipse.jdt.compiler.apt</artifactId>
-              <version>1.3.600</version>
-            </dependency>
-            <dependency>
-              <groupId>org.eclipse.jdt</groupId>
-              <artifactId>org.eclipse.jdt.compiler.tool</artifactId>
-              <version>1.2.600</version>
-            </dependency>
-          </dependencies>
         </plugin>
 
         <!--This plugin's configuration is used to store Eclipse m2e settings 

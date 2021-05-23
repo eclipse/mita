@@ -89,7 +89,7 @@ class StartupGenerator implements IPlatformStartupGenerator {
 		''')
 		.setPreamble('''
 			«FOR startupEventHandler_event: startupEventHandlersAndEvents»					
-				extern ringbuffer_int32_t rb_«startupEventHandler_event.key.handlerName»;
+				extern ringbuffer_uint32_t rb_«startupEventHandler_event.key.handlerName»;
 			«ENDFOR»
 		''')
 		.addHeader('time.h', true)

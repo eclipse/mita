@@ -37,6 +37,7 @@ import static extension org.eclipse.mita.library.stdlib.ArrayGenerator.getInferr
 import org.eclipse.mita.base.types.TypeConstructor
 import org.eclipse.mita.base.util.BaseUtils
 import org.eclipse.mita.base.typesystem.types.TypeVariable
+import static extension org.eclipse.mita.base.util.BaseUtils.*
 
 // https://www.snellman.net/blog/archive/2016-12-13-ring-buffers/
 class RingbufferGenerator extends AbstractTypeGenerator {
@@ -90,12 +91,12 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 			uint32_t ringbuffer_increment(uint32_t i, uint32_t len) {
 				return ringbuffer_mask(i + 1, len);
 			}
-		''')
+		''').addHeader('inttypes.h', true);
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
 		if(type instanceof TypeConstructorType) {
-			codeFragmentProvider.create('''ringbuffer_«typeGenerator.code(context, type.typeArguments.tail.head)»''').addHeader('MitaGeneratedTypes.h', false);	
+			codeFragmentProvider.create('''ringbuffer_«typeGenerator.code(context, type.typeArguments.tail.head)»''').addHeader('''«context.getIncludePathForTypeImplementation(type)»''', false);	
 		}
 	}
 	
@@ -107,6 +108,12 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 			val dataType = type.typeArguments.get(1);
 				
 			return codeFragmentProvider.create('''
+				«varName» = («typeGenerator.code(context, type)») {
+					.data = «bufferName»,
+					.read = 0,
+					.length = 0,
+					.capacity = «size»
+				};
 				«statementGenerator.generateBulkAssignment(
 					context, 
 					codeFragmentProvider.create('''«varName»_rb'''),
@@ -126,12 +133,7 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 				
 			return codeFragmentProvider.create('''
 				«typeGenerator.code(context, type.typeArguments.tail.head)» «bufferName»[«size»];
-				«typeGenerator.code(context, type)» «varName» = «IF !isTopLevel»(«typeGenerator.code(context, type)») «ENDIF»{
-					.data = «bufferName»,
-					.read = 0,
-					.length = 0,
-					.capacity = «size»
-				};
+				«typeGenerator.code(context, type)» «varName»;
 				«statementGenerator.generateBulkAllocation(
 					context, 
 					codeFragmentProvider.create('''«varName»_rb'''),
@@ -220,7 +222,7 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 					true
 				)»
 				++«rbRef.code».length;
-			''').addHeader("MitaGeneratedTypes.h", false);
+			''').addHeader('''«context.getIncludePathForTypeImplementation(rbRef.type)»''', false);
 		}
 	}
 	static class PopGenerator extends AbstractFunctionGenerator {
@@ -255,7 +257,7 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 				)»
 				«ENDIF»
 				«rbRefCode».read = ringbuffer_increment(«rbRefCode».read, «rbRefCode».capacity);
-			''').addHeader("MitaGeneratedTypes.h", false);
+			''').addHeader('''«functionCall.getIncludePathForTypeImplementation(rbRef.type)»''', false);
 		}		
 	}
 	static class PopInferrer implements FunctionSizeInferrer {
@@ -301,10 +303,11 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 		extension GeneratorUtils
 		
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
-			val rbRef = functionCall.arguments.head.code;
+			val rbRef = functionCall.arguments.head;
+			val rbRefCode = rbRef.code;
 			val innerType = resultVariable?.type;
 			return codeFragmentProvider.create('''
-				if(«rbRef».length == 0) {
+				if(«rbRefCode».length == 0) {
 					«generateExceptionHandler(functionCall, "EXCEPTION_INDEXOUTOFBOUNDSEXCEPTION")»
 				}
 				«IF resultVariable !== null»
@@ -313,49 +316,60 @@ class RingbufferGenerator extends AbstractTypeGenerator {
 					resultVariable?.code, 
 					resultVariable, 
 					AssignmentOperator.ASSIGN, 
-					new CodeWithContext(innerType, Optional.empty, codeFragmentProvider.create('''«rbRef».data[«rbRef».read]''')), 
+					new CodeWithContext(innerType, Optional.empty, codeFragmentProvider.create('''«rbRefCode».data[«rbRefCode».read]''')), 
 					true
 				)»
 				«ENDIF»
-			''').addHeader("MitaGeneratedTypes.h", false);
+			''').addHeader('''«functionCall.getIncludePathForTypeImplementation(rbRef.type)»''', false);
 		}		
 	}
 	static class CountGenerator extends AbstractFunctionGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
+		@Inject
+		protected extension GeneratorUtils
 		
 		// no need to recurse, empty has type uint32
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
-			val rbRef = functionCall.arguments.head.code;
+			val rbRef = functionCall.arguments.head;
 			return codeFragmentProvider.create('''
-				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».length;
-			''').addHeader("MitaGeneratedTypes.h", false);
+				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef.code».length;
+			''').addHeader('''«functionCall.getIncludePathForTypeImplementation(rbRef.type)»''', false);
 		}		
 	}
 	static class EmptyGenerator extends AbstractFunctionGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
+		@Inject
+		protected extension GeneratorUtils
 		
 		// no need to recurse, empty has type bool
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
-			val rbRef = functionCall.arguments.head.code;
+			val rbRef = functionCall.arguments.head;
 			return codeFragmentProvider.create('''
-				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».length == 0;
-			''').addHeader("MitaGeneratedTypes.h", false);
+				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef.code».length == 0;
+			''').addHeader('''«functionCall.getIncludePathForTypeImplementation(rbRef.type)»''', false);
 		}		
 	}
 	static class FullGenerator extends AbstractFunctionGenerator {
 		@Inject
 		protected extension StatementGenerator statementGenerator;
+		@Inject
+		protected extension GeneratorUtils
 		
 		// no need to recurse, empty has type bool
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
-			val rbRef = functionCall.arguments.head.code;
+			val rbRef = functionCall.arguments.head;
 			return codeFragmentProvider.create('''
-				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef».length == «rbRef».capacity;
-			''').addHeader("MitaGeneratedTypes.h", false);
+				«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«rbRef.code».length == «rbRef.code».capacity;
+			''').addHeader('''«functionCall.getIncludePathForTypeImplementation(rbRef.type)»''', false);
 		}		
 	}	
+	
+	override protected getRelevantTypeParametersForHeaderName(Iterable<AbstractType> allTypeArguments) {
+		return #[allTypeArguments.get(1)]
+	}
+	
 }
 
 

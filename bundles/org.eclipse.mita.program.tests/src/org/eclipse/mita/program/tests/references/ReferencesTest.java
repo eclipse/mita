@@ -15,7 +15,7 @@ package org.eclipse.mita.program.tests.references;
 
 import org.eclipse.mita.program.tests.util.AbstractXpectTest;
 import org.junit.runner.RunWith;
-import org.xpect.runner.XpectRunner;
+import org.eclipse.xpect.runner.XpectRunner;
 
 @RunWith(XpectRunner.class)
 public class ReferencesTest extends AbstractXpectTest {

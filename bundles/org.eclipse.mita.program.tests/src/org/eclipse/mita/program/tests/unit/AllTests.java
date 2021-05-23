@@ -11,13 +11,16 @@
  * SPDX-License-Identifier: EPL-2.0
  ********************************************************************************/
 
-package org.eclipse.mita.program.tests.linking;
+package org.eclipse.mita.program.tests.unit;
 
 import org.junit.runner.RunWith;
-import org.eclipse.xpect.runner.XpectRunner;
-import org.eclipse.xpect.xtext.lib.tests.XtextTests;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
-@RunWith(XpectRunner.class)
-public class LinkingTest extends XtextTests {
+@SuiteClasses({ 
+	GeneratorUtilsTest.class
+})
+@RunWith(Suite.class)
+public class AllTests {
 
 }

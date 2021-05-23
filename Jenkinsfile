@@ -16,7 +16,7 @@ pipeline {
     
     tools { 
         maven 'apache-maven-latest' 
-        jdk 'jdk1.8.0-latest' 
+        jdk 'jdk11-latest' 
     }
 
     stages {
@@ -25,14 +25,14 @@ pipeline {
                 checkout scm;
                 // clean local copies of mita artifacts
                 sh 'rm -rf /opt/public/hipp/homes/genie.mita/.m2/repository/org/eclipse/mita/'
-                sh "mvn -U -Pplugins -Pplatforms -P!tests -P!deployment -Psign -f bundles/pom.xml clean install"
+                sh "mvn -U -Pplugins -Pplatforms -Pcli -P!tests -P!deployment -Psign -f bundles/pom.xml clean install"
             }
         }
 
         stage('base tests') {
             steps {
                 wrap([$class:'Xvnc', useXauthority: true]) {
-                    sh "mvn -P!plugins -P!platforms -Ptests -P!deployment -P!sign -f bundles/pom.xml clean install"
+                    sh "mvn -P!plugins -P!platforms -P!cli -Ptests -P!deployment -P!sign -f bundles/pom.xml clean install"
                 }
             }
             post {
@@ -44,7 +44,7 @@ pipeline {
 
         stage("deploy") {
             steps {
-                sh "mvn -P!plugins -P!platforms -P!tests -Pdeployment -Psign -f bundles/pom.xml clean install"
+                sh "mvn -P!plugins -P!platforms -P!cli -P!tests -Pdeployment -Psign -f bundles/pom.xml clean install"
             }
             post {
                 always {

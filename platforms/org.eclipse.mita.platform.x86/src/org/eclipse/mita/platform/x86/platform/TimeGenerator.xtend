@@ -47,7 +47,7 @@ class TimeGenerator implements IPlatformTimeGenerator {
 			void sleepMs(uint32_t ms) {
 				usleep(ms * 1000);
 			}
-			int32_t getTime(void) {
+			uint32_t getTime(void) {
 				struct timespec ts;
 				clock_gettime(CLOCK_REALTIME, &ts);
 				return 1000*ts.tv_sec + ts.tv_nsec/1000000; 
@@ -58,8 +58,18 @@ class TimeGenerator implements IPlatformTimeGenerator {
 			void sleepMs(uint32_t ms) {
 				Sleep(ms);
 			}
-			int32_t getTime() {
-				return clock();
+			uint32_t getTime() {
+			  SYSTEMTIME st;
+			  FILETIME ft;
+			  long long now;
+			  
+			  GetSystemTime(&st);
+			  SystemTimeToFileTime(&st, &ft);
+			  now = (LONGLONG)ft.dwLowDateTime + ((LONGLONG)(ft.dwHighDateTime) << 32LL);
+			  now /= 10000;
+			  now -= 11644473600000LL;
+			  
+			  return (uint32_t) now;
 			}
 			#endif
 			''')
@@ -86,12 +96,12 @@ class TimeGenerator implements IPlatformTimeGenerator {
 		#include <time.h>
 		#include <bits/time.h>
 		void sleepMs(uint32_t ms);
-		int32_t getTime(void);
+		uint32_t getTime(void);
 		#endif
 		#ifdef _WIN32
 		#include <windows.h>
 		void sleepMs(uint32_t ms);
-		int32_t getTime();
+		uint32_t getTime();
 		#endif
 		''')
 	}

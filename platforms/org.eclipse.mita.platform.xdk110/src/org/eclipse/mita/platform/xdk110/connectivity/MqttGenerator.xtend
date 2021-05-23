@@ -635,7 +635,7 @@ class MqttGenerator extends AbstractSystemResourceGenerator {
 		static Retcode_T connectToBackend(void);
 		static void mqttPing(void* userParameter1, uint32_t userParameter2);
 		''')
-		.addHeader("MitaGeneratedTypes.h", false)
+		.addHeader("base/generatedTypes/ringbuffer_array_char.h", false)
 		.addHeader('MitaEvents.h', false)
 	}
 

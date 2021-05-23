@@ -25,7 +25,7 @@ Require-Bundle: org.eclipse.xtext,
  org.eclipse.emf.mwe2.launch;resolution:=optional,
  org.eclipse.jdt.core,
  org.eclipse.xtext.ui
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: org.eclipse.mita.platform,
  org.eclipse.mita.platform.generator,
  org.eclipse.mita.platform.impl,

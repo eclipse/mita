@@ -14,7 +14,7 @@
 package org.eclipse.mita.program.tests.expressions;
 
 import org.junit.runner.RunWith;
-import org.xpect.runner.XpectRunner;
+import org.eclipse.xpect.runner.XpectRunner;
 
 import org.eclipse.mita.program.tests.util.AbstractXpectTest;
 

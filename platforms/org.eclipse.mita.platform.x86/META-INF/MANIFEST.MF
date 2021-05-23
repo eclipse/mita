@@ -4,7 +4,7 @@ Bundle-Name: x86 Platform (Beta)
 Bundle-SymbolicName: org.eclipse.mita.platform.x86;singleton:=true
 Bundle-Version: 0.2.0.qualifier
 Automatic-Module-Name: org.eclipse.mita.platform.x86
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: org.eclipse.mita.library.extension,
  org.eclipse.mita.program,
  com.google.guava,

@@ -52,6 +52,7 @@ import org.eclipse.xtend2.lib.StringConcatenationClient
 import org.eclipse.mita.base.expressions.Literal
 import org.eclipse.mita.base.types.TypeUtils
 import org.eclipse.mita.program.model.ModelUtils
+import static extension org.eclipse.mita.base.util.BaseUtils.*
 
 class ArrayGenerator extends AbstractTypeGenerator {
 	
@@ -66,6 +67,9 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	
 	@Inject
 	protected TypeGenerator typeGenerator
+	
+	@Inject
+	protected TypeUtils typeUtils
 	
 	static def getInferredSize(EObject obj) {
 		BaseUtils.getType(obj)?.getInferredSize
@@ -156,7 +160,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		«IF !isTopLevel»
 		«generateGlobalInitialization(type, context, varName, initialization)»
 		«ENDIF»
-		''').addHeader('MitaGeneratedTypes.h', false);
+		''').addHeader('''«context.getIncludePathForTypeImplementation(type)»''', false);
 	}
 	
 	def AbstractType getDataType(AbstractType t) {
@@ -168,7 +172,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 	}
 	
 	override generateTypeSpecifier(AbstractType type, EObject context) {
-		cf('''array_«getDataTypeCCode(context, type)»''').addHeader('MitaGeneratedTypes.h', false);
+		cf('''array_«getDataTypeCCode(context, type)»''').addHeader('''«context.getIncludePathForTypeImplementation(type)»''', false);
 	}
 		
 	def generateLength(CodeFragment temporaryBufferName, ValueRange valRange, CodeWithContext obj) {
@@ -188,7 +192,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 			return null;
 		}
 		val dataType = left.type.dataType;
-		if(!TypeUtils.isGeneratedType(context, dataType)) {
+		if(!typeUtils.isGeneratedType(context, dataType)) {
 			return cf('''
 				«typeGenerator.code(context, dataType)» «cVariablePrefix»_temp_«context.occurrence»[«lit.values.length»] = {«FOR v: lit.values SEPARATOR(", ")»«v.code»«ENDFOR»};
 				memcpy(«left.code».data, «cVariablePrefix»_temp_«context.occurrence», sizeof(«typeGenerator.code(context, dataType)»)*«lit.values.length»);
@@ -308,7 +312,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 
 		«lengthModifyStmt»
 		''').addHeader("string.h", true)
-		.addHeader('MitaGeneratedTypes.h', false);
+		.addHeader('''«context.getIncludePathForTypeImplementation(left.type)»''', false);
 	}
 	
 	def CodeFragment copyContents(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
@@ -324,6 +328,9 @@ class ArrayGenerator extends AbstractTypeGenerator {
 				
 		@Inject
 		protected extension StatementGenerator
+		
+		@Inject
+		protected extension GeneratorUtils
 	
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
@@ -331,7 +338,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 				variable.code;
 			}
 			
-			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».length''').addHeader('MitaGeneratedTypes.h', false);
+			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».length''').addHeader('''«functionCall.getIncludePathForTypeImplementation(variable.type)»''', false);
 		}
 		
 		override callShouldBeUnraveled(ElementReferenceExpression expression) {
@@ -347,6 +354,9 @@ class ArrayGenerator extends AbstractTypeGenerator {
 		
 		@Inject
 		protected extension StatementGenerator
+		
+		@Inject 
+		protected extension GeneratorUtils 
 	
 		override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 			val variable = ExpressionUtils.getArgumentValue(functionCall.reference as Operation, functionCall, 'self');
@@ -354,7 +364,7 @@ class ArrayGenerator extends AbstractTypeGenerator {
 				variable.code;
 			}
 			
-			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».capacity''').addHeader('MitaGeneratedTypes.h', false);
+			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».capacity''').addHeader('''«functionCall.getIncludePathForTypeImplementation(variable.type)»''', false);
 		}
 		
 		override callShouldBeUnraveled(ElementReferenceExpression expression) {
@@ -423,6 +433,10 @@ class ArrayGenerator extends AbstractTypeGenerator {
 				«left.code»[«i»].length = «right.code»[«i»].length;
 			}
 		''')
+	}
+	
+	override protected getRelevantTypeParametersForHeaderName(Iterable<AbstractType> allTypeArguments) {
+		return #[allTypeArguments.get(1)]
 	}
 	
 }

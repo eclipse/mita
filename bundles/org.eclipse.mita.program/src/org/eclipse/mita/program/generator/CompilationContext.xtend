@@ -33,6 +33,7 @@ import org.eclipse.mita.program.generator.internal.ResourceGraphBuilder
 import org.eclipse.mita.program.model.ModelUtils
 import org.eclipse.xtend.lib.annotations.Accessors
 import org.eclipse.mita.base.types.TypeUtils
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 
 class CompilationContext {
 	protected Iterable<Program> units;
@@ -147,7 +148,8 @@ class CompilationContext {
 				!(it.value instanceof TypeScheme) && TypeUtils.isGeneratedType(it.key.eResource, it.value)
 			]
 		.groupBy[it.value.toString].entrySet
-		.map[it.value.head.value];
+		.map[it.value.head.value]
+		.filter(TypeConstructorType);
 	}
 	
 	def getResourceGraph() {

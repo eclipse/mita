@@ -253,7 +253,7 @@ class ProgramDslGenerator extends AbstractGenerator implements IGeneratorOnResou
 			platform, stdlib.head.trace.append(userCodeGenerator.generateTypes(context, platformSpec))
 		)
 		
-		files += fsa.produceFile('base/MitaGeneratedTypes.h', someProgram, generatedTypeGenerator.generateHeader(context, userTypeFiles));
+		files += generatedTypeGenerator.generateHeaders(fsa, someProgram, context, userTypeFiles);
 		files += fsa.produceFile('base/MitaGeneratedTypes.c', someProgram, generatedTypeGenerator.generateImplementation(context, userTypeFiles));
 		
 		files += getUserFiles(input);

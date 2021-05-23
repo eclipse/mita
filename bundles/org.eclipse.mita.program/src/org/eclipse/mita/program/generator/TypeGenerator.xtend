@@ -45,6 +45,9 @@ class TypeGenerator implements IGenerator {
 	
 	@Inject
 	protected extension GeneratorUtils
+	
+	@Inject
+	protected TypeUtils typeUtils
 
 	public dispatch def CodeFragment code(EObject context, AbstractType type) {
 		return codeFragmentProvider.create('''NOT IMPLEMENTED FOR «type.class.name»''')
@@ -53,7 +56,7 @@ class TypeGenerator implements IGenerator {
 		return codeFragmentProvider.create('''NOT IMPLEMENTED FOR NULL''')
 	}
 	public dispatch def CodeFragment code(EObject context, AtomicType type) {
-		if(TypeUtils.isGeneratedType(context, type)) {
+		if(typeUtils.isGeneratedType(context, type)) {
 			val generator = generatorRegistry.getGenerator(context.eResource, type);
 			if(generator instanceof AbstractTypeGenerator) {
 				return generator.generateTypeSpecifier(type, context);
@@ -79,7 +82,7 @@ class TypeGenerator implements IGenerator {
 	}
 	
 	public dispatch def CodeFragment code(EObject context, TypeConstructorType type) {
-		if(TypeUtils.isGeneratedType(context, type)) {
+		if(typeUtils.isGeneratedType(context, type)) {
 			val generator = generatorRegistry.getGenerator(context.eResource, type);
 			if(generator instanceof AbstractTypeGenerator) {
 				return generator.generateTypeSpecifier(type, context);

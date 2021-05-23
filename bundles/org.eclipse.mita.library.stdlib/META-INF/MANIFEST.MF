@@ -5,7 +5,7 @@ Automatic-Module-Name: org.eclipse.mita.library.stdlib
 Bundle-SymbolicName: org.eclipse.mita.library.stdlib;singleton:=true
 Bundle-Version: 0.2.0.qualifier
 Bundle-Vendor: Eclipse.org/Mita
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: org.eclipse.mita.base,
  org.eclipse.mita.library.extension,
  com.google.guava,

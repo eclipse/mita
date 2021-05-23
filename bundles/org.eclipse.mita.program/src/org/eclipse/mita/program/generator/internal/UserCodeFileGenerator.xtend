@@ -61,6 +61,9 @@ class UserCodeFileGenerator {
 	
 	@Inject
 	protected GeneratorRegistry generatorRegistry
+	
+	@Inject
+	protected ModelUtils modelUtils
 		
 	/**
 	 * Generates custom types used by the application.
@@ -161,7 +164,7 @@ class UserCodeFileGenerator {
 			
 			«FOR variable : program.globalVariables.filter[
 				val type = BaseUtils.getType(it);
-				return !ModelUtils.isStructuralType(type, it);
+				return !modelUtils.isStructuralType(type, it);
 			]»
 			«val type = BaseUtils.getType(variable)»
 			«val generator = generatorRegistry.getGenerator(program.eResource, type)?.castOrNull(AbstractTypeGenerator)»

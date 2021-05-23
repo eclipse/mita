@@ -119,17 +119,16 @@ class FunctionTypeClassConstraint extends TypeClassConstraint {
 			}
 			cachedIsAtomic.get();
 		}
-		return selfIsAtomic || !instancesAreMutuallyUnunifiable(system.mguComputer, typeClass)
+		return selfIsAtomic || !instanceResolutionIsDeterministic(system.mguComputer, typ, typeClass)
 	}
 	
-	def boolean instancesAreMutuallyUnunifiable(MostGenericUnifierComputer mgu, TypeClass tc) {
-		val instances = tc.instances.keySet;
-		return !BaseUtils.chooseAny(instances)
-			.filter[it.size == 2]
-			.map[it.get(0) -> it.get(1)]
-			.filter[it.key !== it.value]
-			.map[mgu.compute(#[it]).valid]
-			.fold(false, [b1, b2| b1 || b2])
+	// TODO check subtypes, default arguments? (default arguments are just the worst -.-
+	def boolean instanceResolutionIsDeterministic(MostGenericUnifierComputer mgu, AbstractType typ, TypeClass tc) {
+		val instances = tc.instances.keySet
+		var unifications = instances.filter(TypeScheme).map[it.on].filter(FunctionType).map[instance| 
+			mgu.compute(#[typ -> instance.from]).isValid
+		].filter[it]
+		return unifications.size < 2
 	}
 	
 	def boolean isMoreSpecificThan(AbstractType instance, AbstractType generalization) {

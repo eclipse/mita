@@ -168,6 +168,9 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Inject ITypeSystem typeSystem
 	@Inject PluginResourceLoader loader
 	@Inject ModelUtils modelUtils
+	
+	@Inject
+	protected TypeUtils typeUtils;
 		
 	def featureOrNull(EStructuralFeature ref, EObject object) {
 		if(object === null || ref === null || object.eClass.getEStructuralFeature(ref.getName()) !== ref) {
@@ -320,7 +323,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.NORMAL)
 	def checkGeneratedTypeVariableDeclarations(VariableDeclaration variable) {
 		val type = BaseUtils.getType(variable);
-		if(TypeUtils.isGeneratedType(variable, type)) {
+		if(typeUtils.isGeneratedType(variable, type)) {
 			val cs = TypeUtils.getConstraintSystem(variable.eResource);
 			val validator = cs.getUserData(type, BaseConstraintFactory.VALIDATOR_KEY);
 			if(validator !== null) {
@@ -413,7 +416,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 	@Check(CheckType.NORMAL)
 	def checkFunctionReturnTypeIsPrimitive(FunctionDefinition op) {[|
 		val operationType = BaseUtils.getType(op.typeSpecifier); 
-		if(!(op instanceof GeneratedFunctionDefinition) && (op instanceof AtomicType && op.name == "void") || ModelUtils.isPrimitiveType(operationType, op)) {
+		if(!(op instanceof GeneratedFunctionDefinition) && (op instanceof AtomicType && op.name == "void") || modelUtils.isPrimitiveType(operationType, op)) {
 			return;
 		}
 		
@@ -488,7 +491,7 @@ class ProgramDslValidator extends AbstractProgramDslValidator {
 		var hasGeneratedTypeNext = hasGeneratedType;
 
 		val subTypes = if(type instanceof TypeConstructorType) {
-			if(TypeUtils.isGeneratedType(obj, type)) {
+			if(typeUtils.isGeneratedType(obj, type)) {
 				if(type.name == "reference") {
 					// references are a clean and supported way for nested generated types, since refs are value types and easily copied.
 					return;

@@ -149,6 +149,10 @@ class StatementGenerator {
 	@Inject
 	protected GeneratorRegistry registry
 	
+	
+	@Inject
+	protected TypeUtils typeUtils
+	
 	dispatch def IGeneratorNode code(Void stmt) {
 		return codeFragmentProvider.create('''CODE CALLED ON NULL''');
 	}
@@ -293,7 +297,7 @@ class StatementGenerator {
 	}
 	
 	def CodeFragment generateBulkAllocation(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count, boolean isTopLevel) {
-		if(isGeneratedType(context, left.type)) {
+		if(typeUtils.isGeneratedType(context, left.type)) {
 			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
 			
 			return generator.generateBulkAllocation(context, cVariablePrefix, left, count, isTopLevel);
@@ -301,7 +305,7 @@ class StatementGenerator {
 		return cf('''''')
 	}
 	def CodeFragment generateBulkAssignment(EObject context, CodeFragment cVariablePrefix, CodeWithContext left, CodeFragment count) {
-		if(isGeneratedType(context, left.type)) {
+		if(typeUtils.isGeneratedType(context, left.type)) {
 			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
 			
 			return generator.generateBulkAssignment(context, cVariablePrefix, left, count);
@@ -309,7 +313,7 @@ class StatementGenerator {
 		return cf('''''')
 	}
 	def CodeFragment generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
-		if(isGeneratedType(context, left.type)) {
+		if(typeUtils.isGeneratedType(context, left.type)) {
 			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
 			
 			return generator.generateBulkCopyStatements(context, i, left, right, count);
@@ -377,7 +381,7 @@ class StatementGenerator {
 				'''
 			}
 		}
-		if(TypeUtils.isGeneratedType(expr, coercedType)) {
+		if(typeUtils.isGeneratedType(expr, coercedType)) {
 			val generator = registry.getGenerator(expr.eResource, coercedType) as AbstractTypeGenerator;
 			return '''«generator.generateCoercion(expr, expressionType, coercedType)»'''; 
 		}
@@ -403,7 +407,7 @@ class StatementGenerator {
 		} else if (stmt.isArrayAccess) {
 			'''«arguments.head.value.code.noTerminator»[«stmt.arraySelector.head.code.noTerminator»];'''
 		} else if (stmt.reference instanceof Modality) {
-			throw new CoreException(new Status(IStatus.ERROR, null, 'Sensor access should not be a feature call'));
+			throw new CoreException(new Status(IStatus.ERROR, StatementGenerator, 'Sensor access should not be a feature call'));
 		} else if (stmt.reference instanceof SignalInstance) {
 			'''/* Signal instance access should have been rewritten by the compiler. */'''
 		} else if (stmt.reference instanceof VariableDeclaration) {
@@ -690,7 +694,7 @@ class StatementGenerator {
 	def IGeneratorNode initializationCode(EObject context, CodeFragment tempVarName, CodeWithContext left, AssignmentOperator op, CodeWithContext right, boolean alwaysGenerate) {
 		// TODO handle Optional.none
 		val initialization = right?.obj?.orElse(null);	
-		if (isGeneratedType(context, left.type)) {
+		if (typeUtils.isGeneratedType(context, left.type)) {
 			val generator = registry.getGenerator(context.eResource, left.type).castOrNull(AbstractTypeGenerator);
  
 			if (initialization instanceof ElementReferenceExpression && (initialization as ElementReferenceExpression).isOperationCall) {
@@ -755,7 +759,7 @@ class StatementGenerator {
 		// generate declaration
 		// generated types
 
-		if (TypeUtils.isGeneratedType(context, type)) {
+		if (typeUtils.isGeneratedType(context, type)) {
 			val generator = registry.getGenerator(context.eResource, type).castOrNull(AbstractTypeGenerator);
 			result.children += generator.generateVariableDeclaration(type, context, varName, initialization, isTopLevel);
 		} else if (initialization instanceof ElementReferenceExpression) {

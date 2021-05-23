@@ -15,7 +15,7 @@ Automatic-Module-Name: org.eclipse.mita.base
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  org.eclipse.xtext.xbase,
- org.eclipse.equinox.common;bundle-version="3.5.0",
+ org.eclipse.equinox.common,
  org.eclipse.core.runtime,
  org.eclipse.emf.ecore;visibility:=reexport,
  org.eclipse.xtext.xbase.lib,
@@ -30,10 +30,10 @@ Require-Bundle: org.eclipse.xtext;visibility:=reexport,
  com.google.inject;visibility:=reexport,
  com.google.guava,
  org.eclipse.mita.library.extension,
- org.eclipse.core.resources;bundle-version="3.12.0",
- com.google.gson;bundle-version="2.2.4",
+ org.eclipse.core.resources,
+ com.google.gson,
  org.eclipse.xtext.ui
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: io.protostuff,
  io.protostuff.runtime,
  it.unimi.dsi.fastutil,

@@ -19,7 +19,7 @@
 			<plugin>
 				<groupId>org.eclipse.tycho.extras</groupId>
 				<artifactId>tycho-source-feature-plugin</artifactId>
-				<version>1.0.0</version>
+				<version>${tycho-version}</version>
 
 				<executions>
 					<execution>
@@ -35,7 +35,7 @@
 			<plugin>
 				<groupId>org.eclipse.tycho</groupId>
 				<artifactId>tycho-source-plugin</artifactId>
-				<version>1.0.0</version>
+				<version>${tycho-version}</version>
 
 				<executions>
 					<execution>

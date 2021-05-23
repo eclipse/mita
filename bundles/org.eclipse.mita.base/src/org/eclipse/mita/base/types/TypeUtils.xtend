@@ -44,7 +44,7 @@ class TypeUtils {
 	static def boolean isGeneratedType(Resource res, AbstractType type) {
 		return res.constraintSolution?.getSystem?.isGeneratedType(type);
 	}
-	static def boolean isGeneratedType(EObject context, AbstractType type) {
+	def boolean isGeneratedType(EObject context, AbstractType type) {
 		return context.eResource.isGeneratedType(type);
 	}
 	

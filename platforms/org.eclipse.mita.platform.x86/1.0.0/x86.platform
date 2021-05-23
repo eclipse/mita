@@ -52,5 +52,5 @@ platform x86 {
 	has MQTT
 	
 	// payload is current time in ms since epoch (1970/1/1)
-	event startup: int32
+	event startup: uint32
 }

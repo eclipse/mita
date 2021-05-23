@@ -25,8 +25,12 @@ import org.eclipse.mita.program.generator.CodeFragment
 import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
+import org.eclipse.mita.program.generator.GeneratorUtils
 
 class OptionalsNoneGenerator extends AbstractFunctionGenerator {
+	
+	@Inject
+	protected extension GeneratorUtils
 	
 	@Inject 
 	protected extension StatementGenerator statementGenerator
@@ -50,7 +54,7 @@ class OptionalsNoneGenerator extends AbstractFunctionGenerator {
 			«ELSE»
 			«resultVariable.code».«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.None.name»;
 			«ENDIF»
-		''').addHeader('MitaGeneratedTypes.h', false);
+		''').addHeader('''«functionCall.getIncludePathForTypeImplementation(funType)»''', false);
 	}	
 	
 	override callShouldBeUnraveled(ElementReferenceExpression expression) {

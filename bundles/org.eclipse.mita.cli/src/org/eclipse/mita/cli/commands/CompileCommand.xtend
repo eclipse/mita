@@ -42,6 +42,9 @@ import org.eclipse.xtext.validation.IResourceValidator
 import org.apache.commons.cli.CommandLine
 import org.eclipse.mita.base.typesystem.infra.MitaBaseResource
 import org.eclipse.emf.common.notify.Adapter
+import sun.applet.AppletClassLoader
+import jdk.internal.loader.ClassLoaders
+import java.nio.file.Path
 
 class CompileCommand extends AbstractCommand {
 	@Inject
@@ -126,18 +129,10 @@ class CompileCommand extends AbstractCommand {
 	}
 
 	static def getAllMitaAndPlatformFilesInClasspath() {
-		val rootURLs = new LinkedList<URL>();
-		var cl = Thread.currentThread().getContextClassLoader();
-		while (cl !== null) {
-			if (cl instanceof URLClassLoader) {
-				rootURLs.addAll(cl.URLs);
-			}
-			cl = cl.getParent();
-		}
-
-		rootURLs
+		val rootPaths = System.getProperty("java.class.path", "")
+		rootPaths.split(File.pathSeparator)
 			.flatMap[
-				val file = new File(it.path);
+				val file = new File(it);
 				if(file.isDirectory) {
 					file.listChildren
 				} else {
@@ -156,15 +151,16 @@ class CompileCommand extends AbstractCommand {
 		}
 	}
 	
-	protected static def Iterable<String> listChildren(URL url) {
+	protected static def Iterable<String> listChildren(String url) {
 		val result = new LinkedList<String>();
-		try {
-			val urlIn = url.openStream();
+		if(!url.endsWith("jar")) {
+			return #["file://" + url]
+		}
+		try (val urlIn = Files.newInputStream(Path.of(url))) {
        		val jarIn = new JarInputStream (urlIn);
        		for(var entry = jarIn.getNextJarEntry(); entry !== null; entry = jarIn.getNextJarEntry()) {
        			result.add("classpath://" + entry.name);
        		}
-   		} finally {
    		}
    		return result;   			
 	}

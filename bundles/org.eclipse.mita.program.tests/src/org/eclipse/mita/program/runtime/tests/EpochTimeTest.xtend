@@ -17,6 +17,7 @@ import org.junit.Test
 import java.nio.file.Paths
 import org.junit.Assert
 import java.time.Instant
+import java.util.stream.Collectors
 
 class EpochTimeTest extends AbstractRuntimeTest {
 	@Test
@@ -41,9 +42,9 @@ class EpochTimeTest extends AbstractRuntimeTest {
 		compileMita(projectPath);
 		compileC(projectPath, "all");
 		val executable = projectPath.resolve(Paths.get("src-gen", "build", "app"));
-		val lines = runAtMost(executable, 60);
+		val lines = runAtMost(executable, 60).collect(Collectors.toList());
 		val lastLine = lines.iterator.last;
-		val timeFromApp = Integer.parseInt(lastLine).intValue;
+		val timeFromApp = Long.parseLong(lastLine).intValue;
 		val timeFromJava = Instant.now().toEpochMilli() as int;
 		println('''java: «timeFromJava», testling: «timeFromApp»''')
 		// time difference should be less than 2s
