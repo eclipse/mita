@@ -19,7 +19,9 @@ Require-Bundle: org.eclipse.mita.program.ui,
  org.eclipse.mita.library.extension,
  org.eclipse.cdt.core,
  org.junit,
- org.hamcrest.core
+ org.hamcrest.core,
+ net.bytebuddy.byte-buddy,
+ net.bytebuddy.byte-buddy-agent
 Export-Package: org.eclipse.mita.program.tests;x-internal=true,
  org.eclipse.mita.program.tests.util
 Import-Package: org.hamcrest.core,
