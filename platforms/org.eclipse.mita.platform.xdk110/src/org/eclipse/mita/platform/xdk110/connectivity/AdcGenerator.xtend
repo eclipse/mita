@@ -38,6 +38,17 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 	public def generateSetup(Iterable<SignalInfo> signalInstances) {
 		val setupCode = codeFragmentProvider.create('''
 			Retcode_T exception = RETCODE_OK;
+			
+			«FOR channel: signalInstances»
+			«channel.configName»  = (AdcCentral_ConfigSingle_T) {
+				.AcqTime = «channel.sampleTime»,
+				.Appcallback = adcCallback,
+				.BufferPtr = &AdcResultBuffer,
+				.Channel = «channel.channel»,
+				.Reference = «channel.referenceVoltage»,
+				.Resolution = «channel.resolution»
+			};
+			«ENDFOR»
 
 			exception = AdcCentral_Init();
 			if(exception != RETCODE_OK) return exception;
@@ -74,14 +85,7 @@ class AdcGenerator extends AbstractSystemResourceGenerator {
 		}
 		
 		«FOR channel: signalInstances»
-		AdcCentral_ConfigSingle_T «channel.configName» = {
-			.AcqTime = «channel.sampleTime»,
-			.Appcallback = adcCallback,
-			.BufferPtr = &AdcResultBuffer,
-			.Channel = «channel.channel»,
-			.Reference = «channel.referenceVoltage»,
-			.Resolution = «channel.resolution»
-		};
+		AdcCentral_ConfigSingle_T «channel.configName»;
 
 		«ENDFOR»
 		''')
