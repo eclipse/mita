@@ -11,7 +11,7 @@ Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.xtext,
  org.eclipse.xtext.xtext.generator,
  org.eclipse.xtext.xbase,
- org.eclipse.equinox.common;bundle-version="3.5.0",
+ org.eclipse.equinox.common,
  org.eclipse.core.runtime,
  org.eclipse.emf.ecore;visibility:=reexport,
  org.eclipse.xtext.xbase.lib,
@@ -25,9 +25,9 @@ Require-Bundle: org.eclipse.xtext,
  org.eclipse.mita.base;visibility:=reexport,
  org.eclipse.mita.library.extension,
  org.eclipse.core.resources,
- com.google.gson;bundle-version="2.2.4",
+ com.google.gson,
  org.eclipse.xtext.ui
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: org.eclipse.mita.program,
  org.eclipse.mita.program.generator,
  org.eclipse.mita.program.generator.internal,

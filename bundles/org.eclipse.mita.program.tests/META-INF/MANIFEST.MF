@@ -5,11 +5,11 @@ Bundle-Name: Mita Program Language Tests
 Bundle-SymbolicName: org.eclipse.mita.program.tests
 Bundle-Version: 0.2.0.qualifier
 Bundle-Vendor: Eclipse.org/Mita
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Require-Bundle: org.eclipse.mita.program.ui,
  org.eclipse.mita.program,
- org.xpect,
- org.xpect.xtext.lib,
+ org.eclipse.xpect,
+ org.eclipse.xpect.xtext.lib,
  org.eclipse.xtext.testing,
  org.eclipse.xtext.xbase.testing,
  org.eclipse.xtext.xbase.lib,
@@ -17,13 +17,13 @@ Require-Bundle: org.eclipse.mita.program.ui,
  org.eclipse.mita.platform.ui,
  org.eclipse.mita.platform.unittest,
  org.eclipse.mita.library.extension,
- org.eclipse.cdt.core
+ org.eclipse.cdt.core,
+ org.junit,
+ org.hamcrest.core,
+ net.bytebuddy.byte-buddy,
+ net.bytebuddy.byte-buddy-agent
 Export-Package: org.eclipse.mita.program.tests;x-internal=true,
  org.eclipse.mita.program.tests.util
 Import-Package: org.hamcrest.core,
- org.junit;version="4.5.0",
- org.junit.runners.model;version="4.5.0",
- org.junit.runner;version="4.5.0",
- org.junit.runners;version="4.5.0",
- org.junit.runner.manipulation;version="4.5.0",
- org.junit.runner.notification;version="4.5.0"
+ org.mockito,
+ org.mockito.stubbing

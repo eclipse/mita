@@ -20,17 +20,21 @@ import org.eclipse.mita.program.generator.AbstractFunctionGenerator
 import org.eclipse.mita.program.generator.CodeWithContext
 import org.eclipse.mita.program.generator.StatementGenerator
 
+import static extension org.eclipse.mita.base.util.BaseUtils.*
+import org.eclipse.mita.program.generator.GeneratorUtils
+
 class OptionalsHasValueGenerator extends AbstractFunctionGenerator {
-	
 	
 	@Inject 
 	protected extension StatementGenerator statementGenerator
+	@Inject
+	protected extension GeneratorUtils
 	
 	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 		val args = functionCall.arguments;
 		val optVarOrExpr = args.head.value;
 				
-		codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«optVarOrExpr.code».flag == «enumOptional.Some.name»;''').addHeader('MitaGeneratedTypes.h', false);
+		codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«optVarOrExpr.code».flag == «enumOptional.Some.name»;''').addHeader('''«functionCall.getIncludePathForTypeImplementation(optVarOrExpr.type)»''', false);
 	}
 	
 	

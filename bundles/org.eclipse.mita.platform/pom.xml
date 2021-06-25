@@ -49,7 +49,7 @@
 					<dependency>
 						<groupId>org.eclipse.emf</groupId>
 						<artifactId>org.eclipse.emf.codegen.ecore.xtext</artifactId>
-						<version>1.2.0</version>
+						<version>${emfCodegenVersion}</version>
 					</dependency>
 					<dependency>
 						<groupId>org.eclipse.emf</groupId>
@@ -67,7 +67,7 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>exec-maven-plugin</artifactId>
-				<version>1.4.0</version>
+				<version>3.0.0</version>
 				<executions>
 					<execution>
 						<id>mwe2Launcher</id>

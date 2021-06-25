@@ -68,4 +68,12 @@ class ReferenceGenerator extends AbstractTypeGenerator {
 		throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 	
+	override generateHeaderName(EObject context, TypeConstructorType t) {
+		return "reference"
+	}
+	
+	override generateUnspecializedDefinitionsHeaderName(EObject context, TypeConstructorType typeWitness) {
+		return "reference"
+	}
+	
 }

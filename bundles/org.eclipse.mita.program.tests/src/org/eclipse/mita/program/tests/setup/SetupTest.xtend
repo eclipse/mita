@@ -20,11 +20,11 @@ import org.eclipse.mita.program.tests.util.AbstractXpectTest
 import org.eclipse.mita.program.tests.util.GenerationTest.ContextObject
 import org.eclipse.emf.ecore.EObject
 import org.junit.runner.RunWith
-import org.xpect.expectation.IStringExpectation
-import org.xpect.expectation.StringExpectation
-import org.xpect.runner.LiveExecutionType
-import org.xpect.runner.Xpect
-import org.xpect.runner.XpectRunner
+import org.eclipse.xpect.expectation.IStringExpectation
+import org.eclipse.xpect.expectation.StringExpectation
+import org.eclipse.xpect.runner.LiveExecutionType
+import org.eclipse.xpect.runner.Xpect
+import org.eclipse.xpect.runner.XpectRunner
 
 @RunWith(XpectRunner)
 class SetupTest extends AbstractXpectTest {

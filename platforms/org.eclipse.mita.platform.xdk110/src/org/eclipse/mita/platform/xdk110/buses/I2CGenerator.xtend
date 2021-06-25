@@ -222,7 +222,7 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		return I2CTransceiver_Write(&tranceiverStruct, «busAddress.code.noTerminator», «registerAddress.code.noTerminator», «boi.bufferName», «byteCount»);
 		''')
 		.addHeader("MitaExceptions.h", false)
-		.addHeader("MitaGeneratedTypes.h", false)
+		.addHeader("base/generatedTypes/array_uint8.h", false)
 	}
 	
 	override generateSignalInstanceGetter(SignalInstance signalInstance, String resultName) {
@@ -279,6 +279,6 @@ class I2CGenerator extends AbstractSystemResourceGenerator {
 		return exception;
 		''')
 		.addHeader("MitaExceptions.h", false)
-		.addHeader("MitaGeneratedTypes.h", false)
+		.addHeader("base/generatedTypes/array_uint8.h", false)
 	}
 }

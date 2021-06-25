@@ -27,6 +27,7 @@ import org.eclipse.mita.program.generator.StatementGenerator
 import org.eclipse.mita.program.generator.internal.GeneratorRegistry
 
 import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
+import org.eclipse.mita.program.generator.GeneratorUtils
 
 class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	
@@ -35,6 +36,8 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 	
 	@Inject
 	protected GeneratorRegistry registry
+	@Inject
+	protected extension GeneratorUtils
 	
 	override generate(CodeWithContext resultVariable, ElementReferenceExpression functionCall) {
 		val args = functionCall.arguments;
@@ -58,7 +61,7 @@ class OptionalsSomeGenerator extends AbstractFunctionGenerator {
 			«resultVariable.code».«OptionalGenerator.OPTIONAL_FLAG_MEMBER» = «enumOptional.Some.name»;
 			«resultVariable.code».«OptionalGenerator.OPTIONAL_DATA_MEMBER» = «valueVarOrExpr.code»;
 			«ENDIF»
-		''').addHeader('MitaGeneratedTypes.h', false);
+		''').addHeader('''«functionCall.getIncludePathForTypeImplementation(funType)»''', false);
 	}
 	
 	override callShouldBeUnraveled(ElementReferenceExpression expression) {

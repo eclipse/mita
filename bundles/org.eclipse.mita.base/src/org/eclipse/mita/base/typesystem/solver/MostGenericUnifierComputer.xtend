@@ -28,6 +28,7 @@ import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 import static extension org.eclipse.mita.base.util.BaseUtils.*
 import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMessages
+import org.eclipse.mita.base.typesystem.types.TypeScheme
 
 /* Interesting papers:
  *  Generalizing Hindley-Milner Type Inference Algorithms: https://pdfs.semanticscholar.org/8983/233b3dff2c5b94efb31235f62bddc22dc899.pdf
@@ -196,10 +197,19 @@ class MostGenericUnifierComputer {
 		return ComposedUnificationIssue.fromMultiple(issues);
 	}
 	
+	protected dispatch def UnificationIssue unify(Substitution substitution, TypeScheme t1, TypeScheme t2) {
+		if(t1.freeVars.size != t2.freeVars.size) {
+			val renamer = new NicerTypeVariableNamesForErrorMessages;
+			return new UnificationIssue(#[t1, t2], '''Types «t1.modifyNames(renamer)» and «t2.modifyNames(renamer)» are not the same.''');
+		}
+		return substitution.unify(t1.on, t2.on)
+	}
+	
 	protected dispatch def UnificationIssue unify(Substitution substitution, AbstractType t1, AbstractType t2) {
 		if(t1 != t2) { 
 			val renamer = new NicerTypeVariableNamesForErrorMessages;
 			return new UnificationIssue(#[t1, t2], '''Types «t1.modifyNames(renamer)» and «t2.modifyNames(renamer)» are not the same.''');
 		}
+		return null
 	}
 }

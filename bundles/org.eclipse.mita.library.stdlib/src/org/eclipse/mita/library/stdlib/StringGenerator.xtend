@@ -45,11 +45,18 @@ import static extension org.eclipse.mita.base.util.BaseUtils.castOrNull
 import org.eclipse.mita.base.typesystem.types.TypeConstructorType
 import org.eclipse.mita.base.typesystem.infra.TypeSizeInferrer
 import java.util.Optional
+import org.eclipse.mita.base.typesystem.types.AtomicType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
+import org.eclipse.mita.base.typesystem.StdlibTypeRegistry
 
 class StringGenerator extends ArrayGenerator {
 	
 	@Inject
 	protected extension ProgramDslTraceExtensions
+
+	override def AbstractType getDataType(AbstractType t) {
+		return new AtomicType(t.origin, "char");
+	}
 
 	override generateBulkCopyStatements(EObject context, CodeFragment i, CodeWithContext left, CodeWithContext right, CodeFragment count) {
 		return cf('''
@@ -283,6 +290,14 @@ class StringGenerator extends ArrayGenerator {
 			return codeFragmentProvider.create('''«IF resultVariable !== null»«resultVariable.code» = «ENDIF»«varref».length''');
 		}
 		
+	}
+	
+	override protected getRelevantTypeParametersForHeaderName(Iterable<AbstractType> allTypeArguments) {
+		return #[]
+	}
+	
+	override generateUnspecializedDefinitionsHeaderName(EObject context, TypeConstructorType typeWitness) {
+		return "array"
 	}
 	
 }

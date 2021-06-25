@@ -17,6 +17,8 @@ import java.util.List
 import org.eclipse.mita.program.generator.CompilationContext
 import org.eclipse.mita.program.generator.PlatformMakefileGenerator
 import org.eclipse.mita.program.inferrer.StaticValueInferrer
+import java.util.ArrayList
+import java.util.HashSet
 
 class MakefileGenerator extends PlatformMakefileGenerator {	
 	override generateMakefile(CompilationContext context, List<String> sourceFiles) {
@@ -74,7 +76,7 @@ class MakefileGenerator extends PlatformMakefileGenerator {
 			
 		#List all the application source file under variable BCDS_XDK_APP_SOURCE_FILES in a similar pattern as below
 		export BCDS_XDK_APP_SOURCE_FILES = \
-			«sourceFiles.filter[x | x.endsWith('.c') ].map[x | '''$(BCDS_APP_SOURCE_DIR)/«x»'''].join(' \\\n')»
+			«new HashSet(sourceFiles).filter[x | x.endsWith('.c') ].map[x | '''$(BCDS_APP_SOURCE_DIR)/«x»'''].sort.join(' \\\n')»
 		
 		.PHONY: clean debug release flash_debug_bin flash_release_bin
 		

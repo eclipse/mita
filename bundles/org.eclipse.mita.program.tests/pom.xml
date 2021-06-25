@@ -48,7 +48,10 @@
 						<exclude>**/*Test.xtend</exclude>
 					</excludes>
 					<testFailureIgnore>${testFailureIgnore}</testFailureIgnore>
-					<argLine>${test.vmargs} -Dlog4j.configuration=file:${basedir}/log4j.properties</argLine>
+					<argLine>${test.vmargs} -Dfile.encoding=UTF-8 -Dlog4j.configuration=file:${basedir}/log4j.properties</argLine>
+					<useUIHarness>true</useUIHarness>
+					<useUIThread>true</useUIThread>
+          <appArgLine>-Dfile.encoding=UTF-8</appArgLine>
 				</configuration>
 				<executions>
 					<execution>
@@ -60,13 +63,10 @@
 							<includes>
 								<include>**/AllTests.java</include>
 							</includes>
-							<useUIHarness>true</useUIHarness>
-							<useUIThread>true</useUIThread>
 						</configuration>
 					</execution>
 				</executions>
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

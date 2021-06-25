@@ -32,7 +32,7 @@ import org.eclipse.mita.base.typesystem.infra.NicerTypeVariableNamesForErrorMess
 @Accessors
 class TypeScheme extends AbstractType {	
 	protected final List<TypeVariable> vars;
-	protected final AbstractType on;
+	public final AbstractType on;
 	
 	new(EObject origin, List<TypeVariable> vars, AbstractType on) {
 		super(origin, on.name);

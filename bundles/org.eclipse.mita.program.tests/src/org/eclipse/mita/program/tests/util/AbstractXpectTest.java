@@ -14,11 +14,11 @@
 package org.eclipse.mita.program.tests.util;
 
 import org.junit.runner.RunWith;
-import org.xpect.runner.XpectRunner;
-import org.xpect.runner.XpectSuiteClasses;
-import org.xpect.xtext.lib.tests.LinkingTest;
-import org.xpect.xtext.lib.tests.ScopingTest;
-import org.xpect.xtext.lib.tests.ValidationTest;
+import org.eclipse.xpect.runner.XpectRunner;
+import org.eclipse.xpect.runner.XpectSuiteClasses;
+import org.eclipse.xpect.xtext.lib.tests.LinkingTest;
+import org.eclipse.xpect.xtext.lib.tests.ScopingTest;
+import org.eclipse.xpect.xtext.lib.tests.ValidationTest;
 
 @RunWith(XpectRunner.class)
 @XpectSuiteClasses({ LinkingTest.class, ValidationTest.class, GenerationTest.class, ScopingTest.class, TypeInferrerTest.class})

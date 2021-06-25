@@ -25,6 +25,8 @@ import org.eclipse.core.runtime.NullProgressMonitor
 import org.eclipse.ui.PlatformUI
 import org.eclipse.ui.actions.WorkspaceModifyOperation
 import org.eclipse.xtext.ui.XtextProjectHelper
+import org.eclipse.swt.widgets.Display
+import org.eclipse.ui.application.WorkbenchAdvisor
 
 /**
  * Creates and holds an empty project with Xtext nature setup for testing purposes
@@ -48,6 +50,7 @@ class TestProjectHelper {
 			}
 		}
 		try {
+
 			PlatformUI.getWorkbench().getProgressService().run(false, true, op);
 		} catch (InvocationTargetException e) {
 			e.printStackTrace();

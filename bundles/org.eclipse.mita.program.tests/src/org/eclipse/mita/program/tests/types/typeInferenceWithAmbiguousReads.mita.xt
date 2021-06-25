@@ -1,0 +1,25 @@
+/* XPECT_SETUP org.eclipse.mita.program.tests.types.TypesTest 
+Workspace {
+	Project "testproject" {
+	}
+}
+END_SETUP */
+
+package test;
+import platforms.unittest;
+  
+// no errors here: type of x and y is correctly inferred
+  
+struct Foo {
+	var modality00: int16;
+	var b: uint32;
+}
+
+every 1 second {
+	//XPECT inferredType --> int16
+	var x = my_sensor00.modality00.read();
+	//XPECT inferredType --> uint32
+	var y = my_sensor00.modality01.read();
+	//XPECT inferredType --> Foo(int16, uint32)
+	var foo = Foo(x, y); 
+} 

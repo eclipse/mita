@@ -70,6 +70,8 @@ class ModelUtils {
 	@Inject
 	protected ResourceDescriptionsProvider resourceDescriptionsProvider;
 	
+	@Inject
+	protected TypeUtils typeUtils;
 
 	/**
 	 * Retrieves the variable declaration this nested expression is referencing.
@@ -331,13 +333,13 @@ class ModelUtils {
 		return if(node === null) null else NodeModelUtils.getTokenText(node);
 	}
 	
-	static def boolean isStructuralType(AbstractType type, EObject context) {
+	def boolean isStructuralType(AbstractType type, EObject context) {
 		return type instanceof SumType || type instanceof ProdType || type.isPrimitiveType(context)
 	}
 	
-	static def boolean isPrimitiveType(AbstractType type, EObject context) {
+	def boolean isPrimitiveType(AbstractType type, EObject context) {
 		if (type instanceof AtomicType) {
-			return !TypeUtils.isGeneratedType(context, type);
+			return !typeUtils.isGeneratedType(context, type);
 		}
 		if (type instanceof AbstractBaseType) {
 			return true;

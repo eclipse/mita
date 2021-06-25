@@ -21,6 +21,8 @@ import org.eclipse.mita.base.types.CoercionExpression
 import org.eclipse.mita.base.types.Expression
 import org.eclipse.mita.base.typesystem.types.AbstractType
 import org.eclipse.mita.program.NewInstanceExpression
+import org.eclipse.mita.base.typesystem.types.TypeConstructorType
+import org.eclipse.mita.base.typesystem.types.TypeVariable
 
 /**
  * Interface for type generators.
@@ -31,6 +33,9 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	
 	@Inject
 	protected CodeFragmentProvider codeFragmentProvider
+	
+	@Inject
+	protected extension GeneratorUtils
 	
 	/**
 	 * Produces a code fragment with the actual type specifier
@@ -114,5 +119,21 @@ abstract class AbstractTypeGenerator implements IGenerator {
 	 */
 	def CodeFragment generateTypeImplementations(EObject context, AbstractType type) {
 		return CodeFragment.EMPTY;
+	}
+	
+	protected def getRelevantTypeParametersForHeaderName(Iterable<AbstractType> allTypeArguments) {
+		return allTypeArguments.tail;
+	}
+	
+	def String generateHeaderName(EObject context, TypeConstructorType t) {
+		val relevantTypeParameters = getRelevantTypeParametersForHeaderName(t.typeArguments)
+		if(!relevantTypeParameters.filter(TypeVariable).empty) {
+			return null
+		}
+		return '''«(#[t.name] + relevantTypeParameters.map[getFileNameForTypeImplementation(context, it)]).filterNull.join("_")»'''
+	}
+	
+	def String generateUnspecializedDefinitionsHeaderName(EObject context, TypeConstructorType typeWitness) {
+		return typeWitness.name
 	}
 }

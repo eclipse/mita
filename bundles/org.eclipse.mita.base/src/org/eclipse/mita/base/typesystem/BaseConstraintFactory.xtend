@@ -818,7 +818,7 @@ class BaseConstraintFactory implements IConstraintFactory {
 			
 			return prodType;	
 		}
-		throw new CoreException(new Status(IStatus.ERROR, null, 'Broken model: parent of sum alternative is not a sum type'));
+		throw new CoreException(new Status(IStatus.ERROR, BaseConstraintFactory, 'Broken model: parent of sum alternative is not a sum type'));
 	}
 	
 	protected dispatch def void defineUserData(ConstraintSystem system, GeneratedType genType, AbstractType result) {

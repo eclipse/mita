@@ -10,6 +10,6 @@ Require-Bundle: org.eclipse.mita.base,
  org.eclipse.xtext.ide,
  org.eclipse.xtext.xbase.ide,
  org.antlr.runtime
-Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Bundle-RequiredExecutionEnvironment: JavaSE-11
 Export-Package: org.eclipse.mita.base.ide.contentassist.antlr,
  org.eclipse.mita.base.ide.contentassist.antlr.internal

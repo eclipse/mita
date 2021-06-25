@@ -55,7 +55,6 @@ class ButtonGenerator extends AbstractSystemResourceGenerator {
             .addHeader('BSP_BoardType.h', true, IncludePath.HIGH_PRIORITY)
             .addHeader('BCDS_BSP_Button.h', true)
             .addHeader('MitaEvents.h', true)
-            .addHeader("MitaGeneratedTypes.h", false)
             .setPreamble('''
 			«FOR handlergrp : eventHandler.groupBy[it.sensorInstance.buttonNumber].values»
 			«val changedHandlers = handlergrp.filter[(it.event as SystemEventSource)?.source?.name == "changed"]»

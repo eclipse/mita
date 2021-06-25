@@ -31,7 +31,7 @@ class CodeFragment extends CompositeGeneratorNode {
 		node.toString;
 	}
 	static dispatch def String doGetString(CompositeGeneratorNode node) {
-		node.children.map[doGetString].join;
+		node.children.map[doGetString].join; 
 	}
 	static dispatch def String doGetString(TextNode node) {
 		node.text.toString
@@ -182,12 +182,13 @@ class CodeFragment extends CompositeGeneratorNode {
 	}
 	
 	def toHeader(CompilationContext context, String guardName) {
-		val includes = (includePaths + children.findIncludes).combineIncludes;
+		val includes = (includePaths + children.findIncludes).toList;
 		val preamble = new CompositeGeneratorNode();
 		if(this.preamble !== null) {
 			preamble.children += this.preamble
 		}
 		preamble.children += children.findPreamble;
+		includes += #[preamble].findIncludes;
 		
 		val result = new CompositeGeneratorNode();
 		result.children.add(new TemplateNode('''
@@ -196,7 +197,7 @@ class CodeFragment extends CompositeGeneratorNode {
 			#ifndef «guardName.toUpperCase»
 			#define «guardName.toUpperCase»
 			
-			«FOR include : includes»
+			«FOR include : includes.combineIncludes»
 			«include»
 			«ENDFOR»
 			
@@ -210,18 +211,19 @@ class CodeFragment extends CompositeGeneratorNode {
 	}
 	
 	def toImplementation(CompilationContext context) {
-		val includes = (includePaths + children.findIncludes).combineIncludes;
+		val includes = (includePaths + children.findIncludes).toList;
 		val preamble = new CompositeGeneratorNode();
 		if(this.preamble !== null) {
 			preamble.children += this.preamble
 		}
 		preamble.children += children.findPreamble;
+		includes += #[preamble].findIncludes;
 		
 		val result = new CompositeGeneratorNode();
 		result.children.add(new TemplateNode('''
 			«generateHeaderComment(context)»
 			
-			«FOR include : includes»
+			«FOR include : includes.combineIncludes»
 			«include»
 			«ENDFOR»
 			
@@ -233,7 +235,7 @@ class CodeFragment extends CompositeGeneratorNode {
 		return result;
 	}
 	
-	private def Iterable<IncludePath> findIncludes(Iterable<IGeneratorNode> nodes) {
+	private def Iterable<IncludePath> findIncludes(Iterable<? extends IGeneratorNode> nodes) {
 		nodes.filter(CompositeGeneratorNode).map[x | 
 			if(x instanceof CodeFragment) {
 				x.includePaths + x.children.findIncludes

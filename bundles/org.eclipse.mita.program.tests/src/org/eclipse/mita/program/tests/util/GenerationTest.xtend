@@ -59,18 +59,18 @@ import org.eclipse.xtext.resource.XtextResourceSet
 import org.eclipse.xtext.util.CancelIndicator
 import org.junit.Assert
 import org.junit.runner.RunWith
-import org.xpect.XpectImport
-import org.xpect.XpectInvocation
-import org.xpect.parameter.IStatementRelatedRegion
-import org.xpect.runner.LiveExecutionType
-import org.xpect.runner.Xpect
-import org.xpect.runner.XpectRunner
-import org.xpect.setup.XpectSetupFactory
-import org.xpect.state.Creates
-import org.xpect.state.XpectStateAnnotation
-import org.xpect.xtext.lib.setup.ThisResource
-import org.xpect.xtext.lib.setup.XtextStandaloneSetup
-import org.xpect.xtext.lib.setup.XtextWorkspaceSetup
+import org.eclipse.xpect.XpectImport
+import org.eclipse.xpect.XpectInvocation
+import org.eclipse.xpect.parameter.IStatementRelatedRegion
+import org.eclipse.xpect.runner.LiveExecutionType
+import org.eclipse.xpect.runner.Xpect
+import org.eclipse.xpect.runner.XpectRunner
+import org.eclipse.xpect.setup.XpectSetupFactory
+import org.eclipse.xpect.state.Creates
+import org.eclipse.xpect.state.XpectStateAnnotation
+import org.eclipse.xpect.xtext.lib.setup.ThisResource
+import org.eclipse.xpect.xtext.lib.setup.XtextStandaloneSetup
+import org.eclipse.xpect.xtext.lib.setup.XtextWorkspaceSetup
 
 import static org.eclipse.emf.ecore.util.EcoreUtil.getRootContainer
 
@@ -83,7 +83,7 @@ class GenerationTest {
 	@Inject package TestProjectHelper helper
 	@Inject package ExternalCommandExecutor exec
 	@Inject package GeneratorUtils genUtils
-	@Inject ILibraryProvider libraryProvider
+	@Inject ILibraryProvider libraryProvider 
 
 	@Xpect(liveExecution=LiveExecutionType.FAST)
 	def void noCompileErrors(@ContextObject EObject contextObject) {

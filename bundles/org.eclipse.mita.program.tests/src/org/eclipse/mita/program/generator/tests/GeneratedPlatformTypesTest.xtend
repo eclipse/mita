@@ -17,7 +17,7 @@ class GeneratedPlatformTypesTest extends AbstractGeneratorTest {
 			every 1 second {
 				
 			}
-		''', 'base/MitaGeneratedTypes.h');
+		''', 'base/generatedTypes/string.h');
 		ast.assertNoCompileErrors();
 		val parsedProgram = ast.value;
 		val stringDeclaration = parsedProgram.declarations

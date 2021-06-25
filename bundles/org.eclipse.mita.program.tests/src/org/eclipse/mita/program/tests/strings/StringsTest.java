@@ -19,11 +19,11 @@ import org.eclipse.mita.base.typesystem.types.TypeConstructorType;
 import org.eclipse.mita.base.util.BaseUtils;
 import org.eclipse.mita.program.tests.util.AbstractXpectTest;
 import org.junit.runner.RunWith;
-import org.xpect.expectation.IStringExpectation;
-import org.xpect.expectation.StringExpectation;
-import org.xpect.runner.Xpect;
-import org.xpect.runner.XpectRunner;
-import org.xpect.xtext.lib.setup.ThisOffset;
+import org.eclipse.xpect.expectation.IStringExpectation;
+import org.eclipse.xpect.expectation.StringExpectation;
+import org.eclipse.xpect.runner.Xpect;
+import org.eclipse.xpect.runner.XpectRunner;
+import org.eclipse.xpect.xtext.lib.setup.ThisOffset;
 
 @RunWith(XpectRunner.class)
 public class StringsTest extends AbstractXpectTest {
